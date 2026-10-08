@@ -1,0 +1,174 @@
+name: CI
+
+# Solo `pull_request`: todo lo que llega a develop pasa por PR (CONTRIBUTING.md),
+# y auto-merge.yml espera el check `ci` sobre el SHA de cabecera del PR.
+# `workflow_call`: release.yml la reutiliza para validar el commit etiquetado (ADR 0014).
+#
+# Monorepo (ADR 0001): un job por parte, que corre solo si esa parte existe y
+# cambió (en un tag corren todas las que existan). El job `ci` resume a los
+# demás y es el ÚNICO check requerido: así agregar una parte no obliga a
+# tocar auto-merge.yml.
+on:
+  pull_request:
+    branches: [develop, master]
+  workflow_dispatch: {}
+  workflow_call: {}
+
+jobs:
+  detectar:
+    name: detectar
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.partes.outputs.api }}
+      app: ${{ steps.partes.outputs.app }}
+      firmware: ${{ steps.partes.outputs.firmware }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: partes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # En un PR, una parte corre si existe y cambió (o cambió lo compartido:
+          # db/, docker, workflows). Fuera de un PR (tag, manual), si existe.
+          cambios=""
+          [ -n "$BASE" ] && cambios=$(git diff --name-only "$BASE"...HEAD)
+          comun='^(db/|docker|\.github/|bin/verify)'
+          decidir() {
+            local nombre="$1" marcador="$2" carpeta="$3"
+            if [ ! -f "$marcador" ]; then echo "$nombre=false"; return; fi
+            if [ -z "$BASE" ] || echo "$cambios" | grep -qE "^$carpeta/|$comun"; then
+              echo "$nombre=true"
+            else
+              echo "$nombre=false"
+            fi
+          }
+          {
+            decidir api api/package.json api
+            decidir app app/pubspec.yaml app
+            decidir firmware firmware/platformio.ini firmware
+          } | tee -a "$GITHUB_OUTPUT"
+
+  api:
+    name: api
+    needs: detectar
+    if: needs.detectar.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    # MySQL 8, el mismo motor que producción: los tests nunca usan SQLite.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: qr_access_testing
+          MYSQL_USER: qr_access
+          MYSQL_PASSWORD: qr_access
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_DATABASE_TEST: qr_access_testing
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/qr_access_testing
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Formato (Prettier)
+        run: npm run format:check
+      - name: Tipos (tsc)
+        run: npm run typecheck
+      - name: Fronteras entre módulos (dependency-cruiser)
+        run: npm run arquitectura
+      - name: Migraciones (dbmate)
+        working-directory: .
+        run: |
+          curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v2.28.0/dbmate-linux-amd64
+          chmod +x /usr/local/bin/dbmate
+          dbmate --migrations-dir db/migrations --no-dump-schema up
+      - name: Tests (Vitest sobre MySQL)
+        run: npm test
+
+  app:
+    name: app
+    needs: detectar
+    if: needs.detectar.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Formato (dart format)
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Análisis (flutter analyze)
+        run: flutter analyze --fatal-infos
+      - name: Tests (flutter test)
+        run: flutter test
+      - name: Build web
+        run: flutter build web --release
+
+  firmware:
+    name: firmware
+    needs: detectar
+    if: needs.detectar.outputs.firmware == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: pio-${{ hashFiles('firmware/platformio.ini') }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --upgrade platformio
+      # secretos.h no se versiona: CI compila con la plantilla de ejemplo
+      - run: cp include/secretos.example.h include/secretos.h
+      - name: Compilación (pio run)
+        run: pio run
+      - name: Tests nativos (pio test)
+        run: pio test -e native
+
+  ci:
+    name: ci
+    needs: [detectar, api, app, firmware]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resumen de las partes
+        env:
+          RESULTADOS: ${{ toJSON(needs) }}
+        run: |
+          echo "$RESULTADOS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"'
+          # skipped = la parte no existe o no cambió; cualquier otra cosa que no sea success, falla
+          if echo "$RESULTADOS" | jq -e 'to_entries | any(.value.result != "success" and .value.result != "skipped")' >/dev/null; then
+            echo "Una parte falló."; exit 1
+          fi

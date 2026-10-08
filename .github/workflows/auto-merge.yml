@@ -1,0 +1,115 @@
+name: Auto-merge
+
+# No usa el "Enable auto-merge" nativo de GitHub: esa característica requiere
+# repositorio público en el plan Free (github.com/es/pull-requests/how-tos/
+# merge-and-close-pull-requests/automatically-merging-a-pull-request), y este
+# repo es privado. En su lugar, este workflow espera a que los checks
+# requeridos terminen y mergea directamente por `gh pr merge` — mismo
+# resultado, sin depender del plan de la organización.
+#
+# Solo integra en develop los PR de feature/* y bugfix/*. master no
+# recibe PR: lo actualiza release.yml al pushear un tag de versión (ADR 0014).
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [develop]
+
+# Un solo run vigente por PR: cada push nuevo cancela el run del SHA anterior.
+# Sin esto, un run viejo que sigue sondeando su SHA superado puede terminar
+# mergeando el PR con un head más nuevo cuyos checks aún no pasaron.
+concurrency:
+  group: auto-merge-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: write
+  checks: read
+  actions: read
+
+jobs:
+  merge-when-green:
+    name: merge-when-green
+    runs-on: ubuntu-latest
+    # Un PR en draft se abre justamente para que NO se integre solo: es el
+    # modo en que una tarea automatizada entrega trabajo para revisión. Sin
+    # esta guarda el job igual llegaba a `gh pr merge` y moría con
+    # "Pull Request is still a draft", dejando un check en rojo que no
+    # significaba nada. Al marcarlo "Ready for review" salta el evento
+    # ready_for_review y el auto-merge corre normalmente.
+    if: >-
+      github.event.pull_request.draft == false &&
+      (startsWith(github.head_ref, 'feature/') || startsWith(github.head_ref, 'bugfix/'))
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Esperar checks requeridos y mergear si todos pasan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -o pipefail
+          # Solo este — nunca "todos los checks del PR", porque este
+          # mismo job también es un check y esperarse a sí mismo colgaría
+          # el workflow para siempre.
+          #
+          # Se usa la API REST de check-runs (no `gh pr checks`, que
+          # internamente hace una consulta GraphQL pidiendo
+          # checkSuite.workflowRun — un campo que el GITHUB_TOKEN del
+          # workflow no puede resolver: "Resource not accessible by
+          # integration"). check-runs por SHA evita ese campo por completo.
+          REQUIRED=("ci")
+
+          for i in $(seq 1 40); do
+            if ! JSON=$(gh api "repos/$REPO/commits/$SHA/check-runs" --jq '.check_runs' 2>&1); then
+              echo "gh api check-runs falló (intento $i), reintentando en 15s:"
+              echo "$JSON"
+              sleep 15
+              continue
+            fi
+
+            echo "--- intento $i ---"
+            echo "$JSON" | jq -c '.[] | {name, status, conclusion}'
+
+            ALL_DONE=true
+            ANY_FAILED=false
+
+            for name in "${REQUIRED[@]}"; do
+              RUN=$(echo "$JSON" | jq -c --arg n "$name" \
+                '[.[] | select(.name == $n)] | sort_by(.started_at) | last')
+              STATUS=$(echo "$RUN" | jq -r '.status // "missing"')
+              CONCLUSION=$(echo "$RUN" | jq -r '.conclusion // "null"')
+
+              if [ "$STATUS" != "completed" ]; then
+                ALL_DONE=false
+                continue
+              fi
+              case "$CONCLUSION" in
+                success|skipped|neutral) ;;
+                *) ANY_FAILED=true ;;
+              esac
+            done
+
+            if [ "$ANY_FAILED" = true ]; then
+              echo "Un check requerido falló — no se mergea."
+              exit 1
+            fi
+            if [ "$ALL_DONE" = true ]; then
+              echo "Checks requeridos en verde — mergeando."
+              # --delete-branch borra la rama al integrar. Con squash los
+              # commits originales no quedan como ancestros de develop, así que
+              # una rama vieja no se distingue de una viva mirando el grafo: sin
+              # esto la lista crece hasta que nadie sabe qué está integrado. La
+              # referencia queda en el PR y GitHub la restaura con un clic.
+              gh pr merge --squash --delete-branch "$PR_URL"
+              exit 0
+            fi
+
+            sleep 15
+          done
+
+          echo "Tiempo de espera agotado (10 minutos) sin que los checks requeridos terminaran."
+          exit 1
