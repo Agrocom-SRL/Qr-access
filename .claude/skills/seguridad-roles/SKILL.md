@@ -11,7 +11,7 @@ ADR 0004. Origen: ADR 0004 de ACRECIA, portado de Laravel a Node.
 
 - `cuentas`: identidad (nombre, `codigo` de ingreso, `activo`). Datos de empresa aparte (`cuenta_datos_empresa`).
 - `usuarios.tenant_id NULL` = usuario de la **plataforma** (super admin de AGROCOM).
-- Todo lo demás de una cuenta (sitios, puertas, dispositivos, personas, reglas, credenciales, eventos) lleva `tenant_id`.
+- Todo lo demás de una cuenta (suscripción, sitios, puertas, dispositivos, QR emitidos, eventos) lleva `tenant_id`.
 
 ## Aislamiento por construcción
 

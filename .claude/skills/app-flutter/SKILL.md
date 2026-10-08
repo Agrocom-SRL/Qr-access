@@ -29,9 +29,8 @@ app/lib/
     templates/                  PlantillaAdmin (rail/drawer + cabecera), PlantillaAuth
   features/
     sesion/                     login, elegir rol, perfil
-    mi_qr/                      QR personal dinámico (pantalla completa, brillo al máximo)
-    escaner/                    escáner de guardia (cámara) → valida contra la API
-    puertas/  sitios/  personas/  reglas/  invitaciones/  eventos/  dispositivos/  cuentas/
+    qr_accesos/                 emitir, compartir (imagen) y anular QR; listado con estado (ADR 0008)
+    puertas/  sitios/  usuarios/  eventos/  dispositivos/  cuentas/  suscripcion/
       data/                     repositorio de la feature (usa core/api)
       domain/                   modelos y lógica pura (testeable sin Flutter)
       presentation/             pantallas, widgets propios y providers
@@ -41,7 +40,7 @@ app/lib/
 
 ## Paquetes de referencia
 
-`flutter_riverpod`, `go_router`, `dio`, `flutter_secure_storage`, `qr_flutter` (mostrar), `mobile_scanner` (escanear, móvil y web), `crypto` (HMAC del QR dinámico), `intl`, `very_good_analysis` (lints). Versiones fijadas en `pubspec.lock`, que se versiona.
+`flutter_riverpod`, `go_router`, `dio`, `flutter_secure_storage`, `qr_flutter` (mostrar), `share_plus` (compartir la imagen del QR), `intl`, `very_good_analysis` (lints). Versiones fijadas en `pubspec.lock`, que se versiona.
 
 ## Reglas
 
@@ -50,12 +49,12 @@ app/lib/
 3. **Una feature no importa archivos internos de otra**: solo su `<feature>.dart`. Lo controla `test/arquitectura/fronteras_test.dart`.
 4. **Ningún widget llama a la red**: presentation → provider → repositorio de `data/` → `core/api`.
 5. **Web y móvil comparten código**: nada de `dart:io` fuera de `core/plataforma/*_movil.dart`; elegir implementación con import condicional.
-6. **QR**: negro sobre blanco, tamaño mínimo 240 dp, zona de silencio, brillo al máximo mientras se muestra, regenerado cada `QR_PASO_SEGUNDOS` con cuenta regresiva visible (ADR 0008).
+6. **QR**: negro sobre blanco, tamaño mínimo 240 dp, zona de silencio, con la hora de vencimiento visible y exportable como imagen para compartir (ADR 0008).
 7. **Errores de la API**: se traducen por `code` (`error_qr_vencido`); un `code` desconocido muestra el genérico.
 
 ## Reglas de pantalla (de ACRECIA, `guia-pantallas.md`)
 
-- Arquetipos: **Tablero**, **Listado**, **Formulario**, **Detalle**, más los propios: **Mi QR** y **Escáner**.
+- Arquetipos: **Tablero**, **Listado**, **Formulario**, **Detalle**, más el propio: **Emitir QR**.
 - Tras guardar, el formulario se queda en edición (no vuelve al listado).
 - `activo` nunca va en un formulario: se activa/desactiva con una acción aparte.
 - Colores fijos de acción: Ver = info, Editar = advertencia, Eliminar = peligro; un cambio de estado lleva el color del estado destino. Toda baja o cambio de estado confirma con `ConfirmarDialogo`.

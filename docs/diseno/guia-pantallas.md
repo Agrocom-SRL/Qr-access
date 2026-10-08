@@ -38,11 +38,11 @@ Orden fijo: **cabecera** (título + botón "Nuevo" si hay permiso) → **barra**
 ### 2.4 Detalle
 Cabecera con estado (badge) y acciones → secciones clave-valor → relacionados (p. ej. en una puerta: dispositivo, reglas y últimos eventos).
 
-### 2.5 Mi QR (usuario final)
-`PlantillaPantallaCompleta`: nombre de la persona, `VisorQr`, cuenta regresiva, aviso si no hay credencial activa o si el reloj del teléfono está desfasado. Sin menú; acceso al perfil con un ícono.
+### 2.5 Emitir QR (usuario de cuenta)
+Formulario corto: puerta(s), etiqueta opcional y vigencia (por defecto, fin del día; tope del plan) → `PlantillaPantallaCompleta` con `VisorQr`, la puerta, la etiqueta y la hora de vencimiento → acción principal **Compartir** (menú de compartir del teléfono, imagen PNG con zona de silencio). El token no se vuelve a mostrar después de cerrar (ADR 0008).
 
 ### 2.6 Escáner (guardia)
-Selector de puerta (recordado) → cámara a pantalla completa con marco → `ResultadoAcceso` (permitido o denegado con motivo) → vuelve a escanear.
+Fuera de V1 (D-20).
 
 ## 3. Cambios de estado y confirmaciones
 
