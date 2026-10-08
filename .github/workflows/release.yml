@@ -1,0 +1,72 @@
+name: Release
+
+# master solo se mueve con un tag de versión (ADR 0014). Al pushear vX.Y.Z:
+#   1. corre la CI completa sobre el commit etiquetado (ci.yml vía workflow_call);
+#   2. lo integra en master con merge commit (--no-ff), nunca squash: así master
+#      sigue descendiendo de develop y el próximo release no diverge;
+#   3. si el tag está en fix/* (nace de master), lo reincorpora en develop;
+#   4. publica el GitHub Release con notas automáticas.
+# Un tag sobre un commit que no esté en develop ni en fix/* se rechaza.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: release
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verificar origen del tag
+        id: origen
+        run: |
+          ramas=$(git branch -r --contains "$TAG" --format='%(refname:short)' | sed 's|^origin/||')
+          echo "Ramas que contienen $TAG:"; echo "$ramas"
+          if echo "$ramas" | grep -qx develop; then
+            echo "reincorporar=false" >> "$GITHUB_OUTPUT"
+          elif echo "$ramas" | grep -q '^fix/'; then
+            echo "reincorporar=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::$TAG no está en develop ni en una rama fix/*"; exit 1
+          fi
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Integrar en master
+        run: |
+          git checkout -B master origin/master
+          git merge --no-ff "$TAG" -m "publica $TAG"
+          git push origin master
+
+      - name: Reincorporar en develop
+        if: steps.origen.outputs.reincorporar == 'true'
+        run: |
+          git checkout -B develop origin/develop
+          git merge --no-ff "$TAG" -m "reincorpora $TAG en develop"
+          git push origin develop
+
+      - name: Publicar GitHub Release
+        run: gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes --verify-tag
+
+      # Cuando existan las partes, el release adjunta sus artefactos
+      # (APK firmado, build web y binario del firmware) con `gh release upload`.
+      # Requiere los secretos de firma en GitHub Actions; ver ADR 0014.

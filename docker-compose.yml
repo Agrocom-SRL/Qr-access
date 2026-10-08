@@ -1,0 +1,70 @@
+# Entorno local (ADR 0010). Producción: docker-compose.prod.yml, cuando exista api/.
+#
+#   docker compose up -d db              MySQL 8 con la base de desarrollo y la de tests
+#   docker compose run --rm dbmate up    aplica las migraciones de db/migrations
+#   docker compose up -d api             API en modo desarrollo (requiere api/package.json)
+#
+# El volumen qr-access-db-data guarda los datos que cargas para revisar: no se baja con -v.
+# Para probar migraciones contra una base limpia: docker compose -p qr-access-verif ...
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-qr_access}
+      MYSQL_USER: ${MYSQL_USER:-qr_access}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-qr_access}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - qr-access-db-data:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  dbmate:
+    image: amacneil/dbmate:2
+    profiles: ["herramientas"]
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-qr_access}:${MYSQL_PASSWORD:-qr_access}@db:3306/${MYSQL_DATABASE:-qr_access}
+      DBMATE_MIGRATIONS_DIR: /db/migrations
+      DBMATE_SCHEMA_FILE: /db/schema.sql
+      DBMATE_WAIT: "true"
+    volumes:
+      - ./db:/db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: node:22-alpine
+    working_dir: /repo/api
+    command: sh -c "npm ci && npm run dev"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./:/repo
+      - api-node-modules:/repo/api/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  qr-access-db-data:
+  api-node-modules:

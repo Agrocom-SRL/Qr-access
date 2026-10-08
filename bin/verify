@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# Compuerta de calidad de AGROCOM Acceso: la misma cascada que corre CI.
+#
+#   bin/verify               todas las partes que existan
+#   bin/verify api app       solo esas partes (api | app | firmware)
+#
+# Una parte que todavía no existe (sin api/package.json, app/pubspec.yaml o
+# firmware/platformio.ini) se saltea con un aviso. Devuelve 0 solo si todo pasa.
+#
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+partes=("$@")
+[ ${#partes[@]} -eq 0 ] && partes=(api app firmware)
+
+fallos=0
+paso() { printf '\n\033[1m── %s ──\033[0m\n' "$1"; }
+ok()   { printf '\033[32m✓ %s\033[0m\n' "$1"; }
+mal()  { printf '\033[31m✗ %s\033[0m\n' "$1"; fallos=$((fallos + 1)); }
+aviso(){ printf '\033[33m· %s\033[0m\n' "$1"; }
+correr() { local nombre="$1"; shift; if "$@"; then ok "$nombre"; else mal "$nombre"; fi; }
+
+verificar_api() {
+    paso "api"
+    [ -f api/package.json ] || { aviso "api/ todavía no existe: se saltea"; return; }
+    (
+        cd api || exit 1
+        [ -d node_modules ] || npm ci --no-audit --no-fund || exit 1
+        exit 0
+    ) || { mal "npm ci"; return; }
+    correr "lint (ESLint)"               npm --prefix api run --silent lint
+    correr "formato (Prettier)"          npm --prefix api run --silent format:check
+    correr "tipos (tsc --noEmit)"        npm --prefix api run --silent typecheck
+    correr "fronteras (dependency-cruiser)" npm --prefix api run --silent arquitectura
+    # Los tests usan MySQL real: DB_DATABASE la fuerza el setup de Vitest a qr_access_testing
+    correr "tests (Vitest sobre MySQL)"  npm --prefix api run --silent test
+}
+
+verificar_app() {
+    paso "app"
+    [ -f app/pubspec.yaml ] || { aviso "app/ todavía no existe: se saltea"; return; }
+    command -v flutter >/dev/null || { mal "flutter no está instalado"; return; }
+    (cd app && flutter pub get >/dev/null) || { mal "flutter pub get"; return; }
+    correr "formato (dart format)"   bash -c 'cd app && dart format --output=none --set-exit-if-changed lib test'
+    correr "análisis (flutter analyze)" bash -c 'cd app && flutter analyze --fatal-infos'
+    correr "tests (flutter test)"    bash -c 'cd app && flutter test'
+    correr "build web"               bash -c 'cd app && flutter build web --release >/dev/null'
+}
+
+verificar_firmware() {
+    paso "firmware"
+    [ -f firmware/platformio.ini ] || { aviso "firmware/ todavía no existe: se saltea"; return; }
+    command -v pio >/dev/null || { mal "PlatformIO (pio) no está instalado: pipx install platformio"; return; }
+    correr "compilación (pio run)"       bash -c 'cd firmware && pio run'
+    correr "tests nativos (pio test)"    bash -c 'cd firmware && pio test -e native'
+}
+
+for p in "${partes[@]}"; do
+    case "$p" in
+        api) verificar_api ;;
+        app) verificar_app ;;
+        firmware) verificar_firmware ;;
+        *) mal "parte desconocida: $p (usa api, app o firmware)" ;;
+    esac
+done
+
+printf '\n'
+if [ "$fallos" -eq 0 ]; then
+    printf '\033[32m✓ Cascada en verde.\033[0m\n'
+    exit 0
+fi
+printf '\033[31m✗ %s etapa(s) fallaron.\033[0m\n' "$fallos"
+exit 1

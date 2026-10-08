@@ -1,0 +1,31 @@
+# Entorno
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# api (Node)
+api/node_modules/
+api/dist/
+api/coverage/
+
+# app (Flutter)
+app/.dart_tool/
+app/build/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/android/local.properties
+app/android/key.properties
+app/android/app/*.jks
+app/ios/Pods/
+app/ios/Flutter/Generated.xcconfig
+
+# firmware (PlatformIO)
+firmware/.pio/
+firmware/include/secretos.h
+
+# db
+db/schema.sql
