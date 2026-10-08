@@ -10,7 +10,7 @@ En ACRECIA la regla que sostuvo la coherencia fue "entre módulos, solo contrato
 
 ### API (`api/src/`)
 
-- `modules/<modulo>/` en español, uno por funcionalidad: `seguridad`, `organizacion`, `accesos`, `dispositivos` (nombres provisionales hasta que reciban código).
+- `modules/<modulo>/` en español, uno por funcionalidad: `seguridad`, `suscripciones`, `organizacion`, `accesos`, `dispositivos` (nombres provisionales hasta que reciban código).
 - Transversal en inglés: `platform/` (db, contexto, bitácora, errores, seguridad) y `plugins/`.
 - Dentro de un módulo: `routes.ts`, `schemas.ts`, `actions/`, `repository.ts`, `domain/`, `contracts.ts`, `events.ts` (detalle en el skill `backend-node`).
 - **Un dueño por tabla**: solo el repositorio del módulo dueño la escribe.
@@ -20,9 +20,10 @@ En ACRECIA la regla que sostuvo la coherencia fue "entre módulos, solo contrato
 
 | Módulo | Alcance |
 |---|---|
-| `seguridad` | Cuentas, usuarios, roles, permisos, sesiones, rol activo |
-| `organizacion` | Sitios, puertas, personas, grupos |
-| `accesos` | Credenciales QR, reglas de acceso, invitaciones, validación, eventos de acceso |
+| `seguridad` | Cuentas, usuarios (PIN), roles, permisos, sesiones, rol activo |
+| `suscripciones` | Planes, suscripciones y límites (ADR 0017) |
+| `organizacion` | Sitios y puertas |
+| `accesos` | Emisión y anulación de QR, validación, eventos de acceso |
 | `dispositivos` | Alta, credencial, latido, configuración, OTA |
 
 ### App (`app/lib/`)
