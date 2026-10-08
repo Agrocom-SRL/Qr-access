@@ -4,7 +4,7 @@
 
 | Entorno | Dónde vive | Base de datos | Propósito |
 |---|---|---|---|
-| **local** | `docker compose up -d db` (+ `api` cuando exista) | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
+| **local** | `docker compose up -d` (db + api); `--profile web` suma la app web en :8080 | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
 | **tests local** | El mismo contenedor `db` | `qr_access_testing` (la fuerza el setup de Vitest) | `bin/verify`. Los tests la vacían: **nunca** apuntan a la de desarrollo |
 | **verificación** | Proyecto compose descartable `-p qr-access-verif` | Propia, efímera | Probar migraciones contra MySQL limpio (skill `verificacion`) |
 | **CI** | GitHub Actions (`ci.yml`) | Servicio `mysql:8.4` efímero | Lint, tipos, fronteras, tests y builds |
@@ -31,8 +31,8 @@ docker compose exec db mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS qr_acce
 
 | Herramienta | Para qué | Instalación |
 |---|---|---|
-| Docker Desktop | MySQL, dbmate, API | — |
-| Node 22 LTS | API fuera del contenedor, scripts | `nvm install 22` (el host tiene otra versión: la API fija `engines` y `.nvmrc`) |
-| Flutter estable | App | ya instalado (`~/flutter`) |
-| PlatformIO Core | Firmware | `pipx install platformio` |
+| Docker Desktop | MySQL, dbmate, API, app web, compilación y tests del firmware | — |
+| Node 22 LTS | API fuera del contenedor, `bin/verify api` | `nvm install 22` (la API fija `engines` y `.nvmrc`) |
+| Flutter 3.47.4 | App en emulador o dispositivo, `bin/verify app` | ya instalado (`~/flutter`); `app/Dockerfile` fija la misma versión |
+| PlatformIO Core | Solo para flashear por USB; sin él, `bin/verify` usa el contenedor `firmware` | `pipx install platformio` |
 | Driver USB-serie | Flashear el ESP32 | CP210x o CH340 según la placa |
