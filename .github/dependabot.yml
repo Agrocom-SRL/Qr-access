@@ -1,0 +1,13 @@
+# Actualizaciones de dependencias. Los PR apuntan a develop (ADR 0006) y no los
+# integra auto-merge.yml (solo toma feature/* y bugfix/*): se revisan a mano.
+# Cuando existan api/ y app/, se suman los ecosistemas npm (/api) y pub (/app).
+# PlatformIO no está soportado por Dependabot: el firmware se actualiza a mano.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: actualiza
