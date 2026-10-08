@@ -4,6 +4,8 @@ App de los usuarios de cada cuenta (Android, iOS y web): inicio de sesión con P
 
 ```
 flutter pub get                                   # también genera lib/l10n/gen desde app_es.arb
+adb reverse tcp:3000 tcp:3000                     # teléfono por USB → API del Mac
+flutter run -d <id-del-telefono> --dart-define=API_URL=http://localhost:3000
 flutter run -d chrome --dart-define=API_URL=http://localhost:3000
 ../bin/verify app                                 # formato, análisis, tests y build web
 ```

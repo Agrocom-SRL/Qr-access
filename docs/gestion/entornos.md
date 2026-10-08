@@ -15,7 +15,13 @@
 **Ningún secreto real se versiona.** `.env.example` es la plantilla de la API y de compose; `firmware/include/secretos.example.h`, la del firmware de desarrollo; `app/android/key.properties` (firma) no se versiona. Los guardarraíles de `.claude/hooks/` impiden leerlos o escribirlos por herramienta.
 
 - **local**: `cp .env.example .env` (con la API en el host: `DB_HOST=127.0.0.1`, `DB_PORT=3307`).
-- **app**: la URL de la API entra por `--dart-define=API_URL=http://10.0.2.2:3000` (emulador Android) o `http://localhost:3000` (web/iOS).
+- **app**: la URL de la API entra por `--dart-define=API_URL=…`. No se usa emulador: la app corre en un **teléfono Android conectado por USB** (depuración USB activada).
+  ```
+  adb reverse tcp:3000 tcp:3000          # el localhost:3000 del teléfono llega a la API del Mac
+  flutter devices                        # el teléfono tiene que aparecer
+  flutter run -d <id-del-telefono> --dart-define=API_URL=http://localhost:3000
+  ```
+  `adb reverse` se pierde al desconectar el cable: hay que repetirlo. HTTP sin TLS se permite **solo en debug y solo hacia `localhost`** (`android/app/src/debug/res/xml/network_security_config.xml`); el APK de release exige HTTPS. En web: `http://localhost:3000`, o `:8080` si la sirve el contenedor `web`.
 - **firmware**: credenciales en NVS por aprovisionamiento; `secretos.h` solo para desarrollo en la mesa.
 - **CI**: variables del job; firmas y claves de OTA en GitHub Actions secrets.
 
@@ -33,6 +39,7 @@ docker compose exec db mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS qr_acce
 |---|---|---|
 | Docker Desktop | MySQL, dbmate, API, app web, compilación y tests del firmware | — |
 | Node 22 LTS | API fuera del contenedor, `bin/verify api` | `nvm install 22` (la API fija `engines` y `.nvmrc`) |
-| Flutter 3.47.4 | App en emulador o dispositivo, `bin/verify app` | ya instalado (`~/flutter`); `app/Dockerfile` fija la misma versión |
+| Flutter 3.47.4 | App en el teléfono por USB, `bin/verify app` | ya instalado (`~/flutter`); `app/Dockerfile` fija la misma versión |
 | PlatformIO Core | Solo para flashear por USB; sin él, `bin/verify` usa el contenedor `firmware` | `pipx install platformio` |
 | Driver USB-serie | Flashear el ESP32 | CP210x o CH340 según la placa |
+| Android platform-tools (`adb`) | Instalar y depurar en el teléfono | viene con Android Studio (`~/Library/Android/sdk/platform-tools`); agrégalo al `PATH` |
