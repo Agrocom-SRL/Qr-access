@@ -42,7 +42,7 @@ jobs:
       github.event.pull_request.draft == false &&
       (startsWith(github.head_ref, 'feature/') || startsWith(github.head_ref, 'bugfix/'))
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Esperar checks requeridos y mergear si todos pasan
         env:
