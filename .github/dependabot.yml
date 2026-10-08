@@ -11,3 +11,8 @@ updates:
       interval: weekly
     commit-message:
       prefix: actualiza
+    # Un solo PR semanal con todas las actions, en vez de uno por action:
+    # varias tocan las mismas líneas de ci.yml y por separado chocan entre sí.
+    groups:
+      actions:
+        patterns: ['*']
