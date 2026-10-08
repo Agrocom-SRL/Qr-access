@@ -51,9 +51,17 @@ verificar_app() {
 verificar_firmware() {
     paso "firmware"
     [ -f firmware/platformio.ini ] || { aviso "firmware/ todavía no existe: se saltea"; return; }
-    command -v pio >/dev/null || { mal "PlatformIO (pio) no está instalado: pipx install platformio"; return; }
-    correr "compilación (pio run)"       bash -c 'cd firmware && pio run'
-    correr "tests nativos (pio test)"    bash -c 'cd firmware && pio test -e native'
+    if command -v pio >/dev/null; then
+        correr "compilación (pio run)"       bash -c 'cd firmware && pio run'
+        correr "tests nativos (pio test)"    bash -c 'cd firmware && pio test -e native'
+    elif command -v docker >/dev/null; then
+        # Sin PlatformIO en el host, la misma cascada corre en su contenedor (ADR 0010)
+        aviso "pio no está en el host: se usa el contenedor firmware de docker compose"
+        correr "compilación (pio run, Docker)"    docker compose --profile herramientas run --rm firmware pio run
+        correr "tests nativos (pio test, Docker)" docker compose --profile herramientas run --rm firmware pio test -e native
+    else
+        mal "falta PlatformIO (pipx install platformio) o Docker"
+    fi
 }
 
 for p in "${partes[@]}"; do

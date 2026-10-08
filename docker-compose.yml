@@ -1,11 +1,16 @@
-# Entorno local (ADR 0010). Producción: docker-compose.prod.yml, cuando exista api/.
+# Entorno local con Docker (ADR 0010). Todo lo que se puede correr en contenedor, corre acá.
 #
-#   docker compose up -d db              MySQL 8 con la base de desarrollo y la de tests
-#   docker compose run --rm dbmate up    aplica las migraciones de db/migrations
-#   docker compose up -d api             API en modo desarrollo (requiere api/package.json)
+#   cp .env.example .env
+#   docker compose up -d                                 MySQL + API en desarrollo (tsx watch)
+#   docker compose --profile herramientas run --rm dbmate up     migraciones de db/migrations
+#   docker compose --profile web up -d --build           + app web (build de Flutter servido por Nginx)
+#   docker compose --profile herramientas run --rm firmware      compila el firmware y corre sus tests
+#
+#   API: http://localhost:3000/api/v1/salud   Web: http://localhost:8080   MySQL: localhost:3307
 #
 # El volumen qr-access-db-data guarda los datos que cargas para revisar: no se baja con -v.
 # Para probar migraciones contra una base limpia: docker compose -p qr-access-verif ...
+# Flashear el ESP32 por USB y correr la app en un emulador siguen siendo desde el host.
 
 services:
   db:
@@ -47,24 +52,54 @@ services:
         condition: service_healthy
 
   api:
-    image: node:22-alpine
-    working_dir: /repo/api
-    command: sh -c "npm ci && npm run dev"
+    build:
+      context: ./api
+      target: desarrollo
+    restart: unless-stopped
     env_file:
       - path: .env
         required: false
     environment:
       DB_HOST: db
       DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE:-qr_access}
+      DB_USERNAME: ${MYSQL_USER:-qr_access}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-qr_access}
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
       - ./:/repo
       - api-node-modules:/repo/api/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/salud"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
 
+  web:
+    build:
+      context: ./app
+    profiles: ["web"]
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  firmware:
+    build:
+      context: ./firmware
+    profiles: ["herramientas"]
+    volumes:
+      - ./firmware:/repo/firmware
+      - platformio-cache:/root/.platformio
+
 volumes:
   qr-access-db-data:
   api-node-modules:
+  platformio-cache:
