@@ -1,0 +1,17 @@
+{
+  "@@locale": "es",
+  "appTitulo": "AGROCOM Acceso",
+  "@appTitulo": { "description": "Nombre de la app en la barra del navegador y el selector de apps" },
+  "sesionIngresoTitulo": "Ingresa a AGROCOM Acceso",
+  "@sesionIngresoTitulo": { "description": "Título de la pantalla de inicio de sesión" },
+  "sesionIngresoAyuda": "Usa el código de tu cuenta y el PIN que te entregaron.",
+  "@sesionIngresoAyuda": { "description": "Ayuda bajo el título del inicio de sesión (ADR 0018)" },
+  "sesionCampoCuenta": "Código de cuenta",
+  "@sesionCampoCuenta": { "description": "Etiqueta del campo del código de la cuenta" },
+  "sesionCampoPin": "PIN",
+  "@sesionCampoPin": { "description": "Etiqueta del campo del PIN de acceso" },
+  "sesionBotonIngresar": "Ingresar",
+  "@sesionBotonIngresar": { "description": "Botón principal del inicio de sesión" },
+  "errorGenerico": "Algo salió mal. Intenta de nuevo.",
+  "@errorGenerico": { "description": "Mensaje para un code de error de la API sin traducción propia" }
+}
