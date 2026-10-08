@@ -1,6 +1,6 @@
 # Hardware del controlador de puerta
 
-**Estado:** Propuesta (2026-10-08) — confirmar con las dudas D-01, D-03 y D-04. ADR 0009.
+**Estado:** Referencia (2026-10-08). Confirmado: ESP32 con lector QR en la puerta y cerradura por pulso (D-01, D-03, D-04). El modelo del lector y la cerradura se eligen al comprar. ADR 0009.
 
 ## Lista de materiales (por puerta)
 

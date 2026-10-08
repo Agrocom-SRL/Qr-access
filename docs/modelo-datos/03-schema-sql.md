@@ -1,6 +1,6 @@
 # Schema SQL de referencia — MySQL 8.4
 
-**Estado:** Propuesta (2026-10-08). Es lo que deben producir las migraciones de `db/migrations/`, una por tabla (ADR 0011). Convenciones: skill `modelo-datos`; unicidad con soft delete: ADR 0016. Las tablas `cuenta_datos_empresa` y `usuario_perfiles` se agregan con su ficha cuando se implemente Seguridad.
+**Estado:** Desactualizado (2026-10-08): hay que rehacerlo según `01-entidades-propuestas.md` (salen `personas`, `grupos`, `grupo_personas`, `reglas_acceso`, `reglas_acceso_franjas`, `credenciales_qr`, `qr_usos` e `invitaciones`; entran `planes`, `suscripciones`, `qr_accesos` y `qr_acceso_puertas`; `usuarios` pasa a PIN, ADR 0018). Es la próxima tarea del modelo de datos. Lo que sigue es la propuesta anterior. Es lo que deben producir las migraciones de `db/migrations/`, una por tabla (ADR 0011). Convenciones: skill `modelo-datos`; unicidad con soft delete: ADR 0016. Las tablas `cuenta_datos_empresa` y `usuario_perfiles` se agregan con su ficha cuando se implemente Seguridad.
 
 Verificado contra `mysql:8.4` en un contenedor descartable (2026-10-08): las 20 tablas se crean en este orden sin errores.
 
