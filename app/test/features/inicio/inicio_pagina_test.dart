@@ -7,6 +7,7 @@ import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -202,11 +203,17 @@ void main() {
     ) async {
       await _montar(tester, permisos: _administrador);
       final textos = textosEn(tester);
-      expect(find.byType(NavigationBar), findsOneWidget);
-      expect(find.text(textos.navAdmin), findsOneWidget);
-      expect(find.text(textos.navMisQr), findsNothing);
+      expect(find.byType(BarraNavegacion), findsOneWidget);
+      // Solo la pestaña elegida muestra su texto; las demás, su ícono.
+      expect(find.text(textos.navInicio), findsOneWidget);
+      final barra = find.byType(BarraNavegacion);
+      Finder enBarra(IconData icono) =>
+          find.descendant(of: barra, matching: find.byIcon(icono));
+      expect(enBarra(Icons.history), findsWidgets);
+      expect(enBarra(Icons.tune), findsWidgets);
+      expect(enBarra(Icons.qr_code_2), findsNothing);
 
-      await tester.tap(find.text(textos.navPerfil));
+      await tester.tap(enBarra(Icons.person_outline).first);
       await tester.pumpAndSettle();
       expect(find.text('destino /perfil'), findsOneWidget);
     });

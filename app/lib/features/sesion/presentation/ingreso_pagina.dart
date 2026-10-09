@@ -13,6 +13,7 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -51,6 +52,19 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
     unawaited(
       ref.read(ingresoControladorProvider.notifier).ingresar(_pin.text),
     );
+  }
+
+  /// Pega el PIN del portapapeles (quien lo recibe por mensaje no lo escribe):
+  /// se queda con lo que cabe en un PIN y deja el resto fuera.
+  Future<void> _pegar() async {
+    final datos = await Clipboard.getData(Clipboard.kTextPlain);
+    final pegado = Pin.filtrarEntrada(datos?.text ?? '');
+    if (pegado.isEmpty || !mounted) return;
+    _pin.value = TextEditingValue(
+      text: pegado,
+      selection: TextSelection.collapsed(offset: pegado.length),
+    );
+    ref.read(ingresoControladorProvider.notifier).limpiarError();
   }
 
   /// Mientras dure el bloqueo, la pantalla se repinta cada segundo.
@@ -117,17 +131,25 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
                 ref.read(ingresoControladorProvider.notifier).limpiarError(),
           ),
           SizedBox(height: tokens.espacio.s),
+          Text(
+            textoError ?? l10n.sesionPinLeyenda,
+            style: textos.bodyMedium?.copyWith(
+              color: textoError == null
+                  ? colores.textoSecundario
+                  : colores.peligro,
+            ),
+          ),
+          SizedBox(height: tokens.espacio.s),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  textoError ?? l10n.sesionPinLeyenda,
-                  style: textos.bodyMedium?.copyWith(
-                    color: textoError == null
-                        ? colores.textoSecundario
-                        : colores.peligro,
-                  ),
-                ),
+              AccesoBoton(
+                texto: l10n.sesionPegarPin,
+                icono: Icons.content_paste,
+                variante: VarianteBoton.texto,
+                onPressed: estado.enviando || bloqueado
+                    ? null
+                    : () => unawaited(_pegar()),
               ),
               AccesoBoton(
                 texto: _ocultar ? l10n.sesionMostrarPin : l10n.sesionOcultarPin,

@@ -1,41 +1,50 @@
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Logo de AGROCOM (`assets/imagenes/logo_agrocom.png`) sobre una placa
-/// blanca con radio 20 (10 en tamaños chicos). La placa va siempre en
-/// superficie clara, también en oscuro y sobre el hero: el logo es verde y
-/// naranja sobre fondo transparente, y solo se lee bien sobre blanco.
+/// Logo de AGROCOM (`assets/imagenes/logo_agrocom.png`) en un cuadrado.
+///
+/// El PNG es apaisado y transparente: se escala para caber entero y queda
+/// centrado en el eje corto (si es más ancho que alto, se centra en vertical).
+/// Sin placa, para que no se note un fondo blanco en el tema oscuro; solo
+/// sobre el hero verde ([sobreHero]) lleva una placa blanca, porque ahí el
+/// logo verde y naranja no contrasta.
 class AccesoLogo extends StatelessWidget {
   const new({this.tamano, this.sobreHero = false, super.key});
 
-  /// Alto de la placa; el ancho sale de la proporción del logo.
+  /// Lado del cuadrado.
   final double? tamano;
 
-  /// Sobre el hero verde la placa no lleva sombra (ya contrasta).
+  /// Sobre el hero verde el logo va sobre una placa blanca.
   final bool sobreHero;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final colores = tokens.colores;
-    final alto = tamano ?? tokens.tamano.logo;
-    final grande = alto >= tokens.tamano.logo;
+    final lado = tamano ?? tokens.tamano.logo;
+    final grande = lado >= tokens.tamano.logo;
+    final imagen = Image.asset(
+      'assets/imagenes/logo_agrocom.png',
+      fit: BoxFit.contain,
+    );
     return ExcludeSemantics(
-      child: Container(
-        width: alto * tokens.tamano.logoProporcion,
-        height: alto,
-        padding: EdgeInsets.all(grande ? tokens.espacio.s : tokens.espacio.xs),
-        decoration: BoxDecoration(
-          color: colores.placaLogo,
-          borderRadius: BorderRadius.circular(
-            grande ? tokens.radio.xl : tokens.radio.m,
-          ),
-          boxShadow: sobreHero ? null : colores.elev1,
-        ),
-        child: Image.asset(
-          'assets/imagenes/logo_agrocom.png',
-          fit: BoxFit.contain,
-        ),
+      child: SizedBox.square(
+        dimension: lado,
+        child: sobreHero
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tokens.colores.placaLogo,
+                  borderRadius: BorderRadius.circular(
+                    grande ? tokens.radio.xl : tokens.radio.m,
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(
+                    grande ? tokens.espacio.s : tokens.espacio.xs,
+                  ),
+                  child: imagen,
+                ),
+              )
+            : imagen,
       ),
     );
   }

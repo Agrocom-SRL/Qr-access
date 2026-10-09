@@ -35,17 +35,21 @@ class InicioUsuario extends ConsumerWidget {
     final ultimo = vigentes.value?.datos.firstOrNull;
 
     final accesos = <_AccesoRapido>[
-      if (puedeEmitir && ultimo != null)
+      // Siempre visible para quien emite: sin un QR previo queda apagado en
+      // vez de desaparecer, para que los accesos no cambien de lugar.
+      if (puedeEmitir)
         _AccesoRapido(
           icono: Icons.replay,
           etiqueta: l10n.inicioRepetirUltimo,
-          alTocar: () => context.go(
-            Rutas.qrNuevo,
-            extra: PrellenadoEmision(
-              puertaIds: ultimo.puertas.map((p) => p.id).toSet(),
-              etiqueta: ultimo.etiqueta,
-            ),
-          ),
+          alTocar: ultimo == null
+              ? null
+              : () => context.go(
+                  Rutas.qrNuevo,
+                  extra: PrellenadoEmision(
+                    puertaIds: ultimo.puertas.map((p) => p.id).toSet(),
+                    etiqueta: ultimo.etiqueta,
+                  ),
+                ),
         ),
       if (sesion.tiene(Permisos.verQr))
         _AccesoRapido(
@@ -73,14 +77,25 @@ class InicioUsuario extends ConsumerWidget {
       onRefresh: () => ref.refresh(qrVigentesProvider.future),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
+        // Con el botón flotante, el final del contenido no queda tapado.
+        padding: EdgeInsets.only(
+          top: tokens.espacio.l,
+          bottom: puedeEmitir
+              ? tokens.tamano.fab + tokens.espacio.xl
+              : tokens.espacio.l,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             EncabezadoInicio(sesion: sesion),
             SizedBox(height: tokens.espacio.xl),
             if (puedeEmitir) ...[
-              _HeroEmitir(alEmitir: () => context.go(Rutas.qrNuevo)),
+              _HeroEmitir(
+                // En compacto la acción es el botón flotante de la página.
+                alEmitir: context.clasePantalla == ClasePantalla.compacta
+                    ? null
+                    : () => context.go(Rutas.qrNuevo),
+              ),
               SizedBox(height: tokens.espacio.xl),
             ],
             if (accesos.isNotEmpty) ...[
@@ -89,7 +104,7 @@ class InicioUsuario extends ConsumerWidget {
                   for (final acceso in accesos) Expanded(child: acceso),
                 ],
               ),
-              SizedBox(height: tokens.espacio.xxl),
+              SizedBox(height: tokens.espacio.l),
             ],
             if (sesion.tiene(Permisos.verQr)) ...[
               Row(
@@ -162,7 +177,8 @@ class InicioUsuario extends ConsumerWidget {
 class _HeroEmitir extends StatelessWidget {
   const new({required this.alEmitir});
 
-  final VoidCallback alEmitir;
+  /// `null` oculta el botón (cuando la página ya trae uno flotante).
+  final VoidCallback? alEmitir;
 
   @override
   Widget build(BuildContext context) {
@@ -194,16 +210,18 @@ class _HeroEmitir extends StatelessWidget {
                   l10n.inicioHeroAyuda(l10n.qrFinDelDiaHora),
                   style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
                 ),
-                SizedBox(height: tokens.espacio.l),
-                FilledButton.icon(
-                  onPressed: alEmitir,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colores.superficie,
-                    foregroundColor: colores.primario,
+                if (alEmitir != null) ...[
+                  SizedBox(height: tokens.espacio.l),
+                  FilledButton.icon(
+                    onPressed: alEmitir,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colores.superficie,
+                      foregroundColor: colores.primario,
+                    ),
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.inicioNuevoQr),
                   ),
-                  icon: const Icon(Icons.add),
-                  label: Text(l10n.inicioNuevoQr),
-                ),
+                ],
               ],
             ),
           ),
@@ -228,33 +246,39 @@ class _AccesoRapido extends StatelessWidget {
 
   final IconData icono;
   final String etiqueta;
-  final VoidCallback alTocar;
+
+  /// `null` apaga el acceso (se ve atenuado y no responde).
+  final VoidCallback? alTocar;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Semantics(
       button: true,
+      enabled: alTocar != null,
       label: etiqueta,
-      child: InkWell(
-        onTap: alTocar,
-        borderRadius: BorderRadius.circular(tokens.radio.l),
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: tokens.espacio.s),
-          child: Column(
-            children: [
-              CajaIcono(
-                icono: icono,
-                tono: TonoCaja.superficie,
-                tamano: tokens.tamano.accesoRapido,
-              ),
-              SizedBox(height: tokens.espacio.s),
-              Text(
-                etiqueta,
-                style: Theme.of(context).textTheme.labelSmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
+      child: Opacity(
+        opacity: alTocar == null ? opacidadDeshabilitado : 1,
+        child: InkWell(
+          onTap: alTocar,
+          borderRadius: BorderRadius.circular(tokens.radio.l),
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: tokens.espacio.s),
+            child: Column(
+              children: [
+                CajaIcono(
+                  icono: icono,
+                  tono: TonoCaja.superficie,
+                  tamano: tokens.tamano.accesoRapido,
+                ),
+                SizedBox(height: tokens.espacio.s),
+                Text(
+                  etiqueta,
+                  style: Theme.of(context).textTheme.labelSmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),
