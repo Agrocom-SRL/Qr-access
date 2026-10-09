@@ -14,6 +14,7 @@ para ciudades, edificios, parqueos, condominios y haciendas.
 |---|---|---|---|
 | `app/assets/logo/logo_placa.png` | Splash nativo y animado | `app/assets/imagenes/logo_agrocom.png` (logo oficial a color) sobre placa blanca con sombra | Marca de AGROCOM, uso interno |
 | `app/assets/icono/icono.png`, `icono_adaptativo.png` | Ícono de la app (Android, iOS, web) | `app/assets/imagenes/logo_agrocom.png` centrado sobre blanco, por script | Marca de AGROCOM, uso interno |
+| `app/assets/logo/logo_android12.png` | Ícono del splash de Android 12+ | `app/assets/imagenes/logo_agrocom.png` con margen para que el círculo no lo recorte | Marca de AGROCOM, uso interno |
 | `app/assets/logo/fondo_splash.png`, `fondo_splash_oscuro.png` | Fondo del splash (claro y oscuro) | Degradado generado por script con los verdes de marca | Propietaria del proyecto |
 | `app/assets/lottie/splash_logo.json` | Splash animado (≤ 800 ms) | Creación propia | Propietaria del proyecto |
 | `app/assets/lottie/qr_emitido.json` | Confirmación al emitir un QR (1 s) | Creación propia | Propietaria del proyecto |

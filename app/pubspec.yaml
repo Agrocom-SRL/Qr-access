@@ -67,7 +67,8 @@ flutter:
 # Splash nativo (se regenera con `dart run flutter_native_splash:create`): degradado
 # verde de marca con el logo a color sobre su placa blanca. Es el mismo fondo y la misma
 # placa que dibuja `SplashPagina`, para que el paso del nativo al animado no se note.
-# Android 12+ no admite imagen de fondo: usa el verde de marca y la placa como ícono.
+# Android 12+ no admite imagen de fondo y recorta el ícono en un círculo: usa el verde de marca
+# y el logo con margen sobre un círculo blanco, para que no se corte.
 flutter_native_splash:
   background_image: assets/logo/fondo_splash.png
   background_image_dark: assets/logo/fondo_splash_oscuro.png
@@ -75,9 +76,9 @@ flutter_native_splash:
   android_12:
     color: "#007A33"
     color_dark: "#00451C"
-    image: assets/logo/logo_placa.png
-    icon_background_color: "#007A33"
-    icon_background_color_dark: "#00451C"
+    image: assets/logo/logo_android12.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#FFFFFF"
   web: true
 
 # Ícono de la app (se regenera con `dart run flutter_launcher_icons`): el logo de AGROCOM
