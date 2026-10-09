@@ -115,7 +115,7 @@ void main() {
     await tester.pump();
 
     expect(find.text(textos.qrVigenciaFinDelDia), findsOneWidget);
-    await tester.tap(find.text(textos.qrVigenciaUnaHora));
+    await tester.tap(find.text(textos.qrVigenciaHoras(1)));
     await tester.pump();
     await tester.enterText(find.byType(TextField), ' Proveedor de gas ');
     await tester.pump();

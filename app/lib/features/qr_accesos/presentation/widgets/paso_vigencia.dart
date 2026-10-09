@@ -8,8 +8,9 @@ import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_seleccionable.dart';
 import 'package:flutter/material.dart';
 
-/// Paso 2 (handoff C05b): "Hasta el fin del día" por defecto, o "Más corto"
-/// con 1 h, 4 h u hora; y la etiqueta opcional (máx. 40).
+/// Paso 2 (handoff C05b): "Hasta el fin del día" por defecto, un plazo corto
+/// (1, 2 o 4 h), uno largo (8, 12 o 18 h) o una hora exacta que se elige con
+/// el reloj; y la etiqueta opcional (máx. 40).
 class PasoVigencia extends StatelessWidget {
   const new({
     required this.vigencia,
@@ -53,7 +54,7 @@ class PasoVigencia extends StatelessWidget {
     final l10n = context.l10n;
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
-    final masCorta = vigencia.opcion.esMasCorta;
+    final opcion = vigencia.opcion;
     final venceExacto = vigencia.venceAtPara(ahora);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +64,7 @@ class PasoVigencia extends StatelessWidget {
         TarjetaSeleccionable(
           titulo: l10n.qrVigenciaFinDelDia,
           subtitulo: l10n.qrVenceHoyALas(l10n.qrFinDelDiaHora),
-          seleccionada: !masCorta,
+          seleccionada: opcion == OpcionVigencia.finDelDia,
           alElegir: () => alElegir(Vigencia.porDefecto),
           etiquetaDerecha: AccesoBadge(
             texto: l10n.qrVigenciaPorDefecto,
@@ -71,38 +72,34 @@ class PasoVigencia extends StatelessWidget {
           ),
         ),
         SizedBox(height: tokens.espacio.m),
+        _TarjetaPlazos(
+          titulo: l10n.qrVigenciaCorta,
+          plazos: OpcionVigencia.corta,
+          vigencia: vigencia,
+          seleccionada: opcion.esCorta,
+          alElegir: alElegir,
+        ),
+        SizedBox(height: tokens.espacio.m),
+        _TarjetaPlazos(
+          titulo: l10n.qrVigenciaLarga,
+          plazos: OpcionVigencia.larga,
+          vigencia: vigencia,
+          seleccionada: opcion.esLarga,
+          alElegir: alElegir,
+        ),
+        SizedBox(height: tokens.espacio.m),
         TarjetaSeleccionable(
-          titulo: l10n.qrVigenciaMasCorta,
-          seleccionada: masCorta,
-          alElegir: () => alElegir(const Vigencia(OpcionVigencia.unaHora)),
-          child: Wrap(
-            spacing: tokens.espacio.s,
-            runSpacing: tokens.espacio.s,
-            children: [
-              _Pastilla(
-                texto: l10n.qrVigenciaUnaHora,
-                elegida: vigencia.opcion == OpcionVigencia.unaHora,
-                alElegir: () =>
-                    alElegir(const Vigencia(OpcionVigencia.unaHora)),
-              ),
-              _Pastilla(
-                texto: l10n.qrVigenciaCuatroHoras,
-                elegida: vigencia.opcion == OpcionVigencia.cuatroHoras,
-                alElegir: () =>
-                    alElegir(const Vigencia(OpcionVigencia.cuatroHoras)),
-              ),
-              _Pastilla(
-                texto:
-                    vigencia.opcion == OpcionVigencia.horaExacta &&
-                        venceExacto != null
-                    ? formatearHora(venceExacto)
-                    : l10n.qrVigenciaHora,
-                icono: Icons.schedule,
-                elegida: vigencia.opcion == OpcionVigencia.horaExacta,
-                alElegir: () => _elegirHora(context),
-              ),
-            ],
-          ),
+          titulo: l10n.qrVigenciaPersonalizada,
+          subtitulo: l10n.qrVigenciaPersonalizadaAyuda,
+          seleccionada: opcion == OpcionVigencia.horaExacta,
+          alElegir: () => _elegirHora(context),
+          etiquetaDerecha:
+              opcion == OpcionVigencia.horaExacta && venceExacto != null
+              ? AccesoBadge(
+                  texto: formatearHora(venceExacto),
+                  tono: TonoAcceso.primario,
+                )
+              : Icon(Icons.schedule, size: tokens.tamano.icono),
         ),
         SizedBox(height: tokens.espacio.xl),
         CampoFormulario(
@@ -124,18 +121,56 @@ class PasoVigencia extends StatelessWidget {
   }
 }
 
+/// Tarjeta con un grupo de plazos en horas; tocar la tarjeta elige el primero.
+class _TarjetaPlazos extends StatelessWidget {
+  const new({
+    required this.titulo,
+    required this.plazos,
+    required this.vigencia,
+    required this.seleccionada,
+    required this.alElegir,
+  });
+
+  final String titulo;
+  final List<OpcionVigencia> plazos;
+  final Vigencia vigencia;
+  final bool seleccionada;
+  final ValueChanged<Vigencia> alElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    return TarjetaSeleccionable(
+      titulo: titulo,
+      seleccionada: seleccionada,
+      alElegir: () => alElegir(Vigencia(plazos.first)),
+      child: Wrap(
+        spacing: tokens.espacio.s,
+        runSpacing: tokens.espacio.s,
+        children: [
+          for (final plazo in plazos)
+            _Pastilla(
+              texto: l10n.qrVigenciaHoras(plazo.horas!),
+              elegida: vigencia.opcion == plazo,
+              alElegir: () => alElegir(Vigencia(plazo)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Pastilla extends StatelessWidget {
   const new({
     required this.texto,
     required this.elegida,
     required this.alElegir,
-    this.icono,
   });
 
   final String texto;
   final bool elegida;
   final VoidCallback alElegir;
-  final IconData? icono;
 
   @override
   Widget build(BuildContext context) {
@@ -143,13 +178,6 @@ class _Pastilla extends StatelessWidget {
     final colores = tokens.colores;
     return ChoiceChip(
       label: Text(texto),
-      avatar: icono == null
-          ? null
-          : Icon(
-              icono,
-              size: tokens.tamano.icono,
-              color: elegida ? colores.sobrePrimario : colores.texto,
-            ),
       selected: elegida,
       onSelected: (_) => alElegir(),
       showCheckmark: false,

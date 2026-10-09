@@ -2,21 +2,35 @@ import 'package:flutter/foundation.dart';
 
 /// Vigencia que la persona puede elegir al emitir (handoff C05b). Por defecto
 /// el fin del día local del sitio: lo calcula la API (ADR 0008, D-16), así que
-/// la app no envía `vence_at`. "Más corto": 1 h, 4 h o una hora concreta.
+/// la app no envía `vence_at`. Las demás: un plazo corto (1, 2 o 4 h), uno
+/// largo (8, 12 o 18 h) o una hora concreta del día.
 enum OpcionVigencia {
-  finDelDia,
-  unaHora,
-  cuatroHoras,
-  horaExacta;
+  finDelDia(null),
+  unaHora(1),
+  dosHoras(2),
+  cuatroHoras(4),
+  ochoHoras(8),
+  doceHoras(12),
+  dieciochoHoras(18),
+  horaExacta(null);
+
+  new(this.horas);
 
   /// Horas de vigencia desde la emisión; `null` cuando no es un plazo fijo.
-  int? get horas => switch (this) {
-    OpcionVigencia.unaHora => 1,
-    OpcionVigencia.cuatroHoras => 4,
-    OpcionVigencia.finDelDia || OpcionVigencia.horaExacta => null,
-  };
+  final int? horas;
 
-  bool get esMasCorta => this != OpcionVigencia.finDelDia;
+  /// Plazos de [corta] (hasta 4 h).
+  static const List<OpcionVigencia> corta = [unaHora, dosHoras, cuatroHoras];
+
+  /// Plazos de la vigencia larga (de 8 h en adelante).
+  static const List<OpcionVigencia> larga = [
+    ochoHoras,
+    doceHoras,
+    dieciochoHoras,
+  ];
+
+  bool get esCorta => corta.contains(this);
+  bool get esLarga => larga.contains(this);
 }
 
 /// La vigencia elegida con, si hace falta, la hora exacta.

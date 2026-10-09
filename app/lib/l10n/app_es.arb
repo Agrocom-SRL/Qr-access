@@ -749,17 +749,28 @@
   "@qrVigenciaPorDefecto": {
     "description": "Badge de la vigencia por defecto"
   },
-  "qrVigenciaMasCorta": "Más corto",
-  "@qrVigenciaMasCorta": {
-    "description": "Opción de acortar la vigencia"
+  "qrVigenciaCorta": "Corta",
+  "@qrVigenciaCorta": {
+    "description": "Grupo de plazos cortos de vigencia (1, 2 y 4 horas)"
   },
-  "qrVigenciaUnaHora": "1 h",
-  "@qrVigenciaUnaHora": {
-    "description": "Vigencia corta de una hora"
+  "qrVigenciaLarga": "Larga",
+  "@qrVigenciaLarga": {
+    "description": "Grupo de plazos largos de vigencia (8, 12 y 18 horas)"
   },
-  "qrVigenciaCuatroHoras": "4 h",
-  "@qrVigenciaCuatroHoras": {
-    "description": "Vigencia corta de cuatro horas"
+  "qrVigenciaPersonalizada": "Hora exacta",
+  "@qrVigenciaPersonalizada": {
+    "description": "Opción que deja elegir la hora de vencimiento"
+  },
+  "qrVigenciaPersonalizadaAyuda": "Elige hasta qué hora de hoy vale el QR",
+  "@qrVigenciaPersonalizadaAyuda": {
+    "description": "Ayuda de la opción de hora exacta"
+  },
+  "qrVigenciaHoras": "{horas} h",
+  "@qrVigenciaHoras": {
+    "description": "Plazo de vigencia en horas",
+    "placeholders": {
+      "horas": { "type": "int" }
+    }
   },
   "qrVigenciaHora": "Hora",
   "@qrVigenciaHora": {
