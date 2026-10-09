@@ -6,3 +6,5 @@
 .vscode/ipch
 # Secretos de desarrollo: nunca se versionan (invariante 6)
 include/secretos.h
+# Recomendaciones generadas por PlatformIO: la raíz ya recomienda la extensión
+.vscode/extensions.json

@@ -1,0 +1,21 @@
+{
+  // Abrir este archivo en VS Code (File > Open Workspace from File...).
+  // Un workspace multi-root: cada parte del monorepo es una carpeta. Así
+  // PlatformIO reconoce firmware/platformio.ini y ESLint/Prettier, Flutter y
+  // Dart encuentran su app/pubspec.yaml. Solo rutas relativas: no lleva nada
+  // de esta máquina (ADR 0001).
+  "folders": [
+    { "name": "api", "path": "api" },
+    { "name": "app", "path": "app" },
+    { "name": "firmware", "path": "firmware" }
+  ],
+  "extensions": {
+    "recommendations": [
+      "platformio.platformio-ide",
+      "ms-vscode.cpptools",
+      "dart-code.flutter",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode"
+    ]
+  }
+}
