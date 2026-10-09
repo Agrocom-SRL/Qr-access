@@ -51,8 +51,8 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 
 ```
 POST /api/v1/dispositivos/validaciones   { "token": "<texto del QR>", "leido_en": "…" }
-  → 200 { "abrir": true,  "segundos": 5, "evento_id": "…", "mensaje_code": "acceso.permitido" }
-  → 200 { "abrir": false, "evento_id": "…", "mensaje_code": "qr.vencido" }
+  → 200 { "abrir": true,  "segundos": 5, "evento_id": "…", "motivo_code": "acceso.permitido" }
+  → 200 { "abrir": false, "evento_id": "…", "motivo_code": "qr.vencido" }
 POST /api/v1/dispositivos/latidos        { "firmware": "1.2.0", "rssi": -61, "puerta_abierta": false }
 GET  /api/v1/dispositivos/configuracion  → { "segundos_apertura": 5, "zona_horaria": "America/La_Paz", "ota": null }
 ```
