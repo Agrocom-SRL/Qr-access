@@ -4,6 +4,8 @@ import 'package:agrocom_acceso/core/theme/tema.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Raíz de la app: tema claro y oscuro, textos del ARB y el router con la
+/// guarda de sesión.
 class AccesoApp extends ConsumerWidget {
   const new({super.key});
 
