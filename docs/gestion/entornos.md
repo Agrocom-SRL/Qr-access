@@ -53,7 +53,7 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 | Qué | Valor |
 |---|---|
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
-| PIN del **administrador** (todos los permisos de cuenta) | `DEMADM1` |
+| PIN del **administrador** (todos los permisos de cuenta; también tiene el rol Usuario, así que elige rol al entrar) | `DEMADM1` |
 | PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
 | PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
 | Sitio | `Sede demo` (zona `America/La_Paz`) |
