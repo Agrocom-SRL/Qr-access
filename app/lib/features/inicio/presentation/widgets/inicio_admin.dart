@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -228,7 +229,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
               SizedBox(height: tokens.espacio.s),
               if (datos != null && datos.ultimosEventos.isEmpty)
                 EstadoVacio(
-                  icono: Icons.history,
+                  ilustracion: Multimedia.vacioEventos,
                   titulo: l10n.eventosSinResultados,
                   ayuda: l10n.eventosSinResultadosAyuda,
                 )

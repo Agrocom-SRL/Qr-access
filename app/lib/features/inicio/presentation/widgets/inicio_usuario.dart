@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
@@ -141,7 +142,7 @@ class InicioUsuario extends ConsumerWidget {
                 ),
                 data: (pagina) => pagina.datos.isEmpty
                     ? EstadoVacio(
-                        icono: Icons.qr_code_2,
+                        ilustracion: Multimedia.vacioQr,
                         titulo: l10n.inicioSinVigentes,
                         ayuda: l10n.inicioSinVigentesAyuda,
                         textoAccion: puedeEmitir ? l10n.qrEmitirBoton : null,

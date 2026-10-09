@@ -1,5 +1,6 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
@@ -131,7 +132,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
               alReintentar: () => ref.invalidate(eventosProvider),
               alCambiarPagina: controlador.irAPagina,
               vacio: EstadoVacio(
-                icono: Icons.history,
+                ilustracion: Multimedia.vacioEventos,
                 titulo: hayFiltro
                     ? l10n.eventosSinResultadosFiltro
                     : l10n.eventosSinResultados,
