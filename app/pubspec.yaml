@@ -7,6 +7,8 @@ environment:
   sdk: ^3.13.3
 
 dependencies:
+  animations: ^3.0.0
+  country_flags: ^4.1.2
   dio: ^5.11.1
   flutter:
     sdk: flutter
@@ -29,6 +31,8 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  assets:
+    - assets/imagenes/logo_agrocom.png
   # IBM Plex Sans (texto) y Mono (PIN, códigos, horas y cifras), empaquetadas para no depender
   # de Google Fonts en tiempo de ejecución (sistema de diseño §2.4). Licencia OFL en assets/fuentes.
   fonts:
