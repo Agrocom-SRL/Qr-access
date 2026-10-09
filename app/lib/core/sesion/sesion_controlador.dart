@@ -9,10 +9,6 @@ import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Código que la API no devuelve: `GET /sesiones/actual` sin rol activo
-/// no debería ocurrir con un acceso válido.
-const _codigoSinRol = 'sesion.sin_rol';
-
 /// Dueño de la sesión: guarda el acceso en memoria, el refresco en el almacén
 /// de la plataforma y publica el `SesionEstado` que leen el router y los menús.
 ///
@@ -113,7 +109,17 @@ class SesionControlador extends Notifier<SesionEstado>
   Future<void> _cargarSesionActual() async {
     final actual = await _api.sesionActual();
     final rol = actual.rolActivo;
-    if (rol == null) throw const ErrorApi(code: _codigoSinRol);
+    if (rol == null) {
+      // Al reabrir con un refresco guardado de una sesión que no eligió rol.
+      state = SesionEligiendoRol(
+        usuario: _usuario(actual.usuario),
+        cuenta: _cuenta(actual.cuenta),
+        roles: [
+          for (final r in actual.roles) RolSesion(id: r.id, nombre: r.nombre),
+        ],
+      );
+      return;
+    }
     state = SesionAutenticada(
       usuario: _usuario(actual.usuario),
       cuenta: _cuenta(actual.cuenta),

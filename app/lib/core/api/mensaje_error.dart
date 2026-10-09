@@ -11,8 +11,15 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'sesion.credenciales_invalidas' =>
       l10n.comunErrorSesionCredencialesInvalidas,
     'sesion.bloqueada' => l10n.comunErrorSesionBloqueada,
-    'sesion.refresco_invalido' => l10n.comunErrorSesionRefrescoInvalido,
+    'sesion.refresco_invalido' ||
+    'autenticacion.requerida' => l10n.comunErrorSesionRefrescoInvalido,
+    'permiso.denegado' => l10n.comunErrorPermisoDenegado,
+    'suscripcion.vencida' => l10n.comunErrorSuscripcionVencida,
+    'puerta.no_encontrada' => l10n.comunErrorPuertaNoEncontrada,
+    'qr.no_encontrado' => l10n.comunErrorQrNoEncontrado,
     'qr.ya_usado' => l10n.comunErrorQrYaUsado,
+    'qr.vigencia_invalida' => l10n.comunErrorQrVigenciaInvalida,
+    'qr.vigencia_excedida' => l10n.comunErrorQrVigenciaExcedida,
     'validacion.invalida' => l10n.comunErrorValidacionInvalida,
     _ => l10n.comunErrorGenerico,
   };

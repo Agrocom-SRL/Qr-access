@@ -47,6 +47,7 @@ class SesionActualDto {
   const new({
     required this.usuario,
     required this.cuenta,
+    required this.roles,
     required this.rolActivo,
     required this.permisos,
   });
@@ -54,6 +55,10 @@ class SesionActualDto {
   new desde(Map<String, dynamic> json)
     : usuario = UsuarioDto.desde(json['usuario'] as Map<String, dynamic>),
       cuenta = CuentaDto.desde(json['cuenta'] as Map<String, dynamic>),
+      roles = [
+        for (final rol in json['roles'] as List<dynamic>)
+          RolDto.desde(rol as Map<String, dynamic>),
+      ],
       rolActivo = json['rol_activo'] == null
           ? null
           : RolDto.desde(json['rol_activo'] as Map<String, dynamic>),
@@ -63,6 +68,9 @@ class SesionActualDto {
 
   final UsuarioDto usuario;
   final CuentaDto cuenta;
+
+  /// Todos los roles del usuario, para elegir uno al reabrir sin rol activo.
+  final List<RolDto> roles;
   final RolDto? rolActivo;
   final List<String> permisos;
 }
@@ -72,10 +80,12 @@ class UsuarioDto {
 
   new desde(Map<String, dynamic> json)
     : id = json['id'] as String,
-      etiqueta = json['etiqueta'] as String;
+      etiqueta = json['etiqueta'] as String?;
 
   final String id;
-  final String etiqueta;
+
+  /// `null` cuando a quien se le entregó el PIN no tiene etiqueta.
+  final String? etiqueta;
 }
 
 class CuentaDto {

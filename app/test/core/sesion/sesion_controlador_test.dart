@@ -16,8 +16,23 @@ import '../../helpers/http.dart';
 const Map<String, Object> _sesionActual = {
   'usuario': {'id': 'u1', 'etiqueta': 'Ana'},
   'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
+  'roles': [
+    {'id': 'r1', 'nombre': 'Usuario'},
+  ],
   'rol_activo': {'id': 'r1', 'nombre': 'Usuario'},
   'permisos': ['accesos.qr.emitir'],
+};
+
+/// La misma sesión reabierta sin rol elegido y con un PIN sin etiqueta.
+const Map<String, Object?> _sesionActualSinRol = {
+  'usuario': {'id': 'u1', 'etiqueta': null},
+  'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
+  'roles': [
+    {'id': 'r1', 'nombre': 'Usuario'},
+    {'id': 'r2', 'nombre': 'Guardia'},
+  ],
+  'rol_activo': null,
+  'permisos': <String>[],
 };
 
 /// Rutas de la API que el controlador usa, con las respuestas del contrato.
@@ -26,6 +41,7 @@ Future<ResponseBody> _api(
   RequestOptions options, {
   String refrescoValido = 'ref-1',
   bool red = false,
+  bool sinRol = false,
 }) async {
   if (red) {
     throw DioException.connectionError(
@@ -43,7 +59,7 @@ Future<ResponseBody> _api(
       }
       return respuestaJson(200, {'acceso': 'acc-2', 'refresco': 'ref-2'});
     case ('GET', '/sesiones/actual'):
-      return respuestaJson(200, _sesionActual);
+      return respuestaJson(200, sinRol ? _sesionActualSinRol : _sesionActual);
     case ('POST', '/sesiones/rol-activo'):
       return respuestaJson(200, {'acceso': 'acc-3'});
     case ('DELETE', '/sesiones/actual'):
@@ -59,10 +75,16 @@ ProviderContainer _contenedor({
   required AlmacenRefrescoFalso almacen,
   String refrescoValido = 'ref-1',
   bool red = false,
+  bool sinRol = false,
 }) {
   final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
     ..httpClientAdapter = AdaptadorHttpFalso(
-      (options) => _api(options, refrescoValido: refrescoValido, red: red),
+      (options) => _api(
+        options,
+        refrescoValido: refrescoValido,
+        red: red,
+        sinRol: sinRol,
+      ),
     );
   return ProviderContainer(
     overrides: [
@@ -220,6 +242,21 @@ void main() {
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
       expect(estado.tiene(Permisos.emitirQr), isTrue);
+    });
+
+    test('sin rol activo, ofrece elegir entre sus roles', () async {
+      almacen.refresco = 'ref-1';
+      final contenedor = _contenedor(almacen: almacen, sinRol: true);
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      final estado = contenedor.read(sesionControladorProvider);
+      expect(estado, isA<SesionEligiendoRol>());
+      final eligiendo = estado as SesionEligiendoRol;
+      expect(eligiendo.roles.map((r) => r.id), ['r1', 'r2']);
+      expect(eligiendo.usuario.etiqueta, isNull);
+      expect(almacen.refresco, 'ref-2');
     });
   });
 

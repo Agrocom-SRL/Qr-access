@@ -60,10 +60,10 @@ class InicioPagina extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.inicioSaludo(sesion.usuario.etiqueta),
-              style: texto.headlineSmall,
-            ),
+            Text(switch (sesion.usuario.etiqueta) {
+              final etiqueta? => l10n.inicioSaludo(etiqueta),
+              null => l10n.inicioSaludoSinNombre,
+            }, style: texto.headlineSmall),
             SizedBox(height: tokens.espacio.xs),
             Text(
               l10n.inicioCuentaYRol(

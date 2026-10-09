@@ -58,7 +58,9 @@ class UsuarioSesion {
   const new({required this.id, required this.etiqueta});
 
   final String id;
-  final String etiqueta;
+
+  /// `null` cuando el PIN no tiene etiqueta.
+  final String? etiqueta;
 }
 
 @immutable
