@@ -19,6 +19,13 @@
   - **Docker**: `docker compose up` levanta MySQL y la API; con `--profile web`, también la app web en `:8080`. El firmware se compila y prueba en el contenedor `firmware`.
   - `.gitignore` global (entorno, sistema operativo, editores) y uno por parte (`api/`, `app/`, `firmware/`).
 
+## Núcleo V1 de la API (rama `feature/api-nucleo`)
+
+- 16 migraciones (una por tabla) y `03-schema-sql.md` al día; seeds `01_catalogo` (permisos) y `02_demo` (cuenta `DEM`, solo desarrollo, ver `entornos.md`).
+- Plataforma: `RepositorioDeCuenta` / `RepositorioDePlataforma` (tenant, soft delete, autoría y bitácora por construcción), argon2id, HMAC con pimienta, JWT, plugin de autenticación que falla cerrado.
+- Módulos: `seguridad` (login por PIN, refresco rotativo, rol activo), `organizacion` (listar puertas), `suscripciones` (vigencia vía contrato), `accesos` (emitir, listar y anular QR; validación con los 7 pasos y consumo atómico; eventos) y `dispositivos` (credencial, latido, configuración).
+- Pendiente del núcleo: altas y administración (cuentas, usuarios, sitios, puertas, dispositivos), límites del plan para dispositivos y usuarios, baja diaria de QR vencidos, login del super admin y límite de intentos compartido entre instancias.
+
 ## Próximo paso
 
 1. Revisar e integrar las PR de `feature/alcance-v1` y `feature/esqueletos-base`.

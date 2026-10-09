@@ -29,6 +29,49 @@
 - **firmware**: credenciales en NVS por aprovisionamiento; `secretos.h` solo para desarrollo en la mesa.
 - **CI**: variables del job; firmas y claves de OTA en GitHub Actions secrets.
 
+## Datos de desarrollo: la cuenta demo `DEM`
+
+**Solo desarrollo. Nunca en producción.** Estos PIN y estas claves están publicados en el repositorio: cualquiera puede entrar con ellos. En producción, las cuentas, los PIN y las claves de dispositivo se generan con la API y se muestran una sola vez.
+
+Preparar la base de desarrollo (los datos que cargues se quedan: no se borran, ver skill `verificacion`):
+
+```
+cp .env.example .env                    # trae JWT_SECRETO y PIN_PIMIENTA de desarrollo; si ya tenías un .env, copia esas variables
+docker compose --profile herramientas run --rm dbmate up
+docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=utf8mb4 qr_access < db/seeds/01_catalogo.sql
+docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=utf8mb4 qr_access < db/seeds/02_demo.sql
+docker compose up -d api                # reinicia la API para que lea el .env
+```
+
+Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_demo.sql` solo funciona con la `PIN_PIMIENTA` de desarrollo de `.env.example` (el índice del PIN es un HMAC con esa pimienta). La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
+
+| Qué | Valor |
+|---|---|
+| Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
+| PIN del **administrador** (todos los permisos de cuenta) | `DEMADM1` |
+| PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
+| Sitio | `Sede demo` (zona `America/La_Paz`) |
+| Puertas | `9001` Portón principal, `9002` Puerta trasera (pulso de 5 s) |
+| Dispositivo del portón principal | `Authorization: Dispositivo 9001.1vopRZ7ET7vnEN3pMkYtgGFp8RRqZ7AOx7wJtFv01t0` |
+| Dispositivo de la puerta trasera | `Authorization: Dispositivo 9002.Zp244bmr-MTP2l5CdQmdjMWcn6ZpltbPVekWSKUmsYM` |
+
+El PIN se escribe sin importar mayúsculas (`demadm1` entra igual).
+
+Probar de punta a punta con `curl` (la app hace lo mismo con la IP del Mac):
+
+```
+API=http://localhost:3000/api/v1
+ACCESO=$(curl -s -X POST $API/sesiones -H 'content-type: application/json' -d '{"pin":"DEMADM1"}' | jq -r .acceso)
+curl -s $API/puertas -H "authorization: Bearer $ACCESO"
+TEXTO=$(curl -s -X POST $API/qr-accesos -H "authorization: Bearer $ACCESO" -H 'content-type: application/json' \
+  -d '{"puerta_ids":["9001"],"etiqueta":"Prueba"}' | jq -r .texto)
+curl -s -X POST $API/dispositivos/validaciones -H 'content-type: application/json' \
+  -H 'authorization: Dispositivo 9001.1vopRZ7ET7vnEN3pMkYtgGFp8RRqZ7AOx7wJtFv01t0' -d "{\"token\":\"$TEXTO\"}"
+# → {"abrir":true,"segundos":5,...}; la segunda lectura del mismo QR responde "abrir":false,"motivo_code":"qr.usado"
+```
+
+Para el firmware en la mesa: la credencial del dispositivo es `9001.<clave>` (la clave de la tabla) y la API se alcanza por la IP del Mac, igual que desde la app. Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
+
 ## La base de tests en un volumen existente
 
 `docker/mysql/01-base-testing.sql` crea `qr_access_testing` solo al inicializar el volumen. Si el volumen ya existía:
