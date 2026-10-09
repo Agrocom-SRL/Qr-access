@@ -188,6 +188,9 @@ class Duraciones {
   /// Tope del splash animado: lo que dura el Lottie de arranque.
   Duration get splash => const Duration(milliseconds: 800);
 
+  /// Cada cuánto se actualiza el "tiempo restante" de un QR (sin segundos).
+  Duration get refrescoTiempoRestante => const Duration(seconds: 30);
+
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 

@@ -572,6 +572,27 @@
       }
     }
   },
+  "qrValidezDias": "{n, plural, =1{Válido por 1 día} other{Válido por {n} días}}",
+  "@qrValidezDias": {
+    "description": "Tiempo que le queda a un QR vigente, en días",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "qrValidezHoras": "{n, plural, =1{Válido por 1 hora} other{Válido por {n} horas}}",
+  "@qrValidezHoras": {
+    "description": "Tiempo que le queda a un QR vigente, en horas",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
+  "qrValidezMinutos": "{n, plural, =1{Válido por 1 minuto} other{Válido por {n} minutos}}",
+  "@qrValidezMinutos": {
+    "description": "Tiempo que le queda a un QR vigente, en minutos",
+    "placeholders": {
+      "n": { "type": "int" }
+    }
+  },
   "qrVenceCorto": "vence {hora}",
   "@qrVenceCorto": {
     "description": "Vencimiento en la tarjeta corta del inicio, en mono",
