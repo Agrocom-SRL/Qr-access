@@ -11,6 +11,7 @@ Qué revisas:
 1. **Naming**: dominio en español (`Puerta`, `validarQr`, `eventos_acceso`), infraestructura en inglés (`routes.ts`, `repository.ts`, `plugin`). Módulos y features en español; carpetas transversales en inglés.
 2. **Estilo**: `api/` con Prettier + ESLint (TypeScript `strict`, sin `any` implícito, sin `// eslint-disable` sin motivo); `app/` con `dart format` + `flutter analyze --fatal-infos`; `firmware/` con `.clang-format`.
 3. **Tests**: nombre que describe la regla ("rechaza un QR ya usado"), un comportamiento por test, sin `skip`/`only` olvidados.
-4. **Commits**: español, imperativo, sin punto final, sin `Co-Authored-By`.
+4. **Código limpio y comentarios** (skill `codigo-limpio`): una responsabilidad por función y por capa, dependencias (reloj, azar, E/S) inyectadas, sin números mágicos ni código comentado, comentario de documentación en todo lo público y cita de la invariante o ADR en lo crítico.
+5. **Commits**: español, imperativo, sin punto final, sin `Co-Authored-By`.
 
 Puedes corregir formato (es mecánico). Lo que no es formato, repórtalo con archivo y línea.

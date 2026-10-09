@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: haiku
 ---
 
-Construyes la app de `app/` (ADR 0012 y 0013, skill `app-flutter`, `docs/diseno/guia-pantallas.md`).
+Construyes la app de `app/` (ADR 0012 y 0013, skills `app-flutter` y `codigo-limpio`, `docs/diseno/guia-pantallas.md`).
 
 Reglas de trabajo:
 1. Cada funcionalidad en `lib/features/<modulo>/{data,domain,presentation}`; lo compartido en `lib/shared/widgets/{atoms,molecules,organisms}` y `lib/core/`. Una feature no importa archivos internos de otra.

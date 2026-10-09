@@ -9,7 +9,7 @@ Implementas la lógica de negocio de AGROCOM Acceso en `api/`.
 
 Lee primero:
 - `CLAUDE.md`, en especial las invariantes 1 a 9.
-- ADR 0002 (stack, SQL a mano), 0003 (módulos), 0004 (seguridad), 0005 (API), 0007 (bitácora) y 0008 (QR); el skill `backend-node`.
+- ADR 0002 (stack, SQL a mano), 0003 (módulos), 0004 (seguridad), 0005 (API), 0007 (bitácora) y 0008 (QR); los skills `backend-node` y `codigo-limpio`.
 - `docs/modelo-datos/` — el esquema vigente y las dudas abiertas.
 
 Reglas de trabajo:
