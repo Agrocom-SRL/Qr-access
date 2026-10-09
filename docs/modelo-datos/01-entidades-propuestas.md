@@ -21,7 +21,7 @@ cuentas ─┬─< suscripciones (plan, desde, hasta, estado)
 | 02 | `cuenta_datos_empresa` | seguridad | sí | Razón social, NIT, logo, contacto (1:1) |
 | 03 | `planes` | suscripciones | — (catálogo) | `nombre`, `max_dispositivos`, `max_usuarios`, `max_vigencia_qr_horas` (`NULL` = sin límite), `activo` |
 | 04 | `suscripciones` | suscripciones | sí | `plan_id`, `desde`, `hasta`, `estado` (`vigente`/`suspendida`/`vencida`); una vigente por cuenta |
-| 05 | `usuarios` | seguridad | sí (NULL = plataforma) | Usuario de cuenta = un PIN (ADR 0018): `etiqueta`, `pin_indice` (HMAC, único por cuenta), `pin_hash`, `pin_generado_at`, `activo`. Super admin: `username`, `contrasena_hash` |
+| 05 | `usuarios` | seguridad | sí (NULL = plataforma) | Usuario de cuenta = un PIN (ADR 0018): `etiqueta`, `pin_indice` (HMAC, único por cuenta), `pin_hash`, `pin_generado_at`, `rol_preferido_id` (último rol elegido), `activo`. Super admin: `username`, `contrasena_hash` |
 | 06 | `usuario_perfiles` | seguridad | sí | Nombre, apellidos, teléfono (1:1) |
 | 07 | `roles` | seguridad | sí (NULL = plataforma) | `protegido` |
 | 08 | `permisos` | seguridad | — (catálogo global) | `codigo`, `ambito` |
