@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# Corre la app en el teléfono contra la API del Mac (docs/gestion/entornos.md, ADR 0010).
+#
+#   bin/app-telefono                 flutter run con la IP del Mac por la que sale a internet
+#   bin/app-telefono -d <id>         los argumentos extra van tal cual a `flutter run`
+#
+# La IP se toma de la interfaz de la ruta por defecto (cable en en6, WiFi en en0, etc.),
+# no de una interfaz fija. El puerto sale de API_PORT (por defecto 3000).
+#
+set -euo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+puerto="${API_PORT:-3000}"
+
+interfaz=$(route -n get default 2>/dev/null | awk '/interface:/{print $2}' || true)
+if [ -z "$interfaz" ]; then
+    echo "No hay ruta por defecto: revisa la red del Mac." >&2
+    exit 1
+fi
+
+ip=$(ipconfig getifaddr "$interfaz" 2>/dev/null || true)
+if [ -z "$ip" ]; then
+    echo "La interfaz $interfaz no tiene IPv4 (¿VPN activa o red sin DHCP?)." >&2
+    exit 1
+fi
+
+url="http://$ip:$puerto"
+echo "API para el teléfono: $url (interfaz $interfaz)"
+echo "Antes de abrir la app, prueba en el navegador del teléfono: $url/api/v1/salud"
+
+cd app
+exec flutter run --dart-define=API_URL="$url" "$@"

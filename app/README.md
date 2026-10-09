@@ -4,8 +4,7 @@ App de los usuarios de cada cuenta (Android, iOS y web): inicio de sesión con P
 
 ```
 flutter pub get                                   # también genera lib/l10n/gen desde app_es.arb
-ipconfig getifaddr en0                            # IP del Mac en la WiFi (el teléfono, en la misma red)
-flutter run -d <id-del-telefono> --dart-define=API_URL=http://<ip-del-mac>:3000
+../bin/app-telefono -d <id-del-telefono>          # IP del Mac por la ruta por defecto (cable o WiFi) + flutter run
 flutter run -d chrome --dart-define=API_URL=http://localhost:3000
 ../bin/verify app                                 # formato, análisis, tests y build web
 ```
