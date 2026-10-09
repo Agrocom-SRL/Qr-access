@@ -1,6 +1,6 @@
 # ADR 0012 — App Flutter: estructura por feature y sistema de diseño por tokens
 
-**Estado:** Aceptada (2026-10-08) · **Origen:** ADR 0002 de ACRECIA (Atomic Design + tokens), traducido a Flutter.
+**Estado:** Aceptada (2026-10-08) · **Origen:** ADR 0002 de ACRECIA (Atomic Design + tokens), traducido a Flutter. Precisada por ADR 0019 (patrón de presentación).
 
 ## Contexto
 
