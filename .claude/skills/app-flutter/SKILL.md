@@ -1,65 +1,91 @@
 ---
 name: app-flutter
-description: Mapa de la app Flutter de AGROCOM Acceso (Android, iOS y web) — estructura por feature, sistema de diseño en tokens (verde Santa Cruz), Riverpod, go_router, cliente de la API, l10n, pantallas de QR y escáner, reglas de pantalla y tests. Usar antes de escribir o cambiar código en app/.
+description: Mapa de la app Flutter de AGROCOM Acceso (Android, iOS y web) — estructura por feature, sistema de diseño en tokens (verde Santa Cruz), Riverpod (Notifier por pantalla), go_router con guarda de sesión, cliente de la API (dio + contratos), l10n, pantallas de QR y reglas de pantalla. Usar antes de escribir o cambiar código en app/.
 ---
 
 # App Flutter — mapa de `app/`
 
-ADR 0012 (estructura y diseño) y 0013 (textos). Diseño: `docs/diseno/sistema-diseno.md` y `docs/diseno/guia-pantallas.md`.
+ADR 0012 (estructura y diseño), 0013 (textos) y 0019 (patrón de presentación). Diseño: `docs/diseno/sistema-diseno.md` y `docs/diseno/guia-pantallas.md`.
 
 ## Estructura
 
 ```
 app/lib/
-  main.dart                     arranque (ProviderScope, MaterialApp.router, tema, l10n)
+  main.dart                     ProviderScope + override de proveedorTokensProvider (la sesión)
+  app.dart                      AccesoApp: MaterialApp.router, tema, l10n
   core/
-    api/                        cliente dio + modelos generados del OpenAPI + interceptor de JWT/refresh
-    config/                     entorno (--dart-define=API_URL=…)
-    router/                     go_router + guardas por sesión y permiso
+    api/                        ClienteApi (un método por endpoint), contratos (DTO) de cada recurso,
+                                ErrorApi (RFC 9457 → code), InterceptorSesion (JWT + un solo refresco),
+                                mensaje_error.dart (code → texto del ARB; desconocido → genérico)
+    config/entorno.dart         --dart-define=API_URL, versión de la API, tiempo de espera
+    formato/                    fecha_hora.dart (UTC de la API → hora local)
+    listados/pagina.dart        Pagina<T> (lo que pinta ListadoPaginado) y tamaño por defecto
+    plataforma/                 interfaces + implementación por plataforma (ver "Plataforma")
+    router/                     rutas.dart, guarda_sesion.dart (función pura), router.dart
+    sesion/                     SesionControlador (dueño de la sesión), SesionEstado, Permisos
+    tiempo/reloj.dart           relojProvider: la hora se inyecta, nunca DateTime.now() en la lógica
     theme/
       primitivos.dart           ÚNICOS valores literales de color (rampa verde Santa Cruz, neutros)
-      tokens.dart               AccesoTokens (ThemeExtension): espaciado, radios, duraciones, semánticos
+      tokens.dart               AccesoTokens (ThemeExtension): espaciado, radios, duraciones, tamaños, semánticos
       tema.dart                 ThemeData claro y oscuro construidos desde los tokens
-    plataforma/                 interfaces de cámara, almacenamiento seguro, brillo (impl. móvil/web)
-    sesion/                     estado de sesión, rol activo, permisos
   shared/widgets/
-    atoms/                      AccesoBoton, AccesoBadge, AccesoCampoTexto, AccesoIcono…
-    molecules/                  CampoFormulario, TarjetaIndicador, EstadoVacio, ConfirmarDialogo…
-    organisms/                  ListadoPaginado, FormularioSecciones, EscanerQr…
-    templates/                  PlantillaAdmin (rail/drawer + cabecera), PlantillaAuth
+    atoms/                      AccesoBoton (con cargando), AccesoCampoTexto, AccesoBadge, AccesoCargando
+    molecules/                  EstadoVacio, EstadoError, ConfirmarDialogo
+    organisms/                  ListadoPaginado<T> (columnas según el ancho)
+    templates/                  PlantillaAuth (formulario centrado), PlantillaPantalla (formulario o listado)
   features/
-    sesion/                     login, elegir rol, perfil
-    qr_accesos/                 emitir, compartir (imagen) y anular QR; listado con estado (ADR 0008)
-    puertas/  sitios/  usuarios/  eventos/  dispositivos/  cuentas/  suscripcion/
-      data/                     repositorio de la feature (usa core/api)
-      domain/                   modelos y lógica pura (testeable sin Flutter)
-      presentation/             pantallas, widgets propios y providers
+    sesion/                     ingreso por PIN, elegir rol (domain/pin.dart, data/, presentation/)
+    inicio/                     tablero: accesos según permisos del rol activo
+    puertas/                    solo datos (lista de puertas para emitir); barrel puertas.dart
+    qr_accesos/                 emitir, mostrar y compartir, listado y anulación (ADR 0008)
+    eventos/                    bitácora paginada de accesos (ADR 0007)
       <feature>.dart            lo único que otras features pueden importar
-  l10n/app_es.arb
+  l10n/app_es.arb               textos (prefijo por feature; comun* para lo compartido)
+```
+
+Dentro de una feature:
+
+```
+domain/        modelos y reglas puras (Pin, DatosEmision, EstadoQr); sin Flutter ni red
+data/          repositorio abstracto + implementación con ClienteApi; convierte contratos a dominio
+presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), widgets/ propios
 ```
 
 ## Paquetes de referencia
 
-`flutter_riverpod`, `go_router`, `dio`, `flutter_secure_storage`, `qr_flutter` (mostrar), `share_plus` (compartir la imagen del QR), `intl`, `very_good_analysis` (lints). Versiones fijadas en `pubspec.lock`, que se versiona.
+`flutter_riverpod` (3.x, sin codegen), `go_router`, `dio`, `flutter_secure_storage` (refresco en móvil), `qr` (matriz del QR: se pinta y se exporta como PNG), `share_plus` (compartir la imagen), `intl`, `very_good_analysis`. Versiones fijadas en `pubspec.lock`, que se versiona.
 
 ## Reglas
 
-1. **Tokens siempre**: `context.tokens.espacio.m`, `Theme.of(context).colorScheme.primary`. Prohibido `Color(0x…)`, `Colors.green`, `EdgeInsets.all(13)` en un widget. Lo controla `test/arquitectura/tokens_test.dart`.
-2. **Textos siempre del ARB** (`context.l10n.puertasTitulo`), en tuteo.
+1. **Tokens siempre**: `context.tokens.espacio.m`, `Theme.of(context).colorScheme`. Prohibido `Color(0x…)`, `Colors.green`, `EdgeInsets.all(13)`, `Duration(milliseconds: 200)` en un widget. Lo controla `test/arquitectura/tokens_test.dart`.
+2. **Textos siempre del ARB** (`context.l10n.sesionIngresoTitulo`), en tuteo. Los errores de la API se traducen con `textoDeError(l10n, error)`, nunca se muestra el mensaje del servidor.
 3. **Una feature no importa archivos internos de otra**: solo su `<feature>.dart`. Lo controla `test/arquitectura/fronteras_test.dart`.
-4. **Ningún widget llama a la red**: presentation → provider → repositorio de `data/` → `core/api`.
-5. **Web y móvil comparten código**: nada de `dart:io` fuera de `core/plataforma/*_movil.dart`; elegir implementación con import condicional.
-6. **QR**: negro sobre blanco, tamaño mínimo 240 dp, zona de silencio, con la hora de vencimiento visible y exportable como imagen para compartir (ADR 0008).
-7. **Errores de la API**: se traducen por `code` (`error_qr_vencido`); un `code` desconocido muestra el genérico.
+4. **Ningún widget llama a la red**: página → controlador → repositorio (`data/`) → `ClienteApi`. El controlador no conoce widgets ni `dio`.
+5. **Un widget no es un método**: cada bloque de una pantalla es una clase `Widget` (ADR 0019). Privada si la usa un solo archivo; en `presentation/widgets/` si es de la feature; en `shared/widgets/` si la usan dos features o más. Nada de `_construirX()`.
+6. **Controlador solo cuando hay lógica**: una pantalla sin acción ni estado no lleva `Notifier`. Estado inmutable en clase Dart, sin codegen.
+7. **Fakes con el shape real**: los tests sobrescriben `xxxRepositorioProvider` con un fake que devuelve lo que devuelve el contrato.
+8. **Web y móvil con el mismo código**: lo específico de plataforma va detrás de una interfaz en `core/plataforma/` y se elige por importación condicional (`if (dart.library.io)`). Nada de `dart:io` fuera de `*_movil.dart`.
+9. **QR**: negro sobre blanco siempre (`colores.qrModulo`/`qrFondo`), al menos `tamano.qrMinimo` dp, zona de silencio de `tamano.qrZonaSilencioModulos`, con la hora de vencimiento visible. El `texto` del token solo vive en la pantalla que lo muestra y comparte (ADR 0008): se pasa por `extra` de la ruta y no se guarda.
+10. **Sesión**: el acceso vive en memoria. El refresco se guarda cifrado en móvil y solo en memoria en web (ADR 0004). El interceptor renueva una sola vez aunque lleguen varios 401 a la vez. Lo que el rol activo no puede usar no se muestra y la ruta tampoco se abre (`guarda_sesion.dart`).
+
+## Plataforma (`core/plataforma/`)
+
+| Qué | Interfaz | Móvil | Web |
+|---|---|---|---|
+| Refresco de la sesión | `AlmacenRefresco` | `almacen_refresco_movil.dart` (flutter_secure_storage) | `almacen_refresco_web.dart` (memoria) |
+| Compartir la imagen del QR | `CompartirImagen` | share_plus (`XFile.fromData`) | share_plus (mismo código) |
+
+Pendiente: brillo de pantalla para el QR (CLAUDE.md, invariante 5) y la cookie HttpOnly del refresco cuando la API la soporte.
 
 ## Reglas de pantalla (de ACRECIA, `guia-pantallas.md`)
 
-- Arquetipos: **Tablero**, **Listado**, **Formulario**, **Detalle**, más el propio: **Emitir QR**.
-- Tras guardar, el formulario se queda en edición (no vuelve al listado).
+- Arquetipos: **Tablero** (`inicio`), **Listado** (`qr_accesos`, `eventos`), **Formulario** (emitir QR), **Emitir QR** con su visor.
+- Tras guardar, el formulario se queda en edición (no vuelve al listado). Para emitir, la pantalla avanza a mostrar el QR.
 - `activo` nunca va en un formulario: se activa/desactiva con una acción aparte.
-- Colores fijos de acción: Ver = info, Editar = advertencia, Eliminar = peligro; un cambio de estado lleva el color del estado destino. Toda baja o cambio de estado confirma con `ConfirmarDialogo`.
+- Colores fijos de acción: Ver = info, Editar = advertencia, Eliminar = peligro; un cambio de estado lleva el tono del estado destino. Toda baja o cambio de estado confirma con `ConfirmarDialogo`.
 
 ## Tests
 
-- `test/features/<feature>/domain/*` unitarios; `presentation/*` widget tests con el repositorio sustituido por un fake con el **shape real** de la API.
+- `test/features/<feature>/domain/*` y `test/core/*`: unitarios (Pin, DatosEmision, interceptor, controladores de sesión).
+- `presentation/*`: widget tests con `montarPantalla` (test/helpers/pantalla.dart) y los fakes de `test/helpers/fakes.dart`.
 - `test/l10n/` (redacción neutra, textos literales) y `test/arquitectura/` (tokens, fronteras).

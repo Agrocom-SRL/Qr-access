@@ -1,69 +1,86 @@
+import 'dart:async';
+
+import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/features/sesion/presentation/ingreso_controlador.dart';
+import 'package:agrocom_acceso/features/sesion/presentation/widgets/formateador_pin.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
+import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Inicio de sesión con código de cuenta + PIN (ADR 0018). Esqueleto: el
-/// envío a la API llega con la HU-04.
-class IngresoPagina extends StatelessWidget {
+/// Inicio de sesión con el PIN de acceso (ADR 0018). La página solo compone y
+/// delega en `IngresoControlador`.
+class IngresoPagina extends ConsumerStatefulWidget {
   const new({super.key});
 
   @override
+  ConsumerState<IngresoPagina> createState() => _IngresoPaginaEstado();
+}
+
+class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
+  final _pin = TextEditingController();
+
+  @override
+  void dispose() {
+    _pin.dispose();
+    super.dispose();
+  }
+
+  /// Lanza el envío; la pantalla muestra el resultado desde el controlador.
+  void _ingresar() {
+    unawaited(
+      ref.read(ingresoControladorProvider.notifier).ingresar(_pin.text),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
+    final estado = ref.watch(ingresoControladorProvider);
     final l10n = context.l10n;
-    final texto = Theme.of(context).textTheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(tokens.espacio.xl),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: tokens.tamano.formularioMaximo,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.sesionIngresoTitulo,
-                    style: texto.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: tokens.espacio.s),
-                  Text(
-                    l10n.sesionIngresoAyuda,
-                    style: texto.bodyMedium?.copyWith(
-                      color: tokens.colores.textoSecundario,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: tokens.espacio.xl),
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: l10n.sesionCampoCuenta,
-                    ),
-                    textInputAction: TextInputAction.next,
-                    autocorrect: false,
-                  ),
-                  SizedBox(height: tokens.espacio.l),
-                  TextField(
-                    decoration: InputDecoration(labelText: l10n.sesionCampoPin),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    obscureText: true,
-                  ),
-                  SizedBox(height: tokens.espacio.xl),
-                  // Sin acción hasta la HU-04: no se simula un login.
-                  FilledButton(
-                    onPressed: null,
-                    child: Text(l10n.sesionBotonIngresar),
-                  ),
-                ],
-              ),
-            ),
+    final tokens = context.tokens;
+    final errorApi = estado.errorApi;
+    final textoError = estado.pinInvalido
+        ? l10n.sesionPinFormatoInvalido
+        : (errorApi == null ? null : textoDeError(l10n, errorApi));
+
+    return PlantillaAuth(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.sesionIngresoTitulo,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
           ),
-        ),
+          SizedBox(height: tokens.espacio.s),
+          Text(
+            l10n.sesionIngresoAyuda,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: tokens.colores.textoSecundario),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: tokens.espacio.xl),
+          AccesoCampoTexto(
+            etiqueta: l10n.sesionCampoPin,
+            controlador: _pin,
+            formateadores: const [FormateadorPin()],
+            teclado: TextInputType.visiblePassword,
+            ocultar: true,
+            habilitado: !estado.enviando,
+            textoError: textoError,
+            accionTeclado: TextInputAction.go,
+            alEnviar: (_) => _ingresar(),
+          ),
+          SizedBox(height: tokens.espacio.xl),
+          AccesoBoton(
+            texto: l10n.sesionBotonIngresar,
+            cargando: estado.enviando,
+            onPressed: _ingresar,
+          ),
+        ],
       ),
     );
   }

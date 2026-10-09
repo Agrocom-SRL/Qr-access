@@ -7,4 +7,11 @@ abstract final class Entorno {
     'API_URL',
     defaultValue: 'http://localhost:3000',
   );
+
+  /// Versión de la API en la ruta (ADR 0005).
+  static const versionApi = 'v1';
+
+  /// Espera máxima para conectar y para recibir una respuesta. Pasado el
+  /// tiempo, la app muestra "sin conexión" en vez de quedarse cargando.
+  static const tiempoEsperaSegundos = 15;
 }

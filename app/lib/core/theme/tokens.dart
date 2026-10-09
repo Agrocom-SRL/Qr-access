@@ -1,7 +1,8 @@
 import 'package:agrocom_acceso/core/theme/primitivos.dart';
 import 'package:flutter/material.dart';
 
-/// Colores semánticos (§2.3): lo único de color que leen los widgets.
+/// Colores semánticos (docs/diseno/sistema-diseno.md §2.3): lo único de color
+/// que leen los widgets.
 @immutable
 class ColoresSemanticos {
   const new({
@@ -19,6 +20,8 @@ class ColoresSemanticos {
     required this.informacion,
     required this.accesoPermitido,
     required this.accesoDenegado,
+    required this.qrModulo,
+    required this.qrFondo,
   });
 
   static const claro = ColoresSemanticos(
@@ -36,6 +39,8 @@ class ColoresSemanticos {
     informacion: Primitivos.azul700,
     accesoPermitido: Primitivos.verde500,
     accesoDenegado: Primitivos.rojo600,
+    qrModulo: Primitivos.qrModulo,
+    qrFondo: Primitivos.qrFondo,
   );
 
   static const oscuro = ColoresSemanticos(
@@ -53,6 +58,9 @@ class ColoresSemanticos {
     informacion: Primitivos.azul300,
     accesoPermitido: Primitivos.verde300,
     accesoDenegado: Primitivos.rojo300,
+    // El QR no cambia con el tema (sistema de diseño §1.8).
+    qrModulo: Primitivos.qrModulo,
+    qrFondo: Primitivos.qrFondo,
   );
 
   final Color fondo;
@@ -69,6 +77,10 @@ class ColoresSemanticos {
   final Color informacion;
   final Color accesoPermitido;
   final Color accesoDenegado;
+
+  /// Módulos y fondo del QR: negro sobre blanco en ambos temas.
+  final Color qrModulo;
+  final Color qrFondo;
 }
 
 /// Espaciado en base 4 (§2.5).
@@ -85,6 +97,7 @@ class Espacios {
   double get xxxl => 48;
 }
 
+/// Radios de esquina (§2.5).
 @immutable
 class Radios {
   const new();
@@ -95,6 +108,7 @@ class Radios {
   double get completo => 999;
 }
 
+/// Duraciones de movimiento (§2.5).
 @immutable
 class Duraciones {
   const new();
@@ -104,15 +118,34 @@ class Duraciones {
   Curve get curva => Curves.easeOutCubic;
 }
 
+/// Tamaños de componentes y de contenido. Cambiar la densidad es editar aquí.
 @immutable
 class Tamanos {
   const new();
 
-  /// Alto mínimo de un control táctil.
+  /// Alto mínimo de un control táctil (§2.5).
   double get controlMinimo => 44;
 
-  /// Ancho máximo de un formulario centrado (inicio de sesión).
+  /// Ancho máximo de un formulario centrado (inicio de sesión, emisión).
   double get formularioMaximo => 420;
+
+  /// Ancho máximo del contenido de un listado en la web ancha.
+  double get listadoMaximo => 1200;
+
+  /// Lado mínimo del QR mostrado, en dp: se lee bien a distancia.
+  double get qrMinimo => 240;
+
+  /// Zona de silencio del QR, en módulos (la norma pide 4).
+  int get qrZonaSilencioModulos => 4;
+
+  /// Ícono de una fila o un botón.
+  double get icono => 20;
+
+  /// Ícono del resultado o de una pantalla vacía.
+  double get iconoGrande => 48;
+
+  /// Ancho mínimo de una tarjeta del listado antes de pasar a otra columna.
+  double get tarjetaMinima => 280;
 }
 
 /// Breakpoints (§2.6): ningún otro número.
@@ -144,6 +177,20 @@ class AccesoTokens extends ThemeExtension<AccesoTokens> {
       t < 0.5 || other == null ? this : other;
 }
 
+/// Acceso a los tokens desde cualquier widget: `context.tokens.espacio.m`.
 extension TokensContexto on BuildContext {
   AccesoTokens get tokens => Theme.of(this).extension<AccesoTokens>()!;
+}
+
+/// Clase de pantalla según el ancho (§2.6): compacto, medio o expandido.
+enum ClasePantalla { compacta, media, expandida }
+
+extension ClasePantallaContexto on BuildContext {
+  /// Clasifica el ancho disponible con los breakpoints del tema.
+  ClasePantalla get clasePantalla {
+    final ancho = MediaQuery.sizeOf(this).width;
+    if (ancho >= tokens.breakpoint.expandido) return ClasePantalla.expandida;
+    if (ancho >= tokens.breakpoint.medio) return ClasePantalla.media;
+    return ClasePantalla.compacta;
+  }
 }
