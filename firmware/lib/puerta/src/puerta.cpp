@@ -11,6 +11,11 @@ uint32_t transcurrido(uint32_t desde, uint32_t ahora) { return ahora - desde; }
 
 }  // namespace
 
+void Maquina::fijarMaxAperturaS(uint16_t segundos) {
+  if (segundos < 1) segundos = 1;
+  maxAperturaS_ = segundos > MAX_APERTURA_S ? MAX_APERTURA_S : segundos;
+}
+
 Acciones Maquina::alLeer(const char* texto, uint32_t ahoraMs) {
   Acciones acciones;
   if (estado_ != Estado::Reposo || texto == nullptr) return acciones;
@@ -29,26 +34,32 @@ Acciones Maquina::alLeer(const char* texto, uint32_t ahoraMs) {
   hayUltimoQr_ = true;
 
   estado_ = Estado::Validando;
+  idValidacion_++;
   desdeMs_ = ahoraMs;
   acciones.enviarValidacion = true;
   acciones.indicacion = Indicacion::Validando;
   return acciones;
 }
 
-Acciones Maquina::alResponder(const Resultado& resultado, uint32_t ahoraMs) {
+Acciones Maquina::alResponder(uint32_t id, const Resultado& resultado, uint32_t ahoraMs) {
   Acciones acciones;
-  // Una respuesta fuera de una validación en curso (p. ej. tardía) se descarta.
-  if (estado_ != Estado::Validando) return acciones;
+  // Una respuesta fuera de la validación en curso (tardía, de otra lectura) se descarta.
+  if (estado_ != Estado::Validando || id != idValidacion_) return acciones;
 
   memset(qr_, 0, sizeof(qr_));
   if (resultado.valida && resultado.abrir && resultado.segundos > 0) {
     const uint16_t segundos =
-        resultado.segundos > MAX_APERTURA_S ? MAX_APERTURA_S : resultado.segundos;
+        resultado.segundos > maxAperturaS_ ? maxAperturaS_ : resultado.segundos;
     return abrir(static_cast<uint32_t>(segundos) * 1000U, ahoraMs, Indicacion::Permitido);
   }
 
   estado_ = Estado::Reposo;
-  acciones.indicacion = resultado.valida ? Indicacion::Denegado : Indicacion::Error;
+  if (resultado.valida) {
+    acciones.indicacion = Indicacion::Denegado;
+  } else {
+    acciones.indicacion =
+        resultado.motivo == Motivo::SinRed ? Indicacion::SinRed : Indicacion::Error;
+  }
   return acciones;
 }
 
@@ -56,7 +67,9 @@ Acciones Maquina::alPulsarSalida(uint32_t ahoraMs) {
   if (estado_ == Estado::Abierta) return Acciones{};
   // Una validación en curso se abandona: su respuesta ya no abrirá nada.
   memset(qr_, 0, sizeof(qr_));
-  return abrir(static_cast<uint32_t>(APERTURA_PULSADOR_S) * 1000U, ahoraMs, Indicacion::Ninguna);
+  const uint16_t segundos =
+      APERTURA_PULSADOR_S > maxAperturaS_ ? maxAperturaS_ : APERTURA_PULSADOR_S;
+  return abrir(static_cast<uint32_t>(segundos) * 1000U, ahoraMs, Indicacion::Ninguna);
 }
 
 Acciones Maquina::tick(uint32_t ahoraMs) {
