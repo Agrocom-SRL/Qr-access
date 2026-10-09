@@ -38,8 +38,21 @@ class PuertasRepositorioApi implements PuertasRepositorio {
   }
 }
 
-Puerta _aPuerta(PuertaDto dto) =>
-    Puerta(id: dto.id, nombre: dto.nombre, sitioNombre: dto.sitio.nombre);
+Puerta _aPuerta(PuertaDto dto) => Puerta(
+  id: dto.id,
+  nombre: dto.nombre,
+  sitioId: dto.sitio.id,
+  sitioNombre: dto.sitio.nombre,
+  dispositivo: switch (dto.dispositivo) {
+    null => null,
+    final d => DispositivoDePuerta(
+      id: d.id,
+      nombre: d.nombre,
+      enLinea: d.enLinea,
+      ultimoLatidoAt: d.ultimoLatidoAt,
+    ),
+  },
+);
 
 final puertasRepositorioProvider = Provider<PuertasRepositorio>(
   (ref) => PuertasRepositorioApi(ref.watch(clienteApiProvider)),

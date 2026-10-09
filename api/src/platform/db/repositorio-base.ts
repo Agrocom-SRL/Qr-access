@@ -38,6 +38,8 @@ export interface Consulta {
   readonly donde?: string;
   /** Valores de los `?` de `donde`, en orden. */
   readonly params?: readonly unknown[];
+  /** `GROUP BY` constante, para resúmenes (conteos por estado o por motivo). */
+  readonly agrupar?: string;
   /** Constante o elegido de una lista blanca. */
   readonly orden?: string;
   readonly limite?: number;
@@ -144,6 +146,7 @@ export abstract class RepositorioBase {
     ];
     const params = [...base.params, ...(consulta.params ?? [])];
     if (forma === 'filas') {
+      if (consulta.agrupar !== undefined) partes.push('GROUP BY', consulta.agrupar);
       if (consulta.orden !== undefined) partes.push('ORDER BY', consulta.orden);
       if (consulta.limite !== undefined) {
         partes.push('LIMIT ? OFFSET ?');

@@ -18,6 +18,8 @@ dependencies:
   intl: ^0.20.3
   qr: ^4.0.0
   share_plus: ^13.3.1
+  shared_preferences: ^2.5.6
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
@@ -27,3 +29,22 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
+  # IBM Plex Sans (texto) y Mono (PIN, códigos, horas y cifras), empaquetadas para no depender
+  # de Google Fonts en tiempo de ejecución (sistema de diseño §2.4). Licencia OFL en assets/fuentes.
+  fonts:
+    - family: IBMPlexSans
+      fonts:
+        - asset: assets/fuentes/IBMPlexSans-Regular.ttf
+          weight: 400
+        - asset: assets/fuentes/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: assets/fuentes/IBMPlexSans-SemiBold.ttf
+          weight: 600
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fuentes/IBMPlexMono-Regular.ttf
+          weight: 400
+        - asset: assets/fuentes/IBMPlexMono-Medium.ttf
+          weight: 500
+        - asset: assets/fuentes/IBMPlexMono-SemiBold.ttf
+          weight: 600

@@ -15,7 +15,6 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 | D-16 | "Tiempo de vida por día": ¿el QR vence a fin del día local del sitio, o 24 h después de emitido? ¿El usuario puede elegir una vigencia menor? | Cálculo de `vence_at` | Por defecto, fin del día local del sitio; el usuario puede acortarla, nunca pasar el máximo del plan | Abierta |
 | D-17 | ¿Un QR abre una sola puerta, varias o todas las de la cuenta? | Relación QR–puertas y anti-reuso | El usuario elige una o más puertas de su cuenta al emitirlo | Abierta |
 | D-18 | ¿Cómo le llega el QR a la persona que entra (imagen compartida por WhatsApp, enlace web, correo)? | Paquete de compartir en la app o página pública | V1: la app comparte la imagen del QR con el menú de compartir del teléfono | Abierta |
-| D-19 | Un usuario que no es administrador, ¿puede crear otros usuarios? ¿Con qué roles? | Modelo de permisos (ADR 0004) | Solo quien tenga el permiso `seguridad.usuario.crear`; nunca puede dar un rol con más permisos que el suyo | Abierta |
 | D-20 | ¿Hace falta un escáner de guardia en la app (puertas sin lector)? | Feature `escaner` y rol Guardia | Fuera de V1 | Abierta |
 | D-21 | ¿Se anota algo de la persona que entra (nombre, motivo) al emitir el QR? | Datos personales y lo que muestra el historial | Solo una etiqueta libre opcional ("Proveedor de gas"); no se registra a la persona | Abierta |
 | D-24 | ¿El administrador de la cuenta también entra con PIN, o con usuario y contraseña? | Un solo mecanismo de login o dos | Todos los usuarios de cuenta con PIN; usuario y contraseña solo para el super admin | Abierta |
@@ -24,6 +23,7 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 
 | # | Pregunta | Respuesta | Fecha y fuente |
 |---|---|---|---|
+| D-19 | Un usuario que no es administrador, ¿puede crear otros usuarios? ¿Con qué roles? | **Solo quien tenga `seguridad.usuario.crear`, y nunca con un rol que tenga un permiso que su rol activo no tiene** (la API responde `rol.permisos_excedidos`). Editar, eliminar y regenerar el PIN tienen su propio permiso. | 2026-10-09, implementado en `POST /api/v1/usuarios` (rama `feature/diseno-pantallas`) |
 | D-22 | ¿El login es código de cuenta + PIN, o solo el PIN? ¿De cuántos dígitos? | **Solo el PIN, de 7 caracteres sin separadores**: 3 letras del código único de la cuenta (asignado por AGROCOM, sin `Ñ`) + 4 alfanuméricos al azar (`A`–`Z` sin `Ñ`, `0`–`9`) generados por el servidor. Ej.: `AGR7K2Q`. Ver ADR 0018. | 2026-10-09, AGROCOM |
 | D-23 | ¿Solo AGROCOM genera PIN, o también el administrador de la cuenta? | **Ambos**: AGROCOM al registrar la cuenta y su primer administrador; el administrador crea más usuarios dentro del límite del plan. | 2026-10-09, AGROCOM |
 | D-01 | ¿Lector en la puerta o QR fijo en la puerta? | **Lector QR en la puerta** (ESP32 + módulo lector). Un usuario de la cuenta genera el QR y se lo envía a quien va a entrar. El QR no es fijo: tiene vigencia de un día y se consume al usarse. Al final del día, usado o no, se da de baja (soft delete). Ver ADR 0008. | 2026-10-08, cliente |

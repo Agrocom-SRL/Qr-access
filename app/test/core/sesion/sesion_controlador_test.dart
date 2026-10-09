@@ -21,6 +21,7 @@ const Map<String, Object> _sesionActual = {
   ],
   'rol_activo': {'id': 'r1', 'nombre': 'Usuario'},
   'permisos': ['accesos.qr.emitir'],
+  'suscripcion': {'plan': 'Empresa', 'hasta': '2027-03-31T04:00:00.000Z'},
 };
 
 /// La misma sesión reabierta sin rol elegido y con un PIN sin etiqueta.
@@ -149,7 +150,35 @@ void main() {
       expect(estado, isA<SesionAutenticada>());
       expect(estado.tiene(Permisos.emitirQr), isTrue);
       expect(estado.tiene(Permisos.anularQr), isFalse);
+      final autenticada = estado as SesionAutenticada;
+      expect(autenticada.suscripcion?.plan, 'Empresa');
+      expect(autenticada.roles.map((r) => r.id), ['r1']);
+      expect(autenticada.tieneVariosRoles, isFalse);
     });
+
+    test(
+      'pedir cambio de rol vuelve a elegir con el actual preseleccionado',
+      () async {
+        final contenedor = _contenedor(almacen: almacen, sinRol: true);
+        addTearDown(contenedor.dispose);
+        final controlador = contenedor.read(sesionControladorProvider.notifier);
+        await _asentar();
+        await controlador.adoptarInicio(
+          const RespuestaInicio(
+            acceso: 'acc-1',
+            refresco: 'ref-1',
+            usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+            cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+            roles: [],
+            rolActivoId: null,
+          ),
+        );
+        expect(
+          contenedor.read(sesionControladorProvider),
+          isA<SesionEligiendoRol>(),
+        );
+      },
+    );
 
     test('si no se puede leer la sesión, no deja tokens a medias', () async {
       final contenedor = _contenedor(almacen: almacen, red: true);

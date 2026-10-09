@@ -1,12 +1,15 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
+import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/sesion/data/sesion_repositorio.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/ingreso_controlador.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/fakes.dart';
+
+final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
 const _inicio = RespuestaInicio(
   acceso: 'acc',
@@ -25,6 +28,7 @@ ProviderContainer _contenedor({
     overrides: [
       sesionRepositorioProvider.overrideWithValue(repositorio),
       sesionControladorProvider.overrideWith(() => sesion),
+      relojProvider.overrideWithValue(() => _ahora),
     ],
   );
   addTearDown(contenedor.dispose);
@@ -96,6 +100,56 @@ void main() {
       isTrue,
     );
   });
+
+  test(
+    'un bloqueo guarda hasta cuándo esperar, con lo que diga la API',
+    () async {
+      final contenedor = _contenedor(
+        repositorio: SesionRepositorioFalso(
+          error: const ErrorApi(
+            code: 'sesion.bloqueada',
+            status: 429,
+            detalles: {'reintentar_en_segundos': 120},
+          ),
+        ),
+        sesion: SesionFalsa(),
+      );
+
+      await contenedor
+          .read(ingresoControladorProvider.notifier)
+          .ingresar('AGR7K2Q');
+
+      final estado = contenedor.read(ingresoControladorProvider);
+      expect(estado.bloqueadoHasta, _ahora.add(const Duration(minutes: 2)));
+      expect(estado.bloqueadoEn(_ahora), isTrue);
+      expect(
+        estado.bloqueadoEn(_ahora.add(const Duration(minutes: 3))),
+        isFalse,
+      );
+      expect(estado.pinIncorrecto, isFalse);
+    },
+  );
+
+  test(
+    'sin el detalle de la API, el bloqueo dura el mínimo del servidor',
+    () async {
+      final contenedor = _contenedor(
+        repositorio: SesionRepositorioFalso(
+          error: const ErrorApi(code: 'sesion.bloqueada', status: 429),
+        ),
+        sesion: SesionFalsa(),
+      );
+
+      await contenedor
+          .read(ingresoControladorProvider.notifier)
+          .ingresar('AGR7K2Q');
+
+      expect(
+        contenedor.read(ingresoControladorProvider).bloqueadoHasta,
+        _ahora.add(const Duration(seconds: segundosDeBloqueoPorDefecto)),
+      );
+    },
+  );
 
   test('sin sesión autenticada el estado inicial no tiene errores', () {
     final contenedor = _contenedor(

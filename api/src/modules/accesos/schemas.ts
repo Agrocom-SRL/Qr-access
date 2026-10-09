@@ -48,15 +48,45 @@ export const consultaDeQr = z.object({
 export const parametrosDeQr = z.object({ id: esquemaId });
 export const respuestaListadoDeQr = esquemaListado(esquemaQr);
 
+export const respuestaDeResumenDeQr = z.object({
+  vigentes: z.number().int(),
+  usados: z.number().int(),
+  vencidos: z.number().int(),
+  anulados: z.number().int(),
+});
+
+const esquemaFechaDeFiltro = z.iso.datetime({ offset: true }).transform((texto) => new Date(texto));
+
+/** Filtros del listado y del resumen de eventos: resultado, puerta y ventana `[desde, hasta)`. */
+export const consultaDeEventos = z.object({
+  resultado: z.enum(['permitido', 'rechazado']).optional(),
+  puerta_id: esquemaId.optional(),
+  desde: esquemaFechaDeFiltro.optional(),
+  hasta: esquemaFechaDeFiltro.optional(),
+});
+
 export const esquemaEvento = z.object({
   id: z.string(),
   ocurrido_at: esquemaFecha,
   resultado: z.enum(['permitido', 'rechazado']),
   motivo_code: z.string(),
-  puerta: esquemaPuertaCorta,
+  puerta: esquemaPuertaCorta.extend({ sitio: z.object({ id: z.string(), nombre: z.string() }) }),
   qr_id: z.string().nullable(),
+  qr: z
+    .object({
+      id: z.string(),
+      etiqueta: z.string().nullable(),
+      emisor: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
+    })
+    .nullable(),
 });
 export const respuestaListadoDeEventos = esquemaListado(esquemaEvento);
+
+export const respuestaDeResumenDeEventos = z.object({
+  permitidos: z.number().int(),
+  rechazados: z.number().int(),
+  rechazados_por_motivo: z.array(z.object({ motivo_code: z.string(), total: z.number().int() })),
+});
 
 export const cuerpoDeValidacion = z.object({
   token: z.string().max(512),

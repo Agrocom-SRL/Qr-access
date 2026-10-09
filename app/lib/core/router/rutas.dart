@@ -2,6 +2,7 @@
 abstract final class Rutas {
   /// Mientras se restaura la sesión guardada (móvil).
   static const arranque = '/arranque';
+  static const bienvenida = '/bienvenida';
   static const ingreso = '/ingreso';
   static const elegirRol = '/roles';
   static const inicio = '/inicio';
@@ -17,4 +18,19 @@ abstract final class Rutas {
   static const qrEmitido = '/qr/emitido';
 
   static const eventos = '/eventos';
+  static const perfil = '/perfil';
+
+  /// Administración en compacto: Puertas y Usuarios en pestañas.
+  static const admin = '/admin';
+  static const adminPuertas = '/admin/puertas';
+  static const adminUsuarios = '/admin/usuarios';
+  static const adminUsuarioNuevo = '/admin/usuarios/nuevo';
+
+  /// Editar un usuario: `/admin/usuarios/:id`.
+  static const adminUsuarioEditar = '/admin/usuarios/:id';
+
+  /// El PIN recién generado. Solo llega con `extra` (ADR 0018 §3).
+  static const adminPinGenerado = '/admin/usuarios/pin';
+
+  static String adminUsuario(String id) => '/admin/usuarios/$id';
 }

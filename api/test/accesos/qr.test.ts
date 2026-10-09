@@ -223,6 +223,42 @@ describe('QR de acceso: emitir, listar y anular', () => {
     });
   });
 
+  describe('GET /api/v1/qr-accesos/resumen', () => {
+    it('cuenta los QR por estado con el alcance del rol activo', async () => {
+      const { pool } = prueba;
+      const hace = new Date(Date.now() - 1000);
+      await crearQr(pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      await crearQr(pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id], { usadoAt: hace });
+      await crearQr(pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id], { venceAt: hace });
+      await crearQr(pool, a.cuenta, a.administrador.id, [a.puertaPrincipal.id], {
+        anuladoAt: hace,
+      });
+      await crearQr(pool, b.cuenta, b.usuario.id, [b.puertaPrincipal.id]);
+
+      const resumir = (sesion: Sesion) =>
+        prueba.app.inject({
+          method: 'GET',
+          url: '/api/v1/qr-accesos/resumen',
+          headers: conUsuario(sesion),
+        });
+      const delUsuario = await resumir(sesionUsuarioA);
+      expect(delUsuario.statusCode).toBe(200);
+      expect(delUsuario.json()).toEqual({ vigentes: 1, usados: 1, vencidos: 1, anulados: 0 });
+      expect((await resumir(sesionAdminA)).json()).toEqual({
+        vigentes: 1,
+        usados: 1,
+        vencidos: 1,
+        anulados: 1,
+      });
+      expect((await resumir(sesionAdminB)).json()).toEqual({
+        vigentes: 1,
+        usados: 0,
+        vencidos: 0,
+        anulados: 0,
+      });
+    });
+  });
+
   describe('GET /api/v1/qr-accesos', () => {
     it('lista con el estado derivado y filtra por estado', async () => {
       const { pool } = prueba;

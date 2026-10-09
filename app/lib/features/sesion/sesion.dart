@@ -2,5 +2,6 @@
 /// router registra.
 library;
 
+export 'presentation/bienvenida_pagina.dart' show BienvenidaPagina;
 export 'presentation/elegir_rol_pagina.dart' show ElegirRolPagina;
 export 'presentation/ingreso_pagina.dart' show IngresoPagina;

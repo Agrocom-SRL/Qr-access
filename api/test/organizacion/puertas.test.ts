@@ -39,11 +39,23 @@ describe('GET /api/v1/puertas', () => {
           id: a.puertaPrincipal.id,
           nombre: 'Principal AAA',
           sitio: { id: a.sitioId, nombre: 'Sitio AAA' },
+          dispositivo: {
+            id: a.dispositivoPrincipal.id,
+            nombre: `Dispositivo ${a.puertaPrincipal.id}`,
+            en_linea: false,
+            ultimo_latido_at: null,
+          },
         },
         {
           id: a.puertaTrasera.id,
           nombre: 'Trasera AAA',
           sitio: { id: a.sitioId, nombre: 'Sitio AAA' },
+          dispositivo: {
+            id: a.dispositivoTrasero.id,
+            nombre: `Dispositivo ${a.puertaTrasera.id}`,
+            en_linea: false,
+            ultimo_latido_at: null,
+          },
         },
       ],
       meta: { pagina: 1, por_pagina: 25, total: 2 },
@@ -73,6 +85,32 @@ describe('GET /api/v1/puertas', () => {
     });
     expect((await listar(sesionA, '?por_pagina=101')).statusCode).toBe(400);
     expect((await listar(sesionA, '?pagina=0')).statusCode).toBe(400);
+  });
+
+  it('dice si el lector está en línea según su último latido (HU-09)', async () => {
+    const reciente = new Date(Date.now() - 30_000);
+    const viejo = new Date(Date.now() - 10 * 60_000);
+    await prueba.pool.query('UPDATE dispositivos SET ultimo_latido_at = ? WHERE id = ?', [
+      reciente,
+      a.dispositivoPrincipal.id,
+    ]);
+    await prueba.pool.query('UPDATE dispositivos SET ultimo_latido_at = ? WHERE id = ?', [
+      viejo,
+      a.dispositivoTrasero.id,
+    ]);
+    const respuesta = await listar(sesionA);
+    const puertas = respuesta.json<{ datos: { dispositivo: { en_linea: boolean } }[] }>().datos;
+    expect(puertas.map((puerta) => puerta.dispositivo.en_linea)).toEqual([true, false]);
+  });
+
+  it('una puerta sin lector en servicio (revocado) trae dispositivo null', async () => {
+    await prueba.pool.query('UPDATE dispositivos SET revocado_at = NOW(3) WHERE id = ?', [
+      a.dispositivoPrincipal.id,
+    ]);
+    const respuesta = await listar(sesionA);
+    const puertas = respuesta.json<{ datos: { dispositivo: unknown }[] }>().datos;
+    expect(puertas[0]?.dispositivo).toBeNull();
+    expect(puertas[1]?.dispositivo).not.toBeNull();
   });
 
   it('no muestra puertas borradas ni desactivadas', async () => {

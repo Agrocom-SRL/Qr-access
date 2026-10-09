@@ -21,6 +21,7 @@ async function insertar(pool: Pool, sql: string, valores: unknown[]): Promise<st
 
 export const PERMISOS_DE_ADMINISTRADOR = [
   'organizacion.puerta.ver',
+  'organizacion.puerta.supervisar',
   'accesos.qr.emitir',
   'accesos.qr.ver',
   'accesos.qr.ver_todos',
@@ -28,6 +29,10 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'accesos.qr.anular_todos',
   'accesos.evento.ver',
   'accesos.evento.ver_todos',
+  'seguridad.usuario.ver',
+  'seguridad.usuario.crear',
+  'seguridad.usuario.editar',
+  'seguridad.usuario.eliminar',
 ];
 
 export const PERMISOS_DE_USUARIO = [
@@ -108,12 +113,16 @@ export async function crearUsuarioConPin(
 export async function crearSuscripcion(
   pool: Pool,
   cuenta: Cuenta,
-  opciones: { vigente?: boolean; maxVigenciaQrHoras?: number | null } = {},
+  opciones: {
+    vigente?: boolean;
+    maxVigenciaQrHoras?: number | null;
+    maxUsuarios?: number | null;
+  } = {},
 ): Promise<void> {
   const planId = await insertar(
     pool,
-    'INSERT INTO planes (nombre, max_vigencia_qr_horas) VALUES (?, ?)',
-    [`Plan ${cuenta.codigo}`, opciones.maxVigenciaQrHoras ?? null],
+    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios) VALUES (?, ?, ?)',
+    [`Plan ${cuenta.codigo}`, opciones.maxVigenciaQrHoras ?? null, opciones.maxUsuarios ?? null],
   );
   const dia = 86_400_000;
   const ahora = Date.now();

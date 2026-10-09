@@ -24,6 +24,8 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 - Listado: `GET /api/v1/puertas?q=&pagina=1&por_pagina=25&orden=nombre` → `{ "datos": [...], "meta": { "pagina": 1, "por_pagina": 25, "total": 132 } }`. `por_pagina` máx. 100.
 - Detalle: el objeto directo. Crear: `201` + objeto + `Location`. Borrar: `204` (soft delete).
 - Idempotencia: `POST` críticos (invitaciones) aceptan `Idempotency-Key`.
+- Filtros de un listado como query (`GET /api/v1/eventos-acceso?resultado=rechazado&puerta_id=9&desde=…&hasta=…`); un resumen agregado como subrecurso `GET …/resumen` con los mismos filtros (`/eventos-acceso/resumen`, `/qr-accesos/resumen`).
+- Un secreto que se muestra una sola vez (el PIN de un usuario) va solo en la respuesta que lo genera (`POST /api/v1/usuarios` → `pin`, `POST /api/v1/usuarios/{id}/pin`) y nunca en un `GET`.
 
 ## Errores (RFC 9457)
 
@@ -46,6 +48,16 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 
 - **Usuarios**: `Authorization: Bearer <jwt>` (15 min) + refresh rotativo (`POST /api/v1/sesiones/refresco`). En web, el refresh va en cookie `HttpOnly; Secure; SameSite=Strict`.
 - **Dispositivos**: `Authorization: Dispositivo <id>.<clave>`; solo pueden llamar a `/api/v1/dispositivos/*` de su propia puerta.
+
+## Endpoints de la app (V1)
+
+```
+POST   /sesiones · /sesiones/refresco · /sesiones/rol-activo · GET/DELETE /sesiones/actual (trae permisos y suscripcion)
+GET    /puertas                       (con dispositivo { id, nombre, en_linea, ultimo_latido_at } | null)
+POST   /qr-accesos · GET /qr-accesos?estado= · GET /qr-accesos/resumen · POST /qr-accesos/{id}/anulacion
+GET    /eventos-acceso?resultado=&puerta_id=&desde=&hasta= · GET /eventos-acceso/resumen
+GET    /roles · GET /usuarios · POST /usuarios (201 + pin) · PATCH /usuarios/{id} · DELETE /usuarios/{id} · POST /usuarios/{id}/pin
+```
 
 ## Endpoints del dispositivo (mínimos)
 

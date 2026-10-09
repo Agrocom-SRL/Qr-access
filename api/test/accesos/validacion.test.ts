@@ -412,13 +412,23 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         ocurrido_at: fechaIsoUtc(),
         resultado: 'rechazado',
         motivo_code: 'qr.formato_invalido',
-        puerta: { id: a.puertaPrincipal.id, nombre: 'Principal AAA' },
+        puerta: {
+          id: a.puertaPrincipal.id,
+          nombre: 'Principal AAA',
+          sitio: { id: a.sitioId, nombre: 'Sitio AAA' },
+        },
         qr_id: null,
+        qr: null,
       });
       expect(cuerpo.datos.at(-1)).toMatchObject({
         resultado: 'permitido',
         motivo_code: 'acceso.permitido',
         qr_id: delUsuario.id,
+        qr: {
+          id: delUsuario.id,
+          etiqueta: null,
+          emisor: { id: a.usuario.id, etiqueta: `Usuario ${a.usuario.pin}` },
+        },
       });
     });
 
@@ -458,6 +468,55 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(deA.json<{ meta: { total: number } }>().meta.total).toBe(3);
       expect(paraB.json<{ meta: { total: number } }>().meta.total).toBe(1);
       expect(deA.body).not.toContain(b.puertaPrincipal.nombre);
+    });
+
+    it('filtra por resultado, puerta y ventana de tiempo', async () => {
+      await generarEventos();
+      const sesion = await iniciarSesion(prueba.app, a.administrador.pin);
+      const listar = (consulta: string) =>
+        prueba.app.inject({
+          method: 'GET',
+          url: `/api/v1/eventos-acceso?${consulta}`,
+          headers: conUsuario(sesion),
+        });
+      const total = async (consulta: string) =>
+        (await listar(consulta)).json<{ meta: { total: number } }>().meta.total;
+      expect(await total('resultado=permitido')).toBe(2);
+      expect(await total('resultado=rechazado')).toBe(1);
+      expect(await total(`puerta_id=${a.puertaTrasera.id}`)).toBe(0);
+      const manana = new Date(Date.now() + 86_400_000).toISOString();
+      const ayer = new Date(Date.now() - 86_400_000).toISOString();
+      expect(await total(`desde=${ayer}&hasta=${manana}`)).toBe(3);
+      expect(await total(`desde=${manana}`)).toBe(0);
+      expect(await total(`hasta=${ayer}`)).toBe(0);
+      expect((await listar('resultado=otro')).statusCode).toBe(400);
+      expect((await listar('desde=ayer')).statusCode).toBe(400);
+    });
+
+    it('GET /eventos-acceso/resumen cuenta permitidos y rechazados por motivo, con el alcance del rol', async () => {
+      await generarEventos();
+      const resumir = async (pin: string) =>
+        prueba.app.inject({
+          method: 'GET',
+          url: '/api/v1/eventos-acceso/resumen',
+          headers: conUsuario(await iniciarSesion(prueba.app, pin)),
+        });
+      const admin = await resumir(a.administrador.pin);
+      expect(admin.statusCode).toBe(200);
+      expect(admin.json()).toEqual({
+        permitidos: 2,
+        rechazados: 1,
+        rechazados_por_motivo: [{ motivo_code: 'qr.formato_invalido', total: 1 }],
+      });
+      expect((await resumir(a.usuario.pin)).json()).toEqual({
+        permitidos: 1,
+        rechazados: 0,
+        rechazados_por_motivo: [],
+      });
+      expect((await resumir(b.administrador.pin)).json()).toMatchObject({
+        permitidos: 0,
+        rechazados: 0,
+      });
     });
 
     it('pagina y exige el permiso accesos.evento.ver', async () => {

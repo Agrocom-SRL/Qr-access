@@ -38,6 +38,9 @@ class QrAcceso {
 
   /// Solo un QR vigente se puede anular: los demás ya no abren nada.
   bool get puedeAnularse => estado == EstadoQr.vigente;
+
+  /// Nombres de las puertas separados por " · " (handoff).
+  String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }
 
 /// QR recién emitido. `texto` es el token en claro: vive solo en la pantalla
@@ -57,4 +60,6 @@ class QrEmitido {
   final DateTime venceAt;
   final String? etiqueta;
   final List<PuertaDeQr> puertas;
+
+  String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }

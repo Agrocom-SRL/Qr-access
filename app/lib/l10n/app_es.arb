@@ -1,217 +1,1293 @@
 {
   "@@locale": "es",
-
   "appTitulo": "AGROCOM Acceso",
-  "@appTitulo": { "description": "Nombre de la app en la barra del navegador y el selector de apps" },
-
+  "@appTitulo": {
+    "description": "Nombre de la app en la barra del navegador y el selector de apps"
+  },
   "comunCargando": "Cargando",
-  "@comunCargando": { "description": "Etiqueta para lectores de pantalla mientras algo carga" },
-  "comunCancelar": "Cancela",
-  "@comunCancelar": { "description": "Botón que cierra un diálogo sin confirmar" },
-  "comunReintentar": "Intenta de nuevo",
-  "@comunReintentar": { "description": "Botón que vuelve a pedir los datos después de un error" },
+  "@comunCargando": {
+    "description": "Etiqueta para lectores de pantalla mientras algo carga"
+  },
+  "comunCancelar": "Cancelar",
+  "@comunCancelar": {
+    "description": "Botón que cierra un diálogo o formulario sin confirmar"
+  },
+  "comunReintentar": "Reintentar",
+  "@comunReintentar": {
+    "description": "Botón que vuelve a pedir los datos después de un error"
+  },
+  "comunContinuar": "Continuar",
+  "@comunContinuar": {
+    "description": "Botón principal para seguir (elegir rol)"
+  },
+  "comunSiguiente": "Siguiente",
+  "@comunSiguiente": {
+    "description": "Botón para pasar al siguiente paso del stepper o a la página siguiente"
+  },
+  "comunAtras": "Atrás",
+  "@comunAtras": {
+    "description": "Botón para volver al paso anterior"
+  },
+  "comunCerrar": "Cerrar",
+  "@comunCerrar": {
+    "description": "Ícono de cerrar una pantalla completa (QR emitido, PIN generado)"
+  },
+  "comunVolver": "Volver",
+  "@comunVolver": {
+    "description": "Ícono de volver a la pantalla anterior"
+  },
+  "comunGuardar": "Guardar",
+  "@comunGuardar": {
+    "description": "Botón de guardar un formulario"
+  },
+  "comunGuardando": "Guardando",
+  "@comunGuardando": {
+    "description": "Botón de guardar mientras se envía"
+  },
+  "comunCopiar": "Copiar",
+  "@comunCopiar": {
+    "description": "Copia el PIN al portapapeles"
+  },
+  "comunCopiado": "Copiado",
+  "@comunCopiado": {
+    "description": "Confirmación de que el PIN se copió, 2 s"
+  },
+  "comunEditar": "Editar",
+  "@comunEditar": {
+    "description": "Acción de fila (tono advertencia)"
+  },
+  "comunEliminar": "Eliminar",
+  "@comunEliminar": {
+    "description": "Acción de fila y botón de confirmar una baja (tono peligro)"
+  },
+  "comunVerTodos": "Ver todos",
+  "@comunVerTodos": {
+    "description": "Enlace del tablero a un listado completo"
+  },
+  "comunCargarMas": "Cargar más",
+  "@comunCargarMas": {
+    "description": "Botón al pie de las tarjetas para traer la página siguiente"
+  },
+  "comunQuitarFiltros": "Quitar filtros",
+  "@comunQuitarFiltros": {
+    "description": "Acción del estado vacío cuando un filtro no deja resultados"
+  },
+  "comunOpcional": "(opcional)",
+  "@comunOpcional": {
+    "description": "Sufijo del rótulo de un campo que no es obligatorio"
+  },
+  "comunEstado": "Estado",
+  "@comunEstado": {
+    "description": "Encabezado de la columna de estado en las tablas"
+  },
+  "comunAcciones": "Acciones",
+  "@comunAcciones": {
+    "description": "Encabezado de la columna de acciones en las tablas"
+  },
+  "comunNinguna": "Ninguna",
+  "@comunNinguna": {
+    "description": "Valor del resumen cuando no hay puertas elegidas"
+  },
+  "comunGuion": "—",
+  "@comunGuion": {
+    "description": "Guion para un valor vacío en tablas y resúmenes"
+  },
   "comunRutaNoEncontrada": "Esta pantalla no existe",
-  "@comunRutaNoEncontrada": { "description": "Título de la pantalla para una dirección que la app no tiene" },
+  "@comunRutaNoEncontrada": {
+    "description": "Título de la pantalla para una dirección que la app no tiene"
+  },
   "comunPaginaAnterior": "Anterior",
-  "@comunPaginaAnterior": { "description": "Botón para ir a la página anterior de un listado" },
+  "@comunPaginaAnterior": {
+    "description": "Botón para ir a la página anterior de un listado"
+  },
   "comunPaginaSiguiente": "Siguiente",
-  "@comunPaginaSiguiente": { "description": "Botón para ir a la página siguiente de un listado" },
-  "comunPaginaDe": "Página {pagina} de {total}",
-  "@comunPaginaDe": {
-    "description": "Posición dentro de un listado paginado",
+  "@comunPaginaSiguiente": {
+    "description": "Botón para ir a la página siguiente de un listado"
+  },
+  "comunRangoDe": "{desde}–{hasta} de {total}",
+  "@comunRangoDe": {
+    "description": "Posición dentro de una tabla paginada, en mono",
     "placeholders": {
-      "pagina": { "type": "int" },
-      "total": { "type": "int" }
+      "desde": {
+        "type": "int"
+      },
+      "hasta": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
-
+  "comunHoyALas": "Hoy {hora}",
+  "@comunHoyALas": {
+    "description": "Hora de hoy en forma corta",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "comunHoyPunto": "Hoy · {dia}",
+  "@comunHoyPunto": {
+    "description": "Encabezado del grupo de eventos de hoy",
+    "placeholders": {
+      "dia": {
+        "type": "String"
+      }
+    }
+  },
+  "comunAyerPunto": "Ayer · {dia}",
+  "@comunAyerPunto": {
+    "description": "Encabezado del grupo de eventos de ayer",
+    "placeholders": {
+      "dia": {
+        "type": "String"
+      }
+    }
+  },
+  "comunHaceSegundos": "hace {n} s",
+  "@comunHaceSegundos": {
+    "description": "Última señal del lector, en segundos",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "comunHaceMinutos": "hace {n} min",
+  "@comunHaceMinutos": {
+    "description": "Última señal del lector, en minutos",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "comunHaceHoras": "hace {n} h",
+  "@comunHaceHoras": {
+    "description": "Última señal del lector, en horas",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "comunSinConexionDatosDe": "Sin conexión. Datos de las {hora}.",
+  "@comunSinConexionDatosDe": {
+    "description": "Banner sobre un listado que muestra lo último que cargó",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "comunSinConexionAyuda": "Conéctate a internet para actualizar.",
+  "@comunSinConexionAyuda": {
+    "description": "Ayuda del estado sin conexión"
+  },
+  "comunErrorAyuda": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos.",
+  "@comunErrorAyuda": {
+    "description": "Ayuda del estado de error de un listado"
+  },
   "comunErrorGenerico": "Algo salió mal. Intenta de nuevo.",
-  "@comunErrorGenerico": { "description": "Para un code de error de la API sin traducción propia (ADR 0013)" },
+  "@comunErrorGenerico": {
+    "description": "Para un code de error de la API sin traducción propia (ADR 0013)"
+  },
   "comunErrorSinConexion": "No hay conexión con el servidor. Revisa tu WiFi o tus datos y vuelve a intentar.",
-  "@comunErrorSinConexion": { "description": "No hubo respuesta de la API (red caída o tiempo agotado)" },
-  "comunErrorSesionCredencialesInvalidas": "El PIN no es válido. Revisa que lo escribiste bien.",
-  "@comunErrorSesionCredencialesInvalidas": { "description": "code sesion.credenciales_invalidas (401). Un solo mensaje para cualquier fallo del PIN (ADR 0018)" },
-  "comunErrorSesionBloqueada": "Hubo demasiados intentos. Espera unos minutos antes de volver a intentar.",
-  "@comunErrorSesionBloqueada": { "description": "code sesion.bloqueada (429): límite de intentos por cuenta o por IP (ADR 0018)" },
+  "@comunErrorSinConexion": {
+    "description": "No hubo respuesta de la API (red caída o tiempo agotado)"
+  },
+  "comunErrorSesionCredencialesInvalidas": "PIN incorrecto",
+  "@comunErrorSesionCredencialesInvalidas": {
+    "description": "code sesion.credenciales_invalidas (401). Un solo mensaje para cualquier fallo del PIN (ADR 0018)"
+  },
+  "comunErrorSesionBloqueada": "Demasiados intentos, espera unos minutos.",
+  "@comunErrorSesionBloqueada": {
+    "description": "code sesion.bloqueada (429): límite de intentos por cuenta o por IP (ADR 0018)"
+  },
   "comunErrorSesionRefrescoInvalido": "Tu sesión venció. Ingresa de nuevo.",
-  "@comunErrorSesionRefrescoInvalido": { "description": "code sesion.refresco_invalido: hay que volver a iniciar sesión" },
+  "@comunErrorSesionRefrescoInvalido": {
+    "description": "code sesion.refresco_invalido: hay que volver a iniciar sesión"
+  },
   "comunErrorPermisoDenegado": "Tu rol no tiene permiso para hacer esto.",
-  "@comunErrorPermisoDenegado": { "description": "code permiso.denegado (403): el rol activo no tiene el permiso" },
-  "comunErrorSuscripcionVencida": "La suscripción de tu cuenta no está vigente, así que no puedes emitir QR. Avisa al administrador.",
-  "@comunErrorSuscripcionVencida": { "description": "code suscripcion.vencida (403) al emitir un QR sin suscripción vigente (ADR 0017)" },
+  "@comunErrorPermisoDenegado": {
+    "description": "code permiso.denegado (403): el rol activo no tiene el permiso"
+  },
+  "comunErrorSuscripcionVencida": "La suscripción de tu cuenta no está vigente. Avisa al administrador.",
+  "@comunErrorSuscripcionVencida": {
+    "description": "code suscripcion.vencida (403) al emitir un QR o crear un usuario sin suscripción vigente (ADR 0017)"
+  },
   "comunErrorPuertaNoEncontrada": "Esa puerta ya no está disponible. Actualiza la lista e intenta de nuevo.",
-  "@comunErrorPuertaNoEncontrada": { "description": "code puerta.no_encontrada (404): la puerta no existe, se dio de baja o es de otra cuenta" },
+  "@comunErrorPuertaNoEncontrada": {
+    "description": "code puerta.no_encontrada (404): la puerta no existe, se dio de baja o es de otra cuenta"
+  },
   "comunErrorQrNoEncontrado": "No encontramos ese QR. Puede que ya no esté disponible.",
-  "@comunErrorQrNoEncontrado": { "description": "code qr.no_encontrado (404): el QR no existe o no es tuyo" },
+  "@comunErrorQrNoEncontrado": {
+    "description": "code qr.no_encontrado (404): el QR no existe o no es tuyo"
+  },
   "comunErrorQrVigenciaInvalida": "La vigencia elegida no es válida. Elige otra.",
-  "@comunErrorQrVigenciaInvalida": { "description": "code qr.vigencia_invalida (422): vencimiento en el pasado o mal formado" },
+  "@comunErrorQrVigenciaInvalida": {
+    "description": "code qr.vigencia_invalida (422): vencimiento en el pasado o mal formado"
+  },
   "comunErrorQrVigenciaExcedida": "Esa vigencia supera lo que permite tu plan. Elige una más corta.",
-  "@comunErrorQrVigenciaExcedida": { "description": "code qr.vigencia_excedida (422): la vigencia supera el máximo del plan (ADR 0008)" },
+  "@comunErrorQrVigenciaExcedida": {
+    "description": "code qr.vigencia_excedida (422): la vigencia supera el máximo del plan (ADR 0008)"
+  },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
-  "@comunErrorQrYaUsado": { "description": "code qr.ya_usado (409) al anular un QR" },
+  "@comunErrorQrYaUsado": {
+    "description": "code qr.ya_usado (409) al anular un QR"
+  },
   "comunErrorValidacionInvalida": "Revisa los datos e intenta de nuevo.",
-  "@comunErrorValidacionInvalida": { "description": "code validacion.invalida (400): algún dato no cumple el formato" },
-
-  "sesionIngresoTitulo": "Ingresa a AGROCOM Acceso",
-  "@sesionIngresoTitulo": { "description": "Título de la pantalla de inicio de sesión" },
-  "sesionIngresoAyuda": "Escribe el PIN que te entregaron.",
-  "@sesionIngresoAyuda": { "description": "Ayuda bajo el título del inicio de sesión (ADR 0018)" },
+  "@comunErrorValidacionInvalida": {
+    "description": "code validacion.invalida (400): algún dato no cumple el formato"
+  },
+  "comunErrorUsuarioNoEncontrado": "No encontramos ese usuario. Actualiza la lista.",
+  "@comunErrorUsuarioNoEncontrado": {
+    "description": "code usuario.no_encontrado (404)"
+  },
+  "comunErrorUsuarioPropio": "No puedes darte de baja a ti mismo.",
+  "@comunErrorUsuarioPropio": {
+    "description": "code usuario.propio (422)"
+  },
+  "comunErrorRolNoEncontrado": "Ese rol ya no existe. Actualiza la lista.",
+  "@comunErrorRolNoEncontrado": {
+    "description": "code rol.no_encontrado (404)"
+  },
+  "comunErrorRolPermisosExcedidos": "No puedes asignar un rol con más permisos que el tuyo.",
+  "@comunErrorRolPermisosExcedidos": {
+    "description": "code rol.permisos_excedidos (422), D-19"
+  },
+  "comunErrorPlanLimiteUsuarios": "Tu plan no permite más usuarios. Da de baja uno o cambia de plan.",
+  "@comunErrorPlanLimiteUsuarios": {
+    "description": "code plan.limite_usuarios (422), ADR 0017"
+  },
+  "bienvenidaFrase": "Abre las puertas de tu empresa con un QR de un solo uso.",
+  "@bienvenidaFrase": {
+    "description": "Frase de la marca en el hero de bienvenida y en el panel de marca"
+  },
+  "bienvenidaTitulo": "Te damos la bienvenida",
+  "@bienvenidaTitulo": {
+    "description": "Título de la bienvenida en expandido"
+  },
+  "bienvenidaAyuda": "Ingresa con el PIN que te entregó tu empresa.",
+  "@bienvenidaAyuda": {
+    "description": "Ayuda bajo el título de la bienvenida en expandido"
+  },
+  "bienvenidaSinPin": "¿No tienes PIN? Pídelo al administrador de tu cuenta.",
+  "@bienvenidaSinPin": {
+    "description": "Ayuda bajo el botón Ingresar"
+  },
+  "sesionIngresoTitulo": "Ingresa tu PIN",
+  "@sesionIngresoTitulo": {
+    "description": "Título de la pantalla de inicio de sesión"
+  },
+  "sesionIngresoAyuda": "Son 7 caracteres. Te lo entrega el administrador de tu cuenta.",
+  "@sesionIngresoAyuda": {
+    "description": "Ayuda bajo el título del inicio de sesión (ADR 0018)"
+  },
   "sesionCampoPin": "PIN",
-  "@sesionCampoPin": { "description": "Etiqueta del único campo del inicio de sesión: código de la cuenta y 4 caracteres" },
+  "@sesionCampoPin": {
+    "description": "Etiqueta del único campo del inicio de sesión para lectores de pantalla"
+  },
+  "sesionPinProgreso": "{escritos} de {total} caracteres",
+  "@sesionPinProgreso": {
+    "description": "Lo que anuncia el lector de pantalla mientras se escribe el PIN",
+    "placeholders": {
+      "escritos": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "sesionPinLeyenda": "Cuenta · Clave",
+  "@sesionPinLeyenda": {
+    "description": "Leyenda bajo las casillas: 3 de la cuenta y 4 de la clave"
+  },
+  "sesionMostrarPin": "Mostrar",
+  "@sesionMostrarPin": {
+    "description": "Botón que muestra los caracteres del PIN"
+  },
+  "sesionOcultarPin": "Ocultar",
+  "@sesionOcultarPin": {
+    "description": "Botón que oculta los caracteres del PIN"
+  },
   "sesionPinFormatoInvalido": "El PIN tiene 7 caracteres: 3 letras y 4 letras o números.",
-  "@sesionPinFormatoInvalido": { "description": "El texto escrito no tiene el formato del PIN; no se envía a la API" },
+  "@sesionPinFormatoInvalido": {
+    "description": "El texto escrito no tiene el formato del PIN; no se envía a la API"
+  },
   "sesionBotonIngresar": "Ingresar",
-  "@sesionBotonIngresar": { "description": "Botón principal del inicio de sesión" },
+  "@sesionBotonIngresar": {
+    "description": "Botón principal del inicio de sesión"
+  },
+  "sesionIngresando": "Ingresando",
+  "@sesionIngresando": {
+    "description": "Botón Ingresar mientras se envía"
+  },
+  "sesionBloqueoReintentarEn": "Podrás volver a intentar en",
+  "@sesionBloqueoReintentarEn": {
+    "description": "Texto antes de la cuenta regresiva del bloqueo"
+  },
   "sesionCerrar": "Cerrar sesión",
-  "@sesionCerrar": { "description": "Acción para salir de la app; borra la sesión del dispositivo" },
-  "sesionElegirRolTitulo": "Elige con qué rol entrar",
-  "@sesionElegirRolTitulo": { "description": "Título de la pantalla que aparece cuando el usuario tiene varios roles" },
-  "sesionElegirRolAyuda": "Podrás cambiar de rol después, sin volver a ingresar.",
-  "@sesionElegirRolAyuda": { "description": "Ayuda bajo el título de elegir rol (HU-05)" },
-
-  "inicioTitulo": "Inicio",
-  "@inicioTitulo": { "description": "Título del tablero" },
+  "@sesionCerrar": {
+    "description": "Acción para salir de la app; borra la sesión del dispositivo"
+  },
+  "sesionSaliendo": "Saliendo",
+  "@sesionSaliendo": {
+    "description": "Botón Cerrar sesión mientras se envía"
+  },
+  "sesionElegirRolTitulo": "¿Con qué rol vas a trabajar?",
+  "@sesionElegirRolTitulo": {
+    "description": "Título de la pantalla que aparece cuando el usuario tiene varios roles"
+  },
+  "sesionElegirRolAyuda": "Puedes cambiarlo después desde Perfil.",
+  "@sesionElegirRolAyuda": {
+    "description": "Ayuda bajo el título de elegir rol (HU-05)"
+  },
+  "rolDescripcionAdministrador": "Puertas, usuarios y eventos",
+  "@rolDescripcionAdministrador": {
+    "description": "Descripción del rol Administrador en elegir rol"
+  },
+  "rolDescripcionGuardia": "Eventos y estado de puertas",
+  "@rolDescripcionGuardia": {
+    "description": "Descripción del rol Guardia en elegir rol"
+  },
+  "rolDescripcionUsuario": "Emitir y compartir QR",
+  "@rolDescripcionUsuario": {
+    "description": "Descripción del rol Usuario en elegir rol"
+  },
+  "navInicio": "Inicio",
+  "@navInicio": {
+    "description": "Destino de navegación"
+  },
+  "navEmitirQr": "Emitir QR",
+  "@navEmitirQr": {
+    "description": "Destino de navegación (rail)"
+  },
+  "navMisQr": "Mis QR",
+  "@navMisQr": {
+    "description": "Destino de navegación"
+  },
+  "navEventos": "Eventos",
+  "@navEventos": {
+    "description": "Destino de navegación"
+  },
+  "navPuertas": "Puertas",
+  "@navPuertas": {
+    "description": "Destino de navegación"
+  },
+  "navUsuarios": "Usuarios",
+  "@navUsuarios": {
+    "description": "Destino de navegación"
+  },
+  "navAdmin": "Admin",
+  "@navAdmin": {
+    "description": "Destino de navegación del compacto que agrupa Puertas y Usuarios"
+  },
+  "navPerfil": "Perfil",
+  "@navPerfil": {
+    "description": "Destino de navegación"
+  },
   "inicioSaludoSinNombre": "Hola",
-  "@inicioSaludoSinNombre": { "description": "Saludo cuando el PIN no tiene etiqueta" },
+  "@inicioSaludoSinNombre": {
+    "description": "Saludo cuando el PIN no tiene etiqueta"
+  },
   "inicioSaludo": "Hola, {nombre}",
   "@inicioSaludo": {
-    "description": "Saludo con la etiqueta del usuario (a quién se le entregó el PIN)",
-    "placeholders": { "nombre": { "type": "String" } }
+    "description": "Saludo con el primer nombre de la etiqueta del usuario",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
   },
-  "inicioCuentaYRol": "{cuenta} · Rol: {rol}",
+  "inicioCuentaYRol": "{cuenta} · {rol}",
   "@inicioCuentaYRol": {
     "description": "Cuenta y rol activo, debajo del saludo",
     "placeholders": {
-      "cuenta": { "type": "String" },
-      "rol": { "type": "String" }
+      "cuenta": {
+        "type": "String"
+      },
+      "rol": {
+        "type": "String"
+      }
     }
   },
-  "inicioEmitirQr": "Emitir un QR",
-  "@inicioEmitirQr": { "description": "Acceso del tablero a emitir un QR (permiso accesos.qr.emitir)" },
-  "inicioMisQr": "Mis QR",
-  "@inicioMisQr": { "description": "Acceso del tablero al listado de QR emitidos" },
-  "inicioEventos": "Accesos registrados",
-  "@inicioEventos": { "description": "Acceso del tablero a la bitácora de intentos de acceso" },
-  "inicioSinAccesos": "No tienes funciones disponibles",
-  "@inicioSinAccesos": { "description": "Estado vacío del tablero cuando el rol activo no tiene permisos de la app" },
-  "inicioSinAccesosAyuda": "Un administrador de tu cuenta puede asignarte otro rol.",
-  "@inicioSinAccesosAyuda": { "description": "Ayuda del estado vacío del tablero" },
-
+  "inicioHeroAyuda": "Un solo uso. Vence hoy a las {hora}.",
+  "@inicioHeroAyuda": {
+    "description": "Texto del hero Emitir QR del inicio de usuario",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "inicioNuevoQr": "Nuevo QR",
+  "@inicioNuevoQr": {
+    "description": "Botón del hero Emitir QR"
+  },
+  "inicioRepetirUltimo": "Repetir último",
+  "@inicioRepetirUltimo": {
+    "description": "Acceso rápido que prellena el formulario con el último QR"
+  },
+  "inicioVigentesHoy": "Vigentes hoy",
+  "@inicioVigentesHoy": {
+    "description": "Título de la lista de QR vigentes del inicio"
+  },
+  "inicioSinVigentes": "No tienes QR vigentes hoy",
+  "@inicioSinVigentes": {
+    "description": "Estado vacío de Vigentes hoy"
+  },
+  "inicioSinVigentesAyuda": "Emite uno y compártelo con quien va a entrar.",
+  "@inicioSinVigentesAyuda": {
+    "description": "Ayuda del estado vacío de Vigentes hoy"
+  },
+  "inicioHoy": "Hoy",
+  "@inicioHoy": {
+    "description": "Título de los indicadores del tablero del administrador"
+  },
+  "inicioActualizado": "{cuenta} · actualizado {hora}",
+  "@inicioActualizado": {
+    "description": "Subtítulo del tablero en expandido",
+    "placeholders": {
+      "cuenta": {
+        "type": "String"
+      },
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "inicioActualizadoCorto": "act. {hora}",
+  "@inicioActualizadoCorto": {
+    "description": "Hora de actualización del tablero en compacto, en mono",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "inicioAccesosDeHoy": "Accesos de hoy",
+  "@inicioAccesosDeHoy": {
+    "description": "Indicador hero del tablero"
+  },
+  "inicioPermitidosPorPuertas": "Permitidos por las {n} puertas",
+  "@inicioPermitidosPorPuertas": {
+    "description": "Nota del indicador de accesos de hoy",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "inicioRechazados": "Rechazados",
+  "@inicioRechazados": {
+    "description": "Indicador del tablero"
+  },
+  "inicioRechazadosPorMotivo": "{n} por {motivo}",
+  "@inicioRechazadosPorMotivo": {
+    "description": "Nota del indicador de rechazados: el motivo más frecuente",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "motivo": {
+        "type": "String"
+      }
+    }
+  },
+  "inicioPuertasSinConexion": "Puertas sin conexión",
+  "@inicioPuertasSinConexion": {
+    "description": "Indicador del tablero (cifra en peligro si > 0)"
+  },
+  "inicioUltimosEventos": "Últimos eventos",
+  "@inicioUltimosEventos": {
+    "description": "Título de la lista de eventos del tablero"
+  },
+  "inicioErrorCargar": "No pudimos cargar el tablero",
+  "@inicioErrorCargar": {
+    "description": "Título del estado de error del tablero"
+  },
   "qrEstadoVigente": "Vigente",
-  "@qrEstadoVigente": { "description": "Estado de un QR que todavía sirve" },
+  "@qrEstadoVigente": {
+    "description": "Estado de un QR que todavía sirve"
+  },
   "qrEstadoUsado": "Usado",
-  "@qrEstadoUsado": { "description": "Estado de un QR que ya se consumió en una puerta" },
+  "@qrEstadoUsado": {
+    "description": "Estado de un QR que ya se consumió en una puerta"
+  },
   "qrEstadoVencido": "Vencido",
-  "@qrEstadoVencido": { "description": "Estado de un QR que pasó su hora de vencimiento" },
+  "@qrEstadoVencido": {
+    "description": "Estado de un QR que pasó su hora de vencimiento"
+  },
   "qrEstadoAnulado": "Anulado",
-  "@qrEstadoAnulado": { "description": "Estado de un QR anulado por quien lo emitió o un administrador" },
+  "@qrEstadoAnulado": {
+    "description": "Estado de un QR anulado por quien lo emitió o un administrador"
+  },
+  "qrFiltroVigentes": "Vigentes",
+  "@qrFiltroVigentes": {
+    "description": "Pastilla del filtro de Mis QR"
+  },
+  "qrFiltroUsados": "Usados",
+  "@qrFiltroUsados": {
+    "description": "Pastilla del filtro de Mis QR"
+  },
+  "qrFiltroVencidos": "Vencidos",
+  "@qrFiltroVencidos": {
+    "description": "Pastilla del filtro de Mis QR"
+  },
+  "qrFiltroAnulados": "Anulados",
+  "@qrFiltroAnulados": {
+    "description": "Pastilla del filtro de Mis QR"
+  },
   "qrSinEtiqueta": "Sin etiqueta",
-  "@qrSinEtiqueta": { "description": "Nombre de un QR que no tiene nota" },
+  "@qrSinEtiqueta": {
+    "description": "Nombre de un QR o un usuario que no tiene etiqueta"
+  },
   "qrVenceEl": "Vence el {fecha}",
   "@qrVenceEl": {
-    "description": "Hora de vencimiento de un QR, ya en hora local",
-    "placeholders": { "fecha": { "type": "String" } }
+    "description": "Vencimiento de un QR en otro día, ya en hora local",
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
   },
-  "qrUsadoEl": "Usado el {fecha}",
+  "qrVenceHoyALas": "Vence hoy a las {hora}",
+  "@qrVenceHoyALas": {
+    "description": "Vencimiento de un QR que vence hoy",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "qrVenceCorto": "vence {hora}",
+  "@qrVenceCorto": {
+    "description": "Vencimiento en la tarjeta corta del inicio, en mono",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "qrEmitidoYVence": "{emitido} → vence {vence}",
+  "@qrEmitidoYVence": {
+    "description": "Horas de emisión y vencimiento en la tarjeta de Mis QR",
+    "placeholders": {
+      "emitido": {
+        "type": "String"
+      },
+      "vence": {
+        "type": "String"
+      }
+    }
+  },
+  "qrUsadoEl": "Usado {fecha}",
   "@qrUsadoEl": {
     "description": "Momento en que se usó un QR",
-    "placeholders": { "fecha": { "type": "String" } }
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
   },
-  "qrAnuladoEl": "Anulado el {fecha}",
+  "qrAnuladoEl": "Anulado {fecha}",
   "@qrAnuladoEl": {
     "description": "Momento en que se anuló un QR",
-    "placeholders": { "fecha": { "type": "String" } }
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
   },
   "qrAnular": "Anular",
-  "@qrAnular": { "description": "Acción de anular un QR vigente (color de peligro: lleva al estado anulado)" },
+  "@qrAnular": {
+    "description": "Acción de anular un QR vigente y botón de confirmar (tono peligro)"
+  },
   "qrAnularTitulo": "¿Anular este QR?",
-  "@qrAnularTitulo": { "description": "Título de la confirmación de anulación" },
-  "qrAnularMensaje": "Pasará de vigente a anulado. Quien lo tenga ya no podrá usarlo.",
-  "@qrAnularMensaje": { "description": "Consecuencia de anular, en la confirmación" },
-  "qrAnularConfirmar": "Anular QR",
-  "@qrAnularConfirmar": { "description": "Botón de confirmar la anulación" },
+  "@qrAnularTitulo": {
+    "description": "Título de la confirmación de anulación"
+  },
+  "qrAnularMensaje": "La puerta dejará de aceptarlo. No se puede deshacer.",
+  "@qrAnularMensaje": {
+    "description": "Consecuencia de anular, en la confirmación"
+  },
   "qrVisorEtiqueta": "Código QR de acceso",
-  "@qrVisorEtiqueta": { "description": "Etiqueta del QR para lectores de pantalla" },
-
-  "qrEmitirTitulo": "Emitir un QR",
-  "@qrEmitirTitulo": { "description": "Título del formulario para emitir un QR" },
-  "qrEmitirSeccionPuertas": "Puertas",
-  "@qrEmitirSeccionPuertas": { "description": "Encabezado de la lista de puertas (una o varias)" },
-  "qrEmitirSinPuertas": "Tu cuenta todavía no tiene puertas",
-  "@qrEmitirSinPuertas": { "description": "Estado vacío de la lista de puertas" },
-  "qrEmitirSinPuertasAyuda": "Un administrador de tu cuenta debe registrar una puerta primero.",
-  "@qrEmitirSinPuertasAyuda": { "description": "Ayuda del estado vacío de puertas" },
+  "@qrVisorEtiqueta": {
+    "description": "Etiqueta del QR para lectores de pantalla"
+  },
+  "qrColumnaEtiqueta": "Etiqueta",
+  "@qrColumnaEtiqueta": {
+    "description": "Encabezado de la tabla de Mis QR"
+  },
+  "qrColumnaPuertas": "Puertas",
+  "@qrColumnaPuertas": {
+    "description": "Encabezado de la tabla de Mis QR"
+  },
+  "qrColumnaEmitido": "Emitido",
+  "@qrColumnaEmitido": {
+    "description": "Encabezado de la tabla de Mis QR"
+  },
+  "qrColumnaVence": "Vence",
+  "@qrColumnaVence": {
+    "description": "Encabezado de la tabla de Mis QR"
+  },
+  "qrMisQrTitulo": "Mis QR",
+  "@qrMisQrTitulo": {
+    "description": "Título del listado de QR emitidos"
+  },
+  "qrMisQrSinVigentes": "No tienes QR vigentes",
+  "@qrMisQrSinVigentes": {
+    "description": "Estado vacío del filtro Vigentes"
+  },
+  "qrMisQrSinResultados": "No hay QR en este estado",
+  "@qrMisQrSinResultados": {
+    "description": "Estado vacío del listado para otro filtro"
+  },
+  "qrMisQrSinResultadosAyuda": "Los QR que emitas aparecerán aquí.",
+  "@qrMisQrSinResultadosAyuda": {
+    "description": "Ayuda del estado vacío del listado"
+  },
+  "qrMisQrErrorCargar": "No pudimos cargar tus QR",
+  "@qrMisQrErrorCargar": {
+    "description": "Título del estado de error de Mis QR"
+  },
+  "qrEmitirTitulo": "Emitir QR",
+  "@qrEmitirTitulo": {
+    "description": "Título del stepper y del hero del inicio"
+  },
+  "qrEmitirPasoPuertas": "Puertas",
+  "@qrEmitirPasoPuertas": {
+    "description": "Paso 1 del stepper"
+  },
+  "qrEmitirPasoVigencia": "Vigencia",
+  "@qrEmitirPasoVigencia": {
+    "description": "Paso 2 del stepper"
+  },
+  "qrEmitirPasoConfirmar": "Confirmar",
+  "@qrEmitirPasoConfirmar": {
+    "description": "Paso 3 del stepper"
+  },
+  "qrEmitirPregunta": "¿A qué puertas podrá entrar?",
+  "@qrEmitirPregunta": {
+    "description": "Pregunta del paso 1"
+  },
+  "qrEmitirTodas": "Todas",
+  "@qrEmitirTodas": {
+    "description": "Botón que marca todas las puertas de un sitio (compacto)"
+  },
+  "qrEmitirSeleccionarTodas": "Seleccionar todas",
+  "@qrEmitirSeleccionarTodas": {
+    "description": "Botón que marca todas las puertas de un sitio (expandido)"
+  },
+  "qrEmitirPuertasContadas": "{n, plural, =1{puerta} other{puertas}}",
+  "@qrEmitirPuertasContadas": {
+    "description": "Sustantivo tras la cantidad de puertas elegidas en la barra del paso 1",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "qrEmitirSinPuertas": "No tienes puertas asignadas",
+  "@qrEmitirSinPuertas": {
+    "description": "Estado vacío de la lista de puertas"
+  },
+  "qrEmitirSinPuertasAyuda": "Pídeselas al administrador de tu cuenta.",
+  "@qrEmitirSinPuertasAyuda": {
+    "description": "Ayuda del estado vacío de puertas"
+  },
+  "qrEmitirErrorPuertas": "No pudimos cargar las puertas",
+  "@qrEmitirErrorPuertas": {
+    "description": "Título del estado de error del paso 1"
+  },
   "qrEmitirErrorSinPuertas": "Elige al menos una puerta.",
-  "@qrEmitirErrorSinPuertas": { "description": "Error de validación: el QR necesita una puerta" },
-  "qrEmitirErrorEtiquetaLarga": "La etiqueta no puede tener más de 60 caracteres.",
-  "@qrEmitirErrorEtiquetaLarga": { "description": "Error de validación de la etiqueta (contrato: máximo 60)" },
-  "qrEmitirVigencia": "Hasta cuándo sirve",
-  "@qrEmitirVigencia": { "description": "Etiqueta del selector de vigencia" },
-  "qrEmitirEtiqueta": "Etiqueta (opcional)",
-  "@qrEmitirEtiqueta": { "description": "Nota libre para recordar a quién se entregó el QR (D-21)" },
-  "qrEmitirEtiquetaAyuda": "Por ejemplo: Proveedor de gas. No se registra a la persona.",
-  "@qrEmitirEtiquetaAyuda": { "description": "Ayuda del campo de etiqueta: no se guarda ningún dato personal (D-21)" },
+  "@qrEmitirErrorSinPuertas": {
+    "description": "Error de validación: el QR necesita una puerta"
+  },
+  "qrEmitirErrorEtiquetaLarga": "Máximo {max} caracteres",
+  "@qrEmitirErrorEtiquetaLarga": {
+    "description": "Error de validación de la etiqueta",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "qrEmitirErrorVigenciaPasada": "Esa hora ya pasó. Elige una más tarde.",
+  "@qrEmitirErrorVigenciaPasada": {
+    "description": "Error de validación: la hora exacta elegida ya pasó"
+  },
+  "qrEmitirVigencia": "Vigencia",
+  "@qrEmitirVigencia": {
+    "description": "Título del paso 2"
+  },
+  "qrVigenciaFinDelDia": "Hasta el fin del día",
+  "@qrVigenciaFinDelDia": {
+    "description": "Vigencia por defecto: vence al final del día del sitio"
+  },
+  "qrVigenciaPorDefecto": "Por defecto",
+  "@qrVigenciaPorDefecto": {
+    "description": "Badge de la vigencia por defecto"
+  },
+  "qrVigenciaMasCorta": "Más corto",
+  "@qrVigenciaMasCorta": {
+    "description": "Opción de acortar la vigencia"
+  },
+  "qrVigenciaUnaHora": "1 h",
+  "@qrVigenciaUnaHora": {
+    "description": "Vigencia corta de una hora"
+  },
+  "qrVigenciaCuatroHoras": "4 h",
+  "@qrVigenciaCuatroHoras": {
+    "description": "Vigencia corta de cuatro horas"
+  },
+  "qrVigenciaHora": "Hora",
+  "@qrVigenciaHora": {
+    "description": "Pastilla que abre el selector de hora exacta"
+  },
+  "qrFinDelDiaHora": "23:59",
+  "@qrFinDelDiaHora": {
+    "description": "Hora con la que se muestra el fin del día"
+  },
+  "qrEmitirEtiqueta": "Etiqueta",
+  "@qrEmitirEtiqueta": {
+    "description": "Rótulo del campo de etiqueta (D-21)"
+  },
+  "qrEmitirEtiquetaAyuda": "Te ayuda a reconocerlo en Mis QR y Eventos.",
+  "@qrEmitirEtiquetaAyuda": {
+    "description": "Ayuda del campo de etiqueta"
+  },
+  "qrEmitirEtiquetaEjemplo": "Ej.: Proveedor de gas",
+  "@qrEmitirEtiquetaEjemplo": {
+    "description": "Placeholder del campo de etiqueta"
+  },
+  "qrEmitirRevisa": "Revisa antes de emitir.",
+  "@qrEmitirRevisa": {
+    "description": "Texto del paso 3"
+  },
+  "qrResumenTitulo": "Resumen",
+  "@qrResumenTitulo": {
+    "description": "Título del panel lateral en expandido"
+  },
+  "qrResumenPuertas": "Puertas",
+  "@qrResumenPuertas": {
+    "description": "Clave del resumen"
+  },
+  "qrResumenSitio": "Sitio",
+  "@qrResumenSitio": {
+    "description": "Clave del resumen"
+  },
+  "qrResumenVence": "Vence",
+  "@qrResumenVence": {
+    "description": "Clave del resumen"
+  },
+  "qrResumenUsos": "Usos",
+  "@qrResumenUsos": {
+    "description": "Clave del resumen"
+  },
+  "qrResumenUnSoloUso": "Un solo uso",
+  "@qrResumenUnSoloUso": {
+    "description": "Valor del resumen para los usos"
+  },
+  "qrEmitirAvisoUnSoloUso": "Abre una sola vez cualquiera de las puertas elegidas.",
+  "@qrEmitirAvisoUnSoloUso": {
+    "description": "Aviso informativo del paso 3"
+  },
   "qrEmitirBoton": "Emitir QR",
-  "@qrEmitirBoton": { "description": "Botón principal de emitir" },
-  "qrVigenciaFinDelDia": "Fin del día",
-  "@qrVigenciaFinDelDia": { "description": "Vigencia por defecto: vence al final del día del sitio" },
-  "qrVigenciaUnaHora": "1 hora",
-  "@qrVigenciaUnaHora": { "description": "Vigencia corta de una hora" },
-  "qrVigenciaCuatroHoras": "4 horas",
-  "@qrVigenciaCuatroHoras": { "description": "Vigencia corta de cuatro horas" },
-
-  "qrMostrarTitulo": "Tu QR",
-  "@qrMostrarTitulo": { "description": "Título de la pantalla que muestra el QR recién emitido" },
-  "qrMostrarAviso": "Sirve una sola vez y solo hasta la hora indicada. Compártelo solo con quien va a entrar.",
-  "@qrMostrarAviso": { "description": "Aviso bajo el QR: un solo uso, vencimiento y reenvío (ADR 0008)" },
+  "@qrEmitirBoton": {
+    "description": "Botón principal de emitir y acción de los listados"
+  },
+  "qrEmitiendo": "Emitiendo",
+  "@qrEmitiendo": {
+    "description": "Botón Emitir QR mientras se envía"
+  },
+  "qrEmitirErrorEmitir": "No pudimos emitir el QR. {detalle}",
+  "@qrEmitirErrorEmitir": {
+    "description": "Aviso de error al emitir, con el detalle traducido",
+    "placeholders": {
+      "detalle": {
+        "type": "String"
+      }
+    }
+  },
+  "qrMostrarTitulo": "QR listo",
+  "@qrMostrarTitulo": {
+    "description": "Título de la pantalla que muestra el QR recién emitido"
+  },
+  "qrMostrarAviso": "Después de cerrar no podrás volver a ver este QR. Compártelo ahora.",
+  "@qrMostrarAviso": {
+    "description": "Aviso bajo el QR (ADR 0008)"
+  },
   "qrCompartir": "Compartir",
-  "@qrCompartir": { "description": "Botón que comparte la imagen del QR con el menú del sistema (D-18)" },
-  "qrCompartirTexto": "Tu acceso QR a {puertas} vence el {fecha}. Sirve una sola vez.",
+  "@qrCompartir": {
+    "description": "Botón que comparte la imagen del QR con el menú del sistema (D-18)"
+  },
+  "qrPreparando": "Preparando",
+  "@qrPreparando": {
+    "description": "Botón Compartir mientras se arma la imagen"
+  },
+  "qrCompartirTexto": "Tu acceso QR a {puertas}. {vence}. Sirve una sola vez.",
   "@qrCompartirTexto": {
     "description": "Texto que acompaña la imagen al compartirla",
     "placeholders": {
-      "puertas": { "type": "String" },
-      "fecha": { "type": "String" }
+      "puertas": {
+        "type": "String"
+      },
+      "vence": {
+        "type": "String"
+      }
     }
   },
-  "qrListo": "Listo",
-  "@qrListo": { "description": "Vuelve al listado de QR desde la pantalla del QR recién emitido" },
-
-  "qrMisQrTitulo": "Mis QR",
-  "@qrMisQrTitulo": { "description": "Título del listado de QR emitidos" },
-  "qrMisQrNuevo": "Emitir un QR",
-  "@qrMisQrNuevo": { "description": "Botón para emitir un QR desde el listado" },
-  "qrMisQrSinResultados": "No hay QR en este estado",
-  "@qrMisQrSinResultados": { "description": "Estado vacío del listado para el filtro elegido" },
-  "qrMisQrSinResultadosAyuda": "Cambia el filtro o emite un QR nuevo.",
-  "@qrMisQrSinResultadosAyuda": { "description": "Ayuda del estado vacío del listado" },
-
-  "eventosTitulo": "Accesos registrados",
-  "@eventosTitulo": { "description": "Título de la bitácora de intentos de acceso" },
-  "eventosSinResultados": "Todavía no hay accesos registrados",
-  "@eventosSinResultados": { "description": "Estado vacío de la bitácora" },
-  "eventosSinResultadosAyuda": "Aquí aparece cada intento de entrar, aceptado o rechazado.",
-  "@eventosSinResultadosAyuda": { "description": "Ayuda del estado vacío de la bitácora" },
+  "qrCompartirFallo": "No se pudo compartir. Intenta de nuevo.",
+  "@qrCompartirFallo": {
+    "description": "Aviso cuando el menú de compartir falla"
+  },
+  "qrDescargado": "Imagen descargada. Envíala a quien va a entrar.",
+  "@qrDescargado": {
+    "description": "Aviso en web cuando el navegador no puede compartir y descarga la imagen"
+  },
+  "qrCerrarSinCompartirTitulo": "¿Cerrar sin compartir?",
+  "@qrCerrarSinCompartirTitulo": {
+    "description": "Título de la confirmación al cerrar sin compartir (S05)"
+  },
+  "qrCerrarSinCompartirMensaje": "No podrás volver a ver este QR. Seguirá vigente hasta las {hora} salvo que lo anules en Mis QR.",
+  "@qrCerrarSinCompartirMensaje": {
+    "description": "Mensaje de la confirmación al cerrar sin compartir",
+    "placeholders": {
+      "hora": {
+        "type": "String"
+      }
+    }
+  },
+  "qrCerrarIgual": "Cerrar igual",
+  "@qrCerrarIgual": {
+    "description": "Botón de confirmar el cierre sin compartir"
+  },
+  "eventosTitulo": "Eventos",
+  "@eventosTitulo": {
+    "description": "Título de la bitácora de intentos de acceso"
+  },
+  "eventosFiltrar": "Filtrar",
+  "@eventosFiltrar": {
+    "description": "Ícono que muestra el filtro por puerta en compacto"
+  },
+  "eventosFiltroTodos": "Todos",
+  "@eventosFiltroTodos": {
+    "description": "Pastilla del filtro de resultado"
+  },
+  "eventosFiltroPermitidos": "Permitidos",
+  "@eventosFiltroPermitidos": {
+    "description": "Pastilla del filtro de resultado"
+  },
+  "eventosFiltroRechazados": "Rechazados",
+  "@eventosFiltroRechazados": {
+    "description": "Pastilla del filtro de resultado"
+  },
+  "eventosTodasLasPuertas": "Todas las puertas",
+  "@eventosTodasLasPuertas": {
+    "description": "Opción por defecto del selector de puerta"
+  },
+  "eventosSinResultados": "Sin eventos todavía",
+  "@eventosSinResultados": {
+    "description": "Estado vacío de la bitácora"
+  },
+  "eventosSinResultadosAyuda": "Cuando alguien use un QR en una puerta, lo verás aquí.",
+  "@eventosSinResultadosAyuda": {
+    "description": "Ayuda del estado vacío de la bitácora"
+  },
+  "eventosSinResultadosFiltro": "Sin eventos para este filtro",
+  "@eventosSinResultadosFiltro": {
+    "description": "Estado vacío con filtros"
+  },
+  "eventosSinResultadosFiltroAyuda": "Prueba con otro resultado o quita el filtro de puerta.",
+  "@eventosSinResultadosFiltroAyuda": {
+    "description": "Ayuda del estado vacío con filtros"
+  },
+  "eventosErrorCargar": "No pudimos cargar los eventos",
+  "@eventosErrorCargar": {
+    "description": "Título del estado de error de la bitácora"
+  },
+  "eventosColumnaHora": "Hora",
+  "@eventosColumnaHora": {
+    "description": "Encabezado de la tabla de eventos"
+  },
+  "eventosColumnaPuerta": "Puerta",
+  "@eventosColumnaPuerta": {
+    "description": "Encabezado de la tabla de eventos"
+  },
+  "eventosColumnaSitio": "Sitio",
+  "@eventosColumnaSitio": {
+    "description": "Encabezado de la tabla de eventos y de puertas"
+  },
+  "eventosColumnaQr": "QR",
+  "@eventosColumnaQr": {
+    "description": "Encabezado de la tabla de eventos"
+  },
+  "eventosColumnaResultado": "Resultado",
+  "@eventosColumnaResultado": {
+    "description": "Encabezado de la tabla de eventos"
+  },
+  "eventosColumnaMotivo": "Motivo",
+  "@eventosColumnaMotivo": {
+    "description": "Encabezado de la tabla de eventos"
+  },
+  "eventoQrDe": "{etiqueta} · QR de {emisor}",
+  "@eventoQrDe": {
+    "description": "Detalle de un evento permitido: etiqueta del QR y quién lo emitió",
+    "placeholders": {
+      "etiqueta": {
+        "type": "String"
+      },
+      "emisor": {
+        "type": "String"
+      }
+    }
+  },
   "eventoResultadoPermitido": "Permitido",
-  "@eventoResultadoPermitido": { "description": "Resultado de un intento aceptado" },
+  "@eventoResultadoPermitido": {
+    "description": "Resultado de un intento aceptado"
+  },
   "eventoResultadoRechazado": "Rechazado",
-  "@eventoResultadoRechazado": { "description": "Resultado de un intento rechazado" },
+  "@eventoResultadoRechazado": {
+    "description": "Resultado de un intento rechazado"
+  },
   "eventoMotivoAccesoPermitido": "Acceso permitido",
-  "@eventoMotivoAccesoPermitido": { "description": "motivo_code acceso.permitido" },
-  "eventoMotivoQrFormatoInvalido": "El código no es un QR de acceso",
-  "@eventoMotivoQrFormatoInvalido": { "description": "motivo_code qr.formato_invalido" },
-  "eventoMotivoQrDesconocido": "El QR no existe en esta cuenta",
-  "@eventoMotivoQrDesconocido": { "description": "motivo_code qr.desconocido" },
-  "eventoMotivoQrAnulado": "El QR fue anulado",
-  "@eventoMotivoQrAnulado": { "description": "motivo_code qr.anulado" },
-  "eventoMotivoQrVencido": "El QR ya venció",
-  "@eventoMotivoQrVencido": { "description": "motivo_code qr.vencido" },
-  "eventoMotivoQrOtraPuerta": "El QR no sirve para esta puerta",
-  "@eventoMotivoQrOtraPuerta": { "description": "motivo_code qr.otra_puerta" },
-  "eventoMotivoQrUsado": "El QR ya fue usado",
-  "@eventoMotivoQrUsado": { "description": "motivo_code qr.usado" },
-  "eventoMotivoSuscripcionVencida": "La suscripción de la cuenta está vencida",
-  "@eventoMotivoSuscripcionVencida": { "description": "motivo_code suscripcion.vencida" },
+  "@eventoMotivoAccesoPermitido": {
+    "description": "motivo_code acceso.permitido"
+  },
+  "eventoMotivoQrFormatoInvalido": "Código no válido",
+  "@eventoMotivoQrFormatoInvalido": {
+    "description": "motivo_code qr.formato_invalido"
+  },
+  "eventoMotivoQrDesconocido": "QR desconocido",
+  "@eventoMotivoQrDesconocido": {
+    "description": "motivo_code qr.desconocido"
+  },
+  "eventoMotivoQrAnulado": "QR anulado",
+  "@eventoMotivoQrAnulado": {
+    "description": "motivo_code qr.anulado"
+  },
+  "eventoMotivoQrVencido": "QR vencido",
+  "@eventoMotivoQrVencido": {
+    "description": "motivo_code qr.vencido"
+  },
+  "eventoMotivoQrOtraPuerta": "Otra puerta",
+  "@eventoMotivoQrOtraPuerta": {
+    "description": "motivo_code qr.otra_puerta"
+  },
+  "eventoMotivoQrUsado": "QR ya usado",
+  "@eventoMotivoQrUsado": {
+    "description": "motivo_code qr.usado"
+  },
+  "eventoMotivoSuscripcionVencida": "Suscripción vencida",
+  "@eventoMotivoSuscripcionVencida": {
+    "description": "motivo_code suscripcion.vencida"
+  },
   "eventoMotivoDesconocido": "Motivo no disponible",
-  "@eventoMotivoDesconocido": { "description": "Un motivo_code que la app no conoce (versión vieja de la app)" }
+  "@eventoMotivoDesconocido": {
+    "description": "Un motivo_code que la app no conoce (versión vieja de la app)"
+  },
+  "perfilTitulo": "Perfil",
+  "@perfilTitulo": {
+    "description": "Título de la pantalla de perfil"
+  },
+  "perfilPinDeCuenta": "PIN {codigo} ••••",
+  "@perfilPinDeCuenta": {
+    "description": "Cómo se muestra el PIN sin revelarlo: el código de la cuenta y puntos",
+    "placeholders": {
+      "codigo": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilCuentaYCodigo": "{cuenta} · {codigo}",
+  "@perfilCuentaYCodigo": {
+    "description": "Cuenta y su código, en elegir rol",
+    "placeholders": {
+      "cuenta": {
+        "type": "String"
+      },
+      "codigo": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilRolYCuenta": "{rol} · {codigo}",
+  "@perfilRolYCuenta": {
+    "description": "Rol activo y código de la cuenta, al pie del rail",
+    "placeholders": {
+      "rol": {
+        "type": "String"
+      },
+      "codigo": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilPlanVence": "Plan {plan} · vence {fecha}",
+  "@perfilPlanVence": {
+    "description": "Plan y vencimiento en la tarjeta de la cuenta",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      },
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilSinSuscripcion": "Sin suscripción vigente",
+  "@perfilSinSuscripcion": {
+    "description": "Cuando la cuenta no tiene una suscripción vigente"
+  },
+  "perfilRolActivo": "Rol activo",
+  "@perfilRolActivo": {
+    "description": "Clave de la fila del rol activo"
+  },
+  "perfilCambiarRol": "Cambiar rol",
+  "@perfilCambiarRol": {
+    "description": "Botón que vuelve a elegir rol (HU-05)"
+  },
+  "perfilSuscripcion": "Suscripción",
+  "@perfilSuscripcion": {
+    "description": "Clave de la fila de la suscripción"
+  },
+  "perfilSuscripcionActiva": "Activa · {dias, plural, =1{1 día restante} other{{dias} días restantes}}",
+  "@perfilSuscripcionActiva": {
+    "description": "Valor de la fila de la suscripción",
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      }
+    }
+  },
+  "perfilTemaOscuro": "Tema oscuro",
+  "@perfilTemaOscuro": {
+    "description": "Clave de la fila del interruptor de tema"
+  },
+  "perfilTemaOscuroAyuda": "Sigue al sistema si no lo cambias",
+  "@perfilTemaOscuroAyuda": {
+    "description": "Ayuda del interruptor de tema"
+  },
+  "perfilVersion": "v1.0.0",
+  "@perfilVersion": {
+    "description": "Versión de la app al pie del perfil"
+  },
+  "puertaEnLinea": "En línea",
+  "@puertaEnLinea": {
+    "description": "Badge de una puerta cuyo lector reporta"
+  },
+  "puertaSinConexion": "Sin conexión",
+  "@puertaSinConexion": {
+    "description": "Badge o marca de una puerta cuyo lector no reporta"
+  },
+  "puertaSinLector": "Sin lector",
+  "@puertaSinLector": {
+    "description": "Cuando la puerta no tiene dispositivo"
+  },
+  "puertaNuncaReporto": "nunca",
+  "@puertaNuncaReporto": {
+    "description": "Última señal de un lector que nunca reportó"
+  },
+  "puertasColumnaPuerta": "Puerta",
+  "@puertasColumnaPuerta": {
+    "description": "Encabezado de la tabla de puertas"
+  },
+  "puertasColumnaDispositivo": "Dispositivo",
+  "@puertasColumnaDispositivo": {
+    "description": "Encabezado de la tabla de puertas"
+  },
+  "puertasColumnaUltimaSenal": "Última señal",
+  "@puertasColumnaUltimaSenal": {
+    "description": "Encabezado de la tabla de puertas"
+  },
+  "puertasSinPuertas": "Aún no hay puertas",
+  "@puertasSinPuertas": {
+    "description": "Estado vacío de Puertas"
+  },
+  "puertasSinPuertasAyuda": "Pide a AGROCOM que registre las puertas y sus lectores.",
+  "@puertasSinPuertasAyuda": {
+    "description": "Ayuda del estado vacío de Puertas"
+  },
+  "puertasErrorCargar": "No pudimos cargar las puertas",
+  "@puertasErrorCargar": {
+    "description": "Título del estado de error de Puertas"
+  },
+  "adminTitulo": "Administración",
+  "@adminTitulo": {
+    "description": "Título de la pestaña Admin del compacto"
+  },
+  "usuariosNuevo": "Nuevo usuario",
+  "@usuariosNuevo": {
+    "description": "Botón de alta y título del formulario de alta"
+  },
+  "usuariosEditarTitulo": "Editar usuario",
+  "@usuariosEditarTitulo": {
+    "description": "Título del formulario de edición"
+  },
+  "usuariosSeccionDatos": "Datos del usuario",
+  "@usuariosSeccionDatos": {
+    "description": "Título de la primera sección del formulario"
+  },
+  "usuariosSeccionRoles": "Roles",
+  "@usuariosSeccionRoles": {
+    "description": "Título de la sección de roles del formulario"
+  },
+  "usuariosCampoEtiqueta": "Etiqueta",
+  "@usuariosCampoEtiqueta": {
+    "description": "Rótulo del campo: a quién se le entrega el PIN"
+  },
+  "usuariosCampoEtiquetaAyuda": "A quién le entregas el PIN: una persona, un turno o un área.",
+  "@usuariosCampoEtiquetaAyuda": {
+    "description": "Ayuda del campo etiqueta"
+  },
+  "usuariosCampoEtiquetaEjemplo": "Ej.: Portería turno noche",
+  "@usuariosCampoEtiquetaEjemplo": {
+    "description": "Placeholder del campo etiqueta"
+  },
+  "usuariosErrorSinEtiqueta": "Escribe a quién le entregas el PIN.",
+  "@usuariosErrorSinEtiqueta": {
+    "description": "Error de validación de la etiqueta vacía"
+  },
+  "usuariosErrorEtiquetaLarga": "Máximo {max} caracteres",
+  "@usuariosErrorEtiquetaLarga": {
+    "description": "Error de validación de la etiqueta larga",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "usuariosErrorSinRoles": "Elige al menos un rol.",
+  "@usuariosErrorSinRoles": {
+    "description": "Error de validación sin roles"
+  },
+  "usuariosNuevoAviso": "Al generar el PIN lo verás una sola vez. Entrégalo en persona o por un canal privado.",
+  "@usuariosNuevoAviso": {
+    "description": "Aviso del formulario de alta"
+  },
+  "usuariosGuardado": "Cambios guardados.",
+  "@usuariosGuardado": {
+    "description": "Aviso tras guardar una edición"
+  },
+  "usuariosGenerarPin": "Generar PIN",
+  "@usuariosGenerarPin": {
+    "description": "Botón de alta (genera el PIN) y acción de fila que lo regenera"
+  },
+  "usuariosGenerando": "Generando",
+  "@usuariosGenerando": {
+    "description": "Botón Generar PIN mientras se envía"
+  },
+  "usuariosPin": "PIN",
+  "@usuariosPin": {
+    "description": "Acción de fila corta en compacto"
+  },
+  "usuariosGenerarPinTitulo": "¿Generar un PIN nuevo?",
+  "@usuariosGenerarPinTitulo": {
+    "description": "Título de la confirmación al regenerar el PIN"
+  },
+  "usuariosGenerarPinMensaje": "El PIN actual de {nombre} dejará de funcionar y sus sesiones se cerrarán.",
+  "@usuariosGenerarPinMensaje": {
+    "description": "Mensaje de la confirmación al regenerar el PIN",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPinGeneradoTitulo": "PIN generado",
+  "@usuariosPinGeneradoTitulo": {
+    "description": "Título de la pantalla o diálogo del PIN generado"
+  },
+  "usuariosPinParaRotulo": "Para",
+  "@usuariosPinParaRotulo": {
+    "description": "Rótulo sobre el nombre en la pantalla del PIN"
+  },
+  "usuariosPinPara": "Para {nombre} · {roles}",
+  "@usuariosPinPara": {
+    "description": "Subtítulo del diálogo del PIN en expandido",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      },
+      "roles": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPinSemantica": "PIN {pin}",
+  "@usuariosPinSemantica": {
+    "description": "Lo que lee el lector de pantalla en el PIN generado",
+    "placeholders": {
+      "pin": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPinAvisoNuevo": "Solo lo verás ahora. Entrégalo en persona o por un canal privado.",
+  "@usuariosPinAvisoNuevo": {
+    "description": "Advertencia del PIN de un usuario nuevo"
+  },
+  "usuariosPinAvisoRegenerado": "Solo lo verás ahora. Entrégalo en persona o por un canal privado. El PIN anterior de {nombre} ya no funciona.",
+  "@usuariosPinAvisoRegenerado": {
+    "description": "Advertencia del PIN regenerado",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPinListo": "Listo, ya lo entregué",
+  "@usuariosPinListo": {
+    "description": "Botón que cierra la pantalla del PIN"
+  },
+  "usuariosEliminarTitulo": "¿Dar de baja a {nombre}?",
+  "@usuariosEliminarTitulo": {
+    "description": "Título de la confirmación de baja",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosEliminarMensaje": "Su PIN dejará de entrar y sus sesiones se cerrarán. No se puede deshacer.",
+  "@usuariosEliminarMensaje": {
+    "description": "Mensaje de la confirmación de baja"
+  },
+  "usuariosSinUsuarios": "Aún no hay usuarios",
+  "@usuariosSinUsuarios": {
+    "description": "Estado vacío de Usuarios"
+  },
+  "usuariosSinUsuariosAyuda": "Crea el primero y entrégale su PIN.",
+  "@usuariosSinUsuariosAyuda": {
+    "description": "Ayuda del estado vacío de Usuarios"
+  },
+  "usuariosErrorCargar": "No pudimos cargar los usuarios",
+  "@usuariosErrorCargar": {
+    "description": "Título del estado de error de Usuarios"
+  },
+  "usuariosNuncaIngreso": "nunca",
+  "@usuariosNuncaIngreso": {
+    "description": "Último ingreso de un usuario que nunca entró"
+  },
+  "usuariosColumnaEtiqueta": "Etiqueta",
+  "@usuariosColumnaEtiqueta": {
+    "description": "Encabezado de la tabla de usuarios"
+  },
+  "usuariosColumnaRoles": "Roles",
+  "@usuariosColumnaRoles": {
+    "description": "Encabezado de la tabla de usuarios"
+  },
+  "usuariosColumnaPin": "PIN",
+  "@usuariosColumnaPin": {
+    "description": "Encabezado de la tabla de usuarios"
+  },
+  "usuariosColumnaUltimoIngreso": "Último ingreso",
+  "@usuariosColumnaUltimoIngreso": {
+    "description": "Encabezado de la tabla de usuarios"
+  }
 }

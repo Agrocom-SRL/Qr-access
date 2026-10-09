@@ -2,8 +2,10 @@ import 'package:agrocom_acceso/core/router/guarda_sesion.dart';
 import 'package:agrocom_acceso/core/router/paginas_sistema.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/administracion.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
+import 'package:agrocom_acceso/features/perfil/perfil.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/features/sesion/sesion.dart';
 import 'package:flutter/foundation.dart';
@@ -17,17 +19,21 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(sesionControladorProvider, (_, _) => cambiosDeSesion.value++);
 
   final router = GoRouter(
-    initialLocation: Rutas.ingreso,
+    initialLocation: Rutas.bienvenida,
     refreshListenable: cambiosDeSesion,
     redirect: (context, state) => redireccionDeSesion(
       ref.read(sesionControladorProvider),
-      state.matchedLocation,
+      state.topRoute?.path ?? state.matchedLocation,
     ),
     errorBuilder: (context, state) => const RutaNoEncontrada(),
     routes: [
       GoRoute(
         path: Rutas.arranque,
         builder: (context, state) => const ArranquePagina(),
+      ),
+      GoRoute(
+        path: Rutas.bienvenida,
+        builder: (context, state) => const BienvenidaPagina(),
       ),
       GoRoute(
         path: Rutas.ingreso,
@@ -47,7 +53,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Rutas.qrNuevo,
-        builder: (context, state) => const EmitirQrPagina(),
+        builder: (context, state) => EmitirQrPagina(
+          prellenado: state.extra is PrellenadoEmision
+              ? state.extra! as PrellenadoEmision
+              : null,
+        ),
       ),
       GoRoute(
         path: Rutas.qrEmitido,
@@ -61,6 +71,40 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.eventos,
         builder: (context, state) => const EventosPagina(),
+      ),
+      GoRoute(
+        path: Rutas.perfil,
+        builder: (context, state) => const PerfilPagina(),
+      ),
+      GoRoute(
+        path: Rutas.admin,
+        builder: (context, state) => const AdministracionPagina(),
+      ),
+      GoRoute(
+        path: Rutas.adminPuertas,
+        builder: (context, state) => const PuertasAdminPagina(),
+      ),
+      GoRoute(
+        path: Rutas.adminUsuarios,
+        builder: (context, state) => const UsuariosPagina(),
+        routes: [
+          GoRoute(
+            path: 'nuevo',
+            builder: (context, state) => const UsuarioFormularioPagina(),
+          ),
+          GoRoute(
+            path: 'pin',
+            redirect: (context, state) =>
+                state.extra is PinGenerado ? null : Rutas.adminUsuarios,
+            builder: (context, state) =>
+                PinGeneradoPagina(pin: state.extra! as PinGenerado),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) =>
+                UsuarioFormularioPagina(usuarioId: state.pathParameters['id']),
+          ),
+        ],
       ),
     ],
   );

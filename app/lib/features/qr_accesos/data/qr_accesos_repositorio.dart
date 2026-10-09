@@ -20,6 +20,9 @@ abstract interface class QrAccesosRepositorio {
     required int porPagina,
   });
 
+  /// Cuántos QR hay en cada estado (las pastillas de Mis QR).
+  Future<Map<EstadoQr, int>> resumir();
+
   /// Anula un QR vigente. La API responde `qr.ya_usado` (409) si ya se usó.
   Future<void> anular(String id);
 }
@@ -60,6 +63,17 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
       porPagina: porPagina,
     );
     return respuesta.aPagina(_aQrAcceso);
+  }
+
+  @override
+  Future<Map<EstadoQr, int>> resumir() async {
+    final dto = await _api.resumenQr();
+    return {
+      EstadoQr.vigente: dto.vigentes,
+      EstadoQr.usado: dto.usados,
+      EstadoQr.vencido: dto.vencidos,
+      EstadoQr.anulado: dto.anulados,
+    };
   }
 
   @override
