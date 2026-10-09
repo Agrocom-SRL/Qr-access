@@ -5,7 +5,7 @@ import 'dart:ui';
 /// (quien busca su idioma lo reconoce por cómo se escribe), por eso vive aquí
 /// y no en los ARB.
 enum Idioma {
-  es(codigo: 'es', pais: 'BO', nombre: 'Español'),
+  es(codigo: 'es', pais: 'ES', nombre: 'Español'),
   en(codigo: 'en', pais: 'US', nombre: 'English'),
   pt(codigo: 'pt', pais: 'BR', nombre: 'Português');
 
