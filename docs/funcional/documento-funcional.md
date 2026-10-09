@@ -44,7 +44,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 
 ### 4.4 Dispositivos (ADR 0009)
 - HU-08: Como administrador, doy de alta un dispositivo para una puerta, dentro del límite del plan, y obtengo su credencial (se muestra una sola vez).
-- HU-09: Como administrador, veo qué dispositivos están en línea y cuáles no reportan latido.
+- HU-09: Como administrador o guardia (permiso `organizacion.puerta.supervisar`), veo qué dispositivos están en línea y cuáles no reportan latido (sin latido en 3 minutos = sin conexión).
 - HU-10: Como administrador, revoco un dispositivo.
 
 ### 4.5 Emisión de QR (ADR 0008)

@@ -15,6 +15,7 @@ Fuentes de verdad:
 - **Funcional:** `docs/funcional/documento-funcional.md` (RF-xx y HU).
 - **Modelo de datos:** `docs/modelo-datos/` (`03-schema-sql.md` y las fichas de `tablas/`); las dudas abiertas, en `02-dudas-y-ambiguedades.md`.
 - **Decisiones técnicas:** `docs/decisiones/` (ADRs). Léelos antes de implementar algo que los toque.
+- **Diseño de la app:** `docs/diseno/handoff/README.md` (especificación, ids C01–E10b y capturas) y `docs/diseno/sistema-diseno.md`.
 - **Hardware:** `docs/hardware/README.md`.
 - **Estado del proyecto:** `docs/gestion/estado_proyecto.md`.
 

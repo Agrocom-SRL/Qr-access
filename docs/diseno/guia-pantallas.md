@@ -1,57 +1,74 @@
 # Guía de construcción de una pantalla — AGROCOM Acceso
 
-**Origen:** `docs/diseno/guia_pantalla_panel.md` de ACRECIA (arquetipos y reglas de pantalla), traducida a Flutter. Tokens y componentes: `sistema-diseno.md`.
+**Origen:** `guia_pantalla_panel.md` de ACRECIA, traducida a Flutter y ajustada al handoff V1 (`docs/diseno/handoff/README.md`, §Pantallas). Tokens y componentes: `sistema-diseno.md`.
 
 ## 1. Dónde va cada archivo
 
 | Qué | Dónde |
 |---|---|
-| Pantalla | `lib/features/<feature>/presentation/<nombre>_pantalla.dart` |
+| Pantalla | `lib/features/<feature>/presentation/<nombre>_pagina.dart` |
 | Widgets propios de la feature | `lib/features/<feature>/presentation/widgets/` |
-| Provider (estado) | `lib/features/<feature>/presentation/<nombre>_provider.dart` |
+| Controlador (estado) | `lib/features/<feature>/presentation/<nombre>_controlador.dart` |
 | Repositorio (API) | `lib/features/<feature>/data/<feature>_repositorio.dart` |
 | Lógica pura | `lib/features/<feature>/domain/` |
-| Ruta | `lib/core/router/rutas.dart` (con el permiso requerido) |
+| Ruta y permiso | `lib/core/router/rutas.dart` y `guarda_sesion.dart` |
+| Destino de navegación | `lib/core/navegacion/destinos.dart` |
 | Textos | `lib/l10n/app_es.arb` con prefijo de la feature |
 
-Un componente que sirve a dos features sube a `lib/shared/widgets/`.
+Un componente que sirve a dos features sube a `lib/shared/widgets/`. Las features son `sesion`, `inicio`, `puertas` (solo datos), `qr_accesos`, `eventos`, `perfil` y `administracion`.
 
-## 2. Arquetipos
+## 2. Pantallas del handoff y su implementación
 
-### 2.1 Tablero
-Cabecera → indicadores (`TarjetaIndicador`: accesos de hoy, rechazados, puertas sin latido) → últimos eventos. Para Administrador y Guardia.
+| Id | Pantalla | Dónde |
+|---|---|---|
+| C01 · E01 | Bienvenida | `sesion/presentation/bienvenida_pagina.dart` (`PlantillaAuth`, hero verde) |
+| C02–C02d · E02 | Ingreso con PIN | `sesion/presentation/ingreso_pagina.dart` + `widgets/casillas_pin.dart` (un `TextField` con overlay 3 + 4; bloqueo con cuenta regresiva) |
+| C03 · E03 | Elegir rol | `sesion/presentation/elegir_rol_pagina.dart` (`TarjetaSeleccionable`, último rol preseleccionado) |
+| C04a · E04a | Inicio de usuario | `inicio/presentation/widgets/inicio_usuario.dart` (hero, 4 accesos rápidos, vigentes hoy) |
+| C04b · E04b | Tablero de administración | `inicio/presentation/widgets/inicio_admin.dart` (3 `TarjetaIndicador`, últimos eventos, refresco cada 30 s) |
+| C05a–c · E05 | Emitir QR | `qr_accesos/presentation/emitir_qr_pagina.dart` (stepper; resumen fijo a la derecha en expandido) |
+| C06 · E06 · S05 | QR emitido | `qr_accesos/presentation/mostrar_qr_pagina.dart` (`PlantillaPantallaCompleta`, confirmación al cerrar sin compartir) |
+| C07 · C07b · E07 | Mis QR | `qr_accesos/presentation/mis_qr_pagina.dart` (pastillas con conteos, tabla en expandido, "Vigente → Anulado") |
+| C08 · E08 | Eventos | `eventos/presentation/eventos_pagina.dart` (filtros por resultado y puerta, grupos por día, tabla con segundos) |
+| C09 · E09 | Perfil | `perfil/presentation/perfil_pagina.dart` (cuenta, plan, rol activo, tema, cerrar sesión) |
+| C10a · E10a | Puertas | `administracion/presentation/widgets/vista_puertas.dart` (En línea / Sin conexión, última señal) |
+| C10b · E10b | Usuarios | `administracion/presentation/widgets/vista_usuarios.dart` + `usuario_formulario_pagina.dart` |
+| C10c · E10b | PIN generado | `administracion/presentation/pin_generado_pagina.dart` (compacto) / diálogo (expandido) en `widgets/pin_generado_dialogo.dart` |
 
-### 2.2 Listado
-Orden fijo: **cabecera** (título + botón "Nuevo" si hay permiso) → **barra** (buscador `q` + filtros) → **datos** (tabla en `expandido`, tarjetas clave-valor en `compacto`/`medio`) → **paginación**.
-- Acciones de fila: Ver (información), Editar (advertencia), Eliminar (peligro); en tarjetas, menú "⋮" arriba a la derecha.
-- `EstadoVacio` con dos variantes: "todavía no hay" (con la acción de crear) y "no hay resultados para este filtro" (con limpiar filtros).
-- `activo` no se muestra como columna ni filtro en catálogos simples; los estados de dominio reales (invitación pendiente/usada/vencida) sí.
+## 3. Arquetipos
 
-### 2.3 Formulario
-- Secciones como tarjetas con título y cantidad de campos.
-- **Tras guardar, se queda en edición** del mismo registro (con aviso de guardado), nunca vuelve al listado.
-- **`activo` nunca va en el formulario**: un registro nace activo y se activa/desactiva con una acción aparte confirmada.
-- Cancelar vuelve adonde vuelve "Volver".
-- Salir a crear lo que falta (p. ej. un sitio desde el alta de puerta) no pierde lo cargado.
-- Un formulario no esconde secciones por falta de un dato previo: las muestra deshabilitadas con la explicación.
+### 3.1 Tablero
+Cabecera (saludo + avatar, o título "Hoy" en expandido) → indicadores (`TarjetaIndicador`: accesos de hoy en hero, rechazados, puertas sin conexión con cifra en peligro si > 0) → últimos eventos (`FilaEvento`). Pull-to-refresh y refresco periódico. Lo ve quien supervisa puertas y ve todos los eventos; el resto ve el inicio de usuario.
 
-### 2.4 Detalle
-Cabecera con estado (badge) y acciones → secciones clave-valor → relacionados (p. ej. en una puerta: dispositivo, reglas y últimos eventos).
+### 3.2 Listado
+Orden fijo: **título** (grande, en el contenido) con la acción principal a la derecha (botón en expandido, ícono en compacto, FAB en Mis QR) → **filtros** (`SelectorSegmentado`, `AccesoSelector`) → **`ListadoPaginado`** (tarjetas con encabezados de grupo y "Cargar más" en compacto y medio; `DataTable` con "1–20 de 148" en expandido) → nada más: la paginación va dentro.
+- Los cuatro estados son obligatorios: carga (skeleton con la forma real), vacío (con la acción de crear o de quitar filtros), error ("No pudimos cargar…" + Reintentar) y sin conexión (lo último cargado + `BannerSinConexion`). `estadoDesdeAsync` los deriva del `AsyncValue` del provider.
+- Acciones de fila: Ver (informacion), Editar (advertencia), Eliminar (peligro) con `AccesoAccionFila`; en tarjetas, la acción principal como texto ("Anular", "PIN").
+- `activo` no se muestra como columna ni filtro; los estados de dominio reales (Vigente, Usado, Vencido, Anulado; En línea, Sin conexión) sí, siempre con `AccesoBadge`.
 
-### 2.5 Emitir QR (usuario de cuenta)
-Formulario corto: puerta(s), etiqueta opcional y vigencia (por defecto, fin del día; tope del plan) → `PlantillaPantalla` (formulario) con `VisorQr`, la puerta, la etiqueta y la hora de vencimiento → acción principal **Compartir** (menú de compartir del teléfono, imagen PNG con zona de silencio). El token no se vuelve a mostrar después de cerrar (ADR 0008).
+### 3.3 Formulario
+`FormularioSecciones`: secciones como tarjetas con título en mayúsculas, ancho máximo 640 centrado en expandido, acciones fijas abajo en compacto (`BarraDeAcciones`).
+- **Tras guardar, se queda en edición** del mismo registro con el aviso "Cambios guardados", nunca vuelve al listado. Al crear un usuario, pasa a la pantalla del PIN (que se ve una sola vez).
+- **`activo` nunca va en el formulario**: un registro nace activo y se da de baja con una acción aparte confirmada.
+- Cancelar vuelve al listado.
 
-### 2.6 Escáner (guardia)
+### 3.4 Stepper (Emitir QR)
+`IndicadorPasos` + un contenido por paso + `BarraDeAcciones` (Atrás · Siguiente / Emitir QR). Cada paso valida lo suyo antes de avanzar; el error de la API se muestra en el paso 3 con Reintentar. En expandido, `ResumenEmision` fijo a la derecha con el botón del paso.
+
+### 3.5 Pantalla completa
+`PlantillaPantallaCompleta` para lo que se ve una sola vez (QR emitido, PIN generado): cerrar arriba a la izquierda, acción principal abajo, aviso en `AccesoAviso` de advertencia. Cerrar sin compartir el QR pide confirmación.
+
+### 3.6 Escáner (guardia)
 Fuera de V1 (D-20).
 
-## 3. Cambios de estado y confirmaciones
+## 4. Cambios de estado y confirmaciones
 
-Toda baja o cambio de estado confirma con `ConfirmarDialogo`, con el color del estado destino y la ficha "estado actual → estado destino". Ninguna acción destructiva sin confirmación.
+Toda baja o cambio de estado confirma con `ConfirmarDialogo`, con el color del estado destino y la ficha "estado actual → estado destino" (`TransicionDeEstado`). Regenerar un PIN también confirma: invalida el anterior y cierra las sesiones. Ninguna acción destructiva sin confirmación.
 
-## 4. Checklist de cierre
+## 5. Checklist de cierre
 
-- [ ] Arquetipo correcto y orden de secciones respetado.
+- [ ] Arquetipo correcto y orden de secciones respetado; comparado con la captura del mismo id en `docs/diseno/handoff/capturas/`.
 - [ ] Tokens y textos del ARB (ver `sistema-diseno.md` §6).
-- [ ] Permiso de la ruta y de cada acción (lo que el rol activo no puede, no se muestra).
-- [ ] Estados de carga, vacío y error.
-- [ ] Widget test con el fake del repositorio.
+- [ ] Permiso de la ruta (`guarda_sesion.dart`) y de cada acción (lo que el rol activo no puede, no se muestra).
+- [ ] Estados de carga, vacío, error y sin conexión.
+- [ ] Widget test con el fake del repositorio, en compacto y, si tiene tabla, en expandido (`montarPantalla(expandida: true)`).
