@@ -74,6 +74,8 @@ Future<void> montarPantalla(
       overrides: overrides,
       child: MaterialApp.router(
         theme: tema ?? Tema.claro,
+        // Los tests comparan contra los textos en español.
+        locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,

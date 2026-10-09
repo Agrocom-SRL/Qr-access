@@ -230,7 +230,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
 
 /// "Hoy · jueves 9 oct", "Ayer · …" o la fecha, para agrupar por día.
 String _tituloDelDia(AppLocalizations l10n, DateTime fecha, DateTime ahora) {
-  final dia = DateFormat('EEEE d MMM', 'es').format(fecha.toLocal());
+  final dia = DateFormat('EEEE d MMM', l10n.localeName).format(fecha.toLocal());
   final diasAtras = diaLocal(ahora).difference(diaLocal(fecha)).inDays;
   if (diasAtras == 0) return l10n.comunHoyPunto(dia);
   if (diasAtras == 1) return l10n.comunAyerPunto(dia);

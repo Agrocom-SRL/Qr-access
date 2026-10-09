@@ -4,6 +4,10 @@
   "@appTitulo": {
     "description": "Nombre de la app en la barra del navegador y el selector de apps"
   },
+  "bienvenidaNombreApp": "AGROCOM\nAcceso",
+  "@bienvenidaNombreApp": {
+    "description": "Nombre de la app en el hero de bienvenida (C01), siempre en dos líneas"
+  },
   "comunCargando": "Cargando",
   "@comunCargando": {
     "description": "Etiqueta para lectores de pantalla mientras algo carga"
@@ -675,6 +679,14 @@
   "@qrEmitirPregunta": {
     "description": "Pregunta del paso 1"
   },
+  "qrEtiquetaYPuertas": "{etiqueta} · {puertas}",
+  "@qrEtiquetaYPuertas": {
+    "description": "Qué QR se va a anular, en el diálogo de confirmación (C07b)",
+    "placeholders": {
+      "etiqueta": {"type": "String"},
+      "puertas": {"type": "String"}
+    }
+  },
   "qrEmitirTodas": "Todas",
   "@qrEmitirTodas": {
     "description": "Botón que marca todas las puertas de un sitio (compacto)"
@@ -1073,6 +1085,22 @@
   "@perfilTemaOscuroAyuda": {
     "description": "Ayuda del interruptor de tema"
   },
+  "perfilIdioma": "Idioma",
+  "@perfilIdioma": {
+    "description": "Clave de la fila del selector de idioma en Perfil"
+  },
+  "perfilIdiomaAyuda": "Sigue al dispositivo si no lo cambias",
+  "@perfilIdiomaAyuda": {
+    "description": "Ayuda de la fila del idioma"
+  },
+  "perfilIdiomaTitulo": "Elige un idioma",
+  "@perfilIdiomaTitulo": {
+    "description": "Título de la hoja para elegir el idioma"
+  },
+  "perfilIdiomaSistema": "Usar el idioma del dispositivo",
+  "@perfilIdiomaSistema": {
+    "description": "Opción que quita el idioma elegido y vuelve al del dispositivo"
+  },
   "perfilVersion": "v1.0.0",
   "@perfilVersion": {
     "description": "Versión de la app al pie del perfil"
@@ -1104,6 +1132,14 @@
   "puertasColumnaUltimaSenal": "Última señal",
   "@puertasColumnaUltimaSenal": {
     "description": "Encabezado de la tabla de puertas"
+  },
+  "puertasSitioConCantidad": "{sitio} · {n}",
+  "@puertasSitioConCantidad": {
+    "description": "Encabezado de cada sitio en la lista de puertas, con cuántas tiene (C10a)",
+    "placeholders": {
+      "sitio": {"type": "String"},
+      "n": {"type": "int"}
+    }
   },
   "puertasSinPuertas": "Aún no hay puertas",
   "@puertasSinPuertas": {

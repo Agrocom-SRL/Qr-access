@@ -90,7 +90,11 @@ void main() {
 
   testWidgets('Cerrar sesión llama al controlador', (tester) async {
     final (:sesion, preferencias: _) = await _montar(tester);
-    await tester.tap(find.text(textosEn(tester).sesionCerrar));
+    // Con la fila de idioma, el botón queda bajo la barra en 360×800.
+    final cerrar = find.text(textosEn(tester).sesionCerrar);
+    await tester.ensureVisible(cerrar);
+    await tester.pump();
+    await tester.tap(cerrar);
     await tester.pump();
     expect(sesion.cierres, 1);
   });

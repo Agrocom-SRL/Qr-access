@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
@@ -112,12 +113,15 @@ class PerfilPagina extends ConsumerWidget {
                     valorEnAdvertencia: enAviso || suscripcion == null,
                     icono: Icons.workspace_premium_outlined,
                     invertida: true,
+                    claveEnfatizada: true,
                   ),
+                  const FilaIdioma(),
                   FilaClaveValor(
                     clave: l10n.perfilTemaOscuro,
                     valor: l10n.perfilTemaOscuroAyuda,
                     icono: Icons.dark_mode_outlined,
                     invertida: true,
+                    claveEnfatizada: true,
                     conSeparador: false,
                     accion: AccesoInterruptor(
                       activo: oscuro,
@@ -131,13 +135,16 @@ class PerfilPagina extends ConsumerWidget {
               ),
             ),
             SizedBox(height: tokens.espacio.xxl),
-            AccesoBoton(
-              texto: l10n.sesionCerrar,
-              textoCargando: l10n.sesionSaliendo,
-              icono: Icons.logout,
-              variante: VarianteBoton.peligroTonal,
-              expandido: !context.esExpandida,
-              onPressed: ref.read(sesionControladorProvider.notifier).cerrar,
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AccesoBoton(
+                texto: l10n.sesionCerrar,
+                textoCargando: l10n.sesionSaliendo,
+                icono: Icons.logout,
+                variante: VarianteBoton.peligroTonal,
+                expandido: !context.esExpandida,
+                onPressed: ref.read(sesionControladorProvider.notifier).cerrar,
+              ),
             ),
             SizedBox(height: tokens.espacio.l),
             Text(
@@ -146,7 +153,9 @@ class PerfilPagina extends ConsumerWidget {
                 tokens.tipografia.t12,
                 color: colores.textoSecundario,
               ),
-              textAlign: TextAlign.center,
+              textAlign: context.esExpandida
+                  ? TextAlign.start
+                  : TextAlign.center,
             ),
           ],
         ),

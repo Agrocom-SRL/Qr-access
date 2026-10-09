@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// ADR 0013 y skill `redaccion-neutra`: tuteo estándar, nunca voseo ni usted.
+/// Solo se revisa el español: son reglas de esa lengua (en inglés y portugués
+/// el imperativo formal es el habitual y no es un defecto).
 const _voseo = {
   'seleccioná',
   'confirmá',
@@ -85,7 +87,7 @@ void main() {
   final arbs = Directory('lib/l10n')
       .listSync()
       .whereType<File>()
-      .where((f) => f.path.endsWith('.arb'));
+      .where((f) => f.path.endsWith('app_es.arb'));
 
   test('hay al menos un ARB', () => expect(arbs, isNotEmpty));
 
