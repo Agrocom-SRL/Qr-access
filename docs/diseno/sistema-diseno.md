@@ -99,7 +99,7 @@ El **blanco** es el segundo color de marca: superficies limpias, texto sobre el 
 | Átomo | `AccesoCampoTexto`, `AccesoSelector`, `AccesoInterruptor` | Label siempre visible, error debajo |
 | Molécula | `CampoFormulario`, `TarjetaIndicador`, `EstadoVacio`, `ConfirmarDialogo`, `FilaClaveValor` | |
 | Organismo | `ListadoPaginado` (tabla ≥ 1024, tarjetas < 1024), `FormularioSecciones`, `VisorQr`, `EscanerQr`, `ResultadoAcceso` | |
-| Plantilla | `PlantillaAdmin`, `PlantillaAuth`, `PlantillaPantallaCompleta` | |
+| Plantilla | `PlantillaAuth` (formulario centrado, sin sesión); `PlantillaPantalla` (barra + contenido, formulario o listado según `esFormulario`) | `PlantillaAdmin` (rail/drawer) pendiente: llega con el segundo módulo con menú |
 
 Cada componente: widget test y entrada en esta tabla.
 
