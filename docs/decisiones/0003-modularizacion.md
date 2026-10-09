@@ -1,6 +1,6 @@
 # ADR 0003 — Modularización: módulos por funcionalidad con fronteras verificadas
 
-**Estado:** Aceptada (2026-10-08) · **Origen:** ADR 0003 de ACRECIA (contratos y eventos entre módulos), adaptado a Node y Flutter.
+**Estado:** Aceptada (2026-10-08) · **Origen:** ADR 0003 de ACRECIA (contratos y eventos entre módulos), adaptado a Node y Flutter. Precisada por ADR 0019 (registro de módulos).
 
 ## Contexto
 
