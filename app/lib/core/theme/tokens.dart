@@ -175,7 +175,7 @@ class Duraciones {
   Duration get normal => const Duration(milliseconds: 200);
   Duration get lenta => const Duration(milliseconds: 300);
 
-  /// Pulso del skeleton de carga.
+  /// Periodo del barrido de brillo del skeleton de carga.
   Duration get pulso => const Duration(milliseconds: 1200);
 
   /// Paso de una cuenta regresiva (bloqueo del PIN).
