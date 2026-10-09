@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -107,15 +108,15 @@ class PlantillaAdmin extends ConsumerWidget {
       return Scaffold(
         body: SafeArea(child: contenido),
         floatingActionButton: fab,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: indice < 0 ? 0 : indice,
-          onDestinationSelected: irA,
-          destinations: [
+        bottomNavigationBar: BarraNavegacion(
+          indice: indice < 0 ? 0 : indice,
+          alElegir: irA,
+          destinos: [
             for (final d in destinos)
-              NavigationDestination(
-                icon: Icon(_icono(d, activo: false)),
-                selectedIcon: Icon(_icono(d, activo: true)),
-                label: _etiqueta(context.l10n, d),
+              DestinoBarra(
+                icono: _icono(d, activo: false),
+                iconoActivo: _icono(d, activo: true),
+                etiqueta: _etiqueta(context.l10n, d),
               ),
           ],
         ),
