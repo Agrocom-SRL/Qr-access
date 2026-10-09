@@ -13,7 +13,7 @@ import {
   type Escenario,
 } from '../helpers/fixtures.js';
 import { conUsuario, iniciarSesion } from '../helpers/http.js';
-import { cualquierTexto } from '../helpers/esperados.js';
+import { cualquierTexto, fechaIsoUtc } from '../helpers/esperados.js';
 
 const RUTA = '/api/v1/sesiones';
 
@@ -276,6 +276,7 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
         roles: [{ id: a.rolAdministradorId, nombre: 'Administrador' }],
         rol_activo: { id: a.rolAdministradorId, nombre: 'Administrador' },
         permisos: [...PERMISOS_DE_ADMINISTRADOR].sort(),
+        suscripcion: { plan: 'Plan AAA', hasta: fechaIsoUtc() },
       });
     });
 

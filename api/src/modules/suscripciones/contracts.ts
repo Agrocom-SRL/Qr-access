@@ -5,8 +5,13 @@ import { RepositorioDeSuscripciones } from './repository.js';
 export interface SuscripcionVigente {
   readonly id: string;
   readonly hasta: Date;
+  readonly planNombre: string;
   /** `null` = el plan no limita la vigencia de un QR. */
   readonly maxVigenciaQrHoras: number | null;
+  /** `null` = el plan no limita la cantidad de usuarios (PIN). */
+  readonly maxUsuarios: number | null;
+  /** `null` = el plan no limita la cantidad de dispositivos. */
+  readonly maxDispositivos: number | null;
 }
 
 export interface ServicioDeSuscripciones {
@@ -20,7 +25,14 @@ export function crearServicioDeSuscripciones(pool: Pool): ServicioDeSuscripcione
     async obtenerVigente(ahora) {
       const fila = await repositorio.buscarVigente(ahora);
       if (fila === null) return null;
-      return { id: fila.id, hasta: fila.hasta, maxVigenciaQrHoras: fila.max_vigencia_qr_horas };
+      return {
+        id: fila.id,
+        hasta: fila.hasta,
+        planNombre: fila.plan_nombre,
+        maxVigenciaQrHoras: fila.max_vigencia_qr_horas,
+        maxUsuarios: fila.max_usuarios,
+        maxDispositivos: fila.max_dispositivos,
+      };
     },
   };
 }

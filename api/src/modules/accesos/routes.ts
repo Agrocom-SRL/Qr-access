@@ -1,4 +1,5 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
+import type { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
@@ -6,19 +7,36 @@ import { ejecutar as anularQr } from './actions/anular-qr.js';
 import { ejecutar as emitirQr } from './actions/emitir-qr.js';
 import { ejecutar as listarEventos } from './actions/listar-eventos.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
+import { ejecutar as resumirEventos } from './actions/resumir-eventos.js';
+import { ejecutar as resumirQr } from './actions/resumir-qr.js';
 import { ejecutar as validarQr } from './actions/validar-qr.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
 import {
+  consultaDeEventos,
   consultaDeQr,
   cuerpoDeEmision,
   cuerpoDeValidacion,
   esquemaQr,
   parametrosDeQr,
   respuestaDeEmision,
+  respuestaDeResumenDeEventos,
+  respuestaDeResumenDeQr,
   respuestaDeValidacion,
   respuestaListadoDeEventos,
   respuestaListadoDeQr,
 } from './schemas.js';
+
+type ConsultaDeEventos = z.infer<typeof consultaDeEventos>;
+
+/** Los filtros de la query, con `null` donde no se pidió nada. */
+function filtrosDe(consulta: ConsultaDeEventos) {
+  return {
+    resultado: consulta.resultado ?? null,
+    puertaId: consulta.puerta_id ?? null,
+    desde: consulta.desde ?? null,
+    hasta: consulta.hasta ?? null,
+  };
+}
 
 /** Hora del reloj del dispositivo, solo si es una fecha creíble (puede venir sin NTP). */
 function leerHoraDelDispositivo(texto: string | undefined): Date | null {
@@ -65,6 +83,15 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       },
     );
 
+    app.get(
+      '/qr-accesos/resumen',
+      {
+        schema: { tags: ['accesos'], response: { 200: respuestaDeResumenDeQr } },
+        preHandler: permiso('accesos.qr.ver'),
+      },
+      (request) => resumirQr(pool, usuarioDe(request)),
+    );
+
     app.post(
       '/qr-accesos/:id/anulacion',
       {
@@ -79,12 +106,28 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       {
         schema: {
           tags: ['accesos'],
-          querystring: esquemaPaginacion,
+          querystring: esquemaPaginacion.extend(consultaDeEventos.shape),
           response: { 200: respuestaListadoDeEventos },
         },
         preHandler: permiso('accesos.evento.ver'),
       },
-      (request) => listarEventos(pool, usuarioDe(request), request.query),
+      (request) => {
+        const { pagina, por_pagina, ...filtros } = request.query;
+        return listarEventos(pool, usuarioDe(request), filtrosDe(filtros), { pagina, por_pagina });
+      },
+    );
+
+    app.get(
+      '/eventos-acceso/resumen',
+      {
+        schema: {
+          tags: ['accesos'],
+          querystring: consultaDeEventos,
+          response: { 200: respuestaDeResumenDeEventos },
+        },
+        preHandler: permiso('accesos.evento.ver'),
+      },
+      (request) => resumirEventos(pool, usuarioDe(request), filtrosDe(request.query)),
     );
 
     // Siempre 200 con `abrir` explícito: un rechazo de negocio no es un error HTTP para el firmware (ADR 0005).

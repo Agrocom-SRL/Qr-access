@@ -54,6 +54,13 @@ export interface Latido {
   readonly en: Date;
 }
 
+export interface DispositivoEnServicioFila extends RowDataPacket {
+  id: string;
+  puerta_id: string;
+  nombre: string;
+  ultimo_latido_at: Date | null;
+}
+
 /** Dueño de `dispositivos`. Con tenant: solo los de la cuenta del contexto. */
 export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   constructor(pool: Pool) {
@@ -73,5 +80,15 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
       },
       { sinBitacora: true },
     );
+  }
+
+  /** El dispositivo en servicio de cada una de esas puertas (a lo sumo uno por puerta). */
+  listarEnServicioPorPuertas(puertaIds: readonly string[]): Promise<DispositivoEnServicioFila[]> {
+    if (puertaIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<DispositivoEnServicioFila>({
+      columnas: 't.id, t.puerta_id, t.nombre, t.ultimo_latido_at',
+      donde: 't.puerta_id IN (?) AND t.revocado_at IS NULL AND t.activo = 1',
+      params: [puertaIds],
+    });
   }
 }

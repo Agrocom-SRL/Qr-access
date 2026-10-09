@@ -116,6 +116,18 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     return this.contar({ ...(donde === undefined ? {} : { donde }), params });
   }
 
+  /** Cuántos QR hay en cada estado (las pastillas de "Mis QR"). */
+  async contarPorEstado(
+    emitidoPor: string | null,
+    ahora: Date,
+  ): Promise<Record<EstadoDeQr, number>> {
+    const conteos = { vigente: 0, usado: 0, vencido: 0, anulado: 0 };
+    for (const estado of Object.keys(conteos) as EstadoDeQr[]) {
+      conteos[estado] = await this.contarFiltrados({ estado, emitidoPor, ahora });
+    }
+    return conteos;
+  }
+
   /**
    * Paso 7 del ADR 0008: consumo atómico. El UPDATE solo afecta la fila si sigue sin usar, sin
    * anular y sin vencer; si dos lectores compiten, uno recibe `true` y el otro `false`.
@@ -190,6 +202,51 @@ export interface EventoFila extends RowDataPacket {
   motivo_code: string;
   puerta_id: string;
   qr_acceso_id: string | null;
+  qr_etiqueta: string | null;
+  qr_emitido_por: string | null;
+}
+
+export interface FiltroDeEventos {
+  /** Solo los de QR emitidos por este usuario; `null` = todos los de la cuenta. */
+  readonly emitidoPor: string | null;
+  readonly resultado: 'permitido' | 'rechazado' | null;
+  readonly puertaId: string | null;
+  /** Ventana `[desde, hasta)` en UTC. */
+  readonly desde: Date | null;
+  readonly hasta: Date | null;
+}
+
+export interface ResumenDeEventosFila extends RowDataPacket {
+  resultado: 'permitido' | 'rechazado';
+  motivo_code: string;
+  /** `COUNT(*)` es BIGINT y mysql2 lo entrega como texto (`bigNumberStrings`). */
+  total: string;
+}
+
+function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
+  const condiciones: string[] = [];
+  const params: unknown[] = [];
+  if (filtro.emitidoPor !== null) {
+    condiciones.push('q.emitido_por = ?');
+    params.push(filtro.emitidoPor);
+  }
+  if (filtro.resultado !== null) {
+    condiciones.push('t.resultado = ?');
+    params.push(filtro.resultado);
+  }
+  if (filtro.puertaId !== null) {
+    condiciones.push('t.puerta_id = ?');
+    params.push(filtro.puertaId);
+  }
+  if (filtro.desde !== null) {
+    condiciones.push('t.ocurrido_at >= ?');
+    params.push(filtro.desde);
+  }
+  if (filtro.hasta !== null) {
+    condiciones.push('t.ocurrido_at < ?');
+    params.push(filtro.hasta);
+  }
+  return condiciones.length === 0 ? { params } : { donde: condiciones.join(' AND '), params };
 }
 
 export interface NuevoEvento {
@@ -241,21 +298,35 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
-  listar(emitidoPor: string | null, limite: number, desplazamiento: number): Promise<EventoFila[]> {
+  listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {
+    const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<EventoFila>({
-      columnas: 't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id',
+      columnas:
+        't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.emitido_por AS qr_emitido_por',
       uniones: UNION_QR,
-      ...(emitidoPor === null ? {} : { donde: 'q.emitido_por = ?', params: [emitidoPor] }),
+      ...(donde === undefined ? {} : { donde }),
+      params,
       orden: 't.ocurrido_at DESC, t.id DESC',
       limite,
       desplazamiento,
     });
   }
 
-  contarVisibles(emitidoPor: string | null): Promise<number> {
-    return this.contar({
+  contarVisibles(filtro: FiltroDeEventos): Promise<number> {
+    const { donde, params } = armarFiltroDeEventos(filtro);
+    return this.contar({ uniones: UNION_QR, ...(donde === undefined ? {} : { donde }), params });
+  }
+
+  /** Cuántos intentos hubo por resultado y motivo dentro del filtro (indicadores del tablero). */
+  resumir(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
+    const { donde, params } = armarFiltroDeEventos(filtro);
+    return this.seleccionar<ResumenDeEventosFila>({
+      columnas: 't.resultado, t.motivo_code, COUNT(*) AS total',
       uniones: UNION_QR,
-      ...(emitidoPor === null ? {} : { donde: 'q.emitido_por = ?', params: [emitidoPor] }),
+      ...(donde === undefined ? {} : { donde }),
+      params,
+      agrupar: 't.resultado, t.motivo_code',
+      orden: 't.resultado, t.motivo_code',
     });
   }
 }

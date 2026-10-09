@@ -55,6 +55,7 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
 | PIN del **administrador** (todos los permisos de cuenta) | `DEMADM1` |
 | PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
+| PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
 | Sitio | `Sede demo` (zona `America/La_Paz`) |
 | Puertas | `9001` Portón principal, `9002` Puerta trasera (pulso de 5 s) |
 | Dispositivo del portón principal | `Authorization: Dispositivo 9001.1vopRZ7ET7vnEN3pMkYtgGFp8RRqZ7AOx7wJtFv01t0` |
