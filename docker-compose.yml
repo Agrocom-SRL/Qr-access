@@ -10,7 +10,7 @@
 #
 # El volumen qr-access-db-data guarda los datos que cargas para revisar: no se baja con -v.
 # Para probar migraciones contra una base limpia: docker compose -p qr-access-verif ...
-# Flashear el ESP32 y correr la app en el teléfono (ambos por USB) siguen siendo desde el host.
+# Flashear el ESP32 (por USB) y correr la app en el teléfono (por la WiFi, con la IP del Mac) siguen siendo desde el host.
 
 services:
   db:
