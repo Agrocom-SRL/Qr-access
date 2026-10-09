@@ -100,6 +100,11 @@ jobs:
       - name: Migraciones (dbmate)
         working-directory: .
         run: |
+          # Sin migraciones todavía, dbmate falla con "no migration files found": se saltea
+          if ! ls db/migrations/*.sql >/dev/null 2>&1; then
+            echo "db/migrations todavía no tiene migraciones: se saltea"
+            exit 0
+          fi
           curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v2.28.0/dbmate-linux-amd64
           chmod +x /usr/local/bin/dbmate
           dbmate --migrations-dir db/migrations --no-dump-schema up
