@@ -13,6 +13,34 @@ const _eligiendo = SesionEligiendoRol(
 );
 
 void main() {
+  group('splash animado', () {
+    test('con la sesión resuelta, espera en el arranque hasta que termine', () {
+      expect(
+        redireccionDeSesion(
+          const SinSesion(),
+          Rutas.bienvenida,
+          splashTerminado: false,
+        ),
+        Rutas.arranque,
+      );
+      expect(
+        redireccionDeSesion(
+          const SinSesion(),
+          Rutas.arranque,
+          splashTerminado: false,
+        ),
+        isNull,
+      );
+    });
+
+    test('al terminar, la guarda lleva a la bienvenida', () {
+      expect(
+        redireccionDeSesion(const SinSesion(), Rutas.arranque),
+        Rutas.bienvenida,
+      );
+    });
+  });
+
   group('sin sesión', () {
     test('la app lleva a la bienvenida desde cualquier pantalla', () {
       expect(
