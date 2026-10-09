@@ -10,7 +10,10 @@ export function rutasSalud(pool: Pool): FastifyPluginCallbackZod {
   return (app, _opciones, listo) => {
     app.get(
       '/salud',
-      { schema: { tags: ['plataforma'], response: { 200: respuestaSalud } } },
+      {
+        schema: { tags: ['plataforma'], response: { 200: respuestaSalud } },
+        config: { acceso: 'publica' },
+      },
       async () => {
         try {
           await pool.query('SELECT 1');

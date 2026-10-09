@@ -50,9 +50,10 @@ module.exports = {
     },
     {
       name: 'solo-app-registra-rutas',
-      comment: 'Las rutas de un módulo las registra app.ts y nadie más.',
+      comment:
+        'Las rutas de un módulo las registra app.ts, desde el registro modulos.ts, y nadie más (ADR 0019).',
       severity: 'error',
-      from: { pathNot: '^src/app\\.ts$' },
+      from: { pathNot: '^src/(app|modulos)\\.ts$' },
       to: { path: '^src/modules/[^/]+/routes\\.ts$' },
     },
     {

@@ -13,15 +13,17 @@ describe('errores RFC 9457', () => {
     prueba = await crearAppDePrueba();
     app = prueba.app;
     const conZod = app.withTypeProvider<ZodTypeProvider>();
-    conZod.get('/prueba/dominio', () => {
+    // Sin `config.acceso` una ruta exige un usuario (falla cerrado): estas son públicas a propósito.
+    const publica = { config: { acceso: 'publica' } } as const;
+    conZod.get('/prueba/dominio', publica, () => {
       throw new ErrorDeDominio('qr.vencido', 422);
     });
     conZod.post(
       '/prueba/validacion',
-      { schema: { body: z.object({ nombre: z.string().min(1) }) } },
+      { ...publica, schema: { body: z.object({ nombre: z.string().min(1) }) } },
       () => ({ ok: true }),
     );
-    conZod.get('/prueba/inesperado', () => {
+    conZod.get('/prueba/inesperado', publica, () => {
       throw new Error('detalle interno con un secreto');
     });
     await app.ready();

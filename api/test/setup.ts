@@ -15,3 +15,6 @@ process.env.DB_HOST ??= '127.0.0.1';
 process.env.DB_PORT ??= '3307';
 process.env.DB_USERNAME ??= 'qr_access';
 process.env.DB_PASSWORD ??= 'qr_access';
+// Secretos de prueba: solo existen en los tests (el entorno real los trae de .env o del servidor).
+process.env.JWT_SECRETO = 'secreto-de-pruebas-jwt-0123456789abcdef0123456789abcdef';
+process.env.PIN_PIMIENTA = 'cGltaWVudGEtZGUtcHJ1ZWJhcy0wMTIzNDU2Nzg5YWJjZGVm';
