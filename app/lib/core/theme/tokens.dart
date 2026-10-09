@@ -131,8 +131,9 @@ class ColoresSemanticos {
   Color get qrModulo => Primitivos.qrModulo;
   Color get qrFondo => Primitivos.qrFondo;
 
-  /// Placa del logo: blanca en ambos temas, porque el logo (verde y naranja
-  /// sobre transparente) solo se lee bien sobre blanco.
+  /// Placa del logo: solo se usa sobre el hero verde, donde el logo (verde y
+  /// naranja sobre transparente) no contrasta. Sobre las superficies, claras u
+  /// oscuras, el logo va sin placa.
   Color get placaLogo => Primitivos.neutro0;
 }
 
@@ -149,6 +150,9 @@ class Espacios {
   double get xxl => 32;
   double get xxxl => 48;
 }
+
+/// Opacidad de lo que está apagado (un acceso sin acción posible).
+const double opacidadDeshabilitado = 0.4;
 
 /// Radios de esquina: chips 6 · campos e íconos 10 · tarjetas 14 · hero y
 /// diálogos 20 · completo para botones y badges.
@@ -211,9 +215,6 @@ class Tamanos {
   double get navBar => 80;
   double get logo => 80;
   double get logoChico => 48;
-
-  /// Ancho / alto de la placa del logo (el logo es apaisado).
-  double get logoProporcion => 1.4;
   double get avatar => 44;
   double get avatarGrande => 56;
   double get avatarChico => 32;
