@@ -1,21 +1,23 @@
 #include "indicadores.h"
 
+#include <patron.h>
+
 #include "pines.h"
 
 namespace indicadores {
 
 namespace {
-constexpr uint32_t DURACION_MS = 1500;
-bool encendido = false;
+
+puerta::Indicacion actual = puerta::Indicacion::Ninguna;
 uint32_t desdeMs = 0;
 
-void apagar() {
-  digitalWrite(PIN_LED_VERDE, LOW);
-  digitalWrite(PIN_LED_ROJO, LOW);
-  digitalWrite(PIN_LED_AZUL, LOW);
-  digitalWrite(PIN_BUZZER, LOW);
-  encendido = false;
+void aplicar(const patron::Salida& salida) {
+  digitalWrite(PIN_LED_VERDE, salida.verde ? HIGH : LOW);
+  digitalWrite(PIN_LED_ROJO, salida.rojo ? HIGH : LOW);
+  digitalWrite(PIN_LED_AZUL, salida.azul ? HIGH : LOW);
+  digitalWrite(PIN_BUZZER, salida.buzzer ? HIGH : LOW);
 }
+
 }  // namespace
 
 void iniciar() {
@@ -26,33 +28,17 @@ void iniciar() {
 }
 
 void mostrar(puerta::Indicacion indicacion, uint32_t ahoraMs) {
-  using puerta::Indicacion;
-  if (indicacion == Indicacion::Ninguna) return;
-  apagar();
-  switch (indicacion) {
-    case Indicacion::Validando:
-      digitalWrite(PIN_LED_AZUL, HIGH);
-      break;
-    case Indicacion::Permitido:
-      digitalWrite(PIN_LED_VERDE, HIGH);
-      break;
-    case Indicacion::Denegado:
-      digitalWrite(PIN_LED_ROJO, HIGH);
-      digitalWrite(PIN_BUZZER, HIGH);
-      break;
-    case Indicacion::Error:
-      digitalWrite(PIN_LED_ROJO, HIGH);
-      digitalWrite(PIN_LED_AZUL, HIGH);
-      break;
-    case Indicacion::Ninguna:
-      break;
-  }
-  encendido = true;
+  if (indicacion == puerta::Indicacion::Ninguna) return;
+  actual = indicacion;
   desdeMs = ahoraMs;
+  aplicar(patron::en(actual, 0));
 }
 
 void tick(uint32_t ahoraMs) {
-  if (encendido && ahoraMs - desdeMs >= DURACION_MS) apagar();
+  if (actual == puerta::Indicacion::Ninguna) return;
+  const patron::Salida salida = patron::en(actual, ahoraMs - desdeMs);
+  aplicar(salida);
+  if (salida.terminado) actual = puerta::Indicacion::Ninguna;
 }
 
 }  // namespace indicadores

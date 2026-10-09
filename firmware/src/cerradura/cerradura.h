@@ -12,6 +12,9 @@ void activar(uint32_t ms, uint32_t ahoraMs);
 void desactivar();
 void tick(uint32_t ahoraMs);
 
+// Sensor magnético de la puerta: informativo (va en el latido), no decide nada.
+bool puertaAbierta();
+
 // true una sola vez por pulsación (con antirrebote).
 bool pulsadorPresionado(uint32_t ahoraMs);
 
