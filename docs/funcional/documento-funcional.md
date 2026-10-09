@@ -19,7 +19,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 ## 3. Alcance V1
 
 - §4.1 Cuentas, planes y suscripciones.
-- §4.2 Acceso a la plataforma: login por cuenta + PIN, roles y rol activo.
+- §4.2 Acceso a la plataforma: login por PIN, roles y rol activo.
 - §4.3 Sitios y puertas.
 - §4.4 Dispositivos: alta, credencial, latido y configuración.
 - §4.5 Emisión, envío y anulación de QR.
@@ -30,14 +30,14 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 ## 4. Funcionalidades
 
 ### 4.1 Cuentas, planes y suscripciones (ADR 0017)
-- HU-01: Como super admin, doy de alta una cuenta con su plan, su suscripción (desde/hasta) y su primer administrador.
+- HU-01: Como super admin, doy de alta una cuenta con su código único de 3 letras, su plan, su suscripción (desde/hasta) y su primer administrador.
 - HU-02: Como super admin, renuevo, cambio de plan o suspendo la suscripción de una cuenta.
 - HU-03: Como administrador de cuenta, veo mi plan, su vencimiento y cuánto uso de cada límite (dispositivos, usuarios).
 
 ### 4.2 Acceso a la plataforma (ADR 0004)
-- HU-04: Como usuario, ingreso con el código de cuenta y el PIN que me entregaron, en la app móvil o en la web (ADR 0018) [confirmar D-22, D-24].
+- HU-04: Como usuario, ingreso con el PIN que me entregaron (p. ej. `AGR7K2Q`: código de mi cuenta + 4 caracteres), en la app móvil o en la web (ADR 0018) [confirmar D-24].
 - HU-05: Como usuario con más de un rol, elijo el rol activo y lo cambio sin volver a ingresar.
-- HU-06: Como super admin, o como administrador con el permiso [confirmar D-23], genero PIN de acceso para la cuenta (cada PIN es un usuario con su etiqueta y sus roles), dentro del límite del plan; lo veo una sola vez, y lo regenero o lo doy de baja.
+- HU-06: Como super admin, o como administrador de la cuenta con el permiso `seguridad.usuario.crear`, genero PIN de acceso para la cuenta (cada PIN es un usuario con su etiqueta y sus roles), dentro del límite del plan; lo veo una sola vez, y lo regenero o lo doy de baja.
 
 ### 4.3 Sitios y puertas
 - HU-07: Como administrador, registro sitios (nombre, dirección, zona horaria) y sus puertas (nombre, duración del pulso de apertura).

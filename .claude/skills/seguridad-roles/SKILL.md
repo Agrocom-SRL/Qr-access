@@ -22,9 +22,12 @@ ADR 0004. Origen: ADR 0004 de ACRECIA, portado de Laravel a Node.
 
 ## Login
 
-`POST /api/v1/sesiones { codigo_cuenta, usuario, contrasena }`:
-- Contraseña con **argon2id**. Cuenta inexistente, inactiva, usuario de otra cuenta o contraseña errónea → mismo `401 sesion.credenciales_invalidas`.
-- Límite: 10 intentos por minuto por IP + código de cuenta (`@fastify/rate-limit`).
+Usuarios de cuenta (ADR 0018): `POST /api/v1/sesiones { pin }`:
+- PIN de 7 caracteres sin separadores: 3 letras = `cuentas.codigo` + 4 alfanuméricos al azar (`A`–`Z` sin `Ñ`, `0`–`9`). Se normaliza a mayúsculas y sin espacios.
+- Con el código se busca la cuenta (salto explícito); con el sufijo, `pin_indice = HMAC-SHA256(PIN_PIMIENTA, tenant_id | sufijo)` y se verifica `pin_hash` (argon2id). Cuenta inexistente, inactiva o PIN erróneo → mismo `401 sesion.credenciales_invalidas`.
+- Límite: 10 intentos por minuto por IP + código de cuenta (`@fastify/rate-limit`) y bloqueo creciente tras fallos.
+
+Super admin: `POST /api/v1/sesiones/plataforma { usuario, contrasena }` con **argon2id** [confirmar ruta al implementar].
 - Respuesta: JWT de acceso (15 min) + refresh (30 días, rotativo, guardado hasheado en `sesiones`, revocable). Si el usuario tiene más de un rol y ninguno preferido, el JWT sale sin rol activo y la app pide elegirlo.
 
 ## Roles y permisos
