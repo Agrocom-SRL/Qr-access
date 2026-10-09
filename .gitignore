@@ -1,31 +1,29 @@
-# Entorno
+# .gitignore global del monorepo: lo común a todas las partes.
+# Cada parte tiene el suyo: api/.gitignore, app/.gitignore (y los de android/ e ios/),
+# firmware/.gitignore.
+
+# Entorno y secretos (invariante 6)
 .env
 .env.*
 !.env.example
+*.key
+*.p12
+
+# Sistema operativo
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
 .idea/
+*.iml
 .vscode/*
 !.vscode/extensions.json
+*.swp
+*~
 
-# api (Node)
-api/node_modules/
-api/dist/
-api/coverage/
-
-# app (Flutter)
-app/.dart_tool/
-app/build/
-app/.flutter-plugins
-app/.flutter-plugins-dependencies
-app/android/local.properties
-app/android/key.properties
-app/android/app/*.jks
-app/ios/Pods/
-app/ios/Flutter/Generated.xcconfig
-
-# firmware (PlatformIO)
-firmware/.pio/
-firmware/include/secretos.h
+# Logs
+*.log
 
 # db
 db/schema.sql
