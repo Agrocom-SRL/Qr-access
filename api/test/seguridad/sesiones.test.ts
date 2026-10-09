@@ -147,7 +147,7 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
     }
 
     it('con varios roles y ninguno preferido, entra sin rol activo y sin permisos', async () => {
-      const { usuario } = await usuarioConDosRoles();
+      const { usuario, rolGuardia } = await usuarioConDosRoles();
       const sesion = await iniciarSesion(prueba.app, usuario.pin);
       expect(sesion.rol_activo_id).toBeNull();
       const actual = await prueba.app.inject({
@@ -157,6 +157,9 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
       });
       expect(actual.statusCode).toBe(200);
       expect(actual.json()).toMatchObject({ rol_activo: null, permisos: [] });
+      // Al reabrir sin rol activo, la app ofrece elegir entre estos
+      const roles = actual.json<{ roles: { id: string }[] }>().roles.map((rol) => rol.id);
+      expect(roles.sort()).toEqual([a.rolUsuarioId, rolGuardia].sort());
       const puertas = await prueba.app.inject({
         method: 'GET',
         url: '/api/v1/puertas',
@@ -270,6 +273,7 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
       expect(respuesta.json()).toEqual({
         usuario: { id: a.administrador.id, etiqueta: `Usuario ${a.administrador.pin}` },
         cuenta: { id: a.cuenta.id, codigo: 'AAA', nombre: 'Cuenta AAA' },
+        roles: [{ id: a.rolAdministradorId, nombre: 'Administrador' }],
         rol_activo: { id: a.rolAdministradorId, nombre: 'Administrador' },
         permisos: [...PERMISOS_DE_ADMINISTRADOR].sort(),
       });

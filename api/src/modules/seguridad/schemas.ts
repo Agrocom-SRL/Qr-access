@@ -26,6 +26,7 @@ export const respuestaDeRolActivo = z.object({ acceso: z.string() });
 export const respuestaDeSesionActual = z.object({
   usuario: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+  roles: z.array(esquemaRol),
   rol_activo: esquemaRol.nullable(),
   permisos: z.array(z.string()),
 });
