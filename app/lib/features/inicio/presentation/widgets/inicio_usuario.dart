@@ -208,7 +208,7 @@ class _HeroEmitir extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.espacio.xs),
                 Text(
-                  l10n.inicioHeroAyuda(l10n.qrFinDelDiaHora),
+                  l10n.inicioHeroAyudaHoras(Vigencia.porDefecto.opcion.horas!),
                   style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
                 ),
                 if (alEmitir != null) ...[

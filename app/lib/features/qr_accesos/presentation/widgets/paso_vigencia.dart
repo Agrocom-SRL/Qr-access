@@ -5,12 +5,14 @@ import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart'
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_seleccionable.dart';
 import 'package:flutter/material.dart';
 
-/// Paso 2 (handoff C05b): "Hasta el fin del día" por defecto, un plazo corto
-/// (1, 2 o 4 h), uno largo (8, 12 o 18 h) o una hora exacta que se elige con
-/// el reloj; y la etiqueta opcional (máx. 40).
+/// Paso 2 (handoff C05b): un selector Horas | Días. En horas, un bloque corto
+/// (1, 2, 4, 8 h), uno largo (12, 16, 20, 24 h) y una hora exacta que se elige
+/// con el reloj (2 h por defecto); en días, 2, 3, 5 o 7 días o "todo el día".
+/// Debajo, la etiqueta opcional (máx. 40).
 class PasoVigencia extends StatelessWidget {
   const new({
     required this.vigencia,
@@ -55,52 +57,80 @@ class PasoVigencia extends StatelessWidget {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     final opcion = vigencia.opcion;
+    final enDias = opcion.esDeDias;
     final venceExacto = vigencia.venceAtPara(ahora);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.qrEmitirVigencia, style: textos.titleLarge),
         SizedBox(height: tokens.espacio.m),
-        TarjetaSeleccionable(
-          titulo: l10n.qrVigenciaFinDelDia,
-          subtitulo: l10n.qrVenceHoyALas(l10n.qrFinDelDiaHora),
-          seleccionada: opcion == OpcionVigencia.finDelDia,
-          alElegir: () => alElegir(Vigencia.porDefecto),
-          etiquetaDerecha: AccesoBadge(
-            texto: l10n.qrVigenciaPorDefecto,
-            tono: TonoAcceso.primario,
+        SelectorSegmentado<bool>(
+          segmentos: [
+            SegmentoDeSelector(
+              valor: false,
+              etiqueta: l10n.qrVigenciaModoHoras,
+            ),
+            SegmentoDeSelector(valor: true, etiqueta: l10n.qrVigenciaModoDias),
+          ],
+          seleccionado: enDias,
+          // Al cambiar de modo se pasa al valor por defecto de ese modo.
+          alElegir: (dias) {
+            if (dias != enDias) {
+              alElegir(
+                dias
+                    ? const Vigencia(OpcionVigencia.dosDias)
+                    : Vigencia.porDefecto,
+              );
+            }
+          },
+        ),
+        SizedBox(height: tokens.espacio.m),
+        if (enDias) ...[
+          _TarjetaPlazos(
+            titulo: l10n.qrVigenciaModoDias,
+            plazos: OpcionVigencia.enDias,
+            vigencia: vigencia,
+            seleccionada: OpcionVigencia.enDias.contains(opcion),
+            alElegir: alElegir,
           ),
-        ),
-        SizedBox(height: tokens.espacio.m),
-        _TarjetaPlazos(
-          titulo: l10n.qrVigenciaCorta,
-          plazos: OpcionVigencia.corta,
-          vigencia: vigencia,
-          seleccionada: opcion.esCorta,
-          alElegir: alElegir,
-        ),
-        SizedBox(height: tokens.espacio.m),
-        _TarjetaPlazos(
-          titulo: l10n.qrVigenciaLarga,
-          plazos: OpcionVigencia.larga,
-          vigencia: vigencia,
-          seleccionada: opcion.esLarga,
-          alElegir: alElegir,
-        ),
-        SizedBox(height: tokens.espacio.m),
-        TarjetaSeleccionable(
-          titulo: l10n.qrVigenciaPersonalizada,
-          subtitulo: l10n.qrVigenciaPersonalizadaAyuda,
-          seleccionada: opcion == OpcionVigencia.horaExacta,
-          alElegir: () => _elegirHora(context),
-          etiquetaDerecha:
-              opcion == OpcionVigencia.horaExacta && venceExacto != null
-              ? AccesoBadge(
-                  texto: formatearHora(venceExacto),
-                  tono: TonoAcceso.primario,
-                )
-              : Icon(Icons.schedule, size: tokens.tamano.icono),
-        ),
+          SizedBox(height: tokens.espacio.m),
+          TarjetaSeleccionable(
+            titulo: l10n.qrVigenciaFinDelDia,
+            subtitulo: l10n.qrVenceHoyALas(l10n.qrFinDelDiaHora),
+            seleccionada: opcion == OpcionVigencia.finDelDia,
+            alElegir: () => alElegir(const Vigencia(OpcionVigencia.finDelDia)),
+          ),
+        ] else ...[
+          _TarjetaPlazos(
+            titulo: l10n.qrVigenciaCorta,
+            plazos: OpcionVigencia.corta,
+            vigencia: vigencia,
+            seleccionada: opcion.esCorta,
+            alElegir: alElegir,
+          ),
+          SizedBox(height: tokens.espacio.m),
+          _TarjetaPlazos(
+            titulo: l10n.qrVigenciaLarga,
+            plazos: OpcionVigencia.larga,
+            vigencia: vigencia,
+            seleccionada: opcion.esLarga,
+            alElegir: alElegir,
+          ),
+          SizedBox(height: tokens.espacio.m),
+          TarjetaSeleccionable(
+            titulo: l10n.qrVigenciaPersonalizada,
+            subtitulo: l10n.qrVigenciaPersonalizadaAyuda,
+            seleccionada: opcion == OpcionVigencia.horaExacta,
+            alElegir: () => _elegirHora(context),
+            etiquetaDerecha:
+                opcion == OpcionVigencia.horaExacta && venceExacto != null
+                ? AccesoBadge(
+                    texto: formatearHora(venceExacto),
+                    tono: TonoAcceso.primario,
+                  )
+                : Icon(Icons.schedule, size: tokens.tamano.icono),
+          ),
+        ],
         SizedBox(height: tokens.espacio.xl),
         CampoFormulario(
           etiqueta: l10n.qrEmitirEtiqueta,
@@ -151,7 +181,9 @@ class _TarjetaPlazos extends StatelessWidget {
         children: [
           for (final plazo in plazos)
             _Pastilla(
-              texto: l10n.qrVigenciaHoras(plazo.horas!),
+              texto: plazo.dias != null
+                  ? l10n.qrVigenciaDias(plazo.dias!)
+                  : l10n.qrVigenciaHoras(plazo.horas!),
               elegida: vigencia.opcion == plazo,
               alElegir: () => alElegir(Vigencia(plazo)),
             ),

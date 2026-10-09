@@ -4,7 +4,7 @@ library;
 
 export 'data/qr_accesos_repositorio.dart'
     show QrAccesosRepositorio, qrAccesosRepositorioProvider;
-export 'domain/datos_emision_qr.dart' show PrellenadoEmision;
+export 'domain/datos_emision_qr.dart' show PrellenadoEmision, Vigencia;
 export 'domain/estado_qr.dart';
 export 'domain/qr_acceso.dart';
 export 'presentation/emitir_qr_pagina.dart' show EmitirQrPagina;

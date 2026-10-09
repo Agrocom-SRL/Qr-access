@@ -89,7 +89,7 @@
   "inicioSaludoSinNombre": "Hello",
   "inicioSaludo": "Hello, {nombre}",
   "inicioCuentaYRol": "{cuenta} · {rol}",
-  "inicioHeroAyuda": "Single use. Expires today at {hora}.",
+  "inicioHeroAyudaHoras": "Single use. Expires in {horas} h.",
   "inicioNuevoQr": "New QR",
   "inicioRepetirUltimo": "Repeat last",
   "inicioVigentesHoy": "Active today",
@@ -174,6 +174,9 @@
       "horas": { "type": "int" }
     }
   },
+  "qrVigenciaModoHoras": "Hours",
+  "qrVigenciaModoDias": "Days",
+  "qrVigenciaDias": "{dias} d",
   "qrVigenciaHora": "Time",
   "qrFinDelDiaHora": "23:59",
   "qrEmitirEtiqueta": "Label",
