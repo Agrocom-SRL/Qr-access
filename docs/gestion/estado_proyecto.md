@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-08
+**Última actualización:** 2026-10-09
 
 ## Qué ya existe
 
@@ -19,19 +19,25 @@
   - **Docker**: `docker compose up` levanta MySQL y la API; con `--profile web`, también la app web en `:8080`. El firmware se compila y prueba en el contenedor `firmware`.
   - `.gitignore` global (entorno, sistema operativo, editores) y uno por parte (`api/`, `app/`, `firmware/`).
 
-## Núcleo V1 de la API (rama `feature/api-nucleo`)
+## Núcleo V1 integrado en `develop` (#14, #15, #16)
 
-- 16 migraciones (una por tabla) y `03-schema-sql.md` al día; seeds `01_catalogo` (permisos) y `02_demo` (cuenta `DEM`, solo desarrollo, ver `entornos.md`).
-- Plataforma: `RepositorioDeCuenta` / `RepositorioDePlataforma` (tenant, soft delete, autoría y bitácora por construcción), argon2id, HMAC con pimienta, JWT, plugin de autenticación que falla cerrado.
-- Módulos: `seguridad` (login por PIN, refresco rotativo, rol activo), `organizacion` (listar puertas), `suscripciones` (vigencia vía contrato), `accesos` (emitir, listar y anular QR; validación con los 7 pasos y consumo atómico; eventos) y `dispositivos` (credencial, latido, configuración).
-- Pendiente del núcleo: altas y administración (cuentas, usuarios, sitios, puertas, dispositivos), límites del plan para dispositivos y usuarios, baja diaria de QR vencidos, login del super admin y límite de intentos compartido entre instancias.
+- **API (#15):** 16 migraciones (una por tabla) y `03-schema-sql.md` al día; seeds `01_catalogo` (permisos) y `02_demo` (cuenta `DEM`, solo desarrollo, ver `entornos.md`). `RepositorioDeCuenta` / `RepositorioDePlataforma` (tenant, soft delete, autoría y bitácora por construcción), argon2id, HMAC con pimienta, JWT y autenticación que falla cerrado. Módulos `seguridad` (login por PIN, refresco rotativo, rol activo, sesión actual con sus roles), `organizacion` (listar puertas), `suscripciones` (vigencia vía contrato), `accesos` (emitir, listar y anular QR; validación con consumo atómico; eventos) y `dispositivos` (credencial, latido, configuración). 148 tests.
+- **App (#16):** ingreso por PIN con elección de rol (también al reabrir), tablero por permisos, emisión de QR para una o más puertas, visor y compartir PNG, listado con anulación y bitácora paginada. Cliente de la API escrito a mano con los `code` de error traducidos en el ARB. 156 tests; compila web y APK.
+- **Firmware (#14):** contrato V1 estricto (abre solo con `abrir:true`, `motivo_code=acceso.permitido`, `evento_id` y `segundos` válidos), tope de apertura de 10 s, credencial del dispositivo en NVS, TLS con CA embebida (HTTP plano solo en `esp32-dev`), latido, configuración, NTP, watchdog, aprovisionamiento por serie e indicaciones por LED y buzzer. 69 tests nativos.
+- **Después de actualizar `develop`:** `flutter pub get` y `flutter gen-l10n` en `app/` (las traducciones generadas no se versionan), `npm ci` en `api/`, copiar `JWT_SECRETO` y `PIN_PIMIENTA` de `.env.example` al `.env`, y migrar y sembrar la base de desarrollo (`entornos.md`, "Datos de desarrollo").
 
-## Próximo paso
+## Lo que falta para un V1 usable
 
-1. Revisar e integrar las PR de `feature/alcance-v1` y `feature/esqueletos-base`.
-2. Llevarle al cliente las dudas abiertas que bloquean el modelo: **D-14** (límites del plan), **D-16** (vencimiento "fin del día" o 24 h), **D-17** (una o varias puertas por QR), **D-22 a D-24** (formato del PIN y quién lo genera).
-3. Rehacer `03-schema-sql.md` y escribir las primeras migraciones con el modelo nuevo: `cuentas`, `planes`, `suscripciones`, `usuarios` (PIN), `roles`, `permisos`, `sesiones` y `bitacoras`. Después, `RepositorioDeCuenta` con la bitácora en la misma transacción.
-4. Primera historia vertical: HU-04 (login por PIN) → HU-07 (sitios y puertas) → HU-08 (alta de dispositivo) → HU-11/HU-14 (emitir y validar un QR) → probar con el ESP32 en la mesa.
+1. **Prueba de punta a punta:** API local con el seed `DEM`, la app y el firmware `esp32-dev` en la placa. Nunca se probaron las tres partes juntas.
+2. **Revisión línea por línea de lo crítico** (CLAUDE.md): aislamiento por cuenta, validación y consumo del QR, autenticación de dispositivos y firmware de la cerradura. El núcleo se integró sin ella.
+3. **Administración:** altas y gestión de cuentas, usuarios (con generación del PIN), sitios, puertas y dispositivos. Hoy solo existe lo que trae el seed.
+4. **Límites del plan** para dispositivos y usuarios (RF-10).
+5. **Login del super admin** (usuario + contraseña) y **baja diaria de QR vencidos** (ADR 0008 §7).
+6. **Seguridad de la API:** rate limit en las validaciones por dispositivo, CORS, límite de intentos del login compartido entre instancias (hoy en memoria) y detección de reuso de un refresh robado.
+7. **Bitácora del bloqueo del login:** el ADR 0018 la pide, pero `bitacoras.accion` no tiene un valor para el bloqueo; hoy solo deja un `warn` en el log. Decidir si se agrega `bloqueado` al CHECK.
+8. **Test del OpenAPI** contra el contrato publicado.
+9. **App:** brillo de pantalla al mostrar el QR, diseño visual final, tabla de listados en pantallas anchas (≥1024 px), compilación en iOS, y revisar que el token del QR viaje por `extra` de go_router (en web queda en el historial de la pestaña).
+10. **Firmware:** confirmar la polaridad del sensor reed con el sensor real (`SENSOR_PUERTA_NIVEL_ABIERTA`), la CA para producción y el portal AP de aprovisionamiento; OTA queda fuera de V1.
 
 ## Pendiente de decidir o confirmar
 
