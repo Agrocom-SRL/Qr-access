@@ -64,6 +64,7 @@
   "sesionCampoPin": "PIN",
   "sesionPinProgreso": "{escritos} of {total} characters",
   "sesionPinLeyenda": "Account · Key",
+  "sesionPegarPin": "Paste",
   "sesionMostrarPin": "Show",
   "sesionOcultarPin": "Hide",
   "sesionPinFormatoInvalido": "The PIN has 7 characters: 3 letters and 4 letters or numbers.",

@@ -64,6 +64,7 @@
   "sesionCampoPin": "PIN",
   "sesionPinProgreso": "{escritos} de {total} caracteres",
   "sesionPinLeyenda": "Conta · Chave",
+  "sesionPegarPin": "Colar",
   "sesionMostrarPin": "Mostrar",
   "sesionOcultarPin": "Ocultar",
   "sesionPinFormatoInvalido": "O PIN tem 7 caracteres: 3 letras e 4 letras ou números.",

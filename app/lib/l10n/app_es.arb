@@ -310,6 +310,10 @@
   "@sesionPinLeyenda": {
     "description": "Leyenda bajo las casillas: 3 de la cuenta y 4 de la clave"
   },
+  "sesionPegarPin": "Pegar",
+  "@sesionPegarPin": {
+    "description": "Botón que pega el PIN desde el portapapeles"
+  },
   "sesionMostrarPin": "Mostrar",
   "@sesionMostrarPin": {
     "description": "Botón que muestra los caracteres del PIN"
