@@ -1,6 +1,8 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:flutter/material.dart';
 
@@ -14,6 +16,7 @@ class EstadoVacio extends StatelessWidget {
   const new({
     required this.titulo,
     this.icono,
+    this.ilustracion,
     this.ayuda,
     this.textoAccion,
     this.iconoAccion,
@@ -48,6 +51,10 @@ class EstadoVacio extends StatelessWidget {
 
   final String titulo;
   final IconData? icono;
+
+  /// Ruta del SVG decorativo (ver `Multimedia`). Va arriba del título y
+  /// reemplaza al ícono; error y sin conexión traen la suya por defecto.
+  final String? ilustracion;
   final String? ayuda;
   final String? textoAccion;
   final IconData? iconoAccion;
@@ -59,6 +66,13 @@ class EstadoVacio extends StatelessWidget {
     final tokens = context.tokens;
     final l10n = context.l10n;
     final texto = Theme.of(context).textTheme;
+    final ilustracionFinal =
+        ilustracion ??
+        switch (variante) {
+          VarianteEstadoVacio.vacio => null,
+          VarianteEstadoVacio.error => Multimedia.error,
+          VarianteEstadoVacio.sinConexion => Multimedia.sinConexion,
+        };
     final (
       iconoFinal,
       tono,
@@ -96,11 +110,14 @@ class EstadoVacio extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CajaIcono(
-                icono: iconoFinal,
-                tono: tono,
-                tamano: tokens.tamano.accesoRapido,
-              ),
+              if (ilustracionFinal != null)
+                AccesoIlustracion(ruta: ilustracionFinal)
+              else
+                CajaIcono(
+                  icono: iconoFinal,
+                  tono: tono,
+                  tamano: tokens.tamano.accesoRapido,
+                ),
               SizedBox(height: tokens.espacio.l),
               Text(
                 titulo,

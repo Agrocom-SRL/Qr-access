@@ -185,6 +185,12 @@ class Duraciones {
   /// Segundos que "Copiado" reemplaza a "Copiar" tras copiar el PIN.
   Duration get confirmacionCopiado => const Duration(seconds: 2);
 
+  /// Tope del splash animado: lo que dura el Lottie de arranque.
+  Duration get splash => const Duration(milliseconds: 800);
+
+  /// Cada cuánto se actualiza el "tiempo restante" de un QR (sin segundos).
+  Duration get refrescoTiempoRestante => const Duration(seconds: 30);
+
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 
@@ -244,6 +250,17 @@ class Tamanos {
   double get resumenLateral => 360;
 
   /// Lado mínimo del QR: 240 dp (320 en expandido) + 16 dp de silencio.
+  /// Lienzo del Lottie del splash y ancho del logo que lleva encima.
+  double get splash => 200;
+  double get splashLogo => 120;
+
+  /// Cabecera con foto del ingreso (compacto) y su placa de logo.
+  double get cabeceraFoto => 220;
+  double get placaCabecera => 88;
+
+  /// Ilustración de un estado vacío, de error, sin conexión o de bloqueo.
+  double get ilustracion => 160;
+  double get ilustracionExpandida => 200;
   double get qrMinimo => 240;
   double get qrExpandido => 320;
   double get qrZonaSilencio => 16;

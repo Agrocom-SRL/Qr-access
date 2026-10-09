@@ -32,6 +32,10 @@ Future<CompartirFalso> _montar(WidgetTester tester, {QrEmitido? qr}) async {
     ],
   );
   await tester.pump();
+  // El Lottie de emisión dura 1 s y el QR entra en 300 ms.
+  await tester.pump(const Duration(seconds: 1));
+  await tester.pump(const Duration(milliseconds: 16));
+  await tester.pump(const Duration(milliseconds: 300));
   return compartir;
 }
 

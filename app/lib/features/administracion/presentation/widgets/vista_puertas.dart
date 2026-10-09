@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
@@ -40,7 +41,7 @@ class VistaPuertas extends ConsumerWidget {
       alReintentar: () => ref.invalidate(puertasDisponiblesProvider),
       alCambiarPagina: (_) {},
       vacio: EstadoVacio(
-        icono: Icons.door_front_door_outlined,
+        ilustracion: Multimedia.vacioPuertas,
         titulo: l10n.puertasSinPuertas,
         ayuda: l10n.puertasSinPuertasAyuda,
       ),

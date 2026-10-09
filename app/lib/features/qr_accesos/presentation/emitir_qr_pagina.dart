@@ -22,6 +22,7 @@ import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dar
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -64,7 +65,9 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
 
   Future<void> _emitir() async {
     final qr = await ref.read(emitirQrControladorProvider.notifier).emitir();
-    if (qr != null && mounted) context.go(Rutas.qrEmitido, extra: qr);
+    if (qr == null || !mounted) return;
+    unawaited(HapticFeedback.lightImpact());
+    context.go(Rutas.qrEmitido, extra: qr);
   }
 
   void _cerrar() => context.go(Rutas.inicio);

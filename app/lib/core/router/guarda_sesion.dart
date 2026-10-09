@@ -25,7 +25,18 @@ const Set<String> _permisosDeAdmin = {
 /// Adónde mandar a la persona según su sesión: `null` si puede quedarse en
 /// `ruta`. Función pura para probarla sin router. `ruta` es la ruta
 /// declarada (con `:id`), no la dirección concreta.
-String? redireccionDeSesion(SesionEstado sesion, String ruta) {
+///
+/// Mientras el splash animado no termina ([splashTerminado] falso), la persona
+/// se queda en `arranque` aunque la sesión ya esté resuelta: la animación
+/// (≤ 800 ms) se ve entera y recién entonces se navega.
+String? redireccionDeSesion(
+  SesionEstado sesion,
+  String ruta, {
+  bool splashTerminado = true,
+}) {
+  if (!splashTerminado && sesion is! SesionArrancando) {
+    return ruta == Rutas.arranque ? null : Rutas.arranque;
+  }
   final destinoSinSesion = switch (sesion) {
     SesionArrancando() => Rutas.arranque,
     SinSesion() => null,

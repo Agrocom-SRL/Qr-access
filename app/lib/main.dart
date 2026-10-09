@@ -1,10 +1,14 @@
 import 'package:agrocom_acceso/app.dart';
 import 'package:agrocom_acceso/core/api/api_providers.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Las ilustraciones SVG quedan en caché antes del primer estado vacío.
+  await Multimedia.precachearIlustraciones();
   runApp(
     ProviderScope(
       overrides: [

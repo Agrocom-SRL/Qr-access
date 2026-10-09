@@ -89,7 +89,7 @@
   "inicioSaludoSinNombre": "Hello",
   "inicioSaludo": "Hello, {nombre}",
   "inicioCuentaYRol": "{cuenta} · {rol}",
-  "inicioHeroAyuda": "Single use. Expires today at {hora}.",
+  "inicioHeroAyudaHoras": "Single use. Expires in {horas} h.",
   "inicioNuevoQr": "New QR",
   "inicioRepetirUltimo": "Repeat last",
   "inicioVigentesHoy": "Active today",
@@ -116,6 +116,9 @@
   "qrSinEtiqueta": "No label",
   "qrVenceEl": "Expires {fecha}",
   "qrVenceHoyALas": "Expires today at {hora}",
+  "qrValidezDias": "{n, plural, =1{Valid for 1 day} other{Valid for {n} days}}",
+  "qrValidezHoras": "{n, plural, =1{Valid for 1 hour} other{Valid for {n} hours}}",
+  "qrValidezMinutos": "{n, plural, =1{Valid for 1 minute} other{Valid for {n} minutes}}",
   "qrVenceCorto": "expires {hora}",
   "qrEmitidoYVence": "{emitido} → expires {vence}",
   "qrUsadoEl": "Used {fecha}",
@@ -174,6 +177,9 @@
       "horas": { "type": "int" }
     }
   },
+  "qrVigenciaModoHoras": "Hours",
+  "qrVigenciaModoDias": "Days",
+  "qrVigenciaDias": "{dias} d",
   "qrVigenciaHora": "Time",
   "qrFinDelDiaHora": "23:59",
   "qrEmitirEtiqueta": "Label",

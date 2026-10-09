@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
@@ -53,6 +55,7 @@ class _ContenidoPinGeneradoEstado extends State<ContenidoPinGenerado> {
 
   Future<void> _copiar() async {
     await Clipboard.setData(ClipboardData(text: widget.pin.pin));
+    unawaited(HapticFeedback.lightImpact());
     if (!mounted) return;
     setState(() => _copiado = true);
     await Future<void>.delayed(context.tokens.duracion.confirmacionCopiado);

@@ -89,7 +89,7 @@
   "inicioSaludoSinNombre": "Olá",
   "inicioSaludo": "Olá, {nombre}",
   "inicioCuentaYRol": "{cuenta} · {rol}",
-  "inicioHeroAyuda": "Uso único. Vence hoje às {hora}.",
+  "inicioHeroAyudaHoras": "Uso único. Vence em {horas} h.",
   "inicioNuevoQr": "Novo QR",
   "inicioRepetirUltimo": "Repetir último",
   "inicioVigentesHoy": "Ativos hoje",
@@ -116,6 +116,9 @@
   "qrSinEtiqueta": "Sem rótulo",
   "qrVenceEl": "Vence em {fecha}",
   "qrVenceHoyALas": "Vence hoje às {hora}",
+  "qrValidezDias": "{n, plural, =1{Válido por 1 dia} other{Válido por {n} dias}}",
+  "qrValidezHoras": "{n, plural, =1{Válido por 1 hora} other{Válido por {n} horas}}",
+  "qrValidezMinutos": "{n, plural, =1{Válido por 1 minuto} other{Válido por {n} minutos}}",
   "qrVenceCorto": "vence {hora}",
   "qrEmitidoYVence": "{emitido} → vence {vence}",
   "qrUsadoEl": "Usado {fecha}",
@@ -174,6 +177,9 @@
       "horas": { "type": "int" }
     }
   },
+  "qrVigenciaModoHoras": "Horas",
+  "qrVigenciaModoDias": "Dias",
+  "qrVigenciaDias": "{dias} d",
   "qrVigenciaHora": "Hora",
   "qrFinDelDiaHora": "23:59",
   "qrEmitirEtiqueta": "Rótulo",

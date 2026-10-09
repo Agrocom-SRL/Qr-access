@@ -11,7 +11,11 @@ import {
   motivoTrasConsumoFallido,
   type EntradaDeDecision,
 } from '../../src/modules/accesos/domain/validacion.js';
-import { finDelDiaLocal, vencimientoMaximo } from '../../src/modules/accesos/domain/vencimiento.js';
+import {
+  finDelDiaLocal,
+  vencimientoMaximo,
+  vencimientoPorDefecto,
+} from '../../src/modules/accesos/domain/vencimiento.js';
 import {
   calcularIndiceDePin,
   generarSufijoDePin,
@@ -135,25 +139,39 @@ describe('fin del día local (RF-05, invariante 7)', () => {
     );
   });
 
-  it('con varias zonas toma el fin de día más próximo y el plan lo puede recortar', () => {
+  it('por defecto toma el fin de día más próximo y el plan lo puede recortar', () => {
     const ahora = new Date('2026-10-09T12:00:00Z');
     expect(
-      vencimientoMaximo({
+      vencimientoPorDefecto({
         ahora,
         zonasHorarias: ['America/La_Paz', 'Asia/Tokyo'],
         maxVigenciaHoras: null,
       }).toISOString(),
     ).toBe('2026-10-09T15:00:00.000Z'); // en Tokio el día termina a las 15:00 UTC
     expect(
-      vencimientoMaximo({
+      vencimientoPorDefecto({
         ahora,
         zonasHorarias: ['America/La_Paz'],
         maxVigenciaHoras: 2,
       }).toISOString(),
     ).toBe('2026-10-09T14:00:00.000Z');
     expect(
-      vencimientoMaximo({ ahora, zonasHorarias: [], maxVigenciaHoras: null }).toISOString(),
+      vencimientoPorDefecto({ ahora, zonasHorarias: [], maxVigenciaHoras: null }).toISOString(),
     ).toBe('2026-10-10T04:00:00.000Z');
+  });
+
+  it('el máximo es el del plan y nunca pasa el techo de 7 días del sistema', () => {
+    const ahora = new Date('2026-10-09T12:00:00Z');
+    const entrada = { ahora, zonasHorarias: ['America/La_Paz'] };
+    expect(vencimientoMaximo({ ...entrada, maxVigenciaHoras: 48 }).toISOString()).toBe(
+      '2026-10-11T12:00:00.000Z',
+    );
+    expect(vencimientoMaximo({ ...entrada, maxVigenciaHoras: null }).toISOString()).toBe(
+      '2026-10-16T12:00:00.000Z',
+    );
+    expect(vencimientoMaximo({ ...entrada, maxVigenciaHoras: 1000 }).toISOString()).toBe(
+      '2026-10-16T12:00:00.000Z',
+    );
   });
 });
 

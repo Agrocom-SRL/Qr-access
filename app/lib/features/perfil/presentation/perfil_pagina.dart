@@ -49,7 +49,6 @@ class PerfilPagina extends ConsumerWidget {
 
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
-      titulo: l10n.perfilTitulo,
       anchoMaximo: tokens.tamano.maxFormulario,
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),

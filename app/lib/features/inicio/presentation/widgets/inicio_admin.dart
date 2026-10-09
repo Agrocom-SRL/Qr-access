@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -57,6 +58,9 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     final datos = tablero.value;
     final expandida = context.esExpandida;
     final puedeEmitir = widget.sesion.tiene(Permisos.emitirQr);
+    // El administrador no tiene "Mis QR" en la barra (se llena con Admin):
+    // llega desde aquí a los QR que emitió, para volver a compartirlos.
+    final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
 
     // Las notas solo caben en expandido; en compacto (C04b) las tarjetas
     // llevan rótulo y cifra, nada más.
@@ -129,28 +133,49 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
-                  if (puedeEmitir)
+                  if (puedeVerMisQr)
+                    AccesoBoton(
+                      texto: l10n.navMisQr,
+                      icono: Icons.list_alt,
+                      variante: VarianteBoton.tonal,
+                      onPressed: () => context.go(Rutas.qrMios),
+                    ),
+                  if (puedeEmitir) ...[
+                    SizedBox(width: tokens.espacio.m),
                     AccesoBoton(
                       texto: l10n.qrEmitirBoton,
                       icono: Icons.qr_code_2,
                       onPressed: () => context.go(Rutas.qrNuevo),
                     ),
+                  ],
                 ],
               )
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                accion: puedeEmitir
-                    ? IconButton.filled(
-                        tooltip: l10n.qrEmitirBoton,
-                        onPressed: () => context.go(Rutas.qrNuevo),
-                        // Relleno primario con ícono blanco (C04b); el tema
-                        // de IconButton pinta el ícono en texto.
-                        style: IconButton.styleFrom(
-                          backgroundColor: tokens.colores.primario,
-                          foregroundColor: tokens.colores.sobrePrimario,
-                        ),
-                        icon: const Icon(Icons.qr_code_2),
+                accion: puedeEmitir || puedeVerMisQr
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (puedeVerMisQr)
+                            IconButton.outlined(
+                              tooltip: l10n.navMisQr,
+                              onPressed: () => context.go(Rutas.qrMios),
+                              icon: const Icon(Icons.list_alt),
+                            ),
+                          if (puedeEmitir)
+                            IconButton.filled(
+                              tooltip: l10n.qrEmitirBoton,
+                              onPressed: () => context.go(Rutas.qrNuevo),
+                              // Relleno primario con ícono blanco (C04b); el
+                              // tema de IconButton pinta el ícono en texto.
+                              style: IconButton.styleFrom(
+                                backgroundColor: tokens.colores.primario,
+                                foregroundColor: tokens.colores.sobrePrimario,
+                              ),
+                              icon: const Icon(Icons.qr_code_2),
+                            ),
+                        ],
                       )
                     : null,
               ),
@@ -228,7 +253,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
               SizedBox(height: tokens.espacio.s),
               if (datos != null && datos.ultimosEventos.isEmpty)
                 EstadoVacio(
-                  icono: Icons.history,
+                  ilustracion: Multimedia.vacioEventos,
                   titulo: l10n.eventosSinResultados,
                   ayuda: l10n.eventosSinResultadosAyuda,
                 )

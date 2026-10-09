@@ -1,36 +1,65 @@
 import 'package:flutter/foundation.dart';
 
-/// Vigencia que la persona puede elegir al emitir (handoff C05b). Por defecto
-/// el fin del día local del sitio: lo calcula la API (ADR 0008, D-16), así que
-/// la app no envía `vence_at`. Las demás: un plazo corto (1, 2 o 4 h), uno
-/// largo (8, 12 o 18 h) o una hora concreta del día.
+/// Plazos de vigencia que la persona puede elegir al emitir (handoff C05b):
+/// por **horas** (cortas 1, 2, 4, 8; largas 12, 16, 20, 24; o una hora exacta
+/// del día) o por **días** (2, 3, 5, 7, o todo el día). Por defecto, 2 horas.
+/// La API acepta hasta el máximo del plan, con techo de 7 días (ADR 0020).
 enum OpcionVigencia {
-  finDelDia(null),
-  unaHora(1),
-  dosHoras(2),
-  cuatroHoras(4),
-  ochoHoras(8),
-  doceHoras(12),
-  dieciochoHoras(18),
-  horaExacta(null);
+  unaHora(horas: 1),
+  dosHoras(horas: 2),
+  cuatroHoras(horas: 4),
+  ochoHoras(horas: 8),
+  doceHoras(horas: 12),
+  dieciseisHoras(horas: 16),
+  veinteHoras(horas: 20),
+  veinticuatroHoras(horas: 24),
+  horaExacta(),
+  dosDias(dias: 2),
+  tresDias(dias: 3),
+  cincoDias(dias: 5),
+  sieteDias(dias: 7),
 
-  new(this.horas);
+  /// "Todo el día": la API la calcula como el fin del día local del sitio
+  /// (ADR 0008, D-16), así que la app no envía `vence_at`.
+  finDelDia();
 
-  /// Horas de vigencia desde la emisión; `null` cuando no es un plazo fijo.
+  new({this.horas, this.dias});
+
+  /// Horas de vigencia desde la emisión; `null` si no es un plazo en horas.
   final int? horas;
 
-  /// Plazos de [corta] (hasta 4 h).
-  static const List<OpcionVigencia> corta = [unaHora, dosHoras, cuatroHoras];
+  /// Días de vigencia desde la emisión; `null` si no es un plazo en días.
+  final int? dias;
 
-  /// Plazos de la vigencia larga (de 8 h en adelante).
-  static const List<OpcionVigencia> larga = [
+  /// Plazos del bloque corto (hasta 8 h).
+  static const List<OpcionVigencia> corta = [
+    unaHora,
+    dosHoras,
+    cuatroHoras,
     ochoHoras,
+  ];
+
+  /// Plazos del bloque largo (de 12 a 24 h).
+  static const List<OpcionVigencia> larga = [
     doceHoras,
-    dieciochoHoras,
+    dieciseisHoras,
+    veinteHoras,
+    veinticuatroHoras,
+  ];
+
+  /// Plazos del modo días.
+  static const List<OpcionVigencia> enDias = [
+    dosDias,
+    tresDias,
+    cincoDias,
+    sieteDias,
   ];
 
   bool get esCorta => corta.contains(this);
   bool get esLarga => larga.contains(this);
+
+  /// Pertenece al modo días (incluye "todo el día").
+  bool get esDeDias => enDias.contains(this) || this == finDelDia;
 }
 
 /// La vigencia elegida con, si hace falta, la hora exacta.
@@ -38,7 +67,7 @@ enum OpcionVigencia {
 class Vigencia {
   const new(this.opcion, {this.minutosDelDia});
 
-  static const porDefecto = Vigencia(OpcionVigencia.finDelDia);
+  static const porDefecto = Vigencia(OpcionVigencia.dosHoras);
 
   final OpcionVigencia opcion;
 
@@ -50,6 +79,8 @@ class Vigencia {
   DateTime? venceAtPara(DateTime ahora) {
     final horas = opcion.horas;
     if (horas != null) return ahora.toUtc().add(Duration(hours: horas));
+    final dias = opcion.dias;
+    if (dias != null) return ahora.toUtc().add(Duration(days: dias));
     final minutos = minutosDelDia;
     if (opcion != OpcionVigencia.horaExacta || minutos == null) return null;
     final local = ahora.toLocal();
