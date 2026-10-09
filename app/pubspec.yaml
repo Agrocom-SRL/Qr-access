@@ -26,6 +26,7 @@ dependencies:
   web: ^1.1.1
 
 dev_dependencies:
+  flutter_native_splash: ^2.4.8
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0
@@ -54,3 +55,16 @@ flutter:
           weight: 500
         - asset: assets/fuentes/IBMPlexMono-SemiBold.ttf
           weight: 600
+
+# Splash nativo (se regenera con `dart run flutter_native_splash:create`). Los colores
+# son los del fondo claro y oscuro del sistema de diseño.
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#1B1F1C"
+  image: assets/imagenes/logo_agrocom.png
+  android_12:
+    color: "#FFFFFF"
+    color_dark: "#1B1F1C"
+    image: assets/imagenes/logo_agrocom.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#1B1F1C"
