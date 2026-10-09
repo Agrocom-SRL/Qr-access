@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 ---
 
-Implementas el firmware de `firmware/` (ADR 0009, skill `firmware-esp32`, `docs/hardware/README.md`).
+Implementas el firmware de `firmware/` (ADR 0009, skills `firmware-esp32` y `codigo-limpio`, `docs/hardware/README.md`).
 
 Reglas no negociables:
 1. **Falla segura**: el relé solo se activa ante una respuesta positiva, firmada y válida de la API para el token leído. Timeout, error de TLS, respuesta mal formada o sin WiFi → no abre, indica error (LED/buzzer) y sigue funcionando.

@@ -41,6 +41,7 @@ Fuentes de verdad:
 - **SQL a mano, siempre parametrizado** (`?` de `mysql2`); jamás concatenar un valor del usuario en un SQL (ADR 0002).
 - **App Flutter por funcionalidad** (ADR 0012): `app/lib/features/<modulo>/{data,domain,presentation}`, sistema de diseño en `app/lib/core/theme/` y componentes compartidos en `app/lib/shared/widgets/{atoms,molecules,organisms}`.
 - **Firmware por responsabilidad** (ADR 0009): `firmware/src/{red,lector_qr,cerradura,api,config}`; nada de lógica de negocio en el firmware: lee, pregunta y obedece.
+- **Código limpio y SOLID, sin sobreingeniería, con comentarios que explican el porqué** (en español; documentación en todo lo público; lo crítico cita su invariante o ADR): skill `codigo-limpio`.
 - **Dominio en español, infraestructura en inglés**: `Puerta`, `eventos_acceso`, `validarQr`, pero `routes.ts`, `repository.ts`, `plugin`, `middleware`.
 - **Tablas en español, en plural y sin prefijo** (`puertas`, `reglas_acceso`); **una migración por tabla** al crearla (ADR 0011).
 - **Commits en español, imperativo**, sin trailer `Co-Authored-By` ni ninguna otra atribución, tampoco en los PR. Con la cascada en verde, un commit por grupo de archivos con el mismo propósito.
