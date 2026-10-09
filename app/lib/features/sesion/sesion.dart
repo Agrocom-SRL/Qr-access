@@ -1,5 +1,6 @@
-/// Superficie pública de la feature `sesion`: lo único que otras features
-/// pueden importar (ADR 0003).
+/// Superficie pública de la feature `sesion` (ADR 0003): las pantallas que el
+/// router registra.
 library;
 
+export 'presentation/elegir_rol_pagina.dart' show ElegirRolPagina;
 export 'presentation/ingreso_pagina.dart' show IngresoPagina;
