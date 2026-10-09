@@ -1,17 +1,16 @@
 # Entidades propuestas
 
-**Estado:** Propuesta (2026-10-08), sujeta a las dudas de `02-dudas-y-ambiguedades.md`.
+**Estado:** Propuesta revisada (2026-10-08) tras cerrar D-01 a D-05, D-09 y D-11: quien entra no se registra, los QR los emiten los usuarios de la cuenta y la cuenta tiene una suscripción con plan (ADR 0008 y 0017). Siguen abiertas D-14, D-16, D-17 y D-21, que afectan a `planes` y `qr_accesos`.
 
 ```
-cuentas ─┬─< usuarios >─< usuario_roles >─ roles >─< rol_permisos >─ permisos
+planes (catálogo de plataforma)
+   │
+cuentas ─┬─< suscripciones (plan, desde, hasta, estado)
+         ├─< usuarios >─< usuario_roles >─ roles >─< rol_permisos >─ permisos
          │        └─ sesiones (refresh)
          ├─< sitios ─< puertas ─< dispositivos
-         ├─< personas >─< grupo_personas >─ grupos
-         │      └─ (usuario_id opcional)
-         ├─< reglas_acceso  (persona_id | grupo_id) × puerta_id × franjas
-         │        └─< reglas_acceso_franjas (dia_semana, desde, hasta)
-         ├─< credenciales_qr (persona_id, secreto cifrado) ─< qr_usos (credencial_id, paso)
-         ├─< invitaciones (puerta_id, ventana, token_hash, usos)
+         ├─< qr_accesos (emitido_por usuario, token_hash, vence_at, usado_at, anulado_at)
+         │        └─< qr_acceso_puertas (qr_acceso_id, puerta_id)
          ├─< eventos_acceso (solo inserción)
          └─< bitacoras (solo inserción)
 ```
@@ -20,23 +19,23 @@ cuentas ─┬─< usuarios >─< usuario_roles >─ roles >─< rol_permisos >�
 |---|---|---|---|---|
 | 01 | `cuentas` | seguridad | — | Identidad: nombre, `codigo`, `activo` |
 | 02 | `cuenta_datos_empresa` | seguridad | sí | Razón social, NIT, logo, contacto (1:1) |
-| 03 | `usuarios` | seguridad | sí (NULL = plataforma) | Credenciales: `username`, `email`, `contrasena_hash`, `activo` |
-| 04 | `usuario_perfiles` | seguridad | sí | Nombre, apellidos, teléfono (1:1) |
-| 05 | `roles` | seguridad | sí (NULL = plataforma) | `protegido` |
-| 06 | `permisos` | seguridad | — (catálogo global) | `codigo`, `ambito` |
-| 07 | `rol_permisos` | seguridad | — | Pivote |
-| 08 | `usuario_roles` | seguridad | sí | Pivote con `tenant_id` para el aislamiento |
-| 09 | `sesiones` | seguridad | sí | Refresh token hasheado, `expira_at`, `revocada_at`, dispositivo/navegador |
-| 10 | `sitios` | organizacion | sí | `nombre`, `direccion`, `zona_horaria` |
-| 11 | `puertas` | organizacion | sí | `sitio_id`, `nombre`, `tipo_cerradura` (`fail_secure`/`fail_safe`), `segundos_apertura` |
-| 12 | `personas` | organizacion | sí | `nombres`, `apellidos`, `documento`, `usuario_id` opcional, `foto_ruta` |
-| 13 | `grupos` | organizacion | sí | |
-| 14 | `grupo_personas` | organizacion | sí | Pivote |
-| 15 | `dispositivos` | dispositivos | sí | `puerta_id` (único vigente), `clave_hash`, `firmware_version`, `ultimo_latido_at`, `revocado_at` |
-| 16 | `reglas_acceso` | accesos | sí | `puerta_id`, `persona_id` XOR `grupo_id`, `vigente_desde`, `vigente_hasta` |
-| 17 | `reglas_acceso_franjas` | accesos | sí | `dia_semana` (1–7), `hora_desde`, `hora_hasta` |
-| 18 | `credenciales_qr` | accesos | sí | `persona_id`, `secreto_cifrado`, `activo`, `rotada_at` |
-| 19 | `qr_usos` | accesos | sí | Solo inserción; único `(credencial_id, paso)` — anti-reuso |
-| 20 | `invitaciones` | accesos | sí | `puerta_id`, `desde`, `hasta`, `token_hash`, `usos_max`, `usos`, `estado` |
-| 21 | `eventos_acceso` | accesos | sí | Solo inserción; `resultado`, `motivo_code`, `metodo` (`qr_dispositivo`, `qr_guardia`, `invitacion`, `pulsador`, `forzada`) |
-| 22 | `bitacoras` | plataforma | sí (NULL = plataforma) | Solo inserción; antes/después en JSON |
+| 03 | `planes` | suscripciones | — (catálogo) | `nombre`, `max_dispositivos`, `max_usuarios`, `max_vigencia_qr_horas` (`NULL` = sin límite), `activo` |
+| 04 | `suscripciones` | suscripciones | sí | `plan_id`, `desde`, `hasta`, `estado` (`vigente`/`suspendida`/`vencida`); una vigente por cuenta |
+| 05 | `usuarios` | seguridad | sí (NULL = plataforma) | Usuario de cuenta = un PIN (ADR 0018): `etiqueta`, `pin_indice` (HMAC, único por cuenta), `pin_hash`, `pin_generado_at`, `activo`. Super admin: `username`, `contrasena_hash` |
+| 06 | `usuario_perfiles` | seguridad | sí | Nombre, apellidos, teléfono (1:1) |
+| 07 | `roles` | seguridad | sí (NULL = plataforma) | `protegido` |
+| 08 | `permisos` | seguridad | — (catálogo global) | `codigo`, `ambito` |
+| 09 | `rol_permisos` | seguridad | — | Pivote |
+| 10 | `usuario_roles` | seguridad | sí | Pivote con `tenant_id` para el aislamiento |
+| 11 | `sesiones` | seguridad | sí | Refresh token hasheado, `expira_at`, `revocada_at` |
+| 12 | `sitios` | organizacion | sí | `nombre`, `direccion`, `zona_horaria` |
+| 13 | `puertas` | organizacion | sí | `sitio_id`, `nombre`, `segundos_apertura` (pulso) |
+| 14 | `dispositivos` | dispositivos | sí | `puerta_id` (único vigente), `clave_hash`, `firmware_version`, `ultimo_latido_at`, `revocado_at` |
+| 15 | `qr_accesos` | accesos | sí | `emitido_por` (usuario), `token_hash` (único), `etiqueta`, `vence_at`, `usado_at`, `usado_dispositivo_id`, `anulado_at`; baja diaria por soft delete |
+| 16 | `qr_acceso_puertas` | accesos | sí | Pivote; depende de D-17 (si un QR abre una sola puerta, pasa a columna `puerta_id`) |
+| 17 | `eventos_acceso` | accesos | sí | Solo inserción; `puerta_id`, `dispositivo_id`, `qr_acceso_id` (si se identificó), `token_hash`, `resultado`, `motivo_code`, `metodo` (`qr`, `pulsador`, `forzada`) |
+| 18 | `bitacoras` | plataforma | sí (NULL = plataforma) | Solo inserción; antes/después en JSON |
+
+## Salen respecto de la propuesta anterior
+
+`personas`, `grupos`, `grupo_personas`, `reglas_acceso`, `reglas_acceso_franjas`, `credenciales_qr`, `qr_usos` e `invitaciones`: quien entra no se registra, no hay reglas por persona ni horario, y el anti-reuso pasa a ser `qr_accesos.usado_at` con consumo atómico (ADR 0008). Ninguna tenía migración todavía.

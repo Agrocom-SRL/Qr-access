@@ -34,6 +34,10 @@ Reglas del SQL a mano:
 - **NestJS**: estructura completa, pero con decoradores e inyección de dependencias que agregan ceremonia a una API chica; Fastify con módulos por carpeta alcanza (ADR 0003).
 - **Express**: sin validación por esquema ni OpenAPI integrados, y más lento.
 
+## Nota (2026-10-08): por qué no Prisma, con un caso real
+
+En un proyecto anterior del equipo, cambiar atributos de una tabla con Prisma borró datos ya insertados. El problema no es el lenguaje de consultas: es que la herramienta **genera la migración sola** comparando el modelo con la base. Si un renombre se detecta como "borrar y crear", la herramienta lo ejecuta (`prisma db push` incluso tiene `--accept-data-loss`). Aquí las migraciones son SQL escrito a mano y revisado (dbmate, ADR 0011): ningún `DROP` llega a la base sin que alguien lo haya escrito y aprobado en un PR. Se confirma esta decisión.
+
 ## Consecuencias
 
 - Los tipos de las filas se escriben a mano (`interface PuertaFila`), al lado del SQL que las lee.

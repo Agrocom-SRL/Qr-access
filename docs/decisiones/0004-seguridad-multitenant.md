@@ -10,7 +10,7 @@ La plataforma `acceso.agrocom.com.bo` la usarán varias empresas (cuentas), cada
 
 1. **La cuenta es el tenant.** `cuentas` guarda la identidad; los datos de empresa van en `cuenta_datos_empresa`. `tenant_id NULL` = plataforma.
 2. **Aislamiento por construcción**: `ContextoCuenta` (AsyncLocalStorage) lo abre el plugin de autenticación; `RepositorioDeCuenta` filtra y completa `tenant_id`. Sin contexto, falla cerrado. Recurso de otra cuenta → 404.
-3. **Login por código de cuenta + usuario + contraseña** (argon2id), mensaje único ante cualquier fallo y límite de intentos. Usuario y correo únicos **dentro de la cuenta**.
+3. **Login por PIN** (`AGR7K2Q`: código de cuenta de 3 letras + 4 caracteres al azar) para los usuarios de cuenta (ADR 0018, que reemplaza el usuario + contraseña de la versión anterior) y por usuario + contraseña (argon2id) para el super admin, con un mensaje único ante cualquier fallo y límite de intentos.
 4. **JWT de acceso corto (15 min) + refresh rotativo** guardado hasheado y revocable (`sesiones`). En web, el refresh va en cookie `HttpOnly`.
 5. **Roles por cuenta, permisos por ámbito** (`plataforma` | `cuenta`), con código `<modulo>.<entidad>.<accion>`. Roles base por cuenta: **Administrador** (protegido), **Guardia** y **Usuario**. Un rol de cuenta nunca recibe un permiso de plataforma.
 6. **Un usuario, un login, varios roles, un rol activo** (en el JWT). Los permisos efectivos son los del rol activo, nunca la unión, revalidados en cada request.

@@ -109,7 +109,7 @@ Cada componente: widget test y entrada en esta tabla.
 
 ## 5. El QR y el resultado de acceso
 
-- `VisorQr`: módulos negros sobre blanco puro, mínimo 240 dp, zona de silencio de 4 módulos, corrección de errores M. Brillo al máximo mientras está visible. Cuenta regresiva del paso de 30 s con una barra en `primario`.
+- `VisorQr`: módulos negros sobre blanco puro, mínimo 240 dp, zona de silencio de 4 módulos, corrección de errores M. Se muestra junto a la hora de vencimiento y se exporta como imagen PNG para compartir (ADR 0008).
 - `ResultadoAcceso`: pantalla completa en `accesoPermitido` / `accesoDenegado` con ícono grande, nombre y motivo traducido; se cierra sola a los 3 s. Además del color, ícono y texto (nunca solo color).
 
 ## 6. Checklist de una pantalla nueva

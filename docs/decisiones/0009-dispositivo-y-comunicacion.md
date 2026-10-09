@@ -1,31 +1,31 @@
 # ADR 0009 — Controlador de puerta: ESP32 + Arduino, HTTPS con la API y falla segura
 
-**Estado:** Propuesta (2026-10-08) — confirmar hardware (dudas D-03 y D-04)
+**Estado:** Aceptada (2026-10-08). Cerradas las dudas D-02 a D-05. El modelo del lector y el detalle eléctrico de la cerradura se confirman cuando se compre el hardware.
 
 ## Contexto
 
-Se pidió "Arduino con conexión WiFi" para controlar una puerta eléctrica leyendo QR. Un Arduino UNO/Nano no tiene WiFi ni memoria para TLS; el ESP8266 queda justo de memoria para HTTPS. El ESP32 tiene WiFi, 520 KB de RAM, TLS por hardware y se programa con el mismo framework Arduino.
+Se pidió "Arduino con conexión WiFi" para controlar una puerta eléctrica leyendo QR. Un Arduino UNO/Nano no tiene WiFi ni memoria para TLS, y el ESP8266 anda justo de memoria para HTTPS. El ESP32 tiene WiFi, 520 KB de RAM y TLS por hardware, y se programa con el mismo framework Arduino. El cliente confirmó que usa un ESP32 con un lector QR (D-03), que la cerradura se acciona con un pulso (D-04) y que sin internet no se abre (D-05).
 
 ## Decisión
 
-- **Placa**: ESP32 (DevKitC o ESP32-S3), **framework Arduino**, compilado con **PlatformIO** (reproducible y apto para CI; el código sigue abriendo en Arduino IDE).
-- **Lector**: módulo QR por UART (GM65 / GM861S o equivalente).
-- **Actuador**: relé o MOSFET hacia la cerradura (electroimán o cerradero eléctrico, 12 V). Detalle en `docs/hardware/README.md`.
-- **Entradas**: sensor magnético de puerta (reed), pulsador de salida (abre sin red, por diseño).
-- **Comunicación**: HTTPS (TLS verificado con CA embebida) hacia la API: validación por lectura, latido cada 60 s y configuración. Autenticación con la credencial propia del dispositivo (ADR 0004).
-- **Falla segura** (invariante 2): sin respuesta positiva válida, no abre. El relé tiene un tiempo máximo que el firmware impone.
-- **Tipo de cerradura**: el firmware soporta "fail-secure" (cerrada sin corriente) y "fail-safe" (abierta sin corriente, exigida a veces por normas de evacuación) con un parámetro; la elección es de la instalación (duda D-04).
-- **Aprovisionamiento**: la primera vez, modo AP con un portal propio (o por serie) para cargar WiFi, URL de la API y credencial del dispositivo en NVS.
-- **OTA**: el binario lo indica la configuración de la API, con verificación de hash/firma.
+- **Placa**: ESP32 (DevKitC o ESP32-S3), **framework Arduino**, compilado con **PlatformIO**: es reproducible, sirve para CI y el código se puede seguir abriendo en Arduino IDE.
+- **Lector**: módulo QR por UART (referencia GM65 / GM861S).
+- **Cerradura por pulso**: una salida (relé o MOSFET) da un pulso de `segundos_apertura`, un parámetro de la puerta que entrega la configuración de la API. El firmware le impone un tope máximo. Si después hace falta otro modo (mantener la cerradura energizada, por ejemplo un electroimán *fail-safe*), se agrega como parámetro sin cambiar el flujo.
+- **Entradas**: pulsador de salida, que abre sin red por diseño (RF-08), y, opcionalmente, un sensor magnético de puerta.
+- **Comunicación: HTTPS sobre WiFi** hacia la API, con TLS verificado contra una CA embebida. Es la opción más simple que cumple: la placa pregunta y la API contesta. La validación se hace en cada lectura, hay un latido cada 60 s y la configuración se pide al arrancar. La placa se autentica con su propia credencial (ADR 0004).
+- **Falla segura** (invariante 2): sin una respuesta positiva y válida, no abre. **Sin red no se abre** (D-05): no hay validación local ni lista en la placa.
+- **Aprovisionamiento**: la primera vez, la placa levanta un AP con un portal propio (o se configura por serie) para cargar el WiFi, la URL de la API y la credencial del dispositivo, que quedan en la NVS.
+- **OTA**: la configuración de la API indica qué binario instalar, y se verifica su hash o firma antes de instalarlo.
 
 ## Alternativas descartadas
 
+- **RS485**: es un bus cableado entre equipos; la placa ya tiene WiFi y no hay otro equipo con el que hablar.
+- **Firebase / MQTT / AWS IoT**: sirven para que el servidor le hable a la placa en tiempo real (abrir remoto), algo que queda fuera de V1. Agregan un servicio que operar y una dependencia externa. Si se pide abrir desde la app, se suma MQTT sin cambiar el flujo de validación.
 - **Arduino UNO/Nano + shield WiFi**: poca memoria para TLS y JSON.
-- **MQTT desde el inicio**: necesario solo para "abrir remoto" en tiempo real; agrega un broker que operar. Se suma si se confirma esa función (duda D-02), sin cambiar el flujo de validación.
-- **Validación local en la placa**: ver ADR 0008.
-- **Arduino IDE sin PlatformIO**: no reproducible en CI ni con dependencias fijadas.
+- **Validación local en la placa**: ver ADR 0008 y D-05.
+- **Arduino IDE sin PlatformIO**: no es reproducible en CI ni fija las dependencias.
 
 ## Consecuencias
 
-- Sin red, solo entra quien usa la salida física o la llave. Si el cliente necesita operar sin red (duda D-05), se evaluará una lista local firmada con vencimiento, con un ADR nuevo.
-- La lógica de la máquina de estados vive en `lib/` y se prueba en la PC (`pio test -e native`).
+- Sin red, solo entra quien usa la salida física o la llave mecánica.
+- La lógica de la máquina de estados vive en `lib/` y se prueba en la PC (`pio test -e native`), también desde Docker (ADR 0010).

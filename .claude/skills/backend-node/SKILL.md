@@ -29,7 +29,8 @@ api/
     plugins/                  plugins Fastify: autenticacion, permisos, cors, rate-limit, swagger
     modules/                  un módulo por funcionalidad, en español
       seguridad/              cuentas, usuarios, roles, permisos, sesiones
-      organizacion/           sitios, puertas, personas, grupos
+      suscripciones/          planes, suscripciones y límites (ADR 0017)
+      organizacion/           sitios, puertas
       accesos/                credenciales QR, reglas de acceso, invitaciones, validación, eventos
       dispositivos/           alta, credencial, latido, configuración
   test/                       Vitest: helpers (crearCuenta, loginComo…), un archivo por regla
