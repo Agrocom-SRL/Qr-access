@@ -27,7 +27,7 @@ Claude Code puede leerlas directamente. Pásale la captura junto con el id del m
 **Alta fidelidad.** Colores, tipografía, espaciado, radios y textos son finales. Los datos de ejemplo, el logo (marcador rayado) y el patrón QR (no escaneable) son de muestra.
 
 ## Tokens
-En `flutter/acceso_tokens.dart` hay un punto de partida listo para usar.
+Los valores completos, con su correspondencia a Material 3, están en `tokens.md`. La implementación vive en `app/lib/core/theme/`.
 
 ### Color, tema claro / oscuro
 | Token | Claro | Oscuro |
@@ -136,4 +136,4 @@ Español con tuteo ("Ingresa tu PIN", "Comparte el QR"). Nunca voseo ni "usted".
 ## Recursos
 - Íconos: Material Symbols Outlined (en Flutter, `Icons.*_outlined` o el paquete `material_symbols_icons`).
 - Fuentes: IBM Plex Sans y Mono con `google_fonts` o empaquetadas en assets.
-- Logo: pendiente (marcador en los diseños).
+- Logo: `app/assets/imagenes/logo_agrocom.png` (en los diseños aparece un marcador rayado). Es apaisado y va sobre una placa blanca, también en oscuro y sobre el hero.
