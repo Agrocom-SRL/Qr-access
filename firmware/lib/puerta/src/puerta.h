@@ -9,23 +9,37 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "motivo.h"
+
 namespace puerta {
 
 constexpr uint32_t TIMEOUT_VALIDACION_MS = 3000;
 constexpr uint32_t ANTIRREBOTE_MISMO_QR_MS = 2000;
+// Tope DURO de compilación: ni la API ni la configuración lo superan.
 constexpr uint16_t MAX_APERTURA_S = 10;
+// Tope vigente hasta que la configuración diga otro (siempre <= MAX_APERTURA_S).
+constexpr uint16_t APERTURA_POR_DEFECTO_S = 5;
 constexpr uint16_t APERTURA_PULSADOR_S = 3;
 constexpr size_t MAX_QR = 256;
 
 enum class Estado : uint8_t { Reposo, Validando, Abierta };
 
-enum class Indicacion : uint8_t { Ninguna, Validando, Permitido, Denegado, Error };
+// Qué mostrar: permitido, denegado (la API dijo que no), sin red (no se pudo
+// preguntar) y error (algo falló al preguntar o la respuesta no sirve).
+enum class Indicacion : uint8_t { Ninguna, Validando, Permitido, Denegado, SinRed, Error };
 
 // Resultado de una validación, ya interpretado por lib/respuesta.
 struct Resultado {
-  bool valida;      // la respuesta llegó y tiene el formato esperado
-  bool abrir;       // la API dijo `abrir: true`
+  bool valida;        // la respuesta llegó y tiene el formato esperado
+  bool abrir;         // la API dijo `abrir: true`
   uint16_t segundos;  // duración del pulso pedida por la API
+  Motivo motivo;
+
+  static Resultado invalido(Motivo motivo) { return Resultado{false, false, 0, motivo}; }
+  static Resultado denegado(Motivo motivo) { return Resultado{true, false, 0, motivo}; }
+  static Resultado permitido(uint16_t segundos) {
+    return Resultado{true, true, segundos, Motivo::Permitido};
+  }
 };
 
 // Lo que el hardware tiene que hacer después de cada evento.
@@ -43,13 +57,23 @@ class Maquina {
   bool cerraduraActiva() const { return estado_ == Estado::Abierta; }
   const char* qr() const { return qr_; }
 
+  // Identifica la validación en curso (crece con cada lectura aceptada): una
+  // respuesta con otro id es de una consulta vieja y se descarta.
+  uint32_t idValidacion() const { return idValidacion_; }
+
+  // Tope de apertura vigente (de la configuración de la API): nunca supera
+  // MAX_APERTURA_S ni baja de 1 s.
+  void fijarMaxAperturaS(uint16_t segundos);
+  uint16_t maxAperturaS() const { return maxAperturaS_; }
+
   // El lector entregó una línea. Se ignora si ya hay una lectura en curso,
   // si la puerta está abierta, si es demasiado larga o si es el mismo QR de
   // hace instantes.
   Acciones alLeer(const char* texto, uint32_t ahoraMs);
 
-  // Llegó la respuesta (o el error) de la validación en curso.
-  Acciones alResponder(const Resultado& resultado, uint32_t ahoraMs);
+  // Llegó la respuesta (o el error) de la validación `id`. Si no es la que
+  // está en curso (tardía, ya vencida) se descarta sin abrir.
+  Acciones alResponder(uint32_t id, const Resultado& resultado, uint32_t ahoraMs);
 
   // Pulsador de salida: apertura física, no depende de la red (RF-08).
   Acciones alPulsarSalida(uint32_t ahoraMs);
@@ -63,6 +87,8 @@ class Maquina {
   Estado estado_ = Estado::Reposo;
   uint32_t desdeMs_ = 0;
   uint32_t duracionMs_ = 0;
+  uint32_t idValidacion_ = 0;
+  uint16_t maxAperturaS_ = APERTURA_POR_DEFECTO_S;
   char qr_[MAX_QR + 1] = {0};
   char ultimoQr_[MAX_QR + 1] = {0};
   uint32_t ultimoQrMs_ = 0;

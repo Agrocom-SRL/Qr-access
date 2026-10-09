@@ -25,7 +25,10 @@ void iniciar() {
   digitalWrite(PIN_CERRADURA, NIVEL_INACTIVO);
   pinMode(PIN_CERRADURA, OUTPUT);
   pinMode(PIN_PULSADOR_SALIDA, INPUT_PULLUP);
+  pinMode(PIN_SENSOR_PUERTA, INPUT_PULLUP);
 }
+
+bool puertaAbierta() { return digitalRead(PIN_SENSOR_PUERTA) == SENSOR_PUERTA_NIVEL_ABIERTA; }
 
 void activar(uint32_t ms, uint32_t ahoraMs) {
   duracionMs = ms > TOPE_MS ? TOPE_MS : ms;

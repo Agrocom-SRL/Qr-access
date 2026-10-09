@@ -39,6 +39,47 @@ Los pines viven solo en `firmware/include/pines.h`. Evitar GPIO 0, 2, 12 y 15 (p
 
 ## Aprovisionamiento
 
-1. Flashear el firmware de la versión publicada.
-2. En el primer arranque, el ESP32 levanta un AP `AGROCOM-ACCESO-XXXX` con un portal para cargar WiFi, URL de la API y la credencial (`id` + `clave`) que dio la app al dar de alta el dispositivo.
-3. Se guarda en NVS; el dispositivo envía su primer latido y la app lo muestra "en línea".
+V1 se hace **por serie** (USB, 115200 baudios; `pio device monitor` o cualquier terminal). El portal AP queda para una versión posterior.
+
+1. Flashear el firmware de producción (`pio run -t upload`, env `esp32`).
+2. En la app, dar de alta el dispositivo: entrega el `id` y la `clave` (se muestra una sola vez).
+3. Por serie, un campo por línea (el firmware no repite nunca un valor; una clave no aparece en ningún log):
+
+```
+set wifi_ssid <red>
+set wifi_clave <clave>        (vacía = red abierta)
+set api_url https://acceso.agrocom.com.bo
+set disp_id <id>
+set disp_clave <clave>
+estado                        (qué hay cargado, sin claves)
+reiniciar
+```
+
+4. Se guarda en NVS; el dispositivo envía su primer latido y la app lo muestra "en línea".
+5. `borrar` elimina lo aprovisionado (solo el espacio `acceso` de la NVS; no borra la flash). Después, `reiniciar`.
+
+Sin aprovisionar, el controlador solo atiende el pulsador de salida. La URL tiene que ser `https://`: el firmware de producción no acepta `http://`.
+
+## Compilación de desarrollo
+
+`pio run -e esp32-dev -t upload` compila con `ACCESO_DESARROLLO`: permite una API `http://` (la API local del Mac por la WiFi) y lee `include/secretos.h` (copia de `secretos.example.h`, no versionado) cuando no hay nada en NVS. Imprime un aviso al arrancar y reporta la versión `1.0.0-dev` en el latido. Es solo para la mesa de trabajo: nunca se publica ni se instala en una puerta real. El env `esp32` (el que compila `bin/verify`) no contiene ninguno de esos dos caminos.
+
+## Indicaciones
+
+| Situación | LED | Buzzer |
+|---|---|---|
+| Validando | azul fijo | - |
+| Permitido (`acceso.permitido`) | verde fijo 1,5 s | 1 beep corto |
+| Denegado (cualquier `motivo_code` con `abrir:false`: `qr.vencido`, `qr.usado`, `suscripcion.vencida`...) | rojo fijo 1,5 s | 2 beeps |
+| Sin red (sin WiFi o sin hora NTP: no se valida) | azul parpadeando | 3 beeps cortos |
+| Error (timeout, TLS, respuesta inválida, 401) | rojo parpadeando rápido | 1 beep largo |
+
+El motivo exacto sale por el serie (`[puerta] denegado: QR vencido`), sin el token completo.
+
+## Probar con la placa
+
+1. `pio test -e native` y `pio run` en verde.
+2. Flashear (con tu confirmación; no se flashea sin ella) y abrir el monitor serie. Provisionar como arriba.
+3. Sin WiFi: leer un QR da el patrón "sin red" y la cerradura no se mueve; el pulsador de salida abre igual (3 s).
+4. Con la API: QR válido, relé 5 s (o lo que diga `segundos_apertura`, nunca más de 10 s); el mismo QR otra vez da denegado (`qr.usado`).
+5. Apagar la API durante una lectura: a los 3 s, patrón de error y no abre.
