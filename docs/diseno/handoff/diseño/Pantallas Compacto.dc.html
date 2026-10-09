@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0" rel="stylesheet">
+<style>body{margin:0;background:#E8ECE9;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<section style="--fondo:#121614; --superficie:#1C211E; --superficieElevada:#242A26; --borde:#2C332E; --texto:#E6EAE7; --texto2:#A3ABA5; --primario:#5CB683; --primarioHover:#93D0AB; --sobrePrimario:#002F13; --primarioSuave:#002F13; --peligro:#EF7A7A; --peligroSuave:#3A1C1C; --advertencia:#F2B54A; --advertenciaSuave:#33270F; --info:#7EB6F2; --infoSuave:#14263A; --hero:#00451C; --sobreHero:#FFFFFF; --heroAcento:#005824; --heroBoton:#FFFFFF; --sobreHeroBoton:#00451C; --sombra1:none; --sombra3:none; padding:48px; display:flex; flex-direction:column; gap:24px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Compacto 360×800 · tema oscuro</div>
+    <div style="font-size:16px; color:#5B635D">Mismos componentes; solo cambian los tokens semánticos. El QR no cambia.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+
+    <div id="D02" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">D02</span><span style="font-size:14px; font-weight:500">Ingreso con PIN · oscuro</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(27,31,28,0.10)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#00451C 0 6px,#002F13 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#93D0AB">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; align-items:center; gap:16px">
+              <div style="display:flex; gap:8px">
+                <sc-for list="{{ pinCuentaLleno }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">{{ c }}</div></sc-for>
+              </div>
+              <div style="display:flex; gap:8px">
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">7</div>
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">K</div>
+                <div style="width:36px; height:56px; border-radius:10px; border:2px solid var(--primario); background:var(--superficie); box-sizing:border-box; display:flex; align-items:center; justify-content:center"><span style="width:2px; height:24px; background:var(--primario)"></span></div>
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie)"></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <span style="font-size:12px; color:var(--texto2)">Cuenta · Clave</span>
+              <span style="height:44px; display:flex; align-items:center; gap:4px; color:var(--primario); font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility_off</span>Ocultar</span>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="D04" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">D04</span><span style="font-size:14px; font-weight:500">Inicio · Usuario · oscuro</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(27,31,28,0.10)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="flex:1; padding:16px; display:flex; flex-direction:column; gap:24px; overflow:hidden">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="width:44px; height:44px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:16px">JR</div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">Hola, Jorge</span><span style="font-size:12px; color:var(--texto2)">Agroindustrial Norte · Usuario</span></div>
+          </div>
+          <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:16px">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:24px; font-weight:600">Emitir QR</span><span style="font-size:14px; line-height:1.5">Un solo uso. Vence hoy a las <span style="font-family:'IBM Plex Mono',monospace">23:59</span>.</span></div>
+              <span style="width:48px; height:48px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2_add</span>
+            </div>
+            <div style="height:44px; align-self:flex-start; padding:0 24px; border-radius:999px; background:var(--heroBoton); color:var(--sobreHeroBoton); display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Nuevo QR</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px">
+            <sc-for list="{{ rapidos }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:8px">
+                <span style="width:56px; height:56px; border-radius:14px; background:var(--superficie); box-shadow:var(--sombra1); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">{{ r.icon }}</span>
+                <span style="font-size:12px; font-weight:500; text-align:center">{{ r.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:16px; font-weight:600">Vigentes hoy</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver todos</span></div>
+            <sc-for list="{{ qrHoy }}" as="q" hint-placeholder-count="2">
+              <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 16px; display:flex; align-items:center; gap:12px">
+                <span style="width:44px; height:44px; border-radius:10px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ q.etq }}</span><span style="font-size:12px; color:var(--texto2)">{{ q.puertas }}</span></div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px"><span style="height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600; display:inline-flex; align-items:center">Vigente</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">vence {{ q.vence }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.u0 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div id="D06" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">D06</span><span style="font-size:14px; font-weight:500">QR emitido · oscuro</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(27,31,28,0.10)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">QR listo</span></div>
+        <div style="flex:1; padding:8px 24px 24px; display:flex; flex-direction:column; align-items:center; gap:16px">
+          <div style="background:#FFFFFF; padding:16px; border-radius:20px"><svg width="240" height="240" viewBox="0 0 29 29" shape-rendering="crispEdges" style="display:block"><path d="{{ qr }}" fill="#000000"></path></svg></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center">
+            <span style="font-size:20px; font-weight:600">Proveedor de gas</span>
+            <span style="font-size:14px; color:var(--texto2)">Portón vehicular · Acceso peatonal</span>
+            <span style="font-size:14px; font-weight:500; margin-top:4px">Vence hoy a las <span style="font-family:'IBM Plex Mono',monospace">23:59</span></span>
+          </div>
+          <div style="align-self:stretch; background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start">
+            <span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility_lock</span>
+            <span style="font-size:14px; line-height:1.5; text-wrap:pretty">Después de cerrar no podrás volver a ver este QR. Compártelo ahora.</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="align-self:stretch; height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">share</span>Compartir</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="--fondo:#F5F7F6; --superficie:#FFFFFF; --superficieElevada:#FFFFFF; --borde:#DDE2DF; --texto:#1B1F1C; --texto2:#5B635D; --primario:#007A33; --primarioHover:#006B2D; --sobrePrimario:#FFFFFF; --primarioSuave:#E8F5EE; --peligro:#C62828; --peligroSuave:#FDECEC; --advertencia:#965A00; --advertenciaSuave:#FFF3E0; --info:#1565C0; --infoSuave:#E8F1FB; --hero:#007A33; --sobreHero:#FFFFFF; --heroAcento:#006B2D; --heroBoton:#FFFFFF; --sobreHeroBoton:#007A33; --sombra1:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06); --sombra3:0 8px 24px rgba(27,31,28,0.10), 0 2px 4px rgba(27,31,28,0.04); padding:48px; display:flex; flex-direction:column; gap:24px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Compacto 360×800 · tema claro</div>
+    <div style="font-size:16px; color:#5B635D; max-width:880px; text-wrap:pretty">Navegación inferior en lugar de drawer: cada rol tiene 4 destinos o menos, se usan varias veces al día y quedan a un toque y al alcance del pulgar; un drawer los esconde detrás de un menú. Los destinos cambian según el rol activo. Estados de carga, vacío, error y sin conexión en <a href="Estados.dc.html">Estados</a>.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+
+    <!-- C01 Bienvenida -->
+    <div id="C01" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C01</span><span style="font-size:14px; font-weight:500">Bienvenida</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="flex:1; background:var(--hero); color:var(--sobreHero); border-radius:0 0 32px 32px; display:flex; flex-direction:column; justify-content:flex-end; padding:24px; gap:24px">
+          <div style="width:80px; height:80px; border-radius:20px; background:repeating-linear-gradient(135deg,#006B2D 0 8px,#005824 8px 16px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#C5E6D2">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:32px; font-weight:600; line-height:1.2">AGROCOM<br>Acceso</div>
+            <div style="font-size:16px; line-height:1.5; color:#E8F5EE; text-wrap:pretty">Abre las puertas de tu empresa con un QR de un solo uso.</div>
+          </div>
+        </div>
+        <div style="padding:32px 24px 24px; display:flex; flex-direction:column; gap:16px">
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+          <div style="font-size:14px; color:var(--texto2); text-align:center; text-wrap:pretty">¿No tienes PIN? Pídelo al administrador de tu cuenta.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C02 Ingreso -->
+    <div id="C02" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C02</span><span style="font-size:14px; font-weight:500">Ingreso con PIN · escribiendo (recomendado: casillas 3 + 4)</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; align-items:center; gap:16px">
+              <div style="display:flex; gap:8px">
+                <sc-for list="{{ pinCuentaLleno }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">{{ c }}</div></sc-for>
+              </div>
+              <div style="display:flex; gap:8px">
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">7</div>
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">K</div>
+                <div style="width:36px; height:56px; border-radius:10px; border:2px solid var(--primario); background:var(--superficie); box-sizing:border-box; display:flex; align-items:center; justify-content:center"><span style="width:2px; height:24px; background:var(--primario)"></span></div>
+                <div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie)"></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <span style="font-size:12px; color:var(--texto2)">Cuenta · Clave</span>
+              <span style="height:44px; display:flex; align-items:center; gap:4px; color:var(--primario); font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility_off</span>Ocultar</span>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C02b Cargando -->
+    <div id="C02b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C02b</span><span style="font-size:14px; font-weight:500">Ingreso · oculto + cargando</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; color:var(--borde)">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; align-items:center; gap:16px">
+              <div style="display:flex; gap:8px"><sc-for list="{{ tres }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-size:24px">•</div></sc-for></div>
+              <div style="display:flex; gap:8px"><sc-for list="{{ cuatro }}" as="c" hint-placeholder-count="4"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-size:24px">•</div></sc-for></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <span style="font-size:12px; color:var(--texto2)">Cuenta · Clave</span>
+              <span style="height:44px; display:flex; align-items:center; gap:4px; color:var(--primario); font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility</span>Mostrar</span>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--sobrePrimario); border-right-color:transparent; box-sizing:border-box"></span>Ingresando</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C02c Error -->
+    <div id="C02c" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C02c</span><span style="font-size:14px; font-weight:500">Ingreso · PIN incorrecto</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; align-items:center; gap:16px">
+              <div style="display:flex; gap:8px"><sc-for list="{{ pinErrA }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:2px solid var(--peligro); box-sizing:border-box; background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">{{ c }}</div></sc-for></div>
+              <div style="display:flex; gap:8px"><sc-for list="{{ pinErrB }}" as="c" hint-placeholder-count="4"><div style="width:36px; height:56px; border-radius:10px; border:2px solid var(--peligro); box-sizing:border-box; background:var(--superficie); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">{{ c }}</div></sc-for></div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; color:var(--peligro); font-size:14px; font-weight:500"><span style="font-family:'Material Symbols Outlined'; font-size:20px">error</span>PIN incorrecto</div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C02d Bloqueo -->
+    <div id="C02d" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C02d</span><span style="font-size:14px; font-weight:500">Ingreso · demasiados intentos</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px">
+            <div style="display:flex; gap:8px"><sc-for list="{{ tres }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--fondo)"></div></sc-for></div>
+            <div style="display:flex; gap:8px"><sc-for list="{{ cuatro }}" as="c" hint-placeholder-count="4"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--fondo)"></div></sc-for></div>
+          </div>
+          <div style="background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start">
+            <span style="font-family:'Material Symbols Outlined'; font-size:20px">timer</span>
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; font-weight:600">Demasiados intentos, espera unos minutos.</span><span style="font-size:14px">Podrás volver a intentar en <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">04:52</span></span></div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C02x Alternativa campo mono -->
+    <div id="C02x" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C02x</span><span style="font-size:14px; font-weight:500">Alternativa · campo mono espaciado</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5; text-wrap:pretty">Son 7 caracteres. Te lo entrega el administrador de tu cuenta.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <label style="font-size:14px; font-weight:500">PIN</label>
+            <div style="height:56px; border:2px solid var(--primario); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 4px 0 15px; gap:8px">
+              <span style="flex:1; font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; letter-spacing:0.24em">AGR 7K<span style="color:var(--borde)">__</span></span>
+              <span style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">visibility_off</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--texto2)"><span>Mayúsculas automáticas</span><span style="font-family:'IBM Plex Mono',monospace">5/7</span></div>
+          </div>
+          <div style="font-size:12px; color:var(--texto2); line-height:1.5; border-top:1px solid var(--borde); padding-top:16px; text-wrap:pretty">Comparativa: el campo único es más simple y accesible (un solo foco, pegar funciona igual). Las casillas 3 + 4 (C02) muestran mejor la estructura cuenta + clave y el progreso. Recomiendo casillas, implementadas como un único TextField con overlay para conservar pegar, autocompletar y lector de pantalla.</div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C03 Elegir rol -->
+    <div id="C03" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C03</span><span style="font-size:14px; font-weight:500">Elegir rol</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="flex:1; padding:48px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:14px; color:var(--texto2)">Agroindustrial Norte · <span style="font-family:'IBM Plex Mono',monospace">AGR</span></div>
+            <div style="font-size:24px; font-weight:600">¿Con qué rol vas a trabajar?</div>
+            <div style="font-size:16px; color:var(--texto2); line-height:1.5">Puedes cambiarlo después desde Perfil.</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <sc-for list="{{ roles }}" as="r" hint-placeholder-count="3">
+              <div style="background:var(--superficie); border-radius:14px; border:2px solid {{ r.borde }}; box-shadow:var(--sombra1); padding:16px; display:flex; align-items:center; gap:12px">
+                <span style="width:44px; height:44px; border-radius:10px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">{{ r.icon }}</span>
+                <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">{{ r.nombre }}</span><span style="font-size:14px; color:var(--texto2)">{{ r.desc }}</span></div>
+                <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ r.radio }}; font-variation-settings:{{ r.fill }}">{{ r.ricon }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Continuar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C04a Inicio Usuario -->
+    <div id="C04a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C04a</span><span style="font-size:14px; font-weight:500">Inicio · rol Usuario</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="flex:1; padding:16px; display:flex; flex-direction:column; gap:24px; overflow:hidden">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="width:44px; height:44px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:16px">JR</div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">Hola, Jorge</span><span style="font-size:12px; color:var(--texto2)">Agroindustrial Norte · Usuario</span></div>
+          </div>
+          <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:16px">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:24px; font-weight:600">Emitir QR</span><span style="font-size:14px; line-height:1.5">Un solo uso. Vence hoy a las <span style="font-family:'IBM Plex Mono',monospace">23:59</span>.</span></div>
+              <span style="width:48px; height:48px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2_add</span>
+            </div>
+            <div style="height:44px; align-self:flex-start; padding:0 24px; border-radius:999px; background:var(--heroBoton); color:var(--sobreHeroBoton); display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Nuevo QR</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px">
+            <sc-for list="{{ rapidos }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:8px">
+                <span style="width:56px; height:56px; border-radius:14px; background:var(--superficie); box-shadow:var(--sombra1); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">{{ r.icon }}</span>
+                <span style="font-size:12px; font-weight:500; text-align:center">{{ r.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:16px; font-weight:600">Vigentes hoy</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver todos</span></div>
+            <sc-for list="{{ qrHoy }}" as="q" hint-placeholder-count="2">
+              <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 16px; display:flex; align-items:center; gap:12px">
+                <span style="width:44px; height:44px; border-radius:10px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ q.etq }}</span><span style="font-size:12px; color:var(--texto2)">{{ q.puertas }}</span></div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px"><span style="height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600; display:inline-flex; align-items:center">Vigente</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">vence {{ q.vence }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.u0 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C04b Inicio Admin -->
+    <div id="C04b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C04b</span><span style="font-size:14px; font-weight:500">Inicio · rol Administrador</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="flex:1; padding:16px; display:flex; flex-direction:column; gap:24px; overflow:hidden">
+          <div style="display:flex; align-items:center; gap:12px">
+            <div style="width:44px; height:44px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:16px">CM</div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">Hola, Carla</span><span style="font-size:12px; color:var(--texto2)">Agroindustrial Norte · Administrador</span></div>
+            <span style="width:44px; height:44px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2_add</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:16px; font-weight:600">Hoy</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">act. 10:42</span></div>
+            <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:16px 24px; display:flex; align-items:center; justify-content:space-between">
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px">Accesos de hoy</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">148</span></div>
+              <span style="width:48px; height:48px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">login</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+              <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:16px; display:flex; flex-direction:column; gap:8px">
+                <span style="width:32px; height:32px; border-radius:10px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px">block</span>
+                <span style="font-size:14px; color:var(--texto2)">Rechazados</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">12</span>
+              </div>
+              <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:16px; display:flex; flex-direction:column; gap:8px">
+                <span style="width:32px; height:32px; border-radius:10px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px">wifi_off</span>
+                <span style="font-size:14px; color:var(--texto2)">Puertas sin conexión</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600; color:var(--peligro)">2</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline"><span style="font-size:16px; font-weight:600">Últimos eventos</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver todos</span></div>
+            <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px">
+              <sc-for list="{{ eventosCortos }}" as="e" hint-placeholder-count="4">
+                <div style="min-height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde)">
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2); width:40px">{{ e.hora }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:500">{{ e.puerta }}</span><span style="font-size:12px; color:var(--texto2)">{{ e.detalle }}</span></div>
+                  <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:{{ e.bg }}; color:{{ e.fg }}; font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:{{ e.fg }}"></span>{{ e.resultado }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.a0 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C05a Paso 1 -->
+    <div id="C05a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C05a</span><span style="font-size:14px; font-weight:500">Emitir QR · 1 Puertas</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">Emitir QR</span></div>
+        <div style="padding:8px 16px 16px; display:flex; align-items:center; gap:8px">
+          <sc-for list="{{ pasos.p1 }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:8px; flex:{{ s.flex }}">
+              <span style="width:24px; height:24px; flex:none; border-radius:999px; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600">{{ s.n }}</span>
+              <span style="font-size:12px; font-weight:{{ s.w }}; color:{{ s.tc }}">{{ s.label }}</span>
+              <span style="flex:1; height:2px; border-radius:2px; background:{{ s.linea }}; display:{{ s.lineaDisp }}"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:16px; overflow:hidden">
+          <div style="font-size:16px; color:var(--texto2)">¿A qué puertas podrá entrar?</div>
+          <sc-for list="{{ sitios }}" as="s" hint-placeholder-count="2">
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-size:12px; font-weight:600; color:var(--texto2); letter-spacing:0.04em">{{ s.nombreMay }}</span><span style="font-size:12px; font-weight:600; color:var(--primario)">Todas</span></div>
+              <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); overflow:hidden">
+                <sc-for list="{{ s.puertas }}" as="p" hint-placeholder-count="2">
+                  <div style="min-height:56px; padding:0 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde); background:{{ p.fila }}">
+                    <span style="width:24px; height:24px; border-radius:6px; box-sizing:border-box; border:2px solid {{ p.cb }}; background:{{ p.cbBg }}; color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:18px">{{ p.check }}</span>
+                    <span style="flex:1; font-size:16px">{{ p.nombre }}</span>
+                    <span style="font-size:12px; color:var(--peligro); font-weight:500">{{ p.aviso }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:16px; background:var(--superficie); border-top:1px solid var(--borde); display:flex; align-items:center; gap:12px">
+          <span style="flex:1; font-size:14px; color:var(--texto2)"><span style="font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--texto)">2</span> puertas</span>
+          <div style="height:48px; padding:0 32px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:16px; font-weight:600">Siguiente</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C05b Paso 2 -->
+    <div id="C05b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C05b</span><span style="font-size:14px; font-weight:500">Emitir QR · 2 Vigencia y etiqueta</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span><span style="font-size:20px; font-weight:600">Emitir QR</span></div>
+        <div style="padding:8px 16px 16px; display:flex; align-items:center; gap:8px">
+          <sc-for list="{{ pasos.p2 }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:8px; flex:{{ s.flex }}">
+              <span style="width:24px; height:24px; flex:none; border-radius:999px; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600">{{ s.n }}</span>
+              <span style="font-size:12px; font-weight:{{ s.w }}; color:{{ s.tc }}">{{ s.label }}</span>
+              <span style="flex:1; height:2px; border-radius:2px; background:{{ s.linea }}; display:{{ s.lineaDisp }}"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="font-size:16px; font-weight:600">Vigencia</div>
+            <div style="background:var(--superficie); border:2px solid var(--primario); border-radius:14px; padding:16px; display:flex; align-items:center; gap:12px">
+              <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--primario); font-variation-settings:'FILL' 1">radio_button_checked</span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">Hasta el fin del día</span><span style="font-size:14px; color:var(--texto2)">Vence hoy a las <span style="font-family:'IBM Plex Mono',monospace">23:59</span></span></div>
+              <span style="height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600; display:inline-flex; align-items:center">Por defecto</span>
+            </div>
+            <div style="background:var(--superficie); border:1px solid var(--borde); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; align-items:center; gap:12px"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">radio_button_unchecked</span><span style="font-size:16px; font-weight:600">Más corto</span></div>
+              <div style="display:flex; gap:8px; padding-left:36px; flex-wrap:wrap">
+                <span style="height:44px; padding:0 16px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:14px">1 h</span>
+                <span style="height:44px; padding:0 16px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:14px">4 h</span>
+                <span style="height:44px; padding:0 16px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; gap:4px; font-size:14px"><span style="font-family:'Material Symbols Outlined'; font-size:18px">schedule</span>Hora</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <label style="font-size:16px; font-weight:600">Etiqueta <span style="color:var(--texto2); font-weight:400; font-size:14px">(opcional)</span></label>
+            <div style="height:48px; border:2px solid var(--primario); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 11px; font-size:16px">Proveedor de gas<span style="width:1px; height:20px; background:var(--primario)"></span></div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--texto2)"><span>Te ayuda a reconocerlo en Mis QR y Eventos.</span><span style="font-family:'IBM Plex Mono',monospace">16/40</span></div>
+          </div>
+        </div>
+        <div style="padding:16px; background:var(--superficie); border-top:1px solid var(--borde); display:flex; gap:12px">
+          <div style="height:48px; flex:1; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Atrás</div>
+          <div style="height:48px; flex:1; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Siguiente</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C05c Paso 3 -->
+    <div id="C05c" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C05c</span><span style="font-size:14px; font-weight:500">Emitir QR · 3 Confirmar</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span><span style="font-size:20px; font-weight:600">Emitir QR</span></div>
+        <div style="padding:8px 16px 16px; display:flex; align-items:center; gap:8px">
+          <sc-for list="{{ pasos.p3 }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:8px; flex:{{ s.flex }}">
+              <span style="width:24px; height:24px; flex:none; border-radius:999px; background:{{ s.bg }}; color:{{ s.fg }}; border:1px solid {{ s.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600">{{ s.n }}</span>
+              <span style="font-size:12px; font-weight:{{ s.w }}; color:{{ s.tc }}">{{ s.label }}</span>
+              <span style="flex:1; height:2px; border-radius:2px; background:{{ s.linea }}; display:{{ s.lineaDisp }}"></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:16px">
+          <div style="font-size:16px; color:var(--texto2)">Revisa antes de emitir.</div>
+          <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px">
+            <div style="min-height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2); width:80px">Puertas</span><span style="flex:1; font-weight:500; text-align:right">Portón vehicular<br>Acceso peatonal</span></div>
+            <div style="min-height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2); width:80px">Sitio</span><span style="flex:1; font-weight:500; text-align:right">Planta Warnes</span></div>
+            <div style="min-height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2); width:80px">Vence</span><span style="flex:1; font-weight:500; text-align:right">Hoy <span style="font-family:'IBM Plex Mono',monospace">23:59</span></span></div>
+            <div style="min-height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2); width:80px">Etiqueta</span><span style="flex:1; font-weight:500; text-align:right">Proveedor de gas</span></div>
+            <div style="min-height:56px; display:flex; align-items:center; gap:12px; font-size:14px"><span style="color:var(--texto2); width:80px">Usos</span><span style="flex:1; font-weight:500; text-align:right">Un solo uso</span></div>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start; color:var(--info); background:var(--infoSuave); border-radius:14px; padding:12px 16px"><span style="font-family:'Material Symbols Outlined'; font-size:20px">info</span><span style="font-size:14px; line-height:1.5; text-wrap:pretty">Abre una sola vez cualquiera de las puertas elegidas.</span></div>
+        </div>
+        <div style="padding:16px; background:var(--superficie); border-top:1px solid var(--borde); display:flex; gap:12px">
+          <div style="height:48px; flex:1; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Atrás</div>
+          <div style="height:48px; flex:1; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Emitir QR</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C06 QR emitido -->
+    <div id="C06" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C06</span><span style="font-size:14px; font-weight:500">QR emitido · pantalla completa</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">QR listo</span></div>
+        <div style="flex:1; padding:8px 24px 24px; display:flex; flex-direction:column; align-items:center; gap:16px">
+          <div style="background:#FFFFFF; padding:16px; border-radius:20px; box-shadow:var(--sombra1)"><svg width="240" height="240" viewBox="0 0 29 29" shape-rendering="crispEdges" style="display:block"><path d="{{ qr }}" fill="#000000"></path></svg></div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center">
+            <span style="font-size:20px; font-weight:600">Proveedor de gas</span>
+            <span style="font-size:14px; color:var(--texto2)">Portón vehicular · Acceso peatonal</span>
+            <span style="font-size:14px; font-weight:500; margin-top:4px">Vence hoy a las <span style="font-family:'IBM Plex Mono',monospace">23:59</span></span>
+          </div>
+          <div style="align-self:stretch; background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start">
+            <span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility_lock</span>
+            <span style="font-size:14px; line-height:1.5; text-wrap:pretty">Después de cerrar no podrás volver a ver este QR. Compártelo ahora.</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="align-self:stretch; height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">share</span>Compartir</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C07 Mis QR -->
+    <div id="C07" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C07</span><span style="font-size:14px; font-weight:500">Mis QR · Vigentes</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3); position:relative">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 16px"><span style="font-size:24px; font-weight:600">Mis QR</span></div>
+        <div style="padding:0 16px 16px">
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); background:var(--superficie); border-radius:999px; padding:4px; box-shadow:var(--sombra1)">
+            <sc-for list="{{ filtrosQr }}" as="f" hint-placeholder-count="4"><span style="height:40px; border-radius:999px; background:{{ f.bg }}; color:{{ f.fg }}; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:{{ f.w }}">{{ f.label }}</span></sc-for>
+          </div>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px; overflow:hidden">
+          <sc-for list="{{ misQrFab }}" as="q" hint-placeholder-count="2">
+            <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:16px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; gap:12px; align-items:flex-start">
+                <span style="width:44px; height:44px; flex:none; border-radius:10px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">qr_code_2</span>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">{{ q.etq }}</span><span style="font-size:14px; color:var(--texto2)">{{ q.puertas }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2); margin-top:4px">{{ q.fecha }}</span></div>
+                <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:var(--primario)"></span>Vigente</span>
+              </div>
+              <div style="display:flex; justify-content:flex-end; border-top:1px solid var(--borde); padding-top:4px; margin-bottom:-8px"><span style="height:44px; padding:0 12px; border-radius:999px; color:var(--peligro); display:flex; align-items:center; gap:4px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">block</span>Anular</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute; right:16px; bottom:96px; height:56px; padding:0 20px 0 16px; border-radius:20px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; box-shadow:var(--sombra3)"><span style="font-family:'Material Symbols Outlined'; font-size:24px">add</span>Emitir QR</div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.u1 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C07b Anular -->
+    <div id="C07b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C07b</span><span style="font-size:14px; font-weight:500">Mis QR · confirmar anulación</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3); position:relative">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 16px"><span style="font-size:24px; font-weight:600">Mis QR</span></div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px">
+          <sc-for list="{{ misQr }}" as="q" hint-placeholder-count="3">
+            <div style="background:var(--superficie); border-radius:14px; padding:16px; height:96px; box-sizing:border-box; display:flex; gap:12px">
+              <span style="width:44px; height:44px; border-radius:10px; background:var(--primarioSuave)"></span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:600">{{ q.etq }}</span><span style="font-size:14px; color:var(--texto2)">{{ q.puertas }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; padding:24px">
+          <div style="background:var(--superficieElevada); border-radius:20px; box-shadow:var(--sombra3); padding:24px; display:flex; flex-direction:column; gap:16px; width:100%">
+            <span style="width:44px; height:44px; border-radius:14px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">block</span>
+            <div style="font-size:20px; font-weight:600">¿Anular este QR?</div>
+            <div style="font-size:14px; font-weight:500">Proveedor de gas · Portón vehicular, Acceso peatonal</div>
+            <div style="display:flex; align-items:center; gap:8px">
+              <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:var(--primario)"></span>Vigente</span>
+              <span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--texto2)">arrow_forward</span>
+              <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:var(--fondo); color:var(--texto2); border:1px solid var(--borde); font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:var(--texto2)"></span>Anulado</span>
+            </div>
+            <div style="font-size:14px; color:var(--texto2); line-height:1.5; text-wrap:pretty">La puerta dejará de aceptarlo. No se puede deshacer.</div>
+            <div style="display:flex; justify-content:flex-end; gap:8px">
+              <div style="height:44px; padding:0 16px; border-radius:999px; color:var(--primario); display:flex; align-items:center; font-size:14px; font-weight:600">Cancelar</div>
+              <div style="height:44px; padding:0 24px; border-radius:999px; background:var(--peligro); color:#FFFFFF; display:flex; align-items:center; font-size:14px; font-weight:600">Anular</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C08 Eventos -->
+    <div id="C08" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C08</span><span style="font-size:14px; font-weight:500">Eventos de acceso</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 16px"><span style="font-size:24px; font-weight:600">Eventos</span><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">filter_list</span></div>
+        <div style="padding:0 16px 16px">
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); background:var(--superficie); border-radius:999px; padding:4px; box-shadow:var(--sombra1)">
+            <span style="height:40px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">Todos</span>
+            <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500">Permitidos</span>
+            <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500">Rechazados</span>
+          </div>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:8px; overflow:hidden">
+          <div style="font-size:12px; font-weight:600; color:var(--texto2); letter-spacing:0.04em">HOY · JUEVES 9 OCT</div>
+          <sc-for list="{{ eventos }}" as="e" hint-placeholder-count="7">
+            <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 16px; display:flex; align-items:center; gap:12px">
+              <span style="width:4px; align-self:stretch; border-radius:2px; background:{{ e.fg }}"></span>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ e.puerta }}</span><span style="font-size:12px; color:var(--texto2)">{{ e.detalle }}</span></div>
+              <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px"><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:{{ e.bg }}; color:{{ e.fg }}; font-size:12px; font-weight:600">{{ e.resultado }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">{{ e.hora }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.a1 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C09 Perfil -->
+    <div id="C09" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C09</span><span style="font-size:14px; font-weight:500">Perfil y cuenta</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 16px"><span style="font-size:24px; font-weight:600">Perfil</span></div>
+        <div style="flex:1; padding:0 16px 16px; display:flex; flex-direction:column; gap:16px; overflow:hidden">
+          <div style="display:flex; align-items:center; gap:16px">
+            <div style="width:56px; height:56px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:20px">CM</div>
+            <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:20px; font-weight:600">Carla Méndez</span><span style="font-size:14px; color:var(--texto2)">PIN <span style="font-family:'IBM Plex Mono',monospace">AGR ••••</span></span></div>
+          </div>
+          <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:16px 24px; display:flex; flex-direction:column; gap:8px">
+            <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-size:16px; font-weight:600">Agroindustrial Norte</span><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; background:var(--heroAcento); padding:2px 8px; border-radius:6px">AGR</span></div>
+            <div style="font-size:14px">Plan Empresa · vence <span style="font-family:'IBM Plex Mono',monospace">31/03/2027</span></div>
+          </div>
+          <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px">
+            <div style="min-height:64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde)">
+              <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">badge</span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; color:var(--texto2)">Rol activo</span><span style="font-size:16px; font-weight:600">Administrador</span></div>
+              <span style="height:44px; padding:0 12px; border-radius:999px; color:var(--primario); display:flex; align-items:center; font-size:14px; font-weight:600">Cambiar rol</span>
+            </div>
+            <div style="min-height:64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde)">
+              <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">workspace_premium</span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:500">Suscripción</span><span style="font-size:12px; color:var(--texto2)">Activa · 173 días restantes</span></div>
+              <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">chevron_right</span>
+            </div>
+            <div style="min-height:64px; display:flex; align-items:center; gap:12px">
+              <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">dark_mode</span>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:16px; font-weight:500">Tema oscuro</span><span style="font-size:12px; color:var(--texto2)">Sigue al sistema si no lo cambias</span></div>
+              <div style="width:52px; height:32px; border-radius:999px; background:var(--superficie); border:2px solid var(--texto2); box-sizing:border-box; position:relative"><div style="position:absolute; left:6px; top:6px; width:16px; height:16px; border-radius:999px; background:var(--texto2)"></div></div>
+            </div>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">logout</span>Cerrar sesión</div>
+          <div style="font-size:12px; color:var(--texto2); text-align:center; font-family:'IBM Plex Mono',monospace">v1.0.0</div>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.a3 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C10a Puertas -->
+    <div id="C10a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C10a</span><span style="font-size:14px; font-weight:500">Administración · Puertas</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 16px"><span style="font-size:24px; font-weight:600">Administración</span><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">add</span></div>
+        <div style="padding:0 16px 16px">
+          <div style="display:grid; grid-template-columns:1fr 1fr; background:var(--superficie); border-radius:999px; padding:4px; box-shadow:var(--sombra1)">
+            <span style="height:40px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">Puertas</span>
+            <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500">Usuarios</span>
+          </div>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:16px; overflow:hidden">
+          <sc-for list="{{ sitiosAdmin }}" as="s" hint-placeholder-count="2">
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:12px; font-weight:600; color:var(--texto2); letter-spacing:0.04em">{{ s.nombreMay }} · {{ s.total }}</div>
+              <sc-for list="{{ s.puertas }}" as="p" hint-placeholder-count="2">
+                <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 8px 12px 16px; display:flex; align-items:center; gap:12px">
+                  <span style="width:44px; height:44px; border-radius:10px; background:{{ p.bg }}; color:{{ p.fg }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">{{ p.icon }}</span>
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ p.nombre }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">{{ p.disp }}</span></div>
+                  <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:{{ p.fg }}"></span>{{ p.estado }}</span>
+                  <span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">chevron_right</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.a2 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C10b Usuarios -->
+    <div id="C10b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C10b</span><span style="font-size:14px; font-weight:500">Administración · Usuarios</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; justify-content:space-between; padding:0 4px 0 16px"><span style="font-size:24px; font-weight:600">Administración</span><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">person_add</span></div>
+        <div style="padding:0 16px 16px">
+          <div style="display:grid; grid-template-columns:1fr 1fr; background:var(--superficie); border-radius:999px; padding:4px; box-shadow:var(--sombra1)">
+            <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500">Puertas</span>
+            <span style="height:40px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">Usuarios</span>
+          </div>
+        </div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px; overflow:hidden">
+          <sc-for list="{{ usuarios }}" as="u" hint-placeholder-count="5">
+            <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 8px 12px 16px; display:flex; align-items:center; gap:12px">
+              <div style="width:44px; height:44px; flex:none; border-radius:999px; background:var(--fondo); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">{{ u.ini }}</div>
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px">
+                <span style="font-size:14px; font-weight:600">{{ u.etq }}</span>
+                <div style="display:flex; gap:4px; flex-wrap:wrap"><sc-for list="{{ u.roles }}" as="r" hint-placeholder-count="1"><span style="height:24px; padding:0 8px; border-radius:6px; border:1px solid var(--borde); font-size:12px; font-weight:500; color:var(--texto2); display:inline-flex; align-items:center">{{ r }}</span></sc-for></div>
+              </div>
+              <span style="height:44px; padding:0 8px; border-radius:999px; color:var(--primario); display:flex; align-items:center; gap:4px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">key</span>PIN</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+          <sc-for list="{{ nav.a2 }}" as="n" hint-placeholder-count="4">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+              <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+              <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- C10c PIN generado -->
+    <div id="C10c" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">C10c</span><span style="font-size:14px; font-weight:500">Generar PIN · se muestra una sola vez</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">PIN generado</span></div>
+        <div style="flex:1; padding:24px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Para</span><span style="font-size:20px; font-weight:600">Jorge Rivero</span><span style="font-size:14px; color:var(--texto2)">Usuario</span></div>
+          <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px 16px; display:flex; flex-direction:column; align-items:center; gap:16px">
+            <div style="display:flex; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; letter-spacing:0.16em"><span style="color:var(--texto2)">AGR</span><span>7K2Q</span></div>
+            <div style="height:44px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">content_copy</span>Copiar</div>
+          </div>
+          <div style="background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start">
+            <span style="font-family:'Material Symbols Outlined'; font-size:20px">warning</span>
+            <span style="font-size:14px; line-height:1.5; text-wrap:pretty">Solo lo verás ahora. Entrégalo en persona o por un canal privado. El PIN anterior de Jorge ya no funciona.</span>
+          </div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Listo, ya lo entregué</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+function qrPath(seed, n) {
+  n = n || 29; let s = seed * 9301 + 49297;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const m = Array.from({ length: n }, () => Array(n).fill(0));
+  const res = (x, y) => (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (res(x, y)) continue;
+    m[y][x] = y === 6 ? (x % 2 === 0 ? 1 : 0) : x === 6 ? (y % 2 === 0 ? 1 : 0) : (rnd() > 0.52 ? 1 : 0);
+  }
+  const f = (ox, oy) => { for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) m[oy + i][ox + j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i > 1 && i < 5 && j > 1 && j < 5)) ? 1 : 0; };
+  f(0, 0); f(n - 7, 0); f(0, n - 7);
+  let d = ''; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += 'M' + x + ' ' + y + 'h1v1h-1z';
+  return d;
+}
+const OK = { bg: 'var(--primarioSuave)', fg: 'var(--primario)' };
+const NO = { bg: 'var(--peligroSuave)', fg: 'var(--peligro)' };
+const NAV = {
+  u: [['home', 'Inicio'], ['qr_code_2', 'Mis QR'], ['history', 'Eventos'], ['person', 'Perfil']],
+  a: [['home', 'Inicio'], ['history', 'Eventos'], ['tune', 'Admin'], ['person', 'Perfil']]
+};
+const mkNav = (r, idx) => NAV[r].map(([icon, label], i) => ({
+  icon, label,
+  pill: i === idx ? 'var(--primarioSuave)' : 'transparent',
+  ic: i === idx ? 'var(--primario)' : 'var(--texto2)',
+  fg: i === idx ? 'var(--texto)' : 'var(--texto2)',
+  fill: i === idx ? "'FILL' 1" : "'FILL' 0",
+  w: i === idx ? 600 : 500
+}));
+const mkPasos = (cur) => ['Puertas', 'Vigencia', 'Confirmar'].map((label, i) => {
+  const done = i < cur, act = i === cur;
+  return {
+    n: done ? '✓' : String(i + 1), label,
+    bg: done || act ? 'var(--primario)' : 'var(--superficie)',
+    fg: done || act ? 'var(--sobrePrimario)' : 'var(--texto2)',
+    bd: done || act ? 'var(--primario)' : 'var(--borde)',
+    tc: act ? 'var(--texto)' : 'var(--texto2)', w: act ? 600 : 500,
+    linea: done ? 'var(--primario)' : 'var(--borde)', lineaDisp: i < 2 ? 'block' : 'none', flex: i < 2 ? '1' : 'none'
+  };
+});
+const ev = (hora, puerta, ok, detalle) => Object.assign({ hora, puerta, resultado: ok ? 'Permitido' : 'Rechazado', detalle }, ok ? OK : NO);
+class Component extends DCLogic {
+  renderVals() {
+    const eventos = [
+      ev('10:42', 'Portón vehicular', true, 'Proveedor de gas · QR de Jorge R.'),
+      ev('10:31', 'Acceso peatonal', false, 'QR vencido'),
+      ev('10:17', 'Depósito 2', false, 'Otra puerta'),
+      ev('09:58', 'Acceso principal', true, 'Técnico de internet'),
+      ev('09:40', 'Acceso peatonal', false, 'QR ya usado'),
+      ev('09:12', 'Portón vehicular', true, 'Sin etiqueta · QR de Compras'),
+      ev('08:55', 'Estacionamiento', false, 'Suscripción vencida')
+    ];
+    const puerta = (nombre, sel, aviso) => ({ nombre, aviso: aviso || '', check: sel ? 'check' : '', cb: sel ? 'var(--primario)' : 'var(--texto2)', cbBg: sel ? 'var(--primario)' : 'transparent', fila: sel ? 'var(--primarioSuave)' : 'transparent' });
+    const pa = (nombre, disp, on) => Object.assign({ nombre, disp, estado: on ? 'En línea' : 'Sin conexión', icon: on ? 'door_front' : 'wifi_off' }, on ? OK : NO);
+    return {
+      qr: qrPath(7),
+      nav: { u0: mkNav('u', 0), u1: mkNav('u', 1), a0: mkNav('a', 0), a1: mkNav('a', 1), a2: mkNav('a', 2), a3: mkNav('a', 3) },
+      pasos: { p1: mkPasos(0), p2: mkPasos(1), p3: mkPasos(2) },
+      pinCuentaLleno: ['A', 'G', 'R'], pinErrA: ['A', 'G', 'R'], pinErrB: ['7', 'K', '2', 'O'],
+      tres: [1, 2, 3], cuatro: [1, 2, 3, 4],
+      roles: [
+        { nombre: 'Administrador', desc: 'Puertas, usuarios y eventos', icon: 'admin_panel_settings', sel: true },
+        { nombre: 'Guardia', desc: 'Eventos y estado de puertas', icon: 'shield_person' },
+        { nombre: 'Usuario', desc: 'Emitir y compartir QR', icon: 'person' }
+      ].map(r => Object.assign(r, { borde: r.sel ? 'var(--primario)' : 'transparent', radio: r.sel ? 'var(--primario)' : 'var(--texto2)', ricon: r.sel ? 'radio_button_checked' : 'radio_button_unchecked', fill: r.sel ? "'FILL' 1" : "'FILL' 0" })),
+      rapidos: [{ icon: 'replay', label: 'Repetir último' }, { icon: 'qr_code_2', label: 'Mis QR' }, { icon: 'history', label: 'Eventos' }, { icon: 'swap_horiz', label: 'Cambiar rol' }],
+      qrHoy: [
+        { etq: 'Proveedor de gas', puertas: 'Portón vehicular · Acceso peatonal', vence: '23:59' },
+        { etq: 'Técnico de internet', puertas: 'Acceso principal', vence: '18:00' }
+      ],
+      misQr: [
+        { etq: 'Proveedor de gas', puertas: 'Portón vehicular · Acceso peatonal', fecha: 'Hoy 09:12 → vence 23:59' },
+        { etq: 'Técnico de internet', puertas: 'Acceso principal', fecha: 'Hoy 08:40 → vence 18:00' },
+        { etq: 'Sin etiqueta', puertas: 'Depósito 2', fecha: 'Hoy 08:05 → vence 23:59' }
+      ],
+      misQrFab: [
+        { etq: 'Proveedor de gas', puertas: 'Portón vehicular · Acceso peatonal', fecha: 'Hoy 09:12 → vence 23:59' },
+        { etq: 'Técnico de internet', puertas: 'Acceso principal', fecha: 'Hoy 08:40 → vence 18:00' }
+      ],
+      filtrosQr: ['Vigentes', 'Usados', 'Vencidos', 'Anulados'].map((label, i) => ({ label, bg: i === 0 ? 'var(--primario)' : 'transparent', fg: i === 0 ? 'var(--sobrePrimario)' : 'var(--texto2)', w: i === 0 ? 600 : 500 })),
+      eventos, eventosCortos: eventos.slice(0, 4),
+      sitios: [
+        { nombreMay: 'PLANTA WARNES', puertas: [puerta('Portón vehicular', true), puerta('Acceso peatonal', true), puerta('Depósito 2', false, 'Sin conexión')] },
+        { nombreMay: 'OFICINA EQUIPETROL', puertas: [puerta('Acceso principal', false), puerta('Estacionamiento', false)] }
+      ],
+      sitiosAdmin: [
+        { nombreMay: 'PLANTA WARNES', total: '3', puertas: [pa('Portón vehicular', 'LECT-0042', true), pa('Acceso peatonal', 'LECT-0043', true), pa('Depósito 2', 'LECT-0051', false)] },
+        { nombreMay: 'OFICINA EQUIPETROL', total: '2', puertas: [pa('Acceso principal', 'LECT-0060', true), pa('Estacionamiento', 'LECT-0061', false)] }
+      ],
+      usuarios: [
+        { ini: 'CM', etq: 'Carla Méndez', roles: ['Administrador', 'Usuario'] },
+        { ini: 'PN', etq: 'Portería turno noche', roles: ['Guardia'] },
+        { ini: 'JR', etq: 'Jorge Rivero', roles: ['Usuario'] },
+        { ini: 'CO', etq: 'Compras', roles: ['Usuario'] },
+        { ini: 'MA', etq: 'Mantenimiento', roles: ['Usuario', 'Guardia'] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

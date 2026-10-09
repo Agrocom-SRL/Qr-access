@@ -21,6 +21,11 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'qr.vigencia_invalida' => l10n.comunErrorQrVigenciaInvalida,
     'qr.vigencia_excedida' => l10n.comunErrorQrVigenciaExcedida,
     'validacion.invalida' => l10n.comunErrorValidacionInvalida,
+    'usuario.no_encontrado' => l10n.comunErrorUsuarioNoEncontrado,
+    'usuario.propio' => l10n.comunErrorUsuarioPropio,
+    'rol.no_encontrado' => l10n.comunErrorRolNoEncontrado,
+    'rol.permisos_excedidos' => l10n.comunErrorRolPermisosExcedidos,
+    'plan.limite_usuarios' => l10n.comunErrorPlanLimiteUsuarios,
     _ => l10n.comunErrorGenerico,
   };
 }

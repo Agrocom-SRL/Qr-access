@@ -9,9 +9,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// fake con el shape del contrato.
 abstract interface class EventosRepositorio {
   Future<Pagina<EventoAcceso>> listar({
+    required FiltroEventos filtro,
     required int pagina,
     required int porPagina,
   });
+
+  Future<ResumenEventos> resumir(FiltroEventos filtro);
 }
 
 class EventosRepositorioApi implements EventosRepositorio {
@@ -21,15 +24,34 @@ class EventosRepositorioApi implements EventosRepositorio {
 
   @override
   Future<Pagina<EventoAcceso>> listar({
+    required FiltroEventos filtro,
     required int pagina,
     required int porPagina,
   }) async {
     final respuesta = await _api.eventosAcceso(
       pagina: pagina,
       porPagina: porPagina,
+      filtro: _aFiltroApi(filtro),
     );
     return respuesta.aPagina(_aEvento);
   }
+
+  @override
+  Future<ResumenEventos> resumir(FiltroEventos filtro) async {
+    final dto = await _api.resumenEventos(_aFiltroApi(filtro));
+    return ResumenEventos(
+      permitidos: dto.permitidos,
+      rechazados: dto.rechazados,
+      rechazadosPorMotivo: dto.rechazadosPorMotivo,
+    );
+  }
+
+  FiltroEventosApi _aFiltroApi(FiltroEventos filtro) => FiltroEventosApi(
+    resultado: filtro.resultado?.valorApi,
+    puertaId: filtro.puertaId,
+    desde: filtro.desde,
+    hasta: filtro.hasta,
+  );
 
   EventoAcceso _aEvento(EventoAccesoDto dto) => EventoAcceso(
     id: dto.id,
@@ -37,6 +59,9 @@ class EventosRepositorioApi implements EventosRepositorio {
     resultado: ResultadoEvento.desdeApi(dto.resultado),
     motivoCode: dto.motivoCode,
     puertaNombre: dto.puerta.nombre,
+    sitioNombre: dto.sitio.nombre,
+    qrEtiqueta: dto.qr?.etiqueta,
+    emisorEtiqueta: dto.qr?.emisorEtiqueta,
   );
 }
 

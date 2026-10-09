@@ -1,7 +1,7 @@
-import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
@@ -12,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/fakes.dart';
 import '../../../helpers/pantalla.dart';
+
+final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
 QrAcceso _qr({
   required String id,
@@ -31,20 +33,23 @@ QrAcceso _qr({
 Pagina<QrAcceso> _pagina(List<QrAcceso> datos) =>
     Pagina(datos: datos, pagina: 1, porPagina: 20, total: datos.length);
 
-AppLocalizations _textos(WidgetTester tester) =>
-    AppLocalizations.of(tester.element(find.byType(Scaffold).first));
-
 Future<QrAccesosRepositorioFalso> _montar(
   WidgetTester tester, {
   required Pagina<QrAcceso> listado,
-  Set<String> permisos = const {},
+  Set<String> permisos = const {Permisos.verQr},
+  bool expandida = false,
 }) async {
-  final repositorio = QrAccesosRepositorioFalso(listado: listado);
+  final repositorio = QrAccesosRepositorioFalso(
+    listado: listado,
+    resumen: {EstadoQr.vigente: listado.total, EstadoQr.usado: 27},
+  );
   await montarPantalla(
     tester,
     pagina: const MisQrPagina(),
+    expandida: expandida,
     overrides: [
       qrAccesosRepositorioProvider.overrideWithValue(repositorio),
+      relojProvider.overrideWithValue(() => _ahora),
       sesionControladorProvider.overrideWith(
         () => SesionFalsa(sesionCon(permisos: permisos)),
       ),
@@ -77,26 +82,24 @@ void main() {
       listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.vigente)]),
     );
 
-    expect(find.text(_textos(tester).qrSinEtiqueta), findsOneWidget);
+    expect(find.text(textosEn(tester).qrSinEtiqueta), findsOneWidget);
   });
 
-  testWidgets('elegir el filtro Usado pide esos QR', (tester) async {
+  testWidgets('elegir la pastilla Usados pide esos QR', (tester) async {
     final repositorio = await _montar(tester, listado: _pagina(const []));
-    final textos = _textos(tester);
+    final textos = textosEn(tester);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, textos.qrEstadoUsado));
+    await tester.tap(find.text(textos.qrFiltroUsados));
     await tester.pump();
     await tester.pump();
 
     expect(repositorio.estadosListados.last, EstadoQr.usado);
   });
 
-  testWidgets('sin QR en el estado, lo dice con el estado vacío', (
-    tester,
-  ) async {
+  testWidgets('sin QR vigentes, lo dice con el estado vacío', (tester) async {
     await _montar(tester, listado: _pagina(const []));
 
-    expect(find.text(_textos(tester).qrMisQrSinResultados), findsOneWidget);
+    expect(find.text(textosEn(tester).qrMisQrSinVigentes), findsOneWidget);
   });
 
   testWidgets('sin el permiso de anular, un QR vigente no tiene el botón', (
@@ -107,24 +110,25 @@ void main() {
       listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.vigente)]),
     );
 
-    expect(find.text(_textos(tester).qrAnular), findsNothing);
+    expect(find.text(textosEn(tester).qrAnular), findsNothing);
   });
 
-  testWidgets('anular pide confirmación y, al confirmar, anula el QR', (
+  testWidgets('anular muestra Vigente → Anulado y, al confirmar, anula', (
     tester,
   ) async {
     final repositorio = await _montar(
       tester,
       listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.vigente)]),
-      permisos: {Permisos.anularQr},
+      permisos: {Permisos.verQr, Permisos.anularQr},
     );
-    final textos = _textos(tester);
+    final textos = textosEn(tester);
 
-    await tester.tap(find.widgetWithText(FilledButton, textos.qrAnular));
+    await tester.tap(find.widgetWithText(TextButton, textos.qrAnular));
     await tester.pumpAndSettle();
     expect(find.text(textos.qrAnularTitulo), findsOneWidget);
+    expect(find.text(textos.qrEstadoAnulado), findsOneWidget);
 
-    await tester.tap(find.text(textos.qrAnularConfirmar));
+    await tester.tap(find.widgetWithText(FilledButton, textos.qrAnular));
     await tester.pumpAndSettle();
 
     expect(repositorio.anulados, ['qr1']);
@@ -134,11 +138,11 @@ void main() {
     final repositorio = await _montar(
       tester,
       listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.vigente)]),
-      permisos: {Permisos.anularQr},
+      permisos: {Permisos.verQr, Permisos.anularQr},
     );
-    final textos = _textos(tester);
+    final textos = textosEn(tester);
 
-    await tester.tap(find.widgetWithText(FilledButton, textos.qrAnular));
+    await tester.tap(find.widgetWithText(TextButton, textos.qrAnular));
     await tester.pumpAndSettle();
     await tester.tap(find.text(textos.comunCancelar));
     await tester.pumpAndSettle();
@@ -152,27 +156,47 @@ void main() {
     await _montar(
       tester,
       listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.usado)]),
-      permisos: {Permisos.anularQr},
+      permisos: {Permisos.verQr, Permisos.anularQr},
     );
 
-    expect(find.text(_textos(tester).qrAnular), findsNothing);
+    expect(find.text(textosEn(tester).qrAnular), findsNothing);
   });
 
-  testWidgets('sin el permiso de emitir, no ofrece emitir desde el listado', (
+  testWidgets('sin el permiso de emitir, no hay botón flotante', (
     tester,
   ) async {
     await _montar(tester, listado: _pagina(const []));
-    expect(find.text(_textos(tester).qrMisQrNuevo), findsNothing);
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('con el permiso de emitir, ofrece emitir desde el listado', (
+  testWidgets('con el permiso de emitir, el botón flotante lleva a emitir', (
     tester,
   ) async {
     await _montar(
       tester,
       listado: _pagina(const []),
-      permisos: {Permisos.emitirQr},
+      permisos: {Permisos.verQr, Permisos.emitirQr},
     );
-    expect(find.text(_textos(tester).qrMisQrNuevo), findsOneWidget);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    expect(find.text('destino /qr/nuevo'), findsOneWidget);
+  });
+
+  testWidgets('en expandido es una tabla con conteos en las pastillas', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina([
+        _qr(id: 'qr1', estado: EstadoQr.vigente, etiqueta: 'Proveedor de gas'),
+      ]),
+      expandida: true,
+    );
+    final textos = textosEn(tester);
+
+    expect(find.byType(DataTable), findsOneWidget);
+    expect(find.text(textos.qrColumnaEtiqueta), findsOneWidget);
+    expect(find.text('27'), findsOneWidget);
+    expect(find.text(textos.comunRangoDe(1, 1, 1)), findsOneWidget);
   });
 }

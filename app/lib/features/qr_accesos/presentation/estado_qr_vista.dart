@@ -12,18 +12,30 @@ String textoEstadoQr(AppLocalizations l10n, EstadoQr estado) =>
       EstadoQr.anulado => l10n.qrEstadoAnulado,
     };
 
-/// Tono del badge de un estado de QR (sistema de diseño §4): anular lleva el
-/// tono de peligro, porque es el estado al que lleva ese cambio.
+/// Texto en plural del filtro de Mis QR ("Vigentes", "Usados"…).
+String textoFiltroQr(AppLocalizations l10n, EstadoQr estado) =>
+    switch (estado) {
+      EstadoQr.vigente => l10n.qrFiltroVigentes,
+      EstadoQr.usado => l10n.qrFiltroUsados,
+      EstadoQr.vencido => l10n.qrFiltroVencidos,
+      EstadoQr.anulado => l10n.qrFiltroAnulados,
+    };
+
+/// Tono del badge (handoff): Vigente = primario · Usado = informacion ·
+/// Vencido = advertencia · Anulado = neutro.
 TonoAcceso tonoEstadoQr(EstadoQr estado) => switch (estado) {
   EstadoQr.vigente => TonoAcceso.primario,
   EstadoQr.usado => TonoAcceso.informacion,
-  EstadoQr.vencido => TonoAcceso.neutro,
-  EstadoQr.anulado => TonoAcceso.peligro,
+  EstadoQr.vencido => TonoAcceso.advertencia,
+  EstadoQr.anulado => TonoAcceso.neutro,
 };
 
 /// Texto de un error de los datos del formulario de emisión.
 String textoErrorDatosEmision(AppLocalizations l10n, ErrorDatosEmision error) =>
     switch (error) {
       ErrorDatosEmision.sinPuertas => l10n.qrEmitirErrorSinPuertas,
-      ErrorDatosEmision.etiquetaLarga => l10n.qrEmitirErrorEtiquetaLarga,
+      ErrorDatosEmision.etiquetaLarga => l10n.qrEmitirErrorEtiquetaLarga(
+        DatosEmision.largoMaximoEtiqueta,
+      ),
+      ErrorDatosEmision.vigenciaPasada => l10n.qrEmitirErrorVigenciaPasada,
     };

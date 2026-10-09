@@ -9,6 +9,14 @@ Map<String, Object?> _puerta(int n) => {
   'id': 'p$n',
   'nombre': 'Puerta $n',
   'sitio': {'id': 's1', 'nombre': 'Sede'},
+  'dispositivo': n.isEven
+      ? null
+      : {
+          'id': 'd$n',
+          'nombre': 'LECT-$n',
+          'en_linea': true,
+          'ultimo_latido_at': '2026-10-09T14:30:00.000Z',
+        },
 };
 
 /// Una API con 101 puertas: la primera página llena (100) y una segunda.
@@ -37,6 +45,10 @@ void main() {
     expect(puertas.first.id, 'p1');
     expect(puertas.last.id, 'p101');
     expect(puertas.first.sitioNombre, 'Sede');
+    expect(puertas.first.dispositivo?.nombre, 'LECT-1');
+    expect(puertas.first.sinConexion, isFalse);
+    expect(puertas[1].dispositivo, isNull);
+    expect(puertas[1].sinConexion, isTrue);
     expect(adaptador.peticiones, hasLength(2));
   });
 }

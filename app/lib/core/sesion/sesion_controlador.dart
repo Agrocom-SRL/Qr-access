@@ -106,25 +106,54 @@ class SesionControlador extends Notifier<SesionEstado>
     await _caducar();
   }
 
+  /// Vuelve a elegir rol sin cerrar la sesión (Perfil › "Cambiar rol"). El
+  /// rol activo queda como preferido hasta que se elija otro.
+  void pedirCambioDeRol() {
+    final actual = state;
+    if (actual is! SesionAutenticada || !actual.tieneVariosRoles) return;
+    state = SesionEligiendoRol(
+      usuario: actual.usuario,
+      cuenta: actual.cuenta,
+      roles: actual.roles,
+      rolPreferidoId: actual.rolActivo.id,
+    );
+  }
+
+  /// Vuelve a pedir la sesión a la API (p. ej. tras un cambio de plan).
+  Future<void> refrescarDatos() async {
+    if (_acceso == null) return;
+    try {
+      await _cargarSesionActual();
+    } on ErrorApi {
+      // Sin red: se conserva lo que ya se tenía.
+    }
+  }
+
   Future<void> _cargarSesionActual() async {
     final actual = await _api.sesionActual();
     final rol = actual.rolActivo;
+    final roles = [
+      for (final r in actual.roles) RolSesion(id: r.id, nombre: r.nombre),
+    ];
     if (rol == null) {
       // Al reabrir con un refresco guardado de una sesión que no eligió rol.
       state = SesionEligiendoRol(
         usuario: _usuario(actual.usuario),
         cuenta: _cuenta(actual.cuenta),
-        roles: [
-          for (final r in actual.roles) RolSesion(id: r.id, nombre: r.nombre),
-        ],
+        roles: roles,
       );
       return;
     }
+    final suscripcion = actual.suscripcion;
     state = SesionAutenticada(
       usuario: _usuario(actual.usuario),
       cuenta: _cuenta(actual.cuenta),
       rolActivo: RolSesion(id: rol.id, nombre: rol.nombre),
       permisos: actual.permisos.toSet(),
+      roles: roles,
+      suscripcion: suscripcion == null
+          ? null
+          : SuscripcionSesion(plan: suscripcion.plan, hasta: suscripcion.hasta),
     );
   }
 

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0" rel="stylesheet">
+<style>body{margin:0;background:#E8ECE9;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<div style="--fondo:#F5F7F6; --superficie:#FFFFFF; --superficieElevada:#FFFFFF; --borde:#DDE2DF; --texto:#1B1F1C; --texto2:#5B635D; --primario:#007A33; --sobrePrimario:#FFFFFF; --primarioSuave:#E8F5EE; --peligro:#C62828; --peligroSuave:#FDECEC; --advertencia:#965A00; --advertenciaSuave:#FFF3E0; --info:#1565C0; --infoSuave:#E8F1FB; --sombra1:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06); --sombra3:0 8px 24px rgba(27,31,28,0.10), 0 2px 4px rgba(27,31,28,0.04); --skeleton:#E9EDEA; padding:48px; display:flex; flex-direction:column; gap:48px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+
+<section style="display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Estados de listados · compacto</div>
+    <div style="font-size:16px; color:#5B635D; max-width:880px; text-wrap:pretty">Filas: carga, vacío, error y sin conexión. Columnas: cada listado. Skeleton con la forma real de la tarjeta (pulso de opacidad 1200 ms; estático con "reducir movimiento"). Sin conexión muestra lo último en caché con banner y bloquea acciones que necesitan servidor.</div>
+  </div>
+  <sc-for list="{{ filas }}" as="fila" hint-placeholder-count="4">
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:20px; font-weight:600">{{ fila.titulo }}</div>
+      <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+        <sc-for list="{{ fila.frames }}" as="f" hint-placeholder-count="4">
+          <div id="{{ f.id }}" style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">{{ f.id }}</span><span style="font-size:14px; font-weight:500">{{ f.label }}</span></div>
+            <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+              <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">{{ f.statusIcons }}</span></div>
+              <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 16px"><span style="font-size:24px; font-weight:600">{{ f.titulo }}</span></div>
+              <sc-if value="{{ f.offline }}" hint-placeholder-val="{{ false }}">
+                <div style="margin:0 16px 12px; background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:12px">
+                  <span style="font-family:'Material Symbols Outlined'; font-size:20px">cloud_off</span>
+                  <span style="flex:1; font-size:14px; line-height:1.4">Sin conexión. Datos de las <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">10:12</span>.</span>
+                  <span style="height:44px; display:flex; align-items:center; font-size:14px; font-weight:600">Reintentar</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ f.filtros }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:0 16px 16px"><div style="display:grid; grid-template-columns:repeat(4,1fr); background:var(--superficie); border-radius:999px; padding:4px; box-shadow:var(--sombra1)">
+                  <span style="height:40px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">{{ f.filtro1 }}</span>
+                  <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px">{{ f.filtro2 }}</span>
+                  <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px">{{ f.filtro3 }}</span>
+                  <span style="height:40px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:14px">{{ f.filtro4 }}</span>
+                </div></div>
+              </sc-if>
+              <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:12px; overflow:hidden">
+                <sc-if value="{{ f.carga }}" hint-placeholder-val="{{ true }}">
+                  <sc-for list="{{ f.skel }}" as="s" hint-placeholder-count="5">
+                    <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:16px; display:flex; align-items:center; gap:12px">
+                      <div style="width:44px; height:44px; border-radius:10px; background:var(--skeleton)"></div>
+                      <div style="flex:1; display:flex; flex-direction:column; gap:8px"><div style="height:12px; width:{{ s.w1 }}; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:{{ s.w2 }}; border-radius:6px; background:var(--skeleton)"></div></div>
+                      <div style="width:64px; height:24px; border-radius:999px; background:var(--skeleton)"></div>
+                    </div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ f.cache }}" hint-placeholder-val="{{ false }}">
+                  <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="3">
+                    <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:12px 16px; display:flex; align-items:center; gap:12px">
+                      <span style="width:44px; height:44px; border-radius:10px; background:var(--fondo); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">{{ f.icon }}</span>
+                      <div style="flex:1; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ it.t }}</span><span style="font-size:12px; color:var(--texto2)">{{ it.s }}</span></div>
+                      <span style="height:24px; padding:0 8px; border-radius:999px; background:var(--fondo); border:1px solid var(--borde); color:var(--texto2); font-size:12px; font-weight:600; display:inline-flex; align-items:center">{{ it.b }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="font-size:12px; color:var(--texto2); text-align:center; padding-top:8px">{{ f.cacheNota }}</div>
+                </sc-if>
+                <sc-if value="{{ f.mensaje }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:12px; padding:0 16px 48px">
+                    <div style="width:64px; height:64px; border-radius:20px; background:{{ f.icBg }}; color:{{ f.icFg }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px">{{ f.msgIcon }}</div>
+                    <div style="font-size:20px; font-weight:600">{{ f.msgTitulo }}</div>
+                    <div style="font-size:14px; color:var(--texto2); line-height:1.5; text-wrap:pretty">{{ f.msgTexto }}</div>
+                    <div style="height:48px; padding:0 24px; margin-top:8px; border-radius:999px; background:{{ f.btnBg }}; color:{{ f.btnFg }}; display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">{{ f.btnIcon }}</span>{{ f.btn }}</div>
+                  </div>
+                </sc-if>
+              </div>
+              <div style="height:80px; flex:none; background:var(--superficie); display:flex; border-top:1px solid var(--borde)">
+                <sc-for list="{{ f.nav }}" as="n" hint-placeholder-count="4">
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px">
+                    <span style="width:64px; height:32px; border-radius:999px; background:{{ n.pill }}; color:{{ n.ic }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>
+                    <span style="font-size:12px; font-weight:{{ n.w }}; color:{{ n.fg }}">{{ n.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Estados de pantallas sin listado · compacto</div>
+    <div style="font-size:16px; color:#5B635D">Ingreso, Emitir, QR emitido y Perfil.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+
+    <div id="S01" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S01</span><span style="font-size:14px; font-weight:500">Ingreso · sin conexión</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_off wifi_off battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span></div>
+        <div style="flex:1; padding:16px 24px 24px; display:flex; flex-direction:column; gap:24px">
+          <div style="font-size:24px; font-weight:600">Ingresa tu PIN</div>
+          <div style="display:flex; align-items:center; gap:16px">
+            <div style="display:flex; gap:8px"><sc-for list="{{ tres }}" as="c" hint-placeholder-count="3"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-size:24px">•</div></sc-for></div>
+            <div style="display:flex; gap:8px"><sc-for list="{{ cuatro }}" as="c" hint-placeholder-count="4"><div style="width:36px; height:56px; border-radius:10px; border:1px solid var(--borde); background:var(--superficie); display:flex; align-items:center; justify-content:center; font-size:24px">•</div></sc-for></div>
+          </div>
+          <div style="background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start"><span style="font-family:'Material Symbols Outlined'; font-size:20px">cloud_off</span><span style="font-size:14px; line-height:1.5">Sin conexión. Conéctate a internet para ingresar.</span></div>
+          <div style="flex:1"></div>
+          <div style="height:48px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">refresh</span>Reintentar</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="S02" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S02</span><span style="font-size:14px; font-weight:500">Emitir · paso 1 cargando puertas</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">Emitir QR</span></div>
+        <div style="flex:1; padding:8px 16px; display:flex; flex-direction:column; gap:16px">
+          <div style="height:12px; width:120px; border-radius:6px; background:var(--skeleton)"></div>
+          <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px">
+            <sc-for list="{{ cuatro }}" as="c" hint-placeholder-count="4"><div style="height:56px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde)"><div style="width:24px; height:24px; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:160px; border-radius:6px; background:var(--skeleton)"></div></div></sc-for>
+          </div>
+          <div style="font-size:12px; color:var(--texto2)">Vacío: "No tienes puertas asignadas. Pídeselas al administrador." Error: EstadoVacio + Reintentar.</div>
+        </div>
+        <div style="padding:16px; background:var(--superficie); border-top:1px solid var(--borde); display:flex; justify-content:flex-end"><div style="height:48px; padding:0 32px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; font-size:16px; font-weight:600">Siguiente</div></div>
+      </div>
+    </div>
+
+    <div id="S03" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S03</span><span style="font-size:14px; font-weight:500">Emitir · paso 3 error al emitir</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3); position:relative">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">arrow_back</span><span style="font-size:20px; font-weight:600">Emitir QR</span></div>
+        <div style="flex:1; padding:8px 16px; display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px">
+            <div style="min-height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">Puertas</span><span style="font-weight:500">Portón vehicular, Acceso peatonal</span></div>
+            <div style="min-height:56px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">Vence</span><span style="font-weight:500">Hoy <span style="font-family:'IBM Plex Mono',monospace">23:59</span></span></div>
+            <div style="min-height:56px; display:flex; align-items:center; justify-content:space-between; font-size:14px"><span style="color:var(--texto2)">Etiqueta</span><span style="font-weight:500">Proveedor de gas</span></div>
+          </div>
+        </div>
+        <div style="position:absolute; left:16px; right:16px; bottom:96px; background:#1B1F1C; color:#E6EAE7; border-radius:10px; padding:4px 4px 4px 16px; display:flex; align-items:center; gap:8px; box-shadow:var(--sombra3)"><span style="flex:1; font-size:14px">No pudimos emitir el QR.</span><span style="height:44px; padding:0 12px; display:flex; align-items:center; color:#93D0AB; font-size:14px; font-weight:600">Reintentar</span></div>
+        <div style="padding:16px; background:var(--superficie); border-top:1px solid var(--borde); display:flex; gap:12px">
+          <div style="height:48px; flex:1; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Atrás</div>
+          <div style="height:48px; flex:1; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Emitir QR</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="S04" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S04</span><span style="font-size:14px; font-weight:500">QR emitido · generando</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px; color:var(--borde)">close</span><span style="font-size:20px; font-weight:600">Generando QR</span></div>
+        <div style="flex:1; padding:8px 24px 24px; display:flex; flex-direction:column; align-items:center; gap:16px">
+          <div style="width:272px; height:272px; border-radius:20px; background:#FFFFFF; box-shadow:var(--sombra1); display:flex; align-items:center; justify-content:center"><span style="width:32px; height:32px; border-radius:999px; border:3px solid var(--primario); border-right-color:transparent; box-sizing:border-box"></span></div>
+          <div style="height:16px; width:160px; border-radius:6px; background:var(--skeleton)"></div>
+          <div style="height:12px; width:220px; border-radius:6px; background:var(--skeleton)"></div>
+          <div style="flex:1"></div>
+          <div style="font-size:12px; color:var(--texto2); text-align:center; text-wrap:pretty">Si la emisión falla aquí se vuelve al paso 3 con el aviso de S03; el QR no se crea a medias.</div>
+          <div style="align-self:stretch; height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Compartir</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="S05" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S05</span><span style="font-size:14px; font-weight:500">QR emitido · no se pudo compartir</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3); position:relative">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 4px; gap:4px"><span style="width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">close</span><span style="font-size:20px; font-weight:600">QR listo</span></div>
+        <div style="flex:1; padding:8px 24px 24px; display:flex; flex-direction:column; align-items:center; gap:16px">
+          <div style="background:#FFFFFF; padding:16px; border-radius:20px; box-shadow:var(--sombra1)"><svg width="240" height="240" viewBox="0 0 29 29" shape-rendering="crispEdges" style="display:block"><path d="{{ qr }}" fill="#000000"></path></svg></div>
+          <span style="font-size:20px; font-weight:600">Proveedor de gas</span>
+          <div style="flex:1"></div>
+          <div style="align-self:stretch; height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">share</span>Compartir</div>
+        </div>
+        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; padding:24px">
+          <div style="background:var(--superficieElevada); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:16px; width:100%; box-shadow:var(--sombra3)">
+            <div style="font-size:20px; font-weight:600">¿Cerrar sin compartir?</div>
+            <div style="font-size:14px; color:var(--texto2); line-height:1.5">No podrás volver a ver este QR. Seguirá vigente hasta las <span style="font-family:'IBM Plex Mono',monospace">23:59</span> salvo que lo anules en Mis QR.</div>
+            <div style="display:flex; justify-content:flex-end; gap:8px">
+              <div style="height:44px; padding:0 16px; border-radius:999px; color:var(--peligro); display:flex; align-items:center; font-size:14px; font-weight:600">Cerrar igual</div>
+              <div style="height:44px; padding:0 16px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:14px; font-weight:600">Compartir</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="S06" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">S06</span><span style="font-size:14px; font-weight:500">Perfil · cargando</span></div>
+      <div style="width:360px; height:800px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; flex-direction:column; box-shadow:var(--sombra3)">
+        <div style="height:24px; flex:none; padding:0 16px; display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500"><span>9:41</span><span style="font-family:'Material Symbols Outlined'; font-size:16px; letter-spacing:2px">signal_cellular_4_bar wifi battery_full</span></div>
+        <div style="height:56px; flex:none; display:flex; align-items:center; padding:0 16px"><span style="font-size:24px; font-weight:600">Perfil</span></div>
+        <div style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:16px">
+          <div style="display:flex; align-items:center; gap:16px"><div style="width:56px; height:56px; border-radius:999px; background:var(--skeleton)"></div><div style="display:flex; flex-direction:column; gap:8px"><div style="height:16px; width:140px; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:80px; border-radius:6px; background:var(--skeleton)"></div></div></div>
+          <div style="height:88px; border-radius:20px; background:var(--skeleton)"></div>
+          <div style="background:var(--superficie); border-radius:14px; box-shadow:var(--sombra1); padding:0 16px"><sc-for list="{{ tres }}" as="c" hint-placeholder-count="3"><div style="height:64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--borde)"><div style="width:24px; height:24px; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:160px; border-radius:6px; background:var(--skeleton)"></div></div></sc-for></div>
+          <div style="font-size:12px; color:var(--texto2); text-wrap:pretty">Sin conexión: muestra datos en caché; "Cambiar rol" queda deshabilitado. "Cerrar sesión" siempre funciona (borra la sesión local).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">ListadoPaginado · expandido</div>
+    <div style="font-size:16px; color:#5B635D">Mismos 4 estados en tabla. Se aplica igual a Mis QR, Eventos, Puertas y Usuarios.</div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(2,720px); gap:48px">
+    <sc-for list="{{ tablas }}" as="t" hint-placeholder-count="4">
+      <div id="{{ t.id }}" style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">{{ t.id }}</span><span style="font-size:14px; font-weight:500">{{ t.label }}</span></div>
+        <div style="background:var(--fondo); border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--sombra3); height:520px; box-sizing:border-box; color:var(--texto)">
+          <sc-if value="{{ t.offline }}" hint-placeholder-val="{{ false }}"><div style="background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:12px"><span style="font-family:'Material Symbols Outlined'; font-size:20px">cloud_off</span><span style="flex:1; font-size:14px">Sin conexión. Mostrando datos de las <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">10:12</span>.</span><span style="height:44px; display:flex; align-items:center; font-size:14px; font-weight:600">Reintentar</span></div></sc-if>
+          <div style="flex:1; background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+            <div style="display:grid; grid-template-columns:96px 1.2fr 1fr 120px; gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Hora</span><span>Puerta</span><span>Motivo</span><span>Resultado</span></div>
+            <sc-if value="{{ t.carga }}" hint-placeholder-val="{{ true }}">
+              <sc-for list="{{ t.filas }}" as="r" hint-placeholder-count="6"><div style="display:grid; grid-template-columns:96px 1.2fr 1fr 120px; gap:16px; padding:0 24px; height:52px; align-items:center; border-top:1px solid var(--borde)"><div style="height:12px; width:56px; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:{{ r.w }}; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:80px; border-radius:6px; background:var(--skeleton)"></div><div style="height:24px; width:88px; border-radius:999px; background:var(--skeleton)"></div></div></sc-for>
+            </sc-if>
+            <sc-if value="{{ t.cache }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ t.filas }}" as="r" hint-placeholder-count="5"><div style="display:grid; grid-template-columns:96px 1.2fr 1fr 120px; gap:16px; padding:0 24px; height:52px; align-items:center; border-top:1px solid var(--borde); font-size:14px; color:var(--texto2)"><span style="font-family:'IBM Plex Mono',monospace">{{ r.hora }}</span><span>{{ r.puerta }}</span><span>{{ r.motivo }}</span><span style="font-size:12px; font-weight:600">{{ r.res }}</span></div></sc-for>
+            </sc-if>
+            <sc-if value="{{ t.mensaje }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:24px">
+                <div style="width:56px; height:56px; border-radius:20px; background:{{ t.icBg }}; color:{{ t.icFg }}; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px">{{ t.icon }}</div>
+                <div style="font-size:20px; font-weight:600">{{ t.titulo }}</div>
+                <div style="font-size:14px; color:var(--texto2); max-width:360px">{{ t.texto }}</div>
+                <div style="height:44px; padding:0 24px; border-radius:999px; background:{{ t.btnBg }}; color:{{ t.btnFg }}; display:flex; align-items:center; font-size:14px; font-weight:600">{{ t.btn }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+function qrPath(seed, n) {
+  n = n || 29; let s = seed * 9301 + 49297;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const m = Array.from({ length: n }, () => Array(n).fill(0));
+  const res = (x, y) => (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (res(x, y)) continue;
+    m[y][x] = y === 6 ? (x % 2 === 0 ? 1 : 0) : x === 6 ? (y % 2 === 0 ? 1 : 0) : (rnd() > 0.52 ? 1 : 0);
+  }
+  const f = (ox, oy) => { for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) m[oy + i][ox + j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i > 1 && i < 5 && j > 1 && j < 5)) ? 1 : 0; };
+  f(0, 0); f(n - 7, 0); f(0, n - 7);
+  let d = ''; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += 'M' + x + ' ' + y + 'h1v1h-1z';
+  return d;
+}
+const NAVS = {
+  u: [['home', 'Inicio'], ['qr_code_2', 'Mis QR'], ['history', 'Eventos'], ['person', 'Perfil']],
+  a: [['home', 'Inicio'], ['history', 'Eventos'], ['tune', 'Admin'], ['person', 'Perfil']]
+};
+const mkNav = (r, idx) => NAVS[r].map(([icon, label], i) => ({ icon, label, pill: i === idx ? 'var(--primarioSuave)' : 'transparent', ic: i === idx ? 'var(--primario)' : 'var(--texto2)', fg: i === idx ? 'var(--texto)' : 'var(--texto2)', fill: i === idx ? "'FILL' 1" : "'FILL' 0", w: i === idx ? 600 : 500 }));
+const SKEL = [['70%', '45%'], ['55%', '35%'], ['80%', '50%'], ['60%', '40%'], ['75%', '30%']].map(([w1, w2]) => ({ w1, w2 }));
+const PANTALLAS = [
+  { key: 'inicio', titulo: 'Inicio', icon: 'qr_code_2', nav: mkNav('u', 0), vacio: ['qr_code_2', 'No tienes QR vigentes hoy', 'Emite uno y compártelo con quien va a entrar.', 'Emitir QR', 'add'], items: [{ t: 'Proveedor de gas', s: 'Portón vehicular', b: 'Vigente' }, { t: 'Técnico de internet', s: 'Acceso principal', b: 'Vigente' }], cacheNota: 'Emitir QR necesita conexión.' },
+  { key: 'misqr', titulo: 'Mis QR', icon: 'qr_code_2', nav: mkNav('u', 1), filtros: ['Vigentes', 'Usados', 'Vencidos', 'Anulados'], vacio: ['qr_code_2', 'No tienes QR vigentes', 'Los QR que emitas aparecerán aquí.', 'Emitir QR', 'add'], items: [{ t: 'Proveedor de gas', s: 'Hoy → 23:59', b: 'Vigente' }, { t: 'Técnico de internet', s: 'Hoy → 18:00', b: 'Vigente' }, { t: 'Sin etiqueta', s: 'Hoy → 23:59', b: 'Vigente' }], cacheNota: '"Anular" vuelve cuando haya conexión.' },
+  { key: 'eventos', titulo: 'Eventos', icon: 'history', nav: mkNav('a', 1), filtros: ['Todos', 'Permit.', 'Rechaz.', 'Hoy'], vacio: ['history', 'Sin eventos hoy', 'Cuando alguien use un QR en una puerta, lo verás aquí.', 'Ver ayer', 'calendar_today'], items: [{ t: 'Portón vehicular', s: '10:42 · Proveedor de gas', b: 'Permitido' }, { t: 'Acceso peatonal', s: '10:31 · QR vencido', b: 'Rechazado' }, { t: 'Depósito 2', s: '10:17 · Otra puerta', b: 'Rechazado' }], cacheNota: 'Los eventos nuevos llegarán al reconectar.' },
+  { key: 'admin', titulo: 'Administración', icon: 'door_front', nav: mkNav('a', 2), vacio: ['door_front', 'Aún no hay puertas', 'Agrega la primera puerta y vincula su lector.', 'Nueva puerta', 'add'], items: [{ t: 'Portón vehicular', s: 'LECT-0042', b: 'En línea' }, { t: 'Acceso peatonal', s: 'LECT-0043', b: 'En línea' }, { t: 'Depósito 2', s: 'LECT-0051', b: 'Sin conexión' }], cacheNota: 'Estado de dispositivos sin actualizar.' }
+];
+const ESTADOS = [
+  { k: 'carga', titulo: 'Carga · skeleton' },
+  { k: 'vacio', titulo: 'Vacío · con acción' },
+  { k: 'error', titulo: 'Error · con reintento' },
+  { k: 'offline', titulo: 'Sin conexión · caché + banner' }
+];
+class Component extends DCLogic {
+  renderVals() {
+    const filas = ESTADOS.map((e, ei) => ({
+      titulo: e.titulo,
+      frames: PANTALLAS.map((p, pi) => {
+        const f = {
+          id: 'L' + (ei + 1) + String.fromCharCode(97 + pi), label: p.titulo + ' · ' + e.titulo.split(' · ')[0].toLowerCase(),
+          titulo: p.titulo, nav: p.nav, icon: p.icon, items: p.items, cacheNota: p.cacheNota,
+          statusIcons: e.k === 'offline' ? 'signal_cellular_off wifi_off battery_full' : 'signal_cellular_4_bar wifi battery_full',
+          filtros: !!p.filtros, filtro1: p.filtros ? p.filtros[0] : '', filtro2: p.filtros ? p.filtros[1] : '', filtro3: p.filtros ? p.filtros[2] : '', filtro4: p.filtros ? p.filtros[3] : '',
+          carga: e.k === 'carga', skel: SKEL, cache: e.k === 'offline', offline: e.k === 'offline', mensaje: e.k === 'vacio' || e.k === 'error'
+        };
+        if (e.k === 'vacio') Object.assign(f, { msgIcon: p.vacio[0], msgTitulo: p.vacio[1], msgTexto: p.vacio[2], btn: p.vacio[3], btnIcon: p.vacio[4], icBg: 'var(--primarioSuave)', icFg: 'var(--primario)', btnBg: 'var(--primario)', btnFg: 'var(--sobrePrimario)' });
+        if (e.k === 'error') Object.assign(f, { msgIcon: 'error', msgTitulo: 'No pudimos cargar ' + p.titulo.toLowerCase(), msgTexto: 'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.', btn: 'Reintentar', btnIcon: 'refresh', icBg: 'var(--peligroSuave)', icFg: 'var(--peligro)', btnBg: 'var(--primarioSuave)', btnFg: 'var(--primario)' });
+        return f;
+      })
+    }));
+    const tf = [['10:42', 'Portón vehicular', '—', 'Permitido'], ['10:31', 'Acceso peatonal', 'QR vencido', 'Rechazado'], ['10:17', 'Depósito 2', 'Otra puerta', 'Rechazado'], ['09:58', 'Acceso principal', '—', 'Permitido'], ['09:40', 'Acceso peatonal', 'QR ya usado', 'Rechazado'], ['09:12', 'Portón vehicular', '—', 'Permitido']].map(([hora, puerta, motivo, r], i) => ({ hora, puerta, motivo, res: r, w: ['160px', '120px', '180px', '140px', '100px', '150px'][i] }));
+    const tablas = [
+      { id: 'T1', label: 'Carga', carga: true, filas: tf },
+      { id: 'T2', label: 'Vacío', mensaje: true, icon: 'history', titulo: 'Sin eventos para este filtro', texto: 'Prueba con otra fecha o quita el filtro de puerta.', btn: 'Quitar filtros', icBg: 'var(--primarioSuave)', icFg: 'var(--primario)', btnBg: 'var(--primario)', btnFg: 'var(--sobrePrimario)' },
+      { id: 'T3', label: 'Error', mensaje: true, icon: 'error', titulo: 'No pudimos cargar los eventos', texto: 'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.', btn: 'Reintentar', icBg: 'var(--peligroSuave)', icFg: 'var(--peligro)', btnBg: 'var(--primarioSuave)', btnFg: 'var(--primario)' },
+      { id: 'T4', label: 'Sin conexión', offline: true, cache: true, filas: tf.slice(0, 5) }
+    ].map(t => Object.assign({ carga: false, mensaje: false, offline: false, cache: false, filas: [] }, t));
+    return { filas, tablas, qr: qrPath(7), tres: [1, 2, 3], cuatro: [1, 2, 3, 4] };
+  }
+}
+</script>
+</body>
+</html>

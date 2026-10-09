@@ -34,6 +34,9 @@ ProviderContainer _contenedor(QrAccesosRepositorioFalso repositorio) {
 EmitirQrControlador _controlador(ProviderContainer contenedor) =>
     contenedor.read(emitirQrControladorProvider.notifier);
 
+EmitirQrEstado _estado(ProviderContainer contenedor) =>
+    contenedor.read(emitirQrControladorProvider);
+
 void main() {
   test('sin puertas marca el error y no llama a la API', () async {
     final repositorio = QrAccesosRepositorioFalso(emitido: _emitido);
@@ -42,26 +45,38 @@ void main() {
     final qr = await _controlador(contenedor).emitir();
 
     expect(qr, isNull);
-    expect(
-      contenedor.read(emitirQrControladorProvider).errorDatos,
-      ErrorDatosEmision.sinPuertas,
-    );
+    expect(_estado(contenedor).errorDatos, ErrorDatosEmision.sinPuertas);
     expect(repositorio.emisiones, isEmpty);
   });
 
-  test('una etiqueta de más de 60 caracteres no se envía', () async {
+  test('el paso 1 no avanza sin puertas; con una, sí', () {
+    final contenedor = _contenedor(QrAccesosRepositorioFalso());
+    final controlador = _controlador(contenedor)..siguiente();
+    expect(_estado(contenedor).paso, PasoEmision.puertas);
+    expect(_estado(contenedor).errorDatos, ErrorDatosEmision.sinPuertas);
+
+    controlador
+      ..alternarPuerta('p1')
+      ..siguiente();
+    expect(_estado(contenedor).paso, PasoEmision.vigencia);
+    expect(_estado(contenedor).errorDatos, isNull);
+
+    controlador.siguiente();
+    expect(_estado(contenedor).paso, PasoEmision.confirmar);
+    controlador.atras();
+    expect(_estado(contenedor).paso, PasoEmision.vigencia);
+  });
+
+  test('una etiqueta de más de 40 caracteres no se envía', () async {
     final repositorio = QrAccesosRepositorioFalso(emitido: _emitido);
     final contenedor = _contenedor(repositorio);
     final controlador = _controlador(contenedor)
       ..alternarPuerta('p1')
-      ..cambiarEtiqueta('a' * 61);
+      ..cambiarEtiqueta('a' * 41);
 
     await controlador.emitir();
 
-    expect(
-      contenedor.read(emitirQrControladorProvider).errorDatos,
-      ErrorDatosEmision.etiquetaLarga,
-    );
+    expect(_estado(contenedor).errorDatos, ErrorDatosEmision.etiquetaLarga);
     expect(repositorio.emisiones, isEmpty);
   });
 
@@ -70,7 +85,7 @@ void main() {
     final contenedor = _contenedor(repositorio);
     final controlador = _controlador(contenedor)
       ..alternarPuerta('p1')
-      ..elegirVigencia(OpcionVigencia.unaHora)
+      ..elegirVigencia(const Vigencia(OpcionVigencia.unaHora))
       ..cambiarEtiqueta(' Proveedor de gas ');
 
     final qr = await controlador.emitir();
@@ -92,7 +107,27 @@ void main() {
       ..alternarPuerta('p2')
       ..alternarPuerta('p1');
 
-    expect(contenedor.read(emitirQrControladorProvider).puertaIds, {'p2'});
+    expect(_estado(contenedor).puertaIds, {'p2'});
+  });
+
+  test('"Todas" marca las puertas del sitio y, si ya estaban, las quita', () {
+    final contenedor = _contenedor(QrAccesosRepositorioFalso());
+    final controlador = _controlador(contenedor)
+      ..alternarPuerta('p1')
+      ..alternarTodas(['p1', 'p2']);
+    expect(_estado(contenedor).puertaIds, {'p1', 'p2'});
+
+    controlador.alternarTodas(['p1', 'p2']);
+    expect(_estado(contenedor).puertaIds, isEmpty);
+  });
+
+  test('"Repetir último" prellena puertas y etiqueta', () {
+    final contenedor = _contenedor(QrAccesosRepositorioFalso());
+    _controlador(contenedor).prellenar(
+      const PrellenadoEmision(puertaIds: {'p1', 'p2'}, etiqueta: 'Gas'),
+    );
+    expect(_estado(contenedor).puertaIds, {'p1', 'p2'});
+    expect(_estado(contenedor).etiqueta, 'Gas');
   });
 
   test('un error de la API queda en el estado y no devuelve QR', () async {
@@ -105,21 +140,18 @@ void main() {
     final qr = await controlador.emitir();
 
     expect(qr, isNull);
-    expect(
-      contenedor.read(emitirQrControladorProvider).errorApi?.code,
-      'suscripcion.vencida',
-    );
-    expect(contenedor.read(emitirQrControladorProvider).enviando, isFalse);
+    expect(_estado(contenedor).errorApi?.code, 'suscripcion.vencida');
+    expect(_estado(contenedor).enviando, isFalse);
   });
 
   test('corregir un dato borra el error mostrado', () async {
     final contenedor = _contenedor(QrAccesosRepositorioFalso());
     final controlador = _controlador(contenedor);
     await controlador.emitir();
-    expect(contenedor.read(emitirQrControladorProvider).errorDatos, isNotNull);
+    expect(_estado(contenedor).errorDatos, isNotNull);
 
     controlador.alternarPuerta('p1');
 
-    expect(contenedor.read(emitirQrControladorProvider).errorDatos, isNull);
+    expect(_estado(contenedor).errorDatos, isNull);
   });
 }

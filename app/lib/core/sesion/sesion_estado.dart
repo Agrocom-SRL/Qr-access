@@ -12,7 +12,7 @@ final class SesionArrancando extends SesionEstado {
   const new();
 }
 
-/// Sin usuario: se muestra el inicio de sesión.
+/// Sin usuario: se muestra la bienvenida y el inicio de sesión.
 final class SinSesion extends SesionEstado {
   const new();
 }
@@ -20,11 +20,19 @@ final class SinSesion extends SesionEstado {
 /// El PIN es válido pero el usuario tiene varios roles y no eligió uno
 /// (ADR 0004: un rol activo por sesión).
 final class SesionEligiendoRol extends SesionEstado {
-  const new({required this.usuario, required this.cuenta, required this.roles});
+  const new({
+    required this.usuario,
+    required this.cuenta,
+    required this.roles,
+    this.rolPreferidoId,
+  });
 
   final UsuarioSesion usuario;
   final CuentaSesion cuenta;
   final List<RolSesion> roles;
+
+  /// El último rol usado, para dejarlo preseleccionado (handoff C03).
+  final String? rolPreferidoId;
 }
 
 /// Sesión con rol activo. Los permisos son los del rol activo, nunca la unión
@@ -35,12 +43,22 @@ final class SesionAutenticada extends SesionEstado {
     required this.cuenta,
     required this.rolActivo,
     required this.permisos,
+    this.roles = const [],
+    this.suscripcion,
   });
 
   final UsuarioSesion usuario;
   final CuentaSesion cuenta;
   final RolSesion rolActivo;
   final Set<String> permisos;
+
+  /// Todos los roles del usuario, para "Cambiar rol" desde Perfil.
+  final List<RolSesion> roles;
+
+  /// Plan y vencimiento vigentes (HU-03); `null` sin suscripción vigente.
+  final SuscripcionSesion? suscripcion;
+
+  bool get tieneVariosRoles => roles.length > 1;
 }
 
 /// Si la sesión tiene `permiso` con su rol activo. Sin sesión autenticada,
@@ -78,6 +96,16 @@ class RolSesion {
 
   final String id;
   final String nombre;
+}
+
+@immutable
+class SuscripcionSesion {
+  const new({required this.plan, required this.hasta});
+
+  final String plan;
+
+  /// Vencimiento en UTC.
+  final DateTime hasta;
 }
 
 /// Lo que devuelve el inicio de sesión, ya convertido del contrato.

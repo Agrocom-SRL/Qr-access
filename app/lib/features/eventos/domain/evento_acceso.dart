@@ -26,6 +26,9 @@ class EventoAcceso {
     required this.resultado,
     required this.motivoCode,
     required this.puertaNombre,
+    required this.sitioNombre,
+    this.qrEtiqueta,
+    this.emisorEtiqueta,
   });
 
   final String id;
@@ -38,4 +41,56 @@ class EventoAcceso {
   /// lo traduce.
   final String motivoCode;
   final String puertaNombre;
+  final String sitioNombre;
+
+  /// Etiqueta del QR leído y de quien lo emitió; `null` si no era un QR de
+  /// la cuenta.
+  final String? qrEtiqueta;
+  final String? emisorEtiqueta;
+
+  bool get esPermitido => resultado == ResultadoEvento.permitido;
+}
+
+/// Filtros del listado y del resumen (HU-15): resultado, puerta y ventana.
+@immutable
+class FiltroEventos {
+  const new({this.resultado, this.puertaId, this.desde, this.hasta});
+
+  final ResultadoEvento? resultado;
+  final String? puertaId;
+  final DateTime? desde;
+  final DateTime? hasta;
+
+  FiltroEventos copiar({
+    ResultadoEvento? resultado,
+    bool quitarResultado = false,
+    String? puertaId,
+    bool quitarPuerta = false,
+  }) => FiltroEventos(
+    resultado: quitarResultado ? null : (resultado ?? this.resultado),
+    puertaId: quitarPuerta ? null : (puertaId ?? this.puertaId),
+    desde: desde,
+    hasta: hasta,
+  );
+}
+
+/// Conteos de un período (indicadores del tablero).
+@immutable
+class ResumenEventos {
+  const new({
+    required this.permitidos,
+    required this.rechazados,
+    required this.rechazadosPorMotivo,
+  });
+
+  final int permitidos;
+  final int rechazados;
+  final Map<String, int> rechazadosPorMotivo;
+
+  /// El motivo de rechazo más frecuente, para la nota del indicador.
+  MapEntry<String, int>? get motivoPrincipal => rechazadosPorMotivo.isEmpty
+      ? null
+      : rechazadosPorMotivo.entries.reduce(
+          (a, b) => a.value >= b.value ? a : b,
+        );
 }

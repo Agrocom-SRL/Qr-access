@@ -1,97 +1,111 @@
-import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/estado_qr_vista.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:flutter/material.dart';
 
-/// Un QR en el listado: etiqueta, puertas, estado y la hora que corresponde a
-/// ese estado. Anular es la única acción, y solo si el QR sigue vigente.
+/// Un QR en el listado (handoff C07) y en "Vigentes hoy" (C04a): etiqueta,
+/// puertas, badge y las horas en mono. Anular es la única acción, y solo si
+/// el QR sigue vigente.
 class TarjetaQr extends StatelessWidget {
   const new({
     required this.qr,
-    required this.anulando,
-    required this.alAnular,
+    required this.ahora,
+    this.anulando = false,
+    this.alAnular,
+    this.compacta = false,
     super.key,
   });
 
   final QrAcceso qr;
+  final DateTime ahora;
   final bool anulando;
 
   /// `null` si el usuario no tiene el permiso de anular: no se muestra el
   /// botón.
   final VoidCallback? alAnular;
 
+  /// Versión del tablero: sin horas de emisión ni acción.
+  final bool compacta;
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final tokens = context.tokens;
-    final texto = Theme.of(context).textTheme;
-    final puertas = qr.puertas.map((puerta) => puerta.nombre).join(', ');
-
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(tokens.espacio.l),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    qr.etiqueta ?? l10n.qrSinEtiqueta,
-                    style: texto.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                AccesoBadge(
-                  texto: textoEstadoQr(l10n, qr.estado),
-                  tono: tonoEstadoQr(qr.estado),
-                ),
-              ],
+    final textos = Theme.of(context).textTheme;
+    final estiloMono = tokens.tipografia.mono(
+      tokens.tipografia.t14,
+      color: tokens.colores.textoSecundario,
+    );
+    return TarjetaFila(
+      titulo: qr.etiqueta ?? l10n.qrSinEtiqueta,
+      inicio: const CajaIcono(icono: Icons.qr_code_2),
+      subtituloWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            qr.nombresDePuertas,
+            style: textos.bodyMedium?.copyWith(
+              color: tokens.colores.textoSecundario,
             ),
+          ),
+          if (!compacta) ...[
             SizedBox(height: tokens.espacio.xs),
-            Text(puertas, style: texto.bodyMedium),
+            Text(textoHorasDeQr(l10n, qr, ahora), style: estiloMono),
+          ],
+        ],
+      ),
+      fin: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          AccesoBadge(
+            texto: textoEstadoQr(l10n, qr.estado),
+            tono: tonoEstadoQr(qr.estado),
+          ),
+          if (compacta) ...[
             SizedBox(height: tokens.espacio.xs),
             Text(
-              _fechaDeEstado(l10n),
-              style: texto.bodySmall?.copyWith(
-                color: tokens.colores.textoSecundario,
-              ),
+              l10n.qrVenceCorto(textoHoraCorta(l10n, qr.venceAt, ahora)),
+              style: estiloMono,
             ),
-            if (qr.puedeAnularse && alAnular != null) ...[
-              SizedBox(height: tokens.espacio.s),
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: AccesoBoton(
-                  texto: l10n.qrAnular,
-                  variante: VarianteBoton.peligro,
-                  cargando: anulando,
-                  onPressed: alAnular,
-                ),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
+      pie: qr.puedeAnularse && alAnular != null && !compacta
+          ? Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: AccesoBoton(
+                texto: l10n.qrAnular,
+                icono: Icons.block,
+                variante: VarianteBoton.texto,
+                cargando: anulando,
+                onPressed: alAnular,
+              ),
+            )
+          : null,
     );
   }
+}
 
-  /// La hora que importa según el estado: hasta cuándo vale, o cuándo se usó
-  /// o se anuló. El contrato trae esa fecha para cada estado.
-  String _fechaDeEstado(AppLocalizations l10n) {
-    return switch (qr.estado) {
-      EstadoQr.vigente ||
-      EstadoQr.vencido => l10n.qrVenceEl(formatearFechaHora(qr.venceAt)),
-      EstadoQr.usado => l10n.qrUsadoEl(
-        formatearFechaHora(qr.usadoAt ?? qr.venceAt),
-      ),
-      EstadoQr.anulado => l10n.qrAnuladoEl(
-        formatearFechaHora(qr.anuladoAt ?? qr.venceAt),
-      ),
-    };
-  }
+/// "Hoy 09:12 → vence 23:59", o la hora de uso o anulación según el estado.
+String textoHorasDeQr(AppLocalizations l10n, QrAcceso qr, DateTime ahora) {
+  final emitido = textoHoraCorta(l10n, qr.creadoAt, ahora);
+  return switch (qr.estado) {
+    EstadoQr.vigente || EstadoQr.vencido => l10n.qrEmitidoYVence(
+      emitido,
+      textoHoraCorta(l10n, qr.venceAt, ahora),
+    ),
+    EstadoQr.usado => l10n.qrUsadoEl(
+      textoHoraCorta(l10n, qr.usadoAt ?? qr.venceAt, ahora),
+    ),
+    EstadoQr.anulado => l10n.qrAnuladoEl(
+      textoHoraCorta(l10n, qr.anuladoAt ?? qr.venceAt, ahora),
+    ),
+  };
 }

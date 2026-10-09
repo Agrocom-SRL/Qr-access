@@ -7,21 +7,22 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/fakes.dart';
 
 const _eligiendo = SesionEligiendoRol(
-  usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
-  cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+  usuario: usuarioDePrueba,
+  cuenta: cuentaDePrueba,
   roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
 );
 
 void main() {
   group('sin sesión', () {
-    test('la app pide ingresar desde cualquier pantalla', () {
+    test('la app lleva a la bienvenida desde cualquier pantalla', () {
       expect(
         redireccionDeSesion(const SinSesion(), Rutas.inicio),
-        Rutas.ingreso,
+        Rutas.bienvenida,
       );
     });
 
-    test('se queda en el ingreso', () {
+    test('se queda en la bienvenida y en el ingreso', () {
+      expect(redireccionDeSesion(const SinSesion(), Rutas.bienvenida), isNull);
       expect(redireccionDeSesion(const SinSesion(), Rutas.ingreso), isNull);
     });
 
@@ -48,7 +49,12 @@ void main() {
     final sesion = sesionCon(permisos: {Permisos.emitirQr});
 
     test('las pantallas de entrada llevan al tablero', () {
-      for (final entrada in [Rutas.ingreso, Rutas.elegirRol, Rutas.arranque]) {
+      for (final entrada in [
+        Rutas.bienvenida,
+        Rutas.ingreso,
+        Rutas.elegirRol,
+        Rutas.arranque,
+      ]) {
         expect(redireccionDeSesion(sesion, entrada), Rutas.inicio);
       }
     });
@@ -59,6 +65,29 @@ void main() {
 
     test('una ruta sin el permiso del rol activo vuelve al tablero', () {
       expect(redireccionDeSesion(sesion, Rutas.eventos), Rutas.inicio);
+      expect(redireccionDeSesion(sesion, Rutas.adminUsuarios), Rutas.inicio);
+      expect(
+        redireccionDeSesion(sesion, Rutas.adminUsuarioEditar),
+        Rutas.inicio,
+      );
+    });
+
+    test('la pestaña Admin se abre con cualquiera de sus permisos', () {
+      expect(redireccionDeSesion(sesion, Rutas.admin), Rutas.inicio);
+      expect(
+        redireccionDeSesion(
+          sesionCon(permisos: {Permisos.supervisarPuertas}),
+          Rutas.admin,
+        ),
+        isNull,
+      );
+      expect(
+        redireccionDeSesion(
+          sesionCon(permisos: {Permisos.verUsuarios}),
+          Rutas.admin,
+        ),
+        isNull,
+      );
     });
 
     test('el permiso es del rol activo, no de otro rol de la cuenta', () {
@@ -68,6 +97,7 @@ void main() {
 
     test('una pantalla sin permiso requerido se abre con cualquier sesión', () {
       expect(redireccionDeSesion(sesionCon(), Rutas.inicio), isNull);
+      expect(redireccionDeSesion(sesionCon(), Rutas.perfil), isNull);
     });
   });
 }

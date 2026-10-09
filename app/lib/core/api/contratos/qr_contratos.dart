@@ -64,3 +64,17 @@ class QrAccesoDto {
   final DateTime creadoAt;
   final List<ReferenciaDto> puertas;
 }
+
+/// Respuesta de `GET /qr-accesos/resumen`: cuántos hay en cada estado.
+class ResumenQrDto {
+  new desde(Map<String, dynamic> json)
+    : vigentes = json['vigentes'] as int,
+      usados = json['usados'] as int,
+      vencidos = json['vencidos'] as int,
+      anulados = json['anulados'] as int;
+
+  final int vigentes;
+  final int usados;
+  final int vencidos;
+  final int anulados;
+}

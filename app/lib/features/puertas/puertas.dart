@@ -5,4 +5,5 @@ library;
 export 'data/puertas_repositorio.dart'
     show PuertasRepositorio, puertasRepositorioProvider;
 export 'domain/puerta.dart';
-export 'presentation/puertas_providers.dart' show puertasDisponiblesProvider;
+export 'presentation/puertas_providers.dart'
+    show agruparPorSitio, puertasDisponiblesProvider;

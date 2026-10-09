@@ -1,3 +1,5 @@
+import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
+
 /// Respuesta de `POST /sesiones` (contrato común V1, ADR 0018).
 class RespuestaInicioDto {
   const new({
@@ -42,7 +44,7 @@ class TokensDto {
   final String refresco;
 }
 
-/// Respuesta de `GET /sesiones/actual`: menú y permisos del rol activo.
+/// Respuesta de `GET /sesiones/actual`: menú, permisos y suscripción.
 class SesionActualDto {
   const new({
     required this.usuario,
@@ -50,6 +52,7 @@ class SesionActualDto {
     required this.roles,
     required this.rolActivo,
     required this.permisos,
+    required this.suscripcion,
   });
 
   new desde(Map<String, dynamic> json)
@@ -64,7 +67,10 @@ class SesionActualDto {
           : RolDto.desde(json['rol_activo'] as Map<String, dynamic>),
       permisos = [
         for (final p in json['permisos'] as List<dynamic>) p as String,
-      ];
+      ],
+      suscripcion = json['suscripcion'] == null
+          ? null
+          : SuscripcionDto.desde(json['suscripcion'] as Map<String, dynamic>);
 
   final UsuarioDto usuario;
   final CuentaDto cuenta;
@@ -73,6 +79,9 @@ class SesionActualDto {
   final List<RolDto> roles;
   final RolDto? rolActivo;
   final List<String> permisos;
+
+  /// `null` sin suscripción vigente (la app lo avisa; la API no emite QR).
+  final SuscripcionDto? suscripcion;
 }
 
 class UsuarioDto {
@@ -110,4 +119,15 @@ class RolDto {
 
   final String id;
   final String nombre;
+}
+
+class SuscripcionDto {
+  const new({required this.plan, required this.hasta});
+
+  new desde(Map<String, dynamic> json)
+    : plan = json['plan'] as String,
+      hasta = fechaDeApi(json['hasta'] as String);
+
+  final String plan;
+  final DateTime hasta;
 }

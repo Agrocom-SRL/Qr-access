@@ -45,6 +45,12 @@ final FutureProvider<Pagina<QrAcceso>> listadoQrProvider =
           );
     });
 
+/// Cuántos QR hay por estado (las pastillas). Se invalida junto al listado.
+final FutureProvider<Map<EstadoQr, int>> resumenQrProvider =
+    FutureProvider.autoDispose<Map<EstadoQr, int>>(
+      (ref) => ref.watch(qrAccesosRepositorioProvider).resumir(),
+    );
+
 /// Anula un QR vigente (HU-13). El estado es si hay una anulación en curso.
 /// El error de la API se devuelve en lugar de lanzarlo: la pantalla decide
 /// cómo mostrarlo.
@@ -56,7 +62,9 @@ class AnularQrControlador extends Notifier<bool> {
     state = true;
     try {
       await ref.read(qrAccesosRepositorioProvider).anular(id);
-      ref.invalidate(listadoQrProvider);
+      ref
+        ..invalidate(listadoQrProvider)
+        ..invalidate(resumenQrProvider);
       return null;
     } on ErrorApi catch (error) {
       return error;
