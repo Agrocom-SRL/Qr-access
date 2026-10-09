@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/router/guarda_sesion.dart';
 import 'package:agrocom_acceso/core/router/paginas_sistema.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/router/transiciones.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/administracion.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
@@ -29,34 +30,45 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: Rutas.arranque,
-        builder: (context, state) => const ArranquePagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const ArranquePagina()),
       ),
       GoRoute(
         path: Rutas.bienvenida,
-        builder: (context, state) => const BienvenidaPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const BienvenidaPagina()),
       ),
       GoRoute(
         path: Rutas.ingreso,
-        builder: (context, state) => const IngresoPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const IngresoPagina()),
       ),
       GoRoute(
         path: Rutas.elegirRol,
-        builder: (context, state) => const ElegirRolPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const ElegirRolPagina()),
       ),
       GoRoute(
         path: Rutas.inicio,
-        builder: (context, state) => const InicioPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const InicioPagina()),
       ),
       GoRoute(
         path: Rutas.qrMios,
-        builder: (context, state) => const MisQrPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const MisQrPagina()),
       ),
       GoRoute(
         path: Rutas.qrNuevo,
-        builder: (context, state) => EmitirQrPagina(
-          prellenado: state.extra is PrellenadoEmision
-              ? state.extra! as PrellenadoEmision
-              : null,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          EmitirQrPagina(
+            prellenado: state.extra is PrellenadoEmision
+                ? state.extra! as PrellenadoEmision
+                : null,
+          ),
+          transicion: Transicion.flujo,
         ),
       ),
       GoRoute(
@@ -65,44 +77,66 @@ final routerProvider = Provider<GoRouter>((ref) {
         // mostrar.
         redirect: (context, state) =>
             state.extra is QrEmitido ? null : Rutas.qrMios,
-        builder: (context, state) =>
-            MostrarQrPagina(qr: state.extra! as QrEmitido),
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          MostrarQrPagina(qr: state.extra! as QrEmitido),
+          transicion: Transicion.flujo,
+        ),
       ),
       GoRoute(
         path: Rutas.eventos,
-        builder: (context, state) => const EventosPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const EventosPagina()),
       ),
       GoRoute(
         path: Rutas.perfil,
-        builder: (context, state) => const PerfilPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const PerfilPagina()),
       ),
       GoRoute(
         path: Rutas.admin,
-        builder: (context, state) => const AdministracionPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const AdministracionPagina()),
       ),
       GoRoute(
         path: Rutas.adminPuertas,
-        builder: (context, state) => const PuertasAdminPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const PuertasAdminPagina()),
       ),
       GoRoute(
         path: Rutas.adminUsuarios,
-        builder: (context, state) => const UsuariosPagina(),
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const UsuariosPagina()),
         routes: [
           GoRoute(
             path: 'nuevo',
-            builder: (context, state) => const UsuarioFormularioPagina(),
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              const UsuarioFormularioPagina(),
+              transicion: Transicion.flujo,
+            ),
           ),
           GoRoute(
             path: 'pin',
             redirect: (context, state) =>
                 state.extra is PinGenerado ? null : Rutas.adminUsuarios,
-            builder: (context, state) =>
-                PinGeneradoPagina(pin: state.extra! as PinGenerado),
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              PinGeneradoPagina(pin: state.extra! as PinGenerado),
+              transicion: Transicion.flujo,
+            ),
           ),
           GoRoute(
             path: ':id',
-            builder: (context, state) =>
-                UsuarioFormularioPagina(usuarioId: state.pathParameters['id']),
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              UsuarioFormularioPagina(usuarioId: state.pathParameters['id']),
+              transicion: Transicion.flujo,
+            ),
           ),
         ],
       ),

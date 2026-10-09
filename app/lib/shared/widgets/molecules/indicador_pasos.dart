@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 
 /// Cabecera del stepper (handoff C05): círculos de 32 numerados, con check en
 /// los pasos hechos y una línea entre ellos.
+///
+/// Si los tres nombres entran enteros, cada paso mide lo suyo y las líneas
+/// reparten el resto; si no, los pasos reparten el ancho en proporción a lo
+/// que necesitan y el nombre que no entra se corta con puntos suspensivos.
 class IndicadorPasos extends StatelessWidget {
   const new({required this.pasos, required this.actual, super.key});
 
@@ -17,31 +21,82 @@ class IndicadorPasos extends StatelessWidget {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        for (var i = 0; i < pasos.length; i++) ...[
-          if (i > 0)
-            Flexible(
-              child: Container(
-                height: tokens.tamano.bordeFoco,
-                constraints: BoxConstraints(minWidth: tokens.espacio.l),
-                margin: EdgeInsets.symmetric(horizontal: tokens.espacio.s),
-                color: i <= actual ? colores.primario : colores.borde,
-              ),
-            ),
-          Flexible(
-            flex: 3,
-            child: _Paso(
-              numero: i + 1,
-              nombre: pasos[i],
-              hecho: i < actual,
-              activo: i == actual,
-              textos: textos,
-            ),
-          ),
-        ],
-      ],
+    final estiloNombre = textos.labelMedium?.copyWith(
+      fontWeight: tokens.tipografia.semiNegrita,
     );
+    final escala = MediaQuery.textScalerOf(context);
+    final anchoDeLinea = tokens.espacio.l + tokens.espacio.s * 2;
+
+    return LayoutBuilder(
+      builder: (context, restricciones) {
+        final anchos = [
+          for (final nombre in pasos)
+            tokens.tamano.chipPaso +
+                tokens.espacio.s +
+                _anchoDeTexto(nombre, estiloNombre, escala),
+        ];
+        final necesario =
+            anchos.fold<double>(0, (suma, a) => suma + a) +
+            anchoDeLinea * (pasos.length - 1);
+        final entran =
+            !restricciones.hasBoundedWidth ||
+            necesario <= restricciones.maxWidth;
+
+        return Row(
+          children: [
+            for (var i = 0; i < pasos.length; i++) ...[
+              if (i > 0)
+                Expanded(
+                  flex: entran ? 1 : anchoDeLinea.round(),
+                  child: Container(
+                    height: tokens.tamano.bordeFoco,
+                    constraints: BoxConstraints(minWidth: tokens.espacio.l),
+                    margin: EdgeInsets.symmetric(horizontal: tokens.espacio.s),
+                    color: i <= actual ? colores.primario : colores.borde,
+                  ),
+                ),
+              if (entran)
+                _Paso(
+                  numero: i + 1,
+                  nombre: pasos[i],
+                  hecho: i < actual,
+                  activo: i == actual,
+                  textos: textos,
+                )
+              else
+                Expanded(
+                  flex: anchos[i].round(),
+                  child: _Paso(
+                    numero: i + 1,
+                    nombre: pasos[i],
+                    hecho: i < actual,
+                    activo: i == actual,
+                    textos: textos,
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// Ancho que ocupa [texto] en una línea con [estilo] y la escala de texto
+  /// del sistema.
+  static double _anchoDeTexto(
+    String texto,
+    TextStyle? estilo,
+    TextScaler escala,
+  ) {
+    final pintor = TextPainter(
+      text: TextSpan(text: texto, style: estilo),
+      textDirection: TextDirection.ltr,
+      textScaler: escala,
+      maxLines: 1,
+    )..layout();
+    final ancho = pintor.width;
+    pintor.dispose();
+    return ancho;
   }
 }
 
@@ -101,6 +156,7 @@ class _Paso extends StatelessWidget {
           Flexible(
             child: Text(
               nombre,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: textos.labelMedium?.copyWith(
                 color: activo ? colores.texto : colores.textoSecundario,

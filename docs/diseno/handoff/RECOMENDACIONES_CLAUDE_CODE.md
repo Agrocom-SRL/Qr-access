@@ -13,10 +13,10 @@
 - docs/diseño/README.md (especificación completa)
 - docs/diseño/diseño/*.dc.html (abrir en navegador; ids C01, E04b, etc.)
 - docs/diseño/capturas/ (PNG por id: compacto 2x, expandido 1x, estados)
-- lib/tema/acceso_tokens.dart (tokens; no inventar valores)
+- lib/core/theme/ (tokens; no inventar valores; los del handoff están en docs/diseno/handoff/tokens.md)
 
 ## Reglas
-- Material 3. Colores solo desde context.ac (AccesoColores) o Theme.of(context).colorScheme. Prohibido Color(0x...) fuera de acceso_tokens.dart.
+- Material 3. Colores solo desde context.ac (AccesoColores) o Theme.of(context).colorScheme. Prohibido Color(0x...) fuera de core/theme/primitivos.dart.
 - Espaciado solo con AccesoEspacio (2,4,8,12,16,24,32,48). Radios solo con AccesoRadio. Medidas de componente con AccesoMedida.
 - Tipografía: IBM Plex Sans; AccesoTema.mono() para PIN, códigos, horas y cifras.
 - Controles de 44 dp como mínimo. Contraste AA.
@@ -37,7 +37,7 @@ flutter analyze · flutter test · flutter test --update-goldens · flutter run 
 ## 3. Estructura sugerida
 ```
 lib/
-  tema/acceso_tokens.dart        ← copiar de flutter/acceso_tokens.dart
+  core/theme/                    ← tokens según docs/diseno/handoff/tokens.md
   componentes/atomos/ … moleculas/ … organismos/ … plantillas/
   funciones/
     auth/      (bienvenida, ingreso_pin, elegir_rol)
@@ -56,7 +56,7 @@ test/ y test/goldens/
 Cada prompt nombra la etapa, los marcos de referencia y cuándo se considera terminada.
 
 1. **Tema y tokens**
-   > Crea el proyecto Flutter con el stack de CLAUDE.md. Copia docs/diseño/flutter/acceso_tokens.dart a lib/tema/, aplica AccesoTema.claro/oscuro y crea una pantalla /catalogo que muestre la rampa verde y los semánticos como en "Sistema de Diseño.dc.html". Terminada cuando `flutter analyze` está limpio.
+   > Crea el proyecto Flutter con el stack de CLAUDE.md. Crea lib/core/theme/ con los valores de docs/diseno/handoff/tokens.md, aplica Tema.claro/oscuro y crea una pantalla /catalogo que muestre la rampa verde y los semánticos como en "Sistema de Diseño.dc.html". Terminada cuando `flutter analyze` está limpio.
 2. **Átomos**
    > Implementa AccesoBoton (primario, secundario, texto, peligro tonal y relleno) con estados normal, hover, foco, deshabilitado y carga; AccesoBadge con las 8 variantes; AccesoCampoTexto; AccesoSelector; AccesoInterruptor. Agrégalos a /catalogo. Goldens en claro y oscuro.
 3. **Moléculas y organismos**
@@ -72,7 +72,7 @@ Cada prompt nombra la etapa, los marcos de referencia y cuándo se considera ter
 8. **Administración**
    > Puertas (C10a/E10a), Usuarios (C10b/E10b) y Generar PIN (C10c), que se muestra una sola vez con Copiar.
 9. **Pulido**
-   > Revisa contraste AA, Semantics (PIN "5 de 7 caracteres"), áreas táctiles de 44, "reducir movimiento" y que no queden valores fuera de tokens (`grep -R "Color(0x" lib/ | grep -v acceso_tokens`).
+   > Revisa contraste AA, Semantics (PIN "5 de 7 caracteres"), áreas táctiles de 44, "reducir movimiento" y que no queden valores fuera de tokens (`grep -R "Color(0x" lib/ | grep -v primitivos`).
 
 ## 5. Consejos para trabajar con Claude Code
 - **Usa las capturas en cada prompt de pantalla**: "Implementa docs/diseño/capturas/compacto/C07_mis_qr.png y expandido/E07_mis_qr.png siguiendo el README §Pantallas 7". La imagen fija el aspecto y el README fija los valores exactos; usa siempre las dos.
@@ -81,7 +81,7 @@ Cada prompt nombra la etapa, los marcos de referencia y cuándo se considera ter
 - **Pide plan primero**: "Primero dime qué archivos vas a crear y qué widgets reutilizas; no escribas código aún." Aprueba y luego ejecuta.
 - **Verifica con tests y goldens**: pídele que corra `flutter analyze` y `flutter test` al final de cada etapa y que corrija lo que falle.
 - **Prueba los 3 tamaños**: `flutter run -d chrome` y cambia el ancho a 360, 800 y 1440 para ver compacto, medio y expandido.
-- **No le dejes inventar colores ni espacios**: si propone un valor nuevo, que lo agregue primero a acceso_tokens.dart con un comentario.
+- **No le dejes inventar colores ni espacios**: si propone un valor nuevo, que lo agregue primero a core/theme/ con un comentario.
 - **Datos falsos al inicio**: pide un `RepositorioFalso` con los datos de ejemplo de los diseños (Agroindustrial Norte, AGR, Planta Warnes, etc.) para avanzar sin backend; luego cambia a dio.
 - **Seguridad del PIN**: nunca loguear el PIN; bloqueo de intentos del lado del servidor; el PIN generado no se guarda en el cliente.
 - **Commits por etapa**: pídele un commit con mensaje claro al cerrar cada etapa, así puedes volver atrás.

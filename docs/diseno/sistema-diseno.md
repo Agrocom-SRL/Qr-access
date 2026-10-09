@@ -76,7 +76,7 @@ No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtr
 | Átomo | `AccesoBadge` | Siempre punto + texto. Vigente/Permitido/En línea = primario · Usado = informacion · Vencido = advertencia · Anulado = neutro · Rechazado/Sin conexión = peligro |
 | Átomo | `AccesoCampoTexto`, `AccesoSelector`, `AccesoInterruptor` | Foco primario 2 dp, error peligro 2 dp con ícono, carga con spinner |
 | Átomo | `AccesoAccionFila` | Ver = informacion · Editar = advertencia · Eliminar = peligro, con tooltip |
-| Átomo | `AccesoTarjeta`, `AccesoAvatar`, `AccesoLogo`, `AccesoSkeleton`, `AccesoCargando` | Base de tarjeta con elev1; logo marcador (pendiente de negocio) |
+| Átomo | `AccesoTarjeta`, `AccesoAvatar`, `AccesoLogo`, `AccesoSkeleton`, `AccesoCargando` | Base de tarjeta con elev1; logo de AGROCOM (`assets/imagenes/logo_agrocom.png`) sobre placa blanca |
 | Molécula | `CampoFormulario`, `TarjetaIndicador` (normal, hero, alerta), `EstadoVacio` (vacío, error, sin conexión), `ConfirmarDialogo` (con ficha "estado → estado"), `FilaClaveValor` (normal y navegable) | |
 | Molécula | `AccesoAviso`, `SelectorSegmentado`, `TarjetaSeleccionable`, `IndicadorPasos`, `BannerSinConexion`, `TarjetaFila`, `ChipEtiqueta`, `CajaIcono` | |
 | Organismo | `ListadoPaginado` (tarjetas con "Cargar más" < 1024 / `DataTable` ≥ 1024; estados carga, datos, vacío, error y sin conexión con caché + banner), `FormularioSecciones` (+ `BarraDeAcciones`), `VisorQr` | |

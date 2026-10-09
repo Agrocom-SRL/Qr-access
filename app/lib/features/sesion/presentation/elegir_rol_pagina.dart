@@ -38,64 +38,122 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
     final elegido =
         _elegido ?? sesion.rolPreferidoId ?? sesion.roles.firstOrNull?.id;
 
+    final expandida = context.esExpandida;
+    final continuar = AccesoBoton(
+      texto: l10n.comunContinuar,
+      textoCargando: l10n.comunCargando,
+      cargando: estado.enviando,
+      expandido: true,
+      onPressed: elegido == null ? null : () => controlador.elegir(elegido),
+    );
+    final cerrar = AccesoBoton(
+      texto: l10n.sesionCerrar,
+      variante: VarianteBoton.texto,
+      onPressed: controlador.cerrar,
+    );
+    final alineacion = expandida
+        ? CrossAxisAlignment.center
+        : CrossAxisAlignment.start;
+    final centrado = expandida ? TextAlign.center : TextAlign.start;
+    final tarjetas = [
+      for (final rol in sesion.roles)
+        TarjetaSeleccionable(
+          titulo: rol.nombre,
+          subtitulo: descripcionDeRol(l10n, rol.nombre),
+          icono: iconoDeRol(rol.nombre),
+          vertical: expandida,
+          seleccionada: rol.id == elegido,
+          alElegir: () => setState(() => _elegido = rol.id),
+        ),
+    ];
+
     return PlantillaAuth(
-      pie: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AccesoBoton(
-            texto: l10n.comunContinuar,
-            textoCargando: l10n.comunCargando,
-            cargando: estado.enviando,
-            expandido: true,
-            onPressed: elegido == null
-                ? null
-                : () => controlador.elegir(elegido),
-          ),
-          SizedBox(height: tokens.espacio.s),
-          AccesoBoton(
-            texto: l10n.sesionCerrar,
-            variante: VarianteBoton.texto,
-            onPressed: controlador.cerrar,
-          ),
-        ],
-      ),
+      // En expandido (E03) no hay panel de marca: tarjetas en fila, centradas.
+      conPanelDeMarca: false,
+      centrado: true,
+      anchoMaximo: expandida ? tokens.tamano.maxFormulario : null,
+      pie: expandida
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                continuar,
+                SizedBox(height: tokens.espacio.s),
+                cerrar,
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.perfilCuentaYCodigo(
-              sesion.cuenta.nombre,
-              sesion.cuenta.codigo,
-            ),
-            style: textos.bodyLarge?.copyWith(
-              color: tokens.colores.textoSecundario,
-            ),
-          ),
-          SizedBox(height: tokens.espacio.s),
-          Text(l10n.sesionElegirRolTitulo, style: textos.headlineLarge),
-          SizedBox(height: tokens.espacio.s),
-          Text(
-            l10n.sesionElegirRolAyuda,
-            style: textos.bodyLarge?.copyWith(
-              color: tokens.colores.textoSecundario,
-            ),
+          Column(
+            crossAxisAlignment: alineacion,
+            children: [
+              Text(
+                l10n.perfilCuentaYCodigo(
+                  sesion.cuenta.nombre,
+                  sesion.cuenta.codigo,
+                ),
+                textAlign: centrado,
+                style: textos.bodyLarge?.copyWith(
+                  color: tokens.colores.textoSecundario,
+                ),
+              ),
+              SizedBox(height: tokens.espacio.s),
+              Text(
+                l10n.sesionElegirRolTitulo,
+                textAlign: centrado,
+                style: expandida ? textos.headlineMedium : textos.headlineLarge,
+              ),
+              SizedBox(height: tokens.espacio.s),
+              Text(
+                l10n.sesionElegirRolAyuda,
+                textAlign: centrado,
+                style: textos.bodyLarge?.copyWith(
+                  color: tokens.colores.textoSecundario,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: tokens.espacio.xl),
-          for (final rol in sesion.roles) ...[
-            TarjetaSeleccionable(
-              titulo: rol.nombre,
-              subtitulo: descripcionDeRol(l10n, rol.nombre),
-              icono: iconoDeRol(rol.nombre),
-              seleccionada: rol.id == elegido,
-              alElegir: () => setState(() => _elegido = rol.id),
-            ),
-            SizedBox(height: tokens.espacio.m),
-          ],
+          if (expandida)
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < tarjetas.length; i++) ...[
+                    Expanded(child: tarjetas[i]),
+                    if (i < tarjetas.length - 1)
+                      SizedBox(width: tokens.espacio.l),
+                  ],
+                ],
+              ),
+            )
+          else
+            for (final tarjeta in tarjetas) ...[
+              tarjeta,
+              SizedBox(height: tokens.espacio.m),
+            ],
           if (errorApi != null) ...[
             SizedBox(height: tokens.espacio.s),
             AccesoAviso(
               tono: TonoAviso.peligro,
               texto: textoDeError(l10n, errorApi),
+            ),
+          ],
+          if (expandida) ...[
+            SizedBox(height: tokens.espacio.xl),
+            Center(
+              child: SizedBox(
+                width: tokens.tamano.maxAuth - tokens.espacio.xxxl * 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    continuar,
+                    SizedBox(height: tokens.espacio.s),
+                    cerrar,
+                  ],
+                ),
+              ),
             ),
           ],
         ],

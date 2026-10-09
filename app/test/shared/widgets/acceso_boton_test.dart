@@ -64,7 +64,8 @@ void main() {
 
     expect(find.byType(FilledButton), findsNWidgets(4));
     expect(find.byType(OutlinedButton), findsOneWidget);
-    expect(find.byType(TextButton), findsOneWidget);
+    // texto y peligroTexto
+    expect(find.byType(TextButton), findsNWidgets(2));
   });
 
   testWidgets('el badge muestra su texto, nunca solo el color', (tester) async {

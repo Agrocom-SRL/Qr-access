@@ -3,7 +3,8 @@
 --
 -- Cuenta demo `DEM` con todo lo que la app y el firmware necesitan para probar de punta a punta:
 -- plan y suscripción vigentes, un sitio, dos puertas, un dispositivo por puerta, un administrador,
--- un usuario y un guardia (que además tiene el rol Usuario, para probar la elección de rol). Los PIN y las claves de dispositivo están publicados en docs/gestion/entornos.md
+-- un usuario y un guardia. El administrador y el guardia tienen además el rol Usuario, para probar
+-- la elección de rol (handoff C03). Los PIN y las claves de dispositivo están publicados en docs/gestion/entornos.md
 -- y en el repositorio: cualquiera puede entrar con ellos. En producción, las cuentas, los PIN y
 -- las claves se generan con la API; este archivo no se corre.
 --
@@ -20,7 +21,7 @@ INSERT INTO cuentas (id, nombre, codigo, activo) VALUES
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), codigo = VALUES(codigo), activo = 1, deleted_at = NULL;
 
 INSERT INTO planes (id, nombre, max_dispositivos, max_usuarios, max_vigencia_qr_horas, activo) VALUES
-  (9001, 'Plan demo (desarrollo)', 5, 10, NULL, 1)
+  (9001, 'Demo (desarrollo)', 5, 10, NULL, 1)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), max_dispositivos = VALUES(max_dispositivos),
   max_usuarios = VALUES(max_usuarios), max_vigencia_qr_horas = VALUES(max_vigencia_qr_horas),
   activo = 1, deleted_at = NULL;
@@ -51,7 +52,7 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
     'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.evento.ver', 'accesos.evento.ver_todos'
   );
 
--- PIN DEMADM1 (administrador), DEMUSR1 (usuario) y DEMGRD1 (guardia y usuario)
+-- PIN DEMADM1 (administrador y usuario), DEMUSR1 (usuario) y DEMGRD1 (guardia y usuario)
 INSERT INTO usuarios (id, tenant_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES
   (9001, 9001, 'Administrador demo', '172ecfdb00ad4ee7776d6a1de972b77ff89dab2f37848864f92dbca989a641d1',
    '$argon2id$v=19$m=19456,p=1,t=2$AGBWcv3jHfRNchFSbVxE9w$dpiDbgdP0ERL9t8CS6dnSo2j7xRTOQHVGVtkl9Yj3sA', NOW(3), 1),
@@ -66,7 +67,8 @@ INSERT INTO usuario_roles (id, tenant_id, usuario_id, rol_id) VALUES
   (9001, 9001, 9001, 9001),
   (9002, 9001, 9002, 9002),
   (9003, 9001, 9003, 9003),
-  (9004, 9001, 9003, 9002)
+  (9004, 9001, 9003, 9002),
+  (9005, 9001, 9001, 9002)
 ON DUPLICATE KEY UPDATE usuario_id = VALUES(usuario_id), rol_id = VALUES(rol_id), deleted_at = NULL;
 
 INSERT INTO sitios (id, tenant_id, nombre, direccion, zona_horaria, activo) VALUES

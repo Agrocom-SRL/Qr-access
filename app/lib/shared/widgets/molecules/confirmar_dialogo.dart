@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:flutter/material.dart';
 
 /// Ficha "estado actual → estado destino" del diálogo (guía §3).
@@ -19,13 +20,18 @@ class TransicionDeEstado {
   final TonoAcceso tonoDestino;
 }
 
-/// Confirmación de toda baja o cambio de estado (guía de pantallas §3). El
-/// botón de confirmar lleva el tono del estado destino.
+/// Confirmación de toda baja o cambio de estado (guía de pantallas §3,
+/// handoff C07b): ícono en caja, título, qué se afecta, la ficha de
+/// transición y el mensaje. El botón de confirmar lleva el tono del estado
+/// destino.
 class ConfirmarDialogo extends StatelessWidget {
   const new({
     required this.titulo,
     required this.mensaje,
     required this.textoConfirmar,
+    this.detalle,
+    this.icono,
+    this.tonoIcono = TonoCaja.peligro,
     this.transicion,
     this.variante = VarianteBoton.peligroRelleno,
     this.textoCancelar,
@@ -35,6 +41,13 @@ class ConfirmarDialogo extends StatelessWidget {
   final String titulo;
   final String mensaje;
   final String textoConfirmar;
+
+  /// Qué se va a afectar ("Proveedor de gas · Portón vehicular").
+  final String? detalle;
+
+  /// Ícono arriba del título, en una caja del tono de la acción.
+  final IconData? icono;
+  final TonoCaja tonoIcono;
   final TransicionDeEstado? transicion;
   final VarianteBoton variante;
   final String? textoCancelar;
@@ -46,6 +59,9 @@ class ConfirmarDialogo extends StatelessWidget {
     required String titulo,
     required String mensaje,
     required String textoConfirmar,
+    String? detalle,
+    IconData? icono,
+    TonoCaja tonoIcono = TonoCaja.peligro,
     TransicionDeEstado? transicion,
     VarianteBoton variante = VarianteBoton.peligroRelleno,
     String? textoCancelar,
@@ -56,6 +72,9 @@ class ConfirmarDialogo extends StatelessWidget {
         titulo: titulo,
         mensaje: mensaje,
         textoConfirmar: textoConfirmar,
+        detalle: detalle,
+        icono: icono,
+        tonoIcono: tonoIcono,
         transicion: transicion,
         variante: variante,
         textoCancelar: textoCancelar,
@@ -67,13 +86,37 @@ class ConfirmarDialogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final textos = Theme.of(context).textTheme;
     final transicion = this.transicion;
     return AlertDialog(
-      title: Text(titulo),
+      icon: icono == null
+          ? null
+          : Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: CajaIcono(
+                icono: icono!,
+                tono: tonoIcono,
+                tamano: tokens.tamano.accesoRapido,
+              ),
+            ),
+      iconPadding: EdgeInsets.fromLTRB(
+        tokens.espacio.xl,
+        tokens.espacio.xl,
+        tokens.espacio.xl,
+        0,
+      ),
+      title: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(titulo),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (detalle != null) ...[
+            Text(detalle!, style: textos.titleMedium),
+            SizedBox(height: tokens.espacio.m),
+          ],
           if (transicion != null) ...[
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,

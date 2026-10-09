@@ -40,6 +40,12 @@ class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
         _pestana ?? (vePuertas ? _Pestana.puertas : _Pestana.usuarios);
     final puedeCrear = sesion.tiene(Permisos.crearUsuarios);
 
+    // Desde "medio" cada una tiene su destino en el rail (E10a, E10b): sin
+    // pestañas ni el título genérico.
+    if (!context.esCompacta) {
+      return vePuertas ? const PuertasAdminPagina() : const UsuariosPagina();
+    }
+
     return PlantillaAdmin(
       destino: DestinoNav.admin,
       titulo: l10n.adminTitulo,

@@ -121,12 +121,21 @@ class BarraDeAcciones extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
+        // Las acciones quedan pegadas al borde derecho (handoff C05). Con
+        // [inicio], este es el único elástico y las acciones miden lo suyo;
+        // sin él, las acciones reparten el ancho para no desbordar.
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            if (inicio != null) Flexible(child: inicio!),
-            const Spacer(),
+            if (inicio != null)
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: inicio,
+                ),
+              ),
             for (var i = 0; i < acciones.length; i++) ...[
-              Flexible(child: acciones[i]),
+              if (inicio == null) Flexible(child: acciones[i]) else acciones[i],
               if (i < acciones.length - 1) SizedBox(width: tokens.espacio.m),
             ],
           ],

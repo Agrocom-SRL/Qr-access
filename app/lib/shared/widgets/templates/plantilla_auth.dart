@@ -11,6 +11,8 @@ class PlantillaAuth extends StatelessWidget {
     this.alVolver,
     this.pie,
     this.centrado = false,
+    this.conPanelDeMarca = true,
+    this.anchoMaximo,
     super.key,
   });
 
@@ -24,6 +26,13 @@ class PlantillaAuth extends StatelessWidget {
 
   /// Centra el contenido en vertical (expandido) en vez de alinearlo arriba.
   final bool centrado;
+
+  /// En expandido, el panel verde de marca a la izquierda. Elegir rol (E03)
+  /// no lo lleva: son tarjetas en fila sobre todo el ancho.
+  final bool conPanelDeMarca;
+
+  /// Ancho máximo del contenido; por defecto, el de auth (400).
+  final double? anchoMaximo;
 
   @override
   Widget build(BuildContext context) {
@@ -42,15 +51,22 @@ class PlantillaAuth extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.espacio.l,
-              vertical: tokens.espacio.xl,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: tokens.tamano.maxAuth),
-                child: child,
+          child: Align(
+            alignment: expandida && centrado
+                ? Alignment.center
+                : Alignment.topCenter,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.espacio.l,
+                vertical: tokens.espacio.xl,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: anchoMaximo ?? tokens.tamano.maxAuth,
+                  ),
+                  child: child,
+                ),
               ),
             ),
           ),
@@ -69,7 +85,7 @@ class PlantillaAuth extends StatelessWidget {
     );
     return Scaffold(
       body: SafeArea(
-        child: expandida
+        child: expandida && conPanelDeMarca
             ? Row(
                 children: [
                   const Expanded(child: PanelDeMarca()),

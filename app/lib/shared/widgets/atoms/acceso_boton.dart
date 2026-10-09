@@ -3,13 +3,15 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Variantes de botón del sistema de diseño (handoff §Átomos): primario,
-/// secundario (con borde), texto, tonal (fondo suave), peligro tonal y
-/// peligro relleno. Un cambio de estado lleva el tono del estado al que lleva.
+/// secundario (con borde), texto, tonal (fondo suave), peligro en texto
+/// ("Anular" en una fila), peligro tonal y peligro relleno. Un cambio de
+/// estado lleva el tono del estado al que lleva.
 enum VarianteBoton {
   primaria,
   secundaria,
   texto,
   tonal,
+  peligroTexto,
   peligroTonal,
   peligroRelleno,
 }
@@ -69,6 +71,11 @@ class AccesoBoton extends StatelessWidget {
           backgroundColor: colores.primarioSuave,
           foregroundColor: colores.primario,
         ),
+        child: contenido,
+      ),
+      VarianteBoton.peligroTexto => TextButton(
+        onPressed: alPresionar,
+        style: TextButton.styleFrom(foregroundColor: colores.peligro),
         child: contenido,
       ),
       VarianteBoton.peligroTonal => FilledButton.tonal(

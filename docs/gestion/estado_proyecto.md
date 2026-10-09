@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-09 (rama `feature/diseno-pantallas`)
+**Última actualización:** 2026-10-09 (rama `feature/ajustes-visuales`)
 
 ## Qué ya existe
 
@@ -35,6 +35,18 @@ Aplica el handoff de diseño V1 (`docs/diseno/handoff/`, antes `design_handoff_a
 - **Docs:** `sistema-diseno.md` y `guia-pantallas.md` reescritos sobre el handoff; D-19 cerrada en código.
 - **Después de actualizar:** `flutter pub get` y `flutter gen-l10n` en `app/`; volver a correr `db/seeds/01_catalogo.sql` y `02_demo.sql` (permisos y guardia nuevos) y reiniciar la API.
 - **Queda fuera de la rama:** alta y edición de sitios, puertas y dispositivos desde la app (el handoff dibuja "Nueva puerta", editar y eliminar en E10a, pero la API no tiene esos endpoints: HU-07, HU-08 y HU-10 siguen pendientes); el logo final; "Repetir último" se implementó prellenando el formulario (pendiente de confirmar con negocio, handoff §6); brillo de pantalla al mostrar el QR; revisión visual en dispositivo contra las capturas (los tests cubren comportamiento y layout en 360×800 y 1440×900, no el píxel).
+
+## Rama `feature/ajustes-visuales` (2026-10-09, pendiente de PR)
+
+Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con el handoff:
+
+- **Pantallas móviles:** hero de bienvenida con el nombre en dos líneas y el logo real (`app/assets/imagenes/logo_agrocom.png`, sobre placa blanca); casillas del PIN del mismo ancho; ícono QR blanco en el tablero; tarjetas de indicadores del administrador del mismo alto y sin notas en compacto; filtro de Mis QR con las cuatro pastillas enteras; "Anular" en rojo; diálogo de anular con ícono y detalle; barras de acciones con los botones pegados a la derecha; stepper con "Confirmar" completo; filas de Perfil con título en la clave; FAB con el verde del tema.
+- **Roles, web y PIN:** elegir rol sin panel de marca y con tarjetas en fila; tablero web con tabla de últimos eventos; Administración en expandido va directo a Puertas o Usuarios; formulario de nuevo usuario más compacto; Perfil web sin botón de cerrar sesión a todo el ancho.
+- **Idiomas:** `app_es.arb`, `app_en.arb` y `app_pt.arb` (texto neutro, sin voseo); fila "Idioma" en Perfil con banderas (`country_flags`) y opción de seguir al dispositivo; se recuerda lo elegido. El test de tuteo revisa solo el español.
+- **Paquetes:** `country_flags` (banderas SVG) y `animations` (transiciones entre pantallas).
+- **Docs:** `acceso_tokens.dart` del handoff pasó a `docs/diseno/handoff/tokens.md` (parámetros, no código).
+- **Seed demo:** el administrador `DEMADM1` también tiene el rol Usuario (para ver la elección de rol); el plan se llama "Demo (desarrollo)". Volver a correr `db/seeds/02_demo.sql`.
+- **Pendiente:** revisar en el teléfono; decidir si la barra inferior pasa a `google_nav_bar` (cambiaría el aspecto respecto al handoff); `pinput` para las casillas del PIN y `skeletonizer` para la carga serían los siguientes paquetes razonables.
 
 ## Lo que falta para un V1 usable
 

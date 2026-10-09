@@ -88,7 +88,12 @@ class _Pastilla<T> extends StatelessWidget {
           duration: tokens.duracion.efectiva(context, tokens.duracion.normal),
           curve: tokens.duracion.curva,
           height: tokens.tamano.pastillaFiltro,
-          padding: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
+          // Repartidas a lo ancho, el relleno es el mínimo para que cuatro
+          // pastillas ("Vigentes · Usados · Vencidos · Anulados") entren
+          // enteras en 360 dp (C07).
+          padding: EdgeInsets.symmetric(
+            horizontal: estirada ? tokens.espacio.s : tokens.espacio.l,
+          ),
           decoration: BoxDecoration(
             color: elegida ? colores.primario : null,
             borderRadius: BorderRadius.circular(tokens.radio.completo),

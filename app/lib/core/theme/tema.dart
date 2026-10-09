@@ -128,6 +128,15 @@ abstract final class Tema {
           padding: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
         ),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: c.primario,
+        foregroundColor: c.sobrePrimario,
+        elevation: 0,
+        extendedTextStyle: textoBoton,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.radio.xl),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
           foregroundColor: c.texto,

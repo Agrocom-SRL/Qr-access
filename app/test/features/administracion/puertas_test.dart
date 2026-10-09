@@ -75,8 +75,18 @@ void main() {
     await _montar(tester, pagina: const AdministracionPagina());
     final textos = textosEn(tester);
 
-    expect(find.text('PLANTA WARNES'), findsOneWidget);
-    expect(find.text('OFICINA EQUIPETROL'), findsOneWidget);
+    expect(
+      find.text(
+        textos.puertasSitioConCantidad('Planta Warnes', 2).toUpperCase(),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        textos.puertasSitioConCantidad('Oficina Equipetrol', 1).toUpperCase(),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('LECT-0042'), findsOneWidget);
     expect(find.text(textos.puertaEnLinea), findsOneWidget);
     expect(find.text(textos.puertaSinConexion), findsNWidgets(2));
