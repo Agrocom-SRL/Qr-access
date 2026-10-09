@@ -157,7 +157,7 @@ class MisQrPagina extends ConsumerWidget {
                           child: AccesoBoton(
                             texto: l10n.qrAnular,
                             icono: Icons.block,
-                            variante: VarianteBoton.texto,
+                            variante: VarianteBoton.peligroTexto,
                             cargando: anulando,
                             onPressed: () => _anular(context, ref, qr),
                           ),
@@ -178,6 +178,11 @@ class MisQrPagina extends ConsumerWidget {
     final confirmado = await ConfirmarDialogo.mostrar(
       context,
       titulo: l10n.qrAnularTitulo,
+      detalle: l10n.qrEtiquetaYPuertas(
+        qr.etiqueta ?? l10n.qrSinEtiqueta,
+        qr.nombresDePuertas,
+      ),
+      icono: Icons.block,
       mensaje: l10n.qrAnularMensaje,
       textoConfirmar: l10n.qrAnular,
       transicion: TransicionDeEstado(

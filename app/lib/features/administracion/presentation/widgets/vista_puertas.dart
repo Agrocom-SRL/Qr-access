@@ -44,9 +44,15 @@ class VistaPuertas extends ConsumerWidget {
         titulo: l10n.puertasSinPuertas,
         ayuda: l10n.puertasSinPuertasAyuda,
       ),
+      // "SEDE DEMO · 2": el sitio con cuántas puertas tiene (C10a).
       encabezadoDe: (puerta, anterior) =>
           anterior == null || anterior.sitioId != puerta.sitioId
-          ? puerta.sitioNombre
+          ? l10n.puertasSitioConCantidad(
+              puerta.sitioNombre,
+              (puertas.value ?? const [])
+                  .where((p) => p.sitioId == puerta.sitioId)
+                  .length,
+            )
           : null,
       tarjeta: (context, puerta) => TarjetaPuerta(puerta: puerta),
       columnas: [

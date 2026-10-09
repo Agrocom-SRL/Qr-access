@@ -80,9 +80,6 @@ class _CasillasPinEstado extends State<CasillasPin> {
     final tokens = context.tokens;
     final l10n = context.l10n;
     final texto = widget.controlador.text;
-    final anchoCasilla = context.esExpandida
-        ? tokens.tamano.casillaPinAnchoExpandido
-        : tokens.tamano.casillaPinAncho;
     return Semantics(
       textField: true,
       label: l10n.sesionCampoPin,
@@ -92,23 +89,33 @@ class _CasillasPinEstado extends State<CasillasPin> {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            // Las siete casillas reparten el ancho en partes iguales (36 en
+            // 360 dp, más en pantallas anchas, con tope) y entre el código
+            // de cuenta y la clave queda solo un hueco un poco mayor (C02).
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 for (var i = 0; i < Pin.longitud; i++) ...[
-                  if (i == Pin.largoCodigoCuenta)
-                    SizedBox(width: tokens.espacio.s),
-                  _Casilla(
-                    caracter: i < texto.length ? texto[i] : null,
-                    activa:
-                        widget.habilitado &&
-                        _foco.hasFocus &&
-                        i == texto.length.clamp(0, Pin.longitud - 1) &&
-                        texto.length < Pin.longitud,
-                    ocultar: widget.ocultar,
-                    conError: widget.conError,
-                    habilitada: widget.habilitado,
-                    ancho: anchoCasilla,
+                  if (i > 0)
+                    SizedBox(
+                      width: i == Pin.largoCodigoCuenta
+                          ? tokens.espacio.l
+                          : tokens.espacio.s,
+                    ),
+                  Expanded(
+                    child: Center(
+                      child: _Casilla(
+                        caracter: i < texto.length ? texto[i] : null,
+                        activa:
+                            widget.habilitado &&
+                            _foco.hasFocus &&
+                            i == texto.length.clamp(0, Pin.longitud - 1) &&
+                            texto.length < Pin.longitud,
+                        ocultar: widget.ocultar,
+                        conError: widget.conError,
+                        habilitada: widget.habilitado,
+                        anchoMaximo: tokens.tamano.casillaPinAnchoMaximo,
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -149,7 +156,7 @@ class _Casilla extends StatelessWidget {
     required this.ocultar,
     required this.conError,
     required this.habilitada,
-    required this.ancho,
+    required this.anchoMaximo,
   });
 
   final String? caracter;
@@ -157,7 +164,9 @@ class _Casilla extends StatelessWidget {
   final bool ocultar;
   final bool conError;
   final bool habilitada;
-  final double ancho;
+
+  /// La casilla ocupa todo el ancho de su columna hasta este tope.
+  final double anchoMaximo;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +178,8 @@ class _Casilla extends StatelessWidget {
     final mostrado = caracter == null ? '' : (ocultar ? '•' : caracter!);
     return AnimatedContainer(
       duration: tokens.duracion.efectiva(context, tokens.duracion.rapida),
-      width: ancho,
+      width: double.infinity,
+      constraints: BoxConstraints(maxWidth: anchoMaximo),
       height: tokens.tamano.casillaPinAlto,
       decoration: BoxDecoration(
         color: habilitada ? colores.superficie : colores.fondo,

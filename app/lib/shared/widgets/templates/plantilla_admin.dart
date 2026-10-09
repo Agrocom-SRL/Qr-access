@@ -256,7 +256,7 @@ class _Rail extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AccesoLogo(tamano: tokens.tamano.avatarChico),
+                AccesoLogo(tamano: tokens.tamano.iconoCaja),
                 if (extendido) ...[
                   SizedBox(width: tokens.espacio.m),
                   Flexible(

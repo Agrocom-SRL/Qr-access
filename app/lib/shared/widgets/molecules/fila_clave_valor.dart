@@ -15,6 +15,7 @@ class FilaClaveValor extends StatelessWidget {
     this.valorMono = false,
     this.valorEnAdvertencia = false,
     this.invertida = false,
+    this.claveEnfatizada = false,
     this.conSeparador = true,
     super.key,
   });
@@ -35,6 +36,11 @@ class FilaClaveValor extends StatelessWidget {
   /// Clave arriba en secundario y valor abajo en texto (filas de Perfil), en
   /// vez de clave a la izquierda y valor a la derecha (resumen).
   final bool invertida;
+
+  /// Con [invertida], la clave va en título y el valor en secundario
+  /// ("Suscripción" / "Activa · 173 días restantes"), al revés de la fila
+  /// normal, donde lo importante es el valor ("Rol activo" / "Administrador").
+  final bool claveEnfatizada;
   final bool conSeparador;
 
   @override
@@ -42,14 +48,19 @@ class FilaClaveValor extends StatelessWidget {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
+    final colorValor = valorEnAdvertencia ? colores.advertencia : colores.texto;
     final estiloValor = valorMono
         ? tokens.tipografia.mono(tokens.tipografia.t16, color: colores.texto)
-        : textos.titleMedium?.copyWith(
-            color: valorEnAdvertencia ? colores.advertencia : colores.texto,
-          );
-    final estiloClave = textos.bodyMedium?.copyWith(
-      color: colores.textoSecundario,
-    );
+        : claveEnfatizada
+        ? textos.bodyMedium?.copyWith(
+            color: valorEnAdvertencia
+                ? colores.advertencia
+                : colores.textoSecundario,
+          )
+        : textos.titleMedium?.copyWith(color: colorValor);
+    final estiloClave = claveEnfatizada
+        ? textos.titleMedium
+        : textos.bodyMedium?.copyWith(color: colores.textoSecundario);
     final Widget cuerpo;
     if (invertida) {
       cuerpo = Column(

@@ -76,8 +76,9 @@ class BienvenidaPagina extends StatelessWidget {
                     children: [
                       const AccesoLogo(sobreHero: true),
                       SizedBox(height: tokens.espacio.xl),
+                      // El nombre va en dos líneas en cualquier ancho (C01).
                       Text(
-                        l10n.appTitulo,
+                        l10n.bienvenidaNombreApp,
                         style: textos.headlineLarge?.copyWith(
                           color: colores.sobreHero,
                         ),

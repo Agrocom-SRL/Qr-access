@@ -10,7 +10,7 @@ void main() {
     await montarPantalla(tester, pagina: const BienvenidaPagina());
     final textos = textosEn(tester);
 
-    expect(find.text(textos.appTitulo), findsOneWidget);
+    expect(find.text(textos.bienvenidaNombreApp), findsOneWidget);
     expect(find.text(textos.bienvenidaFrase), findsOneWidget);
     expect(find.text(textos.bienvenidaSinPin), findsOneWidget);
 

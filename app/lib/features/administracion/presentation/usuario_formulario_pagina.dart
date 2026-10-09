@@ -157,6 +157,7 @@ class _UsuarioFormularioPaginaEstado
                         title: Text(rol.nombre),
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
                       ),
                     if (errorDatos == ErrorDatosUsuario.sinRoles)
                       Padding(

@@ -130,6 +130,10 @@ class ColoresSemanticos {
   /// Módulos y fondo del QR: negro sobre blanco en ambos temas (§1.8).
   Color get qrModulo => Primitivos.qrModulo;
   Color get qrFondo => Primitivos.qrFondo;
+
+  /// Placa del logo: blanca en ambos temas, porque el logo (verde y naranja
+  /// sobre transparente) solo se lee bien sobre blanco.
+  Color get placaLogo => Primitivos.neutro0;
 }
 
 /// Espaciado en base 4 (handoff: 2 · 4 · 8 · 12 · 16 · 24 · 32 · 48).
@@ -207,9 +211,15 @@ class Tamanos {
   double get navBar => 80;
   double get logo => 80;
   double get logoChico => 48;
+
+  /// Ancho / alto de la placa del logo (el logo es apaisado).
+  double get logoProporcion => 1.4;
   double get avatar => 44;
   double get avatarGrande => 56;
   double get avatarChico => 32;
+
+  /// Diámetro de la bandera de un idioma (la hoja de idiomas usa `avatar`).
+  double get bandera => 28;
   double get iconoCaja => 40;
   double get railMedio => 80;
   double get railExpandido => 240;
@@ -218,6 +228,9 @@ class Tamanos {
   double get casillaPinAncho => 36;
   double get casillaPinAnchoExpandido => 44;
   double get casillaPinAlto => 56;
+
+  /// Ancho máximo de una casilla del PIN cuando se reparte el ancho.
+  double get casillaPinAnchoMaximo => 56;
 
   /// Ancho máximo del contenido: 400 en auth, 640 en formularios de
   /// secciones, 720 en formularios, 1200 en listas y tableros.

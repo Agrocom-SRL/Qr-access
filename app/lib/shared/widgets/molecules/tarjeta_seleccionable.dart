@@ -13,6 +13,7 @@ class TarjetaSeleccionable extends StatelessWidget {
     this.icono,
     this.etiquetaDerecha,
     this.child,
+    this.vertical = false,
     super.key,
   });
 
@@ -28,10 +29,47 @@ class TarjetaSeleccionable extends StatelessWidget {
   /// Contenido extra debajo (las pastillas de "Más corto").
   final Widget? child;
 
+  /// Ícono y radio arriba, título y descripción debajo (elegir rol en
+  /// expandido, E03). Solo con [icono].
+  final bool vertical;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
+    if (vertical && icono != null) {
+      return Semantics(
+        button: true,
+        selected: seleccionada,
+        child: AccesoTarjeta(
+          seleccionada: seleccionada,
+          alTocar: alElegir,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CajaIcono(icono: icono!),
+                  const Spacer(),
+                  _Radio(seleccionado: seleccionada),
+                ],
+              ),
+              SizedBox(height: tokens.espacio.l),
+              Text(titulo, style: textos.titleMedium),
+              if (subtitulo != null) ...[
+                SizedBox(height: tokens.espacio.xs),
+                Text(
+                  subtitulo!,
+                  style: textos.bodyMedium?.copyWith(
+                    color: tokens.colores.textoSecundario,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
     return Semantics(
       button: true,
       selected: seleccionada,

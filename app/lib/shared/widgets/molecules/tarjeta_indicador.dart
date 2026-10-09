@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 /// verde, cifra en sobreHero) o alerta (cifra en peligro si es mayor que 0).
 enum VarianteIndicador { normal, hero, alerta }
 
-/// Indicador del tablero: ícono, rótulo, cifra en mono 32 y nota.
+/// Indicador del tablero (C04b): el hero lleva rótulo y cifra a la izquierda
+/// con el ícono a la derecha; los demás, el ícono arriba, el rótulo y la
+/// cifra en mono 32. La nota es opcional y va debajo de la cifra.
 class TarjetaIndicador extends StatelessWidget {
   const new({
     required this.etiqueta,
@@ -42,58 +44,77 @@ class TarjetaIndicador extends StatelessWidget {
         : colores.textoSecundario;
     final colorCifra = enAlerta ? colores.peligro : colorTexto;
 
+    final icono = CajaIcono(
+      icono: this.icono,
+      tono: esHero
+          ? TonoCaja.hero
+          : (variante == VarianteIndicador.alerta
+                ? TonoCaja.peligro
+                : TonoCaja.primario),
+      tamano: esHero ? tokens.tamano.accesoRapido : null,
+    );
+    final rotulo = Text(
+      etiqueta,
+      style: textos.bodyLarge?.copyWith(color: colorSecundario),
+    );
+    final cifra = valor == null
+        ? AccesoSkeleton(ancho: tokens.tamano.logo, alto: tokens.tipografia.t32)
+        : Text(
+            '$valor',
+            style: tokens.tipografia.mono(
+              tokens.tipografia.t32,
+              peso: tokens.tipografia.semiNegrita,
+              color: colorCifra,
+            ),
+          );
+    final notaTexto = nota == null
+        ? null
+        : Text(
+            nota!,
+            style: textos.bodyMedium?.copyWith(color: colorSecundario),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          );
+
     return AccesoTarjeta(
       alTocar: alTocar,
       color: esHero ? colores.hero : null,
       relleno: EdgeInsets.all(tokens.espacio.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  etiqueta,
-                  style: textos.bodyLarge?.copyWith(color: colorSecundario),
+      child: esHero
+          ? Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      rotulo,
+                      SizedBox(height: tokens.espacio.xs),
+                      cifra,
+                      if (notaTexto != null) ...[
+                        SizedBox(height: tokens.espacio.xs),
+                        notaTexto,
+                      ],
+                    ],
+                  ),
                 ),
-              ),
-              CajaIcono(
-                icono: icono,
-                tono: esHero
-                    ? TonoCaja.hero
-                    : (variante == VarianteIndicador.alerta
-                          ? TonoCaja.peligro
-                          : TonoCaja.primario),
-              ),
-            ],
-          ),
-          SizedBox(height: tokens.espacio.s),
-          if (valor == null)
-            AccesoSkeleton(
-              ancho: tokens.tamano.logo,
-              alto: tokens.tipografia.t32,
+                SizedBox(width: tokens.espacio.l),
+                icono,
+              ],
             )
-          else
-            Text(
-              '$valor',
-              style: tokens.tipografia.mono(
-                tokens.tipografia.t32,
-                peso: tokens.tipografia.semiNegrita,
-                color: colorCifra,
-              ),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                icono,
+                SizedBox(height: tokens.espacio.m),
+                rotulo,
+                SizedBox(height: tokens.espacio.xs),
+                cifra,
+                if (notaTexto != null) ...[
+                  SizedBox(height: tokens.espacio.xs),
+                  notaTexto,
+                ],
+              ],
             ),
-          if (nota != null) ...[
-            SizedBox(height: tokens.espacio.xs),
-            Text(
-              nota!,
-              style: textos.bodyMedium?.copyWith(color: colorSecundario),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

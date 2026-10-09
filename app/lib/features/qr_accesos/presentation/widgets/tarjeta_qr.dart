@@ -80,10 +80,11 @@ class TarjetaQr extends StatelessWidget {
       pie: qr.puedeAnularse && alAnular != null && !compacta
           ? Align(
               alignment: AlignmentDirectional.centerEnd,
+              // Anular es una baja: va en peligro (handoff C07).
               child: AccesoBoton(
                 texto: l10n.qrAnular,
                 icono: Icons.block,
-                variante: VarianteBoton.texto,
+                variante: VarianteBoton.peligroTexto,
                 cargando: anulando,
                 onPressed: alAnular,
               ),
