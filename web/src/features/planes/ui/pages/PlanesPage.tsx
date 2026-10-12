@@ -4,16 +4,20 @@ import { formatearNumero } from '../../../../l10n/formatos';
 import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
+import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagina';
+import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { TarjetaPlan } from '../../../../shared/ui/organisms/TarjetaPlan';
-import { useGuardarPrecios, usePlanes } from '../../application/usePlanes';
-import { cambiosDePrecio } from '../../domain/plan';
+import { tienePermiso, useSesion } from '../../../seguridad';
+import { useGuardarPrecios, usePlanes, useRetirarPlan } from '../../application/usePlanes';
+import { cambiosDePrecio, type Plan } from '../../domain/plan';
+import { DialogoPlan } from '../components/DialogoPlan';
 import { CampoPrecio } from '../components/CampoPrecio';
 import styles from './PlanesPage.module.css';
 
@@ -22,6 +26,11 @@ export function PlanesPage() {
   const { t } = useTranslation(['planes', 'comun']);
   const planes = usePlanes();
   const guardar = useGuardarPrecios();
+  const retirar = useRetirarPlan();
+  const { sesion } = useSesion();
+  const permisos = sesion?.permisos ?? [];
+  const [dialogo, setDialogo] = useState<{ plan: Plan | null } | null>(null);
+  const [aRetirar, setARetirar] = useState<Plan | null>(null);
   const [borrador, setBorrador] = useState<Record<string, number>>({});
   const [invalidos, setInvalidos] = useState<ReadonlySet<string>>(new Set());
   const lista = planes.data ?? [];
@@ -42,7 +51,22 @@ export function PlanesPage() {
 
   return (
     <>
-      <EncabezadoPagina titulo={t('planes:titulo')} subtitulo={t('planes:subtitulo')} />
+      <EncabezadoPagina
+        titulo={t('planes:titulo')}
+        subtitulo={t('planes:subtitulo')}
+        accion={
+          tienePermiso(permisos, 'suscripciones.plan.crear') ? (
+            <AccesoBoton
+              icono="add"
+              onClick={() => {
+                setDialogo({ plan: null });
+              }}
+            >
+              {t('planes:nuevo')}
+            </AccesoBoton>
+          ) : undefined
+        }
+      />
       <Aviso tono="informacion">{t('planes:aviso')}</Aviso>
 
       {planes.isError ? (
@@ -76,6 +100,28 @@ export function PlanesPage() {
                     <div>
                       <p className={styles.pequeno}>{t('planes:usuariosEnUso')}</p>
                       <TextoMono fuerte>{formatearNumero(plan.usuariosEnUso)}</TextoMono>
+                    </div>
+                    <div className={styles.esquina}>
+                      {tienePermiso(permisos, 'suscripciones.plan.editar') ? (
+                        <BotonIcono
+                          icono="edit"
+                          accion="editar"
+                          etiqueta={t('planes:editarPlan', { plan: plan.nombre })}
+                          onClick={() => {
+                            setDialogo({ plan });
+                          }}
+                        />
+                      ) : null}
+                      {tienePermiso(permisos, 'suscripciones.plan.eliminar') ? (
+                        <BotonIcono
+                          icono="block"
+                          accion="eliminar"
+                          etiqueta={t('planes:retirarPlan', { plan: plan.nombre })}
+                          onClick={() => {
+                            setARetirar(plan);
+                          }}
+                        />
+                      ) : null}
                     </div>
                   </>
                 }
@@ -135,6 +181,38 @@ export function PlanesPage() {
           </div>
         </>
       )}
+
+      <DialogoPlan
+        abierto={dialogo !== null}
+        plan={dialogo?.plan ?? null}
+        onCerrar={() => {
+          setDialogo(null);
+        }}
+      />
+      <ConfirmarDialogo
+        abierto={aRetirar !== null}
+        peligro
+        titulo={t('planes:retirarTitulo', { plan: aRetirar?.nombre ?? '' })}
+        texto={
+          aRetirar && aRetirar.cuentas > 0
+            ? t('planes:retirarTextoConCuentas', { count: aRetirar.cuentas })
+            : t('planes:retirarTextoSinCuentas')
+        }
+        etiquetaConfirmar={retirar.isPending ? t('planes:retirando') : t('planes:retirar')}
+        cargando={retirar.isPending}
+        onCancelar={() => {
+          setARetirar(null);
+        }}
+        onConfirmar={() => {
+          if (aRetirar) {
+            retirar.mutate(aRetirar.id, {
+              onSettled: () => {
+                setARetirar(null);
+              },
+            });
+          }
+        }}
+      />
     </>
   );
 }

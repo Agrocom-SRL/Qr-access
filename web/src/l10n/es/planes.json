@@ -21,5 +21,29 @@
   "vacio": {
     "titulo": "Aún no hay planes",
     "texto": "Los planes se siembran con la plataforma. Revisa la configuración."
-  }
+  },
+  "nuevo": "Nuevo plan",
+  "editar": "Editar",
+  "retirar": "Retirar",
+  "editarPlan": "Editar {{plan}}",
+  "retirarPlan": "Retirar {{plan}}",
+  "dialogoNuevo": "Nuevo plan",
+  "dialogoEditar": "Editar plan",
+  "nombre": "Nombre del plan",
+  "nombreEjemplo": "Por ejemplo, 500 usuarios",
+  "cupo": "Cupo de usuarios activos",
+  "cupoAyuda": "Cuántos usuarios activos puede tener una cuenta con este plan.",
+  "cupoBloqueado": "Este plan ya lo usan cuentas: su cupo no se puede cambiar. Crea un plan nuevo si necesitas otro cupo.",
+  "precioAyuda": "Solo vale para renovaciones y mejoras futuras.",
+  "crear": "Crear plan",
+  "creando": "Creando",
+  "guardarCambios": "Guardar cambios",
+  "guardandoCambios": "Guardando",
+  "retirarTitulo": "¿Retirar el plan {{plan}}?",
+  "retirarTextoConCuentas_one": "{{count}} cuenta lo tiene y lo conserva. Desde ahora no se ofrece para cuentas nuevas ni para mejoras.",
+  "retirarTextoConCuentas_other": "{{count}} cuentas lo tienen y lo conservan. Desde ahora no se ofrece para cuentas nuevas ni para mejoras.",
+  "retirarTextoSinCuentas": "Nadie lo usa: se elimina y ya no aparece al asignar un plan.",
+  "retirando": "Retirando",
+  "requerido": "Este campo es obligatorio",
+  "cupoInvalido": "Escribe un número entero de 1 en adelante"
 }

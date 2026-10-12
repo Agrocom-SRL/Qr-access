@@ -1,4 +1,10 @@
-import { cambiosDePrecio, parsearPrecio, type Plan } from '@/features/planes/domain/plan';
+import {
+  cambiosDePrecio,
+  parsearCupo,
+  parsearPrecio,
+  validarPlan,
+  type Plan,
+} from '@/features/planes/domain/plan';
 
 const plan = (id: string, precioAnual: number): Plan => ({
   id,
@@ -32,5 +38,25 @@ describe('cambiosDePrecio', () => {
 
   it('sin borrador no hay cambios', () => {
     expect(cambiosDePrecio([plan('1', 1)], {})).toEqual([]);
+  });
+});
+
+describe('parsearCupo / validarPlan', () => {
+  it('el cupo es un entero de 1 en adelante', () => {
+    expect(parsearCupo('500')).toBe(500);
+    for (const texto of ['0', '', '1,5', '-2', 'a']) expect(parsearCupo(texto)).toBeNull();
+  });
+
+  it('valida el formulario completo', () => {
+    expect(validarPlan({ nombre: '500 usuarios', cupo: '500', precio: '45.000' })).toEqual({});
+    expect(validarPlan({ nombre: ' ', cupo: '', precio: '' })).toEqual({
+      nombre: 'requerido',
+      cupo: 'requerido',
+      precio: 'requerido',
+    });
+    expect(validarPlan({ nombre: 'X', cupo: '0', precio: '1,5' })).toEqual({
+      cupo: 'cupoInvalido',
+      precio: 'precioInvalido',
+    });
   });
 });

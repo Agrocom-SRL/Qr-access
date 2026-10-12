@@ -42,3 +42,9 @@
   gap: var(--esp16);
   margin-top: var(--esp24);
 }
+
+.esquina {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}

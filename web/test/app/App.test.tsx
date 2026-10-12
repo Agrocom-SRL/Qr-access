@@ -790,3 +790,78 @@ describe('resumen (A02)', () => {
     expect(await screen.findByText('No pudimos cargar el resumen')).toBeInTheDocument();
   });
 });
+
+describe('gestión de planes (A09)', () => {
+  async function irAPlanes(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Planes/ }));
+  }
+
+  it('crea un plan con nombre, cupo y precio', async () => {
+    const crear = vi.fn(() => Promise.resolve());
+    await irAPlanes(crearServiciosDePrueba({ planes: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Nuevo plan' }));
+    const dialogo = await screen.findByRole('dialog');
+    const crearBoton = within(dialogo).getByRole('button', { name: 'Crear plan' });
+    expect(crearBoton).toBeDisabled();
+    await userEvent.type(within(dialogo).getByLabelText('Nombre del plan'), '500 usuarios');
+    await userEvent.type(within(dialogo).getByLabelText('Cupo de usuarios activos'), '500');
+    await userEvent.type(within(dialogo).getByLabelText('Precio anual'), '45.000');
+    await userEvent.click(crearBoton);
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledWith({
+        nombre: '500 usuarios',
+        cupoUsuarios: 500,
+        precioAnual: 45000,
+      });
+    });
+  });
+
+  it('edita un plan: parte de sus valores y bloquea el cupo si ya lo usan cuentas', async () => {
+    const editar = vi.fn(() => Promise.resolve());
+    await irAPlanes(crearServiciosDePrueba({ planes: { editar } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar 100 usuarios' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByLabelText('Nombre del plan')).toHaveValue('100 usuarios');
+    expect(within(dialogo).getByLabelText('Cupo de usuarios activos')).toBeDisabled();
+    expect(within(dialogo).getByText(/ya lo usan cuentas/)).toBeInTheDocument();
+    const nombre = within(dialogo).getByLabelText('Nombre del plan');
+    await userEvent.clear(nombre);
+    await userEvent.type(nombre, 'Básico');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }));
+    await waitFor(() => {
+      expect(editar).toHaveBeenCalledWith('1', {
+        nombre: 'Básico',
+        cupoUsuarios: 100,
+        precioAnual: 12000,
+      });
+    });
+  });
+
+  it('un error de la API al crear se traduce', async () => {
+    const crear = vi.fn(() => Promise.reject(new ErrorApi(409, 'plan.nombre_existente')));
+    await irAPlanes(crearServiciosDePrueba({ planes: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Nuevo plan' }));
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.type(within(dialogo).getByLabelText('Nombre del plan'), '100 usuarios');
+    await userEvent.type(within(dialogo).getByLabelText('Cupo de usuarios activos'), '100');
+    await userEvent.type(within(dialogo).getByLabelText('Precio anual'), '1');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Crear plan' }));
+    expect(await screen.findByText('Ya hay un plan con ese nombre.')).toBeInTheDocument();
+  });
+
+  it('retirar explica que las cuentas lo conservan y pide confirmación', async () => {
+    const retirar = vi.fn(() => Promise.resolve('retirado' as const));
+    await irAPlanes(crearServiciosDePrueba({ planes: { retirar } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Retirar 100 usuarios' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByText('¿Retirar el plan 100 usuarios?')).toBeInTheDocument();
+    expect(within(dialogo).getByText(/21 cuentas lo tienen y lo conservan/)).toBeInTheDocument();
+    expect(retirar).not.toHaveBeenCalled();
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Retirar' }));
+    await waitFor(() => {
+      expect(retirar).toHaveBeenCalledWith('1');
+    });
+  });
+});

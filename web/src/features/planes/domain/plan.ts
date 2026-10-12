@@ -29,3 +29,34 @@ export function cambiosDePrecio(
     .filter((plan) => plan.id in borrador && borrador[plan.id] !== plan.precioAnual)
     .map((plan) => ({ planId: plan.id, precioAnual: borrador[plan.id] ?? plan.precioAnual }));
 }
+
+export interface FormularioDePlan {
+  nombre: string;
+  /** Lo escrito: un entero de 1 en adelante. */
+  cupo: string;
+  /** Lo escrito: dígitos con o sin puntos de miles. */
+  precio: string;
+}
+
+export type ErrorDePlan = 'requerido' | 'cupoInvalido' | 'precioInvalido';
+
+export function parsearCupo(texto: string): number | null {
+  if (!/^\d{1,6}$/.test(texto.trim())) return null;
+  const valor = Number(texto.trim());
+  return valor >= 1 ? valor : null;
+}
+
+/** Validación del formulario de plan antes de llamar a la API (que la repite: la autoridad es el servidor). */
+export function validarPlan(
+  datos: FormularioDePlan,
+): Partial<Record<keyof FormularioDePlan, ErrorDePlan>> {
+  const errores: Partial<Record<keyof FormularioDePlan, ErrorDePlan>> = {};
+  if (datos.nombre.trim() === '') errores.nombre = 'requerido';
+  if (datos.cupo.trim() === '') errores.cupo = 'requerido';
+  else if (parsearCupo(datos.cupo) === null) errores.cupo = 'cupoInvalido';
+  if (datos.precio.trim() === '') errores.precio = 'requerido';
+  else if (parsearPrecio(datos.precio) === null) errores.precio = 'precioInvalido';
+  return errores;
+}
+
+export type ResultadoDeRetiro = 'retirado' | 'eliminado';

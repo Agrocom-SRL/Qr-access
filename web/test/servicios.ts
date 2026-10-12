@@ -19,7 +19,9 @@ export const SUPER_ADMIN = {
     'seguridad.equipo.crear',
     'seguridad.equipo.desactivar',
     'suscripciones.plan.ver',
+    'suscripciones.plan.crear',
     'suscripciones.plan.editar',
+    'suscripciones.plan.eliminar',
     'seguridad.cuenta.ver',
     'seguridad.cuenta.crear',
     'suscripciones.suscripcion.ver',
@@ -326,6 +328,9 @@ export function crearServiciosDePrueba(
   const planes: PlanesRepositorio = {
     listar: () => Promise.resolve(PLANES),
     guardarPrecios: () => Promise.resolve(),
+    crear: () => Promise.resolve(),
+    editar: () => Promise.resolve(),
+    retirar: () => Promise.resolve('retirado' as const),
     ...parcial.planes,
   };
   const cuentas: CuentasRepositorio = {

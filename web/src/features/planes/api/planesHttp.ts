@@ -32,6 +32,35 @@ export function crearPlanesHttp(cliente: ClienteHttp): PlanesRepositorio {
       });
       return dto.datos.map(planDesdeDto);
     },
+    async crear(datos) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: '/plataforma/planes',
+        cuerpo: {
+          nombre: datos.nombre,
+          cupo_usuarios: datos.cupoUsuarios,
+          precio_anual: datos.precioAnual,
+        },
+      });
+    },
+    async editar(id, cambios) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/planes/${id}`,
+        cuerpo: {
+          nombre: cambios.nombre,
+          cupo_usuarios: cambios.cupoUsuarios,
+          precio_anual: cambios.precioAnual,
+        },
+      });
+    },
+    async retirar(id) {
+      const dto = await cliente.solicitar<{ resultado: 'retirado' | 'eliminado' }>({
+        metodo: 'DELETE',
+        ruta: `/plataforma/planes/${id}`,
+      });
+      return dto.resultado;
+    },
     async guardarPrecios(cambios) {
       await cliente.solicitar({
         metodo: 'PUT',
