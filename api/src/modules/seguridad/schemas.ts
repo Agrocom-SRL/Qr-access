@@ -255,6 +255,7 @@ export const respuestaDePuertasDeCuenta = z.object({
 });
 
 export const respuestaDeSuscripcionDeCuenta = z.object({
+  cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
   suscripcion: z.object({
     id: z.string(),
     plan: z.object({

@@ -11,6 +11,7 @@ import {
 import { RepositorioDeCuentasDePlataforma, RepositorioDeSuperAdmins } from '../repository.js';
 
 export interface SuscripcionDeCuentaVista {
+  cuenta: { id: string; codigo: string; nombre: string };
   suscripcion: {
     id: string;
     plan: { id: string; nombre: string; cupo_usuarios: number | null; precio_anual: number };
@@ -62,6 +63,7 @@ export async function ejecutar(
   const nombres = new Map(quienes.map((q) => [q.id, q.etiqueta ?? q.username]));
 
   return {
+    cuenta: { id: cuenta.id, codigo: cuenta.codigo, nombre: cuenta.nombre },
     suscripcion: {
       id: suscripcion.id,
       plan: {
