@@ -11,5 +11,15 @@
     "oscuro": "Oscuro",
     "sistema": "Según el sistema"
   },
-  "cerrarSesion": "Cerrar sesión"
+  "cerrarSesion": "Cerrar sesión",
+  "temporal": "Tu contraseña es temporal. Cámbiala para seguir usando el panel.",
+  "rol": "Super admin · desde {{fecha}}",
+  "usuario": "Usuario",
+  "ultimoIngreso": "Último ingreso",
+  "minimo": "Mínimo {{count}}",
+  "actualizando": "Actualizando",
+  "actualizada": "Contraseña actualizada",
+  "noCoinciden": "Las contraseñas no coinciden",
+  "requerido": "Este campo es obligatorio",
+  "corta": "Usa al menos {{count}} caracteres"
 }
