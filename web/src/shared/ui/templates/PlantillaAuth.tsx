@@ -11,6 +11,7 @@ export function PlantillaAuth({ children }: { children: ReactNode }) {
     <div className={styles.plantilla}>
       <section className={styles.hero}>
         <img src={foto} alt="" className={styles.foto} />
+        <div className={styles.velo} />
         <img src={logo} alt="" className={styles.logo} />
         <div>
           <p className={styles.nombre}>{t('nombre')}</p>
