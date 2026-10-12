@@ -19,14 +19,25 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.eliminar', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
   ('seguridad.equipo.crear', 'plataforma'),
-  ('seguridad.equipo.desactivar', 'plataforma')
+  ('seguridad.equipo.desactivar', 'plataforma'),
+  ('suscripciones.plan.ver', 'plataforma'),
+  ('suscripciones.plan.editar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
 
--- Rol de plataforma (tenant_id NULL): el super admin recibe todos los permisos de ámbito plataforma.
+-- Rol de plataforma (tenant_id NULL). Sus permisos de ámbito plataforma se asignan al final de este archivo.
 INSERT INTO roles (tenant_id, nombre, protegido, activo) VALUES
   (NULL, 'Super admin', 1, 1)
 ON DUPLICATE KEY UPDATE protegido = VALUES(protegido), activo = 1;
 
+-- Los tres planes anuales por cupo de usuarios (ADR 0022). Los precios son de ejemplo: se editan desde el panel
+-- y este seed NO los pisa si ya existen (solo crea los planes que faltan).
+INSERT INTO planes (nombre, max_dispositivos, max_usuarios, max_vigencia_qr_horas, precio_anual, activo) VALUES
+  ('100 usuarios', NULL, 100, NULL, 12000, 1),
+  ('200 usuarios', NULL, 200, NULL, 21600, 1),
+  ('350 usuarios', NULL, 350, NULL, 33600, 1)
+ON DUPLICATE KEY UPDATE max_usuarios = VALUES(max_usuarios), activo = 1;
+
+-- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'
   WHERE r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL;

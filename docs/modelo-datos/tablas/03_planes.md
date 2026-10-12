@@ -15,6 +15,7 @@ Límites que vende AGROCOM: cantidad de dispositivos y de usuarios y vigencia m�
 | `max_dispositivos` | `INT UNSIGNED` | sí |  |
 | `max_usuarios` | `INT UNSIGNED` | sí |  |
 | `max_vigencia_qr_horas` | `INT UNSIGNED` | sí |  |
+| `precio_anual` | `DECIMAL(14,2)` | no | Bs por año; solo afecta renovaciones y cambios de plan futuros (migración `20261012100003_add_precio_anual_a_planes.sql`, ADR 0022) |
 | `activo` | `TINYINT(1)` | no | Desactivar no es borrar |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` (skill `modelo-datos`) |
 
