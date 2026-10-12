@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-09 (rama `feature/ajustes-visuales`)
+**Última actualización:** 2026-10-12 (rama `feature/web-pines-ui`)
 
 ## Qué ya existe
 
@@ -18,6 +18,18 @@
   - `firmware/`: PlatformIO (ESP32 + Arduino) con la máquina de estados de falla segura y el intérprete de la respuesta en `lib/`, más 22 tests nativos. En `src/`: lector por UART, pulso de cerradura con tope, pulsador de salida, WiFi con backoff, NTP, cliente HTTPS en su propia tarea y watchdog. Compila para la placa (RAM 14.6 %, flash 71.4 %).
   - **Docker**: `docker compose up` levanta MySQL y la API; con `--profile web`, también la app web en `:8080`. El firmware se compila y prueba en el contenedor `firmware`.
   - `.gitignore` global (entorno, sistema operativo, editores) y uno por parte (`api/`, `app/`, `firmware/`).
+
+## Panel web de administración (`web/`) — ramas `feature/web-*` (2026-10-12, sin PR)
+
+Una cadena de ramas apiladas, cada una con su proceso (la última contiene todo): `web-base` (tokens, fuentes, i18next y assets del handoff, ADR 0022) → `web-componentes` (cliente HTTP y átomos a plantillas) → `web-ingreso-equipo` (login del super admin, perfil y equipo) → `web-planes` / `web-planes-ui` → `web-cuentas` / `web-cuentas-ui` → `web-suscripciones-cobranza` → `web-bitacora-resumen` → `web-docker` → `web-planes-crud` → `web-pines` / `web-pines-ui`.
+
+- **Diseño:** `docs/diseno/web-admin/` (capturas A01–A12, estados PE y tokens). Tests de `web/` en `web/test/` (espejo de `src/`, alias `@/`).
+- **Pantallas hechas:** ingreso, perfil, equipo, planes (con crear, editar y retirar), cuentas (lista, alta en 4 pasos con PIN de una sola vez, ficha con resumen, suscripción, sitios y puertas y bitácora), cobranza (con CSV), registrar pago, cambiar plan, resumen y bitácora. Cada listado tiene sus cuatro estados; tema claro y oscuro.
+- **API nueva** (módulos `seguridad`, `suscripciones`, `bitacora` y `resumen`, rutas `/api/v1/plataforma/*`): login de super admin con refresco, equipo, cuentas (listar, validar código, crear con roles base y primer administrador, ficha, sitios y puertas), planes (listar, precios, crear, editar, retirar), suscripción (renovar con pago, **subir de plan** cobrando la diferencia, suspender y reactivar), pagos, cobranza, bitácora, resumen, **cambio del código de la cuenta** y **regeneración del PIN de un administrador**.
+- **Migraciones nuevas:** `contrasena_temporal` y `usuario_roles.tenant_id` nulo (super admin), `planes.precio_anual`, `cuenta_datos_empresa`, `pagos`. Seeds: catálogo con los 3 planes y el rol Super admin; demo con el super admin `lucia.paz`.
+- **Decisiones:** ADR 0022 (estructura del panel, i18next, cobranza manual, solo se sube de plan) y ADR 0023 (el hash del PIN ya no incluye el código de cuenta, para poder cambiarlo sin invalidar PIN).
+- **Docker:** `docker compose --profile panel up -d --build` sirve el panel en :8081 con Nginx y proxy de `/api`.
+- **Pendiente / a confirmar (ver `TODO(docs)` en el código):** comprobante adjunto del pago (falta el almacenamiento), correo y teléfono del administrador inicial (no hay columna), edición de los datos de empresa (sin diseño), lista de ciudades, vistas a 768 px sin diseño propio, QR con datos de cuenta/usuario/puerta/hora (ver conversación: hoy el QR es un token aleatorio de un solo uso, ADR 0008), CI que construya la imagen del panel.
 
 ## Núcleo V1 integrado en `develop` (#14, #15, #16)
 
