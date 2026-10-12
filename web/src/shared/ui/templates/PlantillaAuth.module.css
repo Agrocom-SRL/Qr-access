@@ -9,14 +9,31 @@
   flex-direction: column;
   justify-content: space-between;
   padding: var(--esp48);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--hero);
   color: var(--sobreHero);
 }
 
+/* Foto de la app bajo un velo del verde del hero, para que el texto conserve contraste AA. */
+.foto {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+  mix-blend-mode: luminosity;
+}
+
+/* El logo es un PNG transparente: un halo del color de sobre-hero lo separa del verde. */
 .logo {
-  width: var(--tam80);
   height: var(--tam80);
-  border-radius: var(--radio20);
+  width: auto;
+  align-self: flex-start;
+  filter: drop-shadow(0 0 var(--esp12) color-mix(in srgb, var(--sobreHero) 85%, transparent));
 }
 
 .nombre {

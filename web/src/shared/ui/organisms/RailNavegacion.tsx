@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Avatar } from '../atoms/Avatar';
 import { Icono } from '../atoms/Icono';
 import type { NombreIcono } from '../atoms/iconos';
-import logo from '../assets/logo/logo_placa.png';
+import logo from '../assets/logo/logo_transparente.png';
 import styles from './RailNavegacion.module.css';
 
 export interface ItemRail {
