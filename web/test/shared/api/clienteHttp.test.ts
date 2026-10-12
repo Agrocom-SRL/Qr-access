@@ -1,6 +1,6 @@
-import { AlmacenSesion } from './almacenSesion';
-import { crearClienteFetch } from './clienteHttp';
-import { ErrorApi } from './errorApi';
+import { AlmacenSesion } from '@/shared/api/almacenSesion';
+import { crearClienteFetch } from '@/shared/api/clienteHttp';
+import { ErrorApi } from '@/shared/api/errorApi';
 
 function respuesta(estado: number, cuerpo?: unknown): Response {
   return new Response(cuerpo === undefined ? null : JSON.stringify(cuerpo), { status: estado });

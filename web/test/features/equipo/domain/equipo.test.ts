@@ -4,7 +4,7 @@ import {
   sugerirUsuario,
   usuarioConFormatoValido,
   type MiembroEquipo,
-} from './equipo';
+} from '@/features/equipo/domain/equipo';
 
 const miembro: MiembroEquipo = {
   id: '1',

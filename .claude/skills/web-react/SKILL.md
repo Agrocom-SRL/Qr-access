@@ -12,6 +12,7 @@ ADR 0021 (decisión), 0012 (sistema de diseño en tokens), 0013 (textos) y 0017 
 ```
 web/
   index.html, vite.config.ts, tsconfig.json, eslint.config.js
+  test/                      TODOS los tests (espejo de src/), setup de Vitest, mocks y test de arquitectura
   src/
     main.tsx                 punto de entrada (importa theme/global.css)
     app/                     App (QueryClientProvider + Router), rutas y pantallas de arranque
@@ -22,16 +23,19 @@ web/
       tokens.css             semánticos por tema: claro, oscuro y prefers-color-scheme
       global.css             reinicio y base
     l10n/es.ts, index.ts     todos los textos de interfaz (tuteo)
-    test/                    setup de Vitest y test de arquitectura
 ```
 
 ## Reglas
 
-- Componentes con CSS Modules que usan solo `var(--…)`. Un color, tamaño o duración literal falla `src/test/arquitectura.test.ts`.
+- Componentes con CSS Modules que usan solo `var(--…)`. Un color, tamaño o duración literal falla `test/arquitectura.test.ts`.
 - Textos en `l10n`; un texto suelto en un `.tsx` también lo detecta ese test.
 - Tema: `data-tema="claro|oscuro"` en `<html>`; sin atributo sigue `prefers-color-scheme`.
 - Controles de 44 px de alto mínimo (`--alto-control`) y movimiento que respeta `prefers-reduced-motion`.
 - Errores de la API: formato RFC 9457 con `code`; se traduce, nunca se muestra el `detail`.
+
+## Tests
+
+Viven en `web/test/`, espejo de `web/src/` (no junto al código). Importan el código con el alias `@/` (= `src/`). `test/servicios.ts` arma repositorios en memoria para las pruebas de interfaz.
 
 ## Compuerta
 

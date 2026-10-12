@@ -11,7 +11,7 @@ function archivos(dir: string): string[] {
   });
 }
 
-const raiz = join(import.meta.dirname, '..');
+const raiz = join(import.meta.dirname, '..', 'src');
 const fuentes = archivos(raiz).filter(
   (f) => /\.(css|tsx?)$/.test(f) && !/\.test\.tsx?$/.test(f) && !TOKENS.some((t) => f.endsWith(t)),
 );

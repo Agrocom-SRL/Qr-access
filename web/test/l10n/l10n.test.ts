@@ -1,12 +1,12 @@
-import { i18next } from '.';
+import { i18next } from '@/l10n';
 import {
   formatearCuentaRegresiva,
   formatearFecha,
   formatearHora,
   formatearMonto,
   relacionDeDia,
-} from './formatos';
-import { traducirError } from './traducirError';
+} from '@/l10n/formatos';
+import { traducirError } from '@/l10n/traducirError';
 
 describe('formatos', () => {
   it('monto en bolivianos sin decimales y con punto de miles', () => {

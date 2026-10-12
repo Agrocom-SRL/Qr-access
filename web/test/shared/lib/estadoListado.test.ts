@@ -1,4 +1,4 @@
-import { estadoListado } from './estadoListado';
+import { estadoListado } from '@/shared/lib/estadoListado';
 
 const base = { cargando: false, error: false, cantidad: undefined, conexion: true };
 

@@ -1,9 +1,9 @@
-import { AlmacenSesion } from '../shared/api/almacenSesion';
-import { ErrorApi } from '../shared/api/errorApi';
-import type { EquipoRepositorio } from '../features/equipo';
-import type { MiembroEquipo } from '../features/equipo/domain/equipo';
-import type { SeguridadRepositorio } from '../features/seguridad';
-import type { Servicios } from '../app/providers/crearServicios';
+import { AlmacenSesion } from '@/shared/api/almacenSesion';
+import { ErrorApi } from '@/shared/api/errorApi';
+import type { EquipoRepositorio } from '@/features/equipo';
+import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
+import type { SeguridadRepositorio } from '@/features/seguridad';
+import type { Servicios } from '@/app/providers/crearServicios';
 
 export const SUPER_ADMIN = {
   usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },

@@ -1,5 +1,5 @@
-import { validarCambioDeContrasena } from './contrasena';
-import { tienePermiso } from './sesion';
+import { validarCambioDeContrasena } from '@/features/seguridad/domain/contrasena';
+import { tienePermiso } from '@/features/seguridad/domain/sesion';
 
 describe('validarCambioDeContrasena', () => {
   const valido = { actual: 'la-actual-123', nueva: 'una-nueva-1234', repetida: 'una-nueva-1234' };

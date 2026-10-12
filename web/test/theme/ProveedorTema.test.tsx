@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
-import { ProveedorTema, useTema } from './ProveedorTema';
+import { ProveedorTema, useTema } from '@/theme/ProveedorTema';
 
 function Sonda() {
   const { preferencia, aplicado, elegir } = useTema();

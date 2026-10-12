@@ -1,10 +1,10 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { ErrorApi, crearServiciosDePrueba } from '../test/servicios';
-import { AppRutas } from './AppRutas';
-import type { Servicios } from './providers/crearServicios';
-import { ProveedoresApp } from './providers/ProveedoresApp';
+import { ErrorApi, crearServiciosDePrueba } from '../servicios';
+import { AppRutas } from '@/app/AppRutas';
+import type { Servicios } from '@/app/providers/crearServicios';
+import { ProveedoresApp } from '@/app/providers/ProveedoresApp';
 
 function montar(servicios: Servicios, ruta = '/') {
   return render(

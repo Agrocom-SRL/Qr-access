@@ -1,6 +1,6 @@
-import { AlmacenSesion } from '../../../shared/api/almacenSesion';
-import type { ClienteHttp, SolicitudHttp } from '../../../shared/api/clienteHttp';
-import { crearSeguridadHttp } from './seguridadHttp';
+import { AlmacenSesion } from '@/shared/api/almacenSesion';
+import type { ClienteHttp, SolicitudHttp } from '@/shared/api/clienteHttp';
+import { crearSeguridadHttp } from '@/features/seguridad/api/seguridadHttp';
 
 function clienteQueResponde(respuesta: unknown) {
   const llamadas: SolicitudHttp[] = [];
