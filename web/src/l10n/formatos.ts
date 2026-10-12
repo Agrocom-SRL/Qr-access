@@ -12,7 +12,7 @@ export function formatearMonto(monto: number, idioma = 'es'): string {
     useGrouping: true,
   })
     .format(monto)
-    .replaceAll(/[\s ]/g, '.');
+    .replaceAll(/\p{Z}/gu, '.');
   return `Bs ${numero}`;
 }
 
