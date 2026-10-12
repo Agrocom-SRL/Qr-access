@@ -22,6 +22,10 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.equipo.desactivar', 'plataforma'),
   ('seguridad.cuenta.ver', 'plataforma'),
   ('seguridad.cuenta.crear', 'plataforma'),
+  ('suscripciones.suscripcion.ver', 'plataforma'),
+  ('suscripciones.suscripcion.editar', 'plataforma'),
+  ('suscripciones.pago.registrar', 'plataforma'),
+  ('suscripciones.cobranza.ver', 'plataforma'),
   ('suscripciones.plan.ver', 'plataforma'),
   ('suscripciones.plan.editar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
