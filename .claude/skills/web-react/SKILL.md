@@ -5,7 +5,7 @@ description: Mapa del panel web de administración de AGROCOM Acceso (React + Ty
 
 # Panel web — mapa de `web/`
 
-ADR 0021 (decisión), 0012 (sistema de diseño en tokens), 0013 (textos) y 0017 (cuentas, suscripción y planes). El diseño llega del handoff de Claude Design en `docs/diseno/handoff-web/`; compara cada pantalla con su captura.
+ADR 0021 (decisión), 0012 (sistema de diseño en tokens), 0013 (textos) y 0017 (cuentas, suscripción y planes). El diseño llega del handoff de Claude Design en `docs/diseno/web-admin/`; compara cada pantalla con su captura.
 
 ## Estructura
 

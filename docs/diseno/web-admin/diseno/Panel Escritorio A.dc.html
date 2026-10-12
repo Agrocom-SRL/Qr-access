@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0" rel="stylesheet">
+<style>body{margin:0;background:#E8ECE9;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<section style="--fondo:#F5F7F6; --superficie:#FFFFFF; --superficieElevada:#FFFFFF; --borde:#DDE2DF; --texto:#1B1F1C; --texto2:#5B635D; --primario:#007A33; --primarioHover:#006B2D; --sobrePrimario:#FFFFFF; --primarioSuave:#E8F5EE; --peligro:#C62828; --peligroSuave:#FDECEC; --advertencia:#965A00; --advertenciaSuave:#FFF3E0; --info:#1565C0; --infoSuave:#E8F1FB; --hero:#007A33; --sobreHero:#FFFFFF; --heroAcento:#006B2D; --heroBoton:#FFFFFF; --sobreHeroBoton:#007A33; --sombra1:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06); --sombra3:0 8px 24px rgba(27,31,28,0.10), 0 2px 4px rgba(27,31,28,0.04); padding:48px; display:flex; flex-direction:column; gap:24px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Panel de administración · 1440×900 · tema claro · parte A</div>
+    <div style="font-size:16px; color:#5B635D; max-width:880px; text-wrap:pretty">Para el equipo AGROCOM (super admin). Ingreso, Resumen, Cuentas, Crear cuenta y Detalle de cuenta. Rail extendido de 240, tablas con paginación de 20 y formularios centrados de 720. Sigue en <a href="Panel Escritorio B.dc.html">parte B</a>.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+
+    <!-- A01 -->
+    <div id="A01" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A01</span><span style="font-size:14px; font-weight:500">Ingreso · normal</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:grid; grid-template-columns:1fr 1fr; box-shadow:var(--sombra3)">
+        <div style="background:var(--hero); color:var(--sobreHero); padding:48px; display:flex; flex-direction:column; justify-content:space-between">
+          <div style="width:80px; height:80px; border-radius:20px; background:repeating-linear-gradient(135deg,#006B2D 0 8px,#005824 8px 16px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#C5E6D2">logo</div>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div style="font-size:32px; font-weight:600; line-height:1.2">AGROCOM Acceso</div>
+            <div style="font-size:20px; color:#E8F5EE">Panel de la plataforma</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:center; padding:48px">
+          <div style="width:100%; max-width:400px; display:flex; flex-direction:column; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <div style="font-size:24px; font-weight:600">Ingresa al panel</div>
+              <div style="font-size:16px; color:var(--texto2); line-height:1.5">Solo para el equipo AGROCOM.</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <span style="font-size:14px; font-weight:500">Usuario</span>
+              <div style="height:48px; box-sizing:border-box; border:2px solid var(--primario); border-radius:10px; background:var(--superficie); padding:0 16px; display:flex; align-items:center; font-size:16px">lucia.paz</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <span style="font-size:14px; font-weight:500">Contraseña</span>
+              <div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--superficie); padding:0 4px 0 16px; display:flex; align-items:center; justify-content:space-between; font-size:16px"><span style="letter-spacing:0.2em">••••••••••</span><span style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--texto2); font-family:'Material Symbols Outlined'; font-size:20px">visibility</span></div>
+            </div>
+            <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+            <div style="font-size:14px; color:var(--texto2); text-align:center">¿Olvidaste tu contraseña? Pídele a otro super admin que la restablezca.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A01b -->
+    <div id="A01b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A01b</span><span style="font-size:14px; font-weight:500">Ingreso · cargando, credenciales incorrectas y demasiados intentos</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; padding:48px; box-sizing:border-box; box-shadow:var(--sombra3); align-items:center">
+        <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px; display:flex; flex-direction:column; gap:16px">
+          <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">cargando</span>
+          <div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); padding:0 16px; display:flex; align-items:center; font-size:16px; color:var(--texto2)">lucia.paz</div>
+          <div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); padding:0 16px; display:flex; align-items:center; font-size:16px; color:var(--texto2); letter-spacing:0.2em">••••••••••</div>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:12px; font-size:16px; font-weight:600"><span style="width:18px; height:18px; border-radius:999px; border:2px solid rgba(255,255,255,0.4); border-top-color:#FFFFFF; box-sizing:border-box"></span>Ingresando</div>
+        </div>
+        <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px; display:flex; flex-direction:column; gap:16px">
+          <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">error · AUTH_CREDENCIALES</span>
+          <div style="height:48px; box-sizing:border-box; border:2px solid var(--peligro); border-radius:10px; background:var(--superficie); padding:0 16px; display:flex; align-items:center; font-size:16px">lucia.paz</div>
+          <div style="height:48px; box-sizing:border-box; border:2px solid var(--peligro); border-radius:10px; background:var(--superficie); padding:0 16px; display:flex; align-items:center; font-size:16px; letter-spacing:0.2em">••••••••</div>
+          <span style="display:flex; gap:8px; align-items:center; color:var(--peligro); font-size:14px; font-weight:500"><span style="font-family:'Material Symbols Outlined'; font-size:20px">error</span>Credenciales incorrectas</span>
+          <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+        <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px; display:flex; flex-direction:column; gap:16px">
+          <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">error · AUTH_BLOQUEO_TEMPORAL</span>
+          <div style="background:var(--peligroSuave); color:var(--peligro); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start"><span style="font-family:'Material Symbols Outlined'; font-size:20px">lock_clock</span><span style="font-size:14px; line-height:1.5; font-weight:500">Demasiados intentos, espera unos minutos.</span></div>
+          <div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); padding:0 16px; display:flex; align-items:center; font-size:16px; color:var(--texto2)">lucia.paz</div>
+          <div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); padding:0 16px; display:flex; align-items:center; font-size:16px; color:var(--texto2)">Contraseña</div>
+          <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600">Ingresar en <span style="font-family:'IBM Plex Mono',monospace">04:32</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A02 Resumen -->
+    <div id="A02" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A02</span><span style="font-size:14px; font-weight:500">Resumen · tablero</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r0 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:32px; font-weight:600">Resumen</span><span style="font-size:16px; color:var(--texto2)">Lunes 12 de octubre · actualizado <span style="font-family:'IBM Plex Mono',monospace">10:42</span></span></div>
+            <div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Crear cuenta</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px">
+            <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px">Cuentas activas</span><span style="width:44px; height:44px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">apartment</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">38</span>
+              <span style="font-size:14px; color:#E8F5EE">de 42 cuentas · 5 por vencer</span>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Usuarios en uso</span><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">group</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">5.214</span>
+              <div style="display:flex; flex-direction:column; gap:8px"><div style="height:8px; border-radius:999px; background:var(--primarioSuave); overflow:hidden"><div style="height:100%; width:{{ usoTotal.pct }}; background:{{ usoTotal.col }}; border-radius:999px"></div></div><span style="font-size:14px; color:var(--texto2)">de <span style="font-family:'IBM Plex Mono',monospace">7.650</span> de cupo vendido · <span style="font-family:'IBM Plex Mono',monospace">{{ usoTotal.pct }}</span></span></div>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Por vencer en 30 días</span><span style="width:44px; height:44px; border-radius:14px; background:var(--advertenciaSuave); color:var(--advertencia); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">schedule</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">5</span>
+              <span style="font-size:14px; color:var(--texto2)">Suman <span style="font-family:'IBM Plex Mono',monospace">Bs 100.800</span></span>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Ingresos anuales esperados</span><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">payments</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">Bs 812.400</span>
+              <span style="font-size:14px; color:var(--texto2)">Cuentas activas y por vencer</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:24px; flex:1; min-height:0">
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px"><span style="font-size:20px; font-weight:600">Renovaciones próximas</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver cobranza</span></div>
+              <sc-for list="{{ renov }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) 112px 120px 120px; gap:16px; align-items:center; padding:0 24px; min-height:64px; border-top:1px solid var(--borde)">
+                  <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ r.nombre }}</span><span style="font-size:12px; color:var(--texto2)"><span style="font-family:'IBM Plex Mono',monospace">{{ r.cod }}</span> · vence <span style="font-family:'IBM Plex Mono',monospace">{{ r.vence }}</span></span></div>
+                  <span style="font-size:14px; color:var(--texto2)">{{ r.dias }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; text-align:right">{{ r.monto }}</span>
+                  <span style="display:flex; justify-content:flex-end"><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:{{ r.b.bg }}; color:{{ r.b.fg }}; border:1px solid {{ r.b.bd }}; font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">{{ r.b.icon }}</span>{{ r.b.label }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px"><span style="font-size:20px; font-weight:600">Últimas acciones</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver bitácora</span></div>
+              <sc-for list="{{ bita }}" as="b" hint-placeholder-count="5">
+                <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 24px; border-top:1px solid var(--borde)">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px"><span style="font-weight:600">{{ b.quien }}</span> · {{ b.accion }} · <span style="font-family:'IBM Plex Mono',monospace">{{ b.cuenta }}</span></span><span style="font-size:12px; color:var(--texto2)">{{ b.antes }} → {{ b.despues }}</span></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2); white-space:nowrap">{{ b.cuando }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A03 Cuentas -->
+    <div id="A03" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A03</span><span style="font-size:14px; font-weight:500">Cuentas · tabla</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:32px; font-weight:600">Cuentas</span><span style="font-size:16px; color:var(--texto2)">42 empresas cliente</span></div>
+            <div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Crear cuenta</div>
+          </div>
+          <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap">
+            <div style="width:320px; height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:999px; background:var(--superficie); padding:0 16px; display:flex; align-items:center; gap:8px; font-size:16px; color:var(--texto2)"><span style="font-family:'Material Symbols Outlined'; font-size:20px">search</span>Busca por nombre o código</div>
+            <div style="display:flex; gap:4px; padding:4px; border-radius:999px; background:var(--superficie); border:1px solid var(--borde)">
+              <sc-for list="{{ filtros }}" as="f" hint-placeholder-count="5"><span style="height:40px; padding:0 16px; border-radius:999px; background:{{ f.bg }}; color:{{ f.fg }}; display:flex; align-items:center; gap:8px; font-size:14px; font-weight:{{ f.w }}">{{ f.label }}<span style="font-family:'IBM Plex Mono',monospace; font-size:12px">{{ f.n }}</span></span></sc-for>
+            </div>
+          </div>
+          <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column; flex:1; min-height:0">
+            <div style="display:grid; grid-template-columns:minmax(0,2fr) 72px 120px minmax(0,1.5fr) 112px 136px 96px; gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Cuenta</span><span>Código</span><span>Plan</span><span>Usuarios</span><span>Vence</span><span>Estado</span><span style="text-align:right">Acciones</span></div>
+            <sc-for list="{{ cuentas }}" as="c" hint-placeholder-count="10">
+              <div style="display:grid; grid-template-columns:minmax(0,2fr) 72px 120px minmax(0,1.5fr) 112px 136px 96px; gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde); font-size:14px" style-hover="background:var(--fondo)">
+                <span style="font-weight:600">{{ c.nombre }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-weight:500">{{ c.cod }}</span>
+                <span style="color:var(--texto2)">{{ c.plan }}</span>
+                <div style="display:flex; align-items:center; gap:12px"><div style="flex:1; height:8px; border-radius:999px; background:var(--primarioSuave); overflow:hidden"><div style="height:100%; width:{{ c.uso.pct }}; background:{{ c.uso.col }}; border-radius:999px"></div></div><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; width:80px; text-align:right">{{ c.uso.txt }}</span></div>
+                <span style="font-family:'IBM Plex Mono',monospace">{{ c.vence }}</span>
+                <span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:{{ c.b.bg }}; color:{{ c.b.fg }}; border:1px solid {{ c.b.bd }}; font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">{{ c.b.icon }}</span>{{ c.b.label }}</span></span>
+                <span style="display:flex; gap:4px; justify-content:flex-end"><span style="width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--info); font-family:'Material Symbols Outlined'; font-size:20px" style-hover="background:var(--infoSuave)">visibility</span><span style="width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; color:var(--advertencia); font-family:'Material Symbols Outlined'; font-size:20px" style-hover="background:var(--advertenciaSuave)">edit</span></span>
+              </div>
+            </sc-for>
+            <div style="flex:1"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 16px 8px 24px; border-top:1px solid var(--borde); font-size:14px; color:var(--texto2)"><span>Mostrando <span style="font-family:'IBM Plex Mono',monospace">1–10</span> de <span style="font-family:'IBM Plex Mono',monospace">42</span></span><div style="display:flex; gap:4px; align-items:center"><span style="width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px; opacity:0.4">chevron_left</span><span style="font-family:'IBM Plex Mono',monospace; padding:0 8px">1 / 5</span><span style="width:44px; height:44px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px; color:var(--texto)">chevron_right</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A04a Crear cuenta · empresa -->
+    <div id="A04a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A04a</span><span style="font-size:14px; font-weight:500">Crear cuenta · paso 1 empresa · código ya existe</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; justify-content:center">
+          <div style="width:100%; max-width:720px; display:flex; flex-direction:column; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / Crear cuenta</span><span style="font-size:32px; font-weight:600">Crea una cuenta</span></div>
+            <div style="display:flex; align-items:center; gap:12px"><sc-for list="{{ p1 }}" as="p" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:12px; flex:{{ p.flex }}"><span style="width:32px; height:32px; flex:none; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; border:2px solid {{ p.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:{{ p.font }}; font-size:{{ p.fs }}; font-weight:600">{{ p.n }}</span><span style="font-size:14px; font-weight:{{ p.w }}; color:{{ p.tc }}; white-space:nowrap">{{ p.label }}</span><span style="flex:1; height:2px; background:{{ p.linea }}; display:{{ p.lineaDisp }}"></span></div></sc-for></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px; display:flex; flex-direction:column; gap:24px">
+              <span style="font-size:20px; font-weight:600">Datos de la empresa</span>
+              <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Razón social</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px">Agrícola Guarayos S.A.</div></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">NIT</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px; font-family:'IBM Plex Mono',monospace">2876501019</div></div>
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Ciudad</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 8px 0 16px; display:flex; align-items:center; justify-content:space-between; font-size:16px">Ascensión de Guarayos<span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">expand_more</span></div></div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px">
+                <span style="font-size:14px; font-weight:500">Código de cuenta · 3 letras</span>
+                <div style="display:flex; gap:16px; align-items:center">
+                  <div style="width:144px; height:48px; box-sizing:border-box; border:2px solid var(--peligro); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:20px; font-weight:600; letter-spacing:0.12em; font-family:'IBM Plex Mono',monospace">AGR</div>
+                  <span style="display:flex; gap:8px; align-items:center; color:var(--peligro); font-size:14px; font-weight:500"><span style="font-family:'Material Symbols Outlined'; font-size:20px">error</span>Ese código ya es de Agroindustrial Norte</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap"><span style="font-size:14px; color:var(--texto2)">Disponibles:</span><span style="height:32px; padding:0 12px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500">AGU</span><span style="height:32px; padding:0 12px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500">AGY</span><span style="height:32px; padding:0 12px; border-radius:999px; border:1px solid var(--borde); display:flex; align-items:center; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500">GUA</span></div>
+                <span style="font-size:12px; color:var(--texto2)">Es el inicio del PIN de todos los usuarios de la cuenta. No se puede cambiar después.</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Contacto de facturación</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px">Rodrigo Añez</div></div>
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Teléfono</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px; font-family:'IBM Plex Mono',monospace">7 712 4405</div></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between"><div style="height:48px; padding:0 24px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; font-size:16px; font-weight:600">Cancelar</div><div style="height:48px; padding:0 32px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; font-size:16px; font-weight:600">Continuar</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A04b Crear cuenta · plan -->
+    <div id="A04b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A04b</span><span style="font-size:14px; font-weight:500">Crear cuenta · paso 2 plan</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; justify-content:center">
+          <div style="width:100%; max-width:960px; display:flex; flex-direction:column; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / Crear cuenta · Agrícola Guarayos · <span style="font-family:'IBM Plex Mono',monospace">AGU</span></span><span style="font-size:32px; font-weight:600">Elige el plan</span></div>
+            <div style="display:flex; align-items:center; gap:12px; max-width:720px"><sc-for list="{{ p2 }}" as="p" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:12px; flex:{{ p.flex }}"><span style="width:32px; height:32px; flex:none; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; border:2px solid {{ p.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:{{ p.font }}; font-size:{{ p.fs }}; font-weight:600">{{ p.n }}</span><span style="font-size:14px; font-weight:{{ p.w }}; color:{{ p.tc }}; white-space:nowrap">{{ p.label }}</span><span style="flex:1; height:2px; background:{{ p.linea }}; display:{{ p.lineaDisp }}"></span></div></sc-for></div>
+            <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px">
+              <sc-for list="{{ planes }}" as="pl" hint-placeholder-count="3">
+                <div style="background:var(--superficie); border-radius:20px; border:{{ pl.bw }} solid {{ pl.bd }}; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:24px" style-hover="box-shadow:var(--sombra3)">
+                  <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="width:48px; height:48px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">group</span><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ pl.rc }}; font-variation-settings:{{ pl.fill }}">{{ pl.radio }}</span></div>
+                  <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Hasta</span><span style="font-size:32px; font-weight:600"><span style="font-family:'IBM Plex Mono',monospace">{{ pl.cupo }}</span> usuarios</span></div>
+                  <div style="display:flex; flex-direction:column; gap:4px"><span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600">{{ pl.precio }}</span><span style="font-size:14px; color:var(--texto2)">al año · un solo pago</span></div>
+                  <div style="height:1px; background:var(--borde)"></div>
+                  <div style="display:flex; flex-direction:column; gap:12px; font-size:14px"><span style="display:flex; gap:8px; align-items:center"><span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--primario)">all_inclusive</span>QR ilimitados</span><span style="display:flex; gap:8px; align-items:center"><span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--primario)">door_front</span>Sitios y puertas sin límite</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--infoSuave); color:var(--info); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start"><span style="font-family:'Material Symbols Outlined'; font-size:20px">info</span><span style="font-size:14px; line-height:1.5">Precios de ejemplo; se editan en Planes. El único límite es el cupo de usuarios activos. Para pasar el cupo, la cuenta cambia a un plan mayor.</span></div>
+            <div style="flex:1"></div>
+            <div style="display:flex; justify-content:space-between"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">arrow_back</span>Atrás</div><div style="height:48px; padding:0 32px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:16px; font-weight:600">Continuar</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A04c Vigencia y admin -->
+    <div id="A04c" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A04c</span><span style="font-size:14px; font-weight:500">Crear cuenta · paso 3 vigencia y administrador inicial</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; justify-content:center">
+          <div style="width:100%; max-width:720px; display:flex; flex-direction:column; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / Crear cuenta · Agrícola Guarayos · <span style="font-family:'IBM Plex Mono',monospace">AGU</span></span><span style="font-size:32px; font-weight:600">Vigencia y administrador</span></div>
+            <div style="display:flex; align-items:center; gap:12px"><sc-for list="{{ p3 }}" as="p" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:12px; flex:{{ p.flex }}"><span style="width:32px; height:32px; flex:none; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; border:2px solid {{ p.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:{{ p.font }}; font-size:{{ p.fs }}; font-weight:600">{{ p.n }}</span><span style="font-size:14px; font-weight:{{ p.w }}; color:{{ p.tc }}; white-space:nowrap">{{ p.label }}</span><span style="flex:1; height:2px; background:{{ p.linea }}; display:{{ p.lineaDisp }}"></span></div></sc-for></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:32px; display:flex; flex-direction:column; gap:24px">
+              <span style="font-size:20px; font-weight:600">Vigencia</span>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Inicio</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 8px 0 16px; display:flex; align-items:center; justify-content:space-between; font-size:16px; font-family:'IBM Plex Mono',monospace">12/10/2026<span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--texto2)">calendar_today</span></div></div>
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Vence</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); padding:0 16px; display:flex; align-items:center; font-size:16px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">12/10/2027</div><span style="font-size:12px; color:var(--texto2)">12 meses desde el inicio</span></div>
+              </div>
+              <div style="height:1px; background:var(--borde)"></div>
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:20px; font-weight:600">Administrador inicial</span><span style="font-size:14px; color:var(--texto2)">Recibe el primer PIN y crea al resto de los usuarios desde la app.</span></div>
+              <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Nombre o etiqueta</span><div style="height:48px; box-sizing:border-box; border:2px solid var(--primario); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px">Rodrigo Añez</div></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Correo · opcional</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px">rodrigo@guarayos.bo</div></div>
+                <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:14px; font-weight:500">Teléfono · opcional</span><div style="height:48px; box-sizing:border-box; border:1px solid var(--borde); border-radius:10px; padding:0 16px; display:flex; align-items:center; font-size:16px; font-family:'IBM Plex Mono',monospace">7 712 4405</div></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">arrow_back</span>Atrás</div><div style="height:48px; padding:0 32px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:16px; font-weight:600">Continuar</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A04d Confirmar -->
+    <div id="A04d" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A04d</span><span style="font-size:14px; font-weight:500">Crear cuenta · paso 4 confirmar</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; justify-content:center">
+          <div style="width:100%; max-width:720px; display:flex; flex-direction:column; gap:24px">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / Crear cuenta</span><span style="font-size:32px; font-weight:600">Revisa y confirma</span></div>
+            <div style="display:flex; align-items:center; gap:12px"><sc-for list="{{ p4 }}" as="p" hint-placeholder-count="4"><div style="display:flex; align-items:center; gap:12px; flex:{{ p.flex }}"><span style="width:32px; height:32px; flex:none; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; border:2px solid {{ p.bd }}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; font-family:{{ p.font }}; font-size:{{ p.fs }}; font-weight:600">{{ p.n }}</span><span style="font-size:14px; font-weight:{{ p.w }}; color:{{ p.tc }}; white-space:nowrap">{{ p.label }}</span><span style="flex:1; height:2px; background:{{ p.linea }}; display:{{ p.lineaDisp }}"></span></div></sc-for></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:8px 32px; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid var(--borde)"><span style="font-size:16px; font-weight:600">Empresa</span><span style="height:44px; display:flex; align-items:center; font-size:14px; font-weight:600; color:var(--primario)">Editar</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; font-size:14px"><span style="color:var(--texto2)">Razón social</span><span style="font-weight:500">Agrícola Guarayos S.A.</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; font-size:14px"><span style="color:var(--texto2)">Código · NIT</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:500">AGU · 2876501019</span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-top:1px solid var(--borde); border-bottom:1px solid var(--borde)"><span style="font-size:16px; font-weight:600">Plan y vigencia</span><span style="height:44px; display:flex; align-items:center; font-size:14px; font-weight:600; color:var(--primario)">Editar</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; font-size:14px"><span style="color:var(--texto2)">Plan</span><span style="font-weight:500">Hasta 200 usuarios · QR ilimitados</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; font-size:14px"><span style="color:var(--texto2)">Precio anual</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:500">Bs 21.600</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; font-size:14px"><span style="color:var(--texto2)">Vigencia</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:500">12/10/2026 – 12/10/2027</span></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-top:1px solid var(--borde); border-bottom:1px solid var(--borde)"><span style="font-size:16px; font-weight:600">Administrador inicial</span><span style="height:44px; display:flex; align-items:center; font-size:14px; font-weight:600; color:var(--primario)">Editar</span></div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0 16px; font-size:14px"><span style="color:var(--texto2)">Nombre</span><span style="font-weight:500">Rodrigo Añez · rodrigo@guarayos.bo</span></div>
+            </div>
+            <div style="display:flex; justify-content:space-between"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">arrow_back</span>Atrás</div><div style="height:48px; padding:0 32px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">check</span>Crear cuenta</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A04e PIN -->
+    <div id="A04e" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A04e</span><span style="font-size:14px; font-weight:500">Cuenta creada · PIN del administrador, una sola vez</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:var(--sombra3)">
+        <div style="width:100%; max-width:560px; background:var(--superficie); border-radius:20px; box-shadow:var(--sombra3); padding:48px; box-sizing:border-box; display:flex; flex-direction:column; gap:24px; align-items:center; text-align:center">
+          <span style="width:64px; height:64px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px; font-variation-settings:'FILL' 1">check_circle</span>
+          <div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:24px; font-weight:600">Cuenta creada</span><span style="font-size:16px; color:var(--texto2)">Agrícola Guarayos ya puede ingresar a la app.</span></div>
+          <div style="width:100%; background:var(--fondo); border-radius:14px; padding:24px; box-sizing:border-box; display:flex; flex-direction:column; gap:16px; align-items:center">
+            <span style="font-size:14px; color:var(--texto2)">PIN de Rodrigo Añez · Administrador</span>
+            <div style="display:flex; gap:16px">
+              <div style="display:flex; gap:8px"><sc-for list="{{ pin.a }}" as="c" hint-placeholder-count="3"><div style="width:48px; height:64px; border-radius:10px; background:var(--superficie); border:1px solid var(--borde); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">{{ c }}</div></sc-for></div>
+              <div style="display:flex; gap:8px"><sc-for list="{{ pin.b }}" as="c" hint-placeholder-count="4"><div style="width:48px; height:64px; border-radius:10px; background:var(--superficie); border:1px solid var(--borde); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">{{ c }}</div></sc-for></div>
+            </div>
+            <div style="height:44px; padding:0 20px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">content_copy</span>Copiar PIN</div>
+          </div>
+          <div style="width:100%; box-sizing:border-box; background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:12px 16px; display:flex; gap:12px; align-items:flex-start; text-align:left"><span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility_lock</span><span style="font-size:14px; line-height:1.5; font-weight:500">Este PIN no se vuelve a mostrar. Cópialo y entrégalo al administrador. Si se pierde, tendrás que restablecerlo.</span></div>
+          <div style="width:100%; height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ya lo copié, ir a la cuenta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A05a Detalle · Resumen -->
+    <div id="A05a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A05a</span><span style="font-size:14px; font-weight:500">Detalle de cuenta · Resumen</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / <span style="font-family:'IBM Plex Mono',monospace">AGR</span></span><div style="display:flex; align-items:center; gap:12px"><span style="font-size:32px; font-weight:600">Agroindustrial Norte</span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:var(--advertenciaSuave); color:var(--advertencia); font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">schedule</span>Por vencer</span></div></div>
+            <div style="display:flex; gap:12px"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">swap_vert</span>Cambiar plan</div><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">autorenew</span>Renovar</div></div>
+          </div>
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--borde)"><sc-for list="{{ t0 }}" as="t" hint-placeholder-count="4"><span style="height:48px; padding:0 16px; display:flex; align-items:center; font-size:14px; font-weight:{{ t.w }}; color:{{ t.fg }}; border-bottom:2px solid {{ t.bd }}; margin-bottom:-1px">{{ t.label }}</span></sc-for></div>
+          <div style="display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:24px">
+            <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:24px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:#E8F5EE">Plan actual</span><span style="font-size:32px; font-weight:600">Hasta <span style="font-family:'IBM Plex Mono',monospace">100</span> usuarios</span><span style="font-size:16px">QR ilimitados · <span style="font-family:'IBM Plex Mono',monospace">Bs 12.000</span> al año</span></div><span style="width:56px; height:56px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px">workspace_premium</span></div>
+              <div style="display:flex; flex-direction:column; gap:8px"><div style="display:flex; justify-content:space-between; font-size:14px"><span>Usuarios activos</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:600">87 / 100</span></div><div style="height:12px; border-radius:999px; background:var(--heroAcento); overflow:hidden"><div style="height:100%; width:87%; background:#FFFFFF; border-radius:999px"></div></div><span style="font-size:14px; color:#E8F5EE">Puede crear 13 usuarios más</span></div>
+              <div style="display:flex; gap:12px; align-items:center; background:var(--heroAcento); border-radius:14px; padding:12px 16px"><span style="font-family:'Material Symbols Outlined'; font-size:20px">event</span><span style="font-size:14px">Vence el <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">05/11/2026</span>, en 24 días. Después, los accesos se rechazan con "Suscripción vencida".</span></div>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:8px 24px; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0"><span style="font-size:16px; font-weight:600">Empresa</span><span style="height:44px; display:flex; align-items:center; gap:4px; font-size:14px; font-weight:600; color:var(--advertencia)"><span style="font-family:'Material Symbols Outlined'; font-size:20px">edit</span>Editar</span></div>
+              <sc-for list="{{ datosEmpresa }}" as="d" hint-placeholder-count="6"><div style="display:grid; grid-template-columns:128px 1fr; gap:16px; padding:12px 0; border-top:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">{{ d.k }}</span><span style="font-weight:500">{{ d.v }}</span></div></sc-for>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px">
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Sitios y puertas</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">2 · 5</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">door_front</span></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Dispositivos sin conexión</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; color:var(--peligro)">2</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">wifi_off</span></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Administradores</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">2</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">admin_panel_settings</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A05b Detalle · Suscripción -->
+    <div id="A05b" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A05b</span><span style="font-size:14px; font-weight:500">Detalle de cuenta · Suscripción</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / <span style="font-family:'IBM Plex Mono',monospace">AGR</span></span><div style="display:flex; align-items:center; gap:12px"><span style="font-size:32px; font-weight:600">Agroindustrial Norte</span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:var(--advertenciaSuave); color:var(--advertencia); font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">schedule</span>Por vencer</span></div></div>
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--borde)"><sc-for list="{{ t1 }}" as="t" hint-placeholder-count="4"><span style="height:48px; padding:0 16px; display:flex; align-items:center; font-size:14px; font-weight:{{ t.w }}; color:{{ t.fg }}; border-bottom:2px solid {{ t.bd }}; margin-bottom:-1px">{{ t.label }}</span></sc-for></div>
+          <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px 32px; display:flex; justify-content:space-between; align-items:center; gap:24px">
+            <div style="display:grid; grid-template-columns:repeat(4,auto); gap:48px">
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Plan</span><span style="font-size:20px; font-weight:600">100 usuarios</span></div>
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Precio anual</span><span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600">Bs 12.000</span></div>
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Periodo</span><span style="font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600">05/11/2025 – 05/11/2026</span></div>
+              <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Próximo pago</span><span style="font-size:20px; font-weight:600; color:var(--advertencia)">Pendiente</span></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">autorenew</span>Renovar y registrar pago</div><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">swap_vert</span>Cambiar plan</div><div style="flex:1"></div><div style="height:48px; padding:0 24px; border-radius:999px; border:1px solid var(--peligro); box-sizing:border-box; color:var(--peligro); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600" style-hover="background:var(--peligroSuave)"><span style="font-family:'Material Symbols Outlined'; font-size:20px">pause_circle</span>Suspender</div></div>
+          <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+            <div style="padding:16px 24px"><span style="font-size:20px; font-weight:600">Renovaciones y pagos</span></div>
+            <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 120px 112px 112px 128px 128px minmax(0,1fr); gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Periodo</span><span>Plan</span><span style="text-align:right">Monto</span><span>Pagado</span><span>Medio</span><span>Referencia</span><span>Registró</span></div>
+            <sc-for list="{{ historial }}" as="h" hint-placeholder-count="2">
+              <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 120px 112px 112px 128px 128px minmax(0,1fr); gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde); font-size:14px">
+                <span style="font-family:'IBM Plex Mono',monospace">{{ h.periodo }}</span><span style="color:var(--texto2)">{{ h.plan }}</span><span style="font-family:'IBM Plex Mono',monospace; text-align:right">{{ h.monto }}</span><span style="font-family:'IBM Plex Mono',monospace">{{ h.fecha }}</span><span>{{ h.medio }}</span><span style="font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ h.ref }}</span><span style="color:var(--texto2)">{{ h.por }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A05c Detalle · Sitios y puertas -->
+    <div id="A05c" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A05c</span><span style="font-size:14px; font-weight:500">Detalle de cuenta · Sitios y puertas (solo lectura)</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / <span style="font-family:'IBM Plex Mono',monospace">AGR</span></span><div style="display:flex; align-items:center; gap:12px"><span style="font-size:32px; font-weight:600">Agroindustrial Norte</span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:var(--advertenciaSuave); color:var(--advertencia); font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">schedule</span>Por vencer</span></div></div>
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--borde)"><sc-for list="{{ t2 }}" as="t" hint-placeholder-count="4"><span style="height:48px; padding:0 16px; display:flex; align-items:center; font-size:14px; font-weight:{{ t.w }}; color:{{ t.fg }}; border-bottom:2px solid {{ t.bd }}; margin-bottom:-1px">{{ t.label }}</span></sc-for></div>
+          <div style="display:flex; gap:12px; align-items:center; font-size:14px; color:var(--texto2)"><span style="font-family:'Material Symbols Outlined'; font-size:20px">info</span>Los sitios y puertas los administra la cuenta desde la app. Aquí solo se consultan.</div>
+          <sc-for list="{{ sitios }}" as="s" hint-placeholder-count="2">
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+              <div style="display:flex; align-items:center; gap:12px; padding:16px 24px"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--primario)">location_on</span><span style="font-size:20px; font-weight:600">{{ s.nombre }}</span></div>
+              <div style="display:grid; grid-template-columns:minmax(0,1.5fr) 160px 160px minmax(0,1fr); gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Puerta</span><span>Dispositivo</span><span>Última señal</span><span style="text-align:right">Estado</span></div>
+              <sc-for list="{{ s.puertas }}" as="p" hint-placeholder-count="3">
+                <div style="display:grid; grid-template-columns:minmax(0,1.5fr) 160px 160px minmax(0,1fr); gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde); font-size:14px">
+                  <span style="font-weight:500">{{ p.nombre }}</span><span style="font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ p.disp }}</span><span style="font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ p.senal }}</span>
+                  <span style="display:flex; justify-content:flex-end"><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:{{ p.bg }}; color:{{ p.fg }}; font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">{{ p.icon }}</span>{{ p.estado }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- A05d Detalle · Bitácora -->
+    <div id="A05d" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">A05d</span><span style="font-size:14px; font-weight:500">Detalle de cuenta · Bitácora de la cuenta</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / <span style="font-family:'IBM Plex Mono',monospace">AGR</span></span><div style="display:flex; align-items:center; gap:12px"><span style="font-size:32px; font-weight:600">Agroindustrial Norte</span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:var(--advertenciaSuave); color:var(--advertencia); font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">schedule</span>Por vencer</span></div></div>
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--borde)"><sc-for list="{{ t3 }}" as="t" hint-placeholder-count="4"><span style="height:48px; padding:0 16px; display:flex; align-items:center; font-size:14px; font-weight:{{ t.w }}; color:{{ t.fg }}; border-bottom:2px solid {{ t.bd }}; margin-bottom:-1px">{{ t.label }}</span></sc-for></div>
+          <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+            <div style="display:grid; grid-template-columns:152px 140px minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 96px; gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Cuándo</span><span>Quién</span><span>Qué</span><span>Antes</span><span>Después</span><span>Origen</span></div>
+            <sc-for list="{{ bitaCuenta }}" as="b" hint-placeholder-count="6">
+              <div style="display:grid; grid-template-columns:152px 140px minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr) 96px; gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde); font-size:14px">
+                <span style="font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ b.cuando }}</span><span style="font-weight:500">{{ b.quien }}</span><span>{{ b.accion }}</span><span style="color:var(--texto2)">{{ b.antes }}</span><span>{{ b.despues }}</span>
+                <span><span style="display:inline-flex; align-items:center; height:24px; padding:0 8px; border-radius:6px; background:var(--fondo); color:var(--texto2); font-size:12px; font-weight:600">{{ b.origen }}</span></span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<section style="--fondo:#121614; --superficie:#1C211E; --superficieElevada:#242A26; --borde:#2C332E; --texto:#E6EAE7; --texto2:#A3ABA5; --primario:#5CB683; --primarioHover:#93D0AB; --sobrePrimario:#002F13; --primarioSuave:#002F13; --peligro:#EF7A7A; --peligroSuave:#3A1C1C; --advertencia:#F2B54A; --advertenciaSuave:#33270F; --info:#7EB6F2; --infoSuave:#14263A; --hero:#00451C; --sobreHero:#FFFFFF; --heroAcento:#005824; --heroBoton:#FFFFFF; --sobreHeroBoton:#00451C; --sombra1:none; --sombra3:none; padding:48px; display:flex; flex-direction:column; gap:24px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Panel · 1440×900 · tema oscuro · referencia</div>
+    <div style="font-size:16px; color:#5B635D; max-width:880px; text-wrap:pretty">Dos pantallas de referencia; el resto se resuelve con los mismos tokens. Sin sombras: la elevación es superficie (#1C211E) sobre fondo (#121614). Primario #5CB683 lleva texto verde900.</div>
+  </div>
+  <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+    <!-- A02 Resumen -->
+    <div id="AD02" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">AD02</span><span style="font-size:14px; font-weight:500">Resumen · tema oscuro</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r0 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:32px; font-weight:600">Resumen</span><span style="font-size:16px; color:var(--texto2)">Lunes 12 de octubre · actualizado <span style="font-family:'IBM Plex Mono',monospace">10:42</span></span></div>
+            <div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Crear cuenta</div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px">
+            <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px">Cuentas activas</span><span style="width:44px; height:44px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">apartment</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">38</span>
+              <span style="font-size:14px; color:#E8F5EE">de 42 cuentas · 5 por vencer</span>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Usuarios en uso</span><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">group</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">5.214</span>
+              <div style="display:flex; flex-direction:column; gap:8px"><div style="height:8px; border-radius:999px; background:var(--primarioSuave); overflow:hidden"><div style="height:100%; width:{{ usoTotal.pct }}; background:{{ usoTotal.col }}; border-radius:999px"></div></div><span style="font-size:14px; color:var(--texto2)">de <span style="font-family:'IBM Plex Mono',monospace">7.650</span> de cupo vendido · <span style="font-family:'IBM Plex Mono',monospace">{{ usoTotal.pct }}</span></span></div>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Por vencer en 30 días</span><span style="width:44px; height:44px; border-radius:14px; background:var(--advertenciaSuave); color:var(--advertencia); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">schedule</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">5</span>
+              <span style="font-size:14px; color:var(--texto2)">Suman <span style="font-family:'IBM Plex Mono',monospace">Bs 100.800</span></span>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><span style="font-size:16px; color:var(--texto2)">Ingresos anuales esperados</span><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">payments</span></div>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">Bs 812.400</span>
+              <span style="font-size:14px; color:var(--texto2)">Cuentas activas y por vencer</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:24px; flex:1; min-height:0">
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px"><span style="font-size:20px; font-weight:600">Renovaciones próximas</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver cobranza</span></div>
+              <sc-for list="{{ renov }}" as="r" hint-placeholder-count="5">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) 112px 120px 120px; gap:16px; align-items:center; padding:0 24px; min-height:64px; border-top:1px solid var(--borde)">
+                  <div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">{{ r.nombre }}</span><span style="font-size:12px; color:var(--texto2)"><span style="font-family:'IBM Plex Mono',monospace">{{ r.cod }}</span> · vence <span style="font-family:'IBM Plex Mono',monospace">{{ r.vence }}</span></span></div>
+                  <span style="font-size:14px; color:var(--texto2)">{{ r.dias }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; text-align:right">{{ r.monto }}</span>
+                  <span style="display:flex; justify-content:flex-end"><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:{{ r.b.bg }}; color:{{ r.b.fg }}; border:1px solid {{ r.b.bd }}; font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">{{ r.b.icon }}</span>{{ r.b.label }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px"><span style="font-size:20px; font-weight:600">Últimas acciones</span><span style="font-size:14px; font-weight:600; color:var(--primario)">Ver bitácora</span></div>
+              <sc-for list="{{ bita }}" as="b" hint-placeholder-count="5">
+                <div style="display:flex; gap:12px; align-items:flex-start; padding:12px 24px; border-top:1px solid var(--borde)">
+                  <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px"><span style="font-size:14px"><span style="font-weight:600">{{ b.quien }}</span> · {{ b.accion }} · <span style="font-family:'IBM Plex Mono',monospace">{{ b.cuenta }}</span></span><span style="font-size:12px; color:var(--texto2)">{{ b.antes }} → {{ b.despues }}</span></div>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2); white-space:nowrap">{{ b.cuando }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A05a Detalle · Resumen -->
+    <div id="AD05a" style="display:flex; flex-direction:column; gap:12px">
+      <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">AD05a</span><span style="font-size:14px; font-weight:500">Detalle de cuenta · Resumen · tema oscuro</span></div>
+      <div style="width:1440px; height:900px; background:var(--fondo); color:var(--texto); border-radius:20px; overflow:hidden; display:flex; box-shadow:var(--sombra3)">
+        <div style="width:240px; flex:none; background:var(--superficie); border-right:1px solid var(--borde); padding:24px 12px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; align-items:center; gap:12px; padding:0 12px"><div style="width:32px; height:32px; border-radius:10px; background:repeating-linear-gradient(135deg,#C5E6D2 0 4px,#E8F5EE 4px 8px)"></div><div style="display:flex; flex-direction:column"><span style="font-size:16px; font-weight:600">AGROCOM Acceso</span><span style="font-size:12px; color:var(--texto2)">Plataforma</span></div></div>
+          <div style="display:flex; flex-direction:column; gap:4px"><sc-for list="{{ rail.r1 }}" as="n" hint-placeholder-count="6"><div style="height:48px; border-radius:999px; background:{{ n.pill }}; color:{{ n.fg }}; display:flex; align-items:center; gap:12px; padding:0 16px; font-size:14px; font-weight:{{ n.w }}"><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:{{ n.ic }}; font-variation-settings:{{ n.fill }}">{{ n.icon }}</span>{{ n.label }}</div></sc-for></div>
+          <div style="flex:1"></div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--fondo)"><div style="width:40px; height:40px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600">LP</div><div style="display:flex; flex-direction:column; gap:2px"><span style="font-size:14px; font-weight:600">Lucía Paz</span><span style="font-size:12px; color:var(--texto2)">Super admin</span></div></div>
+        </div>
+        <div style="flex:1; overflow:hidden; padding:32px 48px; display:flex; flex-direction:column; gap:24px">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end">
+            <div style="display:flex; flex-direction:column; gap:4px"><span style="font-size:14px; color:var(--texto2)">Cuentas / <span style="font-family:'IBM Plex Mono',monospace">AGR</span></span><div style="display:flex; align-items:center; gap:12px"><span style="font-size:32px; font-weight:600">Agroindustrial Norte</span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px 0 6px; border-radius:999px; background:var(--advertenciaSuave); color:var(--advertencia); font-size:12px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:16px">schedule</span>Por vencer</span></div></div>
+            <div style="display:flex; gap:12px"><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">swap_vert</span>Cambiar plan</div><div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">autorenew</span>Renovar</div></div>
+          </div>
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--borde)"><sc-for list="{{ t0 }}" as="t" hint-placeholder-count="4"><span style="height:48px; padding:0 16px; display:flex; align-items:center; font-size:14px; font-weight:{{ t.w }}; color:{{ t.fg }}; border-bottom:2px solid {{ t.bd }}; margin-bottom:-1px">{{ t.label }}</span></sc-for></div>
+          <div style="display:grid; grid-template-columns:minmax(0,7fr) minmax(0,5fr); gap:24px">
+            <div style="background:var(--hero); color:var(--sobreHero); border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:24px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:#E8F5EE">Plan actual</span><span style="font-size:32px; font-weight:600">Hasta <span style="font-family:'IBM Plex Mono',monospace">100</span> usuarios</span><span style="font-size:16px">QR ilimitados · <span style="font-family:'IBM Plex Mono',monospace">Bs 12.000</span> al año</span></div><span style="width:56px; height:56px; border-radius:14px; background:var(--heroAcento); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px">workspace_premium</span></div>
+              <div style="display:flex; flex-direction:column; gap:8px"><div style="display:flex; justify-content:space-between; font-size:14px"><span>Usuarios activos</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:600">87 / 100</span></div><div style="height:12px; border-radius:999px; background:var(--heroAcento); overflow:hidden"><div style="height:100%; width:87%; background:#FFFFFF; border-radius:999px"></div></div><span style="font-size:14px; color:#E8F5EE">Puede crear 13 usuarios más</span></div>
+              <div style="display:flex; gap:12px; align-items:center; background:var(--heroAcento); border-radius:14px; padding:12px 16px"><span style="font-family:'Material Symbols Outlined'; font-size:20px">event</span><span style="font-size:14px">Vence el <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">05/11/2026</span>, en 24 días. Después, los accesos se rechazan con "Suscripción vencida".</span></div>
+            </div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:8px 24px; display:flex; flex-direction:column">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0"><span style="font-size:16px; font-weight:600">Empresa</span><span style="height:44px; display:flex; align-items:center; gap:4px; font-size:14px; font-weight:600; color:var(--advertencia)"><span style="font-family:'Material Symbols Outlined'; font-size:20px">edit</span>Editar</span></div>
+              <sc-for list="{{ datosEmpresa }}" as="d" hint-placeholder-count="6"><div style="display:grid; grid-template-columns:128px 1fr; gap:16px; padding:12px 0; border-top:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">{{ d.k }}</span><span style="font-weight:500">{{ d.v }}</span></div></sc-for>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px">
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Sitios y puertas</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">2 · 5</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">door_front</span></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Dispositivos sin conexión</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; color:var(--peligro)">2</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">wifi_off</span></div>
+            <div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; justify-content:space-between; align-items:flex-start"><div style="display:flex; flex-direction:column; gap:8px"><span style="font-size:16px; color:var(--texto2)">Administradores</span><span style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">2</span></div><span style="width:44px; height:44px; border-radius:14px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:24px">admin_panel_settings</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SUS = {
+  activa: { label: 'Activa', icon: 'check_circle', bg: 'var(--primarioSuave)', fg: 'var(--primario)', bd: 'transparent' },
+  porVencer: { label: 'Por vencer', icon: 'schedule', bg: 'var(--advertenciaSuave)', fg: 'var(--advertencia)', bd: 'transparent' },
+  vencida: { label: 'Vencida', icon: 'event_busy', bg: 'var(--peligroSuave)', fg: 'var(--peligro)', bd: 'transparent' },
+  suspendida: { label: 'Suspendida', icon: 'pause_circle', bg: 'var(--fondo)', fg: 'var(--texto2)', bd: 'var(--borde)' }
+};
+const RAIL = [['space_dashboard', 'Resumen'], ['apartment', 'Cuentas'], ['payments', 'Cobranza'], ['sell', 'Planes'], ['history', 'Bitácora'], ['group', 'Equipo AGROCOM']];
+const mk = idx => RAIL.map(([icon, label], i) => ({
+  icon, label, pill: i === idx ? 'var(--primarioSuave)' : 'transparent', ic: i === idx ? 'var(--primario)' : 'var(--texto2)',
+  fg: i === idx ? 'var(--texto)' : 'var(--texto2)', fill: i === idx ? "'FILL' 1" : "'FILL' 0", w: i === idx ? 600 : 500
+}));
+const uso = (u, c) => { const p = Math.round(u / c * 100); return { txt: u + ' / ' + c, pct: p + '%', col: p >= 100 ? 'var(--peligro)' : p >= 90 ? 'var(--advertencia)' : 'var(--primario)' }; };
+const cta = (nombre, cod, plan, u, vence, est, extra) => Object.assign({ nombre, cod, plan: plan + ' usuarios', uso: uso(u, plan), vence, b: SUS[est] }, extra || {});
+const pasos = act => ['Empresa', 'Plan', 'Vigencia y admin', 'Confirmar'].map((label, i) => {
+  const done = i < act, cur = i === act;
+  return { label, n: done ? 'check' : String(i + 1), font: done ? "'Material Symbols Outlined'" : "'IBM Plex Mono',monospace", fs: done ? '18px' : '14px',
+    bg: done || cur ? 'var(--primario)' : 'var(--superficie)', fg: done || cur ? 'var(--sobrePrimario)' : 'var(--texto2)', bd: done || cur ? 'var(--primario)' : 'var(--borde)',
+    tc: done || cur ? 'var(--texto)' : 'var(--texto2)', w: cur ? 600 : 500, linea: done ? 'var(--primario)' : 'var(--borde)', lineaDisp: i < 3 ? 'block' : 'none', flex: i < 3 ? '1' : 'none' };
+});
+const tabs = idx => ['Resumen', 'Suscripción', 'Sitios y puertas', 'Bitácora'].map((label, i) => ({ label, fg: i === idx ? 'var(--primario)' : 'var(--texto2)', bd: i === idx ? 'var(--primario)' : 'transparent', w: i === idx ? 600 : 500 }));
+const plan = (cupo, precio, sel) => ({ cupo, precio, bd: sel ? 'var(--primario)' : 'var(--borde)', bw: sel ? '2px' : '1px', radio: sel ? 'radio_button_checked' : 'radio_button_unchecked', rc: sel ? 'var(--primario)' : 'var(--texto2)', fill: sel ? "'FILL' 1" : "'FILL' 0", bg: sel ? 'var(--primarioSuave)' : 'var(--superficie)' });
+const ON = { estado: 'En línea', icon: 'wifi', bg: 'var(--primarioSuave)', fg: 'var(--primario)' };
+const OFF = { estado: 'Sin conexión', icon: 'wifi_off', bg: 'var(--peligroSuave)', fg: 'var(--peligro)' };
+class Component extends DCLogic {
+  renderVals() {
+    const cuentas = [
+      cta('Agroindustrial Norte', 'AGR', 100, 87, '05/11/2026', 'porVencer'),
+      cta('Frigorífico Oriente', 'FRO', 200, 164, '22/03/2027', 'activa'),
+      cta('Ingenio Guapay', 'IGU', 350, 301, '30/06/2027', 'activa'),
+      cta('Semillas del Este', 'SDE', 100, 100, '18/10/2026', 'porVencer'),
+      cta('Lácteos Montero', 'LAM', 200, 122, '02/10/2026', 'vencida'),
+      cta('Transportes Pailón', 'TPA', 100, 41, '15/01/2027', 'suspendida'),
+      cta('Avícola Cotoca', 'AVC', 200, 188, '09/08/2027', 'activa'),
+      cta('Granos Okinawa', 'GOK', 350, 210, '27/04/2027', 'activa'),
+      cta('Hortalizas Portachuelo', 'HPO', 200, 96, '09/11/2026', 'porVencer'),
+      cta('Molinos Yapacaní', 'MYA', 350, 342, '10/11/2026', 'porVencer')
+    ];
+    const renov = [
+      { nombre: 'Semillas del Este', cod: 'SDE', vence: '18/10/2026', dias: 'en 6 días', monto: 'Bs 12.000', b: SUS.porVencer },
+      { nombre: 'Agroindustrial Norte', cod: 'AGR', vence: '05/11/2026', dias: 'en 24 días', monto: 'Bs 12.000', b: SUS.porVencer },
+      { nombre: 'Hortalizas Portachuelo', cod: 'HPO', vence: '09/11/2026', dias: 'en 28 días', monto: 'Bs 21.600', b: SUS.porVencer },
+      { nombre: 'Molinos Yapacaní', cod: 'MYA', vence: '10/11/2026', dias: 'en 29 días', monto: 'Bs 33.600', b: SUS.porVencer },
+      { nombre: 'Lácteos Montero', cod: 'LAM', vence: '02/10/2026', dias: 'hace 10 días', monto: 'Bs 21.600', b: SUS.vencida }
+    ];
+    const bita = [
+      { cuando: 'Hoy 10:12', quien: 'Lucía Paz', accion: 'Registró pago', cuenta: 'FRO', antes: 'vence 22/03/2026', despues: 'vence 22/03/2027', origen: 'Panel' },
+      { cuando: 'Hoy 09:40', quien: 'Marco Suárez', accion: 'Cambió plan', cuenta: 'AVC', antes: '100 usuarios', despues: '200 usuarios', origen: 'Panel' },
+      { cuando: 'Ayer 17:05', quien: 'Lucía Paz', accion: 'Suspendió cuenta', cuenta: 'TPA', antes: 'Activa', despues: 'Suspendida', origen: 'Panel' },
+      { cuando: 'Ayer 00:00', quien: 'Sistema', accion: 'Venció suscripción', cuenta: 'LAM', antes: 'Activa', despues: 'Vencida', origen: 'Automático' },
+      { cuando: '10/10 15:48', quien: 'Marco Suárez', accion: 'Creó cuenta', cuenta: 'GOK', antes: '—', despues: 'Plan 350', origen: 'Panel' }
+    ];
+    const bitaCuenta = [
+      { cuando: 'Hoy 08:01', quien: 'Carla Méndez', accion: 'Creó usuario', antes: '86 usuarios', despues: '87 usuarios', origen: 'App' },
+      { cuando: '09/10 16:20', quien: 'Carla Méndez', accion: 'Editó puerta', antes: 'Depósito', despues: 'Depósito 2', origen: 'App' },
+      { cuando: '01/10 10:05', quien: 'Lucía Paz', accion: 'Editó datos de empresa', antes: 'Tel. 3 342 1100', despues: 'Tel. 3 342 1180', origen: 'Panel' },
+      { cuando: '30/10/2025 11:40', quien: 'Lucía Paz', accion: 'Registró pago', antes: 'vence 05/11/2025', despues: 'vence 05/11/2026', origen: 'Panel' },
+      { cuando: '12/03/2025 09:15', quien: 'Marco Suárez', accion: 'Restableció PIN de admin', antes: '—', despues: 'PIN nuevo emitido', origen: 'Panel' },
+      { cuando: '05/11/2024 14:02', quien: 'Marco Suárez', accion: 'Creó cuenta', antes: '—', despues: 'Plan 100', origen: 'Panel' }
+    ];
+    const W = 'Planta Warnes', E = 'Oficina Equipetrol';
+    const pu = (nombre, sitio, disp, on, senal) => Object.assign({ nombre, sitio, disp, senal }, on ? ON : OFF);
+    return {
+      rail: { r0: mk(0), r1: mk(1) },
+      filtros: [['Todas', '42'], ['Activas', '33'], ['Por vencer', '5'], ['Vencidas', '2'], ['Suspendidas', '2']].map(([label, n], i) => ({ label, n, bg: i === 0 ? 'var(--primario)' : 'transparent', fg: i === 0 ? 'var(--sobrePrimario)' : 'var(--texto2)', w: i === 0 ? 600 : 500 })),
+      cuentas, renov, bita, bitaCuenta,
+      usoTotal: uso(5214, 7650), usoAgr: uso(87, 100),
+      p1: pasos(0), p2: pasos(1), p3: pasos(2), p4: pasos(3),
+      planes: [plan('100', 'Bs 12.000', false), plan('200', 'Bs 21.600', true), plan('350', 'Bs 33.600', false)],
+      t0: tabs(0), t1: tabs(1), t2: tabs(2), t3: tabs(3),
+      datosEmpresa: [['Razón social', 'Agroindustrial Norte S.R.L.'], ['NIT', '1023456021'], ['Ciudad', 'Santa Cruz de la Sierra'], ['Contacto', 'Carla Méndez'], ['Teléfono', '3 342 1180'], ['Cliente desde', '05/11/2024']].map(([k, v]) => ({ k, v })),
+      historial: [
+        { periodo: '05/11/2025 – 05/11/2026', plan: '100 usuarios', monto: 'Bs 12.000', fecha: '30/10/2025', medio: 'Transferencia', ref: 'TRF-884120', por: 'Lucía Paz' },
+        { periodo: '05/11/2024 – 05/11/2025', plan: '100 usuarios', monto: 'Bs 10.800', fecha: '04/11/2024', medio: 'Depósito', ref: 'DEP-20931', por: 'Marco Suárez' }
+      ],
+      sitios: [
+        { nombre: W, puertas: [pu('Portón vehicular', W, 'LECT-0042', true, 'hace 8 s'), pu('Acceso peatonal', W, 'LECT-0043', true, 'hace 12 s'), pu('Depósito 2', W, 'LECT-0051', false, 'hace 2 h')] },
+        { nombre: E, puertas: [pu('Acceso principal', E, 'LECT-0060', true, 'hace 5 s'), pu('Estacionamiento', E, 'LECT-0061', false, 'hace 34 min')] }
+      ],
+      pin: { a: ['A', 'G', 'U'], b: ['9', 'F', '4', 'M'] }
+    };
+  }
+}
+</script>
+</body>
+</html>
