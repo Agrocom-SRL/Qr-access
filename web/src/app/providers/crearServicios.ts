@@ -3,6 +3,7 @@ import { crearClienteFetch } from '../../shared/api/clienteHttp';
 import { crearBitacoraHttp, type BitacoraRepositorio } from '../../features/bitacora';
 import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuentas';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
+import { crearEstadisticasHttp, type EstadisticasRepositorio } from '../../features/estadisticas';
 import { crearPagosHttp, type PagosRepositorio } from '../../features/pagos';
 import { crearPlanesHttp, type PlanesRepositorio } from '../../features/planes';
 import {
@@ -23,6 +24,7 @@ export interface Servicios {
   pagos: PagosRepositorio;
   bitacora: BitacoraRepositorio;
   resumen: ResumenRepositorio;
+  estadisticas: EstadisticasRepositorio;
 }
 
 /** Compone las implementaciones HTTP sobre un único cliente y almacén de sesión. */
@@ -42,5 +44,6 @@ export function crearServicios(
     pagos: crearPagosHttp(cliente),
     bitacora: crearBitacoraHttp(cliente),
     resumen: crearResumenHttp(cliente),
+    estadisticas: crearEstadisticasHttp(cliente),
   };
 }

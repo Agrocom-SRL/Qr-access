@@ -4,26 +4,11 @@ import {
   POR_PAGINA_DE_CUENTAS,
   type CuentaResumen,
   type DetalleDeCuenta,
-  type EstadoCuenta,
   type SitioConPuertas,
 } from '../domain/cuenta';
+import { ESTADO_DESDE_DTO, ESTADO_HACIA_DTO, type EstadoDto } from '../../../shared/api/estados';
+import { parsearMonto } from '../../pagos';
 import type { CuentasRepositorio } from './CuentasRepositorio';
-
-type EstadoDto = 'activa' | 'por_vencer' | 'vencida' | 'suspendida';
-
-const ESTADO_DESDE_DTO: Readonly<Record<EstadoDto, EstadoCuenta>> = {
-  activa: 'activa',
-  por_vencer: 'porVencer',
-  vencida: 'vencida',
-  suspendida: 'suspendida',
-};
-
-const ESTADO_HACIA_DTO: Readonly<Record<EstadoCuenta, EstadoDto>> = {
-  activa: 'activa',
-  porVencer: 'por_vencer',
-  vencida: 'vencida',
-  suspendida: 'suspendida',
-};
 
 interface CuentaDto {
   id: string;
@@ -41,7 +26,13 @@ interface ListadoCuentasDto extends ListadoDto<CuentaDto> {
 
 interface DetalleDto {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
-  empresa: { nit: string; ciudad: string; contacto: string; telefono: string } | null;
+  empresa: {
+    nit: string;
+    ciudad: string;
+    contacto: string;
+    telefono: string;
+    correo: string | null;
+  } | null;
   suscripcion: {
     id: string;
     plan: { id: string; nombre: string; cupo_usuarios: number | null; precio_anual: number };
@@ -62,9 +53,14 @@ interface DetalleDto {
 interface SitioDto {
   id: string;
   nombre: string;
+  direccion: string | null;
+  zona_horaria: string;
+  activo: boolean;
   puertas: {
     id: string;
     nombre: string;
+    segundos_apertura: number;
+    activa: boolean;
     dispositivo: {
       id: string;
       nombre: string;
@@ -147,6 +143,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           porVencer: dto.conteos.por_vencer,
           vencida: dto.conteos.vencida,
           suspendida: dto.conteos.suspendida,
+          pendientePago: dto.conteos.pendiente_pago,
         },
       };
     },
@@ -175,6 +172,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
       const dto = await cliente.solicitar<{
         cuenta: { id: string; codigo: string; nombre: string };
         administrador: { id: string; etiqueta: string; pin: string };
+        suscripcion: { estado: EstadoDto };
       }>({
         metodo: 'POST',
         ruta: '/plataforma/cuentas',
@@ -185,12 +183,30 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           ciudad: empresa.ciudad,
           contacto_nombre: empresa.contactoNombre.trim(),
           contacto_telefono: empresa.contactoTelefono.trim(),
+          contacto_correo: empresa.contactoCorreo.trim(),
           plan_id: borrador.planId,
           inicio: vigencia.inicio,
-          administrador_nombre: vigencia.administradorNombre.trim(),
+          administrador_nombre: (vigencia.adminIgualAlResponsable
+            ? empresa.contactoNombre
+            : vigencia.administradorNombre
+          ).trim(),
+          ...(borrador.pago.modo === 'ahora'
+            ? {
+                pago: {
+                  monto: parsearMonto(borrador.pago.monto),
+                  fecha_pago: borrador.pago.fechaPago,
+                  medio: borrador.pago.medio,
+                  referencia: borrador.pago.referencia.trim(),
+                },
+              }
+            : {}),
         },
       });
-      return { cuenta: dto.cuenta, administrador: dto.administrador };
+      return {
+        cuenta: dto.cuenta,
+        administrador: dto.administrador,
+        estado: ESTADO_DESDE_DTO[dto.suscripcion.estado],
+      };
     },
 
     async administradores(cuentaId) {
@@ -232,17 +248,45 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
       );
     },
 
+    async editar(id, datos) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/cuentas/${id}`,
+        cuerpo: {
+          razon_social: datos.razonSocial.trim(),
+          nit: datos.nit.trim(),
+          ciudad: datos.ciudad,
+          contacto_nombre: datos.contactoNombre.trim(),
+          contacto_telefono: datos.contactoTelefono.trim(),
+          contacto_correo: datos.contactoCorreo.trim(),
+        },
+      });
+    },
+
+    async eliminar(id, codigo) {
+      await cliente.solicitar({
+        metodo: 'DELETE',
+        ruta: `/plataforma/cuentas/${id}`,
+        cuerpo: { codigo },
+      });
+    },
+
     async sitiosYPuertas(id) {
       const dto = await cliente.solicitar<{ datos: SitioDto[] }>({
         metodo: 'GET',
-        ruta: `/plataforma/cuentas/${id}/puertas`,
+        ruta: `/plataforma/cuentas/${id}/sitios`,
       });
       return dto.datos.map((sitio): SitioConPuertas => ({
         id: sitio.id,
         nombre: sitio.nombre,
+        direccion: sitio.direccion,
+        zonaHoraria: sitio.zona_horaria,
+        activo: sitio.activo,
         puertas: sitio.puertas.map((puerta) => ({
           id: puerta.id,
           nombre: puerta.nombre,
+          segundosApertura: puerta.segundos_apertura,
+          activa: puerta.activa,
           dispositivo:
             puerta.dispositivo === null
               ? null
@@ -257,6 +301,67 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
                 },
         })),
       }));
+    },
+
+    async crearSitio(cuentaId, datos) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/sitios`,
+        cuerpo: {
+          nombre: datos.nombre.trim(),
+          direccion: datos.direccion.trim(),
+          zona_horaria: datos.zonaHoraria,
+        },
+      });
+    },
+
+    async editarSitio(cuentaId, sitioId, cambios) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/cuentas/${cuentaId}/sitios/${sitioId}`,
+        cuerpo: {
+          ...(cambios.nombre === undefined ? {} : { nombre: cambios.nombre.trim() }),
+          ...(cambios.direccion === undefined ? {} : { direccion: cambios.direccion.trim() }),
+          ...(cambios.zonaHoraria === undefined ? {} : { zona_horaria: cambios.zonaHoraria }),
+          ...(cambios.activo === undefined ? {} : { activo: cambios.activo }),
+        },
+      });
+    },
+
+    async eliminarSitio(cuentaId, sitioId) {
+      await cliente.solicitar({
+        metodo: 'DELETE',
+        ruta: `/plataforma/cuentas/${cuentaId}/sitios/${sitioId}`,
+      });
+    },
+
+    async crearPuerta(cuentaId, sitioId, datos) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/sitios/${sitioId}/puertas`,
+        cuerpo: { nombre: datos.nombre.trim(), segundos_apertura: datos.segundosApertura },
+      });
+    },
+
+    async editarPuerta(cuentaId, puertaId, cambios) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/cuentas/${cuentaId}/puertas/${puertaId}`,
+        cuerpo: {
+          ...(cambios.nombre === undefined ? {} : { nombre: cambios.nombre.trim() }),
+          ...(cambios.segundosApertura === undefined
+            ? {}
+            : { segundos_apertura: cambios.segundosApertura }),
+          ...(cambios.activa === undefined ? {} : { activa: cambios.activa }),
+        },
+      });
+    },
+
+    async eliminarPuerta(cuentaId, puertaId) {
+      await cliente.solicitar({
+        metodo: 'DELETE',
+        ruta: `/plataforma/cuentas/${cuentaId}/puertas/${puertaId}`,
+      });
     },
   };
 }

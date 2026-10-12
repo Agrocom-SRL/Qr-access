@@ -19,6 +19,7 @@ function useInvalidarPlanes() {
       clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
       clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
       clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
+      clienteConsultas.invalidateQueries({ queryKey: ['estadisticas'] }),
     ]);
   };
 }

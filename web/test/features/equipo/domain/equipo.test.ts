@@ -43,10 +43,10 @@ describe('usuario', () => {
 });
 
 describe('generarContrasenaTemporal', () => {
-  it('son 12 caracteres en tres grupos y supera el mínimo de la API', () => {
+  it('son 12 letras y números, sin guiones, y supera el mínimo de la API', () => {
     let contador = 0;
     const clave = generarContrasenaTemporal(() => contador++ % 50);
-    expect(clave).toMatch(/^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/);
+    expect(clave).toMatch(/^[A-Za-z0-9]{12}$/);
     expect(clave.length).toBeGreaterThanOrEqual(10);
   });
 

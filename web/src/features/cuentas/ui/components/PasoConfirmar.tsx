@@ -1,10 +1,20 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha, formatearMonto } from '../../../../l10n/formatos';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
-import { venceUnAnioDespues, type BorradorDeCuenta } from '../../domain/alta';
+import { formatearNumero } from '../../../../l10n/formatos';
+import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
+import { CamposDePago, type FormularioDePago } from '../../../pagos';
+import {
+  validarPagoDeAlta,
+  venceUnAnioDespues,
+  type BorradorDeCuenta,
+  type DatosDePagoDeAlta,
+} from '../../domain/alta';
+import styles from './PasoConfirmar.module.css';
 
 interface Props {
   borrador: BorradorDeCuenta;
@@ -12,12 +22,20 @@ interface Props {
   plan: { cupoUsuarios: number | null; precioAnual: number };
   /** Vuelve al paso `0` (empresa), `1` (plan) o `2` (vigencia y administrador). */
   onEditar: (paso: number) => void;
+  onPago: (pago: DatosDePagoDeAlta) => void;
 }
 
 /** A04d: resumen de todo lo capturado, con "Editar" por sección, antes de crear la cuenta. */
-export function PasoConfirmar({ borrador, plan, onEditar }: Props) {
+export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
   const { t } = useTranslation('crearCuenta');
-  const { empresa, vigencia } = borrador;
+  const { empresa, vigencia, pago } = borrador;
+  const [tocados, setTocados] = useState<ReadonlySet<keyof FormularioDePago>>(new Set());
+  const datosDePago: FormularioDePago = {
+    monto: pago.monto,
+    fechaPago: pago.fechaPago,
+    medio: pago.medio,
+    referencia: pago.referencia,
+  };
   const fecha = (iso: string) => formatearFecha(`${iso}T12:00:00Z`);
   const editar = (paso: number) => (
     <AccesoBoton
@@ -44,6 +62,10 @@ export function PasoConfirmar({ borrador, plan, onEditar }: Props) {
                   {empresa.codigo} · {empresa.nit}
                 </TextoMono>
               </FilaClaveValor>
+              <FilaClaveValor clave={t('ciudad')}>{empresa.ciudad}</FilaClaveValor>
+              <FilaClaveValor clave={t('responsableTitulo')}>
+                {empresa.contactoNombre} · {empresa.contactoCorreo}
+              </FilaClaveValor>
             </dl>
           ),
         },
@@ -69,13 +91,57 @@ export function PasoConfirmar({ borrador, plan, onEditar }: Props) {
           ),
         },
         {
+          id: 'pago-inicial',
+          titulo: t('pagoTitulo'),
+          descripcion: t('pagoAyuda'),
+          contenido: (
+            <div className={styles.pago}>
+              <FiltroSegmentado<DatosDePagoDeAlta['modo']>
+                etiqueta={t('pagoTitulo')}
+                valor={pago.modo}
+                onCambio={(modo) => {
+                  onPago({
+                    ...pago,
+                    modo,
+                    monto:
+                      modo === 'ahora' && pago.monto === ''
+                        ? formatearNumero(plan.precioAnual)
+                        : pago.monto,
+                  });
+                }}
+                opciones={[
+                  { valor: 'despues', etiqueta: t('pagoDespues') },
+                  { valor: 'ahora', etiqueta: t('pagoAhora') },
+                ]}
+              />
+              {pago.modo === 'despues' ? (
+                <p className={styles.nota}>{t('pagoDespuesTexto')}</p>
+              ) : (
+                <CamposDePago
+                  datos={datosDePago}
+                  errores={validarPagoDeAlta(pago)}
+                  tocados={tocados}
+                  onCambio={(parcial) => {
+                    onPago({ ...pago, ...parcial });
+                  }}
+                  onTocar={(campo) => {
+                    setTocados((actual) => new Set(actual).add(campo));
+                  }}
+                />
+              )}
+            </div>
+          ),
+        },
+        {
           id: 'resumen-admin',
           titulo: t('secciones.administrador'),
           accion: editar(2),
           contenido: (
             <dl>
-              <FilaClaveValor clave={t('nombreEtiqueta')}>
-                {vigencia.administradorNombre}
+              <FilaClaveValor clave={t('nombreAdministrador')}>
+                {vigencia.adminIgualAlResponsable
+                  ? empresa.contactoNombre
+                  : vigencia.administradorNombre}
               </FilaClaveValor>
             </dl>
           ),

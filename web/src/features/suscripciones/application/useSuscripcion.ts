@@ -17,6 +17,7 @@ function useInvalidarTrasCambio(cuentaId: string) {
       clienteConsultas.invalidateQueries({ queryKey: ['cuentas'] }),
       clienteConsultas.invalidateQueries({ queryKey: claveDe(cuentaId) }),
       clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
+      clienteConsultas.invalidateQueries({ queryKey: ['estadisticas'] }),
       clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
       clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
     ]);

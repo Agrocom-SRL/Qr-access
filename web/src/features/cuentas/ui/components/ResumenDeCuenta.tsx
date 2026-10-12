@@ -20,6 +20,7 @@ function textoDeVencimiento(
   t: (clave: string, opciones?: Record<string, unknown>) => string,
 ): string {
   const fecha = formatearFecha(suscripcion.hasta);
+  if (suscripcion.estado === 'pendientePago') return t('detalle:pendienteTexto');
   if (suscripcion.estado === 'suspendida') return t('detalle:suspendidaTexto');
   if (suscripcion.estado === 'vencida') {
     return t('detalle:vencioEl', { fecha, dias: Math.abs(suscripcion.diasRestantes) });
@@ -134,8 +135,9 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
             </FilaClaveValor>
             <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
             <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:contacto')}>{empresa.contacto}</FilaClaveValor>
+            <FilaClaveValor clave={t('detalle:responsable')}>{empresa.contacto}</FilaClaveValor>
             <FilaClaveValor clave={t('detalle:telefono')}>{empresa.telefono}</FilaClaveValor>
+            <FilaClaveValor clave={t('detalle:correo')}>{empresa.correo ?? '—'}</FilaClaveValor>
             <FilaClaveValor clave={t('detalle:clienteDesde')}>
               {formatearFecha(detalle.cuenta.clienteDesde)}
             </FilaClaveValor>

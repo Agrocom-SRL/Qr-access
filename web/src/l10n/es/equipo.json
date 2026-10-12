@@ -1,11 +1,11 @@
 {
   "titulo": "Usuarios",
-  "agregar": "Agregar super admin",
-  "agregarTitulo": "Agrega a alguien del equipo",
+  "agregar": "Agregar administrador",
+  "agregarTitulo": "Agrega a un administrador de la plataforma",
   "contrasenaTemporal": "Contraseña temporal",
   "contrasenaTemporalAyuda": "Tendrá que cambiarla en su primer ingreso.",
   "desactivar": "Desactivar",
-  "noAutodesactivar": "No puedes desactivarte. Siempre queda al menos un super admin activo.",
+  "noAutodesactivar": "No puedes desactivarte. Siempre queda al menos un administrador activo.",
   "vacio": {
     "titulo": "Solo estás tú",
     "texto": "Agrega a otra persona para no quedarte sin acceso al panel."
@@ -32,7 +32,7 @@
   "confirmarTitulo": "¿Desactivar a {{nombre}}?",
   "confirmarTexto": "Dejará de poder ingresar al panel y se cerrarán sus sesiones.",
   "desactivando": "Desactivando",
-  "tabla": "Equipo AGROCOM",
+  "tabla": "Administradores de AGROCOM",
   "errorCarga": "No pudimos cargar el equipo",
   "requerido": "Este campo es obligatorio",
   "subtitulo_one": "Quienes administran la plataforma · {{count}} activo",

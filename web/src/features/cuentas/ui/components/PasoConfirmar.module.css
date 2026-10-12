@@ -1,0 +1,13 @@
+.pago {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.nota {
+  padding: var(--esp16);
+  background: var(--advertenciaSuave);
+  border-radius: var(--radio10);
+  color: var(--texto);
+  font-size: var(--texto14);
+}

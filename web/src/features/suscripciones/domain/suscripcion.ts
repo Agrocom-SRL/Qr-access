@@ -1,8 +1,10 @@
 /** Tipos y reglas puras de la suscripción de una cuenta (A05b, A06): ADR 0017 y 0022. */
 
-export type EstadoSuscripcion = 'activa' | 'porVencer' | 'vencida' | 'suspendida';
-export type EstadoPago = 'pendiente' | 'sinPagar';
-export type TipoDePago = 'renovacion' | 'mejoraDePlan';
+import type { EstadoDeSuscripcion } from '../../../shared/api/estados';
+
+export type EstadoSuscripcion = EstadoDeSuscripcion;
+export type EstadoPago = 'pendiente' | 'sinPagar' | 'porActivar';
+export type TipoDePago = 'alta' | 'renovacion' | 'mejoraDePlan';
 export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
 
 export const MEDIOS_DE_PAGO: readonly MedioDePago[] = ['transferencia', 'deposito', 'efectivo'];
@@ -77,5 +79,5 @@ export function diferenciaDePrecio(actual: PlanComparable, nuevo: PlanComparable
 
 /** ¿Se puede renovar o cambiar de plan? Una suscripción suspendida primero se reactiva. */
 export function admiteCambios(estado: EstadoSuscripcion): boolean {
-  return estado !== 'suspendida';
+  return estado !== 'suspendida' && estado !== 'pendientePago';
 }

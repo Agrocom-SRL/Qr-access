@@ -1,6 +1,8 @@
 /** Tipos y reglas puras de las cuentas cliente (A03 y A05). */
 
-export type EstadoCuenta = 'activa' | 'porVencer' | 'vencida' | 'suspendida';
+import type { EstadoDeSuscripcion } from '../../../shared/api/estados';
+
+export type EstadoCuenta = EstadoDeSuscripcion;
 export type FiltroEstado = EstadoCuenta | 'todas';
 
 export interface PlanDeCuenta {
@@ -36,11 +38,18 @@ export const ESTADOS_DEL_FILTRO: readonly FiltroEstado[] = [
   'porVencer',
   'vencida',
   'suspendida',
+  'pendientePago',
 ];
 
 export interface DetalleDeCuenta {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; clienteDesde: Date };
-  empresa: { nit: string; ciudad: string; contacto: string; telefono: string } | null;
+  empresa: {
+    nit: string;
+    ciudad: string;
+    contacto: string;
+    telefono: string;
+    correo: string | null;
+  } | null;
   suscripcion: {
     id: string;
     plan: { id: string; nombre: string; cupoUsuarios: number | null; precioAnual: number };
@@ -70,8 +79,32 @@ export interface Dispositivo {
   ultimaSenal: Date | null;
 }
 
+export interface PuertaDeSitio {
+  id: string;
+  nombre: string;
+  /** Cuánto queda abierta la cerradura por cada pulso (1 a 30). */
+  segundosApertura: number;
+  activa: boolean;
+  dispositivo: Dispositivo | null;
+}
+
 export interface SitioConPuertas {
   id: string;
   nombre: string;
-  puertas: { id: string; nombre: string; dispositivo: Dispositivo | null }[];
+  direccion: string | null;
+  /** Zona IANA en la que se evalúan los horarios del sitio. */
+  zonaHoraria: string;
+  activo: boolean;
+  puertas: PuertaDeSitio[];
+}
+
+export interface DatosDeSitio {
+  nombre: string;
+  direccion: string;
+  zonaHoraria: string;
+}
+
+export interface DatosDePuerta {
+  nombre: string;
+  segundosApertura: number;
 }
