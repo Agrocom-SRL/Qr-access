@@ -26,5 +26,6 @@
   "suscripcion_no_encontrada": "Esa cuenta no tiene una suscripción.",
   "plan_sin_cambio": "La cuenta ya tiene ese plan.",
   "plan_nombre_existente": "Ya hay un plan con ese nombre.",
-  "plan_en_uso": "Ese plan ya lo usan cuentas: su cupo no se puede cambiar."
+  "plan_en_uso": "Ese plan ya lo usan cuentas: su cupo no se puede cambiar.",
+  "cuenta_codigo_sin_cambio": "Ese ya es el código de la cuenta."
 }

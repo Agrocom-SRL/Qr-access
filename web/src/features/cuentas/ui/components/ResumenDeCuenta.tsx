@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha, formatearMonto } from '../../../../l10n/formatos';
+import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { BarraUso } from '../../../../shared/ui/molecules/BarraUso';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
+import { tienePermiso, useSesion } from '../../../seguridad';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
+import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
+import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
 import styles from './ResumenDeCuenta.module.css';
 
 /** El texto del vencimiento según el estado de la suscripción (A05a). */
@@ -27,6 +32,16 @@ function textoDeVencimiento(
 export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
   const { t } = useTranslation(['detalle', 'planes']);
   const { suscripcion, empresa, uso } = detalle;
+  const { sesion } = useSesion();
+  const puedeCambiarCodigo = tienePermiso(
+    sesion?.permisos ?? [],
+    'seguridad.cuenta.cambiar_codigo',
+  );
+  const puedeRegenerar = tienePermiso(
+    sesion?.permisos ?? [],
+    'seguridad.administrador.regenerar_pin',
+  );
+  const [cambiandoCodigo, setCambiandoCodigo] = useState(false);
   const cupo = suscripcion?.plan.cupoUsuarios ?? null;
   const disponibles = usuariosDisponibles(uso.usuariosActivos, cupo);
 
@@ -100,6 +115,21 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
             <FilaClaveValor clave={t('detalle:razonSocial')}>
               {detalle.cuenta.nombre}
             </FilaClaveValor>
+            <FilaClaveValor clave={t('detalle:codigo')}>
+              <span className={styles.codigo}>
+                <TextoMono fuerte>{detalle.cuenta.codigo}</TextoMono>
+                {puedeCambiarCodigo ? (
+                  <AccesoBoton
+                    variante="texto"
+                    onClick={() => {
+                      setCambiandoCodigo(true);
+                    }}
+                  >
+                    {t('detalle:cambiarCodigo')}
+                  </AccesoBoton>
+                ) : null}
+              </span>
+            </FilaClaveValor>
             <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
             <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
             <FilaClaveValor clave={t('detalle:contacto')}>{empresa.contacto}</FilaClaveValor>
@@ -112,6 +142,10 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
           <p className={styles.sinDatos}>{t('detalle:sinEmpresa')}</p>
         )}
       </section>
+
+      <div className={styles.administradores}>
+        <AdministradoresDeCuenta cuentaId={detalle.cuenta.id} puedeRegenerar={puedeRegenerar} />
+      </div>
 
       <div className={styles.indicadores}>
         <TarjetaIndicador
@@ -131,6 +165,13 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
           icono="admin_panel_settings"
         />
       </div>
+      <DialogoCambiarCodigo
+        abierto={cambiandoCodigo}
+        cuenta={detalle.cuenta}
+        onCerrar={() => {
+          setCambiandoCodigo(false);
+        }}
+      />
     </div>
   );
 }

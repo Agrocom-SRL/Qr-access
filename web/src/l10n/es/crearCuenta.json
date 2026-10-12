@@ -10,7 +10,7 @@
   "nit": "NIT",
   "ciudad": "Ciudad",
   "codigo": "Código de cuenta · 3 letras",
-  "codigoAyuda": "Es el inicio del PIN de todos los usuarios de la cuenta. No se puede cambiar después.",
+  "codigoAyuda": "Es el inicio del PIN de todos los usuarios de la cuenta. Después solo AGROCOM puede cambiarlo.",
   "codigoExiste": "Ese código ya es de {{cuenta}}",
   "disponibles": "Disponibles:",
   "contacto": "Contacto de facturación",

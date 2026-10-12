@@ -193,6 +193,39 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
       return { cuenta: dto.cuenta, administrador: dto.administrador };
     },
 
+    async administradores(cuentaId) {
+      const dto = await cliente.solicitar<{
+        datos: {
+          id: string;
+          etiqueta: string | null;
+          pin_generado_at: string | null;
+          ultimo_ingreso_at: string | null;
+        }[];
+      }>({ metodo: 'GET', ruta: `/plataforma/cuentas/${cuentaId}/administradores` });
+      return dto.datos.map((a) => ({
+        id: a.id,
+        etiqueta: a.etiqueta ?? '—',
+        pinGeneradoEn: a.pin_generado_at === null ? null : new Date(a.pin_generado_at),
+        ultimoIngresoEn: a.ultimo_ingreso_at === null ? null : new Date(a.ultimo_ingreso_at),
+      }));
+    },
+
+    async regenerarPin(cuentaId, usuarioId) {
+      const dto = await cliente.solicitar<{ pin: string }>({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/administradores/${usuarioId}/pin`,
+      });
+      return dto.pin;
+    },
+
+    async cambiarCodigo(cuentaId, codigo) {
+      await cliente.solicitar({
+        metodo: 'PUT',
+        ruta: `/plataforma/cuentas/${cuentaId}/codigo`,
+        cuerpo: { codigo },
+      });
+    },
+
     async obtener(id) {
       return detalleDesdeDto(
         await cliente.solicitar<DetalleDto>({ metodo: 'GET', ruta: `/plataforma/cuentas/${id}` }),

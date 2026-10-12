@@ -72,3 +72,48 @@ export function useCrearCuenta() {
     },
   });
 }
+
+export function useAdministradores(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  return useQuery({
+    queryKey: [...CLAVE_CUENTAS, 'administradores', cuentaId],
+    queryFn: () => repositorio.administradores(cuentaId),
+  });
+}
+
+/**
+ * Regenera el PIN de un administrador. Como el alta, no retiene el resultado (`gcTime: 0`): el PIN
+ * en claro solo debe vivir en el estado de quien lo muestra.
+ */
+export function useRegenerarPin(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (usuarioId: string) => repositorio.regenerarPin(cuentaId, usuarioId),
+    gcTime: 0,
+    onSuccess: async () => {
+      await Promise.all([
+        clienteConsultas.invalidateQueries({
+          queryKey: [...CLAVE_CUENTAS, 'administradores', cuentaId],
+        }),
+        clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
+      ]);
+    },
+  });
+}
+
+export function useCambiarCodigo(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => repositorio.cambiarCodigo(cuentaId, codigo),
+    onSuccess: async () => {
+      await Promise.all([
+        clienteConsultas.invalidateQueries({ queryKey: CLAVE_CUENTAS }),
+        clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
+        clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
+        clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
+      ]);
+    },
+  });
+}

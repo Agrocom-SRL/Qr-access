@@ -429,7 +429,7 @@ describe('detalle de cuenta (A05)', () => {
     expect(screen.getByText('87 / 100')).toBeInTheDocument();
     expect(screen.getByText('Puede crear 13 usuarios más')).toBeInTheDocument();
     expect(screen.getByText(/Vence el 05\/11\/2026, en 24 días/)).toBeInTheDocument();
-    expect(screen.getByText('Carla Méndez')).toBeInTheDocument();
+    expect(screen.getAllByText('Carla Méndez').length).toBeGreaterThan(0);
     expect(screen.getByText('2 · 5')).toBeInTheDocument();
   });
 
@@ -862,6 +862,68 @@ describe('gestión de planes (A09)', () => {
     await userEvent.click(within(dialogo).getByRole('button', { name: 'Retirar' }));
     await waitFor(() => {
       expect(retirar).toHaveBeenCalledWith('1');
+    });
+  });
+});
+
+describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
+  async function abrirCuenta(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+  }
+
+  it('lista los administradores con su último ingreso y su PIN', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(2);
+    expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
+  });
+
+  it('regenerar el PIN pide confirmación y muestra el PIN nuevo una sola vez', async () => {
+    const regenerarPin = vi.fn(() => Promise.resolve('AGR7K2Q'));
+    await abrirCuenta(crearServiciosDePrueba({ cuentas: { regenerarPin } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Regenerar el PIN de Carla Méndez' }),
+    );
+    const confirmar = await screen.findByRole('dialog');
+    expect(within(confirmar).getByText(/El anterior deja de servir/)).toBeInTheDocument();
+    expect(regenerarPin).not.toHaveBeenCalled();
+    await userEvent.click(within(confirmar).getByRole('button', { name: 'Regenerar PIN' }));
+    await waitFor(() => {
+      expect(regenerarPin).toHaveBeenCalledWith('1', '11');
+    });
+    expect(await screen.findByRole('img', { name: 'A G R 7 K 2 Q' })).toBeInTheDocument();
+    expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ya lo copié' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('img', { name: 'A G R 7 K 2 Q' })).not.toBeInTheDocument();
+    });
+    expect(JSON.stringify(Object.entries(localStorage))).not.toContain('7K2Q');
+  });
+
+  it('cambiar el código valida que esté libre y explica qué le pasa a los PIN', async () => {
+    const cambiarCodigo = vi.fn(() => Promise.resolve());
+    await abrirCuenta(crearServiciosDePrueba({ cuentas: { cambiarCodigo } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar código' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(
+      within(dialogo).getByText(/Las 3 primeras letras del PIN de todos sus usuarios/),
+    ).toBeInTheDocument();
+    const entrada = within(dialogo).getByLabelText('Código nuevo · 3 letras');
+    await userEvent.type(entrada, 'fro');
+    expect(
+      await within(dialogo).findByText(/Ese código ya es de Frigorífico Oriente/),
+    ).toBeInTheDocument();
+    expect(within(dialogo).getByRole('button', { name: 'Cambiar código' })).toBeDisabled();
+    await userEvent.clear(entrada);
+    await userEvent.type(entrada, 'xyz');
+    expect(await within(dialogo).findByText('Disponible')).toBeInTheDocument();
+    expect(within(dialogo).getByText(/el PIN AGR7K2Q pasa a ser XYZ7K2Q/)).toBeInTheDocument();
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cambiar código' }));
+    await waitFor(() => {
+      expect(cambiarCodigo).toHaveBeenCalledWith('1', 'XYZ');
     });
   });
 });

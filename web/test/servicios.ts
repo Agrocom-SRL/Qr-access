@@ -24,6 +24,8 @@ export const SUPER_ADMIN = {
     'suscripciones.plan.eliminar',
     'seguridad.cuenta.ver',
     'seguridad.cuenta.crear',
+    'seguridad.cuenta.cambiar_codigo',
+    'seguridad.administrador.regenerar_pin',
     'suscripciones.suscripcion.ver',
     'suscripciones.suscripcion.editar',
     'suscripciones.pago.registrar',
@@ -86,6 +88,12 @@ export const PLANES = [
     usuariosEnUso: 1470,
   },
 ];
+
+/** Códigos que ya tienen dueña en los mocks. */
+const OCUPADOS: Readonly<Record<string, string>> = {
+  AGR: 'Agroindustrial Norte',
+  FRO: 'Frigorífico Oriente',
+};
 
 export const CUENTAS = [
   {
@@ -345,8 +353,8 @@ export function crearServiciosDePrueba(
     codigoDisponible: (codigo) =>
       Promise.resolve({
         formatoValido: codigo.length === 3,
-        disponible: codigo !== 'AGR',
-        usadoPor: codigo === 'AGR' ? 'Agroindustrial Norte' : null,
+        disponible: !(codigo in OCUPADOS),
+        usadoPor: OCUPADOS[codigo] ?? null,
         sugerencias: ['AGU', 'AGY', 'GUA'],
       }),
     crear: (borrador) =>
@@ -358,6 +366,17 @@ export function crearServiciosDePrueba(
           pin: 'AGU9F4M',
         },
       }),
+    administradores: () =>
+      Promise.resolve([
+        {
+          id: '11',
+          etiqueta: 'Carla Méndez',
+          pinGeneradoEn: new Date('2026-09-01T12:00:00Z'),
+          ultimoIngresoEn: null,
+        },
+      ]),
+    regenerarPin: () => Promise.resolve('AGR7K2Q'),
+    cambiarCodigo: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),
     sitiosYPuertas: () => Promise.resolve(SITIOS),
     ...parcial.cuentas,

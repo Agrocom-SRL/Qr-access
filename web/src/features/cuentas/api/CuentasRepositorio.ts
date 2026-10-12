@@ -26,7 +26,19 @@ export interface CuentaCreada {
   administrador: { id: string; etiqueta: string; pin: string };
 }
 
+export interface AdministradorDeCuenta {
+  id: string;
+  etiqueta: string;
+  pinGeneradoEn: Date | null;
+  ultimoIngresoEn: Date | null;
+}
+
 export interface CuentasRepositorio {
+  administradores: (cuentaId: string) => Promise<readonly AdministradorDeCuenta[]>;
+  /** Sortea un PIN nuevo; llega en claro una sola vez y no se guarda en ninguna caché. */
+  regenerarPin: (cuentaId: string, usuarioId: string) => Promise<string>;
+  /** Cambia las 3 primeras letras del PIN de todos los usuarios de la cuenta. */
+  cambiarCodigo: (cuentaId: string, codigo: string) => Promise<void>;
   listar: (filtros: FiltrosDeCuentas) => Promise<ListadoDeCuentas>;
   codigoDisponible: (codigo: string, razonSocial: string) => Promise<DisponibilidadDeCodigo>;
   crear: (borrador: BorradorDeCuenta) => Promise<CuentaCreada>;
