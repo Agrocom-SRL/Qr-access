@@ -1,5 +1,9 @@
 import type { Pool } from 'mysql2/promise';
-import { RepositorioDeCuentas, RepositorioDeUsuarios } from './repository.js';
+import {
+  RepositorioDeConteoDeUsuarios,
+  RepositorioDeCuentas,
+  RepositorioDeUsuarios,
+} from './repository.js';
 
 export { crearAutenticadorDePlataforma, crearAutenticadorDeUsuario } from './autenticador.js';
 
@@ -35,4 +39,14 @@ export function crearServicioDeCuentas(pool: Pool): ServicioDeCuentas {
       return (await cuentas.buscarActivaPorId(cuentaId)) !== null;
     },
   };
+}
+
+export interface ServicioDeConteoDeUsuarios {
+  /** `cuentaId -> usuarios activos` (PIN vigentes); una cuenta sin usuarios no figura. Solo para plataforma. */
+  activosPorCuenta(cuentaIds: readonly string[]): Promise<Map<string, number>>;
+}
+
+export function crearServicioDeConteoDeUsuarios(pool: Pool): ServicioDeConteoDeUsuarios {
+  const conteo = new RepositorioDeConteoDeUsuarios(pool);
+  return { activosPorCuenta: (cuentaIds) => conteo.activosPorCuenta(cuentaIds) };
 }

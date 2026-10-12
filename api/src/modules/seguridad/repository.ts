@@ -714,3 +714,38 @@ export class RepositorioDeRolesDeSuperAdmin extends RepositorioDeFilasDePlatafor
     return filas.map((fila) => fila.codigo);
   }
 }
+
+interface ConteoDeUsuariosFila extends RowDataPacket {
+  tenant_id: string;
+  /** mysql2 devuelve los conteos como texto cuando son BIGINT. */
+  total: string | number;
+}
+
+/**
+ * Cuántos usuarios activos tiene cada cuenta, para el panel de plataforma. Es un SALTO
+ * EXPLÍCITO del aislamiento (RepositorioDePlataforma sobre `usuarios`): solo lee conteos
+ * agrupados por cuenta, nunca filas de usuarios, y nunca escribe.
+ */
+export class RepositorioDeConteoDeUsuarios extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'usuarios',
+      columnas: [],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  async activosPorCuenta(cuentaIds: readonly string[]): Promise<Map<string, number>> {
+    const mapa = new Map<string, number>();
+    if (cuentaIds.length === 0) return mapa;
+    const filas = await this.seleccionar<ConteoDeUsuariosFila>({
+      columnas: 't.tenant_id, COUNT(*) AS total',
+      donde: 't.tenant_id IN (?) AND t.activo = 1',
+      params: [cuentaIds],
+      agrupar: 't.tenant_id',
+    });
+    for (const fila of filas) mapa.set(fila.tenant_id, Number(fila.total));
+    return mapa;
+  }
+}

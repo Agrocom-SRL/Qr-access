@@ -1,5 +1,7 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
+import type { Transaccion } from '../../platform/db/transaccion.js';
 
 export interface SuscripcionVigenteFila extends RowDataPacket {
   id: string;
@@ -30,5 +32,85 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
       donde: "t.estado = 'vigente' AND t.desde <= ? AND t.hasta > ?",
       params: [ahora, ahora],
     });
+  }
+}
+
+export interface PlanFila extends RowDataPacket {
+  id: string;
+  nombre: string;
+  max_usuarios: number | null;
+  precio_anual: string;
+}
+
+/** Dueño de `planes` (catálogo de plataforma, sin cuenta). */
+export class RepositorioDePlanes extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'planes',
+      columnas: [
+        'nombre',
+        'max_dispositivos',
+        'max_usuarios',
+        'max_vigencia_qr_horas',
+        'precio_anual',
+        'activo',
+      ],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  /** Los planes que se venden, del cupo más chico al más grande. */
+  listarActivos(): Promise<PlanFila[]> {
+    return this.seleccionar<PlanFila>({
+      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      donde: 't.activo = 1',
+      orden: 't.max_usuarios, t.id',
+    });
+  }
+
+  buscarActivoPorId(id: string): Promise<PlanFila | null> {
+    return this.seleccionarUna<PlanFila>({
+      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      donde: 't.id = ? AND t.activo = 1',
+      params: [id],
+    });
+  }
+
+  /** Solo cambia el precio de las renovaciones y mejoras futuras; las suscripciones vigentes no se tocan. */
+  cambiarPrecio(tx: Transaccion, id: string, precioAnual: number): Promise<boolean> {
+    return this.actualizar(tx, id, { precio_anual: precioAnual });
+  }
+}
+
+interface UsoDePlanFila extends RowDataPacket {
+  plan_id: string;
+  tenant_id: string;
+}
+
+/**
+ * Qué cuentas usan cada plan, para la pantalla de Planes. Salto EXPLÍCITO del aislamiento
+ * (RepositorioDePlataforma sobre `suscripciones`): solo lee pares plan–cuenta, nunca escribe.
+ */
+export class RepositorioDeUsoDePlanes extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'suscripciones',
+      columnas: [],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  /** `planId -> ids de las cuentas activas` con una suscripción en ese plan. */
+  async cuentasPorPlan(): Promise<Map<string, string[]>> {
+    const filas = await this.seleccionar<UsoDePlanFila>({
+      columnas: 't.plan_id, t.tenant_id',
+      uniones: 'JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL AND c.activo = 1',
+    });
+    const mapa = new Map<string, string[]>();
+    for (const fila of filas)
+      mapa.set(fila.plan_id, [...(mapa.get(fila.plan_id) ?? []), fila.tenant_id]);
+    return mapa;
   }
 }
