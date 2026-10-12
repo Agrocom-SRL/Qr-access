@@ -914,3 +914,28 @@ export class RepositorioDeRolPermisos extends RepositorioDePlataforma {
     return this.insertar(tx, { rol_id: rolId, permiso_id: permisoId });
   }
 }
+
+export interface IdentidadFila extends RowDataPacket {
+  id: string;
+  etiqueta: string | null;
+  username: string | null;
+}
+
+/**
+ * Nombres de usuarios de CUALQUIER cuenta y de la plataforma, solo para rotular la bitácora y las
+ * listas del panel. Salto EXPLÍCITO del aislamiento: lee id, etiqueta y username; nunca escribe.
+ */
+export class RepositorioDeIdentidades extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, { nombre: 'usuarios', columnas: [], perfil: 'dominio', deCuenta: true });
+  }
+
+  buscarPorIds(ids: readonly string[]): Promise<IdentidadFila[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.seleccionar<IdentidadFila>({
+      columnas: 't.id, t.etiqueta, t.username',
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+  }
+}

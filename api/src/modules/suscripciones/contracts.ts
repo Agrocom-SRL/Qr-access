@@ -96,6 +96,8 @@ function aSuscripcionDeCuenta(fila: SuscripcionActualFila, ahora: Date): Suscrip
 export interface ServicioDeSuscripcionesDePlataforma {
   /** `cuentaId -> su suscripción actual`; una cuenta sin suscripción no figura. */
   deTodasLasCuentas(ahora: Date): Promise<Map<string, SuscripcionDeCuenta>>;
+  /** `planId -> nombre` de esos planes (vendibles o no), para rotular la bitácora. */
+  nombresDePlanes(ids: readonly string[]): Promise<Map<string, string>>;
   /** Un plan que se vende (activo), o `null`. */
   buscarPlan(planId: string): Promise<PlanContratado | null>;
   /**
@@ -141,6 +143,9 @@ export function crearServicioDeSuscripcionesDePlataforma(
         if (!mapa.has(fila.tenant_id)) mapa.set(fila.tenant_id, aSuscripcionDeCuenta(fila, ahora));
       }
       return mapa;
+    },
+    async nombresDePlanes(ids) {
+      return new RepositorioDePlanes(pool).nombresPorIds(ids);
     },
     async buscarPlan(planId) {
       const fila = await new RepositorioDePlanes(pool).buscarActivoPorId(planId);

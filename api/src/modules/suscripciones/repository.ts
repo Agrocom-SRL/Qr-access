@@ -124,6 +124,17 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
     });
   }
 
+  /** `id -> nombre`, también de planes que ya no se venden (la bitácora los menciona). */
+  async nombresPorIds(ids: readonly string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const filas = await this.seleccionar<PlanFila>({
+      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+    return new Map(filas.map((fila) => [fila.id, fila.nombre]));
+  }
+
   buscarActivoPorId(id: string): Promise<PlanFila | null> {
     return this.seleccionarUna<PlanFila>({
       columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',

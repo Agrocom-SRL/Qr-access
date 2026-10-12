@@ -2,6 +2,8 @@ import type { Pool } from 'mysql2/promise';
 import {
   RepositorioDeConteoDeUsuarios,
   RepositorioDeCuentas,
+  RepositorioDeCuentasDePlataforma,
+  RepositorioDeIdentidades,
   RepositorioDeUsuarios,
 } from './repository.js';
 
@@ -49,4 +51,50 @@ export interface ServicioDeConteoDeUsuarios {
 export function crearServicioDeConteoDeUsuarios(pool: Pool): ServicioDeConteoDeUsuarios {
   const conteo = new RepositorioDeConteoDeUsuarios(pool);
   return { activosPorCuenta: (cuentaIds) => conteo.activosPorCuenta(cuentaIds) };
+}
+
+export interface CuentaDePlataforma {
+  readonly id: string;
+  readonly codigo: string;
+  readonly nombre: string;
+  readonly activa: boolean;
+}
+
+/** Lo que el panel de plataforma (bitácora, resumen) necesita saber de las cuentas y de quién hizo un cambio. */
+export interface ServicioDeIdentidades {
+  /** `usuarioId -> nombre` de usuarios de cualquier cuenta o de la plataforma (etiqueta, o su usuario). */
+  nombresDeUsuarios(ids: readonly string[]): Promise<Map<string, string>>;
+  /** `cuentaId -> cuenta`. */
+  cuentas(ids: readonly string[]): Promise<Map<string, CuentaDePlataforma>>;
+  /** Todas las cuentas vigentes. */
+  todasLasCuentas(): Promise<CuentaDePlataforma[]>;
+}
+
+export function crearServicioDeIdentidades(pool: Pool): ServicioDeIdentidades {
+  const repositorio = new RepositorioDeCuentasDePlataforma(pool);
+  const aCuenta = (fila: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    activo: number;
+  }): CuentaDePlataforma => ({
+    id: fila.id,
+    codigo: fila.codigo,
+    nombre: fila.nombre,
+    activa: fila.activo === 1,
+  });
+  return {
+    async nombresDeUsuarios(ids) {
+      const filas = await new RepositorioDeIdentidades(pool).buscarPorIds(ids);
+      return new Map(filas.map((fila) => [fila.id, fila.etiqueta ?? fila.username ?? '—']));
+    },
+    async cuentas(ids) {
+      const todas = await repositorio.listarTodas();
+      const pedidas = new Set(ids);
+      return new Map(todas.filter((c) => pedidas.has(c.id)).map((c) => [c.id, aCuenta(c)]));
+    },
+    async todasLasCuentas() {
+      return (await repositorio.listarTodas()).map(aCuenta);
+    },
+  };
 }
