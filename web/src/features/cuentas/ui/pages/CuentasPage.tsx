@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatearFecha } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
+import { rutaDeCuenta } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
 import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
@@ -12,6 +14,7 @@ import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagi
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
+import { tienePermiso, useSesion } from '../../../seguridad';
 import { useCuentas } from '../../application/useCuentas';
 import {
   ESTADOS_DEL_FILTRO,
@@ -21,6 +24,7 @@ import {
   type FiltrosDeCuentas,
 } from '../../domain/cuenta';
 import { RUTAS_DE_CUENTAS } from '../../rutas';
+import { DialogoEliminarCuenta } from '../components/DialogoEliminarCuenta';
 import styles from './CuentasPage.module.css';
 
 /** Búsqueda, filtro y página viven en la URL: el enlace se puede compartir (ARQUITECTURA_REACT §6). */
@@ -40,6 +44,12 @@ export function CuentasPage() {
   const [parametros, setParametros] = useSearchParams();
   const filtros = filtrosDeLaUrl(parametros);
   const cuentas = useCuentas(filtros);
+  const { sesion } = useSesion();
+  const permisos = sesion?.permisos ?? [];
+  const [aEliminar, setAEliminar] = useState<CuentaResumen | null>(null);
+  const irA = (ruta: string) => {
+    void navegar(ruta);
+  };
 
   const cambiar = (cambios: Partial<FiltrosDeCuentas>) => {
     const siguiente = { ...filtros, pagina: 1, ...cambios };
@@ -102,15 +112,46 @@ export function CuentasPage() {
       id: 'acciones',
       encabezado: t('cuentas:columna.acciones'),
       alinear: 'fin',
+      // Todo el CRUD desde la fila: ver, ir directo a sus puertas, editar y eliminar.
       celda: (c) => (
-        <BotonIcono
-          icono="visibility"
-          accion="ver"
-          etiqueta={t('cuentas:ver', { cuenta: c.nombre })}
-          onClick={() => {
-            void navegar(RUTAS_DE_CUENTAS.detalle(c.id));
-          }}
-        />
+        <span className={styles.acciones}>
+          <BotonIcono
+            icono="visibility"
+            accion="ver"
+            etiqueta={t('cuentas:ver', { cuenta: c.nombre })}
+            onClick={() => {
+              irA(RUTAS_DE_CUENTAS.detalle(c.id));
+            }}
+          />
+          <BotonIcono
+            icono="door_front"
+            accion="neutro"
+            etiqueta={t('cuentas:verPuertas', { cuenta: c.nombre })}
+            onClick={() => {
+              irA(rutaDeCuenta(c.id, 'sitios'));
+            }}
+          />
+          {tienePermiso(permisos, 'seguridad.cuenta.editar') ? (
+            <BotonIcono
+              icono="edit"
+              accion="editar"
+              etiqueta={t('cuentas:editar', { cuenta: c.nombre })}
+              onClick={() => {
+                irA(`${RUTAS_DE_CUENTAS.detalle(c.id)}?editar=1`);
+              }}
+            />
+          ) : null}
+          {tienePermiso(permisos, 'seguridad.cuenta.eliminar') ? (
+            <BotonIcono
+              icono="delete"
+              accion="eliminar"
+              etiqueta={t('cuentas:eliminar', { cuenta: c.nombre })}
+              onClick={() => {
+                setAEliminar(c);
+              }}
+            />
+          ) : null}
+        </span>
       ),
     },
   ];
@@ -188,6 +229,18 @@ export function CuentasPage() {
             : undefined
         }
       />
+      {aEliminar ? (
+        <DialogoEliminarCuenta
+          abierto
+          cuenta={{ id: aEliminar.id, nombre: aEliminar.nombre, codigo: aEliminar.codigo }}
+          onCerrar={() => {
+            setAEliminar(null);
+          }}
+          onEliminada={() => {
+            setAEliminar(null);
+          }}
+        />
+      ) : null}
     </>
   );
 }

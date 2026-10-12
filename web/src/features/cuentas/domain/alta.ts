@@ -1,4 +1,4 @@
-import { parsearMonto, type MedioDePago } from '../../pagos';
+import { validarPago, type FormularioDePago } from '../../pagos';
 
 /** Reglas del alta de cuenta (A04): datos por paso, validaciones y vigencia. Espejo de lo que valida la API. */
 
@@ -25,14 +25,8 @@ export interface DatosDeVigencia {
  * Cómo se cobra el alta: con el pago ya registrado (la cuenta nace activa) o después (la cuenta
  * nace pendiente de pago y aparece en Cobranza hasta que se registre).
  */
-export interface DatosDePagoDeAlta {
+export interface DatosDePagoDeAlta extends FormularioDePago {
   modo: 'ahora' | 'despues';
-  /** Lo que escribió la persona: dígitos con o sin puntos de miles. */
-  monto: string;
-  /** `aaaa-mm-dd`. */
-  fechaPago: string;
-  medio: MedioDePago;
-  referencia: string;
 }
 
 export interface BorradorDeCuenta {
@@ -90,17 +84,8 @@ export function validarVigencia(
 }
 
 /** El pago de alta solo se valida si se registra ahora; si se cobra después, no hay nada que revisar. */
-export function validarPagoDeAlta(
-  datos: DatosDePagoDeAlta,
-): Partial<Record<'monto' | 'fechaPago' | 'referencia', ErrorDeCampo>> {
-  const errores: Partial<Record<'monto' | 'fechaPago' | 'referencia', ErrorDeCampo>> = {};
-  if (datos.modo === 'despues') return errores;
-  if (datos.monto.trim() === '') errores.monto = 'requerido';
-  else if (parsearMonto(datos.monto) === null) errores.monto = 'formato';
-  if (datos.fechaPago === '') errores.fechaPago = 'requerido';
-  else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaPago)) errores.fechaPago = 'formato';
-  if (datos.referencia.trim() === '') errores.referencia = 'requerido';
-  return errores;
+export function validarPagoDeAlta(datos: DatosDePagoDeAlta): ReturnType<typeof validarPago> {
+  return datos.modo === 'despues' ? {} : validarPago(datos);
 }
 
 /** Vence = inicio + 12 meses (README, "Vigencia"); `aaaa-mm-dd` → `aaaa-mm-dd`, sin pasarse de fin de mes. */
@@ -151,5 +136,14 @@ export const BORRADOR_VACIO = (hoy: string): BorradorDeCuenta => ({
   },
   planId: null,
   vigencia: { inicio: hoy, administradorNombre: '', adminIgualAlResponsable: false },
-  pago: { modo: 'despues', monto: '', fechaPago: hoy, medio: 'transferencia', referencia: '' },
+  pago: {
+    modo: 'despues',
+    monto: '',
+    fechaPago: hoy,
+    medio: 'transferencia',
+    referencia: '',
+    banco: '',
+    cuentaDestino: '',
+    comprobante: null,
+  },
 });

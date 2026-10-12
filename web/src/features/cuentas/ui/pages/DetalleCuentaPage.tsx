@@ -34,7 +34,8 @@ export function DetalleCuentaPage() {
   const navegar = useNavigate();
   const { sesion } = useSesion();
   const permisos = sesion?.permisos ?? [];
-  const [editando, setEditando] = useState(false);
+  // `?editar=1` abre el diálogo de edición: la lista de cuentas enlaza así desde su acción de editar.
+  const [editando, setEditando] = useState(parametros.get('editar') === '1');
   const [eliminando, setEliminando] = useState(false);
   const pedida = parametros.get('pestana');
   const pestana = PESTANAS.find((p) => p === pedida) ?? 'resumen';
@@ -100,7 +101,7 @@ export function DetalleCuentaPage() {
             ) : null}
             {tienePermiso(permisos, 'seguridad.cuenta.editar') ? (
               <AccesoBoton
-                variante="tonal"
+                variante="advertencia"
                 icono="edit"
                 onClick={() => {
                   setEditando(true);
@@ -171,6 +172,11 @@ export function DetalleCuentaPage() {
             abierto={editando}
             onCerrar={() => {
               setEditando(false);
+              if (parametros.has('editar')) {
+                const resto = new URLSearchParams(parametros);
+                resto.delete('editar');
+                setParametros(resto, { replace: true });
+              }
             }}
             detalle={datos}
           />

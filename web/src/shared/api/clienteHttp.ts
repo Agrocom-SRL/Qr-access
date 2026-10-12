@@ -9,6 +9,10 @@ export interface SolicitudHttp {
   ruta: string;
   consulta?: Readonly<Record<string, string | number | boolean | undefined>>;
   cuerpo?: unknown;
+  /** Un archivo como cuerpo crudo (su `type` es el `Content-Type`); no se combina con `cuerpo`. */
+  archivo?: Blob;
+  /** `blob` devuelve el contenido tal cual (un comprobante) en vez de leerlo como JSON. */
+  formato?: 'json' | 'blob';
   senal?: AbortSignal;
 }
 
@@ -57,12 +61,15 @@ export function crearClienteFetch({
   async function enviar(solicitud: SolicitudHttp, acceso: string | undefined): Promise<Response> {
     const cabeceras: Record<string, string> = { Accept: 'application/json' };
     if (solicitud.cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
+    if (solicitud.archivo) cabeceras['Content-Type'] = solicitud.archivo.type;
     if (acceso) cabeceras.Authorization = `Bearer ${acceso}`;
     try {
       return await implementacionFetch(armarUrl(baseUrl, solicitud.ruta, solicitud.consulta), {
         method: solicitud.metodo,
         headers: cabeceras,
-        body: solicitud.cuerpo === undefined ? undefined : JSON.stringify(solicitud.cuerpo),
+        body:
+          solicitud.archivo ??
+          (solicitud.cuerpo === undefined ? undefined : JSON.stringify(solicitud.cuerpo)),
         signal: solicitud.senal,
       });
     } catch (error) {
@@ -104,6 +111,7 @@ export function crearClienteFetch({
       }
       if (!respuesta.ok) throw await leerError(respuesta);
       if (respuesta.status === 204) return undefined as T;
+      if (solicitud.formato === 'blob') return (await respuesta.blob()) as T;
       return (await respuesta.json()) as T;
     },
   };

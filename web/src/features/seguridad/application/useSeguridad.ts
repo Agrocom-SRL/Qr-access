@@ -25,6 +25,23 @@ export function usePerfil() {
   });
 }
 
+/** Cambia el nombre del perfil y lo refleja también en la sesión (la barra lateral lo muestra). */
+export function useCambiarNombre() {
+  const repositorio = useSeguridadRepositorio();
+  const clienteConsultas = useQueryClient();
+  const { sesion, iniciar } = useSesion();
+  return useMutation({
+    mutationFn: (nombre: string) => repositorio.cambiarNombre(nombre),
+    onSuccess: async (_, nombre) => {
+      if (sesion) iniciar({ ...sesion, usuario: { ...sesion.usuario, nombre: nombre.trim() } });
+      await Promise.all([
+        clienteConsultas.invalidateQueries({ queryKey: CLAVE_PERFIL }),
+        clienteConsultas.invalidateQueries({ queryKey: ['equipo'] }),
+      ]);
+    },
+  });
+}
+
 export function useCambiarContrasena() {
   const repositorio = useSeguridadRepositorio();
   const clienteConsultas = useQueryClient();

@@ -107,8 +107,44 @@
 .indicadores {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--esp24);
+}
+
+.enlaceIndicador {
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radio20);
+}
+
+.enlaceIndicador:hover > article {
+  box-shadow: var(--elevacion2);
+}
+
+.responsable {
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.persona {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp16);
+}
+
+.contacto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--esp8);
+  margin: 0;
+}
+
+.nombrePersona {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
 }
 
 @media (width < 1024px) {
@@ -117,7 +153,7 @@
   }
 
   .indicadores {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -129,4 +165,10 @@
 
 .administradores {
   grid-column: 1 / -1;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
 }

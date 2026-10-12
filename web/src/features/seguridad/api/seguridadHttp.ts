@@ -107,6 +107,14 @@ export function crearSeguridadHttp(
       );
     },
 
+    async cambiarNombre(nombre) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: '/plataforma/perfil',
+        cuerpo: { nombre: nombre.trim() },
+      });
+    },
+
     async cambiarContrasena(actual, nueva) {
       await cliente.solicitar({
         metodo: 'PUT',

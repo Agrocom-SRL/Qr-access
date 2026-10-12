@@ -8,6 +8,30 @@ export const MEDIOS: readonly MedioDePago[] = ['transferencia', 'deposito', 'efe
 
 export type TipoDePago = 'alta' | 'renovacion' | 'mejora_de_plan';
 
+/** Bancos donde AGROCOM recibe los pagos. TODO(docs): confirmar con negocio las cuentas reales. */
+export const BANCOS = [
+  'Banco Unión',
+  'Banco Nacional de Bolivia',
+  'Banco de Crédito',
+  'Banco Mercantil Santa Cruz',
+  'Banco BISA',
+  'Banco Ganadero',
+  'Banco Económico',
+  'Banco FIE',
+  'Banco Sol',
+  'Banco Fassil',
+  'Banco Prodem',
+  'Otro',
+] as const;
+
+/** Lo que acepta la API como comprobante (ADR 0024): se revisa también acá para avisar antes de subir. */
+export const TIPOS_DE_COMPROBANTE = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+export const MAX_BYTES_DE_COMPROBANTE = 5 * 1024 * 1024;
+
+export function requiereRespaldo(medio: MedioDePago): boolean {
+  return medio !== 'efectivo';
+}
+
 export interface FormularioDePago {
   /** Lo que escribió la persona: dígitos con o sin puntos de miles. */
   monto: string;
@@ -15,9 +39,14 @@ export interface FormularioDePago {
   fechaPago: string;
   medio: MedioDePago;
   referencia: string;
+  /** A qué banco y cuenta de AGROCOM llegó el dinero; solo para transferencia y depósito. */
+  banco: string;
+  cuentaDestino: string;
+  /** La foto o el PDF del comprobante; solo para transferencia y depósito. */
+  comprobante: File | null;
 }
 
-export type ErrorDePago = 'requerido' | 'formato';
+export type ErrorDePago = 'requerido' | 'formato' | 'archivoInvalido' | 'archivoGrande';
 
 /** `12.000` o `12000` → 12000; `null` si no es un monto entero mayor que cero. */
 export function parsearMonto(texto: string): number | null {
@@ -36,6 +65,16 @@ export function validarPago(
   if (datos.fechaPago === '') errores.fechaPago = 'requerido';
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaPago)) errores.fechaPago = 'formato';
   if (datos.referencia.trim() === '') errores.referencia = 'requerido';
+  if (requiereRespaldo(datos.medio)) {
+    if (datos.banco.trim() === '') errores.banco = 'requerido';
+    if (datos.cuentaDestino.trim() === '') errores.cuentaDestino = 'requerido';
+    if (datos.comprobante === null) errores.comprobante = 'requerido';
+    else if (!TIPOS_DE_COMPROBANTE.includes(datos.comprobante.type)) {
+      errores.comprobante = 'archivoInvalido';
+    } else if (datos.comprobante.size > MAX_BYTES_DE_COMPROBANTE) {
+      errores.comprobante = 'archivoGrande';
+    }
+  }
   return errores;
 }
 

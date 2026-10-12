@@ -23,6 +23,9 @@ describe('validarPago', () => {
     fechaPago: '2026-10-12',
     medio: 'transferencia' as const,
     referencia: 'TRF-1',
+    banco: 'Banco Unión',
+    cuentaDestino: '10000123456',
+    comprobante: new File(['x'], 'comprobante.png', { type: 'image/png' }),
   };
 
   it('acepta un pago completo', () => {
@@ -39,6 +42,30 @@ describe('validarPago', () => {
       monto: 'formato',
       fechaPago: 'formato',
     });
+  });
+
+  it('una transferencia o un depósito piden banco, cuenta y comprobante; el efectivo no', () => {
+    const sinRespaldo = { ...valido, banco: '', cuentaDestino: ' ', comprobante: null };
+    expect(validarPago(sinRespaldo)).toEqual({
+      banco: 'requerido',
+      cuentaDestino: 'requerido',
+      comprobante: 'requerido',
+    });
+    expect(validarPago({ ...sinRespaldo, medio: 'deposito' })).toHaveProperty('comprobante');
+    expect(validarPago({ ...sinRespaldo, medio: 'efectivo' })).toEqual({});
+  });
+
+  it('el comprobante tiene que ser imagen o PDF y pesar hasta 5 MB', () => {
+    const archivo = (tipo: string, bytes = 1) =>
+      new File([new Uint8Array(bytes)], 'a', { type: tipo });
+    expect(validarPago({ ...valido, comprobante: archivo('application/pdf') })).toEqual({});
+    expect(validarPago({ ...valido, comprobante: archivo('text/html') }).comprobante).toBe(
+      'archivoInvalido',
+    );
+    expect(
+      validarPago({ ...valido, comprobante: archivo('image/png', 5 * 1024 * 1024 + 1) })
+        .comprobante,
+    ).toBe('archivoGrande');
   });
 });
 

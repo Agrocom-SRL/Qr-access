@@ -6,6 +6,7 @@ import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
+import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
@@ -15,6 +16,7 @@ import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { TablaDatos, type Columna } from '../../../../shared/ui/organisms/TablaDatos';
 import type { PlanCambiado } from '../../api/SuscripcionesRepositorio';
 import {
+  useAbrirComprobante,
   useReactivar,
   useSuscripcionDeCuenta,
   useSuspender,
@@ -34,6 +36,7 @@ export function PestanaSuscripcion({ cuenta }: Props) {
   const consulta = useSuscripcionDeCuenta(cuenta.id);
   const suspender = useSuspender(cuenta.id);
   const reactivar = useReactivar(cuenta.id);
+  const abrirComprobante = useAbrirComprobante();
   const [cambiandoPlan, setCambiandoPlan] = useState(false);
   const [confirmando, setConfirmando] = useState<'suspender' | 'reactivar' | null>(null);
   const [mejora, setMejora] = useState<PlanCambiado | null>(null);
@@ -58,6 +61,10 @@ export function PestanaSuscripcion({ cuenta }: Props) {
   const { suscripcion, proximoPago, pagos } = consulta.data;
   const suspendida = suscripcion.estado === 'suspendida';
   const pendiente = suscripcion.estado === 'pendientePago';
+  // Una suscripción activa ya está paga hasta su vencimiento: renovar solo tiene sentido cuando
+  // ya entró en su último mes (por vencer) o venció, o para cobrar el primer pago de una cuenta nueva.
+  const alDia = suscripcion.estado === 'activa';
+  const puedeRegistrarPago = !suspendida && !alDia;
   const medio = (valor: PagoDeCuenta['medio']) => t(`suscripcion:medios.${valor}`);
   const periodo = (desde: Date, hasta: Date) =>
     `${formatearFecha(desde)} – ${formatearFecha(hasta)}`;
@@ -105,6 +112,37 @@ export function PestanaSuscripcion({ cuenta }: Props) {
           <TextoMono>{p.referencia}</TextoMono>
         </span>
       ),
+    },
+    {
+      id: 'banco',
+      encabezado: t('suscripcion:columna.banco'),
+      secundaria: true,
+      celda: (p) =>
+        p.banco === null ? (
+          <span className={styles.suave}>—</span>
+        ) : (
+          <span className={styles.suave}>
+            {p.banco} · <TextoMono>{p.cuentaDestino}</TextoMono>
+          </span>
+        ),
+    },
+    {
+      id: 'comprobante',
+      encabezado: t('suscripcion:columna.comprobante'),
+      celda: (p) =>
+        p.comprobanteId === null ? (
+          <span className={styles.suave}>—</span>
+        ) : (
+          <BotonIcono
+            icono="visibility"
+            accion="ver"
+            etiqueta={t('suscripcion:verComprobante')}
+            disabled={abrirComprobante.isPending}
+            onClick={() => {
+              abrirComprobante.mutate(p.comprobanteId ?? '');
+            }}
+          />
+        ),
     },
     {
       id: 'registro',
@@ -165,23 +203,30 @@ export function PestanaSuscripcion({ cuenta }: Props) {
         </div>
         <div>
           <p className={styles.etiqueta}>{t('suscripcion:proximoPago')}</p>
-          <p className={proximoPago === 'sinPagar' ? styles.peligro : styles.advertencia}>
-            {proximoPago === null ? '—' : t(`suscripcion:pago.${proximoPago}`)}
-          </p>
+          {alDia ? (
+            <p className={styles.alDia}>
+              {t('suscripcion:alDia', { fecha: formatearFecha(suscripcion.hasta) })}
+            </p>
+          ) : (
+            <p className={proximoPago === 'sinPagar' ? styles.peligro : styles.advertencia}>
+              {proximoPago === null ? '—' : t(`suscripcion:pago.${proximoPago}`)}
+            </p>
+          )}
         </div>
       </section>
 
       <div className={styles.acciones}>
         <div className={styles.principales}>
-          <AccesoBoton
-            icono={pendiente ? 'payments' : 'autorenew'}
-            disabled={suspendida}
-            onClick={() => {
-              void navegar(rutaDePago(cuenta.id));
-            }}
-          >
-            {pendiente ? t('suscripcion:registrarPrimerPago') : t('suscripcion:renovarPago')}
-          </AccesoBoton>
+          {puedeRegistrarPago ? (
+            <AccesoBoton
+              icono={pendiente ? 'payments' : 'autorenew'}
+              onClick={() => {
+                void navegar(rutaDePago(cuenta.id));
+              }}
+            >
+              {pendiente ? t('suscripcion:registrarPrimerPago') : t('suscripcion:renovarPago')}
+            </AccesoBoton>
+          ) : null}
           <AccesoBoton
             variante="tonal"
             icono="swap_vert"

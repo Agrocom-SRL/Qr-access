@@ -7,5 +7,7 @@ export interface SeguridadRepositorio {
   restaurar: () => Promise<SesionIniciada | null>;
   cerrarSesion: () => Promise<void>;
   obtenerPerfil: () => Promise<PerfilAdmin>;
+  /** El super admin cambia su propio nombre. */
+  cambiarNombre: (nombre: string) => Promise<void>;
   cambiarContrasena: (actual: string, nueva: string) => Promise<void>;
 }

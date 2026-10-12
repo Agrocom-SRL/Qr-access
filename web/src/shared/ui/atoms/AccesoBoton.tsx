@@ -4,7 +4,7 @@ import type { NombreIcono } from './iconos';
 import { Spinner } from './Spinner';
 import styles from './AccesoBoton.module.css';
 
-export type VarianteBoton = 'primario' | 'tonal' | 'texto' | 'peligro';
+export type VarianteBoton = 'primario' | 'tonal' | 'texto' | 'peligro' | 'advertencia';
 
 interface Props extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   variante?: VarianteBoton;

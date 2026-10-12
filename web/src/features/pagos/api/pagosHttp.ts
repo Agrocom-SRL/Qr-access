@@ -1,4 +1,6 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
+import { subirComprobante } from '../../../shared/api/comprobantes';
+import { requiereRespaldo } from '../domain/pago';
 import type { Cobranza, FilaDeCobranza } from '../domain/pago';
 import { ESTADO_DESDE_DTO, type EstadoDto } from '../../../shared/api/estados';
 import type { PagosRepositorio } from './PagosRepositorio';
@@ -60,6 +62,11 @@ export function cobranzaDesdeDto(dto: CobranzaDto): Cobranza {
 export function crearPagosHttp(cliente: ClienteHttp): PagosRepositorio {
   return {
     async registrar(cuentaId, tipo, pago) {
+      // El comprobante se sube primero y el pago lo referencia por su id (ADR 0024).
+      const comprobanteId =
+        requiereRespaldo(pago.medio) && pago.comprobante
+          ? await subirComprobante(cliente, pago.comprobante)
+          : undefined;
       const dto = await cliente.solicitar<{
         periodo_desde: string;
         periodo_hasta: string;
@@ -73,6 +80,13 @@ export function crearPagosHttp(cliente: ClienteHttp): PagosRepositorio {
           fecha_pago: pago.fechaPago,
           medio: pago.medio,
           referencia: pago.referencia.trim(),
+          ...(comprobanteId === undefined
+            ? {}
+            : {
+                banco: pago.banco,
+                cuenta_destino: pago.cuentaDestino.trim(),
+                comprobante_id: comprobanteId,
+              }),
         },
       });
       return {

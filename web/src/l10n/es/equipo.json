@@ -36,5 +36,11 @@
   "errorCarga": "No pudimos cargar el equipo",
   "requerido": "Este campo es obligatorio",
   "subtitulo_one": "Quienes administran la plataforma · {{count}} activo",
-  "subtitulo_other": "Quienes administran la plataforma · {{count}} activos"
+  "subtitulo_other": "Quienes administran la plataforma · {{count}} activos",
+  "editar": "Editar a {{nombre}}",
+  "editarTitulo": "Editar a {{nombre}}",
+  "desactivarA": "Desactivar a {{nombre}}",
+  "reactivarA": "Reactivar a {{nombre}}",
+  "guardar": "Guardar",
+  "guardando": "Guardando"
 }

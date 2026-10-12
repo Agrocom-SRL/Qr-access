@@ -104,6 +104,27 @@ describe('perfil (A12)', () => {
     });
   });
 
+  it('muestra datos, tema y contraseña en ese orden y permite cambiar el nombre', async () => {
+    const cambiarNombre = vi.fn(() => Promise.resolve());
+    montar(crearServiciosDePrueba({ seguridad: { cambiarNombre } }), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Lucía Paz/ }));
+    const tema = await screen.findByRole('heading', { name: 'Tema' });
+    const contrasena = screen.getByRole('heading', { name: 'Cambiar contraseña' });
+    expect(
+      tema.compareDocumentPosition(contrasena) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar nombre' }));
+    const campo = screen.getByLabelText('Nombre');
+    await userEvent.clear(campo);
+    await userEvent.type(campo, 'Lucía Paz Rojas');
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar nombre' }));
+    await waitFor(() => {
+      expect(cambiarNombre).toHaveBeenCalledWith('Lucía Paz Rojas');
+    });
+  });
+
   it('cerrar sesión devuelve al ingreso', async () => {
     montar(crearServiciosDePrueba(), '/ingreso');
     await ingresar();
@@ -124,7 +145,9 @@ describe('equipo (A11)', () => {
     await irAEquipo(crearServiciosDePrueba());
     const tabla = await screen.findByRole('table', { name: 'Administradores de AGROCOM' });
     expect(within(tabla).getByText('Tú')).toBeInTheDocument();
-    expect(within(tabla).getAllByRole('button', { name: 'Desactivar' })).toHaveLength(1);
+    expect(within(tabla).getAllByRole('button', { name: /^Desactivar a / })).toHaveLength(1);
+    expect(within(tabla).getAllByRole('button', { name: /^Editar a / }).length).toBeGreaterThan(1);
+    expect(within(tabla).getByRole('button', { name: /^Reactivar a / })).toBeInTheDocument();
     expect(within(tabla).getByText('Desactivado')).toBeInTheDocument();
     expect(screen.getByText('Quienes administran la plataforma · 2 activos')).toBeInTheDocument();
   });
@@ -132,15 +155,32 @@ describe('equipo (A11)', () => {
   it('desactivar pide confirmación', async () => {
     const desactivar = vi.fn(() => Promise.resolve());
     await irAEquipo(crearServiciosDePrueba({ equipo: { desactivar } }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Desactivar' }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Desactivar a / }));
     expect(desactivar).not.toHaveBeenCalled();
     const dialogo = await screen.findByText('¿Desactivar a Marco Suárez?');
     expect(dialogo).toBeInTheDocument();
-    await userEvent.click(
-      screen.getAllByRole('button', { name: 'Desactivar' }).at(-1) as HTMLElement,
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Desactivar' }));
     await waitFor(() => {
       expect(desactivar).toHaveBeenCalledWith('2');
+    });
+  });
+
+  it('editar cambia el nombre y reactivar vuelve a activar a un miembro desactivado', async () => {
+    const renombrar = vi.fn(() => Promise.resolve());
+    const reactivar = vi.fn(() => Promise.resolve());
+    await irAEquipo(crearServiciosDePrueba({ equipo: { renombrar, reactivar } }));
+    await userEvent.click(await screen.findByRole('button', { name: /^Editar a Marco/ }));
+    const dialogo = await screen.findByRole('dialog');
+    const campo = within(dialogo).getByLabelText('Nombre completo');
+    await userEvent.clear(campo);
+    await userEvent.type(campo, 'Marco A. Suárez');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(renombrar).toHaveBeenCalledWith('2', 'Marco A. Suárez');
+    });
+    await userEvent.click(screen.getByRole('button', { name: /^Reactivar a / }));
+    await waitFor(() => {
+      expect(reactivar).toHaveBeenCalled();
     });
   });
 
@@ -217,6 +257,23 @@ describe('cuentas (A03)', () => {
     expect(within(tabla).getByText('Por vencer')).toBeInTheDocument();
     expect(screen.getByText('42 empresas cliente')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Por vencer/ })).toHaveTextContent('5');
+  });
+
+  it('cada fila trae ver, sitios y puertas, editar y eliminar', async () => {
+    await irACuentas(crearServiciosDePrueba());
+    const tabla = await screen.findByRole('table', { name: 'Cuentas' });
+    for (const nombre of [
+      'Ver Agroindustrial Norte',
+      'Sitios y puertas de Agroindustrial Norte',
+      'Editar Agroindustrial Norte',
+      'Eliminar Agroindustrial Norte',
+    ]) {
+      expect(within(tabla).getByRole('button', { name: nombre })).toBeInTheDocument();
+    }
+    await userEvent.click(
+      within(tabla).getByRole('button', { name: 'Eliminar Agroindustrial Norte' }),
+    );
+    expect(await screen.findByText('¿Eliminar Agroindustrial Norte?')).toBeInTheDocument();
   });
 
   it('filtrar por estado y buscar mandan los filtros al repositorio', async () => {
@@ -409,7 +466,15 @@ describe('detalle de cuenta (A05)', () => {
     expect(screen.getByText('Puede crear 13 usuarios más')).toBeInTheDocument();
     expect(screen.getByText(/Vence el 05\/11\/2026, en 24 días/)).toBeInTheDocument();
     expect(screen.getAllByText('Carla Méndez').length).toBeGreaterThan(0);
-    expect(screen.getByText('2 · 5')).toBeInTheDocument();
+    // Sitios y puertas son dos indicadores arriba, con enlace a su pestaña.
+    expect(screen.getByRole('link', { name: /Sitios\s*2/ })).toHaveAttribute(
+      'href',
+      '/cuentas/1?pestana=sitios',
+    );
+    expect(screen.getByRole('link', { name: /Puertas\s*5/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Persona responsable de la cuenta' }),
+    ).toBeInTheDocument();
   });
 
   it('la pestaña Sitios y puertas muestra el estado de cada lector', async () => {
@@ -523,6 +588,34 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
     });
   });
 
+  it('una suscripción activa está al día: no ofrece renovar ni muestra "pendiente"', async () => {
+    const activa = {
+      ...SUSCRIPCION,
+      suscripcion: { ...SUSCRIPCION.suscripcion, estado: 'activa' as const, diasRestantes: 200 },
+    };
+    await abrirSuscripcion(
+      crearServiciosDePrueba({ suscripciones: { obtener: () => Promise.resolve(activa) } }),
+    );
+    expect(await screen.findByText(/Al día · vence el/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Renovar y registrar pago' })).toBeNull();
+    expect(screen.queryByText('Pendiente')).toBeNull();
+  });
+
+  it('el historial muestra banco y cuenta, y abre el comprobante', async () => {
+    const verComprobante = vi.fn(() => Promise.resolve(new Blob(['x'], { type: 'image/png' })));
+    URL.createObjectURL = vi.fn(() => 'blob:prueba');
+    URL.revokeObjectURL = vi.fn();
+    const abrir = vi.spyOn(globalThis, 'open').mockReturnValue(null);
+    await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { verComprobante } }));
+    expect(await screen.findByText(/Banco Unión/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ver comprobante' }));
+    await waitFor(() => {
+      expect(verComprobante).toHaveBeenCalledWith('77');
+      expect(abrir).toHaveBeenCalledWith('blob:prueba', '_blank', 'noopener');
+    });
+    abrir.mockRestore();
+  });
+
   it('suspendida: ofrece reactivar y no deja renovar ni cambiar de plan', async () => {
     const suspendida = {
       ...SUSCRIPCION,
@@ -533,7 +626,7 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
       crearServiciosDePrueba({ suscripciones: { obtener: () => Promise.resolve(suspendida) } }),
     );
     expect(await screen.findByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Renovar y registrar pago' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Renovar y registrar pago' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Cambiar plan' })).toBeDisabled();
     expect(screen.getByText(/La suscripción está suspendida/)).toBeInTheDocument();
   });
@@ -573,6 +666,14 @@ describe('registrar pago (A07)', () => {
     await abrirPago(crearServiciosDePrueba({ pagos: { registrar } }));
     await userEvent.type(await screen.findByLabelText('Referencia'), 'TRF-912204');
     await userEvent.click(screen.getByRole('button', { name: 'Depósito' }));
+    // Un depósito exige banco, cuenta y el comprobante: sin ellos no se llega a confirmar.
+    await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await userEvent.selectOptions(screen.getByLabelText('Banco donde se recibió'), 'Banco Unión');
+    await userEvent.type(screen.getByLabelText('Cuenta de destino'), '10000123456');
+    const comprobante = new File(['x'], 'boleta.png', { type: 'image/png' });
+    await userEvent.upload(screen.getByLabelText('Comprobante'), comprobante);
+    expect(await screen.findByText('boleta.png')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
     const dialogo = await screen.findByRole('dialog');
     expect(within(dialogo).getByText('¿Registrar el pago y renovar?')).toBeInTheDocument();
@@ -583,7 +684,14 @@ describe('registrar pago (A07)', () => {
       expect(registrar).toHaveBeenCalledWith(
         '1',
         'renovacion',
-        expect.objectContaining({ monto: 12000, medio: 'deposito', referencia: 'TRF-912204' }),
+        expect.objectContaining({
+          monto: 12000,
+          medio: 'deposito',
+          referencia: 'TRF-912204',
+          banco: 'Banco Unión',
+          cuentaDestino: '10000123456',
+          comprobante,
+        }),
       );
     });
     expect(

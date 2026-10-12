@@ -26,6 +26,16 @@
   gap: var(--esp16);
 }
 
+.identidad {
+  flex: 1;
+}
+
+.nombreEdicion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}
+
 .nombre {
   font-size: var(--texto20);
   font-weight: var(--peso600);

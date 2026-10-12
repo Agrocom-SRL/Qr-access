@@ -23,7 +23,6 @@
   "telefono": "Teléfono",
   "clienteDesde": "Cliente desde",
   "qrIlimitadosPrecio": "QR ilimitados · {{precio}} al año",
-  "sitiosYPuertas": "Sitios y puertas",
   "dispositivosSinConexion": "Dispositivos sin conexión",
   "administradores": "Administradores",
   "sinSuscripcion": "Esta cuenta no tiene una suscripción vigente. Sus puertas rechazan los accesos.",
@@ -94,6 +93,9 @@
   "registrarPago": "Registrar pago",
   "pendienteAviso": "Esta cuenta aún no pagó su primer año: no emite QR ni abre puertas hasta registrar el pago.",
   "correo": "Correo",
-  "responsable": "Persona responsable",
-  "pendienteTexto": "Pendiente de su primer pago: empieza a operar cuando se registre."
+  "responsable": "Persona responsable de la cuenta",
+  "pendienteTexto": "Pendiente de su primer pago: empieza a operar cuando se registre.",
+  "sitios": "Sitios",
+  "puertas": "Puertas",
+  "sinResponsable": "Esta cuenta no tiene datos de contacto."
 }

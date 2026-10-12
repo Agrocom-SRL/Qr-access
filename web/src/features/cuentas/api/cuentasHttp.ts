@@ -7,7 +7,8 @@ import {
   type SitioConPuertas,
 } from '../domain/cuenta';
 import { ESTADO_DESDE_DTO, ESTADO_HACIA_DTO, type EstadoDto } from '../../../shared/api/estados';
-import { parsearMonto } from '../../pagos';
+import { subirComprobante } from '../../../shared/api/comprobantes';
+import { parsearMonto, requiereRespaldo } from '../../pagos';
 import type { CuentasRepositorio } from './CuentasRepositorio';
 
 interface CuentaDto {
@@ -169,6 +170,13 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
 
     async crear(borrador) {
       const { empresa, vigencia } = borrador;
+      // El comprobante se sube primero; la cuenta lo referencia por su id (ADR 0024).
+      const comprobanteId =
+        borrador.pago.modo === 'ahora' &&
+        requiereRespaldo(borrador.pago.medio) &&
+        borrador.pago.comprobante
+          ? await subirComprobante(cliente, borrador.pago.comprobante)
+          : undefined;
       const dto = await cliente.solicitar<{
         cuenta: { id: string; codigo: string; nombre: string };
         administrador: { id: string; etiqueta: string; pin: string };
@@ -197,6 +205,13 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
                   fecha_pago: borrador.pago.fechaPago,
                   medio: borrador.pago.medio,
                   referencia: borrador.pago.referencia.trim(),
+                  ...(comprobanteId === undefined
+                    ? {}
+                    : {
+                        banco: borrador.pago.banco,
+                        cuenta_destino: borrador.pago.cuentaDestino.trim(),
+                        comprobante_id: comprobanteId,
+                      }),
                 },
               }
             : {}),

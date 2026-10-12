@@ -5,6 +5,7 @@ import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
+import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { Avatar } from '../../../../shared/ui/atoms/Avatar';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
@@ -13,9 +14,10 @@ import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagi
 import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
-import { useDesactivarMiembro, useEquipo } from '../../application/useEquipo';
-import { puedeDesactivar, type MiembroEquipo } from '../../domain/equipo';
+import { useDesactivarMiembro, useEquipo, useReactivarMiembro } from '../../application/useEquipo';
+import { puedeDesactivar, puedeReactivar, type MiembroEquipo } from '../../domain/equipo';
 import { DialogoAgregarMiembro } from '../components/DialogoAgregarMiembro';
+import { DialogoEditarMiembro } from '../components/DialogoEditarMiembro';
 import styles from './EquipoPage.module.css';
 
 /** A11: el equipo AGROCOM con sus cuatro estados, agregar (A11b) y desactivar con confirmación. */
@@ -23,6 +25,8 @@ export function EquipoPage() {
   const { t } = useTranslation(['equipo', 'comun']);
   const equipo = useEquipo();
   const desactivar = useDesactivarMiembro();
+  const reactivar = useReactivarMiembro();
+  const [aEditar, setAEditar] = useState<MiembroEquipo | null>(null);
   const [agregando, setAgregando] = useState(false);
   const [aDesactivar, setADesactivar] = useState<MiembroEquipo | null>(null);
 
@@ -76,18 +80,39 @@ export function EquipoPage() {
       id: 'accion',
       encabezado: t('equipo:columna.accion'),
       alinear: 'fin',
-      celda: (m) =>
-        puedeDesactivar(m) ? (
-          <AccesoBoton
-            variante="texto"
-            className={styles.desactivar}
+      celda: (m) => (
+        <span className={styles.acciones}>
+          <BotonIcono
+            icono="edit"
+            accion="editar"
+            etiqueta={t('equipo:editar', { nombre: m.nombre })}
             onClick={() => {
-              setADesactivar(m);
+              setAEditar(m);
             }}
-          >
-            {t('equipo:desactivar')}
-          </AccesoBoton>
-        ) : null,
+          />
+          {puedeDesactivar(m) ? (
+            <BotonIcono
+              icono="block"
+              accion="eliminar"
+              etiqueta={t('equipo:desactivarA', { nombre: m.nombre })}
+              onClick={() => {
+                setADesactivar(m);
+              }}
+            />
+          ) : null}
+          {puedeReactivar(m) ? (
+            <BotonIcono
+              icono="refresh"
+              accion="ver"
+              etiqueta={t('equipo:reactivarA', { nombre: m.nombre })}
+              disabled={reactivar.isPending}
+              onClick={() => {
+                reactivar.mutate(m.id);
+              }}
+            />
+          ) : null}
+        </span>
+      ),
     },
   ];
 
@@ -117,8 +142,10 @@ export function EquipoPage() {
           </AccesoBoton>
         }
       />
-      {desactivar.isError ? (
-        <Aviso tono="peligro">{traducirError(t, codigoDe(desactivar.error))}</Aviso>
+      {desactivar.isError || reactivar.isError ? (
+        <Aviso tono="peligro">
+          {traducirError(t, codigoDe(desactivar.error ?? reactivar.error))}
+        </Aviso>
       ) : null}
       <ListadoPaginado
         etiqueta={t('equipo:tabla')}
@@ -140,6 +167,14 @@ export function EquipoPage() {
         <Icono nombre="info" tamano={20} />
         {t('equipo:noAutodesactivar')}
       </p>
+      {aEditar ? (
+        <DialogoEditarMiembro
+          miembro={aEditar}
+          onCerrar={() => {
+            setAEditar(null);
+          }}
+        />
+      ) : null}
       <DialogoAgregarMiembro
         abierto={agregando}
         onCerrar={() => {

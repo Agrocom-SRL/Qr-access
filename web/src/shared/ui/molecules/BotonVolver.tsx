@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AccesoBoton } from '../atoms/AccesoBoton';
+import styles from './BotonVolver.module.css';
 
 /**
  * Vuelve a la página anterior del historial; si la persona llegó directo a esta dirección (no hay
@@ -15,7 +16,7 @@ export function BotonVolver({ alternativa }: { alternativa: string }) {
     else void navegar(alternativa);
   };
   return (
-    <AccesoBoton variante="texto" icono="arrow_back" onClick={volver}>
+    <AccesoBoton variante="texto" icono="arrow_back" className={styles.volver} onClick={volver}>
       {t('volver')}
     </AccesoBoton>
   );

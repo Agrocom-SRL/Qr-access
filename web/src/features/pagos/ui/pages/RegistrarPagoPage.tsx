@@ -17,12 +17,22 @@ import { useSuscripcionDeCuenta } from '../../../suscripciones';
 import { useRegistrarPago } from '../../application/usePagos';
 import {
   parsearMonto,
+  requiereRespaldo,
   validarPago,
   type FormularioDePago,
   type TipoDePago,
 } from '../../domain/pago';
 import { CamposDePago } from '../components/CamposDePago';
 import styles from './RegistrarPagoPage.module.css';
+
+const TODOS_LOS_CAMPOS: ReadonlySet<keyof FormularioDePago> = new Set([
+  'monto',
+  'fechaPago',
+  'referencia',
+  'banco',
+  'cuentaDestino',
+  'comprobante',
+]);
 
 const hoy = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz', dateStyle: 'short' }).format(
@@ -88,6 +98,9 @@ export function RegistrarPagoPage() {
     fechaPago: hoy(),
     medio: 'transferencia',
     referencia: '',
+    banco: '',
+    cuentaDestino: '',
+    comprobante: null,
   };
   const errores = validarPago(datos);
   const valido = Object.keys(errores).length === 0 && suscripcion.estado !== 'suspendida';
@@ -150,7 +163,7 @@ export function RegistrarPagoPage() {
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
-          setTocados(new Set(['monto', 'fechaPago', 'referencia']));
+          setTocados(TODOS_LOS_CAMPOS);
           if (valido) setConfirmando(true);
         }}
       >
@@ -162,8 +175,6 @@ export function RegistrarPagoPage() {
           onTocar={tocar}
           ayudaDelMonto={tipo === 'mejora_de_plan' ? undefined : t('pago:montoAyuda')}
         />
-        {/* TODO(docs): el comprobante adjunto queda fuera hasta definir dónde se guarda (ADR 0015). */}
-        <p className={styles.nota}>{t('pago:comprobanteNota')}</p>
 
         <div className={styles.vigencia}>
           <span>
@@ -190,7 +201,7 @@ export function RegistrarPagoPage() {
         <AccesoBoton
           disabled={!valido}
           onClick={() => {
-            setTocados(new Set(['monto', 'fechaPago', 'referencia']));
+            setTocados(TODOS_LOS_CAMPOS);
             if (valido) setConfirmando(true);
           }}
         >
@@ -245,6 +256,11 @@ export function RegistrarPagoPage() {
             {t(`pago:medios.${datos.medio}`)} ·{' '}
             <TextoMono fuerte>{datos.referencia.trim()}</TextoMono>
           </FilaClaveValor>
+          {requiereRespaldo(datos.medio) ? (
+            <FilaClaveValor clave={t('pago:filaBanco')}>
+              {datos.banco} · <TextoMono fuerte>{datos.cuentaDestino.trim()}</TextoMono>
+            </FilaClaveValor>
+          ) : null}
           <FilaClaveValor clave={t('pago:filaFecha')}>
             <TextoMono fuerte>{formatearFecha(`${datos.fechaPago}T12:00:00Z`)}</TextoMono>
           </FilaClaveValor>

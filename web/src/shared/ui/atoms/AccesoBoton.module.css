@@ -59,6 +59,16 @@
   background: var(--peligroSuave);
 }
 
+.advertencia {
+  background: transparent;
+  border-color: var(--advertencia);
+  color: var(--advertencia);
+}
+
+.advertencia:hover:not(:disabled) {
+  background: var(--advertenciaSuave);
+}
+
 .boton:disabled {
   background: var(--borde);
   border-color: transparent;

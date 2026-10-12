@@ -30,7 +30,9 @@
     "pagado": "Pagado",
     "medio": "Medio",
     "referencia": "Referencia",
-    "registro": "Registró"
+    "registro": "Registró",
+    "banco": "Banco y cuenta",
+    "comprobante": "Comprobante"
   },
   "medios": {
     "transferencia": "Transferencia",
@@ -52,5 +54,7 @@
   "registrarDiferencia": "Registrar pago de la diferencia",
   "pendienteAviso": "La cuenta aún no pagó su primer año: no emite QR ni abre puertas hasta registrar el pago.",
   "registrarPrimerPago": "Registrar el primer pago",
-  "primerPago": "primer pago"
+  "primerPago": "primer pago",
+  "verComprobante": "Ver comprobante",
+  "alDia": "Al día · vence el {{fecha}}"
 }

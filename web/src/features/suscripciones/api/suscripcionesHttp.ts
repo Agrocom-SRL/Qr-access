@@ -1,4 +1,5 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
+import { bajarComprobante } from '../../../shared/api/comprobantes';
 import { ESTADO_DESDE_DTO, type EstadoDto } from '../../../shared/api/estados';
 import type { MedioDePago, SuscripcionDeCuenta } from '../domain/suscripcion';
 import type { SuscripcionesRepositorio } from './SuscripcionesRepositorio';
@@ -34,6 +35,9 @@ interface SuscripcionDto {
     fecha_pago: string;
     medio: MedioDePago;
     referencia: string;
+    banco: string | null;
+    cuenta_destino: string | null;
+    comprobante_id: string | null;
     periodo_desde: string;
     periodo_hasta: string;
     registro: { id: string; nombre: string } | null;
@@ -65,6 +69,9 @@ export function suscripcionDesdeDto(dto: SuscripcionDto): SuscripcionDeCuenta {
       fechaPago: pago.fecha_pago,
       medio: pago.medio,
       referencia: pago.referencia,
+      banco: pago.banco,
+      cuentaDestino: pago.cuenta_destino,
+      comprobanteId: pago.comprobante_id,
       periodoDesde: new Date(pago.periodo_desde),
       periodoHasta: new Date(pago.periodo_hasta),
       registro: pago.registro,
@@ -75,6 +82,8 @@ export function suscripcionDesdeDto(dto: SuscripcionDto): SuscripcionDeCuenta {
 /** Endpoints de suscripción de `/plataforma/cuentas/:id` (módulo `suscripciones` de la API). */
 export function crearSuscripcionesHttp(cliente: ClienteHttp): SuscripcionesRepositorio {
   return {
+    verComprobante: (comprobanteId) => bajarComprobante(cliente, comprobanteId),
+
     async obtener(cuentaId) {
       return suscripcionDesdeDto(
         await cliente.solicitar<SuscripcionDto>({
