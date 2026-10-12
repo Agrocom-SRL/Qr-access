@@ -3,7 +3,8 @@ import { AccesoBadge, type TonoBadge } from './AccesoBadge';
 import type { NombreIcono } from './iconos';
 
 /** Estados que pinta el badge; el cálculo del estado vive en `features/suscripciones/domain`. */
-export type EstadoBadgeSuscripcion = 'activa' | 'porVencer' | 'vencida' | 'suspendida';
+export type EstadoBadgeSuscripcion =
+  'activa' | 'porVencer' | 'vencida' | 'suspendida' | 'pendientePago';
 
 /** theme.ts › badgeSuscripcion: cada estado con su tono e ícono. */
 const APARIENCIA: Readonly<
@@ -13,6 +14,7 @@ const APARIENCIA: Readonly<
   porVencer: { tono: 'advertencia', icono: 'schedule' },
   vencida: { tono: 'peligro', icono: 'event_busy' },
   suspendida: { tono: 'neutro', icono: 'pause_circle' },
+  pendientePago: { tono: 'advertencia', icono: 'pending_actions' },
 };
 
 export function BadgeSuscripcion({ estado }: { estado: EstadoBadgeSuscripcion }) {

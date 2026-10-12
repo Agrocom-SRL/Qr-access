@@ -10,7 +10,9 @@ import crearCuenta from './es/crearCuenta.json';
 import cuentas from './es/cuentas.json';
 import detalle from './es/detalle.json';
 import equipo from './es/equipo.json';
+import estadisticas from './es/estadisticas.json';
 import estados from './es/estados.json';
+import estructura from './es/estructura.json';
 import errores from './es/errores.json';
 import nav from './es/nav.json';
 import pago from './es/pago.json';
@@ -36,7 +38,9 @@ export const recursos = {
     detalle,
     equipo,
     errores,
+    estadisticas,
     estados,
+    estructura,
     nav,
     pago,
     perfil,

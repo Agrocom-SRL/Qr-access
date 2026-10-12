@@ -17,6 +17,7 @@ export function PantallaSinConexion({
     <PantallaCompleta incrustada={incrustada}>
       <EstadoVacio
         ilustracion="sinConexion"
+        ilustracionGrande
         titulo={t('sinConexionTotal.titulo')}
         texto={t('sinConexionTotal.texto')}
         accion={
@@ -39,6 +40,7 @@ export function PantallaSesionVencida({
     <PantallaCompleta incrustada={incrustada}>
       <EstadoVacio
         ilustracion="bloqueo"
+        ilustracionGrande
         titulo={t('auth:sesionVencida.titulo')}
         texto={t('auth:sesionVencida.texto')}
         codigo="AUTH_SESION_VENCIDA"
@@ -57,7 +59,8 @@ export function PantallaNoEncontrada({
   return (
     <PantallaCompleta incrustada={incrustada}>
       <EstadoVacio
-        ilustracion="vacioQr"
+        ilustracion="error"
+        ilustracionGrande
         titulo={t('noEncontrada.titulo')}
         texto={t('noEncontrada.texto')}
         codigo="404"

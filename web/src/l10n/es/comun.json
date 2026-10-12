@@ -29,5 +29,6 @@
     "titulo": "No encontramos esa página",
     "texto": "La dirección no existe o ya no está disponible. Tu sesión sigue abierta.",
     "volver": "Ir al resumen"
-  }
+  },
+  "sinResultados": "Sin resultados"
 }

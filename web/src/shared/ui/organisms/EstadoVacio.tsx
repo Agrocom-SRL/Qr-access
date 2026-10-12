@@ -4,6 +4,8 @@ import styles from './EstadoVacio.module.css';
 
 interface Props {
   ilustracion?: NombreIlustracion;
+  /** Ilustración más grande, para pantallas de estado completas. */
+  ilustracionGrande?: boolean;
   titulo: string;
   texto?: string;
   /** Un `AccesoBoton` o enlace con la acción que destraba el vacío. */
@@ -15,6 +17,7 @@ interface Props {
 /** Ilustración 200×144, título 20/600, texto de hasta 400 px y acción (PE2, PE4). */
 export function EstadoVacio({
   ilustracion = 'vacioPuertas',
+  ilustracionGrande = false,
   titulo,
   texto,
   accion,
@@ -22,7 +25,7 @@ export function EstadoVacio({
 }: Props) {
   return (
     <div className={styles.estado}>
-      <Ilustracion nombre={ilustracion} />
+      <Ilustracion nombre={ilustracion} grande={ilustracionGrande} />
       <h2 className={styles.titulo}>{titulo}</h2>
       {texto ? <p className={styles.texto}>{texto}</p> : null}
       {codigo ? <code className={styles.codigo}>{codigo}</code> : null}
