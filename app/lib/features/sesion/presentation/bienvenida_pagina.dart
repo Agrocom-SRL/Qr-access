@@ -1,7 +1,9 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
@@ -58,40 +60,49 @@ class BienvenidaPagina extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: colores.hero,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(tokens.radio.xl),
-                ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(tokens.radio.xl),
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: EdgeInsets.all(tokens.espacio.xl),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const AccesoLogo(sobreHero: true),
-                      SizedBox(height: tokens.espacio.xl),
-                      // El nombre va en dos líneas en cualquier ancho (C01).
-                      Text(
-                        l10n.bienvenidaNombreApp,
-                        style: textos.headlineLarge?.copyWith(
-                          color: colores.sobreHero,
+              child: ColoredBox(
+                color: colores.hero,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const AccesoFoto(ruta: Multimedia.fotoBienvenida),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: EdgeInsets.all(tokens.espacio.xl),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const AccesoLogo(sobreHero: true),
+                              SizedBox(height: tokens.espacio.xl),
+                              // El nombre va en dos líneas en cualquier
+                              // ancho (C01).
+                              Text(
+                                l10n.bienvenidaNombreApp,
+                                style: textos.headlineLarge?.copyWith(
+                                  color: colores.sobreHero,
+                                ),
+                              ),
+                              SizedBox(height: tokens.espacio.s),
+                              Text(
+                                l10n.bienvenidaFrase,
+                                style: textos.bodyLarge?.copyWith(
+                                  color: colores.sobreHero,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      SizedBox(height: tokens.espacio.s),
-                      Text(
-                        l10n.bienvenidaFrase,
-                        style: textos.bodyLarge?.copyWith(
-                          color: colores.sobreHero,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

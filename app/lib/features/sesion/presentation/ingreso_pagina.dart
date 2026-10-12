@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
@@ -9,6 +10,7 @@ import 'package:agrocom_acceso/features/sesion/domain/pin.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/ingreso_controlador.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/widgets/casillas_pin.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
@@ -88,7 +90,13 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(ingresoControladorProvider);
-    ref.listen(ingresoControladorProvider, (_, nuevo) => _seguirBloqueo(nuevo));
+    ref.listen(ingresoControladorProvider, (anterior, nuevo) {
+      _seguirBloqueo(nuevo);
+      // Vibración fuerte al fallar el PIN, una vez por intento.
+      if (nuevo.pinIncorrecto && anterior?.pinIncorrecto != true) {
+        unawaited(HapticFeedback.heavyImpact());
+      }
+    });
     final l10n = context.l10n;
     final tokens = context.tokens;
     final colores = tokens.colores;
@@ -101,6 +109,7 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
         : (errorApi == null || bloqueado ? null : textoDeError(l10n, errorApi));
 
     return PlantillaAuth(
+      cabeceraConFoto: true,
       alVolver: () => context.go(Rutas.bienvenida),
       pie: AccesoBoton(
         texto: l10n.sesionBotonIngresar,
@@ -112,8 +121,10 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AccesoLogo(tamano: tokens.tamano.logoChico),
-          SizedBox(height: tokens.espacio.xl),
+          if (context.esExpandida) ...[
+            AccesoLogo(tamano: tokens.tamano.logoChico),
+            SizedBox(height: tokens.espacio.xl),
+          ],
           Text(l10n.sesionIngresoTitulo, style: textos.headlineLarge),
           SizedBox(height: tokens.espacio.s),
           Text(
@@ -162,6 +173,8 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
             ],
           ),
           if (bloqueado) ...[
+            SizedBox(height: tokens.espacio.l),
+            const Center(child: AccesoIlustracion(ruta: Multimedia.bloqueo)),
             SizedBox(height: tokens.espacio.l),
             _AvisoBloqueo(hasta: estado.bloqueadoHasta!, ahora: ahora),
           ],

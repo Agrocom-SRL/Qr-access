@@ -1,5 +1,6 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -99,7 +100,7 @@ class MisQrPagina extends ConsumerWidget {
                 ..invalidate(resumenQrProvider),
               alCambiarPagina: ref.read(filtroQrProvider.notifier).irAPagina,
               vacio: EstadoVacio(
-                icono: Icons.qr_code_2,
+                ilustracion: Multimedia.vacioQr,
                 titulo: filtro.estado == EstadoQr.vigente
                     ? l10n.qrMisQrSinVigentes
                     : l10n.qrMisQrSinResultados,

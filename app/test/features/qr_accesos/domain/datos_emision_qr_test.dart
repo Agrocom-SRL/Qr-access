@@ -77,8 +77,39 @@ void main() {
   });
 
   group('Vigencia.venceAtPara', () {
-    test('el fin del día lo calcula la API: la app no manda vence_at', () {
-      expect(Vigencia.porDefecto.venceAtPara(ahora), isNull);
+    test('por defecto son 2 horas desde la emisión', () {
+      expect(Vigencia.porDefecto.opcion, OpcionVigencia.dosHoras);
+      expect(
+        Vigencia.porDefecto.venceAtPara(ahora),
+        DateTime.utc(2026, 10, 9, 16, 30),
+      );
+    });
+
+    test('todo el día lo calcula la API: la app no manda vence_at', () {
+      expect(
+        const Vigencia(OpcionVigencia.finDelDia).venceAtPara(ahora),
+        isNull,
+      );
+    });
+
+    test('los plazos largos llegan hasta las 24 horas', () {
+      expect(
+        const Vigencia(OpcionVigencia.veinticuatroHoras).venceAtPara(ahora),
+        DateTime.utc(2026, 10, 10, 14, 30),
+      );
+    });
+
+    test('los plazos en días cuentan 24 horas por día', () {
+      expect(
+        const Vigencia(OpcionVigencia.sieteDias).venceAtPara(ahora),
+        DateTime.utc(2026, 10, 16, 14, 30),
+      );
+      expect(OpcionVigencia.enDias.map((o) => o.dias), [2, 3, 5, 7]);
+    });
+
+    test('los bloques de horas son 1, 2, 4, 8 y 12, 16, 20, 24', () {
+      expect(OpcionVigencia.corta.map((o) => o.horas), [1, 2, 4, 8]);
+      expect(OpcionVigencia.larga.map((o) => o.horas), [12, 16, 20, 24]);
     });
 
     test('una hora después de la emisión, en UTC', () {

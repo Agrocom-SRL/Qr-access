@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/router/guarda_sesion.dart';
 import 'package:agrocom_acceso/core/router/paginas_sistema.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/router/splash_estado.dart';
 import 'package:agrocom_acceso/core/router/transiciones.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/administracion.dart';
@@ -17,7 +18,9 @@ import 'package:go_router/go_router.dart';
 /// guarda de `guarda_sesion.dart`.
 final routerProvider = Provider<GoRouter>((ref) {
   final cambiosDeSesion = ValueNotifier<int>(0);
-  ref.listen(sesionControladorProvider, (_, _) => cambiosDeSesion.value++);
+  ref
+    ..listen(sesionControladorProvider, (_, _) => cambiosDeSesion.value++)
+    ..listen(splashTerminadoProvider, (_, _) => cambiosDeSesion.value++);
 
   final router = GoRouter(
     initialLocation: Rutas.bienvenida,
@@ -25,13 +28,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) => redireccionDeSesion(
       ref.read(sesionControladorProvider),
       state.topRoute?.path ?? state.matchedLocation,
+      splashTerminado: ref.read(splashTerminadoProvider),
     ),
     errorBuilder: (context, state) => const RutaNoEncontrada(),
     routes: [
       GoRoute(
         path: Rutas.arranque,
         pageBuilder: (context, state) =>
-            paginaAnimada(context, state, const ArranquePagina()),
+            paginaAnimada(context, state, const SplashPagina()),
       ),
       GoRoute(
         path: Rutas.bienvenida,

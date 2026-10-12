@@ -136,6 +136,24 @@ describe('QR de acceso: emitir, listar y anular', () => {
       expect(new Date(qr.vence_at).getTime() - Date.now()).toBeLessThanOrEqual(3_600_000);
     });
 
+    it('acepta una vigencia de varios días y rechaza la que pasa el techo de 7 días', async () => {
+      const enTresDias = new Date(Date.now() + 72 * 3_600_000).toISOString();
+      const ok = await emitir(sesionUsuarioA, {
+        puerta_ids: [a.puertaPrincipal.id],
+        vence_at: enTresDias,
+      });
+      expect(ok.statusCode).toBe(201);
+      expect(ok.json<QrEmitido>().vence_at).toBe(enTresDias);
+
+      const enDiezDias = new Date(Date.now() + 240 * 3_600_000).toISOString();
+      const excedida = await emitir(sesionUsuarioA, {
+        puerta_ids: [a.puertaPrincipal.id],
+        vence_at: enDiezDias,
+      });
+      expect(excedida.statusCode).toBe(422);
+      expect(excedida.json()).toMatchObject({ code: 'qr.vigencia_excedida' });
+    });
+
     it('acepta una vigencia menor y rechaza una mayor al máximo o ya vencida', async () => {
       const enUnaHora = new Date(Date.now() + 3_600_000).toISOString();
       const ok = await emitir(sesionUsuarioA, {

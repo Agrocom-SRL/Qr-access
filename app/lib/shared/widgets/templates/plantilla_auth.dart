@@ -1,5 +1,7 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
 import 'package:flutter/material.dart';
 
@@ -10,6 +12,7 @@ class PlantillaAuth extends StatelessWidget {
     required this.child,
     this.alVolver,
     this.pie,
+    this.cabeceraConFoto = false,
     this.centrado = false,
     this.conPanelDeMarca = true,
     this.anchoMaximo,
@@ -23,6 +26,10 @@ class PlantillaAuth extends StatelessWidget {
 
   /// Acción fija abajo (botón principal).
   final Widget? pie;
+
+  /// En compacto, una cabecera con la foto del edificio, el logo y la flecha
+  /// de volver encima (la flecha deja de ir sola arriba).
+  final bool cabeceraConFoto;
 
   /// Centra el contenido en vertical (expandido) en vez de alinearlo arriba.
   final bool centrado;
@@ -41,7 +48,9 @@ class PlantillaAuth extends StatelessWidget {
     final contenido = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (alVolver != null)
+        if (cabeceraConFoto && !expandida)
+          CabeceraFoto(alVolver: alVolver)
+        else if (alVolver != null)
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: IconButton(
@@ -107,22 +116,73 @@ class PanelDeMarca extends StatelessWidget {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
-    return Container(
-      color: colores.hero,
-      padding: EdgeInsets.all(tokens.espacio.xxxl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AccesoLogo(sobreHero: true),
-          const Spacer(),
-          Text(
-            context.l10n.appTitulo,
-            style: textos.headlineLarge?.copyWith(color: colores.sobreHero),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const AccesoFoto(ruta: Multimedia.fotoBienvenida),
+        Padding(
+          padding: EdgeInsets.all(tokens.espacio.xxxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AccesoLogo(sobreHero: true),
+              const Spacer(),
+              Text(
+                context.l10n.appTitulo,
+                style: textos.headlineLarge?.copyWith(color: colores.sobreHero),
+              ),
+              SizedBox(height: tokens.espacio.s),
+              Text(
+                context.l10n.bienvenidaFrase,
+                style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
+              ),
+            ],
           ),
-          SizedBox(height: tokens.espacio.s),
-          Text(
-            context.l10n.bienvenidaFrase,
-            style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
+        ),
+      ],
+    );
+  }
+}
+
+/// Cabecera del ingreso en compacto: la foto del edificio bajo una capa verde
+/// que se funde con el fondo, la placa del logo y la flecha de volver encima.
+class CabeceraFoto extends StatelessWidget {
+  const new({this.alVolver, super.key});
+
+  final VoidCallback? alVolver;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colores = tokens.colores;
+    return SizedBox(
+      height: tokens.tamano.cabeceraFoto,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const AccesoFoto(
+            ruta: Multimedia.fotoIngreso,
+            alineacion: Alignment(0, 0.4),
+            fundirConFondo: true,
+          ),
+          if (alVolver != null)
+            Align(
+              alignment: AlignmentDirectional.topStart,
+              child: IconButton(
+                tooltip: context.l10n.comunVolver,
+                onPressed: alVolver,
+                color: colores.sobreHero,
+                icon: const Icon(Icons.arrow_back),
+              ),
+            ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ExcludeSemantics(
+              child: Image.asset(
+                Multimedia.logoPlaca,
+                width: tokens.tamano.placaCabecera,
+              ),
+            ),
           ),
         ],
       ),

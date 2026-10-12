@@ -48,27 +48,36 @@ export function finDelDiaLocal(ahora: Date, zonaHoraria: string): Date {
   return new Date(medianocheComoUtc - desfaseEnMs(formato, new Date(primera)));
 }
 
+/** Techo del sistema para cualquier QR, aunque el plan no limite la vigencia (7 días). */
+export const VIGENCIA_MAXIMA_HORAS = 168;
+
 export interface EntradaDeVencimiento {
   readonly ahora: Date;
   /** Zonas de los sitios de las puertas del QR. */
   readonly zonasHorarias: readonly string[];
-  /** `null` = el plan no limita la vigencia. */
+  /** `null` = el plan no limita la vigencia (rige el techo del sistema). */
   readonly maxVigenciaHoras: number | null;
 }
 
 /**
- * El mayor vencimiento permitido para un QR: el fin del día local del sitio (el más próximo si
- * las puertas están en zonas distintas), sin pasar nunca la vigencia máxima del plan (ADR 0008 §3).
+ * El mayor vencimiento que una persona puede pedir para un QR: el límite de su plan, sin pasar
+ * nunca el techo del sistema ([VIGENCIA_MAXIMA_HORAS]). Invariante 3: nunca más que el máximo
+ * del plan.
  */
-export function vencimientoMaximo({
-  ahora,
-  zonasHorarias,
-  maxVigenciaHoras,
-}: EntradaDeVencimiento): Date {
-  const zonas = zonasHorarias.length > 0 ? zonasHorarias : [ZONA_DE_RESPALDO];
-  let tope = Math.min(...zonas.map((zona) => finDelDiaLocal(ahora, zona).getTime()));
-  if (maxVigenciaHoras !== null) {
-    tope = Math.min(tope, ahora.getTime() + maxVigenciaHoras * 3_600_000);
-  }
-  return new Date(tope);
+export function vencimientoMaximo({ ahora, maxVigenciaHoras }: EntradaDeVencimiento): Date {
+  const horas =
+    maxVigenciaHoras === null
+      ? VIGENCIA_MAXIMA_HORAS
+      : Math.min(maxVigenciaHoras, VIGENCIA_MAXIMA_HORAS);
+  return new Date(ahora.getTime() + horas * 3_600_000);
+}
+
+/**
+ * El vencimiento cuando la persona no pide uno: el fin del día local del sitio (el más próximo
+ * si las puertas están en zonas distintas), sin pasar el máximo (ADR 0008 §3).
+ */
+export function vencimientoPorDefecto(entrada: EntradaDeVencimiento): Date {
+  const zonas = entrada.zonasHorarias.length > 0 ? entrada.zonasHorarias : [ZONA_DE_RESPALDO];
+  const finDelDia = Math.min(...zonas.map((zona) => finDelDiaLocal(entrada.ahora, zona).getTime()));
+  return new Date(Math.min(finDelDia, vencimientoMaximo(entrada).getTime()));
 }

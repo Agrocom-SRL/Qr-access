@@ -3,7 +3,7 @@
     "short_name": "Acceso",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#007A33",
+    "background_color": "#FFFFFF",
     "theme_color": "#007A33",
     "description": "AGROCOM Acceso: QR de acceso a puertas",
     "orientation": "portrait-primary",

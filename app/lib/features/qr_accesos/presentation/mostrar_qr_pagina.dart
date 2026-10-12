@@ -5,11 +5,11 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/mostrar_qr_controlador.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_revelado.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
-import 'package:agrocom_acceso/shared/widgets/organisms/visor_qr.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_pantalla_completa.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,7 +77,7 @@ class MostrarQrPagina extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(child: VisorQr(texto: qr.texto)),
+          Center(child: QrRevelado(texto: qr.texto)),
           SizedBox(height: tokens.espacio.xl),
           Text(
             titulo,

@@ -3,6 +3,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/estado_qr_vista.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/tiempo_restante.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -77,17 +78,26 @@ class TarjetaQr extends StatelessWidget {
           ],
         ],
       ),
-      pie: qr.puedeAnularse && alAnular != null && !compacta
-          ? Align(
-              alignment: AlignmentDirectional.centerEnd,
-              // Anular es una baja: va en peligro (handoff C07).
-              child: AccesoBoton(
-                texto: l10n.qrAnular,
-                icono: Icons.block,
-                variante: VarianteBoton.peligroTexto,
-                cargando: anulando,
-                onPressed: alAnular,
-              ),
+      pie: !compacta && qr.estado == EstadoQr.vigente
+          ? Row(
+              children: [
+                // Abajo a la izquierda: cuánto tiempo de validez le queda.
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TiempoRestante(venceAt: qr.venceAt),
+                  ),
+                ),
+                if (qr.puedeAnularse && alAnular != null)
+                  // Anular es una baja: va en peligro (handoff C07).
+                  AccesoBoton(
+                    texto: l10n.qrAnular,
+                    icono: Icons.block,
+                    variante: VarianteBoton.peligroTexto,
+                    cargando: anulando,
+                    onPressed: alAnular,
+                  ),
+              ],
             )
           : null,
     );

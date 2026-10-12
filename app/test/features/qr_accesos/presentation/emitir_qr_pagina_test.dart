@@ -102,6 +102,37 @@ void main() {
     expect(repositorio.emisiones, isEmpty);
   });
 
+  testWidgets('el modo Días ofrece 2, 3, 5 y 7 días y "todo el día"', (
+    tester,
+  ) async {
+    final repositorio = await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text('Portón principal'));
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+
+    await tester.tap(find.text(textos.qrVigenciaModoDias));
+    await tester.pump();
+    expect(find.text(textos.qrVigenciaFinDelDia), findsOneWidget);
+    for (final dias in [2, 3, 5, 7]) {
+      expect(find.text(textos.qrVigenciaDias(dias)), findsOneWidget);
+    }
+    await tester.tap(find.text(textos.qrVigenciaDias(5)));
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+    await tester.tap(_boton(textos.qrEmitirBoton));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      repositorio.emisiones.single.vigencia.opcion,
+      OpcionVigencia.cincoDias,
+    );
+  });
+
   testWidgets('los tres pasos: puerta, 1 h y etiqueta, y emite', (
     tester,
   ) async {
@@ -114,7 +145,9 @@ void main() {
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
-    expect(find.text(textos.qrVigenciaFinDelDia), findsOneWidget);
+    // Por defecto, en modo horas, con 2 h elegidas.
+    expect(find.text(textos.qrVigenciaModoHoras), findsOneWidget);
+    expect(find.text(textos.qrVigenciaHoras(24)), findsOneWidget);
     await tester.tap(find.text(textos.qrVigenciaHoras(1)));
     await tester.pump();
     await tester.enterText(find.byType(TextField), ' Proveedor de gas ');
