@@ -13,6 +13,8 @@ class PlantillaAuth extends StatelessWidget {
     this.alVolver,
     this.pie,
     this.cabeceraConFoto = false,
+    this.fotoCabecera = Multimedia.fotoIngreso,
+    this.alineacionFotoCabecera = const Alignment(0, 0.4),
     this.centrado = false,
     this.conPanelDeMarca = true,
     this.anchoMaximo,
@@ -30,6 +32,10 @@ class PlantillaAuth extends StatelessWidget {
   /// En compacto, una cabecera con la foto del edificio, el logo y la flecha
   /// de volver encima (la flecha deja de ir sola arriba).
   final bool cabeceraConFoto;
+
+  /// Foto de esa cabecera y la zona que se deja a la vista al recortarla.
+  final String fotoCabecera;
+  final AlignmentGeometry alineacionFotoCabecera;
 
   /// Centra el contenido en vertical (expandido) en vez de alinearlo arriba.
   final bool centrado;
@@ -49,7 +55,11 @@ class PlantillaAuth extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (cabeceraConFoto && !expandida)
-          CabeceraFoto(alVolver: alVolver)
+          CabeceraFoto(
+            alVolver: alVolver,
+            ruta: fotoCabecera,
+            alineacion: alineacionFotoCabecera,
+          )
         else if (alVolver != null)
           Align(
             alignment: AlignmentDirectional.centerStart,
@@ -147,9 +157,16 @@ class PanelDeMarca extends StatelessWidget {
 /// Cabecera del ingreso en compacto: la foto del edificio bajo una capa verde
 /// que se funde con el fondo, la placa del logo y la flecha de volver encima.
 class CabeceraFoto extends StatelessWidget {
-  const new({this.alVolver, super.key});
+  const new({
+    this.alVolver,
+    this.ruta = Multimedia.fotoIngreso,
+    this.alineacion = const Alignment(0, 0.4),
+    super.key,
+  });
 
   final VoidCallback? alVolver;
+  final String ruta;
+  final AlignmentGeometry alineacion;
 
   @override
   Widget build(BuildContext context) {
@@ -160,11 +177,7 @@ class CabeceraFoto extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const AccesoFoto(
-            ruta: Multimedia.fotoIngreso,
-            alineacion: Alignment(0, 0.4),
-            fundirConFondo: true,
-          ),
+          AccesoFoto(ruta: ruta, alineacion: alineacion, fundirConFondo: true),
           if (alVolver != null)
             Align(
               alignment: AlignmentDirectional.topStart,
