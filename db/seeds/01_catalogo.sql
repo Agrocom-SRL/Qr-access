@@ -22,6 +22,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.equipo.desactivar', 'plataforma'),
   ('seguridad.cuenta.ver', 'plataforma'),
   ('seguridad.cuenta.crear', 'plataforma'),
+  ('bitacora.registro.ver', 'plataforma'),
+  ('resumen.panel.ver', 'plataforma'),
   ('suscripciones.suscripcion.ver', 'plataforma'),
   ('suscripciones.suscripcion.editar', 'plataforma'),
   ('suscripciones.pago.registrar', 'plataforma'),
