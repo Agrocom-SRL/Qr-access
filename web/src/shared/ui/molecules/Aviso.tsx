@@ -13,10 +13,19 @@ const ICONO: Readonly<Record<TonoAviso, NombreIcono>> = {
 };
 
 /** Aviso en línea con fondo `*Suave`, ícono y texto (nunca solo color). */
-export function Aviso({ tono, children }: { tono: TonoAviso; children: ReactNode }) {
+export function Aviso({
+  tono,
+  icono,
+  children,
+}: {
+  tono: TonoAviso;
+  /** Ícono propio; por defecto el del tono. */
+  icono?: NombreIcono;
+  children: ReactNode;
+}) {
   return (
     <div className={cx(styles.aviso, styles[tono])} role={tono === 'peligro' ? 'alert' : 'note'}>
-      <Icono nombre={ICONO[tono]} tamano={20} />
+      <Icono nombre={icono ?? ICONO[tono]} tamano={20} />
       <div>{children}</div>
     </div>
   );

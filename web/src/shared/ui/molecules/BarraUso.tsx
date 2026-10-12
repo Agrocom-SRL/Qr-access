@@ -16,24 +16,32 @@ interface Props {
   cupo: number;
   /** Pista de 12 (hero) en lugar de 8. */
   grande?: boolean;
+  /** Sobre el fondo `hero`: pista oscura y relleno blanco. */
+  sobreHero?: boolean;
   /** Oculta la etiqueta "87 / 100" cuando el contexto ya la muestra. */
   sinEtiqueta?: boolean;
 }
 
-export function BarraUso({ usados, cupo, grande = false, sinEtiqueta = false }: Props) {
+export function BarraUso({
+  usados,
+  cupo,
+  grande = false,
+  sobreHero = false,
+  sinEtiqueta = false,
+}: Props) {
   const nivel = nivelDeUso(usados, cupo);
   const porcentaje = cupo > 0 ? Math.min(100, (usados / cupo) * 100) : 0;
   return (
     <span className={styles.contenedor}>
       <span
-        className={cx(styles.pista, grande && styles.grande)}
+        className={cx(styles.pista, grande && styles.grande, sobreHero && styles.pistaHero)}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={cupo}
         aria-valuenow={usados}
       >
         <span
-          className={cx(styles.relleno, styles[nivel])}
+          className={cx(styles.relleno, sobreHero ? styles.rellenoHero : styles[nivel])}
           style={{ width: `${String(porcentaje)}%` }}
         />
       </span>

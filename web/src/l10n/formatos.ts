@@ -75,3 +75,20 @@ export function relacionDeDia(
   if (dia === diaDe(new Date(ahora.getTime() - 86_400_000))) return 'ayer';
   return 'otro';
 }
+
+/** "hace 8 s", "hace 34 min", "hace 2 h", "hace 3 d": el tiempo transcurrido, abreviado y con `Intl`. */
+export function formatearTranscurrido(
+  fecha: Date | string,
+  ahora: Date = new Date(),
+  idioma = 'es',
+): string {
+  const segundos = Math.max(0, Math.round((ahora.getTime() - new Date(fecha).getTime()) / 1000));
+  const relativo = new Intl.RelativeTimeFormat(localeDe(idioma), {
+    numeric: 'always',
+    style: 'narrow',
+  });
+  if (segundos < 60) return relativo.format(-segundos, 'second');
+  if (segundos < 3600) return relativo.format(-Math.floor(segundos / 60), 'minute');
+  if (segundos < 86_400) return relativo.format(-Math.floor(segundos / 3600), 'hour');
+  return relativo.format(-Math.floor(segundos / 86_400), 'day');
+}

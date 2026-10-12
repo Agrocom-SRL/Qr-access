@@ -43,3 +43,8 @@
     display: none;
   }
 }
+
+.incrustada {
+  border-radius: 0;
+  box-shadow: none;
+}

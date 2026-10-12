@@ -30,6 +30,7 @@ import info from '@material-symbols/svg-400/outlined/info.svg?raw';
 import keyboard_arrow_down from '@material-symbols/svg-400/outlined/keyboard_arrow_down.svg?raw';
 import download from '@material-symbols/svg-400/outlined/download.svg?raw';
 import upload_file from '@material-symbols/svg-400/outlined/upload_file.svg?raw';
+import wifi from '@material-symbols/svg-400/outlined/wifi.svg?raw';
 import wifi_off from '@material-symbols/svg-400/outlined/wifi_off.svg?raw';
 import cloud_off from '@material-symbols/svg-400/outlined/cloud_off.svg?raw';
 import refresh from '@material-symbols/svg-400/outlined/refresh.svg?raw';
@@ -87,6 +88,7 @@ const registro = {
   keyboard_arrow_down,
   download,
   upload_file,
+  wifi,
   wifi_off,
   cloud_off,
   refresh,

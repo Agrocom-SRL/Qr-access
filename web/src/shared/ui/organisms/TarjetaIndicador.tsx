@@ -4,7 +4,7 @@ import type { NombreIcono } from '../atoms/iconos';
 import { cx } from '../../lib/cx';
 import styles from './TarjetaIndicador.module.css';
 
-export type TonoIndicador = 'primario' | 'advertencia' | 'informacion' | 'hero';
+export type TonoIndicador = 'primario' | 'advertencia' | 'informacion' | 'peligro' | 'hero';
 
 interface Props {
   etiqueta: string;
@@ -34,7 +34,7 @@ export function TarjetaIndicador({
           <Icono nombre={icono} />
         </span>
       </div>
-      <p className={styles.valor}>{valor}</p>
+      <p className={cx(styles.valor, tono === 'peligro' && styles.valorPeligro)}>{valor}</p>
       {children}
       {detalle ? <p className={styles.detalle}>{detalle}</p> : null}
     </article>

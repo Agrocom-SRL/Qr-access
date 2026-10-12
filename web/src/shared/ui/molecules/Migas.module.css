@@ -1,0 +1,15 @@
+.migas {
+  margin-bottom: var(--esp4);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.enlace {
+  color: inherit;
+  text-decoration: none;
+}
+
+.enlace:hover {
+  color: var(--primario);
+  text-decoration: underline;
+}

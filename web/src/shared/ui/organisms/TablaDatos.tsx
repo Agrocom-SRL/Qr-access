@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cx } from '../../lib/cx';
 import { Skeleton } from '../atoms/Skeleton';
 import styles from './TablaDatos.module.css';
 
@@ -23,6 +24,8 @@ interface Props<T> {
   etiqueta: string;
   /** Paginador u otro pie dentro de la tarjeta. */
   pie?: ReactNode;
+  /** Sin tarjeta propia (sombra y radio): va dentro de otra tarjeta. */
+  incrustada?: boolean;
 }
 
 const ANCHOS = ['largo', 'medio', 'corto', 'completo'] as const;
@@ -39,13 +42,14 @@ export function TablaDatos<T>({
   filasEsqueleto = 6,
   etiqueta,
   pie,
+  incrustada = false,
 }: Props<T>) {
   const clase = (c: Columna<T>) =>
     [c.secundaria ? styles.secundaria : '', c.alinear === 'fin' ? styles.fin : '']
       .filter(Boolean)
       .join(' ');
   return (
-    <div className={styles.tarjeta}>
+    <div className={cx(styles.tarjeta, incrustada && styles.incrustada)}>
       <table className={styles.tabla} aria-label={etiqueta} aria-busy={cargando || undefined}>
         <thead>
           <tr>

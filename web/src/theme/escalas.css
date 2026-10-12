@@ -16,6 +16,7 @@
   --tam44: 44px;
   --tam48: 48px;
   --tam56: 56px;
+  --tam64: 64px;
   --tam80: 80px;
   --tam144: 144px;
   --tam200: 200px;
@@ -24,5 +25,8 @@
   --anchoTextoVacio: 400px;
   --anchoBuscador: 320px;
   --anchoTarjetaPlan: 300px;
+  --anchoPlanes: 960px;
+  --anchoCodigo: 144px;
+  --anchoPin: 560px;
   --anchoLogin: 400px;
 }

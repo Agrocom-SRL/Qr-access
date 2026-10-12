@@ -48,6 +48,15 @@
   color: var(--informacion);
 }
 
+.peligro {
+  background: var(--peligroSuave);
+  color: var(--peligro);
+}
+
+.valorPeligro {
+  color: var(--peligro);
+}
+
 .hero .icono,
 .icono.hero {
   background: var(--heroAcento);

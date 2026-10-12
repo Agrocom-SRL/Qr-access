@@ -36,3 +36,11 @@
 .peligro {
   background: var(--peligro);
 }
+
+.pistaHero {
+  background: var(--heroAcento);
+}
+
+.rellenoHero {
+  background: var(--sobreHero);
+}
