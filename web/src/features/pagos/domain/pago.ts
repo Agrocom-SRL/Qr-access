@@ -1,11 +1,12 @@
-import { celdaCsv } from '../../../shared/lib/csv';
+import type { EstadoDeSuscripcion } from '../../../shared/api/estados';
+import type { DefinicionDeLibro } from '../../../shared/lib/excel';
 
 /** Reglas puras de los pagos y la cobranza (A07 y A08), ADR 0022. */
 
 export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
 export const MEDIOS: readonly MedioDePago[] = ['transferencia', 'deposito', 'efectivo'];
 
-export type TipoDePago = 'renovacion' | 'mejora_de_plan';
+export type TipoDePago = 'alta' | 'renovacion' | 'mejora_de_plan';
 
 export interface FormularioDePago {
   /** Lo que escribió la persona: dígitos con o sin puntos de miles. */
@@ -38,11 +39,17 @@ export function validarPago(
   return errores;
 }
 
-export type VentanaDeCobranza = 'd30' | 'd60' | 'd90' | 'vencidas';
-export const VENTANAS: readonly VentanaDeCobranza[] = ['d30', 'd60', 'd90', 'vencidas'];
+export type VentanaDeCobranza = 'd30' | 'd60' | 'd90' | 'vencidas' | 'pendientes';
+export const VENTANAS: readonly VentanaDeCobranza[] = [
+  'd30',
+  'd60',
+  'd90',
+  'vencidas',
+  'pendientes',
+];
 
-export type EstadoDePago = 'pendiente' | 'sinPagar';
-export type EstadoDeCuenta = 'activa' | 'porVencer' | 'vencida' | 'suspendida';
+export type EstadoDePago = 'pendiente' | 'sinPagar' | 'porActivar';
+export type EstadoDeCuenta = EstadoDeSuscripcion;
 
 export interface FilaDeCobranza {
   cuenta: { id: string; codigo: string; nombre: string };
@@ -65,29 +72,42 @@ export interface Cobranza {
     porCobrar30: Total;
     porCobrar90: Total;
     vencidoSinPagar: Total;
+    /** Cuentas nuevas que todavía no pagaron su alta. */
+    porActivar: Total;
     cobradoAnio: { anio: number; monto: number; pagos: number };
   };
   conteos: Record<VentanaDeCobranza, number>;
   filas: readonly FilaDeCobranza[];
 }
 
-/** El CSV de la cobranza visible: una fila por cuenta, fechas `aaaa-mm-dd` para que Excel las ordene. */
-export function cobranzaACsv(
+/**
+ * La cobranza visible como tabla de Excel: una fila por cuenta, con el monto como número y el
+ * vencimiento como fecha de verdad (para que Excel pueda sumar, ordenar y filtrar).
+ */
+export function cobranzaAExcel(
   filas: readonly FilaDeCobranza[],
   encabezados: readonly string[],
+  hoja: string,
   textoDePago: (pago: EstadoDePago) => string,
-): string {
-  const cuerpo = filas.map((f) =>
-    [
+): DefinicionDeLibro {
+  const [cuenta, codigo, plan, monto, vence, pago] = encabezados;
+  return {
+    hoja,
+    columnas: [
+      { encabezado: cuenta ?? '' },
+      { encabezado: codigo ?? '', alineacion: 'center' },
+      { encabezado: plan ?? '' },
+      { encabezado: monto ?? '', formato: '#,##0.00', alineacion: 'right' },
+      { encabezado: vence ?? '', formato: 'dd/mm/yyyy', alineacion: 'center' },
+      { encabezado: pago ?? '', alineacion: 'center' },
+    ],
+    filas: filas.map((f) => [
       f.cuenta.nombre,
       f.cuenta.codigo,
       f.plan.nombre,
       f.monto,
-      f.venceEl.toISOString().slice(0, 10),
+      f.venceEl,
       textoDePago(f.pago),
-    ]
-      .map(celdaCsv)
-      .join(','),
-  );
-  return [encabezados.map(celdaCsv).join(','), ...cuerpo].join('\r\n');
+    ]),
+  };
 }

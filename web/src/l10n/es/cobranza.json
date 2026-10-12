@@ -1,7 +1,7 @@
 {
   "titulo": "Cobranza",
   "subtitulo": "Suscripciones anuales por vencimiento",
-  "exportar": "Exportar CSV",
+  "exportar": "Exportar a Excel",
   "porCobrar30": "Por cobrar en 30 días",
   "porCobrar90": "Por cobrar en 90 días",
   "vencidoSinPagar": "Vencido sin pagar",
@@ -10,12 +10,14 @@
     "d30": "30 días",
     "d60": "60 días",
     "d90": "90 días",
-    "vencidas": "Vencidas"
+    "vencidas": "Vencidas",
+    "pendientes": "Por activar"
   },
   "estadoPago": {
     "pendiente": "Pendiente",
     "sinPagar": "Sin pagar",
-    "pagado": "Pagado"
+    "pagado": "Pagado",
+    "porActivar": "Primer pago"
   },
   "vacio": {
     "titulo": "Nada por cobrar en 30 días",
@@ -47,7 +49,12 @@
   "registrarPago": "Registrar pago",
   "registrarPagoDe": "Registrar pago de {{cuenta}}",
   "filtroEtiqueta": "Ventana de vencimiento",
-  "csv": {
+  "vacioVencidas": {
+    "titulo": "Ninguna suscripción vencida",
+    "texto": "Todas las cuentas están al día."
+  },
+  "excel": {
+    "hoja": "Cobranza",
     "cuenta": "Cuenta",
     "codigo": "Código",
     "plan": "Plan",
@@ -56,8 +63,13 @@
     "pago": "Pago",
     "archivo": "cobranza"
   },
-  "vacioVencidas": {
-    "titulo": "Ninguna suscripción vencida",
-    "texto": "Todas las cuentas están al día."
+  "porActivar": "Por activar · cuentas nuevas",
+  "cuentasNuevas_one": "{{count}} cuenta nueva sin pagar",
+  "cuentasNuevas_other": "{{count}} cuentas nuevas sin pagar",
+  "sinVigencia": "Aún no empieza",
+  "registrarPrimerPago": "Registrar primer pago",
+  "vacioPendientes": {
+    "titulo": "Ninguna cuenta por activar",
+    "texto": "Todas las cuentas nuevas ya pagaron su primer año."
   }
 }

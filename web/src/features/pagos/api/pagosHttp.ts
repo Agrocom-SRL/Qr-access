@@ -1,15 +1,13 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
-import type { Cobranza, EstadoDeCuenta, FilaDeCobranza } from '../domain/pago';
+import type { Cobranza, FilaDeCobranza } from '../domain/pago';
+import { ESTADO_DESDE_DTO, type EstadoDto } from '../../../shared/api/estados';
 import type { PagosRepositorio } from './PagosRepositorio';
 
-type EstadoDto = 'activa' | 'por_vencer' | 'vencida' | 'suspendida';
-
-const ESTADO: Readonly<Record<EstadoDto, EstadoDeCuenta>> = {
-  activa: 'activa',
-  por_vencer: 'porVencer',
-  vencida: 'vencida',
-  suspendida: 'suspendida',
-};
+const PAGO_DESDE_DTO = {
+  pendiente: 'pendiente',
+  sin_pagar: 'sinPagar',
+  por_activar: 'porActivar',
+} as const;
 
 interface Total {
   monto: number;
@@ -21,16 +19,17 @@ interface CobranzaDto {
     por_cobrar_30: Total;
     por_cobrar_90: Total;
     vencido_sin_pagar: Total;
+    por_activar: Total;
     cobrado_anio: { anio: number; monto: number; pagos: number };
   };
-  conteos: { d30: number; d60: number; d90: number; vencidas: number };
+  conteos: { d30: number; d60: number; d90: number; vencidas: number; pendientes: number };
   datos: {
     cuenta: { id: string; codigo: string; nombre: string };
     plan: { id: string; nombre: string; cupo_usuarios: number | null };
     monto: number;
     vence_el: string;
     dias_restantes: number;
-    pago: 'pendiente' | 'sin_pagar';
+    pago: 'pendiente' | 'sin_pagar' | 'por_activar';
     estado: EstadoDto;
   }[];
 }
@@ -41,6 +40,7 @@ export function cobranzaDesdeDto(dto: CobranzaDto): Cobranza {
       porCobrar30: dto.totales.por_cobrar_30,
       porCobrar90: dto.totales.por_cobrar_90,
       vencidoSinPagar: dto.totales.vencido_sin_pagar,
+      porActivar: dto.totales.por_activar,
       cobradoAnio: dto.totales.cobrado_anio,
     },
     conteos: dto.conteos,
@@ -50,8 +50,8 @@ export function cobranzaDesdeDto(dto: CobranzaDto): Cobranza {
       monto: fila.monto,
       venceEl: new Date(fila.vence_el),
       diasRestantes: fila.dias_restantes,
-      pago: fila.pago === 'pendiente' ? 'pendiente' : 'sinPagar',
-      estado: ESTADO[fila.estado],
+      pago: PAGO_DESDE_DTO[fila.pago],
+      estado: ESTADO_DESDE_DTO[fila.estado],
     })),
   };
 }

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatearFecha, formatearMonto } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
-import { descargarTexto } from '../../../../shared/lib/descargar';
+import { descargarExcel } from '../../../../shared/lib/excel';
 import { rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
@@ -13,9 +13,11 @@ import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmenta
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
+import { CobradoPorMes, useEstadisticas } from '../../../estadisticas';
 import { useCobranza } from '../../application/usePagos';
+import { PorCobrar } from '../components/PorCobrar';
 import {
-  cobranzaACsv,
+  cobranzaAExcel,
   VENTANAS,
   type FilaDeCobranza,
   type VentanaDeCobranza,
@@ -27,7 +29,7 @@ function ventanaDeLaUrl(valor: string | null): VentanaDeCobranza {
   return VENTANAS.find((v) => v === valor) ?? 'd30';
 }
 
-/** A08: lo que hay por cobrar por ventana de vencimiento, con acceso directo a registrar el pago y exportar a CSV. */
+/** A08: lo que hay por cobrar por ventana de vencimiento, con acceso directo a registrar el pago y exportar a Excel. */
 export function CobranzaPage() {
   const { t } = useTranslation(['cobranza', 'comun', 'cuentas']);
   const navegar = useNavigate();
@@ -35,6 +37,7 @@ export function CobranzaPage() {
   const ventana = ventanaDeLaUrl(parametros.get('ventana'));
   const busqueda = parametros.get('q') ?? '';
   const cobranza = useCobranza(ventana, busqueda);
+  const estadisticas = useEstadisticas();
 
   const cambiar = (siguiente: { ventana?: VentanaDeCobranza; busqueda?: string }) => {
     const nuevos = new URLSearchParams();
@@ -84,12 +87,15 @@ export function CobranzaPage() {
     {
       id: 'vence',
       encabezado: t('cobranza:columna.vence'),
-      celda: (f) => (
-        <div>
-          <TextoMono>{formatearFecha(f.venceEl)}</TextoMono>
-          <p className={styles.dias}>{vence(f)}</p>
-        </div>
-      ),
+      celda: (f) =>
+        f.estado === 'pendientePago' ? (
+          <span className={styles.suave}>{t('cobranza:sinVigencia')}</span>
+        ) : (
+          <div>
+            <TextoMono>{formatearFecha(f.venceEl)}</TextoMono>
+            <p className={styles.dias}>{vence(f)}</p>
+          </div>
+        ),
     },
     {
       id: 'pago',
@@ -119,7 +125,9 @@ export function CobranzaPage() {
             void navegar(rutaDePago(f.cuenta.id));
           }}
         >
-          {t('cobranza:registrarPago')}
+          {f.pago === 'porActivar'
+            ? t('cobranza:registrarPrimerPago')
+            : t('cobranza:registrarPago')}
         </AccesoBoton>
       ),
     },
@@ -127,19 +135,20 @@ export function CobranzaPage() {
 
   const exportar = () => {
     if (!cobranza.data) return;
-    const csv = cobranzaACsv(
+    const libro = cobranzaAExcel(
       cobranza.data.filas,
       [
-        t('cobranza:csv.cuenta'),
-        t('cobranza:csv.codigo'),
-        t('cobranza:csv.plan'),
-        t('cobranza:csv.monto'),
-        t('cobranza:csv.vence'),
-        t('cobranza:csv.pago'),
+        t('cobranza:excel.cuenta'),
+        t('cobranza:excel.codigo'),
+        t('cobranza:excel.plan'),
+        t('cobranza:excel.monto'),
+        t('cobranza:excel.vence'),
+        t('cobranza:excel.pago'),
       ],
+      t('cobranza:excel.hoja'),
       (pago) => t(`cobranza:estadoPago.${pago}`),
     );
-    descargarTexto(`${t('cobranza:csv.archivo')}-${ventana}.csv`, csv);
+    void descargarExcel(`${t('cobranza:excel.archivo')}-${ventana}.xlsx`, libro);
   };
 
   const totales = cobranza.data?.totales;
@@ -178,6 +187,14 @@ export function CobranzaPage() {
           }
         />
         <TarjetaIndicador
+          tono="advertencia"
+          etiqueta={t('cobranza:porActivar')}
+          valor={totales ? formatearMonto(totales.porActivar.monto) : '—'}
+          detalle={
+            totales ? t('cobranza:cuentasNuevas', { count: totales.porActivar.cuentas }) : undefined
+          }
+        />
+        <TarjetaIndicador
           tono="peligro"
           etiqueta={t('cobranza:vencidoSinPagar')}
           valor={totales ? formatearMonto(totales.vencidoSinPagar.monto) : '—'}
@@ -196,6 +213,11 @@ export function CobranzaPage() {
               : undefined
           }
         />
+      </div>
+
+      <div className={styles.graficas}>
+        {estadisticas.data ? <CobradoPorMes estadisticas={estadisticas.data} /> : null}
+        {totales ? <PorCobrar totales={totales} /> : null}
       </div>
 
       <div className={styles.barra}>
@@ -237,7 +259,12 @@ export function CobranzaPage() {
                 titulo: t('cobranza:vacioVencidas.titulo'),
                 texto: t('cobranza:vacioVencidas.texto'),
               }
-            : { titulo: t('cobranza:vacio.titulo'), texto: t('cobranza:vacio.texto') }
+            : ventana === 'pendientes'
+              ? {
+                  titulo: t('cobranza:vacioPendientes.titulo'),
+                  texto: t('cobranza:vacioPendientes.texto'),
+                }
+              : { titulo: t('cobranza:vacio.titulo'), texto: t('cobranza:vacio.texto') }
         }
       />
     </>

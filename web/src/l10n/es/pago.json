@@ -34,5 +34,8 @@
   "formato": "Revisa el formato",
   "suspendida": "La suscripción está suspendida: reactívala antes de registrar un pago.",
   "errorCarga": "No pudimos cargar la cuenta",
-  "cancelar": "Cancelar"
+  "cancelar": "Cancelar",
+  "subtituloAlta": "{{cuenta}} · primer pago del plan {{plan}}",
+  "confirmarAltaTitulo": "¿Registrar el primer pago y activar la cuenta?",
+  "confirmarAltaTexto": "{{cuenta}} empieza a operar desde hoy y queda vigente hasta el {{fecha}}."
 }

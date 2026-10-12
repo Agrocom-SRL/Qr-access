@@ -1,6 +1,6 @@
-import { celdaCsv } from '@/shared/lib/csv';
+import { anchosDeColumnas, construirLibro, TAMANO_DE_FUENTE } from '@/shared/lib/excel';
 import {
-  cobranzaACsv,
+  cobranzaAExcel,
   parsearMonto,
   validarPago,
   type FilaDeCobranza,
@@ -42,31 +42,53 @@ describe('validarPago', () => {
   });
 });
 
-describe('CSV', () => {
-  it('encomilla comas, comillas y saltos de línea', () => {
-    expect(celdaCsv('Semillas, del "Este"')).toBe('"Semillas, del ""Este"""');
-    expect(celdaCsv('simple')).toBe('simple');
-    expect(celdaCsv(12000)).toBe('12000');
+describe('Excel de la cobranza', () => {
+  const fila: FilaDeCobranza = {
+    cuenta: { id: '1', codigo: 'SDE', nombre: 'Semillas, del Este' },
+    plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
+    monto: 12000,
+    venceEl: new Date('2026-10-18T04:00:00Z'),
+    diasRestantes: 6,
+    pago: 'pendiente',
+    estado: 'porVencer',
+  };
+  const definicion = cobranzaAExcel(
+    [fila],
+    ['Cuenta', 'Código', 'Plan', 'Monto', 'Vence', 'Pago'],
+    'Cobranza',
+    () => 'Pendiente',
+  );
+
+  it('arma una columna por dato con el monto y la fecha como valores de verdad', () => {
+    expect(definicion.columnas.map((c) => c.encabezado)).toEqual([
+      'Cuenta',
+      'Código',
+      'Plan',
+      'Monto',
+      'Vence',
+      'Pago',
+    ]);
+    expect(definicion.filas[0]).toEqual([
+      'Semillas, del Este',
+      'SDE',
+      '100 usuarios',
+      12000,
+      fila.venceEl,
+      'Pendiente',
+    ]);
   });
 
-  it('arma encabezados y una fila por cuenta', () => {
-    const fila: FilaDeCobranza = {
-      cuenta: { id: '1', codigo: 'SDE', nombre: 'Semillas, del Este' },
-      plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
-      monto: 12000,
-      venceEl: new Date('2026-10-18T04:00:00Z'),
-      diasRestantes: 6,
-      pago: 'pendiente',
-      estado: 'porVencer',
-    };
-    expect(
-      cobranzaACsv(
-        [fila],
-        ['Cuenta', 'Código', 'Plan', 'Monto', 'Vence', 'Pago'],
-        () => 'Pendiente',
-      ),
-    ).toBe(
-      'Cuenta,Código,Plan,Monto,Vence,Pago\r\n"Semillas, del Este",SDE,100 usuarios,12000,2026-10-18,Pendiente',
-    );
+  it('el libro lleva cabeceras verdes, letra de 13, anchos distintos y filtros', async () => {
+    const libro = await construirLibro(definicion);
+    const hoja = libro.getWorksheet('Cobranza');
+    const cabecera = hoja?.getRow(1).getCell(1);
+    expect(cabecera?.fill).toMatchObject({ fgColor: { argb: 'FF007A33' } });
+    expect(cabecera?.font).toMatchObject({ bold: true, size: TAMANO_DE_FUENTE });
+    expect(TAMANO_DE_FUENTE).toBeGreaterThan(11);
+    expect(hoja?.getRow(2).getCell(1).font.size).toBe(TAMANO_DE_FUENTE);
+    const anchos = anchosDeColumnas(definicion);
+    expect(anchos[0]).toBeGreaterThan(anchos[1] ?? 0);
+    expect(new Set(anchos).size).toBeGreaterThan(1);
+    expect(hoja?.autoFilter).toBeTruthy();
   });
 });

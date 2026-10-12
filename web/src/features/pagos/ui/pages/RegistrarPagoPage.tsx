@@ -8,24 +8,20 @@ import { RUTAS, rutaDeCuenta } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
-import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
-import { CampoMonto } from '../../../../shared/ui/molecules/CampoMonto';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
-import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import { Migas } from '../../../../shared/ui/molecules/Migas';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { useSuscripcionDeCuenta } from '../../../suscripciones';
 import { useRegistrarPago } from '../../application/usePagos';
 import {
-  MEDIOS,
   parsearMonto,
   validarPago,
   type FormularioDePago,
-  type MedioDePago,
   type TipoDePago,
 } from '../../domain/pago';
+import { CamposDePago } from '../components/CamposDePago';
 import styles from './RegistrarPagoPage.module.css';
 
 const hoy = () =>
@@ -45,7 +41,8 @@ function masUnAnio(fecha: Date): Date {
 
 /**
  * A07: registra el pago de una cuenta. Una renovación extiende 12 meses desde el vencimiento; con
- * `?tipo=mejora` cobra la diferencia de un cambio de plan y no cambia la vigencia (ADR 0022).
+ * `?tipo=mejora` cobra la diferencia de un cambio de plan y no cambia la vigencia (ADR 0022). Una
+ * cuenta nueva pendiente de pago registra su pago de alta: la activa y el año corre desde la fecha del pago.
  */
 export function RegistrarPagoPage() {
   const { t } = useTranslation(['pago', 'comun', 'suscripcion']);
@@ -55,7 +52,6 @@ export function RegistrarPagoPage() {
   const consulta = useSuscripcionDeCuenta(cuentaId);
   const registrar = useRegistrarPago(cuentaId);
 
-  const tipo: TipoDePago = parametros.get('tipo') === 'mejora' ? 'mejora_de_plan' : 'renovacion';
   const montoSugerido = Number(parametros.get('monto'));
   const [formulario, setFormulario] = useState<FormularioDePago | null>(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -79,6 +75,12 @@ export function RegistrarPagoPage() {
   }
 
   const { cuenta, suscripcion } = consulta.data;
+  const tipo: TipoDePago =
+    suscripcion.estado === 'pendientePago'
+      ? 'alta'
+      : parametros.get('tipo') === 'mejora'
+        ? 'mejora_de_plan'
+        : 'renovacion';
   const sugerido =
     tipo === 'mejora_de_plan' && montoSugerido > 0 ? montoSugerido : suscripcion.plan.precioAnual;
   const datos: FormularioDePago = formulario ?? {
@@ -95,13 +97,13 @@ export function RegistrarPagoPage() {
   const tocar = (campo: keyof FormularioDePago) => {
     setTocados((actual) => new Set(actual).add(campo));
   };
-  const mensaje = (campo: keyof FormularioDePago): string | undefined => {
-    const error = errores[campo];
-    if (!tocados.has(campo) || !error) return undefined;
-    return campo === 'monto' && error === 'formato' ? t('pago:montoInvalido') : t(`pago:${error}`);
-  };
 
-  const venceNuevo = tipo === 'renovacion' ? masUnAnio(suscripcion.hasta) : suscripcion.hasta;
+  const venceNuevo =
+    tipo === 'alta'
+      ? masUnAnio(new Date(`${datos.fechaPago}T12:00:00Z`))
+      : tipo === 'renovacion'
+        ? masUnAnio(suscripcion.hasta)
+        : suscripcion.hasta;
   const volver = () => {
     void navegar(rutaDeCuenta(cuentaId, 'suscripcion'));
   };
@@ -120,10 +122,14 @@ export function RegistrarPagoPage() {
     );
   };
 
-  const subtitulo =
+  const subtitulo = t(
     tipo === 'mejora_de_plan'
-      ? t('pago:subtituloMejora', { cuenta: cuenta.nombre, plan: suscripcion.plan.nombre })
-      : t('pago:subtituloRenovacion', { cuenta: cuenta.nombre, plan: suscripcion.plan.nombre });
+      ? 'pago:subtituloMejora'
+      : tipo === 'alta'
+        ? 'pago:subtituloAlta'
+        : 'pago:subtituloRenovacion',
+    { cuenta: cuenta.nombre, plan: suscripcion.plan.nombre },
+  );
 
   return (
     <div className={styles.pagina}>
@@ -148,72 +154,27 @@ export function RegistrarPagoPage() {
           if (valido) setConfirmando(true);
         }}
       >
-        <div className={styles.fila}>
-          <CampoMonto
-            etiqueta={t('pago:monto')}
-            moneda={t('pago:moneda')}
-            value={datos.monto}
-            ayuda={tipo === 'mejora_de_plan' ? undefined : t('pago:montoAyuda')}
-            error={mensaje('monto')}
-            onBlur={() => {
-              tocar('monto');
-            }}
-            onChange={(e) => {
-              cambiar({ monto: e.target.value });
-            }}
-          />
-          <AccesoCampoTexto
-            etiqueta={t('pago:fecha')}
-            type="date"
-            mono
-            value={datos.fechaPago}
-            error={mensaje('fechaPago')}
-            onBlur={() => {
-              tocar('fechaPago');
-            }}
-            onChange={(e) => {
-              cambiar({ fechaPago: e.target.value });
-            }}
-          />
-        </div>
-
-        <div className={styles.medio}>
-          <span className={styles.etiqueta}>{t('pago:medio')}</span>
-          <FiltroSegmentado<MedioDePago>
-            etiqueta={t('pago:medio')}
-            valor={datos.medio}
-            onCambio={(medio) => {
-              cambiar({ medio });
-            }}
-            opciones={MEDIOS.map((m) => ({ valor: m, etiqueta: t(`pago:medios.${m}`) }))}
-          />
-        </div>
-
-        <AccesoCampoTexto
-          etiqueta={t('pago:referencia')}
-          mono
-          value={datos.referencia}
-          ayuda={t('pago:referenciaAyuda')}
-          error={mensaje('referencia')}
-          autoComplete="off"
-          onBlur={() => {
-            tocar('referencia');
-          }}
-          onChange={(e) => {
-            cambiar({ referencia: e.target.value });
-          }}
+        <CamposDePago
+          datos={datos}
+          errores={errores}
+          tocados={tocados}
+          onCambio={cambiar}
+          onTocar={tocar}
+          ayudaDelMonto={tipo === 'mejora_de_plan' ? undefined : t('pago:montoAyuda')}
         />
         {/* TODO(docs): el comprobante adjunto queda fuera hasta definir dónde se guarda (ADR 0015). */}
         <p className={styles.nota}>{t('pago:comprobanteNota')}</p>
 
         <div className={styles.vigencia}>
           <span>
-            {tipo === 'renovacion' ? t('pago:nuevaVigencia') : t('pago:vigenciaSinCambio')}
+            {tipo === 'mejora_de_plan' ? t('pago:vigenciaSinCambio') : t('pago:nuevaVigencia')}
           </span>
           <TextoMono fuerte>
-            {tipo === 'renovacion'
-              ? `${formatearFecha(suscripcion.hasta)} ${t('pago:hasta')} ${formatearFecha(venceNuevo)}`
-              : formatearFecha(venceNuevo)}
+            {tipo === 'alta'
+              ? `${formatearFecha(`${datos.fechaPago}T12:00:00Z`)} ${t('pago:hasta')} ${formatearFecha(venceNuevo)}`
+              : tipo === 'renovacion'
+                ? `${formatearFecha(suscripcion.hasta)} ${t('pago:hasta')} ${formatearFecha(venceNuevo)}`
+                : formatearFecha(venceNuevo)}
           </TextoMono>
         </div>
       </form>
@@ -240,7 +201,13 @@ export function RegistrarPagoPage() {
       <Dialogo
         abierto={confirmando}
         icono="autorenew"
-        titulo={tipo === 'renovacion' ? t('pago:confirmarTitulo') : t('pago:confirmarMejoraTitulo')}
+        titulo={
+          tipo === 'alta'
+            ? t('pago:confirmarAltaTitulo')
+            : tipo === 'renovacion'
+              ? t('pago:confirmarTitulo')
+              : t('pago:confirmarMejoraTitulo')
+        }
         onCerrar={() => {
           setConfirmando(false);
         }}
@@ -261,12 +228,14 @@ export function RegistrarPagoPage() {
         }
       >
         <p className={styles.suave}>
-          {tipo === 'renovacion'
-            ? t('pago:confirmarTexto', { cuenta: cuenta.nombre, fecha: formatearFecha(venceNuevo) })
-            : t('pago:confirmarMejoraTexto', {
-                cuenta: cuenta.nombre,
-                fecha: formatearFecha(venceNuevo),
-              })}
+          {t(
+            tipo === 'alta'
+              ? 'pago:confirmarAltaTexto'
+              : tipo === 'renovacion'
+                ? 'pago:confirmarTexto'
+                : 'pago:confirmarMejoraTexto',
+            { cuenta: cuenta.nombre, fecha: formatearFecha(venceNuevo) },
+          )}
         </p>
         <dl>
           <FilaClaveValor clave={t('pago:filaMonto')}>

@@ -1,6 +1,6 @@
 .totales {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--esp24);
   margin-bottom: var(--esp24);
 }
@@ -40,5 +40,18 @@
 @media (width < 1024px) {
   .totales {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.graficas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+@media (width < 1024px) {
+  .graficas {
+    grid-template-columns: 1fr;
   }
 }
