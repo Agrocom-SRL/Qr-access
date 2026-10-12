@@ -21,6 +21,8 @@ export const cuerpoDeEmision = z.object({
     .max(MAX_ETIQUETA)
     .transform((texto) => (texto === '' ? null : texto))
     .nullish(),
+  /** QR de "Mi QR de acceso": anula el propio anterior y no aparece en "Mis QR". */
+  propio: z.boolean().optional(),
 });
 
 export const respuestaDeEmision = z.object({

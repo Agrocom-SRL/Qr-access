@@ -21,6 +21,8 @@ export interface NuevoQr {
   readonly tokenHash: string;
   readonly etiqueta: string | null;
   readonly venceAt: Date;
+  /** El QR de "Mi QR de acceso": no se lista en "Mis QR" y solo hay uno activo por usuario. */
+  readonly propio?: boolean;
 }
 
 export interface FiltroDeQr {
@@ -39,7 +41,8 @@ const CONDICION_DE_ESTADO: Readonly<Record<EstadoDeQr, string>> = {
 };
 
 function armarFiltro(filtro: FiltroDeQr): { donde?: string; params: unknown[] } {
-  const condiciones: string[] = [];
+  // Los QR propios no se listan ni se cuentan: se presentan como una entrada fija.
+  const condiciones: string[] = ['t.es_propio = 0'];
   const params: unknown[] = [];
   if (filtro.estado !== null) {
     condiciones.push(CONDICION_DE_ESTADO[filtro.estado]);
@@ -49,7 +52,7 @@ function armarFiltro(filtro: FiltroDeQr): { donde?: string; params: unknown[] } 
     condiciones.push('t.emitido_por = ?');
     params.push(filtro.emitidoPor);
   }
-  return condiciones.length === 0 ? { params } : { donde: condiciones.join(' AND '), params };
+  return { donde: condiciones.join(' AND '), params };
 }
 
 /** Dueño de `qr_accesos`. */
@@ -61,6 +64,7 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
         'emitido_por',
         'token_hash',
         'etiqueta',
+        'es_propio',
         'vence_at',
         'usado_at',
         'usado_dispositivo_id',
@@ -78,8 +82,24 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
       emitido_por: qr.emitidoPor,
       token_hash: qr.tokenHash,
       etiqueta: qr.etiqueta,
+      es_propio: qr.propio === true ? 1 : 0,
       vence_at: qr.venceAt,
     });
+  }
+
+  /**
+   * Anula los QR propios todavía activos del usuario (aunque ya hayan vencido): al emitir uno
+   * nuevo, el anterior deja de servir. Si alguien le sacó una foto, esa foto ya no abre.
+   */
+  async anularPropiosActivos(tx: Transaccion, usuarioId: string, ahora: Date): Promise<number> {
+    const activos = await this.seleccionar<QrFila>({
+      columnas: COLUMNAS_DE_QR,
+      donde:
+        't.emitido_por = ? AND t.es_propio = 1 AND t.anulado_at IS NULL AND t.usado_at IS NULL',
+      params: [usuarioId],
+    });
+    for (const activo of activos) await this.anular(tx, activo.id, usuarioId, ahora);
+    return activos.length;
   }
 
   /** Busca SOLO dentro de la cuenta del contexto (ADR 0008 paso 2): un QR de otra cuenta es desconocido. */

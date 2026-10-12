@@ -43,3 +43,8 @@ El SQL completo está en `03-schema-sql.md`.
 - D-16 — `02-dudas-y-ambiguedades.md`
 - D-17 — `02-dudas-y-ambiguedades.md`
 - D-21 — `02-dudas-y-ambiguedades.md`
+
+## QR propio ("Mi QR de acceso")
+
+- `es_propio` marca el QR que la app emite al abrir "Mi QR de acceso". No se lista ni se cuenta en "Mis QR" (se presenta como una entrada fija); sus usos siguen quedando en `eventos_acceso`.
+- `propio_activo` vale 1 mientras ese QR no se anule ni se use, y el `UNIQUE (emitido_por, propio_activo)` impide dos activos por usuario. Al emitir uno nuevo, la API anula los anteriores en la misma transacción: si alguien le sacó una foto al QR viejo, ya no abre.

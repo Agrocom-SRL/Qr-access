@@ -8,6 +8,7 @@ import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart'
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 
 /// QR de acceso de la cuenta (ADR 0008). Los tests lo sustituyen por un fake
 /// con el mismo shape que el contrato de la API.
@@ -43,6 +44,7 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
       puertaIds: datos.puertaIds,
       venceAt: datos.vigencia.venceAtPara(ahora),
       etiqueta: datos.etiqueta,
+      propio: datos.propio,
     );
     // El texto solo existe ahora: se guarda en el dispositivo para poder
     // volver a mostrarlo desde Mis QR (ADR 0008, addendum).
@@ -126,9 +128,8 @@ final qrAccesosRepositorioProvider = Provider<QrAccesosRepositorio>(
 
 /// El texto guardado en este dispositivo para un QR emitido, o `null` si se
 /// emitió en otro dispositivo, ya venció o el almacén no lo tiene.
-// ignore: specify_nonobvious_property_types, el tipo de la familia no se exporta.
-final textoQrGuardadoProvider = FutureProvider.autoDispose
-    .family<String?, String>((ref, id) async {
+final FutureProviderFamily<String?, String> textoQrGuardadoProvider =
+    FutureProvider.autoDispose.family<String?, String>((ref, id) async {
       try {
         return await ref.watch(almacenQrProvider).leer(id);
       } on Object {

@@ -14,6 +14,8 @@ export interface DatosDeEmision {
   /** Una vigencia hasta el máximo del plan; sin ella, el fin del día local. */
   readonly venceAt: Date | null;
   readonly etiqueta: string | null;
+  /** Es el QR de "Mi QR de acceso": solo uno activo por usuario y fuera de "Mis QR". */
+  readonly propio?: boolean;
 }
 
 export interface QrEmitido {
@@ -62,15 +64,27 @@ export async function ejecutar(
   const venceAt = datos.venceAt ?? vencimientoPorDefecto(limites);
 
   const token = generarTokenQr();
+  const propio = datos.propio === true;
   const id = await enTransaccion(pool, async (tx) => {
-    const qrId = await new RepositorioDeQr(pool).crear(tx, {
+    const repositorio = new RepositorioDeQr(pool);
+    // El propio anterior se anula en la misma transacción que crea el nuevo: nunca hay dos
+    // activos (y el UNIQUE `propio_activo` lo garantiza aunque dos emisiones corran a la vez).
+    if (propio) await repositorio.anularPropiosActivos(tx, principal.usuarioId, ahora);
+    const qrId = await repositorio.crear(tx, {
       emitidoPor: principal.usuarioId,
       tokenHash: hashDeToken(token),
       etiqueta: datos.etiqueta,
       venceAt,
+      propio,
     });
     await new RepositorioDePuertasDeQr(pool).asociar(tx, qrId, idsUnicos);
     return qrId;
+  }).catch((error: unknown) => {
+    // Dos emisiones propias simultáneas: la segunda choca con el UNIQUE y se reintenta.
+    if (propio && (error as { code?: string }).code === 'ER_DUP_ENTRY') {
+      throw new ErrorDeDominio('qr.propio_en_curso', 409);
+    }
+    throw error;
   });
 
   return {

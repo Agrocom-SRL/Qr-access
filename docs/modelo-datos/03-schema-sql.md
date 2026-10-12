@@ -336,7 +336,7 @@ CREATE TABLE dispositivos (
 
 ## qr_accesos
 
-Migración: `db/migrations/20261009100014_create_qr_accesos.sql`
+Migraciones: `db/migrations/20261009100014_create_qr_accesos.sql` y `20261012100006_add_es_propio_a_qr_accesos.sql` (`es_propio` y `propio_activo`, ya incluidos abajo)
 
 ```sql
 CREATE TABLE qr_accesos (
@@ -345,6 +345,7 @@ CREATE TABLE qr_accesos (
   emitido_por BIGINT UNSIGNED NOT NULL,
   token_hash CHAR(64) NOT NULL,
   etiqueta VARCHAR(60) NULL,
+  es_propio TINYINT(1) NOT NULL DEFAULT 0,
   vence_at DATETIME(3) NOT NULL,
   usado_at DATETIME(3) NULL,
   usado_dispositivo_id BIGINT UNSIGNED NULL,
@@ -356,11 +357,13 @@ CREATE TABLE qr_accesos (
   created_by BIGINT UNSIGNED NULL,
   updated_by BIGINT UNSIGNED NULL,
   deleted_by BIGINT UNSIGNED NULL,
+  propio_activo TINYINT GENERATED ALWAYS AS (IF(es_propio = 1 AND anulado_at IS NULL AND usado_at IS NULL AND deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_qr_accesos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   CONSTRAINT fk_qr_accesos_emisor FOREIGN KEY (emitido_por) REFERENCES usuarios (id),
   CONSTRAINT fk_qr_accesos_dispositivo FOREIGN KEY (usado_dispositivo_id) REFERENCES dispositivos (id),
   CONSTRAINT fk_qr_accesos_anulador FOREIGN KEY (anulado_por) REFERENCES usuarios (id),
   UNIQUE KEY uq_qr_accesos_token (token_hash),
+  UNIQUE KEY uq_qr_accesos_propio_activo (emitido_por, propio_activo),
   KEY idx_qr_accesos_emisor (tenant_id, emitido_por, created_at),
   KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

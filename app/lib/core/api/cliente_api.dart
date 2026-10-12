@@ -102,6 +102,7 @@ class ClienteApi {
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
+    bool propio = false,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
@@ -110,6 +111,7 @@ class ClienteApi {
           'puerta_ids': puertaIds,
           'vence_at': ?venceAt?.toUtc().toIso8601String(),
           'etiqueta': ?etiqueta,
+          if (propio) 'propio': true,
         },
       );
       return QrEmitidoDto.desde(r.data!);

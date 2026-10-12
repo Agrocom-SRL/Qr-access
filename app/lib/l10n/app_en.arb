@@ -48,6 +48,7 @@
   "comunErrorQrNoEncontrado": "We could not find that QR. It may no longer be available.",
   "comunErrorQrVigenciaInvalida": "The chosen validity is not valid. Pick another one.",
   "comunErrorQrVigenciaExcedida": "That validity exceeds what your plan allows. Pick a shorter one.",
+  "comunErrorQrPropioEnCurso": "Your access QR is already being generated. Try again.",
   "comunErrorQrYaUsado": "This QR was already used, so it cannot be revoked.",
   "comunErrorValidacionInvalida": "Check the data and try again.",
   "comunErrorUsuarioNoEncontrado": "We could not find that user. Refresh the list.",

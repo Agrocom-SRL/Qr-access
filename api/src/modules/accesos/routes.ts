@@ -59,6 +59,7 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           puertaIds: request.body.puerta_ids,
           venceAt: request.body.vence_at ?? null,
           etiqueta: request.body.etiqueta ?? null,
+          propio: request.body.propio ?? false,
         });
         return reply.status(201).send(qr);
       },

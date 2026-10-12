@@ -102,16 +102,23 @@ class PlantillaAuth extends StatelessWidget {
           ),
       ],
     );
-    return Scaffold(
-      body: SafeArea(
-        child: expandida && conPanelDeMarca
-            ? Row(
-                children: [
-                  const Expanded(child: PanelDeMarca()),
-                  Expanded(child: contenido),
-                ],
-              )
-            : contenido,
+    return PopScope(
+      // Con flecha de volver, "atrás" hace lo mismo que ella en vez de salir.
+      canPop: alVolver == null,
+      onPopInvokedWithResult: (salio, _) {
+        if (!salio) alVolver?.call();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: expandida && conPanelDeMarca
+              ? Row(
+                  children: [
+                    const Expanded(child: PanelDeMarca()),
+                    Expanded(child: contenido),
+                  ],
+                )
+              : contenido,
+        ),
       ),
     );
   }

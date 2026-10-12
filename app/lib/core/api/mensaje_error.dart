@@ -17,6 +17,7 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'suscripcion.vencida' => l10n.comunErrorSuscripcionVencida,
     'puerta.no_encontrada' => l10n.comunErrorPuertaNoEncontrada,
     'qr.no_encontrado' => l10n.comunErrorQrNoEncontrado,
+    'qr.propio_en_curso' => l10n.comunErrorQrPropioEnCurso,
     'qr.ya_usado' => l10n.comunErrorQrYaUsado,
     'qr.vigencia_invalida' => l10n.comunErrorQrVigenciaInvalida,
     'qr.vigencia_excedida' => l10n.comunErrorQrVigenciaExcedida,

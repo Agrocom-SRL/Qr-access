@@ -61,6 +61,17 @@ class FiltroEventos {
   final DateTime? desde;
   final DateTime? hasta;
 
+  @override
+  bool operator ==(Object other) =>
+      other is FiltroEventos &&
+      other.resultado == resultado &&
+      other.puertaId == puertaId &&
+      other.desde == desde &&
+      other.hasta == hasta;
+
+  @override
+  int get hashCode => Object.hash(resultado, puertaId, desde, hasta);
+
   FiltroEventos copiar({
     ResultadoEvento? resultado,
     bool quitarResultado = false,

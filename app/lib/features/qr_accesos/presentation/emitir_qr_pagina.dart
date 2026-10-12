@@ -246,56 +246,70 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
     }
 
     final cantidad = estado.puertaIds.length;
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: estado.paso == PasoEmision.puertas
-              ? l10n.comunCerrar
-              : l10n.comunAtras,
-          icon: Icon(
-            estado.paso == PasoEmision.puertas ? Icons.close : Icons.arrow_back,
+    return PopScope(
+      // "Atrás" retrocede un paso; en el primero, cierra el flujo.
+      canPop: false,
+      onPopInvokedWithResult: (salio, _) {
+        if (salio) return;
+        if (estado.paso == PasoEmision.puertas) {
+          _cerrar();
+        } else {
+          controlador.atras();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: estado.paso == PasoEmision.puertas
+                ? l10n.comunCerrar
+                : l10n.comunAtras,
+            icon: Icon(
+              estado.paso == PasoEmision.puertas
+                  ? Icons.close
+                  : Icons.arrow_back,
+            ),
+            onPressed: estado.paso == PasoEmision.puertas
+                ? _cerrar
+                : controlador.atras,
           ),
-          onPressed: estado.paso == PasoEmision.puertas
-              ? _cerrar
-              : controlador.atras,
+          title: Text(l10n.qrEmitirTitulo),
         ),
-        title: Text(l10n.qrEmitirTitulo),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  tokens.espacio.l,
-                  tokens.espacio.s,
-                  tokens.espacio.l,
-                  0,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    tokens.espacio.l,
+                    tokens.espacio.s,
+                    tokens.espacio.l,
+                    0,
+                  ),
+                  child: cuerpo,
                 ),
-                child: cuerpo,
               ),
-            ),
-            BarraDeAcciones(
-              inicio: estado.paso == PasoEmision.puertas
-                  ? Text.rich(
-                      TextSpan(
-                        text: '$cantidad ',
-                        style: Theme.of(context).textTheme.titleMedium,
-                        children: [
-                          TextSpan(
-                            text: l10n.qrEmitirPuertasContadas(cantidad),
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: tokens.colores.textoSecundario,
-                                ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : botonAtras,
-              acciones: [botonPrincipal],
-            ),
-          ],
+              BarraDeAcciones(
+                inicio: estado.paso == PasoEmision.puertas
+                    ? Text.rich(
+                        TextSpan(
+                          text: '$cantidad ',
+                          style: Theme.of(context).textTheme.titleMedium,
+                          children: [
+                            TextSpan(
+                              text: l10n.qrEmitirPuertasContadas(cantidad),
+                              style: Theme.of(context).textTheme.bodyLarge
+                                  ?.copyWith(
+                                    color: tokens.colores.textoSecundario,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : botonAtras,
+                acciones: [botonPrincipal],
+              ),
+            ],
+          ),
         ),
       ),
     );
