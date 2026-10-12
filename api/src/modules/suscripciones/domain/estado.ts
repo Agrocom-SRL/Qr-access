@@ -26,3 +26,14 @@ export function estadoDeSuscripcion(datos: DatosDeEstado, ahora: Date): EstadoDe
   if (datos.estado === 'vencida' || datos.hasta.getTime() <= ahora.getTime()) return 'vencida';
   return diasRestantes(datos.hasta, ahora) <= DIAS_PARA_POR_VENCER ? 'por_vencer' : 'activa';
 }
+
+/** Un plan es una mejora si su cupo de usuarios es mayor; sin tope (`null`) es el mayor de todos. */
+export function esMejoraDePlan(cupoActual: number | null, cupoNuevo: number | null): boolean {
+  if (cupoActual === null) return false;
+  return cupoNuevo === null || cupoNuevo > cupoActual;
+}
+
+/** Lo que se cobra al subir de plan: la diferencia de precio anual (no se devuelve dinero al bajar: no se baja). */
+export function diferenciaDePrecio(precioActual: number, precioNuevo: number): number {
+  return Math.round((precioNuevo - precioActual) * 100) / 100;
+}

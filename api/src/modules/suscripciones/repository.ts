@@ -64,6 +64,20 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
     });
   }
 
+  /** Extiende la vigencia: el nuevo `hasta` ya viene calculado por el dominio. */
+  renovar(tx: Transaccion, id: string, hasta: Date): Promise<boolean> {
+    return this.actualizar(tx, id, { hasta });
+  }
+
+  cambiarPlan(tx: Transaccion, id: string, planId: string): Promise<boolean> {
+    return this.actualizar(tx, id, { plan_id: planId });
+  }
+
+  /** Suspende o reactiva (`vigente`); el estado `vencida` se calcula, no se guarda. */
+  cambiarEstado(tx: Transaccion, id: string, estado: 'vigente' | 'suspendida'): Promise<boolean> {
+    return this.actualizar(tx, id, { estado });
+  }
+
   /** La suscripción de la cuenta del contexto que cubre `ahora`, con los límites de su plan. */
   buscarVigente(ahora: Date): Promise<SuscripcionVigenteFila | null> {
     return this.seleccionarUna<SuscripcionVigenteFila>({
@@ -176,5 +190,111 @@ export class RepositorioDeSuscripcionesDeTodas extends RepositorioDePlataforma {
       uniones: UNION_PLAN,
       orden: 't.tenant_id, t.id DESC',
     });
+  }
+}
+
+export type TipoDePago = 'renovacion' | 'mejora_de_plan';
+export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
+
+export interface PagoFila extends RowDataPacket {
+  id: string;
+  tenant_id: string;
+  suscripcion_id: string;
+  plan_id: string;
+  plan_nombre: string;
+  tipo: TipoDePago;
+  monto: string;
+  fecha_pago: Date;
+  medio: MedioDePago;
+  referencia: string;
+  periodo_desde: Date;
+  periodo_hasta: Date;
+  created_by: string | null;
+  created_at: Date;
+}
+
+export interface NuevoPago {
+  readonly suscripcionId: string;
+  readonly planId: string;
+  readonly tipo: TipoDePago;
+  readonly monto: number;
+  /** `aaaa-mm-dd`. */
+  readonly fechaPago: string;
+  readonly medio: MedioDePago;
+  readonly referencia: string;
+  readonly periodoDesde: Date;
+  readonly periodoHasta: Date;
+}
+
+const COLUMNAS_DE_PAGO =
+  't.id, t.tenant_id, t.suscripcion_id, t.plan_id, p.nombre AS plan_nombre, t.tipo, t.monto, t.fecha_pago, t.medio, t.referencia, t.periodo_desde, t.periodo_hasta, t.created_by, t.created_at';
+const UNION_PLAN_DE_PAGO = 'JOIN planes AS p ON p.id = t.plan_id';
+
+/** Dueño de `pagos`: los de la cuenta del contexto. */
+export class RepositorioDePagos extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'pagos',
+      columnas: [
+        'suscripcion_id',
+        'plan_id',
+        'tipo',
+        'monto',
+        'fecha_pago',
+        'medio',
+        'referencia',
+        'periodo_desde',
+        'periodo_hasta',
+      ],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  registrar(tx: Transaccion, pago: NuevoPago): Promise<string> {
+    return this.insertar(tx, {
+      suscripcion_id: pago.suscripcionId,
+      plan_id: pago.planId,
+      tipo: pago.tipo,
+      monto: pago.monto,
+      fecha_pago: pago.fechaPago,
+      medio: pago.medio,
+      referencia: pago.referencia,
+      periodo_desde: pago.periodoDesde,
+      periodo_hasta: pago.periodoHasta,
+    });
+  }
+
+  /** Los pagos de la cuenta, el más reciente primero. */
+  listar(): Promise<PagoFila[]> {
+    return this.seleccionar<PagoFila>({
+      columnas: COLUMNAS_DE_PAGO,
+      uniones: UNION_PLAN_DE_PAGO,
+      orden: 't.fecha_pago DESC, t.id DESC',
+    });
+  }
+}
+
+interface TotalCobradoFila extends RowDataPacket {
+  monto: string | null;
+  pagos: string | number;
+}
+
+/**
+ * Cuánto se cobró en un año, de todas las cuentas (cobranza, resumen). Salto EXPLÍCITO del
+ * aislamiento: solo lee totales agregados, nunca filas de una cuenta ni escribe.
+ */
+export class RepositorioDeTotalesDePagos extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, { nombre: 'pagos', columnas: [], perfil: 'dominio', deCuenta: true });
+  }
+
+  async cobradoEn(desde: string, hasta: string): Promise<{ monto: number; pagos: number }> {
+    const fila = await this.seleccionarUna<TotalCobradoFila>({
+      columnas: 'SUM(t.monto) AS monto, COUNT(*) AS pagos',
+      donde: 't.fecha_pago >= ? AND t.fecha_pago < ?',
+      params: [desde, hasta],
+    });
+    return { monto: Number(fila?.monto ?? 0), pagos: Number(fila?.pagos ?? 0) };
   }
 }

@@ -26,3 +26,36 @@ export const cuerpoDePrecios = z.object({
     .min(1)
     .max(20),
 });
+
+export const parametrosDeCuenta = z.object({ id: esquemaId });
+
+export const cuerpoDeCambioDePlan = z.object({ plan_id: esquemaId });
+
+export const respuestaDeCambioDePlan = z.object({
+  plan: z.object({
+    id: z.string(),
+    nombre: z.string(),
+    cupo_usuarios: z.number().int().nullable(),
+  }),
+  diferencia_precio: z.number(),
+});
+
+export const cuerpoDePago = z.object({
+  tipo: z.enum(['renovacion', 'mejora_de_plan']),
+  monto: z
+    .number()
+    .positive()
+    .max(99_999_999)
+    .refine((n) => Math.round(n * 100) / 100 === n),
+  fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+  referencia: z.string().trim().min(1).max(80),
+});
+
+export const respuestaDePago = z.object({
+  id: z.string(),
+  tipo: z.enum(['renovacion', 'mejora_de_plan']),
+  periodo_desde: z.string(),
+  periodo_hasta: z.string(),
+  vence_el: z.string(),
+});

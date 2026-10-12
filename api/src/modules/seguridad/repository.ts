@@ -556,6 +556,16 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
     });
   }
 
+  /** Los super admin con esos ids (activos o no), para mostrar quién registró algo. */
+  buscarPorIds(ids: readonly string[]): Promise<SuperAdminFila[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.seleccionar<SuperAdminFila>({
+      columnas: COLUMNAS_DE_SUPER_ADMIN,
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+  }
+
   contarTodos(): Promise<number> {
     return this.contar({});
   }

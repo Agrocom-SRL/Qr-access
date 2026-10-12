@@ -2,13 +2,21 @@ import type { Pool } from 'mysql2/promise';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import { diasRestantes, estadoDeSuscripcion, type EstadoDeSuscripcion } from './domain/estado.js';
 import {
+  RepositorioDePagos,
   RepositorioDePlanes,
+  RepositorioDeTotalesDePagos,
   RepositorioDeSuscripciones,
   RepositorioDeSuscripcionesDeTodas,
   type SuscripcionActualFila,
 } from './repository.js';
 
 export { DIAS_PARA_POR_VENCER, diasRestantes, estadoDeSuscripcion } from './domain/estado.js';
+export {
+  entraEnVentana,
+  estadoDePago,
+  type EstadoDePago,
+  type VentanaDeCobranza,
+} from './domain/cobranza.js';
 export type { EstadoDeSuscripcion } from './domain/estado.js';
 
 /** Lo que otros módulos pueden saber de la suscripción de una cuenta (ADR 0017). */
@@ -100,6 +108,26 @@ export interface ServicioDeSuscripcionesDePlataforma {
   ): Promise<string>;
   /** La suscripción actual de la cuenta del contexto, o `null`. */
   deLaCuentaDelContexto(ahora: Date): Promise<SuscripcionDeCuenta | null>;
+  /** Los pagos de la cuenta del contexto, el más reciente primero. */
+  pagosDeLaCuentaDelContexto(): Promise<PagoRegistrado[]>;
+  /** Total cobrado y cantidad de pagos con `fecha_pago` en el año calendario `anio` (todas las cuentas). */
+  cobradoEnElAnio(anio: number): Promise<{ monto: number; pagos: number }>;
+}
+
+/** Un pago ya registrado de una cuenta. */
+export interface PagoRegistrado {
+  readonly id: string;
+  readonly tipo: 'renovacion' | 'mejora_de_plan';
+  readonly planNombre: string;
+  readonly monto: number;
+  /** `aaaa-mm-dd`. */
+  readonly fechaPago: string;
+  readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+  readonly referencia: string;
+  readonly periodoDesde: Date;
+  readonly periodoHasta: Date;
+  /** Id del super admin que lo registró (para mostrar su nombre). */
+  readonly registradoPor: string | null;
 }
 
 export function crearServicioDeSuscripcionesDePlataforma(
@@ -125,9 +153,33 @@ export function crearServicioDeSuscripcionesDePlataforma(
       };
     },
     crear: (tx, suscripcion) => new RepositorioDeSuscripciones(pool).crear(tx, suscripcion),
+    async pagosDeLaCuentaDelContexto() {
+      return (await new RepositorioDePagos(pool).listar()).map((fila) => ({
+        id: fila.id,
+        tipo: fila.tipo,
+        planNombre: fila.plan_nombre,
+        monto: Number(fila.monto),
+        fechaPago: fechaIso(fila.fecha_pago),
+        medio: fila.medio,
+        referencia: fila.referencia,
+        periodoDesde: fila.periodo_desde,
+        periodoHasta: fila.periodo_hasta,
+        registradoPor: fila.created_by,
+      }));
+    },
+    cobradoEnElAnio: (anio) =>
+      new RepositorioDeTotalesDePagos(pool).cobradoEn(
+        `${String(anio)}-01-01`,
+        `${String(anio + 1)}-01-01`,
+      ),
     async deLaCuentaDelContexto(ahora) {
       const fila = await new RepositorioDeSuscripciones(pool).buscarActual();
       return fila === null ? null : aSuscripcionDeCuenta(fila, ahora);
     },
   };
+}
+
+/** `DATE` llega como medianoche UTC (el pool usa `timezone: 'Z'`): se lee como `aaaa-mm-dd`. */
+function fechaIso(fecha: Date): string {
+  return fecha.toISOString().slice(0, 10);
 }

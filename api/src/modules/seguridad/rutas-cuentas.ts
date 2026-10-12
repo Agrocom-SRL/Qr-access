@@ -3,14 +3,19 @@ import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
+import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
+import { ejecutar as verSuscripcionDeCuenta } from './actions/ver-suscripcion-de-cuenta.js';
 import { ejecutar as verPuertasDeCuenta } from './actions/ver-puertas-de-cuenta.js';
 import {
+  consultaDeCobranza,
   consultaDeCodigoDeCuenta,
   consultaDeCuentas,
   cuerpoDeNuevaCuenta,
   parametrosDeCuenta,
+  respuestaDeCobranza,
   respuestaDeCodigoDeCuenta,
+  respuestaDeSuscripcionDeCuenta,
   respuestaDeCuentaCreada,
   respuestaDeCuentas,
   respuestaDeDetalleDeCuenta,
@@ -122,6 +127,34 @@ export const rutasDeCuentas =
       async (request) => ({
         datos: await verPuertasDeCuenta(pool, plataformaDe(request), request.params.id),
       }),
+    );
+
+    app.get(
+      '/plataforma/cuentas/:id/suscripcion',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeSuscripcionDeCuenta },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      (request) => verSuscripcionDeCuenta(pool, plataformaDe(request), request.params.id),
+    );
+
+    app.get(
+      '/plataforma/cobranza',
+      {
+        schema: {
+          tags: ETIQUETA,
+          querystring: consultaDeCobranza,
+          response: { 200: respuestaDeCobranza },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('suscripciones.cobranza.ver'),
+      },
+      (request) => verCobranza(pool, request.query),
     );
 
     listo();

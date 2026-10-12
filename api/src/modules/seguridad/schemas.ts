@@ -253,3 +253,71 @@ export const respuestaDePuertasDeCuenta = z.object({
     }),
   ),
 });
+
+export const respuestaDeSuscripcionDeCuenta = z.object({
+  suscripcion: z.object({
+    id: z.string(),
+    plan: z.object({
+      id: z.string(),
+      nombre: z.string(),
+      cupo_usuarios: z.number().int().nullable(),
+      precio_anual: z.number(),
+    }),
+    desde: esquemaFecha,
+    hasta: esquemaFecha,
+    estado: esquemaEstadoDeSuscripcion,
+    dias_restantes: z.number().int(),
+  }),
+  proximo_pago: z.enum(['pendiente', 'sin_pagar']).nullable(),
+  pagos: z.array(
+    z.object({
+      id: z.string(),
+      tipo: z.enum(['renovacion', 'mejora_de_plan']),
+      plan: z.string(),
+      monto: z.number(),
+      fecha_pago: z.string(),
+      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+      referencia: z.string(),
+      periodo_desde: esquemaFecha,
+      periodo_hasta: esquemaFecha,
+      registro: z.object({ id: z.string(), nombre: z.string() }).nullable(),
+    }),
+  ),
+});
+
+const esquemaTotal = z.object({ monto: z.number(), cuentas: z.number().int() });
+
+export const consultaDeCobranza = z.object({
+  ventana: z.enum(['d30', 'd60', 'd90', 'vencidas']).default('d30'),
+  busqueda: z.string().trim().max(100).default(''),
+});
+
+export const respuestaDeCobranza = z.object({
+  totales: z.object({
+    por_cobrar_30: esquemaTotal,
+    por_cobrar_90: esquemaTotal,
+    vencido_sin_pagar: esquemaTotal,
+    cobrado_anio: z.object({ anio: z.number().int(), monto: z.number(), pagos: z.number().int() }),
+  }),
+  conteos: z.object({
+    d30: z.number().int(),
+    d60: z.number().int(),
+    d90: z.number().int(),
+    vencidas: z.number().int(),
+  }),
+  datos: z.array(
+    z.object({
+      cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+      plan: z.object({
+        id: z.string(),
+        nombre: z.string(),
+        cupo_usuarios: z.number().int().nullable(),
+      }),
+      monto: z.number(),
+      vence_el: esquemaFecha,
+      dias_restantes: z.number().int(),
+      pago: z.enum(['pendiente', 'sin_pagar']),
+      estado: esquemaEstadoDeSuscripcion,
+    }),
+  ),
+});
