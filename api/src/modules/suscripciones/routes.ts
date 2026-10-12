@@ -3,18 +3,24 @@ import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as actualizarPrecios } from './actions/actualizar-precios.js';
+import * as gestionarPlanes from './actions/gestionar-planes.js';
 import { ejecutar as cambiarEstado } from './actions/cambiar-estado.js';
 import { ejecutar as cambiarPlan } from './actions/cambiar-plan.js';
 import { ejecutar as listarPlanes } from './actions/listar-planes.js';
 import { ejecutar as registrarPago } from './actions/registrar-pago.js';
 import {
   cuerpoDeCambioDePlan,
+  cuerpoDeEdicionDePlan,
+  cuerpoDePlanNuevo,
   cuerpoDePago,
   cuerpoDePrecios,
   parametrosDeCuenta,
+  parametrosDePlan,
   respuestaDeCambioDePlan,
   respuestaDePago,
+  respuestaDePlanCreado,
   respuestaDePlanes,
+  respuestaDePlanRetirado,
 } from './schemas.js';
 
 const ETIQUETA = ['plataforma'];
@@ -46,6 +52,61 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         );
         return reply.status(204).send();
       },
+    );
+
+    app.post(
+      '/plataforma/planes',
+      {
+        schema: {
+          tags: ETIQUETA,
+          body: cuerpoDePlanNuevo,
+          response: { 201: respuestaDePlanCreado },
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.plan.crear'),
+      },
+      async (request, reply) => {
+        const plan = await gestionarPlanes.crear(pool, {
+          nombre: request.body.nombre,
+          cupoUsuarios: request.body.cupo_usuarios,
+          precioAnual: request.body.precio_anual,
+        });
+        return reply
+          .status(201)
+          .header('location', `/api/v1/plataforma/planes/${plan.id}`)
+          .send(plan);
+      },
+    );
+
+    app.patch(
+      '/plataforma/planes/:id',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDePlan, body: cuerpoDeEdicionDePlan },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.plan.editar'),
+      },
+      async (request, reply) => {
+        await gestionarPlanes.editar(pool, request.params.id, {
+          nombre: request.body.nombre,
+          cupoUsuarios: request.body.cupo_usuarios,
+          precioAnual: request.body.precio_anual,
+        });
+        return reply.status(204).send();
+      },
+    );
+
+    app.delete(
+      '/plataforma/planes/:id',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDePlan,
+          response: { 200: respuestaDePlanRetirado },
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.plan.eliminar'),
+      },
+      (request) => gestionarPlanes.retirar(pool, request.params.id),
     );
 
     // Todo lo que sigue opera DENTRO de la cuenta (ADR 0004 §7): el super admin firma cada cambio.

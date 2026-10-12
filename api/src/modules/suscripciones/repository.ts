@@ -83,7 +83,8 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
     return this.seleccionarUna<SuscripcionVigenteFila>({
       columnas:
         't.id, t.hasta, p.nombre AS plan_nombre, p.max_vigencia_qr_horas, p.max_usuarios, p.max_dispositivos',
-      uniones: 'JOIN planes AS p ON p.id = t.plan_id AND p.deleted_at IS NULL AND p.activo = 1',
+      // Un plan retirado de la venta (activo = 0) sigue valiendo para la cuenta que ya lo tiene (ADR 0022).
+      uniones: 'JOIN planes AS p ON p.id = t.plan_id',
       donde: "t.estado = 'vigente' AND t.desde <= ? AND t.hasta > ?",
       params: [ahora, ahora],
     });
@@ -135,6 +136,45 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
     return new Map(filas.map((fila) => [fila.id, fila.nombre]));
   }
 
+  /** Un plan vigente (no borrado) con ese nombre, activo o retirado: el nombre es único. */
+  buscarPorNombre(nombre: string): Promise<PlanFila | null> {
+    return this.seleccionarUna<PlanFila>({
+      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      donde: 't.nombre = ?',
+      params: [nombre],
+    });
+  }
+
+  crear(
+    tx: Transaccion,
+    plan: { nombre: string; cupoUsuarios: number; precioAnual: number },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      nombre: plan.nombre,
+      max_usuarios: plan.cupoUsuarios,
+      precio_anual: plan.precioAnual,
+      activo: 1,
+    });
+  }
+
+  editar(
+    tx: Transaccion,
+    id: string,
+    cambios: Readonly<Record<string, unknown>>,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, cambios);
+  }
+
+  /** Lo saca de la venta sin tocar a las cuentas que lo tienen. */
+  retirar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.actualizar(tx, id, { activo: 0 });
+  }
+
+  /** Soft delete: solo para un plan que ninguna cuenta usa ni usó. */
+  eliminar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+
   buscarActivoPorId(id: string): Promise<PlanFila | null> {
     return this.seleccionarUna<PlanFila>({
       columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
@@ -166,6 +206,11 @@ export class RepositorioDeUsoDePlanes extends RepositorioDePlataforma {
       perfil: 'dominio',
       deCuenta: true,
     });
+  }
+
+  /** Cuántas suscripciones (de cuentas activas o no) tienen o tuvieron ese plan. */
+  contarDelPlan(planId: string): Promise<number> {
+    return this.contar({ donde: 't.plan_id = ?', params: [planId] });
   }
 
   /** `planId -> ids de las cuentas activas` con una suscripción en ese plan. */

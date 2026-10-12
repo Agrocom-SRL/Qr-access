@@ -59,3 +59,25 @@ export const respuestaDePago = z.object({
   periodo_hasta: z.string(),
   vence_el: z.string(),
 });
+
+const esquemaNombreDePlan = z.string().trim().min(1).max(80);
+const esquemaCupo = z.number().int().min(1).max(100_000);
+
+export const cuerpoDePlanNuevo = z.object({
+  nombre: esquemaNombreDePlan,
+  cupo_usuarios: esquemaCupo,
+  precio_anual: esquemaPrecio,
+});
+
+export const cuerpoDeEdicionDePlan = z
+  .object({
+    nombre: esquemaNombreDePlan.optional(),
+    cupo_usuarios: esquemaCupo.optional(),
+    precio_anual: esquemaPrecio.optional(),
+  })
+  .refine((cuerpo) => Object.keys(cuerpo).length > 0);
+
+export const parametrosDePlan = z.object({ id: esquemaId });
+
+export const respuestaDePlanCreado = z.object({ id: z.string() });
+export const respuestaDePlanRetirado = z.object({ resultado: z.enum(['retirado', 'eliminado']) });

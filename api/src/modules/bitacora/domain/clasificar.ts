@@ -30,6 +30,7 @@ export const TABLAS_RELEVANTES = [
 ] as const;
 
 const SINGULAR: Readonly<Record<string, string>> = {
+  planes: 'plan',
   sitios: 'sitio',
   puertas: 'puerta',
   dispositivos: 'dispositivo',
@@ -82,8 +83,12 @@ export function clasificarCambio(c: CambioCrudo): string {
       if (c.accion === 'creado') return 'pago.registrado';
       break;
     case 'planes':
-      if (cambio(c.despues, 'precio_anual')) return 'plan.precio_editado';
-      break;
+      if (c.accion === 'creado') return 'plan.creado';
+      if (c.accion === 'eliminado' || c.despues?.activo === 0) return 'plan.eliminado';
+      if (cambio(c.despues, 'precio_anual') && Object.keys(c.despues ?? {}).length === 1) {
+        return 'plan.precio_editado';
+      }
+      return 'plan.editado';
     case 'usuarios':
       if (c.tenantId === null) {
         if (c.accion === 'creado') return 'equipo.agregado';
@@ -142,6 +147,11 @@ export function detalleDelCambio(
       return { antes: soloCampos(c.antes, ['estado']), despues: soloCampos(c.despues, ['estado']) };
     case 'pago.registrado':
       return { antes: null, despues: soloCampos(c.despues, ['monto', 'referencia', 'tipo']) };
+    case 'plan.creado':
+      return {
+        antes: null,
+        despues: soloCampos(c.despues, ['nombre', 'max_usuarios', 'precio_anual']),
+      };
     case 'plan.precio_editado':
       return {
         antes: { plan: plan(c.registroId), precio_anual: simple(c.antes?.precio_anual) },
