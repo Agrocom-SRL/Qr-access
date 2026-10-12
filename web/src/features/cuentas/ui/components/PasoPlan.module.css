@@ -1,0 +1,65 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+.opcion {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.entrada {
+  position: absolute;
+  opacity: 0;
+}
+
+.opcion:has(.entrada:focus-visible) {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: var(--radio20);
+}
+
+.radio {
+  display: block;
+  width: var(--tam24);
+  height: var(--tam24);
+  border: 2px solid var(--textoSecundario);
+  border-radius: var(--radioCompleto);
+}
+
+.radioActivo {
+  border: var(--tam6) solid var(--primario);
+}
+
+.precio {
+  font-size: var(--texto24);
+}
+
+.nota {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.ventajas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+  padding: 0;
+  margin: 0;
+  color: var(--texto);
+  font-size: var(--texto14);
+  list-style: none;
+}
+
+.ventajas li {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.ventajas li > span {
+  color: var(--primario);
+}

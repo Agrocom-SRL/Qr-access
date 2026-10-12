@@ -1,0 +1,24 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  max-width: var(--anchoFormulario);
+  margin: 0 auto;
+}
+
+.ancha {
+  max-width: var(--anchoPlanes);
+}
+
+.titulo {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp16);
+}

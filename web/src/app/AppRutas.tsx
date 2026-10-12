@@ -1,4 +1,10 @@
 import { Route, Routes } from 'react-router-dom';
+import {
+  CrearCuentaPage,
+  CuentasPage,
+  DetalleCuentaPage,
+  RUTAS_DE_CUENTAS,
+} from '../features/cuentas';
 import { EquipoPage } from '../features/equipo';
 import { PlanesPage } from '../features/planes';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
@@ -13,7 +19,9 @@ export function AppRutas() {
       <Route path={RUTAS.ingreso} element={<IngresoPage />} />
       <Route element={<LayoutAdmin />}>
         <Route path={RUTAS.resumen} element={<PaginaProximamente />} />
-        <Route path={RUTAS.cuentas} element={<PaginaProximamente />} />
+        <Route path={RUTAS.cuentas} element={<CuentasPage />} />
+        <Route path={RUTAS_DE_CUENTAS.nueva} element={<CrearCuentaPage />} />
+        <Route path={`${RUTAS.cuentas}/:id`} element={<DetalleCuentaPage />} />
         <Route path={RUTAS.cobranza} element={<PaginaProximamente />} />
         <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<PaginaProximamente />} />

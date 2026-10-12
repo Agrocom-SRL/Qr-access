@@ -2,6 +2,7 @@ import { AlmacenSesion } from '@/shared/api/almacenSesion';
 import { ErrorApi } from '@/shared/api/errorApi';
 import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
+import type { CuentasRepositorio } from '@/features/cuentas';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
@@ -15,6 +16,8 @@ export const SUPER_ADMIN = {
     'seguridad.equipo.desactivar',
     'suscripciones.plan.ver',
     'suscripciones.plan.editar',
+    'seguridad.cuenta.ver',
+    'seguridad.cuenta.crear',
   ],
 } as const;
 
@@ -72,12 +75,89 @@ export const PLANES = [
   },
 ];
 
+export const CUENTAS = [
+  {
+    id: '1',
+    codigo: 'AGR',
+    nombre: 'Agroindustrial Norte',
+    plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
+    usuariosActivos: 87,
+    venceEl: new Date('2026-11-05T12:00:00Z'),
+    estado: 'porVencer' as const,
+  },
+  {
+    id: '2',
+    codigo: 'FRO',
+    nombre: 'Frigorífico Oriente',
+    plan: { id: '2', nombre: '200 usuarios', cupoUsuarios: 200 },
+    usuariosActivos: 164,
+    venceEl: new Date('2027-03-22T12:00:00Z'),
+    estado: 'activa' as const,
+  },
+];
+
+export const DETALLE = {
+  cuenta: {
+    id: '1',
+    codigo: 'AGR',
+    nombre: 'Agroindustrial Norte',
+    activa: true,
+    clienteDesde: new Date('2024-11-05T12:00:00Z'),
+  },
+  empresa: {
+    nit: '1023456021',
+    ciudad: 'Santa Cruz de la Sierra',
+    contacto: 'Carla Méndez',
+    telefono: '3 342 1180',
+  },
+  suscripcion: {
+    id: '5',
+    plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100, precioAnual: 12000 },
+    desde: new Date('2025-11-05T12:00:00Z'),
+    hasta: new Date('2026-11-05T12:00:00Z'),
+    estado: 'porVencer' as const,
+    diasRestantes: 24,
+  },
+  uso: {
+    usuariosActivos: 87,
+    sitios: 2,
+    puertas: 5,
+    dispositivosSinConexion: 2,
+    administradores: 2,
+  },
+};
+
+export const SITIOS = [
+  {
+    id: '1',
+    nombre: 'Planta Warnes',
+    puertas: [
+      {
+        id: '1',
+        nombre: 'Portón vehicular',
+        dispositivo: { id: '1', nombre: 'LECT-0042', enLinea: true, ultimaSenal: new Date() },
+      },
+      {
+        id: '2',
+        nombre: 'Depósito 2',
+        dispositivo: {
+          id: '2',
+          nombre: 'LECT-0051',
+          enLinea: false,
+          ultimaSenal: new Date(Date.now() - 2 * 3_600_000),
+        },
+      },
+    ],
+  },
+];
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
     seguridad?: Partial<SeguridadRepositorio>;
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
+    cuentas?: Partial<CuentasRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -125,7 +205,36 @@ export function crearServiciosDePrueba(
     guardarPrecios: () => Promise.resolve(),
     ...parcial.planes,
   };
-  return { almacen, seguridad, equipo, planes };
+  const cuentas: CuentasRepositorio = {
+    listar: () =>
+      Promise.resolve({
+        elementos: CUENTAS,
+        pagina: 1,
+        porPagina: 10,
+        total: CUENTAS.length,
+        conteos: { todas: 42, activa: 33, porVencer: 5, vencida: 2, suspendida: 2 },
+      }),
+    codigoDisponible: (codigo) =>
+      Promise.resolve({
+        formatoValido: codigo.length === 3,
+        disponible: codigo !== 'AGR',
+        usadoPor: codigo === 'AGR' ? 'Agroindustrial Norte' : null,
+        sugerencias: ['AGU', 'AGY', 'GUA'],
+      }),
+    crear: (borrador) =>
+      Promise.resolve({
+        cuenta: { id: '77', codigo: borrador.empresa.codigo, nombre: borrador.empresa.razonSocial },
+        administrador: {
+          id: '88',
+          etiqueta: borrador.vigencia.administradorNombre,
+          pin: 'AGU9F4M',
+        },
+      }),
+    obtener: () => Promise.resolve(DETALLE),
+    sitiosYPuertas: () => Promise.resolve(SITIOS),
+    ...parcial.cuentas,
+  };
+  return { almacen, seguridad, equipo, planes, cuentas };
 }
 
 export { ErrorApi };

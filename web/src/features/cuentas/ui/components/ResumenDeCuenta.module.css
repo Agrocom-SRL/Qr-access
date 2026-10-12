@@ -1,0 +1,108 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: var(--esp24);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  padding: var(--esp32);
+  background: var(--hero);
+  border-radius: var(--radio20);
+  color: var(--sobreHero);
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
+.etiqueta {
+  font-size: var(--texto16);
+}
+
+.plan {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.precio {
+  margin-top: var(--esp4);
+  color: var(--heroTextoSuave);
+}
+
+.medalla {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tam56);
+  height: var(--tam56);
+  background: var(--heroAcento);
+  border-radius: var(--radio14);
+}
+
+.uso {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--esp8);
+  font-size: var(--texto14);
+}
+
+.puede {
+  margin-top: var(--esp8);
+  color: var(--heroTextoSuave);
+  font-size: var(--texto14);
+}
+
+.vence {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  padding: var(--esp16);
+  background: var(--heroAcento);
+  border-radius: var(--radio14);
+  font-size: var(--texto14);
+}
+
+.empresa {
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.tituloEmpresa {
+  margin-bottom: var(--esp16);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.datos {
+  margin: 0;
+}
+
+.sinDatos {
+  color: var(--textoSecundario);
+}
+
+.indicadores {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--esp24);
+}
+
+@media (width < 1024px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+
+  .indicadores {
+    grid-template-columns: 1fr;
+  }
+}

@@ -2,7 +2,7 @@
   "sesion_credenciales_invalidas": "Credenciales incorrectas",
   "sesion_bloqueada": "Demasiados intentos, espera unos minutos.",
   "autenticacion_requerida": "Tu sesión terminó",
-  "cuenta_codigo_existente": "Ese código ya es de otra cuenta",
+  "cuenta_codigo_existente": "Ese código ya es de otra cuenta.",
   "plan_solo_mejora": "Solo puedes cambiar a un plan con más cupo de usuarios.",
   "plan_limite_usuarios": "La cuenta alcanzó el cupo de usuarios de su plan.",
   "suscripcion_vencida": "Suscripción vencida",
@@ -19,5 +19,7 @@
   "equipo_no_desactivarse": "No puedes desactivar tu propia cuenta.",
   "equipo_ultimo_activo": "Siempre tiene que quedar al menos un super admin activo.",
   "permiso_denegado": "No tienes permiso para hacer esto.",
-  "plan_no_encontrado": "Ese plan no existe o ya no se vende."
+  "plan_no_encontrado": "Ese plan no existe o ya no se vende.",
+  "cuenta_codigo_invalido": "El código son 3 letras de la A a la Z.",
+  "cuenta_no_encontrada": "No encontramos esa cuenta."
 }

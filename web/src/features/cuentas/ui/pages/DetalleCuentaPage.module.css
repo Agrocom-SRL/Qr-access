@@ -1,0 +1,24 @@
+.cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.cargandoTitulo {
+  width: var(--anchoBuscador);
+}
+
+.contenido {
+  margin-top: var(--esp24);
+}

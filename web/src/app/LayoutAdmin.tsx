@@ -11,7 +11,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     icono: 'space_dashboard',
     iconoActivo: 'space_dashboard_fill',
   },
-  { clave: 'cuentas', ruta: RUTAS.cuentas, icono: 'apartment', iconoActivo: 'apartment_fill' },
+  {
+    clave: 'cuentas',
+    ruta: RUTAS.cuentas,
+    icono: 'apartment',
+    iconoActivo: 'apartment_fill',
+    permiso: 'seguridad.cuenta.ver',
+  },
   { clave: 'cobranza', ruta: RUTAS.cobranza, icono: 'payments', iconoActivo: 'payments_fill' },
   {
     clave: 'planes',

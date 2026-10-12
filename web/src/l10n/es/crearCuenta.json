@@ -29,5 +29,45 @@
   "pinDe": "PIN de {{nombre}} · Administrador",
   "copiarPin": "Copiar PIN",
   "pinUnaVez": "Este PIN no se vuelve a mostrar. Cópialo y entrégalo al administrador. Si se pierde, tendrás que restablecerlo.",
-  "irCuenta": "Ya lo copié, ir a la cuenta"
+  "irCuenta": "Ya lo copié, ir a la cuenta",
+  "migas": {
+    "cuentas": "Cuentas",
+    "crear": "Crear cuenta"
+  },
+  "titulos": {
+    "empresa": "Crea una cuenta",
+    "plan": "Elige el plan",
+    "vigencia": "Vigencia y administrador",
+    "confirmar": "Revisa y confirma"
+  },
+  "datosEmpresa": "Datos de la empresa",
+  "vigenciaTitulo": "Vigencia",
+  "pasosEtiqueta": "Pasos para crear la cuenta",
+  "ciudadElegir": "Elige una ciudad",
+  "codigoDisponible": "Disponible",
+  "verificando": "Verificando",
+  "hasta": "Hasta",
+  "usuarios": "{{count}} usuarios",
+  "alAnio": "al año · un solo pago",
+  "qrIlimitados": "QR ilimitados",
+  "sitiosIlimitados": "Sitios y puertas sin límite",
+  "precioAnual": "Precio anual",
+  "plan": "Plan",
+  "vigencia": "Vigencia",
+  "codigoNit": "Código · NIT",
+  "editar": "Editar",
+  "creando": "Creando",
+  "crear": "Crear cuenta",
+  "atras": "Atrás",
+  "planElegido": "Elige un plan",
+  "planesError": "No pudimos cargar los planes",
+  "requerido": "Este campo es obligatorio",
+  "formato": "Revisa el formato",
+  "secciones": {
+    "empresa": "Empresa",
+    "planVigencia": "Plan y vigencia",
+    "administrador": "Administrador inicial"
+  },
+  "cuentaCreadaTitulo": "Cuenta creada",
+  "copiado": "PIN copiado"
 }
