@@ -1,0 +1,27 @@
+/*
+ * Dimensiones de componentes que el handoff mide pero no nombra en acceso-tokens.css
+ * (íconos, avatar, pista de barras, anchos de diálogo…). Junto con acceso-tokens.css es el
+ * único lugar con px literales (ADR 0012): los componentes solo usan var(--…).
+ */
+:root {
+  --tam6: 6px;
+  --tam8: 8px;
+  --tam12: 12px;
+  --tam16: 16px;
+  --tam18: 18px;
+  --tam20: 20px;
+  --tam24: 24px;
+  --tam32: 32px;
+  --tam40: 40px;
+  --tam44: 44px;
+  --tam48: 48px;
+  --tam56: 56px;
+  --tam80: 80px;
+  --tam144: 144px;
+  --tam200: 200px;
+  --anchoDialogoS: 480px;
+  --anchoDialogoL: 640px;
+  --anchoTextoVacio: 400px;
+  --anchoBuscador: 320px;
+  --anchoLogin: 400px;
+}

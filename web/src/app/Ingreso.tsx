@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { AccesoBoton } from '../shared/componentes/AccesoBoton';
+import { AccesoBoton } from '../shared/ui/atoms/AccesoBoton';
 import styles from './Ingreso.module.css';
 
 /** Esqueleto de la pantalla de ingreso: se completa con el handoff de diseño. */
