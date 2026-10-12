@@ -59,7 +59,7 @@ describe('plataforma: estadísticas del panel (A02, A08)', () => {
     const estadisticas = await pedir();
     const estados = estadisticas.cuentas_por_estado;
     // Las cuentas de prueba vencen pronto: cuentan como "por vencer".
-    expect(estados.activa + estados.por_vencer).toBe(2);
+    expect((estados.activa ?? 0) + (estados.por_vencer ?? 0)).toBe(2);
     expect(estados.pendiente_pago).toBe(0);
     expect(estadisticas.cuentas_por_plan.reduce((suma, p) => suma + p.cuentas, 0)).toBe(2);
     expect(estadisticas.altas_por_mes.at(-1)?.cuentas).toBe(2);
