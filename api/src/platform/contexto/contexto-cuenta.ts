@@ -38,6 +38,18 @@ export const ContextoCuenta = {
     );
   },
 
+  /**
+   * El super admin opera DENTRO de una cuenta (ADR 0004 §7): las consultas de cuenta se filtran
+   * por ella y la bitácora firma con su usuario. Salto explícito del aislamiento: cada uso se
+   * revisa línea por línea, y solo lo invocan acciones de plataforma ya autorizadas.
+   */
+  comoPlataformaEn<T>(cuentaId: string, usuarioId: string, fn: () => T): T {
+    return ContextoCuenta.ejecutar(
+      { cuentaId, usuarioId, rolActivoId: null, dispositivoId: null, origen: 'api' },
+      fn,
+    );
+  },
+
   actual(): DatosContexto | undefined {
     return almacen.getStore();
   },

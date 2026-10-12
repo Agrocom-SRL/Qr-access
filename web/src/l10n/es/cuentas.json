@@ -1,0 +1,39 @@
+{
+  "titulo": "Cuentas",
+  "subtitulo": "{{count}} empresas cliente",
+  "crear": "Crear cuenta",
+  "buscar": "Busca por nombre o código",
+  "filtro": {
+    "todas": "Todas",
+    "activa": "Activas",
+    "porVencer": "Por vencer",
+    "vencida": "Vencidas",
+    "suspendida": "Suspendidas"
+  },
+  "columna": {
+    "cuenta": "Cuenta",
+    "codigo": "Código",
+    "plan": "Plan",
+    "usuarios": "Usuarios",
+    "vence": "Vence",
+    "estado": "Estado",
+    "acciones": "Acciones"
+  },
+  "vacio": {
+    "titulo": "Aún no hay cuentas",
+    "texto": "Crea la primera empresa cliente para empezar a vender."
+  },
+  "error": "No pudimos cargar las cuentas",
+  "subtitulo_one": "{{count}} empresa cliente",
+  "subtitulo_other": "{{count}} empresas cliente",
+  "tabla": "Cuentas",
+  "errorCarga": "No pudimos cargar las cuentas",
+  "sinResultados": {
+    "titulo": "Sin resultados",
+    "texto": "Prueba con otro nombre o código, o quita el filtro."
+  },
+  "ver": "Ver {{cuenta}}",
+  "filtroEtiqueta": "Filtrar por estado",
+  "usuariosDe": "{{count}} usuarios",
+  "sinPlan": "Sin plan"
+}

@@ -1,0 +1,28 @@
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp12);
+  padding: var(--esp12) var(--esp16);
+  border-radius: var(--radio10);
+  font-size: var(--texto14);
+}
+
+.informacion {
+  background: var(--informacionSuave);
+  color: var(--informacion);
+}
+
+.advertencia {
+  background: var(--advertenciaSuave);
+  color: var(--advertencia);
+}
+
+.peligro {
+  background: var(--peligroSuave);
+  color: var(--peligro);
+}
+
+.exito {
+  background: var(--primarioSuave);
+  color: var(--primario);
+}

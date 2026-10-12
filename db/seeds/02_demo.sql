@@ -52,14 +52,15 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
     'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.evento.ver', 'accesos.evento.ver_todos'
   );
 
--- PIN DEMADM1 (administrador y usuario), DEMUSR1 (usuario) y DEMGRD1 (guardia y usuario)
+-- PIN DEMADM1 (administrador y usuario), DEMUSR1 (usuario) y DEMGRD1 (guardia y usuario).
+-- `pin_hash` = argon2id('<id de la cuenta>|<sufijo>'), no del PIN completo: el código de la cuenta se puede cambiar (ADR 0023).
 INSERT INTO usuarios (id, tenant_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES
   (9001, 9001, 'Administrador demo', '172ecfdb00ad4ee7776d6a1de972b77ff89dab2f37848864f92dbca989a641d1',
-   '$argon2id$v=19$m=19456,p=1,t=2$AGBWcv3jHfRNchFSbVxE9w$dpiDbgdP0ERL9t8CS6dnSo2j7xRTOQHVGVtkl9Yj3sA', NOW(3), 1),
+   '$argon2id$v=19$m=19456,p=1,t=2$bGeVY9hw2gApc2AF0o54Gg$2SgWub+4x3E9lgTGlDB4MvXFg1DNR8BK8dLDavFUHIU', NOW(3), 1),
   (9002, 9001, 'Usuario demo', '60c5daaf7292fa754724a808ab26f6a552d521dfd8a73fb372a1d6680fb200bc',
-   '$argon2id$v=19$m=19456,p=1,t=2$CGOmdJaRv0cS0gjvr4o6Rg$n9dOdb4KNQBM6r1D1f5exDIChttGRMy67vfN0acbrLk', NOW(3), 1),
+   '$argon2id$v=19$m=19456,p=1,t=2$iWwhKeBBl7hySni3FNMZvw$MJYNC3Qgy73v7aIOw7/NHnkvtlHGx9EjWVUkeNhhnVM', NOW(3), 1),
   (9003, 9001, 'Portería turno noche', '84dbfa2d86d62f3e4b11ef75cab7ee854f4389ddaf8017bfbe999d55ba60085a',
-   '$argon2id$v=19$m=19456,p=1,t=2$AX1kT5y6DvW+tt9DY3S38g$tcxh7wUYPmz6f5bb97aMyRfumQkx/4BOEi72AkfZ7Os', NOW(3), 1)
+   '$argon2id$v=19$m=19456,p=1,t=2$/tq/mdaPTSQLwdr/ccqrQA$jVJJkl3ivWoMu8tjvgZbEh5XSJaSrsRbyMEXPNTF6FY', NOW(3), 1)
 ON DUPLICATE KEY UPDATE etiqueta = VALUES(etiqueta), pin_indice = VALUES(pin_indice), pin_hash = VALUES(pin_hash),
   activo = 1, deleted_at = NULL;
 
@@ -90,3 +91,12 @@ INSERT INTO dispositivos (id, tenant_id, puerta_id, nombre, clave_hash, revocado
    '$argon2id$v=19$m=19456,p=1,t=2$8FAOrCcsjZcaxWw7ePAA+Q$1gWRVRI18wWXBH8qznAOMHRmNeRytCe3RXd7SFnPy4I', NULL, 1)
 ON DUPLICATE KEY UPDATE puerta_id = VALUES(puerta_id), nombre = VALUES(nombre), clave_hash = VALUES(clave_hash),
   revocado_at = NULL, activo = 1, deleted_at = NULL;
+
+-- Super admin de desarrollo (web admin): usuario lucia.paz, contraseña agrocom-demo-2026
+INSERT INTO usuarios (id, tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES
+  (9100, NULL, 'Lucía Paz', 'lucia.paz', '$argon2id$v=19$m=19456,p=1,t=2$VCPmfr1DVGOmQK6EW+K5fg$eDOgMSV+rhf1WSN5eX+YA2PjSEdDFAWN6/i7A9jl8Zo', 0, 1)
+ON DUPLICATE KEY UPDATE etiqueta = VALUES(etiqueta), contrasena_hash = VALUES(contrasena_hash), activo = 1, deleted_at = NULL;
+
+INSERT INTO usuario_roles (id, tenant_id, usuario_id, rol_id)
+  SELECT 9100, NULL, 9100, id FROM roles WHERE tenant_id IS NULL AND nombre = 'Super admin' AND deleted_at IS NULL
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id), deleted_at = NULL;

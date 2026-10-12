@@ -1,0 +1,32 @@
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  width: var(--anchoBuscador);
+  max-width: 100%;
+  height: var(--altoControl);
+  padding: 0 var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radioCompleto);
+  color: var(--textoSecundario);
+}
+
+.buscador:focus-within {
+  border: 2px solid var(--primario);
+}
+
+.entrada {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto16);
+  outline: none;
+}
+
+.entrada::placeholder {
+  color: var(--textoSecundario);
+}

@@ -14,10 +14,11 @@ Quien entra a la app. Un usuario de cuenta es un PIN con su etiqueta (ADR 0018);
 | `tenant_id` | `BIGINT UNSIGNED` | sí | FK a `cuentas` |
 | `etiqueta` | `VARCHAR(80)` | sí |  |
 | `pin_indice` | `CHAR(64)` | sí | HMAC del PIN (sensible) |
-| `pin_hash` | `VARCHAR(255)` | sí | argon2id del PIN (sensible) |
+| `pin_hash` | `VARCHAR(255)` | sí | argon2id de `<id de la cuenta>\|<sufijo>` (sensible, ADR 0023) |
 | `pin_generado_at` | `DATETIME(3)` | sí |  |
 | `username` | `VARCHAR(60)` | sí |  |
 | `contrasena_hash` | `VARCHAR(255)` | sí | argon2id (solo plataforma, sensible) |
+| `contrasena_temporal` | `TINYINT(1)` | no | 1 si la contraseña la fijó otro super admin y hay que cambiarla en el primer ingreso (migración `20261012100001_add_contrasena_temporal_a_usuarios.sql`) |
 | `rol_preferido_id` | `BIGINT UNSIGNED` | sí |  |
 | `activo` | `TINYINT(1)` | no | Desactivar no es borrar |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` (skill `modelo-datos`) |

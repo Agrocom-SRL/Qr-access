@@ -1,0 +1,21 @@
+.plantilla {
+  display: flex;
+  min-height: 100vh;
+}
+
+.principal {
+  flex: 1;
+  min-width: 0;
+  padding: var(--esp32) var(--esp48);
+}
+
+.contenido {
+  max-width: var(--anchoContenido);
+  margin: 0 auto;
+}
+
+@media (width < 1024px) {
+  .principal {
+    padding: var(--esp24);
+  }
+}

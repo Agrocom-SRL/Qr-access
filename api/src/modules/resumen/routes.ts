@@ -1,0 +1,21 @@
+import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
+import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
+import { permisoDePlataforma } from '../../plugins/permisos.js';
+import { ejecutar as verResumen } from './actions/ver-resumen.js';
+import { respuestaDeResumen } from './schemas.js';
+
+/** El tablero de la plataforma para el super admin (A02). */
+export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod {
+  return (app, _opciones, listo) => {
+    app.get(
+      '/plataforma/resumen',
+      {
+        schema: { tags: ['plataforma'], response: { 200: respuestaDeResumen } },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('resumen.panel.ver'),
+      },
+      () => verResumen(pool),
+    );
+    listo();
+  };
+}

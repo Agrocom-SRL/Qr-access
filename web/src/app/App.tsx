@@ -1,17 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { Ingreso } from './Ingreso';
+import { BrowserRouter } from 'react-router-dom';
+import { AppRutas } from './AppRutas';
+import { crearServicios } from './providers/crearServicios';
+import { ProveedoresApp } from './providers/ProveedoresApp';
 
-const clienteConsultas = new QueryClient();
+/** La API se sirve en el mismo origen: proxy de Vite en desarrollo, Nginx en producción (sin CORS). */
+const servicios = crearServicios('/api/v1');
 
 export function App() {
   return (
-    <QueryClientProvider client={clienteConsultas}>
+    <ProveedoresApp servicios={servicios}>
       <BrowserRouter>
-        <Routes>
-          <Route path="*" element={<Ingreso />} />
-        </Routes>
+        <AppRutas />
       </BrowserRouter>
-    </QueryClientProvider>
+    </ProveedoresApp>
   );
 }

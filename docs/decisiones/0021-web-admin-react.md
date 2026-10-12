@@ -27,4 +27,4 @@ AGROCOM Acceso es un SaaS: cada cuenta (empresa cliente) paga una suscripción a
 
 - El login por PIN y el rol activo no existen en el panel: solo super admin.
 - La API necesita los endpoints de plataforma (cuentas, planes con cupo de usuarios, suscripciones y pagos, bitácora). Se construyen en el módulo `suscripciones` y sus contratos (ADR 0003); este ADR no los define.
-- El diseño de las pantallas llega del handoff de Claude Design en `docs/diseno/handoff-web/`; hasta entonces `web/` es solo el esqueleto.
+- El diseño de las pantallas llega del handoff de Claude Design en `docs/diseno/web-admin/`. Ver el ADR 0022, que ajusta la estructura de carpetas y los textos.

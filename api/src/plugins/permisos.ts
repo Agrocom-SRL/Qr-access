@@ -1,6 +1,10 @@
 import type { FastifyRequest } from 'fastify';
 import { ErrorDeDominio } from '../platform/errores/error-de-dominio.js';
-import type { PrincipalDispositivo, PrincipalUsuario } from '../platform/seguridad/principal.js';
+import type {
+  PrincipalDispositivo,
+  PrincipalPlataforma,
+  PrincipalUsuario,
+} from '../platform/seguridad/principal.js';
 
 /** El usuario autenticado de la petición; una ruta `usuario` siempre lo tiene. */
 export function usuarioDe(request: FastifyRequest): PrincipalUsuario {
@@ -29,6 +33,23 @@ export function tienePermiso(usuario: PrincipalUsuario, codigo: string): boolean
 export function permiso(codigo: string) {
   return (request: FastifyRequest): Promise<void> => {
     if (!tienePermiso(usuarioDe(request), codigo)) {
+      return Promise.reject(new ErrorDeDominio('permiso.denegado', 403, { permiso: codigo }));
+    }
+    return Promise.resolve();
+  };
+}
+
+/** El super admin autenticado de la petición; una ruta `plataforma` siempre lo tiene. */
+export function plataformaDe(request: FastifyRequest): PrincipalPlataforma {
+  if (request.principal?.tipo !== 'plataforma')
+    throw new ErrorDeDominio('autenticacion.requerida', 401);
+  return request.principal;
+}
+
+/** `preHandler` que exige un permiso de ámbito plataforma del super admin. */
+export function permisoDePlataforma(codigo: string) {
+  return (request: FastifyRequest): Promise<void> => {
+    if (!plataformaDe(request).permisos.has(codigo)) {
       return Promise.reject(new ErrorDeDominio('permiso.denegado', 403, { permiso: codigo }));
     }
     return Promise.resolve();

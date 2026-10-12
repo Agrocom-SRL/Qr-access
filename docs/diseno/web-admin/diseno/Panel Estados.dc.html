@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<script src="./image-slot.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0" rel="stylesheet">
+<style>body{margin:0;background:#E8ECE9;font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<div style="--fondo:#F5F7F6; --superficie:#FFFFFF; --borde:#DDE2DF; --texto:#1B1F1C; --texto2:#5B635D; --primario:#007A33; --sobrePrimario:#FFFFFF; --primarioSuave:#E8F5EE; --peligro:#C62828; --peligroSuave:#FDECEC; --advertencia:#965A00; --advertenciaSuave:#FFF3E0; --sombra1:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06); --sombra3:0 8px 24px rgba(27,31,28,0.10), 0 2px 4px rgba(27,31,28,0.04); --skeleton:#E9EDEA; padding:48px; display:flex; flex-direction:column; gap:48px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+  <div style="display:flex; flex-direction:column; gap:4px">
+    <div style="font-size:32px; font-weight:600">Panel de administración · estados</div>
+    <div style="font-size:16px; color:#5B635D; max-width:920px; text-wrap:pretty">Carga, vacío, error y sin conexión de cada listado. Vacío y error usan una ilustración de unDraw recoloreada a #007A33 (arrastra el SVG a cada recuadro). El error muestra un mensaje traducido y el código de la API en mono, chico. Sin conexión deja ver lo último en caché y desactiva las acciones. Skeleton con pulso de opacidad de 1200 ms; estático con "reducir movimiento".</div>
+  </div>
+
+  <sc-for list="{{ listados }}" as="l" hint-placeholder-count="4">
+    <section style="display:flex; flex-direction:column; gap:16px">
+      <div style="font-size:24px; font-weight:600">{{ l.titulo }}</div>
+      <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+        <sc-for list="{{ l.frames }}" as="f" hint-placeholder-count="4">
+          <div id="{{ f.id }}" style="display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">{{ f.id }}</span><span style="font-size:14px; font-weight:500">{{ f.label }}</span></div>
+            <div style="width:720px; height:560px; box-sizing:border-box; background:var(--fondo); color:var(--texto); border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--sombra3)">
+              <div style="display:flex; justify-content:space-between; align-items:center"><span style="font-size:24px; font-weight:600">{{ l.nombre }}</span><span style="height:44px; padding:0 20px; border-radius:999px; background:{{ f.ctaBg }}; color:{{ f.ctaFg }}; display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">{{ l.ctaIcon }}</span>{{ l.cta }}</span></div>
+              <sc-if value="{{ f.offline }}" hint-placeholder-val="{{ false }}">
+                <div style="background:var(--advertenciaSuave); color:var(--advertencia); border-radius:14px; padding:4px 8px 4px 16px; display:flex; align-items:center; gap:12px"><span style="font-family:'Material Symbols Outlined'; font-size:20px">cloud_off</span><span style="flex:1; font-size:14px">Sin conexión. Datos de las <span style="font-family:'IBM Plex Mono',monospace; font-weight:600">10:12</span>; las acciones vuelven al reconectar.</span><span style="height:44px; padding:0 8px; display:flex; align-items:center; font-size:14px; font-weight:600">Reintentar</span></div>
+              </sc-if>
+              <div style="flex:1; min-height:0; background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); overflow:hidden; display:flex; flex-direction:column">
+                <div style="display:grid; grid-template-columns:{{ l.cols }}; gap:16px; padding:12px 24px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><sc-for list="{{ l.head }}" as="h" hint-placeholder-count="4"><span>{{ h }}</span></sc-for></div>
+                <sc-if value="{{ f.carga }}" hint-placeholder-val="{{ true }}">
+                  <sc-for list="{{ skel }}" as="s" hint-placeholder-count="6">
+                    <div style="display:grid; grid-template-columns:{{ l.cols }}; gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde)"><div style="height:12px; width:{{ s.a }}; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:{{ s.b }}; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:{{ s.c }}; border-radius:6px; background:var(--skeleton)"></div><div style="height:24px; width:88px; border-radius:999px; background:var(--skeleton)"></div></div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ f.cache }}" hint-placeholder-val="{{ false }}">
+                  <sc-for list="{{ l.filas }}" as="r" hint-placeholder-count="4">
+                    <div style="display:grid; grid-template-columns:{{ l.cols }}; gap:16px; padding:0 24px; min-height:56px; align-items:center; border-top:1px solid var(--borde); font-size:14px; color:var(--texto2)"><span style="font-weight:600; color:var(--texto)">{{ r.a }}</span><span style="font-family:'IBM Plex Mono',monospace">{{ r.b }}</span><span>{{ r.c }}</span><span><span style="display:inline-flex; align-items:center; height:24px; padding:0 8px; border-radius:999px; background:var(--fondo); border:1px solid var(--borde); font-size:12px; font-weight:600">{{ r.d }}</span></span></div>
+                  </sc-for>
+                </sc-if>
+                <sc-if value="{{ f.mensaje }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:24px; border-top:1px solid var(--borde)">
+                    <image-slot id="ilus-{{ f.id }}" shape="rounded" radius="20" fit="contain" placeholder="{{ f.ilus }}" style="width:200px; height:144px"></image-slot>
+                    <div style="font-size:20px; font-weight:600">{{ f.titulo }}</div>
+                    <div style="font-size:14px; color:var(--texto2); max-width:400px; line-height:1.5; text-wrap:pretty">{{ f.texto }}</div>
+                    <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">{{ f.codigo }}</div>
+                    <div style="height:48px; padding:0 24px; border-radius:999px; background:{{ f.btnBg }}; color:{{ f.btnFg }}; display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">{{ f.btnIcon }}</span>{{ f.btn }}</div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+
+  <section style="display:flex; flex-direction:column; gap:16px">
+    <div style="font-size:24px; font-weight:600">Resumen y sesión</div>
+    <div style="display:flex; flex-wrap:wrap; gap:48px; align-items:flex-start">
+      <div id="PE5a" style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">PE5a</span><span style="font-size:14px; font-weight:500">Resumen · cargando</span></div>
+        <div style="width:1104px; height:560px; box-sizing:border-box; background:var(--fondo); border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:24px; box-shadow:var(--sombra3)">
+          <div style="display:flex; flex-direction:column; gap:8px"><div style="height:24px; width:200px; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:280px; border-radius:6px; background:var(--skeleton)"></div></div>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:24px"><sc-for list="{{ cuatro }}" as="k" hint-placeholder-count="4"><div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1); padding:24px; display:flex; flex-direction:column; gap:12px"><div style="height:12px; width:60%; border-radius:6px; background:var(--skeleton)"></div><div style="height:32px; width:50%; border-radius:6px; background:var(--skeleton)"></div><div style="height:12px; width:80%; border-radius:6px; background:var(--skeleton)"></div></div></sc-for></div>
+          <div style="flex:1; display:grid; grid-template-columns:7fr 5fr; gap:24px"><div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1)"></div><div style="background:var(--superficie); border-radius:20px; box-shadow:var(--sombra1)"></div></div>
+        </div>
+      </div>
+      <div id="PE5b" style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">PE5b</span><span style="font-size:14px; font-weight:500">Sin conexión y sin caché · pantalla completa</span></div>
+        <div style="width:720px; height:560px; box-sizing:border-box; background:var(--fondo); border-radius:20px; padding:32px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; box-shadow:var(--sombra3)">
+          <image-slot id="ilus-PE5b" shape="rounded" radius="20" fit="contain" placeholder="unDraw · sin conexión · #007A33" style="width:240px; height:176px"></image-slot>
+          <div style="font-size:20px; font-weight:600">No hay conexión</div>
+          <div style="font-size:14px; color:var(--texto2); max-width:400px; line-height:1.5">Revisa tu internet. El panel vuelve a cargar solo cuando se recupere.</div>
+          <div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">refresh</span>Reintentar</div>
+        </div>
+      </div>
+      <div id="PE5c" style="display:flex; flex-direction:column; gap:12px">
+        <div style="display:flex; gap:8px; align-items:center"><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; background:#1B1F1C; color:#FFFFFF; padding:4px 8px; border-radius:6px">PE5c</span><span style="font-size:14px; font-weight:500">Sesión vencida</span></div>
+        <div style="width:720px; height:560px; box-sizing:border-box; background:var(--fondo); border-radius:20px; padding:32px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; box-shadow:var(--sombra3)">
+          <image-slot id="ilus-PE5c" shape="rounded" radius="20" fit="contain" placeholder="unDraw · seguridad · #007A33" style="width:240px; height:176px"></image-slot>
+          <div style="font-size:20px; font-weight:600">Tu sesión terminó</div>
+          <div style="font-size:14px; color:var(--texto2); max-width:400px; line-height:1.5">Por seguridad, ingresa de nuevo con tu usuario y contraseña.</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--texto2)">AUTH_SESION_VENCIDA</div>
+          <div style="height:48px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:16px; font-weight:600">Ingresar</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const L = [
+  { n: '1', titulo: 'Cuentas', nombre: 'Cuentas', cta: 'Crear cuenta', ctaIcon: 'add', cols: 'minmax(0,2fr) 112px minmax(0,1fr) 120px', head: ['Cuenta', 'Plan', 'Usuarios', 'Estado'],
+    filas: [['Agroindustrial Norte', '100', '87 / 100', 'Por vencer'], ['Frigorífico Oriente', '200', '164 / 200', 'Activa'], ['Ingenio Guapay', '350', '301 / 350', 'Activa'], ['Semillas del Este', '100', '100 / 100', 'Por vencer']],
+    vacio: ['unDraw · edificios · #007A33', 'Aún no hay cuentas', 'Crea la primera empresa cliente para empezar a vender.', 'Crear cuenta', 'add'], err: 'CUENTAS_LISTAR_500' },
+  { n: '2', titulo: 'Cobranza', nombre: 'Cobranza', cta: 'Exportar CSV', ctaIcon: 'download', cols: 'minmax(0,2fr) 120px minmax(0,1fr) 120px', head: ['Cuenta', 'Monto', 'Vence', 'Pago'],
+    filas: [['Semillas del Este', 'Bs 12.000', '18/10/2026', 'Pendiente'], ['Agroindustrial Norte', 'Bs 12.000', '05/11/2026', 'Pendiente'], ['Molinos Yapacaní', 'Bs 33.600', '10/11/2026', 'Pagado']],
+    vacio: ['unDraw · calendario · #007A33', 'Nada por cobrar en 30 días', 'Ninguna suscripción vence en este periodo.', 'Ver 90 días', 'date_range'], err: 'COBRANZA_TIMEOUT' },
+  { n: '3', titulo: 'Bitácora', nombre: 'Bitácora', cta: 'Exportar CSV', ctaIcon: 'download', cols: '152px 120px minmax(0,1fr) 96px', head: ['Cuándo', 'Quién', 'Qué', 'Cuenta'],
+    filas: [['12/10 10:12', 'Lucía Paz', 'Registró pago', 'FRO'], ['12/10 09:40', 'Marco Suárez', 'Cambió plan', 'AVC'], ['11/10 17:05', 'Lucía Paz', 'Suspendió cuenta', 'TPA']],
+    vacio: ['unDraw · búsqueda · #007A33', 'Sin acciones con estos filtros', 'Prueba con otras fechas o quita los filtros.', 'Quitar filtros', 'filter_alt_off'], err: 'BITACORA_LISTAR_500' },
+  { n: '4', titulo: 'Equipo AGROCOM', nombre: 'Equipo AGROCOM', cta: 'Agregar super admin', ctaIcon: 'person_add', cols: 'minmax(0,1.5fr) minmax(0,1fr) 128px 120px', head: ['Nombre', 'Usuario', 'Último ingreso', 'Estado'],
+    filas: [['Lucía Paz', 'lucia.paz', 'Hoy 08:12', 'Activo'], ['Marco Suárez', 'marco.suarez', 'Hoy 09:35', 'Activo'], ['Andrea Vaca', 'andrea.vaca', 'Ayer 18:30', 'Activo']],
+    vacio: ['unDraw · equipo · #007A33', 'Solo estás tú', 'Agrega a otra persona para no quedarte sin acceso al panel.', 'Agregar super admin', 'person_add'], err: 'EQUIPO_LISTAR_500' }
+];
+const P = { bg: 'var(--primario)', fg: 'var(--sobrePrimario)' };
+const OFF = { bg: 'var(--borde)', fg: 'var(--texto2)' };
+class Component extends DCLogic {
+  renderVals() {
+    const listados = L.map(l => {
+      const base = { titulo: l.titulo, nombre: l.nombre, cta: l.cta, ctaIcon: l.ctaIcon, cols: l.cols, head: l.head, filas: l.filas.map(([a, b, c, d]) => ({ a, b, c, d })) };
+      const fr = (k, label, extra) => Object.assign({ id: 'PE' + l.n + k, label, carga: false, cache: false, offline: false, mensaje: false, ctaBg: P.bg, ctaFg: P.fg, codigo: '' }, extra);
+      base.frames = [
+        fr('a', 'Cargando', { carga: true, ctaBg: OFF.bg, ctaFg: OFF.fg }),
+        fr('b', 'Vacío', { mensaje: true, ilus: l.vacio[0], titulo: l.vacio[1], texto: l.vacio[2], btn: l.vacio[3], btnIcon: l.vacio[4], btnBg: P.bg, btnFg: P.fg }),
+        fr('c', 'Error con reintento', { mensaje: true, ilus: 'unDraw · error de servidor · #007A33', titulo: 'No pudimos cargar ' + ({ '1': 'las cuentas', '2': 'la cobranza', '3': 'la bitácora', '4': 'el equipo' })[l.n], texto: 'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.', codigo: 'Código ' + l.err, btn: 'Reintentar', btnIcon: 'refresh', btnBg: 'var(--primarioSuave)', btnFg: 'var(--primario)', ctaBg: OFF.bg, ctaFg: OFF.fg }),
+        fr('d', 'Sin conexión · caché', { cache: true, offline: true, ctaBg: OFF.bg, ctaFg: OFF.fg })
+      ];
+      return base;
+    });
+    return {
+      listados,
+      skel: [['70%', '50%', '60%'], ['55%', '40%', '75%'], ['80%', '50%', '45%'], ['60%', '45%', '70%'], ['75%', '50%', '55%'], ['50%', '40%', '65%']].map(([a, b, c]) => ({ a, b, c })),
+      cuatro: [1, 2, 3, 4]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -35,6 +35,16 @@ export function calcularIndiceDePin(pimienta: string, cuentaId: string, sufijo: 
   return hmacHex(pimienta, `${cuentaId}|${sufijo}`);
 }
 
+/**
+ * Lo que se hashea con argon2id para verificar un PIN: la cuenta y el sufijo, NO el código de
+ * la cuenta. Así el super admin puede cambiar el código y los PIN de todos sus usuarios siguen
+ * sirviendo con las 3 letras nuevas y el mismo sufijo (ADR 0023). El código es público: no suma
+ * secreto, y el id de la cuenta ata el hash a su cuenta.
+ */
+export function secretoDePin(cuentaId: string, sufijo: string): string {
+  return `${cuentaId}|${sufijo}`;
+}
+
 /** Sufijo de 4 caracteres con `crypto.randomInt`, carácter por carácter (36⁴ combinaciones). */
 export function generarSufijoDePin(): string {
   let sufijo = '';

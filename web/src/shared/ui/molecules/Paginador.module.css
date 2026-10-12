@@ -1,0 +1,16 @@
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tam56);
+  padding: 0 var(--esp24);
+  border-top: 1px solid var(--borde);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.navegacion {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+}

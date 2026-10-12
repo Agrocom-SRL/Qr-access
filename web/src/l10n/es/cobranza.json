@@ -1,0 +1,63 @@
+{
+  "titulo": "Cobranza",
+  "subtitulo": "Suscripciones anuales por vencimiento",
+  "exportar": "Exportar CSV",
+  "porCobrar30": "Por cobrar en 30 días",
+  "porCobrar90": "Por cobrar en 90 días",
+  "vencidoSinPagar": "Vencido sin pagar",
+  "cobradoAnio": "Cobrado en {{anio}}",
+  "filtro": {
+    "d30": "30 días",
+    "d60": "60 días",
+    "d90": "90 días",
+    "vencidas": "Vencidas"
+  },
+  "estadoPago": {
+    "pendiente": "Pendiente",
+    "sinPagar": "Sin pagar",
+    "pagado": "Pagado"
+  },
+  "vacio": {
+    "titulo": "Nada por cobrar en 30 días",
+    "texto": "Ninguna suscripción vence en este periodo."
+  },
+  "buscar": "Busca una cuenta",
+  "tabla": "Cuentas por cobrar",
+  "errorCarga": "No pudimos cargar la cobranza",
+  "cuentas_one": "{{count}} cuenta",
+  "cuentas_other": "{{count}} cuentas",
+  "vencidasRechazadas_one": "{{count}} cuenta con accesos rechazados",
+  "vencidasRechazadas_other": "{{count}} cuentas con accesos rechazados",
+  "pagosRegistrados_one": "{{count}} pago registrado",
+  "pagosRegistrados_other": "{{count}} pagos registrados",
+  "enDias_one": "en {{count}} día",
+  "enDias_other": "en {{count}} días",
+  "haceDias_one": "hace {{count}} día",
+  "haceDias_other": "hace {{count}} días",
+  "hoy": "hoy",
+  "columna": {
+    "cuenta": "Cuenta",
+    "plan": "Plan",
+    "monto": "Monto",
+    "vence": "Vence",
+    "pago": "Pago",
+    "estado": "Estado",
+    "accion": "Acción"
+  },
+  "registrarPago": "Registrar pago",
+  "registrarPagoDe": "Registrar pago de {{cuenta}}",
+  "filtroEtiqueta": "Ventana de vencimiento",
+  "csv": {
+    "cuenta": "Cuenta",
+    "codigo": "Código",
+    "plan": "Plan",
+    "monto": "Monto (Bs)",
+    "vence": "Vence",
+    "pago": "Pago",
+    "archivo": "cobranza"
+  },
+  "vacioVencidas": {
+    "titulo": "Ninguna suscripción vencida",
+    "texto": "Todas las cuentas están al día."
+  }
+}

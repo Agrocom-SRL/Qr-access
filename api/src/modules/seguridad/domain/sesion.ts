@@ -7,3 +7,9 @@ export interface VigenciaDeSesion {
 export function sesionVigente(sesion: VigenciaDeSesion, ahora: Date): boolean {
   return sesion.revocada_at === null && sesion.expira_at > ahora;
 }
+
+/** Los tokens nuevos que entrega un refresco rotativo. */
+export interface SesionRefrescada {
+  acceso: string;
+  refresco: string;
+}

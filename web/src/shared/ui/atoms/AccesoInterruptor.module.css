@@ -1,0 +1,48 @@
+.contenedor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp12);
+  min-height: var(--altoMinimoTactil);
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+  cursor: pointer;
+}
+
+.entrada {
+  position: absolute;
+  opacity: 0;
+}
+
+.pista {
+  position: relative;
+  width: var(--tam40);
+  height: var(--tam24);
+  background: var(--borde);
+  border-radius: var(--radioCompleto);
+  transition: background var(--dur120) var(--easeOutCubic);
+}
+
+.pista::after {
+  position: absolute;
+  top: var(--esp2);
+  left: var(--esp2);
+  width: var(--tam20);
+  height: var(--tam20);
+  background: var(--superficie);
+  border-radius: var(--radioCompleto);
+  content: '';
+  transition: transform var(--dur120) var(--easeOutCubic);
+}
+
+.entrada:checked + .pista {
+  background: var(--primario);
+}
+
+.entrada:checked + .pista::after {
+  transform: translateX(var(--tam16));
+}
+
+.entrada:focus-visible + .pista {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}

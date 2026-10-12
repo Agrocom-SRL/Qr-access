@@ -1,6 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { cargarConfig } from '../../src/config.js';
-import { calcularIndiceDePin } from '../../src/modules/seguridad/domain/pin.js';
+import { calcularIndiceDePin, secretoDePin } from '../../src/modules/seguridad/domain/pin.js';
 import { hashear } from '../../src/platform/seguridad/hash.js';
 import { generarTokenOpaco } from '../../src/platform/seguridad/tokens.js';
 import {
@@ -63,10 +63,12 @@ export async function crearRol(
   nombre: string,
   permisos: readonly string[],
 ): Promise<string> {
-  const id = await insertar(pool, 'INSERT INTO roles (tenant_id, nombre) VALUES (?, ?)', [
-    cuenta.id,
-    nombre,
-  ]);
+  // Administrador es protegido, como lo crea la API al dar de alta una cuenta.
+  const id = await insertar(
+    pool,
+    'INSERT INTO roles (tenant_id, nombre, protegido) VALUES (?, ?, ?)',
+    [cuenta.id, nombre, nombre === 'Administrador' ? 1 : 0],
+  );
   for (const codigo of permisos) {
     await pool.query(
       'INSERT INTO rol_permisos (rol_id, permiso_id) SELECT ?, id FROM permisos WHERE codigo = ?',
@@ -96,7 +98,7 @@ export async function crearUsuarioConPin(
       cuenta.id,
       `Usuario ${pin}`,
       calcularIndiceDePin(cargarConfig().PIN_PIMIENTA, cuenta.id, sufijo),
-      await hashear(pin),
+      await hashear(secretoDePin(cuenta.id, sufijo)),
       opciones.activo === false ? 0 : 1,
     ],
   );
@@ -278,4 +280,35 @@ export async function contarFilas(
     params,
   );
   return Number(filas[0]?.total);
+}
+
+export interface SuperAdminDePrueba {
+  readonly id: string;
+  readonly usuario: string;
+  readonly contrasena: string;
+}
+
+/** Un super admin (`tenant_id NULL`) con el rol "Super admin" que siembra el catálogo. */
+export async function crearSuperAdmin(
+  pool: Pool,
+  usuario: string,
+  opciones: { contrasena?: string; nombre?: string; activo?: boolean; temporal?: boolean } = {},
+): Promise<SuperAdminDePrueba> {
+  const contrasena = opciones.contrasena ?? 'contrasena-de-prueba-1';
+  const id = await insertar(
+    pool,
+    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES (NULL, ?, ?, ?, ?, ?)',
+    [
+      opciones.nombre ?? `Admin ${usuario}`,
+      usuario,
+      await hashear(contrasena),
+      opciones.temporal === true ? 1 : 0,
+      opciones.activo === false ? 0 : 1,
+    ],
+  );
+  await pool.query(
+    "INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id) SELECT NULL, ?, id FROM roles WHERE tenant_id IS NULL AND nombre = 'Super admin'",
+    [id],
+  );
+  return { id, usuario, contrasena };
 }

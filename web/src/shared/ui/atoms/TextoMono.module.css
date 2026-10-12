@@ -1,0 +1,8 @@
+.mono {
+  font-family: var(--fuenteMono);
+  font-variant-numeric: tabular-nums;
+}
+
+.fuerte {
+  font-weight: var(--peso600);
+}

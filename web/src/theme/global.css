@@ -1,5 +1,6 @@
-@import './primitivos.css';
-@import './tokens.css';
+@import './fuentes.css';
+@import './acceso-tokens.css';
+@import './escalas.css';
 
 *,
 *::before,
@@ -9,14 +10,27 @@
 
 body {
   margin: 0;
-  background: var(--color-fondo);
-  color: var(--color-texto);
-  font-family: var(--fuente-texto);
-  font-size: var(--texto-16);
-  line-height: 1.5;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuenteTexto);
+  font-size: var(--texto16);
+  line-height: var(--interlineadoCuerpo);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-primario);
+  outline: 2px solid var(--primario);
   outline-offset: 2px;
+}
+
+@keyframes pulso {
+  50% {
+    opacity: 0.5;
+  }
 }

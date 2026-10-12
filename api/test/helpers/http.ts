@@ -22,3 +22,25 @@ export interface Problema {
   code: string;
   status: number;
 }
+
+export interface SesionDePlataforma {
+  acceso: string;
+  refresco: string;
+  debe_cambiar_contrasena: boolean;
+  permisos: string[];
+}
+
+/** Ingresa como super admin (usuario + contraseña); falla si no entra. */
+export async function iniciarSesionDePlataforma(
+  app: FastifyInstance,
+  usuario: string,
+  contrasena: string,
+): Promise<SesionDePlataforma> {
+  const respuesta = await app.inject({
+    method: 'POST',
+    url: '/api/v1/plataforma/sesiones',
+    payload: { usuario, contrasena },
+  });
+  expect(respuesta.statusCode, respuesta.body).toBe(200);
+  return respuesta.json<SesionDePlataforma>();
+}

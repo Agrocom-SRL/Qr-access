@@ -54,3 +54,19 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
     });
   }
 }
+
+/** Dueño de `sitios`: por ahora solo cuenta los activos (el alta de sitios la hace la cuenta, HU-07). */
+export class RepositorioDeSitios extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'sitios',
+      columnas: ['nombre', 'direccion', 'zona_horaria', 'activo'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  contarActivos(): Promise<number> {
+    return this.contar({ donde: 't.activo = 1' });
+  }
+}

@@ -4,7 +4,7 @@
 
 | Entorno | Dónde vive | Base de datos | Propósito |
 |---|---|---|---|
-| **local** | `docker compose up -d` (db + api); `--profile web` suma la app web en :8080 | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
+| **local** | `docker compose up -d` (db + api); `--profile web` suma la app web en :8080 y `--profile panel`, el panel de administración (React) en :8081 | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
 | **tests local** | El mismo contenedor `db` | `qr_access_testing` (la fuerza el setup de Vitest) | `bin/verify`. Los tests la vacían: **nunca** apuntan a la de desarrollo |
 | **verificación** | Proyecto compose descartable `-p qr-access-verif` | Propia, efímera | Probar migraciones contra MySQL limpio (skill `verificacion`) |
 | **CI** | GitHub Actions (`ci.yml`) | Servicio `mysql:8.4` efímero | Lint, tipos, fronteras, tests y builds |
@@ -53,6 +53,7 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 | Qué | Valor |
 |---|---|
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
+| Super admin del panel web (solo desarrollo) | usuario `lucia.paz`, contraseña `agrocom-demo-2026` |
 | PIN del **administrador** (todos los permisos de cuenta; también tiene el rol Usuario, así que elige rol al entrar) | `DEMADM1` |
 | PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
 | PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |

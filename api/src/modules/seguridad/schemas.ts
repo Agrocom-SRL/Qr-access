@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { esquemaListado } from '../../platform/http/paginacion.js';
+import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
 
 export const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
@@ -69,3 +69,272 @@ export const parametrosDeUsuario = z.object({ id: esquemaId });
 export const respuestaDePinGenerado = z.object({ pin: z.string(), pin_generado_at: esquemaFecha });
 
 export const respuestaListadoDeRoles = z.object({ datos: z.array(esquemaRol) });
+
+// --- Equipo AGROCOM (super admin, web admin) ---
+
+export const cuerpoDeIngresoDePlataforma = z.object({
+  usuario: z.string().min(1).max(60),
+  contrasena: z.string().min(1).max(128),
+});
+
+export const respuestaDeIngresoDePlataforma = z.object({
+  acceso: z.string(),
+  refresco: z.string(),
+  usuario: z.object({ id: z.string(), nombre: z.string().nullable(), usuario: z.string() }),
+  debe_cambiar_contrasena: z.boolean(),
+  permisos: z.array(z.string()),
+});
+
+export const respuestaDePerfilDePlataforma = z.object({
+  id: z.string(),
+  nombre: z.string().nullable(),
+  usuario: z.string(),
+  creado_at: esquemaFecha,
+  ultimo_ingreso_at: esquemaFecha.nullable(),
+  debe_cambiar_contrasena: z.boolean(),
+  permisos: z.array(z.string()),
+});
+
+export const cuerpoDeCambioDeContrasena = z.object({
+  actual: z.string().min(1).max(128),
+  nueva: z.string().min(1).max(128),
+});
+
+const esquemaMiembroDelEquipo = z.object({
+  id: z.string(),
+  nombre: z.string().nullable(),
+  usuario: z.string(),
+  activo: z.boolean(),
+  es_actual: z.boolean(),
+  ultimo_ingreso_at: esquemaFecha.nullable(),
+  created_at: esquemaFecha,
+});
+
+export const respuestaDelEquipo = esquemaListado(esquemaMiembroDelEquipo).extend({
+  activos: z.number().int(),
+});
+
+export const respuestaDeMiembroCreado = esquemaMiembroDelEquipo;
+
+export const cuerpoDeNuevoMiembro = z.object({
+  nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
+  usuario: z.string().min(1).max(60),
+  contrasena_temporal: z.string().min(1).max(128),
+});
+
+export const consultaDeUsuarioDisponible = z.object({ usuario: z.string().max(60).default('') });
+export const respuestaDeUsuarioDisponible = z.object({ disponible: z.boolean() });
+
+export const cuerpoDeEdicionDeMiembro = z.object({ activo: z.literal(false) });
+
+// --- Cuentas (administración por AGROCOM, web admin) ---
+
+const esquemaEstadoDeSuscripcion = z.enum(['activa', 'por_vencer', 'vencida', 'suspendida']);
+
+export const consultaDeCuentas = esquemaPaginacion.extend({
+  busqueda: z.string().trim().max(100).default(''),
+  estado: z.enum(['todas', 'activa', 'por_vencer', 'vencida', 'suspendida']).default('todas'),
+});
+
+const esquemaCuentaListada = z.object({
+  id: z.string(),
+  codigo: z.string(),
+  nombre: z.string(),
+  plan: z
+    .object({ id: z.string(), nombre: z.string(), cupo_usuarios: z.number().int().nullable() })
+    .nullable(),
+  usuarios_activos: z.number().int(),
+  vence_el: esquemaFecha.nullable(),
+  estado: esquemaEstadoDeSuscripcion,
+});
+
+export const respuestaDeCuentas = esquemaListado(esquemaCuentaListada).extend({
+  conteos: z.object({
+    todas: z.number().int(),
+    activa: z.number().int(),
+    por_vencer: z.number().int(),
+    vencida: z.number().int(),
+    suspendida: z.number().int(),
+  }),
+});
+
+export const consultaDeCodigoDeCuenta = z.object({
+  codigo: z.string().max(10).default(''),
+  razon_social: z.string().max(150).default(''),
+});
+
+export const respuestaDeCodigoDeCuenta = z.object({
+  formato_valido: z.boolean(),
+  disponible: z.boolean(),
+  usado_por: z.string().nullable(),
+  sugerencias: z.array(z.string()),
+});
+
+export const cuerpoDeNuevaCuenta = z.object({
+  razon_social: z.string().trim().min(1).max(150),
+  codigo: z.string().min(1).max(10),
+  nit: z
+    .string()
+    .trim()
+    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  ciudad: z.string().trim().min(1).max(80),
+  contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_telefono: z
+    .string()
+    .trim()
+    .regex(/^[0-9+() -]{6,30}$/),
+  plan_id: esquemaId,
+  inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  administrador_nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
+});
+
+export const respuestaDeCuentaCreada = z.object({
+  cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+  administrador: z.object({ id: z.string(), etiqueta: z.string(), pin: z.string() }),
+  suscripcion: z.object({ desde: esquemaFecha, hasta: esquemaFecha }),
+});
+
+export const parametrosDeCuenta = z.object({ id: esquemaId });
+
+export const respuestaDeDetalleDeCuenta = z.object({
+  cuenta: z.object({
+    id: z.string(),
+    codigo: z.string(),
+    nombre: z.string(),
+    activa: z.boolean(),
+    cliente_desde: esquemaFecha,
+  }),
+  empresa: z
+    .object({ nit: z.string(), ciudad: z.string(), contacto: z.string(), telefono: z.string() })
+    .nullable(),
+  suscripcion: z
+    .object({
+      id: z.string(),
+      plan: z.object({
+        id: z.string(),
+        nombre: z.string(),
+        cupo_usuarios: z.number().int().nullable(),
+        precio_anual: z.number(),
+      }),
+      desde: esquemaFecha,
+      hasta: esquemaFecha,
+      estado: esquemaEstadoDeSuscripcion,
+      dias_restantes: z.number().int(),
+    })
+    .nullable(),
+  uso: z.object({
+    usuarios_activos: z.number().int(),
+    sitios: z.number().int(),
+    puertas: z.number().int(),
+    dispositivos_sin_conexion: z.number().int(),
+    administradores: z.number().int(),
+  }),
+});
+
+export const respuestaDePuertasDeCuenta = z.object({
+  datos: z.array(
+    z.object({
+      id: z.string(),
+      nombre: z.string(),
+      puertas: z.array(
+        z.object({
+          id: z.string(),
+          nombre: z.string(),
+          dispositivo: z
+            .object({
+              id: z.string(),
+              nombre: z.string(),
+              en_linea: z.boolean(),
+              ultimo_latido_at: esquemaFecha.nullable(),
+            })
+            .nullable(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export const respuestaDeSuscripcionDeCuenta = z.object({
+  cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+  suscripcion: z.object({
+    id: z.string(),
+    plan: z.object({
+      id: z.string(),
+      nombre: z.string(),
+      cupo_usuarios: z.number().int().nullable(),
+      precio_anual: z.number(),
+    }),
+    desde: esquemaFecha,
+    hasta: esquemaFecha,
+    estado: esquemaEstadoDeSuscripcion,
+    dias_restantes: z.number().int(),
+  }),
+  proximo_pago: z.enum(['pendiente', 'sin_pagar']).nullable(),
+  pagos: z.array(
+    z.object({
+      id: z.string(),
+      tipo: z.enum(['renovacion', 'mejora_de_plan']),
+      plan: z.string(),
+      monto: z.number(),
+      fecha_pago: z.string(),
+      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+      referencia: z.string(),
+      periodo_desde: esquemaFecha,
+      periodo_hasta: esquemaFecha,
+      registro: z.object({ id: z.string(), nombre: z.string() }).nullable(),
+    }),
+  ),
+});
+
+const esquemaTotal = z.object({ monto: z.number(), cuentas: z.number().int() });
+
+export const consultaDeCobranza = z.object({
+  ventana: z.enum(['d30', 'd60', 'd90', 'vencidas']).default('d30'),
+  busqueda: z.string().trim().max(100).default(''),
+});
+
+export const respuestaDeCobranza = z.object({
+  totales: z.object({
+    por_cobrar_30: esquemaTotal,
+    por_cobrar_90: esquemaTotal,
+    vencido_sin_pagar: esquemaTotal,
+    cobrado_anio: z.object({ anio: z.number().int(), monto: z.number(), pagos: z.number().int() }),
+  }),
+  conteos: z.object({
+    d30: z.number().int(),
+    d60: z.number().int(),
+    d90: z.number().int(),
+    vencidas: z.number().int(),
+  }),
+  datos: z.array(
+    z.object({
+      cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+      plan: z.object({
+        id: z.string(),
+        nombre: z.string(),
+        cupo_usuarios: z.number().int().nullable(),
+      }),
+      monto: z.number(),
+      vence_el: esquemaFecha,
+      dias_restantes: z.number().int(),
+      pago: z.enum(['pendiente', 'sin_pagar']),
+      estado: esquemaEstadoDeSuscripcion,
+    }),
+  ),
+});
+
+export const cuerpoDeCambioDeCodigo = z.object({ codigo: z.string().min(1).max(10) });
+export const respuestaDeCambioDeCodigo = z.object({ codigo: z.string() });
+
+export const parametrosDeAdministrador = z.object({ id: esquemaId, usuarioId: esquemaId });
+
+export const respuestaDeAdministradores = z.object({
+  datos: z.array(
+    z.object({
+      id: z.string(),
+      etiqueta: z.string().nullable(),
+      pin_generado_at: esquemaFecha.nullable(),
+      ultimo_ingreso_at: esquemaFecha.nullable(),
+    }),
+  ),
+});

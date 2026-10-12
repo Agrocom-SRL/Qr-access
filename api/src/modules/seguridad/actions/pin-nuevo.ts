@@ -1,6 +1,6 @@
 import type { Transaccion } from '../../../platform/db/transaccion.js';
 import { hashear } from '../../../platform/seguridad/hash.js';
-import { calcularIndiceDePin, generarSufijoDePin } from '../domain/pin.js';
+import { calcularIndiceDePin, generarSufijoDePin, secretoDePin } from '../domain/pin.js';
 
 /** Cuántos sorteos se intentan si el sufijo ya existe en la cuenta (36⁴ posibles: casi nunca). */
 const INTENTOS_DE_SORTEO = 5;
@@ -35,7 +35,7 @@ export async function conPinNuevo(
     const pin: PinSorteado = {
       completo,
       indice: calcularIndiceDePin(pimienta, cuenta.id, sufijo),
-      hash: await hashear(completo),
+      hash: await hashear(secretoDePin(cuenta.id, sufijo)),
     };
     try {
       await guardar(pin);

@@ -4,9 +4,10 @@
 #   docker compose up -d                                 MySQL + API en desarrollo (tsx watch)
 #   docker compose --profile herramientas run --rm dbmate up     migraciones de db/migrations
 #   docker compose --profile web up -d --build           + app web (build de Flutter servido por Nginx)
+#   docker compose --profile panel up -d --build         + panel de administración (React servido por Nginx)
 #   docker compose --profile herramientas run --rm firmware      compila el firmware y corre sus tests
 #
-#   API: http://localhost:3000/api/v1/salud   Web: http://localhost:8080   MySQL: localhost:3307
+#   API: http://localhost:3000/api/v1/salud   Web: http://localhost:8080   Panel: http://localhost:8081   MySQL: localhost:3307
 #
 # El volumen qr-access-db-data guarda los datos que cargas para revisar: no se baja con -v.
 # Para probar migraciones contra una base limpia: docker compose -p qr-access-verif ...
@@ -87,6 +88,17 @@ services:
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  panel:
+    build:
+      context: ./web
+    profiles: ["panel"]
+    restart: unless-stopped
+    ports:
+      - "${PANEL_PORT:-8081}:8080"
     depends_on:
       api:
         condition: service_healthy

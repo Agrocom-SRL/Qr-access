@@ -1,0 +1,14 @@
+.envoltorio {
+  position: relative;
+}
+
+.entrada {
+  padding-right: var(--tam56);
+}
+
+.ojo {
+  position: absolute;
+  top: 50%;
+  right: var(--esp4);
+  transform: translateY(-50%);
+}

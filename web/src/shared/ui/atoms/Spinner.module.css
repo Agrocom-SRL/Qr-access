@@ -1,0 +1,21 @@
+.spinner {
+  display: inline-block;
+  width: var(--tam18);
+  height: var(--tam18);
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radioCompleto);
+  animation: girar 800ms linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

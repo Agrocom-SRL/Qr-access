@@ -1,0 +1,12 @@
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, var(--anchoBuscador)));
+  gap: var(--esp16);
+  margin-bottom: var(--esp24);
+}
+
+@media (width < 1024px) {
+  .filtros {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

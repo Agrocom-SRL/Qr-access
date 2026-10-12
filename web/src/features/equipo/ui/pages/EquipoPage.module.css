@@ -1,0 +1,24 @@
+.persona {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp12);
+}
+
+.yo {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.desactivar {
+  color: var(--peligro);
+  padding: 0 var(--esp12);
+}
+
+.nota {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  margin-top: var(--esp16);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}

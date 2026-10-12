@@ -1,0 +1,77 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp48);
+  padding: var(--esp24) var(--esp32);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.etiqueta {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.valorTexto {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.valor {
+  font-size: var(--texto20);
+}
+
+.advertencia {
+  color: var(--advertencia);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.peligro {
+  color: var(--peligro);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
+.principales {
+  display: flex;
+  gap: var(--esp12);
+}
+
+.historial {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.titulo {
+  padding: var(--esp24);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}
+
+.mejora {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
