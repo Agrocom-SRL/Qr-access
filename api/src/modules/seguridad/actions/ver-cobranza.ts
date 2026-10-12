@@ -25,13 +25,15 @@ export interface Cobranza {
     por_cobrar_30: { monto: number; cuentas: number };
     por_cobrar_90: { monto: number; cuentas: number };
     vencido_sin_pagar: { monto: number; cuentas: number };
+    /** Cuentas nuevas que todavía no pagaron su alta. */
+    por_activar: { monto: number; cuentas: number };
     cobrado_anio: { anio: number; monto: number; pagos: number };
   };
   conteos: Record<VentanaDeCobranza, number>;
   datos: FilaDeCobranza[];
 }
 
-const VENTANAS: readonly VentanaDeCobranza[] = ['d30', 'd60', 'd90', 'vencidas'];
+const VENTANAS: readonly VentanaDeCobranza[] = ['d30', 'd60', 'd90', 'vencidas', 'pendientes'];
 
 function normalizar(texto: string): string {
   return texto.normalize('NFD').replaceAll(/\p{M}/gu, '').toLowerCase().trim();
@@ -88,6 +90,7 @@ export async function ejecutar(
       por_cobrar_30: total(en('d30')),
       por_cobrar_90: total(en('d90')),
       vencido_sin_pagar: total(en('vencidas')),
+      por_activar: total(en('pendientes')),
       cobrado_anio: { anio, ...cobrado },
     },
     conteos: Object.fromEntries(VENTANAS.map((v) => [v, en(v).length])) as Record<

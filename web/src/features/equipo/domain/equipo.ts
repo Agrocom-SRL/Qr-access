@@ -39,12 +39,13 @@ const ALFABETO = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 export const LARGO_DE_CONTRASENA_TEMPORAL = 12;
 
 /**
- * Contraseña temporal de 12 caracteres en tres grupos (`Qx7m-R42p-LbT9`). Recibe la fuente de
+ * Contraseña temporal de 12 letras y números, sin guiones ni símbolos (`Qx7mR42pLbT9`): se dicta
+ * y se copia sin sorpresas; quien la reciba la cambia en su primer ingreso. Recibe la fuente de
  * azar para poder probarla; en producción es `crypto.getRandomValues`.
  */
 export function generarContrasenaTemporal(aleatorio: (limite: number) => number): string {
   const caracteres = Array.from({ length: LARGO_DE_CONTRASENA_TEMPORAL }, () =>
     ALFABETO.charAt(aleatorio(ALFABETO.length)),
   );
-  return [0, 4, 8].map((i) => caracteres.slice(i, i + 4).join('')).join('-');
+  return caracteres.join('');
 }

@@ -129,11 +129,31 @@ export const cuerpoDeEdicionDeMiembro = z.object({ activo: z.literal(false) });
 
 // --- Cuentas (administración por AGROCOM, web admin) ---
 
-const esquemaEstadoDeSuscripcion = z.enum(['activa', 'por_vencer', 'vencida', 'suspendida']);
+const esquemaTelefono = z
+  .string()
+  .trim()
+  .regex(/^[0-9+() -]{6,30}$/);
+/** El correo de la persona responsable; vacío o ausente = sin correo. */
+const esquemaCorreo = z
+  .union([z.literal(''), z.email().max(120)])
+  .nullish()
+  .transform((correo) =>
+    correo === undefined || correo === null || correo === '' ? null : correo,
+  );
+
+const esquemaEstadoDeSuscripcion = z.enum([
+  'activa',
+  'por_vencer',
+  'vencida',
+  'suspendida',
+  'pendiente_pago',
+]);
 
 export const consultaDeCuentas = esquemaPaginacion.extend({
   busqueda: z.string().trim().max(100).default(''),
-  estado: z.enum(['todas', 'activa', 'por_vencer', 'vencida', 'suspendida']).default('todas'),
+  estado: z
+    .enum(['todas', 'activa', 'por_vencer', 'vencida', 'suspendida', 'pendiente_pago'])
+    .default('todas'),
 });
 
 const esquemaCuentaListada = z.object({
@@ -155,6 +175,7 @@ export const respuestaDeCuentas = esquemaListado(esquemaCuentaListada).extend({
     por_vencer: z.number().int(),
     vencida: z.number().int(),
     suspendida: z.number().int(),
+    pendiente_pago: z.number().int(),
   }),
 });
 
@@ -179,22 +200,49 @@ export const cuerpoDeNuevaCuenta = z.object({
     .regex(/^[0-9A-Za-z.-]{4,20}$/),
   ciudad: z.string().trim().min(1).max(80),
   contacto_nombre: z.string().trim().min(1).max(120),
-  contacto_telefono: z
-    .string()
-    .trim()
-    .regex(/^[0-9+() -]{6,30}$/),
+  contacto_telefono: esquemaTelefono,
+  contacto_correo: esquemaCorreo,
   plan_id: esquemaId,
   inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   administrador_nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
+  /** El primer pago, si ya se cobró: la cuenta nace activa. Sin él, nace pendiente de pago. */
+  pago: z
+    .object({
+      monto: z.number().positive().max(99_999_999),
+      fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+      referencia: z.string().trim().min(1).max(80),
+    })
+    .optional(),
+});
+
+/** Lo que se puede corregir de una cuenta ya creada; el código tiene su propia ruta (ADR 0023). */
+export const cuerpoDeEdicionDeCuenta = z.object({
+  razon_social: z.string().trim().min(1).max(150),
+  nit: z
+    .string()
+    .trim()
+    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  ciudad: z.string().trim().min(1).max(80),
+  contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_telefono: esquemaTelefono,
+  contacto_correo: esquemaCorreo,
 });
 
 export const respuestaDeCuentaCreada = z.object({
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
   administrador: z.object({ id: z.string(), etiqueta: z.string(), pin: z.string() }),
-  suscripcion: z.object({ desde: esquemaFecha, hasta: esquemaFecha }),
+  suscripcion: z.object({
+    desde: esquemaFecha,
+    hasta: esquemaFecha,
+    estado: esquemaEstadoDeSuscripcion,
+  }),
 });
 
 export const parametrosDeCuenta = z.object({ id: esquemaId });
+
+/** Para borrar una cuenta hay que repetir su código: así no se borra otra por error. */
+export const cuerpoDeBajaDeCuenta = z.object({ codigo: z.string().trim().min(1).max(10) });
 
 export const respuestaDeDetalleDeCuenta = z.object({
   cuenta: z.object({
@@ -205,7 +253,13 @@ export const respuestaDeDetalleDeCuenta = z.object({
     cliente_desde: esquemaFecha,
   }),
   empresa: z
-    .object({ nit: z.string(), ciudad: z.string(), contacto: z.string(), telefono: z.string() })
+    .object({
+      nit: z.string(),
+      ciudad: z.string(),
+      contacto: z.string(),
+      telefono: z.string(),
+      correo: z.string().nullable(),
+    })
     .nullable(),
   suscripcion: z
     .object({
@@ -231,28 +285,69 @@ export const respuestaDeDetalleDeCuenta = z.object({
   }),
 });
 
-export const respuestaDePuertasDeCuenta = z.object({
+const esquemaLectorDePuerta = z.object({
+  id: z.string(),
+  nombre: z.string(),
+  en_linea: z.boolean(),
+  ultimo_latido_at: esquemaFecha.nullable(),
+});
+
+/** Sitios con todas sus puertas y lectores: lo que se gestiona desde la plataforma (A05c). */
+export const respuestaDeEstructuraDeCuenta = z.object({
   datos: z.array(
     z.object({
       id: z.string(),
       nombre: z.string(),
+      direccion: z.string().nullable(),
+      zona_horaria: z.string(),
+      activo: z.boolean(),
       puertas: z.array(
         z.object({
           id: z.string(),
           nombre: z.string(),
-          dispositivo: z
-            .object({
-              id: z.string(),
-              nombre: z.string(),
-              en_linea: z.boolean(),
-              ultimo_latido_at: esquemaFecha.nullable(),
-            })
-            .nullable(),
+          segundos_apertura: z.number().int(),
+          activa: z.boolean(),
+          dispositivo: esquemaLectorDePuerta.nullable(),
         }),
       ),
     }),
   ),
 });
+
+const esquemaNombreDeSitio = z.string().trim().min(1).max(120);
+const esquemaDireccion = z
+  .string()
+  .trim()
+  .max(255)
+  .transform((texto) => (texto === '' ? null : texto));
+
+export const cuerpoDeNuevoSitio = z.object({
+  nombre: esquemaNombreDeSitio,
+  direccion: esquemaDireccion.nullish().transform((d) => d ?? null),
+  zona_horaria: z.string().trim().min(1).max(64).default('America/La_Paz'),
+});
+
+export const cuerpoDeEdicionDeSitio = z.object({
+  nombre: esquemaNombreDeSitio.optional(),
+  direccion: esquemaDireccion.nullable().optional(),
+  zona_horaria: z.string().trim().min(1).max(64).optional(),
+  activo: z.boolean().optional(),
+});
+
+export const cuerpoDeNuevaPuerta = z.object({
+  nombre: z.string().trim().min(1).max(120),
+  segundos_apertura: z.number().int().min(1).max(30).default(5),
+});
+
+export const cuerpoDeEdicionDePuerta = z.object({
+  nombre: z.string().trim().min(1).max(120).optional(),
+  segundos_apertura: z.number().int().min(1).max(30).optional(),
+  activa: z.boolean().optional(),
+});
+
+export const parametrosDeSitio = z.object({ id: esquemaId, sitioId: esquemaId });
+export const parametrosDePuerta = z.object({ id: esquemaId, puertaId: esquemaId });
+export const respuestaDeCreado = z.object({ id: z.string() });
 
 export const respuestaDeSuscripcionDeCuenta = z.object({
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
@@ -269,11 +364,11 @@ export const respuestaDeSuscripcionDeCuenta = z.object({
     estado: esquemaEstadoDeSuscripcion,
     dias_restantes: z.number().int(),
   }),
-  proximo_pago: z.enum(['pendiente', 'sin_pagar']).nullable(),
+  proximo_pago: z.enum(['pendiente', 'sin_pagar', 'por_activar']).nullable(),
   pagos: z.array(
     z.object({
       id: z.string(),
-      tipo: z.enum(['renovacion', 'mejora_de_plan']),
+      tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
       plan: z.string(),
       monto: z.number(),
       fecha_pago: z.string(),
@@ -289,7 +384,7 @@ export const respuestaDeSuscripcionDeCuenta = z.object({
 const esquemaTotal = z.object({ monto: z.number(), cuentas: z.number().int() });
 
 export const consultaDeCobranza = z.object({
-  ventana: z.enum(['d30', 'd60', 'd90', 'vencidas']).default('d30'),
+  ventana: z.enum(['d30', 'd60', 'd90', 'vencidas', 'pendientes']).default('d30'),
   busqueda: z.string().trim().max(100).default(''),
 });
 
@@ -298,6 +393,7 @@ export const respuestaDeCobranza = z.object({
     por_cobrar_30: esquemaTotal,
     por_cobrar_90: esquemaTotal,
     vencido_sin_pagar: esquemaTotal,
+    por_activar: esquemaTotal,
     cobrado_anio: z.object({ anio: z.number().int(), monto: z.number(), pagos: z.number().int() }),
   }),
   conteos: z.object({
@@ -305,6 +401,7 @@ export const respuestaDeCobranza = z.object({
     d60: z.number().int(),
     d90: z.number().int(),
     vencidas: z.number().int(),
+    pendientes: z.number().int(),
   }),
   datos: z.array(
     z.object({
@@ -317,7 +414,7 @@ export const respuestaDeCobranza = z.object({
       monto: z.number(),
       vence_el: esquemaFecha,
       dias_restantes: z.number().int(),
-      pago: z.enum(['pendiente', 'sin_pagar']),
+      pago: z.enum(['pendiente', 'sin_pagar', 'por_activar']),
       estado: esquemaEstadoDeSuscripcion,
     }),
   ),

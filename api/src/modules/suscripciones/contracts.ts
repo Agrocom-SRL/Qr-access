@@ -102,24 +102,39 @@ export interface ServicioDeSuscripcionesDePlataforma {
   buscarPlan(planId: string): Promise<PlanContratado | null>;
   /**
    * Da de alta la suscripción de la cuenta del contexto (HU-01). Se llama dentro de
-   * `ContextoCuenta.comoPlataformaEn` y de la transacción que crea la cuenta.
+   * `ContextoCuenta.comoPlataformaEn` y de la transacción que crea la cuenta. Con `pago`, queda
+   * vigente y registra el pago de alta; sin él, queda pendiente de su primer pago.
    */
   crear(
     tx: Transaccion,
-    suscripcion: { planId: string; desde: Date; hasta: Date },
+    suscripcion: { planId: string; desde: Date; hasta: Date; pago?: PagoDeAlta },
   ): Promise<string>;
   /** La suscripción actual de la cuenta del contexto, o `null`. */
   deLaCuentaDelContexto(ahora: Date): Promise<SuscripcionDeCuenta | null>;
   /** Los pagos de la cuenta del contexto, el más reciente primero. */
   pagosDeLaCuentaDelContexto(): Promise<PagoRegistrado[]>;
+  /** Lo cobrado por mes (`aaaa-mm`) entre dos fechas `aaaa-mm-dd` (hasta excluida), de todas las cuentas. */
+  cobradoPorMes(
+    desde: string,
+    hasta: string,
+  ): Promise<{ mes: string; monto: number; pagos: number }[]>;
   /** Total cobrado y cantidad de pagos con `fecha_pago` en el año calendario `anio` (todas las cuentas). */
   cobradoEnElAnio(anio: number): Promise<{ monto: number; pagos: number }>;
+}
+
+/** El primer pago de una cuenta nueva, registrado junto con su alta. */
+export interface PagoDeAlta {
+  readonly monto: number;
+  /** `aaaa-mm-dd`. */
+  readonly fechaPago: string;
+  readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+  readonly referencia: string;
 }
 
 /** Un pago ya registrado de una cuenta. */
 export interface PagoRegistrado {
   readonly id: string;
-  readonly tipo: 'renovacion' | 'mejora_de_plan';
+  readonly tipo: 'alta' | 'renovacion' | 'mejora_de_plan';
   readonly planNombre: string;
   readonly monto: number;
   /** `aaaa-mm-dd`. */
@@ -157,7 +172,27 @@ export function crearServicioDeSuscripcionesDePlataforma(
         precioAnual: Number(fila.precio_anual),
       };
     },
-    crear: (tx, suscripcion) => new RepositorioDeSuscripciones(pool).crear(tx, suscripcion),
+    async crear(tx, suscripcion) {
+      const { pago, ...datos } = suscripcion;
+      const id = await new RepositorioDeSuscripciones(pool).crear(tx, {
+        ...datos,
+        estado: pago === undefined ? 'pendiente' : 'vigente',
+      });
+      if (pago !== undefined) {
+        await new RepositorioDePagos(pool).registrar(tx, {
+          suscripcionId: id,
+          planId: suscripcion.planId,
+          tipo: 'alta',
+          monto: pago.monto,
+          fechaPago: pago.fechaPago,
+          medio: pago.medio,
+          referencia: pago.referencia,
+          periodoDesde: suscripcion.desde,
+          periodoHasta: suscripcion.hasta,
+        });
+      }
+      return id;
+    },
     async pagosDeLaCuentaDelContexto() {
       return (await new RepositorioDePagos(pool).listar()).map((fila) => ({
         id: fila.id,
@@ -172,6 +207,8 @@ export function crearServicioDeSuscripcionesDePlataforma(
         registradoPor: fila.created_by,
       }));
     },
+    cobradoPorMes: (desde, hasta) =>
+      new RepositorioDeTotalesDePagos(pool).cobradoPorMes(desde, hasta),
     cobradoEnElAnio: (anio) =>
       new RepositorioDeTotalesDePagos(pool).cobradoEn(
         `${String(anio)}-01-01`,

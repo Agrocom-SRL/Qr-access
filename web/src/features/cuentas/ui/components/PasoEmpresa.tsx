@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
-import { AccesoSelector } from '../../../../shared/ui/molecules/AccesoSelector';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { CampoFormulario } from '../../../../shared/ui/molecules/CampoFormulario';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
 import { useCodigoDisponible } from '../../application/useCuentas';
@@ -73,19 +73,17 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                     cambiar({ nit: e.target.value });
                   }}
                 />
-                <AccesoSelector
+                <AccesoSelectorBuscable
                   etiqueta={t('crearCuenta:ciudad')}
-                  value={datos.ciudad}
+                  valor={datos.ciudad}
                   error={mensaje('ciudad')}
+                  placeholder={t('crearCuenta:ciudadElegir')}
                   onBlur={() => {
                     tocar('ciudad');
                   }}
-                  opciones={[
-                    { valor: '', etiqueta: t('crearCuenta:ciudadElegir') },
-                    ...CIUDADES.map((ciudad) => ({ valor: ciudad, etiqueta: ciudad })),
-                  ]}
-                  onChange={(e) => {
-                    cambiar({ ciudad: e.target.value });
+                  opciones={CIUDADES.map((ciudad) => ({ valor: ciudad, etiqueta: ciudad }))}
+                  onCambio={(ciudad) => {
+                    cambiar({ ciudad });
                   }}
                 />
               </div>
@@ -143,9 +141,18 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                   </div>
                 ) : null}
               </div>
+            </div>
+          ),
+        },
+        {
+          id: 'responsable',
+          titulo: t('crearCuenta:responsableTitulo'),
+          descripcion: t('crearCuenta:responsableAyuda'),
+          contenido: (
+            <div className={styles.campos}>
               <div className={styles.fila}>
                 <AccesoCampoTexto
-                  etiqueta={t('crearCuenta:contacto')}
+                  etiqueta={t('crearCuenta:responsableNombre')}
                   value={datos.contactoNombre}
                   error={mensaje('contactoNombre')}
                   autoComplete="name"
@@ -171,6 +178,20 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                   }}
                 />
               </div>
+              <AccesoCampoTexto
+                etiqueta={t('crearCuenta:correo')}
+                value={datos.contactoCorreo}
+                type="email"
+                error={mensaje('contactoCorreo')}
+                autoComplete="email"
+                ayuda={t('crearCuenta:correoAyuda')}
+                onBlur={() => {
+                  tocar('contactoCorreo');
+                }}
+                onChange={(e) => {
+                  cambiar({ contactoCorreo: e.target.value });
+                }}
+              />
             </div>
           ),
         },

@@ -132,6 +132,12 @@ export const badgeSuscripcion = {
     icono: 'pause_circle',
     etiqueta: 'suscripcion.estado.suspendida',
   },
+  pendientePago: {
+    fondo: 'advertenciaSuave',
+    texto: 'advertencia',
+    icono: 'pending_actions',
+    etiqueta: 'suscripcion.estado.pendientePago',
+  },
 } as const;
 
 /** Acciones de fila con color fijo. */

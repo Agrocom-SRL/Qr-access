@@ -315,7 +315,7 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
           vencido_sin_pagar: { monto: number; cuentas: number };
           cobrado_anio: { monto: number; pagos: number };
         };
-        conteos: { d30: number; d60: number; d90: number; vencidas: number };
+        conteos: { d30: number; d60: number; d90: number; vencidas: number; pendientes: number };
         datos: {
           cuenta: { codigo: string };
           monto: number;
@@ -338,7 +338,7 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
       await conVencimiento('DDD', 200);
       await conVencimiento('EEE', -5);
       const resultado = await cobranza();
-      expect(resultado.conteos).toEqual({ d30: 1, d60: 2, d90: 3, vencidas: 1 });
+      expect(resultado.conteos).toEqual({ d30: 1, d60: 2, d90: 3, vencidas: 1, pendientes: 0 });
       expect(resultado.totales.por_cobrar_30).toEqual({ monto: 12000, cuentas: 1 });
       expect(resultado.totales.por_cobrar_90).toEqual({ monto: 12000 + 21600 + 33600, cuentas: 3 });
       expect(resultado.totales.vencido_sin_pagar).toEqual({ monto: 12000, cuentas: 1 });

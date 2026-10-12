@@ -23,6 +23,7 @@ export async function ejecutar(
 ): Promise<PlanCambiado> {
   const suscripcion = await suscripcionActualODeLaCuenta(pool);
   const estado = estadoDeSuscripcion(suscripcion, ahora);
+  if (estado === 'pendiente_pago') throw new ErrorDeDominio('suscripcion.pendiente_de_pago', 422);
   if (estado === 'suspendida') throw new ErrorDeDominio('suscripcion.suspendida', 422);
   if (estado === 'vencida') throw new ErrorDeDominio('suscripcion.vencida', 422);
 

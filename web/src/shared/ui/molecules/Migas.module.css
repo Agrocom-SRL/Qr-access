@@ -13,3 +13,14 @@
   color: var(--primario);
   text-decoration: underline;
 }
+
+.contenedor {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+  margin-bottom: var(--esp4);
+}
+
+.contenedor .migas {
+  margin-bottom: 0;
+}

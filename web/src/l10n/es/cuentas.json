@@ -8,7 +8,8 @@
     "activa": "Activas",
     "porVencer": "Por vencer",
     "vencida": "Vencidas",
-    "suspendida": "Suspendidas"
+    "suspendida": "Suspendidas",
+    "pendientePago": "Por activar"
   },
   "columna": {
     "cuenta": "Cuenta",

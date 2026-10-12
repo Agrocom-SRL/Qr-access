@@ -109,6 +109,7 @@ export function contarPorEstado(
     por_vencer: 0,
     vencida: 0,
     suspendida: 0,
+    pendiente_pago: 0,
   };
   for (const cuenta of cuentas) conteo[cuenta.estado] += 1;
   return conteo;

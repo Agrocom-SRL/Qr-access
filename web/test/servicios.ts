@@ -4,6 +4,7 @@ import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
 import type { BitacoraRepositorio, EventoBitacora } from '@/features/bitacora';
 import type { ResumenRepositorio } from '@/features/resumen';
+import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisticas';
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
@@ -25,6 +26,10 @@ export const SUPER_ADMIN = {
     'seguridad.cuenta.ver',
     'seguridad.cuenta.crear',
     'seguridad.cuenta.cambiar_codigo',
+    'seguridad.cuenta.editar',
+    'seguridad.cuenta.eliminar',
+    'organizacion.sitio.gestionar',
+    'organizacion.puerta.gestionar',
     'seguridad.administrador.regenerar_pin',
     'suscripciones.suscripcion.ver',
     'suscripciones.suscripcion.editar',
@@ -129,6 +134,7 @@ export const DETALLE = {
     ciudad: 'Santa Cruz de la Sierra',
     contacto: 'Carla Méndez',
     telefono: '3 342 1180',
+    correo: 'carla@agroindustrialnorte.bo',
   },
   suscripcion: {
     id: '5',
@@ -151,15 +157,22 @@ export const SITIOS = [
   {
     id: '1',
     nombre: 'Planta Warnes',
+    direccion: 'Ruta 4 km 12' as string | null,
+    zonaHoraria: 'America/La_Paz',
+    activo: true,
     puertas: [
       {
         id: '1',
         nombre: 'Portón vehicular',
+        segundosApertura: 5,
+        activa: true,
         dispositivo: { id: '1', nombre: 'LECT-0042', enLinea: true, ultimaSenal: new Date() },
       },
       {
         id: '2',
         nombre: 'Depósito 2',
+        segundosApertura: 8,
+        activa: true,
         dispositivo: {
           id: '2',
           nombre: 'LECT-0051',
@@ -259,14 +272,37 @@ export const RESUMEN = {
   ultimasAcciones: EVENTOS,
 };
 
+export const ESTADISTICAS: Estadisticas = {
+  cobradoPorMes: Array.from({ length: 12 }, (_, i) => ({
+    mes: `2026-${String(i + 1).padStart(2, '0')}`,
+    monto: i === 9 ? 24_000 : 0,
+    pagos: i === 9 ? 2 : 0,
+  })),
+  altasPorMes: Array.from({ length: 12 }, (_, i) => ({
+    mes: `2026-${String(i + 1).padStart(2, '0')}`,
+    cuentas: i === 9 ? 3 : 0,
+  })),
+  cuentasPorEstado: { activa: 30, porVencer: 5, vencida: 2, suspendida: 1, pendientePago: 2 },
+  cuentasPorPlan: [
+    { plan: '100 usuarios', cuentas: 24, cupoUsuarios: 100 },
+    { plan: '200 usuarios', cuentas: 14, cupoUsuarios: 200 },
+  ],
+  accesosPorDia: Array.from({ length: 14 }, (_, i) => ({
+    dia: `2026-10-${String(i + 1).padStart(2, '0')}`,
+    permitidos: 10 + i,
+    rechazados: i % 3,
+  })),
+};
+
 export const COBRANZA = {
   totales: {
     porCobrar30: { monto: 100800, cuentas: 5 },
     porCobrar90: { monto: 298800, cuentas: 14 },
     vencidoSinPagar: { monto: 33600, cuentas: 2 },
+    porActivar: { monto: 24000, cuentas: 2 },
     cobradoAnio: { anio: 2026, monto: 513600, pagos: 27 },
   },
-  conteos: { d30: 5, d60: 9, d90: 14, vencidas: 2 },
+  conteos: { d30: 5, d60: 9, d90: 14, vencidas: 2, pendientes: 2 },
   filas: [
     {
       cuenta: { id: '1', codigo: 'SDE', nombre: 'Semillas del Este' },
@@ -291,6 +327,7 @@ export function crearServiciosDePrueba(
     pagos?: Partial<PagosRepositorio>;
     bitacora?: Partial<BitacoraRepositorio>;
     resumen?: Partial<ResumenRepositorio>;
+    estadisticas?: Partial<EstadisticasRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -348,7 +385,14 @@ export function crearServiciosDePrueba(
         pagina: 1,
         porPagina: 10,
         total: CUENTAS.length,
-        conteos: { todas: 42, activa: 33, porVencer: 5, vencida: 2, suspendida: 2 },
+        conteos: {
+          todas: 42,
+          activa: 33,
+          porVencer: 5,
+          vencida: 2,
+          suspendida: 2,
+          pendientePago: 0,
+        },
       }),
     codigoDisponible: (codigo) =>
       Promise.resolve({
@@ -365,6 +409,7 @@ export function crearServiciosDePrueba(
           etiqueta: borrador.vigencia.administradorNombre,
           pin: 'AGU9F4M',
         },
+        estado: borrador.pago.modo === 'ahora' ? ('activa' as const) : ('pendientePago' as const),
       }),
     administradores: () =>
       Promise.resolve([
@@ -378,7 +423,15 @@ export function crearServiciosDePrueba(
     regenerarPin: () => Promise.resolve('AGR7K2Q'),
     cambiarCodigo: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),
+    editar: () => Promise.resolve(),
+    eliminar: () => Promise.resolve(),
     sitiosYPuertas: () => Promise.resolve(SITIOS),
+    crearSitio: () => Promise.resolve(),
+    editarSitio: () => Promise.resolve(),
+    eliminarSitio: () => Promise.resolve(),
+    crearPuerta: () => Promise.resolve(),
+    editarPuerta: () => Promise.resolve(),
+    eliminarPuerta: () => Promise.resolve(),
     ...parcial.cuentas,
   };
   const suscripciones: SuscripcionesRepositorio = {
@@ -411,7 +464,22 @@ export function crearServiciosDePrueba(
     obtener: () => Promise.resolve(RESUMEN),
     ...parcial.resumen,
   };
-  return { almacen, seguridad, equipo, planes, cuentas, suscripciones, pagos, bitacora, resumen };
+  const estadisticas: EstadisticasRepositorio = {
+    obtener: () => Promise.resolve(ESTADISTICAS),
+    ...parcial.estadisticas,
+  };
+  return {
+    almacen,
+    seguridad,
+    equipo,
+    planes,
+    cuentas,
+    suscripciones,
+    pagos,
+    bitacora,
+    resumen,
+    estadisticas,
+  };
 }
 
 export { ErrorApi };

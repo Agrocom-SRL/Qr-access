@@ -1,0 +1,38 @@
+.caja {
+  min-width: var(--tam120);
+  padding: var(--esp12) var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio10);
+  box-shadow: var(--elevacion2);
+  color: var(--texto);
+  font-size: var(--texto14);
+}
+
+.titulo {
+  margin-bottom: var(--esp4);
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.linea {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.muestra {
+  flex: none;
+  width: var(--esp8);
+  height: var(--esp8);
+  border-radius: var(--radio6);
+}
+
+.nombre {
+  flex: 1;
+}
+
+.valor {
+  font-family: var(--fuenteMono);
+  font-variant-numeric: tabular-nums;
+}

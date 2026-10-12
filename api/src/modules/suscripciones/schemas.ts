@@ -41,7 +41,7 @@ export const respuestaDeCambioDePlan = z.object({
 });
 
 export const cuerpoDePago = z.object({
-  tipo: z.enum(['renovacion', 'mejora_de_plan']),
+  tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
   monto: z
     .number()
     .positive()
@@ -54,7 +54,7 @@ export const cuerpoDePago = z.object({
 
 export const respuestaDePago = z.object({
   id: z.string(),
-  tipo: z.enum(['renovacion', 'mejora_de_plan']),
+  tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
   periodo_desde: z.string(),
   periodo_hasta: z.string(),
   vence_el: z.string(),

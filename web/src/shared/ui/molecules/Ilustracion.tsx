@@ -15,7 +15,20 @@ const ILUSTRACIONES = { bloqueo, error, sinConexion, vacioEventos, vacioPuertas,
 
 export type NombreIlustracion = keyof typeof ILUSTRACIONES;
 
-/** Ilustración decorativa de 200×144. */
-export function Ilustracion({ nombre }: { nombre: NombreIlustracion }) {
-  return <img className={styles.imagen} src={ILUSTRACIONES[nombre]} alt="" />;
+/** Ilustración decorativa de 200×144 (o 320×230 en las pantallas de estado completas). */
+export function Ilustracion({
+  nombre,
+  grande = false,
+}: {
+  nombre: NombreIlustracion;
+  /** Para las pantallas de estado completas (404, sin conexión): más protagonismo. */
+  grande?: boolean;
+}) {
+  return (
+    <img
+      className={grande ? [styles.imagen, styles.grande].join(' ') : styles.imagen}
+      src={ILUSTRACIONES[nombre]}
+      alt=""
+    />
+  );
 }

@@ -17,7 +17,13 @@ import {
 
 export interface DetalleDeCuenta {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
-  empresa: { nit: string; ciudad: string; contacto: string; telefono: string } | null;
+  empresa: {
+    nit: string;
+    ciudad: string;
+    contacto: string;
+    telefono: string;
+    correo: string | null;
+  } | null;
   suscripcion: {
     id: string;
     plan: { id: string; nombre: string; cupo_usuarios: number | null; precio_anual: number };
@@ -75,6 +81,7 @@ export async function ejecutar(
               ciudad: empresa.ciudad,
               contacto: empresa.contacto_nombre,
               telefono: empresa.contacto_telefono,
+              correo: empresa.contacto_correo,
             },
       suscripcion:
         suscripcion === null

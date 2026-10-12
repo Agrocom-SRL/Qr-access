@@ -1,7 +1,9 @@
 /** El tablero de la plataforma (A02). */
 import type { EventoBitacora } from '../../bitacora';
 
-export type EstadoRenovacion = 'activa' | 'porVencer' | 'vencida' | 'suspendida';
+import type { EstadoDeSuscripcion } from '../../../shared/api/estados';
+
+export type EstadoRenovacion = EstadoDeSuscripcion;
 
 export interface RenovacionProxima {
   cuenta: { id: string; codigo: string; nombre: string };

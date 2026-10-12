@@ -27,5 +27,16 @@
   "plan_sin_cambio": "La cuenta ya tiene ese plan.",
   "plan_nombre_existente": "Ya hay un plan con ese nombre.",
   "plan_en_uso": "Ese plan ya lo usan cuentas: su cupo no se puede cambiar.",
-  "cuenta_codigo_sin_cambio": "Ese ya es el código de la cuenta."
+  "cuenta_codigo_sin_cambio": "Ese ya es el código de la cuenta.",
+  "cuenta_confirmacion_invalida": "El código no coincide con el de la cuenta.",
+  "suscripcion_pendiente_de_pago": "La cuenta aún no pagó su primer año: registra primero ese pago.",
+  "suscripcion_ya_activa": "La cuenta ya está activa: usa renovar o mejorar el plan.",
+  "sitio_no_encontrado": "No encontramos ese sitio.",
+  "sitio_nombre_existente": "Ya hay un sitio con ese nombre en la cuenta.",
+  "sitio_zona_invalida": "Esa zona horaria no existe.",
+  "sitio_con_puertas": "El sitio tiene puertas: elimínalas o muévelas primero.",
+  "puerta_no_encontrada": "No encontramos esa puerta.",
+  "puerta_nombre_existente": "Ya hay una puerta con ese nombre en el sitio.",
+  "puerta_con_dispositivo": "La puerta tiene un lector en servicio: dalo de baja primero.",
+  "puerta_segundos_invalidos": "Los segundos de apertura van de 1 a 30."
 }

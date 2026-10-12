@@ -36,3 +36,41 @@
 .suave {
   color: var(--textoSecundario);
 }
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp24);
+}
+
+.encabezadoSitio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp24);
+  padding-right: var(--esp24);
+}
+
+.detalleSitio {
+  margin-top: calc(-1 * var(--esp16));
+  padding: 0 var(--esp24) var(--esp16) calc(var(--esp24) + var(--esp12) + var(--esp24));
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.botones {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.apagada {
+  color: var(--textoSecundario);
+  text-decoration: line-through;
+}
+
+.sinPuertas {
+  padding: 0 var(--esp24) var(--esp24);
+  color: var(--textoSecundario);
+}

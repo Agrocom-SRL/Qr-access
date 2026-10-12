@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
-import type { BorradorDeCuenta } from '../domain/alta';
-import type { FiltrosDeCuentas } from '../domain/cuenta';
+import type { BorradorDeCuenta, DatosDeEmpresa } from '../domain/alta';
+import type { DatosDePuerta, DatosDeSitio, FiltrosDeCuentas } from '../domain/cuenta';
 import { useCuentasRepositorio } from './contextos';
 
 /** Clave raíz de todo lo de cuentas: cualquier mutación de una cuenta la invalida. */
@@ -67,6 +67,7 @@ export function useCrearCuenta() {
       await Promise.all([
         clienteConsultas.invalidateQueries({ queryKey: CLAVE_CUENTAS }),
         clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
+        clienteConsultas.invalidateQueries({ queryKey: ['estadisticas'] }),
         clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
       ]);
     },
@@ -116,4 +117,80 @@ export function useCambiarCodigo(cuentaId: string) {
       ]);
     },
   });
+}
+
+/** Lo que cambia cuando se toca una cuenta: su ficha, los listados, el resumen y la bitácora. */
+async function invalidarTodoDeCuentas(clienteConsultas: ReturnType<typeof useQueryClient>) {
+  await Promise.all([
+    clienteConsultas.invalidateQueries({ queryKey: CLAVE_CUENTAS }),
+    clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
+    clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
+    clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
+    clienteConsultas.invalidateQueries({ queryKey: ['estadisticas'] }),
+  ]);
+}
+
+/** Corrige la razón social y los datos de la empresa y su persona responsable (no el código). */
+export function useEditarCuenta(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (datos: Omit<DatosDeEmpresa, 'codigo'>) => repositorio.editar(cuentaId, datos),
+    onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
+  });
+}
+
+/** Da de baja la cuenta; hay que repetir su código. */
+export function useEliminarCuenta(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (codigo: string) => repositorio.eliminar(cuentaId, codigo),
+    onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
+  });
+}
+
+/** Altas, ediciones y bajas de sitios y puertas de una cuenta: todas refrescan la misma estructura. */
+export function useGestionDeEstructura(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  const refrescar = async () => {
+    await Promise.all([
+      clienteConsultas.invalidateQueries({ queryKey: [...CLAVE_CUENTAS, 'puertas', cuentaId] }),
+      clienteConsultas.invalidateQueries({ queryKey: [...CLAVE_CUENTAS, 'detalle', cuentaId] }),
+      clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
+    ]);
+  };
+  const opciones = { onSuccess: refrescar };
+  return {
+    crearSitio: useMutation({
+      mutationFn: (datos: DatosDeSitio) => repositorio.crearSitio(cuentaId, datos),
+      ...opciones,
+    }),
+    editarSitio: useMutation({
+      mutationFn: (p: { sitioId: string; cambios: Partial<DatosDeSitio> & { activo?: boolean } }) =>
+        repositorio.editarSitio(cuentaId, p.sitioId, p.cambios),
+      ...opciones,
+    }),
+    eliminarSitio: useMutation({
+      mutationFn: (sitioId: string) => repositorio.eliminarSitio(cuentaId, sitioId),
+      ...opciones,
+    }),
+    crearPuerta: useMutation({
+      mutationFn: (p: { sitioId: string; datos: DatosDePuerta }) =>
+        repositorio.crearPuerta(cuentaId, p.sitioId, p.datos),
+      ...opciones,
+    }),
+    editarPuerta: useMutation({
+      mutationFn: (p: {
+        puertaId: string;
+        cambios: Partial<DatosDePuerta> & { activa?: boolean };
+      }) => repositorio.editarPuerta(cuentaId, p.puertaId, p.cambios),
+      ...opciones,
+    }),
+    eliminarPuerta: useMutation({
+      mutationFn: (puertaId: string) => repositorio.eliminarPuerta(cuentaId, puertaId),
+      ...opciones,
+    }),
+  };
 }

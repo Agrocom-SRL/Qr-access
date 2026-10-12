@@ -1,0 +1,17 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+/* La última (altas por mes) ocupa todo el ancho para que la rejilla cierre pareja. */
+.rejilla > :last-child {
+  grid-column: 1 / -1;
+}
+
+@media (width < 1024px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}

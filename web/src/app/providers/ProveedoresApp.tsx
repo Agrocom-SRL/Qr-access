@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { ProveedorBitacora } from '../../features/bitacora';
 import { ProveedorCuentas } from '../../features/cuentas';
 import { ProveedorEquipo } from '../../features/equipo';
+import { ProveedorEstadisticas } from '../../features/estadisticas';
 import { ProveedorPagos } from '../../features/pagos';
 import { ProveedorPlanes } from '../../features/planes';
 import { ProveedorResumen } from '../../features/resumen';
@@ -52,7 +53,9 @@ export function ProveedoresApp({
                   <ProveedorPagos valor={servicios.pagos}>
                     <ProveedorBitacora valor={servicios.bitacora}>
                       <ProveedorResumen valor={servicios.resumen}>
-                        <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
+                        <ProveedorEstadisticas valor={servicios.estadisticas}>
+                          <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
+                        </ProveedorEstadisticas>
                       </ProveedorResumen>
                     </ProveedorBitacora>
                   </ProveedorPagos>

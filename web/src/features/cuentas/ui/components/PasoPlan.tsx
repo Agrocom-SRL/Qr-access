@@ -4,7 +4,6 @@ import { codigoDe } from '../../../../shared/api/errorApi';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
-import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { TarjetaPlan } from '../../../../shared/ui/organisms/TarjetaPlan';
 import { cx } from '../../../../shared/lib/cx';
@@ -90,7 +89,6 @@ export function PasoPlan({ planId, onElegir }: Props) {
           );
         })}
       </div>
-      <Aviso tono="informacion">{t('avisoPlanes')}</Aviso>
     </>
   );
 }

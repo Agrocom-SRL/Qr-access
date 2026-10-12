@@ -57,6 +57,7 @@ export function PestanaSuscripcion({ cuenta }: Props) {
 
   const { suscripcion, proximoPago, pagos } = consulta.data;
   const suspendida = suscripcion.estado === 'suspendida';
+  const pendiente = suscripcion.estado === 'pendientePago';
   const medio = (valor: PagoDeCuenta['medio']) => t(`suscripcion:medios.${valor}`);
   const periodo = (desde: Date, hasta: Date) =>
     `${formatearFecha(desde)} – ${formatearFecha(hasta)}`;
@@ -74,6 +75,7 @@ export function PestanaSuscripcion({ cuenta }: Props) {
         <span className={styles.suave}>
           {p.plan}
           {p.tipo === 'mejoraDePlan' ? ` · ${t('suscripcion:mejora')}` : ''}
+          {p.tipo === 'alta' ? ` · ${t('suscripcion:primerPago')}` : ''}
         </span>
       ),
     },
@@ -140,6 +142,7 @@ export function PestanaSuscripcion({ cuenta }: Props) {
         </Aviso>
       ) : null}
       {suspendida ? <Aviso tono="advertencia">{t('suscripcion:suspendidaAviso')}</Aviso> : null}
+      {pendiente ? <Aviso tono="advertencia">{t('suscripcion:pendienteAviso')}</Aviso> : null}
 
       <section className={styles.resumen} aria-label={t('suscripcion:plan')}>
         <div>
@@ -171,13 +174,13 @@ export function PestanaSuscripcion({ cuenta }: Props) {
       <div className={styles.acciones}>
         <div className={styles.principales}>
           <AccesoBoton
-            icono="autorenew"
-            disabled={!admiteCambios(suscripcion.estado)}
+            icono={pendiente ? 'payments' : 'autorenew'}
+            disabled={suspendida}
             onClick={() => {
               void navegar(rutaDePago(cuenta.id));
             }}
           >
-            {t('suscripcion:renovarPago')}
+            {pendiente ? t('suscripcion:registrarPrimerPago') : t('suscripcion:renovarPago')}
           </AccesoBoton>
           <AccesoBoton
             variante="tonal"
@@ -190,7 +193,7 @@ export function PestanaSuscripcion({ cuenta }: Props) {
             {t('suscripcion:cambiarPlan')}
           </AccesoBoton>
         </div>
-        {suspendida ? (
+        {pendiente ? null : suspendida ? (
           <AccesoBoton
             variante="tonal"
             icono="autorenew"

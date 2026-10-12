@@ -64,6 +64,8 @@ export interface CuentaDePlataforma {
   readonly codigo: string;
   readonly nombre: string;
   readonly activa: boolean;
+  /** Cuándo se creó la cuenta (cliente desde). */
+  readonly clienteDesde: Date;
 }
 
 /** Lo que el panel de plataforma (bitácora, resumen) necesita saber de las cuentas y de quién hizo un cambio. */
@@ -83,11 +85,13 @@ export function crearServicioDeIdentidades(pool: Pool): ServicioDeIdentidades {
     codigo: string;
     nombre: string;
     activo: number;
+    created_at: Date;
   }): CuentaDePlataforma => ({
     id: fila.id,
     codigo: fila.codigo,
     nombre: fila.nombre,
     activa: fila.activo === 1,
+    clienteDesde: fila.created_at,
   });
   return {
     async identidadesDeUsuarios(ids) {

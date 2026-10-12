@@ -1,17 +1,23 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ErrorApi, codigoDe } from '../../../../shared/api/errorApi';
+import { rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
+import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Migas } from '../../../../shared/ui/molecules/Migas';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { Pestanas } from '../../../../shared/ui/organisms/Pestanas';
 import { PestanaBitacora } from '../../../bitacora';
+import { tienePermiso, useSesion } from '../../../seguridad';
 import { PestanaSuscripcion } from '../../../suscripciones';
 import { useDetalleDeCuenta } from '../../application/useCuentas';
 import { RUTAS_DE_CUENTAS } from '../../rutas';
+import { DialogoEditarCuenta } from '../components/DialogoEditarCuenta';
+import { DialogoEliminarCuenta } from '../components/DialogoEliminarCuenta';
 import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
@@ -25,6 +31,11 @@ export function DetalleCuentaPage() {
   const { id = '' } = useParams();
   const [parametros, setParametros] = useSearchParams();
   const detalle = useDetalleDeCuenta(id);
+  const navegar = useNavigate();
+  const { sesion } = useSesion();
+  const permisos = sesion?.permisos ?? [];
+  const [editando, setEditando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const pedida = parametros.get('pestana');
   const pestana = PESTANAS.find((p) => p === pedida) ?? 'resumen';
 
@@ -74,7 +85,47 @@ export function DetalleCuentaPage() {
             </div>
           )}
         </div>
+        {datos ? (
+          <div className={styles.acciones}>
+            {datos.suscripcion?.estado === 'pendientePago' &&
+            tienePermiso(permisos, 'suscripciones.pago.registrar') ? (
+              <AccesoBoton
+                icono="payments"
+                onClick={() => {
+                  void navegar(rutaDePago(id));
+                }}
+              >
+                {t('detalle:registrarPago')}
+              </AccesoBoton>
+            ) : null}
+            {tienePermiso(permisos, 'seguridad.cuenta.editar') ? (
+              <AccesoBoton
+                variante="tonal"
+                icono="edit"
+                onClick={() => {
+                  setEditando(true);
+                }}
+              >
+                {t('detalle:editar')}
+              </AccesoBoton>
+            ) : null}
+            {tienePermiso(permisos, 'seguridad.cuenta.eliminar') ? (
+              <AccesoBoton
+                variante="peligro"
+                icono="delete"
+                onClick={() => {
+                  setEliminando(true);
+                }}
+              >
+                {t('detalle:eliminar')}
+              </AccesoBoton>
+            ) : null}
+          </div>
+        ) : null}
       </header>
+      {datos?.suscripcion?.estado === 'pendientePago' ? (
+        <Aviso tono="advertencia">{t('detalle:pendienteAviso')}</Aviso>
+      ) : null}
       <Pestanas
         etiqueta={t('detalle:pestanasEtiqueta')}
         activa={pestana}
@@ -113,6 +164,28 @@ export function DetalleCuentaPage() {
           <SitiosYPuertas cuentaId={id} />
         )}
       </div>
+      {datos ? (
+        <>
+          <DialogoEditarCuenta
+            key={`${datos.cuenta.nombre}-${datos.empresa?.nit ?? ''}-${datos.empresa?.correo ?? ''}`}
+            abierto={editando}
+            onCerrar={() => {
+              setEditando(false);
+            }}
+            detalle={datos}
+          />
+          <DialogoEliminarCuenta
+            abierto={eliminando}
+            cuenta={{ id, nombre: datos.cuenta.nombre, codigo: datos.cuenta.codigo }}
+            onCerrar={() => {
+              setEliminando(false);
+            }}
+            onEliminada={() => {
+              void navegar(RUTAS_DE_CUENTAS.lista);
+            }}
+          />
+        </>
+      ) : null}
     </>
   );
 }

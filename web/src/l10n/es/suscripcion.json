@@ -3,7 +3,8 @@
     "activa": "Activa",
     "porVencer": "Por vencer",
     "vencida": "Vencida",
-    "suspendida": "Suspendida"
+    "suspendida": "Suspendida",
+    "pendientePago": "Pendiente de pago"
   },
   "plan": "Plan",
   "precioAnual": "Precio anual",
@@ -11,7 +12,8 @@
   "proximoPago": "Próximo pago",
   "pago": {
     "pendiente": "Pendiente",
-    "sinPagar": "Sin pagar"
+    "sinPagar": "Sin pagar",
+    "porActivar": "Primer pago pendiente"
   },
   "renovarPago": "Renovar y registrar pago",
   "cambiarPlan": "Cambiar plan",
@@ -47,5 +49,8 @@
   "reactivarTexto": "La cuenta vuelve a emitir QR y sus puertas vuelven a aceptar accesos.",
   "suspendidaAviso": "La suscripción está suspendida. Reactívala para renovar o cambiar de plan.",
   "mejoraRegistrada": "El plan cambió a {{plan}}. Falta registrar el pago de la diferencia: {{monto}}.",
-  "registrarDiferencia": "Registrar pago de la diferencia"
+  "registrarDiferencia": "Registrar pago de la diferencia",
+  "pendienteAviso": "La cuenta aún no pagó su primer año: no emite QR ni abre puertas hasta registrar el pago.",
+  "registrarPrimerPago": "Registrar el primer pago",
+  "primerPago": "primer pago"
 }

@@ -1,0 +1,58 @@
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: var(--tam160) 1fr var(--tam160);
+  align-items: center;
+  gap: var(--esp12);
+}
+
+.etiqueta {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.pista {
+  height: var(--esp12);
+  background: var(--fondo);
+  border-radius: var(--radio6);
+}
+
+.relleno {
+  display: block;
+  min-width: var(--esp4);
+  height: 100%;
+  border-radius: var(--radio6);
+}
+
+.valor {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--fuenteMono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cuentas {
+  color: var(--textoSecundario);
+  font-family: var(--fuenteTexto);
+  font-size: var(--texto12);
+  font-weight: var(--peso400);
+}
+
+@media (width < 1024px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+
+  .valor {
+    text-align: left;
+  }
+}

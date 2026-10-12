@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha } from '../../../../l10n/formatos';
+import { AccesoInterruptor } from '../../../../shared/ui/atoms/AccesoInterruptor';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
 import {
@@ -13,6 +14,8 @@ import styles from './PasoEmpresa.module.css';
 
 interface Props {
   datos: DatosDeVigencia;
+  /** El nombre de la persona responsable (paso anterior), para "es la misma persona". */
+  nombreDelResponsable: string;
   onCambio: (datos: DatosDeVigencia) => void;
 }
 
@@ -21,7 +24,7 @@ interface Props {
  * TODO(docs): el diseño pide correo y teléfono opcionales del administrador; `usuarios` no tiene
  * dónde guardarlos, así que no se piden hasta que el modelo de datos los defina.
  */
-export function PasoVigencia({ datos, onCambio }: Props) {
+export function PasoVigencia({ datos, nombreDelResponsable, onCambio }: Props) {
   const [tocados, setTocados] = useState<ReadonlySet<keyof DatosDeVigencia>>(new Set());
   const tocar = (campo: keyof DatosDeVigencia) => {
     setTocados((actual) => new Set(actual).add(campo));
@@ -71,18 +74,36 @@ export function PasoVigencia({ datos, onCambio }: Props) {
           titulo: t('adminInicial'),
           descripcion: t('adminInicialAyuda'),
           contenido: (
-            <AccesoCampoTexto
-              etiqueta={t('nombreEtiqueta')}
-              value={datos.administradorNombre}
-              error={mensaje('administradorNombre')}
-              onBlur={() => {
-                tocar('administradorNombre');
-              }}
-              autoComplete="off"
-              onChange={(e) => {
-                onCambio({ ...datos, administradorNombre: e.target.value });
-              }}
-            />
+            <div className={styles.campos}>
+              <AccesoInterruptor
+                etiqueta={t('adminEsResponsable', { nombre: nombreDelResponsable })}
+                checked={datos.adminIgualAlResponsable}
+                onChange={(e) => {
+                  onCambio({
+                    ...datos,
+                    adminIgualAlResponsable: e.target.checked,
+                    administradorNombre: e.target.checked
+                      ? nombreDelResponsable
+                      : datos.administradorNombre,
+                  });
+                }}
+              />
+              <AccesoCampoTexto
+                etiqueta={t('nombreAdministrador')}
+                value={
+                  datos.adminIgualAlResponsable ? nombreDelResponsable : datos.administradorNombre
+                }
+                disabled={datos.adminIgualAlResponsable}
+                error={mensaje('administradorNombre')}
+                onBlur={() => {
+                  tocar('administradorNombre');
+                }}
+                autoComplete="off"
+                onChange={(e) => {
+                  onCambio({ ...datos, administradorNombre: e.target.value });
+                }}
+              />
+            </div>
           ),
         },
       ]}

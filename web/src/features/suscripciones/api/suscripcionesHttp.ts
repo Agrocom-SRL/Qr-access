@@ -1,15 +1,19 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
-import type { EstadoSuscripcion, MedioDePago, SuscripcionDeCuenta } from '../domain/suscripcion';
+import { ESTADO_DESDE_DTO, type EstadoDto } from '../../../shared/api/estados';
+import type { MedioDePago, SuscripcionDeCuenta } from '../domain/suscripcion';
 import type { SuscripcionesRepositorio } from './SuscripcionesRepositorio';
 
-type EstadoDto = 'activa' | 'por_vencer' | 'vencida' | 'suspendida';
+const TIPO_DESDE_DTO = {
+  alta: 'alta',
+  renovacion: 'renovacion',
+  mejora_de_plan: 'mejoraDePlan',
+} as const;
 
-const ESTADO: Readonly<Record<EstadoDto, EstadoSuscripcion>> = {
-  activa: 'activa',
-  por_vencer: 'porVencer',
-  vencida: 'vencida',
-  suspendida: 'suspendida',
-};
+const PAGO_DESDE_DTO = {
+  pendiente: 'pendiente',
+  sin_pagar: 'sinPagar',
+  por_activar: 'porActivar',
+} as const;
 
 interface SuscripcionDto {
   cuenta: { id: string; codigo: string; nombre: string };
@@ -21,10 +25,10 @@ interface SuscripcionDto {
     estado: EstadoDto;
     dias_restantes: number;
   };
-  proximo_pago: 'pendiente' | 'sin_pagar' | null;
+  proximo_pago: 'pendiente' | 'sin_pagar' | 'por_activar' | null;
   pagos: {
     id: string;
-    tipo: 'renovacion' | 'mejora_de_plan';
+    tipo: 'alta' | 'renovacion' | 'mejora_de_plan';
     plan: string;
     monto: number;
     fecha_pago: string;
@@ -49,18 +53,13 @@ export function suscripcionDesdeDto(dto: SuscripcionDto): SuscripcionDeCuenta {
       },
       desde: new Date(dto.suscripcion.desde),
       hasta: new Date(dto.suscripcion.hasta),
-      estado: ESTADO[dto.suscripcion.estado],
+      estado: ESTADO_DESDE_DTO[dto.suscripcion.estado],
       diasRestantes: dto.suscripcion.dias_restantes,
     },
-    proximoPago:
-      dto.proximo_pago === null
-        ? null
-        : dto.proximo_pago === 'pendiente'
-          ? 'pendiente'
-          : 'sinPagar',
+    proximoPago: dto.proximo_pago === null ? null : PAGO_DESDE_DTO[dto.proximo_pago],
     pagos: dto.pagos.map((pago) => ({
       id: pago.id,
-      tipo: pago.tipo === 'renovacion' ? 'renovacion' : 'mejoraDePlan',
+      tipo: TIPO_DESDE_DTO[pago.tipo],
       plan: pago.plan,
       monto: pago.monto,
       fechaPago: pago.fecha_pago,

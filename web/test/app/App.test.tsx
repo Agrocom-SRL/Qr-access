@@ -122,7 +122,7 @@ describe('equipo (A11)', () => {
 
   it('lista al equipo: "Tú" sin acción y desactivar solo en otra persona activa', async () => {
     await irAEquipo(crearServiciosDePrueba());
-    const tabla = await screen.findByRole('table', { name: 'Equipo AGROCOM' });
+    const tabla = await screen.findByRole('table', { name: 'Administradores de AGROCOM' });
     expect(within(tabla).getByText('Tú')).toBeInTheDocument();
     expect(within(tabla).getAllByRole('button', { name: 'Desactivar' })).toHaveLength(1);
     expect(within(tabla).getByText('Desactivado')).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('equipo (A11)', () => {
         }),
     );
     await irAEquipo(crearServiciosDePrueba({ equipo: { agregar } }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Agregar super admin' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
     await userEvent.type(await screen.findByLabelText('Nombre completo'), 'Valeria Justiniano');
     expect(screen.getByLabelText('Usuario', { selector: 'input' })).toHaveValue(
       'valeria.justiniano',
@@ -180,7 +180,7 @@ describe('equipo (A11)', () => {
     });
     const enviado = agregar.mock.calls[0]?.[0];
     expect(enviado?.usuario).toBe('valeria.justiniano');
-    expect(enviado?.contrasenaTemporal).toMatch(/^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/);
+    expect(enviado?.contrasenaTemporal).toMatch(/^[A-Za-z0-9]{12}$/);
   });
 });
 
@@ -226,7 +226,7 @@ describe('cuentas (A03)', () => {
         pagina: 1,
         porPagina: 10,
         total: 0,
-        conteos: { todas: 0, activa: 0, porVencer: 0, vencida: 0, suspendida: 0 },
+        conteos: { todas: 0, activa: 0, porVencer: 0, vencida: 0, suspendida: 0, pendientePago: 0 },
       }),
     );
     await irACuentas(crearServiciosDePrueba({ cuentas: { listar } }));
@@ -255,7 +255,14 @@ describe('cuentas (A03)', () => {
               pagina: 1,
               porPagina: 10,
               total: 0,
-              conteos: { todas: 0, activa: 0, porVencer: 0, vencida: 0, suspendida: 0 },
+              conteos: {
+                todas: 0,
+                activa: 0,
+                porVencer: 0,
+                vencida: 0,
+                suspendida: 0,
+                pendientePago: 0,
+              },
             }),
         },
       }),
@@ -280,10 +287,13 @@ describe('crear cuenta (A04)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta' }));
     await userEvent.type(await screen.findByLabelText('Razón social'), 'Agrícola Guarayos S.A.');
     await userEvent.type(screen.getByLabelText('NIT'), '2876501019');
-    await userEvent.selectOptions(screen.getByLabelText('Ciudad'), 'Ascensión de Guarayos');
+    // La ciudad es una lista con búsqueda (react-select): se escribe y se elige.
+    await userEvent.type(screen.getByLabelText('Ciudad'), 'Guarayos');
+    await userEvent.click(await screen.findByText('Ascensión de Guarayos'));
     await userEvent.type(screen.getByLabelText(/Código de cuenta/), codigo);
-    await userEvent.type(screen.getByLabelText('Contacto de facturación'), 'Rodrigo Añez');
+    await userEvent.type(screen.getByLabelText('Nombre completo'), 'Rodrigo Añez');
     await userEvent.type(screen.getByLabelText('Teléfono'), '7 712 4405');
+    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'rodrigo@guarayos.bo');
   }
 
   async function empezar(servicios: Servicios) {
@@ -320,6 +330,7 @@ describe('crear cuenta (A04)', () => {
             etiqueta: borrador.vigencia.administradorNombre,
             pin: 'AGU9F4M',
           },
+          estado: 'pendientePago' as const,
         }),
     );
     await empezar(crearServiciosDePrueba({ cuentas: { crear } }));
@@ -331,7 +342,7 @@ describe('crear cuenta (A04)', () => {
     await userEvent.click(await screen.findByRole('radio', { name: /200 usuarios/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
-    await userEvent.type(await screen.findByLabelText('Nombre o etiqueta'), 'Rodrigo Añez');
+    await userEvent.type(await screen.findByLabelText('Nombre del administrador'), 'Rodrigo Añez');
     expect(screen.getByLabelText('Vence')).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
 
@@ -354,7 +365,7 @@ describe('crear cuenta (A04)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     await userEvent.click(await screen.findByRole('radio', { name: /100 usuarios/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    await userEvent.type(await screen.findByLabelText('Nombre o etiqueta'), 'Rodrigo');
+    await userEvent.type(await screen.findByLabelText('Nombre del administrador'), 'Rodrigo');
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta' }));
     await screen.findByRole('heading', { name: 'Cuenta creada' });
@@ -372,7 +383,7 @@ describe('crear cuenta (A04)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     await userEvent.click(await screen.findByRole('radio', { name: /100 usuarios/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
-    await userEvent.type(await screen.findByLabelText('Nombre o etiqueta'), 'Rodrigo');
+    await userEvent.type(await screen.findByLabelText('Nombre del administrador'), 'Rodrigo');
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta' }));
     expect(await screen.findByText('Ese código ya es de otra cuenta.')).toBeInTheDocument();
@@ -407,7 +418,9 @@ describe('detalle de cuenta (A05)', () => {
     expect(await screen.findByText('Planta Warnes')).toBeInTheDocument();
     expect(screen.getByText('En línea')).toBeInTheDocument();
     expect(screen.getByText('Sin conexión')).toBeInTheDocument();
-    expect(screen.getByText(/Aquí solo se consultan/)).toBeInTheDocument();
+    expect(screen.getByText('5 segundos')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nuevo sitio' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar Portón vehicular' })).toBeInTheDocument();
   });
 
   it('una cuenta inexistente muestra "No encontramos esa cuenta"', async () => {
@@ -597,9 +610,10 @@ describe('cobranza (A08)', () => {
 
   it('muestra los totales, la lista de la ventana y el acceso a registrar el pago', async () => {
     await abrirCobranza(crearServiciosDePrueba());
-    expect(await screen.findByText('Bs 100.800')).toBeInTheDocument();
-    expect(screen.getByText('Bs 298.800')).toBeInTheDocument();
-    expect(screen.getByText('Bs 33.600')).toBeInTheDocument();
+    // Cada monto sale en su tarjeta y de nuevo en el resumen "por cobrar" (PorCobrar).
+    expect((await screen.findAllByText('Bs 100.800')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Bs 298.800').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Bs 33.600').length).toBeGreaterThan(0);
     expect(screen.getByText('Cobrado en 2026')).toBeInTheDocument();
     expect(screen.getByText('2 cuentas con accesos rechazados')).toBeInTheDocument();
     expect(screen.getByText('27 pagos registrados')).toBeInTheDocument();
@@ -630,13 +644,15 @@ describe('cobranza (A08)', () => {
     expect(await screen.findByText('Nada por cobrar en 30 días')).toBeInTheDocument();
   });
 
-  it('exportar CSV baja el archivo con lo que se ve', async () => {
+  it('exportar a Excel baja el archivo con lo que se ve', async () => {
     const crear = vi.fn(() => 'blob:prueba');
     Object.defineProperty(URL, 'createObjectURL', { value: crear, configurable: true });
     Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true });
     await abrirCobranza(crearServiciosDePrueba());
-    await userEvent.click(await screen.findByRole('button', { name: 'Exportar CSV' }));
-    expect(crear).toHaveBeenCalledOnce();
+    await userEvent.click(await screen.findByRole('button', { name: 'Exportar a Excel' }));
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledOnce();
+    });
   });
 });
 

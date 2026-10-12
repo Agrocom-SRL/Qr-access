@@ -54,6 +54,11 @@ import apartment_fill from '@material-symbols/svg-400/outlined/apartment-fill.sv
 import payments_fill from '@material-symbols/svg-400/outlined/payments-fill.svg?raw';
 import sell_fill from '@material-symbols/svg-400/outlined/sell-fill.svg?raw';
 import history_fill from '@material-symbols/svg-400/outlined/history-fill.svg?raw';
+import delete_icono from '@material-symbols/svg-400/outlined/delete.svg?raw';
+import pending_actions from '@material-symbols/svg-400/outlined/pending_actions.svg?raw';
+import add_location from '@material-symbols/svg-400/outlined/add_location.svg?raw';
+import add_business from '@material-symbols/svg-400/outlined/add_business.svg?raw';
+import translate from '@material-symbols/svg-400/outlined/translate.svg?raw';
 import group_fill from '@material-symbols/svg-400/outlined/group-fill.svg?raw';
 
 const registro = {
@@ -113,6 +118,11 @@ const registro = {
   sell_fill,
   history_fill,
   group_fill,
+  delete: delete_icono,
+  pending_actions,
+  add_location,
+  add_business,
+  translate,
 } as const;
 
 export type NombreIcono = keyof typeof registro;

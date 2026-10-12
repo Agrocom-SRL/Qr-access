@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { cx } from '../../../../shared/lib/cx';
+import { rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Migas } from '../../../../shared/ui/molecules/Migas';
@@ -14,6 +15,7 @@ import {
   BORRADOR_VACIO,
   hoyIso,
   validarEmpresa,
+  validarPagoDeAlta,
   validarVigencia,
   type BorradorDeCuenta,
 } from '../../domain/alta';
@@ -33,6 +35,8 @@ interface Creada {
   administrador: string;
   /** Vive solo en este estado: nunca en la caché de consultas, el almacenamiento ni un log. */
   pin: string;
+  /** La cuenta quedó sin pagar su alta: hay que registrar el pago en Cobranza. */
+  pendientePago: boolean;
 }
 
 /** A04a–e: asistente de 4 pasos para crear una cuenta y mostrar el PIN inicial una sola vez. */
@@ -57,7 +61,7 @@ export function CrearCuentaPage() {
         ? planElegido !== null
         : idPaso === 'vigencia'
           ? Object.keys(validarVigencia(borrador.vigencia)).length === 0
-          : true;
+          : Object.keys(validarPagoDeAlta(borrador.pago)).length === 0;
 
   const volverALista = () => {
     void navegar(RUTAS_DE_CUENTAS.lista);
@@ -76,6 +80,7 @@ export function CrearCuentaPage() {
           cuenta: resultado.cuenta.nombre,
           administrador: resultado.administrador.etiqueta,
           pin: resultado.administrador.pin,
+          pendientePago: resultado.estado === 'pendientePago',
         });
         // Se suelta el resultado de la mutación: el PIN ya solo vive en `creada`.
         crear.reset();
@@ -89,8 +94,14 @@ export function CrearCuentaPage() {
         cuenta={creada.cuenta}
         administrador={creada.administrador}
         pin={creada.pin}
+        pendientePago={creada.pendientePago}
         onIrALaCuenta={() => {
           const destino = RUTAS_DE_CUENTAS.detalle(creada.cuentaId);
+          setCreada(null);
+          void navegar(destino);
+        }}
+        onRegistrarPago={() => {
+          const destino = rutaDePago(creada.cuentaId);
           setCreada(null);
           void navegar(destino);
         }}
@@ -140,6 +151,7 @@ export function CrearCuentaPage() {
       {idPaso === 'vigencia' ? (
         <PasoVigencia
           datos={borrador.vigencia}
+          nombreDelResponsable={borrador.empresa.contactoNombre}
           onCambio={(vigencia) => {
             setBorrador((actual) => ({ ...actual, vigencia }));
           }}
@@ -151,6 +163,9 @@ export function CrearCuentaPage() {
           plan={planElegido}
           onEditar={(destino) => {
             setPaso(destino);
+          }}
+          onPago={(pago) => {
+            setBorrador((actual) => ({ ...actual, pago }));
           }}
         />
       ) : null}

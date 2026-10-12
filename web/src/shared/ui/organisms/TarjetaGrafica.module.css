@@ -1,0 +1,69 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+  min-width: 0;
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.ancha {
+  grid-column: span 2;
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp12);
+}
+
+.titulo {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.subtitulo {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.tablaCaja {
+  max-height: var(--altoGrafica);
+  overflow: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto14);
+}
+
+.tabla th {
+  padding: var(--esp8) var(--esp12);
+  border-bottom: 1px solid var(--borde);
+  color: var(--textoSecundario);
+  font-weight: var(--peso600);
+  text-align: left;
+}
+
+.tabla td {
+  padding: var(--esp8) var(--esp12);
+  border-bottom: 1px solid var(--borde);
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+@media (width < 1024px) {
+  .ancha {
+    grid-column: span 1;
+  }
+}

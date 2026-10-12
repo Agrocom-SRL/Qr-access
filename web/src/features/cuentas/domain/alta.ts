@@ -1,3 +1,5 @@
+import { parsearMonto, type MedioDePago } from '../../pagos';
+
 /** Reglas del alta de cuenta (A04): datos por paso, validaciones y vigencia. Espejo de lo que valida la API. */
 
 export interface DatosDeEmpresa {
@@ -5,20 +7,39 @@ export interface DatosDeEmpresa {
   nit: string;
   ciudad: string;
   codigo: string;
+  /** La persona responsable de la cuenta: con quien AGROCOM trata el servicio y los pagos. */
   contactoNombre: string;
   contactoTelefono: string;
+  contactoCorreo: string;
 }
 
 export interface DatosDeVigencia {
   /** `aaaa-mm-dd`. */
   inicio: string;
   administradorNombre: string;
+  /** El administrador es la misma persona responsable: se usa su nombre. */
+  adminIgualAlResponsable: boolean;
+}
+
+/**
+ * Cómo se cobra el alta: con el pago ya registrado (la cuenta nace activa) o después (la cuenta
+ * nace pendiente de pago y aparece en Cobranza hasta que se registre).
+ */
+export interface DatosDePagoDeAlta {
+  modo: 'ahora' | 'despues';
+  /** Lo que escribió la persona: dígitos con o sin puntos de miles. */
+  monto: string;
+  /** `aaaa-mm-dd`. */
+  fechaPago: string;
+  medio: MedioDePago;
+  referencia: string;
 }
 
 export interface BorradorDeCuenta {
   empresa: DatosDeEmpresa;
   planId: string | null;
   vigencia: DatosDeVigencia;
+  pago: DatosDePagoDeAlta;
 }
 
 export type ErrorDeCampo = 'requerido' | 'formato';
@@ -26,6 +47,7 @@ export type ErrorDeCampo = 'requerido' | 'formato';
 const NIT = /^[0-9A-Za-z.-]{4,20}$/;
 const TELEFONO = /^[0-9+() -]{6,30}$/;
 const CODIGO = /^[A-Z]{3}$/;
+const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** `agr` → `AGR`; solo letras A–Z y a lo sumo 3. Lo que se guarda y se valida contra la API. */
 export function normalizarCodigo(entrada: string): string {
@@ -48,6 +70,8 @@ export function validarEmpresa(
   if (datos.contactoNombre.trim() === '') errores.contactoNombre = 'requerido';
   if (datos.contactoTelefono.trim() === '') errores.contactoTelefono = 'requerido';
   else if (!TELEFONO.test(datos.contactoTelefono.trim())) errores.contactoTelefono = 'formato';
+  if (datos.contactoCorreo.trim() === '') errores.contactoCorreo = 'requerido';
+  else if (!CORREO.test(datos.contactoCorreo.trim())) errores.contactoCorreo = 'formato';
   return errores;
 }
 
@@ -59,7 +83,23 @@ export function validarVigencia(
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.inicio) || Number.isNaN(Date.parse(datos.inicio))) {
     errores.inicio = 'formato';
   }
-  if (datos.administradorNombre.trim() === '') errores.administradorNombre = 'requerido';
+  if (!datos.adminIgualAlResponsable && datos.administradorNombre.trim() === '') {
+    errores.administradorNombre = 'requerido';
+  }
+  return errores;
+}
+
+/** El pago de alta solo se valida si se registra ahora; si se cobra después, no hay nada que revisar. */
+export function validarPagoDeAlta(
+  datos: DatosDePagoDeAlta,
+): Partial<Record<'monto' | 'fechaPago' | 'referencia', ErrorDeCampo>> {
+  const errores: Partial<Record<'monto' | 'fechaPago' | 'referencia', ErrorDeCampo>> = {};
+  if (datos.modo === 'despues') return errores;
+  if (datos.monto.trim() === '') errores.monto = 'requerido';
+  else if (parsearMonto(datos.monto) === null) errores.monto = 'formato';
+  if (datos.fechaPago === '') errores.fechaPago = 'requerido';
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaPago)) errores.fechaPago = 'formato';
+  if (datos.referencia.trim() === '') errores.referencia = 'requerido';
   return errores;
 }
 
@@ -76,18 +116,27 @@ export function hoyIso(ahora: Date = new Date(), zona = 'America/La_Paz'): strin
   return new Intl.DateTimeFormat('en-CA', { timeZone: zona, dateStyle: 'short' }).format(ahora);
 }
 
-/** Ciudades del selector de A04a. TODO(docs): confirmar con negocio la lista definitiva. */
+/**
+ * Ciudades del selector (A04a): las capitales de departamento, El Alto y las poblaciones donde
+ * AGROCOM tiene clientes. TODO(docs): confirmar con negocio la lista definitiva.
+ */
 export const CIUDADES = [
   'Santa Cruz de la Sierra',
+  'La Paz',
+  'Cochabamba',
+  'El Alto',
+  'Sucre',
+  'Oruro',
+  'Potosí',
+  'Tarija',
+  'Trinidad',
+  'Cobija',
   'Montero',
   'Warnes',
   'Ascensión de Guarayos',
-  'Cochabamba',
-  'La Paz',
-  'El Alto',
-  'Sucre',
-  'Tarija',
-  'Trinidad',
+  'San Ignacio de Velasco',
+  'Yacuiba',
+  'Camiri',
 ] as const;
 
 export const BORRADOR_VACIO = (hoy: string): BorradorDeCuenta => ({
@@ -98,7 +147,9 @@ export const BORRADOR_VACIO = (hoy: string): BorradorDeCuenta => ({
     codigo: '',
     contactoNombre: '',
     contactoTelefono: '',
+    contactoCorreo: '',
   },
   planId: null,
-  vigencia: { inicio: hoy, administradorNombre: '' },
+  vigencia: { inicio: hoy, administradorNombre: '', adminIgualAlResponsable: false },
+  pago: { modo: 'despues', monto: '', fechaPago: hoy, medio: 'transferencia', referencia: '' },
 });

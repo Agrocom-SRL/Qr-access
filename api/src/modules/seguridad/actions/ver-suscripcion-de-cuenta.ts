@@ -24,7 +24,7 @@ export interface SuscripcionDeCuentaVista {
   proximo_pago: EstadoDePago | null;
   pagos: {
     id: string;
-    tipo: 'renovacion' | 'mejora_de_plan';
+    tipo: 'alta' | 'renovacion' | 'mejora_de_plan';
     plan: string;
     monto: number;
     fecha_pago: string;
