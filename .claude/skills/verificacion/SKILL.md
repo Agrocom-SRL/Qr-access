@@ -1,6 +1,6 @@
 ---
 name: verificacion
-description: La compuerta de calidad de AGROCOM Acceso — cómo correr la cascada (bin/verify) por partes (api, app, firmware), qué significa cada etapa que falla y cómo se corrige, cómo verificar migraciones contra MySQL sin tocar la base de desarrollo y qué NO se toca para hacerla pasar. Usar antes de dar por cerrado cualquier cambio de código.
+description: La compuerta de calidad de AGROCOM Acceso — cómo correr la cascada (bin/verify) por partes (api, app, firmware, web), qué significa cada etapa que falla y cómo se corrige, cómo verificar migraciones contra MySQL sin tocar la base de desarrollo y qué NO se toca para hacerla pasar. Usar antes de dar por cerrado cualquier cambio de código.
 ---
 
 # Verificación — la compuerta de AGROCOM Acceso
