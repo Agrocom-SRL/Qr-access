@@ -37,7 +37,11 @@ export class RepositorioDeBitacora extends RepositorioDePlataforma {
   }
 
   private condiciones(filtro: FiltroDeBitacora): { donde: string; params: unknown[] } {
-    const partes = ['t.tabla IN (?)'];
+    // La suscripción y los datos de empresa del alta ya van dentro de "Creó cuenta": no se repiten.
+    const partes = [
+      't.tabla IN (?)',
+      "NOT (t.tabla IN ('suscripciones', 'cuenta_datos_empresa') AND t.accion = 'creado')",
+    ];
     const params: unknown[] = [[...TABLAS_RELEVANTES]];
     if (filtro.cuentaId !== undefined) {
       // El alta de la cuenta se registra sin cuenta (la tabla `cuentas` es de plataforma): se encuentra por su id.

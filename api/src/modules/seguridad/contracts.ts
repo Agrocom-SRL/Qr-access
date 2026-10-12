@@ -53,6 +53,12 @@ export function crearServicioDeConteoDeUsuarios(pool: Pool): ServicioDeConteoDeU
   return { activosPorCuenta: (cuentaIds) => conteo.activosPorCuenta(cuentaIds) };
 }
 
+export interface IdentidadDeUsuario {
+  readonly nombre: string;
+  /** Es del equipo AGROCOM (`tenant_id NULL`). */
+  readonly deLaPlataforma: boolean;
+}
+
 export interface CuentaDePlataforma {
   readonly id: string;
   readonly codigo: string;
@@ -62,8 +68,8 @@ export interface CuentaDePlataforma {
 
 /** Lo que el panel de plataforma (bitácora, resumen) necesita saber de las cuentas y de quién hizo un cambio. */
 export interface ServicioDeIdentidades {
-  /** `usuarioId -> nombre` de usuarios de cualquier cuenta o de la plataforma (etiqueta, o su usuario). */
-  nombresDeUsuarios(ids: readonly string[]): Promise<Map<string, string>>;
+  /** `usuarioId -> quién es` (etiqueta o usuario) y si es de la plataforma, de cualquier cuenta. */
+  identidadesDeUsuarios(ids: readonly string[]): Promise<Map<string, IdentidadDeUsuario>>;
   /** `cuentaId -> cuenta`. */
   cuentas(ids: readonly string[]): Promise<Map<string, CuentaDePlataforma>>;
   /** Todas las cuentas vigentes. */
@@ -84,9 +90,17 @@ export function crearServicioDeIdentidades(pool: Pool): ServicioDeIdentidades {
     activa: fila.activo === 1,
   });
   return {
-    async nombresDeUsuarios(ids) {
+    async identidadesDeUsuarios(ids) {
       const filas = await new RepositorioDeIdentidades(pool).buscarPorIds(ids);
-      return new Map(filas.map((fila) => [fila.id, fila.etiqueta ?? fila.username ?? '—']));
+      return new Map(
+        filas.map((fila) => [
+          fila.id,
+          {
+            nombre: fila.etiqueta ?? fila.username ?? '—',
+            deLaPlataforma: fila.tenant_id === null,
+          },
+        ]),
+      );
     },
     async cuentas(ids) {
       const todas = await repositorio.listarTodas();

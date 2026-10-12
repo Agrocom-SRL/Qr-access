@@ -101,6 +101,7 @@ describe('plataforma: bitácora y resumen (A10, A05d, A02)', () => {
       usuario: { nombre: 'Lucía Paz' },
       cuenta: { codigo: 'FRO' },
       origen: 'api',
+      canal: 'panel',
       antes: { plan: '100 usuarios' },
       despues: { plan: '200 usuarios' },
     });

@@ -33,11 +33,19 @@ export interface EventoDeBitacora extends Detalle {
   /** Tipo de evento (`pago.registrado`, `suscripcion.plan_cambiado`…): el panel lo traduce. */
   codigo: string;
   origen: BitacoraFila['origen'];
+  /** Desde dónde se hizo: el panel (super admin), la app (usuario de una cuenta), el sistema o un lector. */
+  canal: 'panel' | 'app' | 'automatico' | 'dispositivo';
 }
 
 /** La cuenta a la que pertenece el cambio: `tenant_id`, o el propio registro si es la fila de `cuentas`. */
 function cuentaDe(fila: BitacoraFila): string | null {
   return fila.tabla === 'cuentas' ? fila.registro_id : fila.tenant_id;
+}
+
+function canalDe(fila: BitacoraFila, deLaPlataforma: boolean): EventoDeBitacora['canal'] {
+  if (fila.origen === 'sistema') return 'automatico';
+  if (fila.origen === 'dispositivo') return 'dispositivo';
+  return deLaPlataforma ? 'panel' : 'app';
 }
 
 function aCambio(fila: BitacoraFila): CambioCrudo {
@@ -93,7 +101,7 @@ export async function ejecutar(
 
   const identidades = crearServicioDeIdentidades(pool);
   const [usuarios, cuentas, planes] = await Promise.all([
-    identidades.nombresDeUsuarios([
+    identidades.identidadesDeUsuarios([
       ...new Set(filas.flatMap((f) => (f.usuario_id === null ? [] : [f.usuario_id]))),
     ]),
     identidades.cuentas([
@@ -113,11 +121,12 @@ export async function ejecutar(
       usuario:
         fila.usuario_id === null
           ? null
-          : { id: fila.usuario_id, nombre: usuarios.get(fila.usuario_id) ?? '—' },
+          : { id: fila.usuario_id, nombre: usuarios.get(fila.usuario_id)?.nombre ?? '—' },
       cuenta: cuenta === undefined ? null : { id: cuenta.id, codigo: cuenta.codigo },
       accion: fila.accion,
       codigo,
       origen: fila.origen,
+      canal: canalDe(fila, usuarios.get(fila.usuario_id ?? '')?.deLaPlataforma ?? false),
       ...detalleDelCambio(codigo, cambio, planes),
     };
   });

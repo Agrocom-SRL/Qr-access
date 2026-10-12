@@ -23,6 +23,7 @@ export const esquemaEventoDeBitacora = z.object({
   accion: z.enum(['creado', 'actualizado', 'eliminado', 'restaurado']),
   codigo: z.string(),
   origen: z.enum(['api', 'dispositivo', 'sistema']),
+  canal: z.enum(['panel', 'app', 'automatico', 'dispositivo']),
   antes: esquemaValores.nullable(),
   despues: esquemaValores.nullable(),
 });

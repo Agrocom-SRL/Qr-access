@@ -919,6 +919,8 @@ export interface IdentidadFila extends RowDataPacket {
   id: string;
   etiqueta: string | null;
   username: string | null;
+  /** `null` = usuario de la plataforma (super admin). */
+  tenant_id: string | null;
 }
 
 /**
@@ -933,7 +935,7 @@ export class RepositorioDeIdentidades extends RepositorioDePlataforma {
   buscarPorIds(ids: readonly string[]): Promise<IdentidadFila[]> {
     if (ids.length === 0) return Promise.resolve([]);
     return this.seleccionar<IdentidadFila>({
-      columnas: 't.id, t.etiqueta, t.username',
+      columnas: 't.id, t.etiqueta, t.username, t.tenant_id',
       donde: 't.id IN (?)',
       params: [ids],
     });

@@ -36,6 +36,14 @@ const SINGULAR: Readonly<Record<string, string>> = {
   usuarios: 'usuario',
 };
 
+/** Columnas que no le dicen nada al super admin en un cambio genérico. */
+const CAMPOS_INTERNOS: readonly string[] = [
+  'pin_generado_at',
+  'contrasena_temporal',
+  'rol_preferido_id',
+  'updated_at',
+];
+
 const VERBO = {
   creado: 'creado',
   actualizado: 'editado',
@@ -149,7 +157,7 @@ export function detalleDelCambio(
       return { antes: null, despues: soloCampos(c.despues, ['etiqueta']) };
     default: {
       const campos = Object.keys(c.despues ?? c.antes ?? {}).filter(
-        (campo) => !['pin_generado_at', 'contrasena_temporal'].includes(campo),
+        (campo) => !CAMPOS_INTERNOS.includes(campo),
       );
       return { antes: soloCampos(c.antes, campos), despues: soloCampos(c.despues, campos) };
     }
