@@ -24,7 +24,8 @@ import 'package:go_router/go_router.dart';
 /// QR rápido: la propia persona emite al instante su QR y lo muestra en este
 /// mismo dispositivo para acercarlo al lector de la puerta. Sin formulario y
 /// sin compartir (el QR es suyo); cerrar no pide confirmación, porque no hay
-/// nada que enviar. El token vive solo en esta pantalla (ADR 0008).
+/// nada que enviar. El token vive solo en esta pantalla (ADR 0008); sin
+/// internet se muestra el último QR propio guardado en el dispositivo.
 class QrRapidoPagina extends ConsumerStatefulWidget {
   const new({super.key});
 
@@ -113,7 +114,13 @@ class _QrPropio extends StatelessWidget {
         SizedBox(height: tokens.espacio.m),
         Center(child: TiempoRestante(venceAt: qr.venceAt)),
         SizedBox(height: tokens.espacio.xl),
-        AccesoAviso(icono: Icons.lock_outline, texto: l10n.qrRapidoAviso),
+        if (qr.respaldo)
+          AccesoAviso(
+            icono: Icons.cloud_off_outlined,
+            texto: l10n.qrRapidoRespaldoAviso,
+          )
+        else
+          AccesoAviso(icono: Icons.lock_outline, texto: l10n.qrRapidoAviso),
       ],
     );
   }

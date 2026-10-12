@@ -174,6 +174,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('destino /qr/nuevo'), findsOneWidget);
     });
+
+    testWidgets('el botón flotante, sin texto, abre el QR propio', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario);
+      final fab = find.byType(FloatingActionButton);
+      expect(fab, findsOneWidget);
+      expect(
+        find.descendant(of: fab, matching: find.byType(Text)),
+        findsNothing,
+      );
+      await tester.tap(fab);
+      await tester.pumpAndSettle();
+      expect(find.text('destino /qr/rapido'), findsOneWidget);
+    });
   });
 
   group('tablero de administración (C04b)', () {

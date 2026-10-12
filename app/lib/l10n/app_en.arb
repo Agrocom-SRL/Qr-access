@@ -123,6 +123,7 @@
   "qrRapidoTitulo": "My access QR",
   "qrRapidoEtiquetaSinNombre": "Personal entry",
   "qrRapidoAviso": "Just for you. Hold it up to the door reader; it cannot be shared.",
+  "qrRapidoRespaldoAviso": "No connection: this is your last saved QR. If it is still valid, the reader accepts it as usual.",
   "qrRapidoListo": "Done",
   "inicioQrPropio": "My QR",
   "qrRapidoEtiqueta": "Entry for {nombre}",

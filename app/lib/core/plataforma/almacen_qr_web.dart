@@ -22,6 +22,26 @@ class AlmacenQrWeb implements AlmacenQr {
 
   @override
   Future<void> borrar(String id) async => _entradas.remove(id);
+
+  static QrPropioGuardado? _ultimoPropio;
+
+  @override
+  Future<QrPropioGuardado?> leerUltimoPropio() async {
+    final qr = _ultimoPropio;
+    if (qr != null && !qr.venceAt.isAfter(DateTime.now())) {
+      _ultimoPropio = null;
+    }
+    return _ultimoPropio;
+  }
+
+  @override
+  Future<void> guardarUltimoPropio(QrPropioGuardado qr) async =>
+      _ultimoPropio = qr;
+
+  @override
+  Future<void> borrarUltimoPropio(String id) async {
+    if (_ultimoPropio?.id == id) _ultimoPropio = null;
+  }
 }
 
 /// Fábrica que elige `almacen_qr.dart` por importación condicional.

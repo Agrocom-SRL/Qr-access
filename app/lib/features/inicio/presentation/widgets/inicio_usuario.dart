@@ -101,12 +101,7 @@ class InicioUsuario extends ConsumerWidget {
             EncabezadoInicio(sesion: sesion),
             SizedBox(height: tokens.espacio.xl),
             if (puedeEmitir) ...[
-              _HeroEmitir(
-                // En compacto la acción es el botón flotante de la página.
-                alEmitir: context.clasePantalla == ClasePantalla.compacta
-                    ? null
-                    : () => context.go(Rutas.qrNuevo),
-              ),
+              _HeroEmitir(alEmitir: () => context.go(Rutas.qrNuevo)),
               SizedBox(height: tokens.espacio.xl),
             ],
             if (accesos.isNotEmpty) ...[
@@ -188,8 +183,7 @@ class InicioUsuario extends ConsumerWidget {
 class _HeroEmitir extends StatelessWidget {
   const new({required this.alEmitir});
 
-  /// `null` oculta el botón (cuando la página ya trae uno flotante).
-  final VoidCallback? alEmitir;
+  final VoidCallback alEmitir;
 
   @override
   Widget build(BuildContext context) {
@@ -217,18 +211,16 @@ class _HeroEmitir extends StatelessWidget {
                   l10n.inicioHeroAyudaHoras(Vigencia.porDefecto.opcion.horas!),
                   style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
                 ),
-                if (alEmitir != null) ...[
-                  SizedBox(height: tokens.espacio.l),
-                  FilledButton.icon(
-                    onPressed: alEmitir,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colores.superficie,
-                      foregroundColor: colores.primario,
-                    ),
-                    icon: const Icon(Icons.add),
-                    label: Text(l10n.inicioNuevoQr),
+                SizedBox(height: tokens.espacio.l),
+                FilledButton.icon(
+                  onPressed: alEmitir,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colores.superficie,
+                    foregroundColor: colores.primario,
                   ),
-                ],
+                  icon: const Icon(Icons.add),
+                  label: Text(l10n.inicioNuevoQr),
+                ),
               ],
             ),
           ),

@@ -44,6 +44,7 @@ Future<void> montarPantalla(
         Rutas.inicio,
         Rutas.qrMios,
         Rutas.qrNuevo,
+        Rutas.qrRapido,
         Rutas.eventos,
         Rutas.perfil,
         Rutas.admin,

@@ -145,9 +145,13 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
     this.errorEmitir,
     this.errorAnular,
     this.errorListar,
+    this.respaldo,
   });
 
   QrEmitido? emitido;
+
+  /// Lo que devuelve el respaldo sin internet del QR propio.
+  QrEmitido? respaldo;
   Pagina<QrAcceso>? listado;
   Map<EstadoQr, int> resumen;
   Exception? errorEmitir;
@@ -190,6 +194,9 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
     if (errorAnular != null) throw errorAnular!;
     anulados.add(id);
   }
+
+  @override
+  Future<QrEmitido?> ultimoPropioGuardado() async => respaldo;
 }
 
 class EventosRepositorioFalso implements EventosRepositorio {
@@ -320,4 +327,18 @@ class AlmacenQrEnMemoria implements AlmacenQr {
 
   @override
   Future<void> borrar(String id) async => _textos.remove(id);
+
+  QrPropioGuardado? ultimoPropio;
+
+  @override
+  Future<QrPropioGuardado?> leerUltimoPropio() async => ultimoPropio;
+
+  @override
+  Future<void> guardarUltimoPropio(QrPropioGuardado qr) async =>
+      ultimoPropio = qr;
+
+  @override
+  Future<void> borrarUltimoPropio(String id) async {
+    if (ultimoPropio?.id == id) ultimoPropio = null;
+  }
 }

@@ -11,6 +11,7 @@ class AlmacenQrMovil implements AlmacenQr {
     : _almacen = almacen ?? const FlutterSecureStorage();
 
   static const _clave = 'qr.emitidos';
+  static const _clavePropio = 'qr.ultimo_propio';
 
   final FlutterSecureStorage _almacen;
 
@@ -50,6 +51,56 @@ class AlmacenQrMovil implements AlmacenQr {
   Future<void> borrar(String id) async {
     final todo = await _leerTodo();
     if (todo.remove(id) != null) await _escribir(todo);
+  }
+
+  @override
+  Future<QrPropioGuardado?> leerUltimoPropio() async {
+    final crudo = await _almacen.read(key: _clavePropio);
+    if (crudo == null) return null;
+    try {
+      final m = jsonDecode(crudo) as Map<String, dynamic>;
+      final venceAt = DateTime.parse(m['vence'] as String);
+      if (!venceAt.isAfter(DateTime.now())) {
+        await _almacen.delete(key: _clavePropio);
+        return null;
+      }
+      return QrPropioGuardado(
+        id: m['id'] as String,
+        texto: m['texto'] as String,
+        venceAt: venceAt,
+        etiqueta: m['etiqueta'] as String?,
+        puertas: [
+          for (final p in m['puertas'] as List<dynamic>)
+            (
+              id: (p as Map<String, dynamic>)['id'] as String,
+              nombre: p['nombre'] as String,
+            ),
+        ],
+      );
+    } on Object {
+      // Un respaldo dañado no debe romper el QR propio: se descarta.
+      return null;
+    }
+  }
+
+  @override
+  Future<void> guardarUltimoPropio(QrPropioGuardado qr) => _almacen.write(
+    key: _clavePropio,
+    value: jsonEncode({
+      'id': qr.id,
+      'texto': qr.texto,
+      'vence': qr.venceAt.toUtc().toIso8601String(),
+      'etiqueta': qr.etiqueta,
+      'puertas': [
+        for (final p in qr.puertas) {'id': p.id, 'nombre': p.nombre},
+      ],
+    }),
+  );
+
+  @override
+  Future<void> borrarUltimoPropio(String id) async {
+    final actual = await leerUltimoPropio();
+    if (actual?.id == id) await _almacen.delete(key: _clavePropio);
   }
 }
 

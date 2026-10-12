@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
@@ -28,7 +29,23 @@ class QrRapidoControlador extends Notifier<AsyncValue<QrEmitido>> {
   /// para Ana"). Se llama de nuevo para sacar otro QR (otro token).
   Future<void> emitir(String etiqueta) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() => _emitir(etiqueta));
+    state = await AsyncValue.guard(() => _emitirOUsarRespaldo(etiqueta));
+  }
+
+  /// Con internet siempre se emite uno nuevo. Solo si no hay conexión se
+  /// reutiliza el último QR propio guardado: en el servidor sigue siendo el
+  /// único vigente de la persona, así que el lector lo valida igual.
+  Future<QrEmitido> _emitirOUsarRespaldo(String etiqueta) async {
+    try {
+      return await _emitir(etiqueta);
+    } on ErrorApi catch (error) {
+      if (!error.esSinConexion) rethrow;
+      final respaldo = await ref
+          .read(qrAccesosRepositorioProvider)
+          .ultimoPropioGuardado();
+      if (respaldo == null) rethrow;
+      return respaldo;
+    }
   }
 
   Future<QrEmitido> _emitir(String etiqueta) async {
