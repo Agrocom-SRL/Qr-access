@@ -90,3 +90,12 @@ INSERT INTO dispositivos (id, tenant_id, puerta_id, nombre, clave_hash, revocado
    '$argon2id$v=19$m=19456,p=1,t=2$8FAOrCcsjZcaxWw7ePAA+Q$1gWRVRI18wWXBH8qznAOMHRmNeRytCe3RXd7SFnPy4I', NULL, 1)
 ON DUPLICATE KEY UPDATE puerta_id = VALUES(puerta_id), nombre = VALUES(nombre), clave_hash = VALUES(clave_hash),
   revocado_at = NULL, activo = 1, deleted_at = NULL;
+
+-- Super admin de desarrollo (web admin): usuario lucia.paz, contraseña agrocom-demo-2026
+INSERT INTO usuarios (id, tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES
+  (9100, NULL, 'Lucía Paz', 'lucia.paz', '$argon2id$v=19$m=19456,p=1,t=2$VCPmfr1DVGOmQK6EW+K5fg$eDOgMSV+rhf1WSN5eX+YA2PjSEdDFAWN6/i7A9jl8Zo', 0, 1)
+ON DUPLICATE KEY UPDATE etiqueta = VALUES(etiqueta), contrasena_hash = VALUES(contrasena_hash), activo = 1, deleted_at = NULL;
+
+INSERT INTO usuario_roles (id, tenant_id, usuario_id, rol_id)
+  SELECT 9100, NULL, 9100, id FROM roles WHERE tenant_id IS NULL AND nombre = 'Super admin' AND deleted_at IS NULL
+ON DUPLICATE KEY UPDATE rol_id = VALUES(rol_id), deleted_at = NULL;
