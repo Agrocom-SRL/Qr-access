@@ -14,11 +14,12 @@ Un solo repositorio (`agrocom-developer/Qr-access`):
 api/        Node.js + TypeScript (ADR 0002)
 app/        Flutter móvil + web (ADR 0012)
 firmware/   ESP32 + Arduino + PlatformIO (ADR 0009)
+web/        panel web de administración de la plataforma, React (ADR 0021)
 db/         migraciones SQL (ADR 0011)
 docs/       funcional, modelo de datos, ADRs, diseño, hardware, gestión
 ```
 
-- **Un solo gitflow** (ADR 0006), una sola CI con un job por parte (`api`, `app`, `firmware`) y un check resumen `ci` (ADR 0014).
+- **Un solo gitflow** (ADR 0006), una sola CI con un job por parte (`api`, `app`, `firmware`, `web`) y un check resumen `ci` (ADR 0014).
 - **Una sola versión** por release (`vX.Y.Z`) para las tres partes; cada artefacto declara además su propia versión de compilación.
 - El **contrato de la API** (OpenAPI) es el punto de encuentro: app y firmware se prueban contra él.
 
