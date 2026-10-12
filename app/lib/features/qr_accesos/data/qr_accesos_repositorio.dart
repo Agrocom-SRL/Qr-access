@@ -3,6 +3,7 @@ import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
@@ -28,9 +29,10 @@ abstract interface class QrAccesosRepositorio {
 }
 
 class QrAccesosRepositorioApi implements QrAccesosRepositorio {
-  const new(this._api);
+  const new(this._api, this._almacenQr);
 
   final ClienteApi _api;
+  final AlmacenQr _almacenQr;
 
   @override
   Future<QrEmitido> emitir(
@@ -42,6 +44,9 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
       venceAt: datos.vigencia.venceAtPara(ahora),
       etiqueta: datos.etiqueta,
     );
+    // El texto solo existe ahora: se guarda en el dispositivo para poder
+    // volver a mostrarlo desde Mis QR (ADR 0008, addendum).
+    await _guardarSinFallar(dto.id, dto.texto, dto.venceAt);
     return QrEmitido(
       id: dto.id,
       texto: dto.texto,
@@ -77,7 +82,25 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
   }
 
   @override
-  Future<void> anular(String id) => _api.anularQr(id);
+  Future<void> anular(String id) async {
+    await _api.anularQr(id);
+    // Anulado, el texto ya no abre nada: no tiene sentido conservarlo.
+    await _almacenQr.borrar(id);
+  }
+
+  /// Guardar el texto es una comodidad: si el almacén falla, el QR se emitió
+  /// igual y se muestra y comparte como siempre.
+  Future<void> _guardarSinFallar(
+    String id,
+    String texto,
+    DateTime venceAt,
+  ) async {
+    try {
+      await _almacenQr.guardar(id, texto, venceAt);
+    } on Object {
+      // Sin almacén, "Ver QR" simplemente no aparecerá para este QR.
+    }
+  }
 
   QrAcceso _aQrAcceso(QrAccesoDto dto) => QrAcceso(
     id: dto.id,
@@ -95,5 +118,20 @@ PuertaDeQr _aPuertaDeQr(ReferenciaDto dto) =>
     PuertaDeQr(id: dto.id, nombre: dto.nombre);
 
 final qrAccesosRepositorioProvider = Provider<QrAccesosRepositorio>(
-  (ref) => QrAccesosRepositorioApi(ref.watch(clienteApiProvider)),
+  (ref) => QrAccesosRepositorioApi(
+    ref.watch(clienteApiProvider),
+    ref.watch(almacenQrProvider),
+  ),
 );
+
+/// El texto guardado en este dispositivo para un QR emitido, o `null` si se
+/// emitió en otro dispositivo, ya venció o el almacén no lo tiene.
+// ignore: specify_nonobvious_property_types, el tipo de la familia no se exporta.
+final textoQrGuardadoProvider = FutureProvider.autoDispose
+    .family<String?, String>((ref, id) async {
+      try {
+        return await ref.watch(almacenQrProvider).leer(id);
+      } on Object {
+        return null;
+      }
+    });

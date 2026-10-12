@@ -20,6 +20,8 @@ class TarjetaQr extends StatelessWidget {
     required this.ahora,
     this.anulando = false,
     this.alAnular,
+    this.alVer,
+    this.soloEnOtroDispositivo = false,
     this.compacta = false,
     super.key,
   });
@@ -31,6 +33,14 @@ class TarjetaQr extends StatelessWidget {
   /// `null` si el usuario no tiene el permiso de anular: no se muestra el
   /// botón.
   final VoidCallback? alAnular;
+
+  /// Abre el QR para mostrarlo. `null` si el texto no está en este
+  /// dispositivo.
+  final VoidCallback? alVer;
+
+  /// El QR sigue vigente pero se emitió en otro dispositivo: se avisa en lugar
+  /// de ofrecer "Ver QR".
+  final bool soloEnOtroDispositivo;
 
   /// Versión del tablero: sin horas de emisión ni acción.
   final bool compacta;
@@ -79,23 +89,42 @@ class TarjetaQr extends StatelessWidget {
         ],
       ),
       pie: !compacta && qr.estado == EstadoQr.vigente
-          ? Row(
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Abajo a la izquierda: cuánto tiempo de validez le queda.
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TiempoRestante(venceAt: qr.venceAt),
-                  ),
+                Row(
+                  children: [
+                    // Abajo a la izquierda: cuánto tiempo de validez le queda.
+                    Expanded(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TiempoRestante(venceAt: qr.venceAt),
+                      ),
+                    ),
+                    if (alVer != null)
+                      AccesoBoton(
+                        texto: l10n.qrVerQr,
+                        icono: Icons.qr_code_2,
+                        variante: VarianteBoton.texto,
+                        onPressed: alVer,
+                      ),
+                    if (qr.puedeAnularse && alAnular != null)
+                      // Anular es una baja: va en peligro (handoff C07).
+                      AccesoBoton(
+                        texto: l10n.qrAnular,
+                        icono: Icons.block,
+                        variante: VarianteBoton.peligroTexto,
+                        cargando: anulando,
+                        onPressed: alAnular,
+                      ),
+                  ],
                 ),
-                if (qr.puedeAnularse && alAnular != null)
-                  // Anular es una baja: va en peligro (handoff C07).
-                  AccesoBoton(
-                    texto: l10n.qrAnular,
-                    icono: Icons.block,
-                    variante: VarianteBoton.peligroTexto,
-                    cargando: anulando,
-                    onPressed: alAnular,
+                if (soloEnOtroDispositivo)
+                  Text(
+                    l10n.qrSoloEnOtroDispositivo,
+                    style: textos.bodySmall?.copyWith(
+                      color: tokens.colores.textoSecundario,
+                    ),
                   ),
               ],
             )

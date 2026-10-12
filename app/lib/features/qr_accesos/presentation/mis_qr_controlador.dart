@@ -13,6 +13,13 @@ class FiltroQr {
 
   final EstadoQr estado;
   final int pagina;
+
+  @override
+  bool operator ==(Object other) =>
+      other is FiltroQr && other.estado == estado && other.pagina == pagina;
+
+  @override
+  int get hashCode => Object.hash(estado, pagina);
 }
 
 /// Estado elegido en la barra de filtros. Cambiar de estado vuelve a la
@@ -32,18 +39,20 @@ final NotifierProvider<FiltroQrControlador, FiltroQr> filtroQrProvider =
       FiltroQrControlador.new,
     );
 
-/// Listado de QR según el filtro. Al anular o cambiar un QR se invalida.
-final FutureProvider<Pagina<QrAcceso>> listadoQrProvider =
-    FutureProvider.autoDispose<Pagina<QrAcceso>>((ref) {
-      final filtro = ref.watch(filtroQrProvider);
-      return ref
+/// Listado de QR de un filtro. Es una familia para que cada pestaña tenga el
+/// suyo mientras se desliza entre ellas. Al anular o cambiar un QR se invalida
+/// entera.
+// ignore: specify_nonobvious_property_types, el tipo de la familia no se exporta.
+final listadoQrProvider = FutureProvider.autoDispose
+    .family<Pagina<QrAcceso>, FiltroQr>(
+      (ref, filtro) => ref
           .watch(qrAccesosRepositorioProvider)
           .listar(
             estado: filtro.estado,
             pagina: filtro.pagina,
             porPagina: porPaginaPorDefecto,
-          );
-    });
+          ),
+    );
 
 /// Cuántos QR hay por estado (las pastillas). Se invalida junto al listado.
 final FutureProvider<Map<EstadoQr, int>> resumenQrProvider =

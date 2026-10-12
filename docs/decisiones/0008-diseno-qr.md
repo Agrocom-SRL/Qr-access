@@ -38,3 +38,7 @@ Un QR viaja como imagen por WhatsApp o correo: se puede reenviar y fotografiar. 
 - La app comparte la imagen del QR (D-18); el texto del token no se guarda en el teléfono más allá de esa pantalla.
 - Una captura reenviada sirve una sola vez y solo hasta su vencimiento: el riesgo queda acotado a ese primer uso.
 - Tests obligatorios: QR vencido, usado, anulado, de otra cuenta, de otra puerta, con suscripción vencida y dos validaciones concurrentes del mismo QR → una sola abre, y todos los intentos quedan registrados.
+
+## Addendum (2026-10-12): el dispositivo que emitió el QR puede volver a mostrarlo
+
+El servidor sigue guardando solo el hash del token (invariante 6): el texto no se puede recuperar de la API. Para que "Mis QR" pueda abrir un QR vigente, el **dispositivo que lo emitió** guarda su texto en el almacén seguro del sistema (Keystore o Keychain; en web, solo en memoria) hasta el vencimiento del QR, y lo borra al anularlo. Un QR emitido en otro dispositivo se ve en la lista, pero no se puede abrir ahí. El texto del QR es `AQ1.` + 22 caracteres base64url (128 bits al azar), sin datos de cuenta, puerta ni vencimiento.

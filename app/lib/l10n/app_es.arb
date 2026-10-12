@@ -912,9 +912,17 @@
   "@qrMostrarTitulo": {
     "description": "Título de la pantalla que muestra el QR recién emitido"
   },
-  "qrMostrarAviso": "Después de cerrar no podrás volver a ver este QR. Compártelo ahora.",
+  "qrMostrarAviso": "Podrás volver a verlo en Mis QR, en este dispositivo, mientras siga vigente.",
   "@qrMostrarAviso": {
     "description": "Aviso bajo el QR (ADR 0008)"
+  },
+  "qrVerQr": "Ver QR",
+  "@qrVerQr": {
+    "description": "Botón de una tarjeta de Mis QR que abre el QR para mostrarlo"
+  },
+  "qrSoloEnOtroDispositivo": "Solo se puede ver en el dispositivo donde lo emitiste.",
+  "@qrSoloEnOtroDispositivo": {
+    "description": "Aviso de un QR vigente cuyo código solo está en el dispositivo donde se emitió"
   },
   "qrCompartir": "Compartir",
   "@qrCompartir": {

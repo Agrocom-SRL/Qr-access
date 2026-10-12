@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
@@ -38,6 +39,7 @@ Future<QrAccesosRepositorioFalso> _montar(
   required Pagina<QrAcceso> listado,
   Set<String> permisos = const {Permisos.verQr},
   bool expandida = false,
+  AlmacenQr? almacenQr,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(
     listado: listado,
@@ -49,6 +51,7 @@ Future<QrAccesosRepositorioFalso> _montar(
     expandida: expandida,
     overrides: [
       qrAccesosRepositorioProvider.overrideWithValue(repositorio),
+      if (almacenQr != null) almacenQrProvider.overrideWithValue(almacenQr),
       relojProvider.overrideWithValue(() => _ahora),
       sesionControladorProvider.overrideWith(
         () => SesionFalsa(sesionCon(permisos: permisos)),
@@ -90,8 +93,7 @@ void main() {
     final textos = textosEn(tester);
 
     await tester.tap(find.text(textos.qrFiltroUsados));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(repositorio.estadosListados.last, EstadoQr.usado);
   });
@@ -198,5 +200,50 @@ void main() {
     expect(find.text(textos.qrColumnaEtiqueta), findsOneWidget);
     expect(find.text('27'), findsOneWidget);
     expect(find.text(textos.comunRangoDe(1, 1, 1)), findsOneWidget);
+  });
+
+  testWidgets('"Atrás" en Mis QR vuelve al inicio en vez de salir', (
+    tester,
+  ) async {
+    await _montar(tester, listado: _pagina(const []));
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('destino /inicio'), findsOneWidget);
+  });
+
+  testWidgets('un QR vigente emitido en este dispositivo ofrece Ver QR', (
+    tester,
+  ) async {
+    final almacen = AlmacenQrEnMemoria();
+    await almacen.guardar('qr1', 'AQ1.abc', DateTime.utc(2099));
+    await _montar(
+      tester,
+      listado: _pagina([_qr(id: 'qr1', estado: EstadoQr.vigente)]),
+      almacenQr: almacen,
+    );
+    final textos = textosEn(tester);
+
+    expect(find.text(textos.qrVerQr), findsOneWidget);
+    expect(find.text(textos.qrSoloEnOtroDispositivo), findsNothing);
+
+    await tester.tap(find.text(textos.qrVerQr));
+    await tester.pumpAndSettle();
+    expect(find.text('destino /qr/emitido'), findsOneWidget);
+  });
+
+  testWidgets('un QR vigente emitido en otro dispositivo lo avisa', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina([_qr(id: 'qr2', estado: EstadoQr.vigente)]),
+      almacenQr: AlmacenQrEnMemoria(),
+    );
+    final textos = textosEn(tester);
+
+    expect(find.text(textos.qrVerQr), findsNothing);
+    expect(find.text(textos.qrSoloEnOtroDispositivo), findsOneWidget);
   });
 }
