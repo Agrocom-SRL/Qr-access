@@ -1,6 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { cargarConfig } from '../../src/config.js';
-import { calcularIndiceDePin } from '../../src/modules/seguridad/domain/pin.js';
+import { calcularIndiceDePin, secretoDePin } from '../../src/modules/seguridad/domain/pin.js';
 import { hashear } from '../../src/platform/seguridad/hash.js';
 import { generarTokenOpaco } from '../../src/platform/seguridad/tokens.js';
 import {
@@ -98,7 +98,7 @@ export async function crearUsuarioConPin(
       cuenta.id,
       `Usuario ${pin}`,
       calcularIndiceDePin(cargarConfig().PIN_PIMIENTA, cuenta.id, sufijo),
-      await hashear(pin),
+      await hashear(secretoDePin(cuenta.id, sufijo)),
       opciones.activo === false ? 0 : 1,
     ],
   );

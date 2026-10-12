@@ -1,5 +1,7 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
+import * as administradores from './actions/administradores-de-cuenta.js';
+import { ejecutar as cambiarCodigo } from './actions/cambiar-codigo-de-cuenta.js';
 import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
@@ -9,6 +11,10 @@ import { ejecutar as verSuscripcionDeCuenta } from './actions/ver-suscripcion-de
 import { ejecutar as verPuertasDeCuenta } from './actions/ver-puertas-de-cuenta.js';
 import {
   consultaDeCobranza,
+  cuerpoDeCambioDeCodigo,
+  parametrosDeAdministrador,
+  respuestaDeAdministradores,
+  respuestaDeCambioDeCodigo,
   consultaDeCodigoDeCuenta,
   consultaDeCuentas,
   cuerpoDeNuevaCuenta,
@@ -18,6 +24,7 @@ import {
   respuestaDeSuscripcionDeCuenta,
   respuestaDeCuentaCreada,
   respuestaDeCuentas,
+  respuestaDePinGenerado,
   respuestaDeDetalleDeCuenta,
   respuestaDePuertasDeCuenta,
 } from './schemas.js';
@@ -141,6 +148,58 @@ export const rutasDeCuentas =
         preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
       },
       (request) => verSuscripcionDeCuenta(pool, plataformaDe(request), request.params.id),
+    );
+
+    app.get(
+      '/plataforma/cuentas/:id/administradores',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeAdministradores },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      async (request) => ({
+        datos: await administradores.listar(pool, plataformaDe(request), request.params.id),
+      }),
+    );
+
+    // AGROCOM solo restablece el PIN de los administradores; ellos manejan el de sus usuarios.
+    app.post(
+      '/plataforma/cuentas/:id/administradores/:usuarioId/pin',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeAdministrador,
+          response: { 200: respuestaDePinGenerado },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.administrador.regenerar_pin'),
+      },
+      (request) =>
+        administradores.regenerarPin(
+          servicios,
+          plataformaDe(request),
+          request.params.id,
+          request.params.usuarioId,
+        ),
+    );
+
+    app.put(
+      '/plataforma/cuentas/:id/codigo',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          body: cuerpoDeCambioDeCodigo,
+          response: { 200: respuestaDeCambioDeCodigo },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.cambiar_codigo'),
+      },
+      (request) => cambiarCodigo(servicios, request.params.id, request.body.codigo),
     );
 
     app.get(

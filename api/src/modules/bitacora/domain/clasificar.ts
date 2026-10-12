@@ -64,6 +64,7 @@ export function clasificarCambio(c: CambioCrudo): string {
   switch (c.tabla) {
     case 'cuentas':
       if (c.accion === 'creado') return 'cuenta.creada';
+      if (cambio(c.despues, 'codigo')) return 'cuenta.codigo_cambiado';
       break;
     case 'cuenta_datos_empresa':
       if (c.accion === 'actualizado') return 'empresa.editada';
@@ -157,6 +158,8 @@ export function detalleDelCambio(
         antes: { plan: plan(c.registroId), precio_anual: simple(c.antes?.precio_anual) },
         despues: { plan: plan(c.registroId), precio_anual: simple(c.despues?.precio_anual) },
       };
+    case 'cuenta.codigo_cambiado':
+      return { antes: soloCampos(c.antes, ['codigo']), despues: soloCampos(c.despues, ['codigo']) };
     case 'cuenta.creada':
       return { antes: null, despues: soloCampos(c.despues, ['nombre', 'codigo']) };
     case 'equipo.agregado':

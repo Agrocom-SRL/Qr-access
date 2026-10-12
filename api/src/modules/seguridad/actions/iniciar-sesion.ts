@@ -4,7 +4,7 @@ import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { verificarContraRelleno, verificarHash } from '../../../platform/seguridad/hash.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
-import { calcularIndiceDePin, normalizarPin } from '../domain/pin.js';
+import { calcularIndiceDePin, normalizarPin, secretoDePin } from '../domain/pin.js';
 import { decidirRolActivo } from '../domain/rol-activo.js';
 import {
   RepositorioDeCuentas,
@@ -93,7 +93,7 @@ export async function ejecutar(
     const valido =
       usuario?.pin_hash == null
         ? await verificarContraRelleno(pin.completo)
-        : await verificarHash(usuario.pin_hash, pin.completo);
+        : await verificarHash(usuario.pin_hash, secretoDePin(cuenta.id, pin.sufijo));
     if (usuario === null || !valido) return rechazar(servicios, claves, datos.log);
 
     servicios.limitadorPorIp.registrarExito(claves.ip);

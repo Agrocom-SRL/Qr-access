@@ -322,3 +322,19 @@ export const respuestaDeCobranza = z.object({
     }),
   ),
 });
+
+export const cuerpoDeCambioDeCodigo = z.object({ codigo: z.string().min(1).max(10) });
+export const respuestaDeCambioDeCodigo = z.object({ codigo: z.string() });
+
+export const parametrosDeAdministrador = z.object({ id: esquemaId, usuarioId: esquemaId });
+
+export const respuestaDeAdministradores = z.object({
+  datos: z.array(
+    z.object({
+      id: z.string(),
+      etiqueta: z.string().nullable(),
+      pin_generado_at: esquemaFecha.nullable(),
+      ultimo_ingreso_at: esquemaFecha.nullable(),
+    }),
+  ),
+});

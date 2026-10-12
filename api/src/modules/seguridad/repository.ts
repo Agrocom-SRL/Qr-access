@@ -296,6 +296,19 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
   }
 
+  /** Ids de los usuarios activos de la cuenta con el rol protegido "Administrador". */
+  async idsDeAdministradores(): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { usuario_id: string }>({
+      columnas: 'DISTINCT t.usuario_id',
+      uniones: [
+        "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
+        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+      ].join(' '),
+      orden: 't.usuario_id',
+    });
+    return filas.map((fila) => fila.usuario_id);
+  }
+
   /** Usuarios activos de la cuenta que tienen el rol protegido "Administrador". */
   contarAdministradores(): Promise<number> {
     return this.contar({
@@ -834,6 +847,14 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
 
   crear(tx: Transaccion, cuenta: NuevaCuenta): Promise<string> {
     return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo, activo: 1 });
+  }
+
+  /**
+   * Cambia el código de la cuenta (las 3 primeras letras de todos sus PIN). Los PIN no se tocan:
+   * su verificación no depende del código (ADR 0023).
+   */
+  cambiarCodigo(tx: Transaccion, id: string, codigo: string): Promise<boolean> {
+    return this.actualizar(tx, id, { codigo });
   }
 }
 
