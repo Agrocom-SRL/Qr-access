@@ -8,14 +8,15 @@ import { Migas } from '../../../../shared/ui/molecules/Migas';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { Pestanas } from '../../../../shared/ui/organisms/Pestanas';
+import { PestanaSuscripcion } from '../../../suscripciones';
 import { useDetalleDeCuenta } from '../../application/useCuentas';
 import { RUTAS_DE_CUENTAS } from '../../rutas';
 import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
 
-type PestanaDeCuenta = 'resumen' | 'sitios';
-const PESTANAS: readonly PestanaDeCuenta[] = ['resumen', 'sitios'];
+type PestanaDeCuenta = 'resumen' | 'suscripcion' | 'sitios';
+const PESTANAS: readonly PestanaDeCuenta[] = ['resumen', 'suscripcion', 'sitios'];
 
 /** A05: ficha de una cuenta con pestañas (la pestaña activa vive en la URL: `?pestana=sitios`). */
 export function DetalleCuentaPage() {
@@ -85,6 +86,21 @@ export function DetalleCuentaPage() {
         {pestana === 'resumen' ? (
           datos ? (
             <ResumenDeCuenta detalle={datos} />
+          ) : (
+            <div aria-busy="true">
+              <Skeleton alto="bloque" />
+            </div>
+          )
+        ) : pestana === 'suscripcion' ? (
+          datos ? (
+            <PestanaSuscripcion
+              cuenta={{
+                id,
+                nombre: datos.cuenta.nombre,
+                codigo: datos.cuenta.codigo,
+                usuariosActivos: datos.uso.usuariosActivos,
+              }}
+            />
           ) : (
             <div aria-busy="true">
               <Skeleton alto="bloque" />

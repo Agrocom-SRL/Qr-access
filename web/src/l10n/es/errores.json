@@ -21,5 +21,8 @@
   "permiso_denegado": "No tienes permiso para hacer esto.",
   "plan_no_encontrado": "Ese plan no existe o ya no se vende.",
   "cuenta_codigo_invalido": "El código son 3 letras de la A a la Z.",
-  "cuenta_no_encontrada": "No encontramos esa cuenta."
+  "cuenta_no_encontrada": "No encontramos esa cuenta.",
+  "suscripcion_suspendida": "La suscripción está suspendida: reactívala primero.",
+  "suscripcion_no_encontrada": "Esa cuenta no tiene una suscripción.",
+  "plan_sin_cambio": "La cuenta ya tiene ese plan."
 }

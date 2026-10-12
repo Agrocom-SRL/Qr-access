@@ -5,6 +5,7 @@ import {
   DetalleCuentaPage,
   RUTAS_DE_CUENTAS,
 } from '../features/cuentas';
+import { CobranzaPage, RegistrarPagoPage } from '../features/pagos';
 import { EquipoPage } from '../features/equipo';
 import { PlanesPage } from '../features/planes';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
@@ -22,7 +23,8 @@ export function AppRutas() {
         <Route path={RUTAS.cuentas} element={<CuentasPage />} />
         <Route path={RUTAS_DE_CUENTAS.nueva} element={<CrearCuentaPage />} />
         <Route path={`${RUTAS.cuentas}/:id`} element={<DetalleCuentaPage />} />
-        <Route path={RUTAS.cobranza} element={<PaginaProximamente />} />
+        <Route path={RUTAS.cobranza} element={<CobranzaPage />} />
+        <Route path={`${RUTAS.cobranza}/:cuentaId/pago`} element={<RegistrarPagoPage />} />
         <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<PaginaProximamente />} />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />

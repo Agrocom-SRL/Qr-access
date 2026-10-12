@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { ErrorApi, crearServiciosDePrueba } from '../servicios';
+import { COBRANZA, ErrorApi, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
 import { ProveedoresApp } from '@/app/providers/ProveedoresApp';
@@ -449,5 +449,225 @@ describe('detalle de cuenta (A05)', () => {
       }),
     );
     expect(await screen.findByText('No encontramos esa cuenta')).toBeInTheDocument();
+  });
+});
+
+describe('suscripción de una cuenta (A05b, A06)', () => {
+  async function abrirSuscripcion(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Suscripción' }));
+  }
+
+  it('muestra el resumen, el próximo pago y el historial con quién registró', async () => {
+    await abrirSuscripcion(crearServiciosDePrueba());
+    expect(await screen.findByText('Pendiente')).toBeInTheDocument();
+    expect(screen.getAllByText('05/11/2025 – 05/11/2026')).toHaveLength(2);
+    const historial = screen.getByRole('table', { name: 'Renovaciones y pagos' });
+    expect(within(historial).getByText('TRF-884120')).toBeInTheDocument();
+    expect(within(historial).getByText('Lucía Paz')).toBeInTheDocument();
+    expect(within(historial).getByText('Transferencia')).toBeInTheDocument();
+  });
+
+  it('cambiar de plan solo ofrece planes mayores y muestra la diferencia a cobrar', async () => {
+    await abrirSuscripcion(crearServiciosDePrueba());
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar plan' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByText('+ Bs 9.600')).toBeInTheDocument();
+    expect(within(dialogo).getByText(/Podrá crear hasta 200 usuarios/)).toBeInTheDocument();
+    expect(within(dialogo).getByRole('button', { name: '200 usuarios' })).toBeInTheDocument();
+    expect(within(dialogo).getByRole('button', { name: '350 usuarios' })).toBeInTheDocument();
+    expect(within(dialogo).queryByRole('button', { name: '100 usuarios' })).not.toBeInTheDocument();
+    expect(within(dialogo).getByText(/Solo puedes subir de plan/)).toBeInTheDocument();
+  });
+
+  it('confirmar el cambio avisa que falta cobrar la diferencia y lleva a registrarla', async () => {
+    const cambiarPlan = vi.fn(() =>
+      Promise.resolve({
+        plan: { id: '2', nombre: '200 usuarios', cupoUsuarios: 200 },
+        diferenciaPrecio: 9600,
+      }),
+    );
+    await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { cambiarPlan } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar plan' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar a 200 usuarios' }));
+    await waitFor(() => {
+      expect(cambiarPlan).toHaveBeenCalledWith('1', '2');
+    });
+    expect(
+      await screen.findByText(/Falta registrar el pago de la diferencia: Bs 9\.600/),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Registrar pago de la diferencia' }));
+    expect(await screen.findByLabelText('Monto')).toHaveValue('9.600');
+    expect(screen.getByText(/diferencia por subir a 100 usuarios/)).toBeInTheDocument();
+  });
+
+  it('un error de la API al cambiar el plan se traduce', async () => {
+    const cambiarPlan = vi.fn(() => Promise.reject(new ErrorApi(422, 'plan.solo_mejora')));
+    await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { cambiarPlan } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar plan' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar a 200 usuarios' }));
+    expect(
+      await screen.findByText('Solo puedes cambiar a un plan con más cupo de usuarios.'),
+    ).toBeInTheDocument();
+  });
+
+  it('en el plan más alto no hay nada que mejorar', async () => {
+    const alto = {
+      ...SUSCRIPCION,
+      suscripcion: {
+        ...SUSCRIPCION.suscripcion,
+        plan: { id: '3', nombre: '350 usuarios', cupoUsuarios: 350, precioAnual: 33600 },
+      },
+    };
+    await abrirSuscripcion(
+      crearServiciosDePrueba({ suscripciones: { obtener: () => Promise.resolve(alto) } }),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar plan' }));
+    expect(await screen.findByText('Esta cuenta ya tiene el plan más alto.')).toBeInTheDocument();
+  });
+
+  it('suspender pide confirmación y llama a la API', async () => {
+    const suspender = vi.fn(() => Promise.resolve());
+    await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { suspender } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
+    expect(suspender).not.toHaveBeenCalled();
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByText(/no emite QR/)).toBeInTheDocument();
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Suspender' }));
+    await waitFor(() => {
+      expect(suspender).toHaveBeenCalledWith('1');
+    });
+  });
+
+  it('suspendida: ofrece reactivar y no deja renovar ni cambiar de plan', async () => {
+    const suspendida = {
+      ...SUSCRIPCION,
+      suscripcion: { ...SUSCRIPCION.suscripcion, estado: 'suspendida' as const },
+      proximoPago: null,
+    };
+    await abrirSuscripcion(
+      crearServiciosDePrueba({ suscripciones: { obtener: () => Promise.resolve(suspendida) } }),
+    );
+    expect(await screen.findByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Renovar y registrar pago' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cambiar plan' })).toBeDisabled();
+    expect(screen.getByText(/La suscripción está suspendida/)).toBeInTheDocument();
+  });
+});
+
+describe('registrar pago (A07)', () => {
+  async function abrirPago(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Suscripción' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Renovar y registrar pago' }));
+  }
+
+  it('trae el precio vigente del plan y la nueva vigencia', async () => {
+    await abrirPago(crearServiciosDePrueba());
+    expect(await screen.findByLabelText('Monto')).toHaveValue('12.000');
+    expect(screen.getByText('05/11/2026 → 05/11/2027')).toBeInTheDocument();
+    expect(screen.getByText('Agroindustrial Norte · plan 100 usuarios')).toBeInTheDocument();
+  });
+
+  it('la referencia es obligatoria', async () => {
+    await abrirPago(crearServiciosDePrueba());
+    await screen.findByLabelText('Monto');
+    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeDisabled();
+  });
+
+  it('confirma antes de registrar y manda el pago a la API', async () => {
+    const registrar = vi.fn(() =>
+      Promise.resolve({
+        periodoDesde: new Date('2026-11-05T12:00:00Z'),
+        periodoHasta: new Date('2027-11-05T12:00:00Z'),
+        venceEl: new Date('2027-11-05T12:00:00Z'),
+      }),
+    );
+    await abrirPago(crearServiciosDePrueba({ pagos: { registrar } }));
+    await userEvent.type(await screen.findByLabelText('Referencia'), 'TRF-912204');
+    await userEvent.click(screen.getByRole('button', { name: 'Depósito' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByText('¿Registrar el pago y renovar?')).toBeInTheDocument();
+    expect(within(dialogo).getByText(/quedará vigente hasta el 05\/11\/2027/)).toBeInTheDocument();
+    expect(registrar).not.toHaveBeenCalled();
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Registrar pago' }));
+    await waitFor(() => {
+      expect(registrar).toHaveBeenCalledWith(
+        '1',
+        'renovacion',
+        expect.objectContaining({ monto: 12000, medio: 'deposito', referencia: 'TRF-912204' }),
+      );
+    });
+    expect(
+      await screen.findByRole('tab', { name: 'Suscripción', selected: true }),
+    ).toBeInTheDocument();
+  });
+
+  it('un monto inválido marca el campo', async () => {
+    await abrirPago(crearServiciosDePrueba());
+    const monto = await screen.findByLabelText('Monto');
+    await userEvent.clear(monto);
+    await userEvent.type(monto, '12,5');
+    await userEvent.tab();
+    expect(await screen.findByText('Escribe un monto entero en bolivianos')).toBeInTheDocument();
+  });
+});
+
+describe('cobranza (A08)', () => {
+  async function abrirCobranza(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cobranza/ }));
+  }
+
+  it('muestra los totales, la lista de la ventana y el acceso a registrar el pago', async () => {
+    await abrirCobranza(crearServiciosDePrueba());
+    expect(await screen.findByText('Bs 100.800')).toBeInTheDocument();
+    expect(screen.getByText('Bs 298.800')).toBeInTheDocument();
+    expect(screen.getByText('Bs 33.600')).toBeInTheDocument();
+    expect(screen.getByText('Cobrado en 2026')).toBeInTheDocument();
+    expect(screen.getByText('2 cuentas con accesos rechazados')).toBeInTheDocument();
+    expect(screen.getByText('27 pagos registrados')).toBeInTheDocument();
+    const tabla = screen.getByRole('table', { name: 'Cuentas por cobrar' });
+    expect(within(tabla).getByText('Semillas del Este')).toBeInTheDocument();
+    expect(within(tabla).getByText('en 6 días')).toBeInTheDocument();
+    await userEvent.click(
+      within(tabla).getByRole('button', { name: 'Registrar pago de Semillas del Este' }),
+    );
+    expect(await screen.findByRole('heading', { name: 'Registra el pago' })).toBeInTheDocument();
+  });
+
+  it('cambiar de ventana consulta la API con esa ventana', async () => {
+    const cobranza = vi.fn(() => Promise.resolve(COBRANZA));
+    await abrirCobranza(crearServiciosDePrueba({ pagos: { cobranza } }));
+    await userEvent.click(await screen.findByRole('button', { name: /Vencidas/ }));
+    await waitFor(() => {
+      expect(cobranza).toHaveBeenLastCalledWith({ ventana: 'vencidas', busqueda: '' });
+    });
+  });
+
+  it('sin nada por cobrar, estado vacío', async () => {
+    await abrirCobranza(
+      crearServiciosDePrueba({
+        pagos: { cobranza: () => Promise.resolve({ ...COBRANZA, filas: [] }) },
+      }),
+    );
+    expect(await screen.findByText('Nada por cobrar en 30 días')).toBeInTheDocument();
+  });
+
+  it('exportar CSV baja el archivo con lo que se ve', async () => {
+    const crear = vi.fn(() => 'blob:prueba');
+    Object.defineProperty(URL, 'createObjectURL', { value: crear, configurable: true });
+    Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true });
+    await abrirCobranza(crearServiciosDePrueba());
+    await userEvent.click(await screen.findByRole('button', { name: 'Exportar CSV' }));
+    expect(crear).toHaveBeenCalledOnce();
   });
 });

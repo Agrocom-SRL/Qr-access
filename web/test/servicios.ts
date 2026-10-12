@@ -2,6 +2,8 @@ import { AlmacenSesion } from '@/shared/api/almacenSesion';
 import { ErrorApi } from '@/shared/api/errorApi';
 import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
+import type { PagosRepositorio } from '@/features/pagos';
+import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
@@ -18,6 +20,10 @@ export const SUPER_ADMIN = {
     'suscripciones.plan.editar',
     'seguridad.cuenta.ver',
     'seguridad.cuenta.crear',
+    'suscripciones.suscripcion.ver',
+    'suscripciones.suscripcion.editar',
+    'suscripciones.pago.registrar',
+    'suscripciones.cobranza.ver',
   ],
 } as const;
 
@@ -151,6 +157,54 @@ export const SITIOS = [
   },
 ];
 
+export const SUSCRIPCION = {
+  cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+  suscripcion: {
+    id: '5',
+    plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100, precioAnual: 12000 },
+    desde: new Date('2025-11-05T12:00:00Z'),
+    hasta: new Date('2026-11-05T12:00:00Z'),
+    estado: 'porVencer' as const,
+    diasRestantes: 24,
+  },
+  proximoPago: 'pendiente' as const,
+  pagos: [
+    {
+      id: '9',
+      tipo: 'renovacion' as const,
+      plan: '100 usuarios',
+      monto: 12000,
+      fechaPago: '2025-10-30',
+      medio: 'transferencia' as const,
+      referencia: 'TRF-884120',
+      periodoDesde: new Date('2025-11-05T12:00:00Z'),
+      periodoHasta: new Date('2026-11-05T12:00:00Z'),
+      registro: { id: '1', nombre: 'Lucía Paz' },
+    },
+  ],
+};
+
+export const COBRANZA = {
+  totales: {
+    porCobrar30: { monto: 100800, cuentas: 5 },
+    porCobrar90: { monto: 298800, cuentas: 14 },
+    vencidoSinPagar: { monto: 33600, cuentas: 2 },
+    cobradoAnio: { anio: 2026, monto: 513600, pagos: 27 },
+  },
+  conteos: { d30: 5, d60: 9, d90: 14, vencidas: 2 },
+  filas: [
+    {
+      cuenta: { id: '1', codigo: 'SDE', nombre: 'Semillas del Este' },
+      plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
+      monto: 12000,
+      venceEl: new Date('2026-10-18T12:00:00Z'),
+      diasRestantes: 6,
+      pago: 'pendiente' as const,
+      estado: 'porVencer' as const,
+    },
+  ],
+};
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
@@ -158,6 +212,8 @@ export function crearServiciosDePrueba(
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
+    suscripciones?: Partial<SuscripcionesRepositorio>;
+    pagos?: Partial<PagosRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -234,7 +290,28 @@ export function crearServiciosDePrueba(
     sitiosYPuertas: () => Promise.resolve(SITIOS),
     ...parcial.cuentas,
   };
-  return { almacen, seguridad, equipo, planes, cuentas };
+  const suscripciones: SuscripcionesRepositorio = {
+    obtener: () => Promise.resolve(SUSCRIPCION),
+    cambiarPlan: () =>
+      Promise.resolve({
+        plan: { id: '2', nombre: '200 usuarios', cupoUsuarios: 200 },
+        diferenciaPrecio: 9600,
+      }),
+    suspender: () => Promise.resolve(),
+    reactivar: () => Promise.resolve(),
+    ...parcial.suscripciones,
+  };
+  const pagos: PagosRepositorio = {
+    registrar: () =>
+      Promise.resolve({
+        periodoDesde: new Date('2026-11-05T12:00:00Z'),
+        periodoHasta: new Date('2027-11-05T12:00:00Z'),
+        venceEl: new Date('2027-11-05T12:00:00Z'),
+      }),
+    cobranza: () => Promise.resolve(COBRANZA),
+    ...parcial.pagos,
+  };
+  return { almacen, seguridad, equipo, planes, cuentas, suscripciones, pagos };
 }
 
 export { ErrorApi };

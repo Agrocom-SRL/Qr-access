@@ -20,5 +20,44 @@
   "vacio": {
     "titulo": "Nada por cobrar en 30 días",
     "texto": "Ninguna suscripción vence en este periodo."
+  },
+  "buscar": "Busca una cuenta",
+  "tabla": "Cuentas por cobrar",
+  "errorCarga": "No pudimos cargar la cobranza",
+  "cuentas_one": "{{count}} cuenta",
+  "cuentas_other": "{{count}} cuentas",
+  "vencidasRechazadas_one": "{{count}} cuenta con accesos rechazados",
+  "vencidasRechazadas_other": "{{count}} cuentas con accesos rechazados",
+  "pagosRegistrados_one": "{{count}} pago registrado",
+  "pagosRegistrados_other": "{{count}} pagos registrados",
+  "enDias_one": "en {{count}} día",
+  "enDias_other": "en {{count}} días",
+  "haceDias_one": "hace {{count}} día",
+  "haceDias_other": "hace {{count}} días",
+  "hoy": "hoy",
+  "columna": {
+    "cuenta": "Cuenta",
+    "plan": "Plan",
+    "monto": "Monto",
+    "vence": "Vence",
+    "pago": "Pago",
+    "estado": "Estado",
+    "accion": "Acción"
+  },
+  "registrarPago": "Registrar pago",
+  "registrarPagoDe": "Registrar pago de {{cuenta}}",
+  "filtroEtiqueta": "Ventana de vencimiento",
+  "csv": {
+    "cuenta": "Cuenta",
+    "codigo": "Código",
+    "plan": "Plan",
+    "monto": "Monto (Bs)",
+    "vence": "Vence",
+    "pago": "Pago",
+    "archivo": "cobranza"
+  },
+  "vacioVencidas": {
+    "titulo": "Ninguna suscripción vencida",
+    "texto": "Todas las cuentas están al día."
   }
 }

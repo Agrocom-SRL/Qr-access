@@ -6,6 +6,18 @@
   "efecto": "Podrá crear hasta {{count}} usuarios desde que confirmes.",
   "elegirOtro": "Elegir otro plan",
   "confirmar": "Cambiar a {{count}} usuarios",
-  "soloMejora": "Solo puedes subir de plan. Para bajar, la cuenta cambia al renovar.",
-  "cobro": "Se cobra la diferencia ahora, al confirmar."
+  "soloMejora": "Solo puedes subir de plan. Para bajar, la cuenta cambia al renovar: no se devuelve dinero.",
+  "cobro": "Se cobra la diferencia al confirmar: registra el pago a continuación.",
+  "precioAnio": "{{precio}} / año",
+  "usuarios": "{{count}} usuarios",
+  "sinMejora": "Esta cuenta ya tiene el plan más alto.",
+  "elegir": "Plan nuevo",
+  "qr": "QR",
+  "qrIlimitados": "Ilimitados, sin cambio",
+  "vencimiento": "Vencimiento",
+  "sinCambio": "{{fecha}}, sin cambio",
+  "cambiando": "Cambiando",
+  "cerrar": "Cerrar",
+  "subtitulo_one": "{{cuenta}} · {{codigo}} · {{count}} usuario activo",
+  "subtitulo_other": "{{cuenta}} · {{codigo}} · {{count}} usuarios activos"
 }
