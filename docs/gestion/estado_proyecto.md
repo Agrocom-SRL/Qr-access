@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-12 (rama `feature/web-pines-ui`)
+**Última actualización:** 2026-10-12 (rama `feature/web-cuentas-puertas`)
 
 ## Qué ya existe
 
@@ -30,6 +30,14 @@ Una cadena de ramas apiladas, cada una con su proceso (la última contiene todo)
 - **Decisiones:** ADR 0022 (estructura del panel, i18next, cobranza manual, solo se sube de plan) y ADR 0023 (el hash del PIN ya no incluye el código de cuenta, para poder cambiarlo sin invalidar PIN).
 - **Docker:** `docker compose --profile panel up -d --build` sirve el panel en :8081 con Nginx y proxy de `/api`.
 - **Pendiente / a confirmar (ver `TODO(docs)` en el código):** comprobante adjunto del pago (falta el almacenamiento), correo y teléfono del administrador inicial (no hay columna), edición de los datos de empresa (sin diseño), lista de ciudades, vistas a 768 px sin diseño propio, QR con datos de cuenta/usuario/puerta/hora (ver conversación: hoy el QR es un token aleatorio de un solo uso, ADR 0008), CI que construya la imagen del panel.
+
+## Rama `feature/web-cuentas-puertas` (2026-10-12, PR contra `develop`)
+
+Sale de `develop` (ya con el panel #28, #29 y el QR propio #31):
+
+- **API (+ tests, 337 en total):** cuentas nuevas quedan pendientes de pago; correo de la persona responsable; editar y eliminar cuentas; sitios y puertas gestionados por cuenta (`organizacion`, rutas `/plataforma/cuentas/:id/sitios` y puertas); `GET` de estadísticas del panel (cuentas por estado y plan, altas y cobrado por mes).
+- **Web (133 tests):** diálogos para editar y eliminar cuenta, sitios y puertas; alta con correo del responsable; pantalla de estadísticas con gráficas (`recharts`); cobranza con resumen "por cobrar" y exportación a Excel (`exceljs`); registrar pago con cuentas pendientes; selector buscable (`react-select`), botón volver y migas.
+- **Pendiente:** los `TODO(docs)` del panel (comprobante de pago, teléfono del administrador, lista de ciudades, ilustraciones faltantes); el chunk de `exceljs` pesa ~930 kB (se podría cargar bajo demanda).
 
 ## Núcleo V1 integrado en `develop` (#14, #15, #16)
 
