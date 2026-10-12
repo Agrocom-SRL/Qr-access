@@ -21,7 +21,7 @@ void main() {
     final repositorio = QrAccesosRepositorioFalso();
     final contenedor = _contenedor(repositorio);
 
-    await contenedor.read(listadoQrProvider.future);
+    await contenedor.read(listadoQrProvider(const FiltroQr()).future);
 
     expect(repositorio.estadosListados, [EstadoQr.vigente]);
   });
@@ -35,17 +35,19 @@ void main() {
 
     final filtro = contenedor.read(filtroQrProvider);
     expect(filtro.pagina, 1);
-    await contenedor.read(listadoQrProvider.future);
+    await contenedor.read(listadoQrProvider(filtro).future);
     expect(repositorio.estadosListados.last, EstadoQr.usado);
   });
 
   test('cambiar de página pide la página elegida', () async {
     final repositorio = QrAccesosRepositorioFalso();
     final contenedor = _contenedor(repositorio);
-    await contenedor.read(listadoQrProvider.future);
+    await contenedor.read(listadoQrProvider(const FiltroQr()).future);
 
     contenedor.read(filtroQrProvider.notifier).irAPagina(2);
-    final listado = await contenedor.read(listadoQrProvider.future);
+    final listado = await contenedor.read(
+      listadoQrProvider(contenedor.read(filtroQrProvider)).future,
+    );
 
     expect(listado.pagina, 2);
   });
@@ -53,7 +55,7 @@ void main() {
   test('anular un QR lo pide a la API y recarga el listado', () async {
     final repositorio = QrAccesosRepositorioFalso();
     final contenedor = _contenedor(repositorio);
-    await contenedor.read(listadoQrProvider.future);
+    await contenedor.read(listadoQrProvider(const FiltroQr()).future);
     final antes = repositorio.estadosListados.length;
 
     final error = await contenedor
@@ -62,7 +64,7 @@ void main() {
 
     expect(error, isNull);
     expect(repositorio.anulados, ['qr1']);
-    await contenedor.read(listadoQrProvider.future);
+    await contenedor.read(listadoQrProvider(const FiltroQr()).future);
     expect(repositorio.estadosListados.length, greaterThan(antes));
   });
 
@@ -90,7 +92,9 @@ void main() {
     );
     final contenedor = _contenedor(repositorio);
 
-    final listado = await contenedor.read(listadoQrProvider.future);
+    final listado = await contenedor.read(
+      listadoQrProvider(const FiltroQr()).future,
+    );
 
     expect(listado.datos, isEmpty);
   });

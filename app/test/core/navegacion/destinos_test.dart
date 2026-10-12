@@ -60,7 +60,7 @@ void main() {
       );
     });
 
-    test('administrador: Inicio · Eventos · Admin · Perfil', () {
+    test('administrador: Inicio · Mis QR · Admin · Perfil (Eventos cede)', () {
       expect(
         destinosPara(
           sesionCon(permisos: _administrador),
@@ -68,7 +68,7 @@ void main() {
         ),
         [
           DestinoNav.inicio,
-          DestinoNav.eventos,
+          DestinoNav.misQr,
           DestinoNav.admin,
           DestinoNav.perfil,
         ],

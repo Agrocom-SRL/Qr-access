@@ -60,7 +60,7 @@ No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtr
 
 ### 2.6 Breakpoints y navegación (`context.clasePantalla`)
 
-`compacta < 600` (NavigationBar de hasta 4 destinos, listados en tarjetas) · `media 600–1023` (NavigationRail de 80, tarjetas en 2 columnas) · `expandida ≥ 1024` (rail extendido de 240, `DataTable` con paginación de 20, formularios centrados). Los destinos salen de los permisos del rol activo (`lib/core/navegacion/destinos.dart`):
+`compacta < 600` (NavigationBar de hasta 4 destinos, listados en tarjetas; si sobran, Eventos cede su lugar a Mis QR y Admin) · `media 600–1023` (NavigationRail de 80, tarjetas en 2 columnas) · `expandida ≥ 1024` (rail extendido de 240, `DataTable` con paginación de 20, formularios centrados). Los destinos salen de los permisos del rol activo (`lib/core/navegacion/destinos.dart`):
 
 | Rol (por permisos) | Compacto | Rail |
 |---|---|---|

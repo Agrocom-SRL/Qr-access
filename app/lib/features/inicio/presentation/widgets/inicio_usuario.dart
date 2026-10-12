@@ -61,7 +61,8 @@ class InicioUsuario extends ConsumerWidget {
           etiqueta: l10n.inicioQrPropio,
           alTocar: () => context.go(Rutas.qrRapido),
         ),
-      if (sesion.tiene(Permisos.verQr))
+      // En compacto Mis QR ya es una pestaña de la barra.
+      if (sesion.tiene(Permisos.verQr) && !context.esCompacta)
         _AccesoRapido(
           icono: Icons.qr_code_2,
           etiqueta: l10n.navMisQr,

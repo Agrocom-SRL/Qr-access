@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
@@ -13,6 +14,7 @@ import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
@@ -48,7 +50,7 @@ class VistaUsuarios extends ConsumerWidget {
       onPressed: puedeEditar ? () => _generarPin(context, ref, usuario) : null,
     );
 
-    return ListadoPaginado<Usuario>(
+    final listado = ListadoPaginado<Usuario>(
       estado: estadoDesdeAsync(usuarios, ahora: ahora),
       tituloDeError: l10n.usuariosErrorCargar,
       alReintentar: () => ref.invalidate(usuariosProvider),
@@ -168,6 +170,29 @@ class VistaUsuarios extends ConsumerWidget {
             ],
           ),
         ),
+      ],
+    );
+    // En compacto, una banda de foto sobre el listado, como en Puertas; en
+    // medio y expandido la tabla ya llena la pantalla.
+    if (context.clasePantalla != ClasePantalla.compacta) return listado;
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(tokens.espacio.l),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens.radio.xl),
+            child: SizedBox(
+              height: tokens.tamano.cabeceraFoto / 2,
+              width: double.infinity,
+              child: const AccesoFoto(
+                ruta: Multimedia.fotoCerradura,
+                alineacion: Alignment(0.2, -0.2),
+                fundirConFondo: true,
+              ),
+            ),
+          ),
+        ),
+        Expanded(child: listado),
       ],
     );
   }

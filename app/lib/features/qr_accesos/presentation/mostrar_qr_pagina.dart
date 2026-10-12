@@ -15,9 +15,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Muestra el QR recién emitido y lo comparte (handoff C06/E06). El token
-/// vive solo aquí: al salir, no se puede volver a ver (ADR 0008). Cerrar sin
-/// compartir pide confirmación (S05).
+/// Muestra el QR y lo comparte (handoff C06/E06). Recién emitido, cerrar sin
+/// compartir pide confirmación (S05); el texto queda guardado en este
+/// dispositivo y se vuelve a abrir desde Mis QR mientras siga vigente (ADR
+/// 0008, addendum).
 class MostrarQrPagina extends ConsumerWidget {
   const new({required this.qr, super.key});
 
@@ -26,7 +27,7 @@ class MostrarQrPagina extends ConsumerWidget {
   Future<void> _cerrar(BuildContext context, WidgetRef ref) async {
     final estado = ref.read(mostrarQrControladorProvider);
     final l10n = context.l10n;
-    if (!estado.compartido && !estado.descargado) {
+    if (!qr.repaso && !estado.compartido && !estado.descargado) {
       final vence = formatearHoraDe(qr.venceAt);
       final cerrar = await ConfirmarDialogo.mostrar(
         context,

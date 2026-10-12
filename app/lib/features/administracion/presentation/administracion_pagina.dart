@@ -8,7 +8,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_puertas.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_usuarios.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/desliza_entre_opciones.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +33,6 @@ class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final tokens = context.tokens;
     final sesion = ref.watch(sesionControladorProvider);
     final vePuertas = sesion.tiene(Permisos.supervisarPuertas);
     final veUsuarios = sesion.tiene(Permisos.verUsuarios);
@@ -47,62 +46,40 @@ class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
       return vePuertas ? const PuertasAdminPagina() : const UsuariosPagina();
     }
 
+    final conPestanas = vePuertas && veUsuarios;
     return PlantillaAdmin(
       destino: DestinoNav.admin,
+      // "Nuevo usuario" es el botón flotante mientras se ven los usuarios.
+      fab: pestana == _Pestana.usuarios && puedeCrear
+          ? FloatingActionButton.extended(
+              onPressed: () => context.go(Rutas.adminUsuarioNuevo),
+              icon: const Icon(Icons.person_add_outlined),
+              label: Text(l10n.usuariosNuevo),
+            )
+          : null,
       // Sin título: las pestañas ya dicen dónde estás.
       conRelleno: false,
-      child: DeslizaEntreOpciones<_Pestana>(
-        activo: vePuertas && veUsuarios,
-        opciones: _Pestana.values,
-        seleccionada: pestana,
-        alCambiar: (elegida) => setState(() => _pestana = elegida),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (vePuertas && veUsuarios)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  tokens.espacio.l,
-                  tokens.espacio.l,
-                  tokens.espacio.l,
-                  0,
+      child: conPestanas
+          ? PestanasDeslizables<_Pestana>(
+              segmentos: [
+                SegmentoDeSelector(
+                  valor: _Pestana.puertas,
+                  etiqueta: l10n.navPuertas,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SelectorSegmentado<_Pestana>(
-                        segmentos: [
-                          SegmentoDeSelector(
-                            valor: _Pestana.puertas,
-                            etiqueta: l10n.navPuertas,
-                          ),
-                          SegmentoDeSelector(
-                            valor: _Pestana.usuarios,
-                            etiqueta: l10n.navUsuarios,
-                          ),
-                        ],
-                        seleccionado: pestana,
-                        alElegir: (elegida) =>
-                            setState(() => _pestana = elegida),
-                      ),
-                    ),
-                    if (pestana == _Pestana.usuarios && puedeCrear)
-                      IconButton(
-                        tooltip: l10n.usuariosNuevo,
-                        onPressed: () => context.go(Rutas.adminUsuarioNuevo),
-                        icon: const Icon(Icons.person_add_outlined),
-                      ),
-                  ],
+                SegmentoDeSelector(
+                  valor: _Pestana.usuarios,
+                  etiqueta: l10n.navUsuarios,
                 ),
-              ),
-            Expanded(
-              child: pestana == _Pestana.puertas
+              ],
+              seleccionado: pestana,
+              alElegir: (elegida) => setState(() => _pestana = elegida),
+              paginaDe: (context, valor) => valor == _Pestana.puertas
                   ? const VistaPuertas()
                   : const VistaUsuarios(),
-            ),
-          ],
-        ),
-      ),
+            )
+          : vePuertas
+          ? const VistaPuertas()
+          : const VistaUsuarios(),
     );
   }
 }

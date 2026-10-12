@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
@@ -304,4 +305,19 @@ class CompartirFalso implements CompartirImagen {
     enviados.add((bytes: bytes, nombreArchivo: nombreArchivo, texto: texto));
     return resultado;
   }
+}
+
+/// Almacén de QR emitidos en memoria, sin vencimiento automático.
+class AlmacenQrEnMemoria implements AlmacenQr {
+  final Map<String, String> _textos = {};
+
+  @override
+  Future<String?> leer(String id) async => _textos[id];
+
+  @override
+  Future<void> guardar(String id, String texto, DateTime venceAt) async =>
+      _textos[id] = texto;
+
+  @override
+  Future<void> borrar(String id) async => _textos.remove(id);
 }

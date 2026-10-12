@@ -204,7 +204,15 @@
   "qrEmitiendo": "Emitindo",
   "qrEmitirErrorEmitir": "Não foi possível emitir o QR. {detalle}",
   "qrMostrarTitulo": "QR pronto",
-  "qrMostrarAviso": "Depois de fechar você não poderá ver este QR novamente. Compartilhe agora.",
+  "qrMostrarAviso": "Você poderá vê-lo novamente em Meus QR, neste dispositivo, enquanto ainda for válido.",
+  "qrVerQr": "Ver QR",
+  "@qrVerQr": {
+    "description": "Botón de una tarjeta de Mis QR que abre el QR para mostrarlo"
+  },
+  "qrSoloEnOtroDispositivo": "Só pode ser visto no dispositivo em que você o emitiu.",
+  "@qrSoloEnOtroDispositivo": {
+    "description": "Aviso de un QR vigente cuyo código solo está en el dispositivo donde se emitió"
+  },
   "qrCompartir": "Compartilhar",
   "qrPreparando": "Preparando",
   "qrCompartirTexto": "Seu acesso QR a {puertas}. {vence}. Vale uma única vez.",

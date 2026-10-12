@@ -107,7 +107,13 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
       onRefresh: () => ref.refresh(tableroProvider.future),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
+        // El botón flotante no tapa el final del contenido.
+        padding: EdgeInsets.only(
+          top: tokens.espacio.l,
+          bottom: puedeEmitir && !expandida
+              ? tokens.tamano.fab + tokens.espacio.xl
+              : tokens.espacio.l,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -162,35 +168,19 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                accion: puedeEmitir || puedeVerMisQr
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (puedeEmitir)
-                            IconButton.outlined(
-                              tooltip: l10n.inicioQrPropio,
-                              onPressed: () => context.go(Rutas.qrRapido),
-                              icon: const Icon(Icons.person_pin_outlined),
-                            ),
-                          if (puedeVerMisQr)
-                            IconButton.outlined(
-                              tooltip: l10n.navMisQr,
-                              onPressed: () => context.go(Rutas.qrMios),
-                              icon: const Icon(Icons.list_alt),
-                            ),
-                          if (puedeEmitir)
-                            IconButton.filled(
-                              tooltip: l10n.qrEmitirBoton,
-                              onPressed: () => context.go(Rutas.qrNuevo),
-                              // Relleno primario con ícono blanco (C04b); el
-                              // tema de IconButton pinta el ícono en texto.
-                              style: IconButton.styleFrom(
-                                backgroundColor: tokens.colores.primario,
-                                foregroundColor: tokens.colores.sobrePrimario,
-                              ),
-                              icon: const Icon(Icons.qr_code_2),
-                            ),
-                        ],
+                // Solo "Emitir QR": Mis QR es una pestaña y "Mi QR de acceso"
+                // es el botón flotante de la página.
+                accion: puedeEmitir
+                    ? IconButton.filled(
+                        tooltip: l10n.qrEmitirBoton,
+                        onPressed: () => context.go(Rutas.qrNuevo),
+                        // Relleno primario con ícono blanco (C04b); el
+                        // tema de IconButton pinta el ícono en texto.
+                        style: IconButton.styleFrom(
+                          backgroundColor: tokens.colores.primario,
+                          foregroundColor: tokens.colores.sobrePrimario,
+                        ),
+                        icon: const Icon(Icons.qr_code_2),
                       )
                     : null,
               ),

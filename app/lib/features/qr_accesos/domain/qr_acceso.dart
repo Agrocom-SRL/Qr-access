@@ -43,8 +43,9 @@ class QrAcceso {
   String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }
 
-/// QR recién emitido. `texto` es el token en claro: vive solo en la pantalla
-/// que lo muestra y comparte, nunca se guarda (ADR 0008).
+/// QR emitido. `texto` es el token en claro: el servidor no lo conserva (solo
+/// su hash); el dispositivo que lo emitió lo guarda cifrado hasta que vence
+/// para poder volver a mostrarlo (ADR 0008).
 @immutable
 class QrEmitido {
   const new({
@@ -53,6 +54,7 @@ class QrEmitido {
     required this.venceAt,
     required this.etiqueta,
     required this.puertas,
+    this.repaso = false,
   });
 
   final String id;
@@ -60,6 +62,10 @@ class QrEmitido {
   final DateTime venceAt;
   final String? etiqueta;
   final List<PuertaDeQr> puertas;
+
+  /// `true` si se vuelve a abrir desde Mis QR: el QR ya se emitió y se puede
+  /// ver de nuevo, así que cerrar no pide confirmación.
+  final bool repaso;
 
   String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }

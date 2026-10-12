@@ -11,10 +11,10 @@ import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idi
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_interruptor.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/hero_con_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -165,7 +165,9 @@ class PerfilPagina extends ConsumerWidget {
   }
 }
 
-/// La cuenta en verde: nombre, código y plan con su vencimiento.
+/// La cuenta: franja de foto arriba y debajo, sobre la superficie, el nombre,
+/// el plan con su vencimiento y el código. Sin bloque verde: el color de marca
+/// queda para el código.
 class _TarjetaCuenta extends StatelessWidget {
   const new({required this.sesion});
 
@@ -178,51 +180,75 @@ class _TarjetaCuenta extends StatelessWidget {
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
     final suscripcion = sesion.suscripcion;
-    return HeroConFoto(
-      ruta: Multimedia.fotoPorton,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sesion.cuenta.nombre,
-                  style: textos.titleLarge?.copyWith(color: colores.sobreHero),
-                ),
-                SizedBox(height: tokens.espacio.xs),
-                Text(
-                  suscripcion == null
-                      ? l10n.perfilSinSuscripcion
-                      : l10n.perfilPlanVence(
-                          suscripcion.plan,
-                          formatearFecha(suscripcion.hasta),
-                        ),
-                  style: textos.bodyLarge?.copyWith(color: colores.sobreHero),
-                ),
-              ],
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radio.xl),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colores.superficie,
+          border: Border.all(
+            color: colores.borde,
+            width: tokens.tamano.bordeFino,
           ),
-          SizedBox(width: tokens.espacio.l),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.espacio.m,
-              vertical: tokens.espacio.xs,
-            ),
-            decoration: BoxDecoration(
-              color: colores.heroAcento,
-              borderRadius: BorderRadius.circular(tokens.radio.m),
-            ),
-            child: Text(
-              sesion.cuenta.codigo,
-              style: tokens.tipografia.mono(
-                tokens.tipografia.t16,
-                peso: tokens.tipografia.semiNegrita,
-                color: colores.sobreHero,
+          borderRadius: BorderRadius.circular(tokens.radio.xl),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: tokens.tamano.cabeceraFoto / 2,
+              child: const AccesoFoto(
+                ruta: Multimedia.fotoPorton,
+                fundirConFondo: true,
               ),
             ),
-          ),
-        ],
+            Padding(
+              padding: EdgeInsets.all(tokens.espacio.l),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(sesion.cuenta.nombre, style: textos.titleLarge),
+                        SizedBox(height: tokens.espacio.xs),
+                        Text(
+                          suscripcion == null
+                              ? l10n.perfilSinSuscripcion
+                              : l10n.perfilPlanVence(
+                                  suscripcion.plan,
+                                  formatearFecha(suscripcion.hasta),
+                                ),
+                          style: textos.bodyMedium?.copyWith(
+                            color: colores.textoSecundario,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: tokens.espacio.l),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: tokens.espacio.m,
+                      vertical: tokens.espacio.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colores.primarioSuave,
+                      borderRadius: BorderRadius.circular(tokens.radio.m),
+                    ),
+                    child: Text(
+                      sesion.cuenta.codigo,
+                      style: tokens.tipografia.mono(
+                        tokens.tipografia.t16,
+                        peso: tokens.tipografia.semiNegrita,
+                        color: colores.primario,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
