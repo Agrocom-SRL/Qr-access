@@ -8,7 +8,7 @@ import { BarraUso } from '../../../../shared/ui/molecules/BarraUso';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
 import { tienePermiso, useSesion } from '../../../seguridad';
-import foto from '../../../../shared/ui/assets/fotos/bienvenida_edificio.jpg';
+import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
