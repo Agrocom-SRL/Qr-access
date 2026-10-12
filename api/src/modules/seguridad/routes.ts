@@ -30,6 +30,7 @@ import {
   respuestaListadoDeRoles,
   respuestaListadoDeUsuarios,
 } from './schemas.js';
+import { rutasDeCuentas } from './rutas-cuentas.js';
 import { rutasDePlataforma } from './rutas-plataforma.js';
 import { crearServiciosDeSeguridad } from './servicios.js';
 
@@ -180,6 +181,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       (request) => generarPin(servicios, usuarioDe(request), request.params.id),
     );
     app.register(rutasDePlataforma(servicios));
+    app.register(rutasDeCuentas(servicios));
     listo();
   };
 }

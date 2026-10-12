@@ -16,11 +16,17 @@ export interface DispositivoDePuerta {
 export interface ServicioDeDispositivos {
   /** `puertaId -> dispositivo en servicio` de la cuenta del contexto; una puerta sin lector no figura. */
   porPuerta(puertaIds: readonly string[], ahora: Date): Promise<Map<string, DispositivoDePuerta>>;
+  /** Cuántos dispositivos en servicio de la cuenta del contexto no reportan latido (HU-09). */
+  contarSinConexion(ahora: Date): Promise<number>;
 }
 
 export function crearServicioDeDispositivos(pool: Pool): ServicioDeDispositivos {
   const dispositivos = new RepositorioDeDispositivos(pool);
   return {
+    async contarSinConexion(ahora) {
+      const filas = await dispositivos.listarEnServicio();
+      return filas.filter((fila) => !estaEnLinea(fila.ultimo_latido_at, ahora)).length;
+    },
     async porPuerta(puertaIds, ahora) {
       const filas = await dispositivos.listarEnServicioPorPuertas(puertaIds);
       return new Map(

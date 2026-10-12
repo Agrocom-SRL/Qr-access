@@ -180,6 +180,11 @@ export class RepositorioDeRoles extends RepositorioDeCuenta {
     });
   }
 
+  /** Alta de un rol de la cuenta del contexto (los tres roles base de una cuenta nueva). */
+  crear(tx: Transaccion, rol: { nombre: string; protegido: boolean }): Promise<string> {
+    return this.insertar(tx, { nombre: rol.nombre, protegido: rol.protegido ? 1 : 0, activo: 1 });
+  }
+
   listarActivos(): Promise<RolFila[]> {
     return this.seleccionar<RolFila>({
       columnas: 't.id, t.nombre',
@@ -289,6 +294,16 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
 
   asignar(tx: Transaccion, usuarioId: string, rolId: string): Promise<string> {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
+  }
+
+  /** Usuarios activos de la cuenta que tienen el rol protegido "Administrador". */
+  contarAdministradores(): Promise<number> {
+    return this.contar({
+      uniones: [
+        "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
+        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+      ].join(' '),
+    });
   }
 
   quitar(tx: Transaccion, asignacionId: string): Promise<boolean> {
@@ -747,5 +762,145 @@ export class RepositorioDeConteoDeUsuarios extends RepositorioDePlataforma {
     });
     for (const fila of filas) mapa.set(fila.tenant_id, Number(fila.total));
     return mapa;
+  }
+}
+
+/** Las filas de `cuentas` que el panel de plataforma lista y muestra. */
+export interface CuentaDePlataformaFila extends RowDataPacket {
+  id: string;
+  codigo: string;
+  nombre: string;
+  activo: number;
+  created_at: Date;
+}
+
+export interface NuevaCuenta {
+  readonly nombre: string;
+  readonly codigo: string;
+}
+
+/** Administración de `cuentas` por AGROCOM: listar, buscar y dar de alta (tabla de plataforma, sin cuenta). */
+export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'cuentas',
+      columnas: ['nombre', 'codigo', 'activo'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  /** Todas las cuentas vigentes (la plataforma maneja cientos, no millones: se pagina en memoria). */
+  listarTodas(): Promise<CuentaDePlataformaFila[]> {
+    return this.seleccionar<CuentaDePlataformaFila>({
+      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      orden: 't.nombre, t.id',
+    });
+  }
+
+  buscarPorId(id: string): Promise<CuentaDePlataformaFila | null> {
+    return this.seleccionarUna<CuentaDePlataformaFila>({
+      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  buscarPorCodigo(codigo: string): Promise<CuentaDePlataformaFila | null> {
+    return this.seleccionarUna<CuentaDePlataformaFila>({
+      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      donde: 't.codigo = ?',
+      params: [codigo],
+    });
+  }
+
+  /** Los códigos que ya tiene alguna cuenta vigente (para sugerir los que quedan libres). */
+  async codigosEnUso(): Promise<Set<string>> {
+    const filas = await this.seleccionar<RowDataPacket & { codigo: string }>({
+      columnas: 't.codigo',
+    });
+    return new Set(filas.map((fila) => fila.codigo));
+  }
+
+  crear(tx: Transaccion, cuenta: NuevaCuenta): Promise<string> {
+    return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo, activo: 1 });
+  }
+}
+
+export interface DatosDeEmpresa {
+  readonly nit: string;
+  readonly ciudad: string;
+  readonly contactoNombre: string;
+  readonly contactoTelefono: string;
+}
+
+export interface DatosDeEmpresaFila extends RowDataPacket {
+  nit: string;
+  ciudad: string;
+  contacto_nombre: string;
+  contacto_telefono: string;
+}
+
+/** Dueño de `cuenta_datos_empresa`: la ve y la escribe solo con el contexto de la cuenta. */
+export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'cuenta_datos_empresa',
+      columnas: ['nit', 'ciudad', 'contacto_nombre', 'contacto_telefono'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  buscar(): Promise<DatosDeEmpresaFila | null> {
+    return this.seleccionarUna<DatosDeEmpresaFila>({
+      columnas: 't.nit, t.ciudad, t.contacto_nombre, t.contacto_telefono',
+    });
+  }
+
+  crear(tx: Transaccion, datos: DatosDeEmpresa): Promise<string> {
+    return this.insertar(tx, {
+      nit: datos.nit,
+      ciudad: datos.ciudad,
+      contacto_nombre: datos.contactoNombre,
+      contacto_telefono: datos.contactoTelefono,
+    });
+  }
+}
+
+interface PermisoConIdFila extends RowDataPacket {
+  id: string;
+  codigo: string;
+}
+
+/** Catálogo de permisos (tabla de plataforma, solo lectura): para dar a los roles base de una cuenta nueva. */
+export class RepositorioDePermisos extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, { nombre: 'permisos', columnas: [], perfil: 'transitoria', deCuenta: false });
+  }
+
+  /** `codigo -> id` de los permisos de ámbito cuenta. */
+  async deAmbitoCuenta(): Promise<Map<string, string>> {
+    const filas = await this.seleccionar<PermisoConIdFila>({
+      columnas: 't.id, t.codigo',
+      donde: "t.ambito = 'cuenta'",
+    });
+    return new Map(filas.map((fila) => [fila.codigo, fila.id]));
+  }
+}
+
+/** `rol_permisos` no tiene cuenta ni autoría propia: la cuenta la da el rol al que se asigna. */
+export class RepositorioDeRolPermisos extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'rol_permisos',
+      columnas: ['rol_id', 'permiso_id'],
+      perfil: 'transitoria',
+      deCuenta: false,
+    });
+  }
+
+  asignar(tx: Transaccion, rolId: string, permisoId: string): Promise<string> {
+    return this.insertar(tx, { rol_id: rolId, permiso_id: permisoId });
   }
 }

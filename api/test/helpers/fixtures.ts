@@ -63,10 +63,12 @@ export async function crearRol(
   nombre: string,
   permisos: readonly string[],
 ): Promise<string> {
-  const id = await insertar(pool, 'INSERT INTO roles (tenant_id, nombre) VALUES (?, ?)', [
-    cuenta.id,
-    nombre,
-  ]);
+  // Administrador es protegido, como lo crea la API al dar de alta una cuenta.
+  const id = await insertar(
+    pool,
+    'INSERT INTO roles (tenant_id, nombre, protegido) VALUES (?, ?, ?)',
+    [cuenta.id, nombre, nombre === 'Administrador' ? 1 : 0],
+  );
   for (const codigo of permisos) {
     await pool.query(
       'INSERT INTO rol_permisos (rol_id, permiso_id) SELECT ?, id FROM permisos WHERE codigo = ?',

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { esquemaListado } from '../../platform/http/paginacion.js';
+import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
 
 export const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
@@ -126,3 +126,130 @@ export const consultaDeUsuarioDisponible = z.object({ usuario: z.string().max(60
 export const respuestaDeUsuarioDisponible = z.object({ disponible: z.boolean() });
 
 export const cuerpoDeEdicionDeMiembro = z.object({ activo: z.literal(false) });
+
+// --- Cuentas (administración por AGROCOM, web admin) ---
+
+const esquemaEstadoDeSuscripcion = z.enum(['activa', 'por_vencer', 'vencida', 'suspendida']);
+
+export const consultaDeCuentas = esquemaPaginacion.extend({
+  busqueda: z.string().trim().max(100).default(''),
+  estado: z.enum(['todas', 'activa', 'por_vencer', 'vencida', 'suspendida']).default('todas'),
+});
+
+const esquemaCuentaListada = z.object({
+  id: z.string(),
+  codigo: z.string(),
+  nombre: z.string(),
+  plan: z
+    .object({ id: z.string(), nombre: z.string(), cupo_usuarios: z.number().int().nullable() })
+    .nullable(),
+  usuarios_activos: z.number().int(),
+  vence_el: esquemaFecha.nullable(),
+  estado: esquemaEstadoDeSuscripcion,
+});
+
+export const respuestaDeCuentas = esquemaListado(esquemaCuentaListada).extend({
+  conteos: z.object({
+    todas: z.number().int(),
+    activa: z.number().int(),
+    por_vencer: z.number().int(),
+    vencida: z.number().int(),
+    suspendida: z.number().int(),
+  }),
+});
+
+export const consultaDeCodigoDeCuenta = z.object({
+  codigo: z.string().max(10).default(''),
+  razon_social: z.string().max(150).default(''),
+});
+
+export const respuestaDeCodigoDeCuenta = z.object({
+  formato_valido: z.boolean(),
+  disponible: z.boolean(),
+  usado_por: z.string().nullable(),
+  sugerencias: z.array(z.string()),
+});
+
+export const cuerpoDeNuevaCuenta = z.object({
+  razon_social: z.string().trim().min(1).max(150),
+  codigo: z.string().min(1).max(10),
+  nit: z
+    .string()
+    .trim()
+    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  ciudad: z.string().trim().min(1).max(80),
+  contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_telefono: z
+    .string()
+    .trim()
+    .regex(/^[0-9+() -]{6,30}$/),
+  plan_id: esquemaId,
+  inicio: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  administrador_nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
+});
+
+export const respuestaDeCuentaCreada = z.object({
+  cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
+  administrador: z.object({ id: z.string(), etiqueta: z.string(), pin: z.string() }),
+  suscripcion: z.object({ desde: esquemaFecha, hasta: esquemaFecha }),
+});
+
+export const parametrosDeCuenta = z.object({ id: esquemaId });
+
+export const respuestaDeDetalleDeCuenta = z.object({
+  cuenta: z.object({
+    id: z.string(),
+    codigo: z.string(),
+    nombre: z.string(),
+    activa: z.boolean(),
+    cliente_desde: esquemaFecha,
+  }),
+  empresa: z
+    .object({ nit: z.string(), ciudad: z.string(), contacto: z.string(), telefono: z.string() })
+    .nullable(),
+  suscripcion: z
+    .object({
+      id: z.string(),
+      plan: z.object({
+        id: z.string(),
+        nombre: z.string(),
+        cupo_usuarios: z.number().int().nullable(),
+        precio_anual: z.number(),
+      }),
+      desde: esquemaFecha,
+      hasta: esquemaFecha,
+      estado: esquemaEstadoDeSuscripcion,
+      dias_restantes: z.number().int(),
+    })
+    .nullable(),
+  uso: z.object({
+    usuarios_activos: z.number().int(),
+    sitios: z.number().int(),
+    puertas: z.number().int(),
+    dispositivos_sin_conexion: z.number().int(),
+    administradores: z.number().int(),
+  }),
+});
+
+export const respuestaDePuertasDeCuenta = z.object({
+  datos: z.array(
+    z.object({
+      id: z.string(),
+      nombre: z.string(),
+      puertas: z.array(
+        z.object({
+          id: z.string(),
+          nombre: z.string(),
+          dispositivo: z
+            .object({
+              id: z.string(),
+              nombre: z.string(),
+              en_linea: z.boolean(),
+              ultimo_latido_at: esquemaFecha.nullable(),
+            })
+            .nullable(),
+        }),
+      ),
+    }),
+  ),
+});

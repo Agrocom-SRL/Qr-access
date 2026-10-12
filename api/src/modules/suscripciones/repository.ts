@@ -12,6 +12,28 @@ export interface SuscripcionVigenteFila extends RowDataPacket {
   max_dispositivos: number | null;
 }
 
+export interface SuscripcionActualFila extends RowDataPacket {
+  id: string;
+  tenant_id: string;
+  plan_id: string;
+  plan_nombre: string;
+  max_usuarios: number | null;
+  precio_anual: string;
+  desde: Date;
+  hasta: Date;
+  estado: 'vigente' | 'suspendida' | 'vencida';
+}
+
+export interface NuevaSuscripcion {
+  readonly planId: string;
+  readonly desde: Date;
+  readonly hasta: Date;
+}
+
+const COLUMNAS_ACTUAL =
+  't.id, t.tenant_id, t.plan_id, p.nombre AS plan_nombre, p.max_usuarios, p.precio_anual, t.desde, t.hasta, t.estado';
+const UNION_PLAN = 'JOIN planes AS p ON p.id = t.plan_id';
+
 /** Dueño de `suscripciones` (ADR 0003). `planes` es de plataforma y se une por su id. */
 export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
   constructor(pool: Pool) {
@@ -20,6 +42,25 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
       columnas: ['plan_id', 'desde', 'hasta', 'estado'],
       perfil: 'dominio',
       deCuenta: true,
+    });
+  }
+
+  /** La suscripción actual de la cuenta del contexto (vigente, suspendida o vencida): una por cuenta. */
+  buscarActual(): Promise<SuscripcionActualFila | null> {
+    return this.seleccionarUna<SuscripcionActualFila>({
+      columnas: COLUMNAS_ACTUAL,
+      uniones: UNION_PLAN,
+      orden: 't.id DESC',
+    });
+  }
+
+  /** Alta de la suscripción de la cuenta del contexto (HU-01); queda `vigente` entre `desde` y `hasta`. */
+  crear(tx: Transaccion, suscripcion: NuevaSuscripcion): Promise<string> {
+    return this.insertar(tx, {
+      plan_id: suscripcion.planId,
+      desde: suscripcion.desde,
+      hasta: suscripcion.hasta,
+      estado: 'vigente',
     });
   }
 
@@ -112,5 +153,28 @@ export class RepositorioDeUsoDePlanes extends RepositorioDePlataforma {
     for (const fila of filas)
       mapa.set(fila.plan_id, [...(mapa.get(fila.plan_id) ?? []), fila.tenant_id]);
     return mapa;
+  }
+}
+
+/**
+ * La suscripción actual de TODAS las cuentas, para el panel de plataforma (lista de cuentas,
+ * resumen, cobranza). Salto EXPLÍCITO del aislamiento: solo lee, nunca escribe.
+ */
+export class RepositorioDeSuscripcionesDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'suscripciones',
+      columnas: [],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  listar(): Promise<SuscripcionActualFila[]> {
+    return this.seleccionar<SuscripcionActualFila>({
+      columnas: COLUMNAS_ACTUAL,
+      uniones: UNION_PLAN,
+      orden: 't.tenant_id, t.id DESC',
+    });
   }
 }

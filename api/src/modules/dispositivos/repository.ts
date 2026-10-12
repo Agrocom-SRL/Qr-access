@@ -91,4 +91,12 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
       params: [puertaIds],
     });
   }
+
+  /** Todos los dispositivos en servicio de la cuenta del contexto (para contar cuántos están sin conexión). */
+  listarEnServicio(): Promise<DispositivoEnServicioFila[]> {
+    return this.seleccionar<DispositivoEnServicioFila>({
+      columnas: 't.id, t.puerta_id, t.nombre, t.ultimo_latido_at',
+      donde: 't.revocado_at IS NULL AND t.activo = 1',
+    });
+  }
 }

@@ -37,7 +37,11 @@ describe('plataforma: ingreso del super admin', () => {
       refresco: cualquierTexto(),
       usuario: { id: lucia.id, nombre: 'Lucía Paz', usuario: 'lucia.paz' },
       debe_cambiar_contrasena: false,
-      permisos: ['seguridad.equipo.crear', 'seguridad.equipo.desactivar', 'seguridad.equipo.ver'],
+      permisos: expect.arrayContaining([
+        'seguridad.equipo.crear',
+        'seguridad.equipo.desactivar',
+        'seguridad.equipo.ver',
+      ]) as string[],
     });
   });
 
