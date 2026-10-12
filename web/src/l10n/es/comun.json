@@ -23,10 +23,11 @@
   "ayer": "Ayer",
   "copiar": "Copiar",
   "copiado": "Copiado",
-  "pronto": {
-    "titulo": "Esta sección llega pronto",
-    "texto": "La estamos construyendo junto con su API."
-  },
   "desde": "desde {{fecha}}",
-  "volver": "Volver"
+  "volver": "Volver",
+  "noEncontrada": {
+    "titulo": "No encontramos esa página",
+    "texto": "La dirección no existe o ya no está disponible. Tu sesión sigue abierta.",
+    "volver": "Ir al resumen"
+  }
 }

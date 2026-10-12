@@ -35,16 +35,15 @@
   font-size: var(--texto12);
 }
 
-.acciones {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--esp16);
-  margin-top: var(--esp24);
-}
-
 .esquina {
   display: flex;
   align-items: center;
   margin-left: auto;
+}
+
+.precio {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp8);
+  font-size: var(--texto32);
 }

@@ -21,6 +21,7 @@ import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicad
 import { describirEvento } from '../../../bitacora';
 import { useResumen } from '../../application/useResumen';
 import { porcentajeDeUso } from '../../domain/resumen';
+import foto from '../../../../shared/ui/assets/fotos/portico_banner.webp';
 import styles from './ResumenPage.module.css';
 
 /** A02: el tablero con cuentas, usuarios, vencimientos, ingresos, renovaciones próximas y últimas acciones. */
@@ -80,6 +81,8 @@ export function ResumenPage() {
           </AccesoBoton>
         }
       />
+
+      <img src={foto} alt="" className={styles.banner} />
 
       {datos ? (
         <div className={styles.indicadores}>

@@ -1,5 +1,6 @@
 import { AlmacenSesion } from '@/shared/api/almacenSesion';
 import type { ClienteHttp, SolicitudHttp } from '@/shared/api/clienteHttp';
+import { ErrorApi } from '@/shared/api/errorApi';
 import { crearSeguridadHttp } from '@/features/seguridad/api/seguridadHttp';
 
 function clienteQueResponde(respuesta: unknown) {
@@ -43,5 +44,49 @@ describe('seguridadHttp', () => {
     const cliente: ClienteHttp = { solicitar: () => Promise.reject(new Error('sin red')) };
     await expect(crearSeguridadHttp(cliente, sesion).cerrarSesion()).rejects.toThrow();
     expect(sesion.obtener()).toBeNull();
+  });
+
+  describe('restaurar', () => {
+    const perfil = {
+      id: '7',
+      nombre: null,
+      usuario: 'lucia.paz',
+      creado_at: '2026-01-01T00:00:00Z',
+      ultimo_ingreso_at: null,
+      debe_cambiar_contrasena: false,
+      permisos: ['seguridad.equipo.ver'],
+    };
+
+    it('sin refresco recordado no llama a la API', async () => {
+      const { cliente, llamadas } = clienteQueResponde({});
+      expect(await crearSeguridadHttp(cliente, new AlmacenSesion()).restaurar()).toBeNull();
+      expect(llamadas).toHaveLength(0);
+    });
+
+    it('refresca, trae el perfil y rota el refresco recordado', async () => {
+      const sesion = new AlmacenSesion();
+      sesion.guardar({ acceso: 'viejo', refresco: 'r1' });
+      const cliente: ClienteHttp = {
+        solicitar: <T>(solicitud: SolicitudHttp) =>
+          Promise.resolve(
+            (solicitud.ruta === '/sesiones/refresco'
+              ? { acceso: 'a2', refresco: 'r2' }
+              : perfil) as T,
+          ),
+      };
+      const restaurada = await crearSeguridadHttp(cliente, new AlmacenSesion()).restaurar();
+      expect(restaurada).toMatchObject({ usuario: { usuario: 'lucia.paz' } });
+      expect(sessionStorage.getItem('acceso.refresco')).toBe('r2');
+    });
+
+    it('un refresco rechazado borra lo recordado', async () => {
+      const sesion = new AlmacenSesion();
+      sesion.guardar({ acceso: 'a', refresco: 'r1' });
+      const cliente: ClienteHttp = {
+        solicitar: () => Promise.reject(new ErrorApi(401, 'sesion.invalida')),
+      };
+      expect(await crearSeguridadHttp(cliente, sesion).restaurar()).toBeNull();
+      expect(sesion.refrescoRecordado()).toBeNull();
+    });
   });
 });

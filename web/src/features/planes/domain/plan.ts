@@ -20,16 +20,6 @@ export function parsearPrecio(texto: string): number | null {
   return Number(limpio);
 }
 
-/** Precios nuevos por plan que difieren de los vigentes: lo único que se manda a la API. */
-export function cambiosDePrecio(
-  planes: readonly Plan[],
-  borrador: Readonly<Record<string, number>>,
-): { planId: string; precioAnual: number }[] {
-  return planes
-    .filter((plan) => plan.id in borrador && borrador[plan.id] !== plan.precioAnual)
-    .map((plan) => ({ planId: plan.id, precioAnual: borrador[plan.id] ?? plan.precioAnual }));
-}
-
 export interface FormularioDePlan {
   nombre: string;
   /** Lo escrito: un entero de 1 en adelante. */

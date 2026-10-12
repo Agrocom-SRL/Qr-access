@@ -19,3 +19,7 @@ El handoff de diseño del panel (`docs/diseno/web-admin/`) pide pantallas de cue
 
 - El panel y la API avanzan juntos, una rama por proceso.
 - El diseño de A06b (bajada bloqueada por cupo) pasa a ser "bajar no está permitido".
+
+## Addendum (2026-10-12): el refresco sobrevive a la recarga
+
+El token de acceso sigue solo en memoria, pero el de refresco se recuerda en el `sessionStorage` de la pestaña: recargar o escribir otra URL ya no cierra la sesión; cerrar la pestaña o la sesión lo borra (nunca `localStorage`). Al arrancar, `restaurar()` lo rota y trae el perfil. Riesgo asumido: un XSS podría leerlo; se resuelve con la cookie httpOnly cuando la API la soporte.

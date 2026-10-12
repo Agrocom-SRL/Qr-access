@@ -8,6 +8,7 @@ import { BarraUso } from '../../../../shared/ui/molecules/BarraUso';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
 import { tienePermiso, useSesion } from '../../../seguridad';
+import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
@@ -48,6 +49,7 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
   return (
     <div className={styles.rejilla}>
       <section className={styles.hero} aria-labelledby="plan-actual">
+        <img src={foto} alt="" className={styles.foto} />
         {suscripcion ? (
           <>
             <div className={styles.cabecera}>
@@ -80,7 +82,7 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
                 )}
               </div>
               {cupo === null ? null : (
-                <BarraUso grande sobreHero sinEtiqueta usados={uso.usuariosActivos} cupo={cupo} />
+                <BarraUso grande sinEtiqueta usados={uso.usuariosActivos} cupo={cupo} />
               )}
               <p className={styles.puede}>
                 {disponibles === null

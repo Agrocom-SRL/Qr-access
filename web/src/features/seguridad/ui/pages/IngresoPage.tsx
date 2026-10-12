@@ -9,6 +9,7 @@ import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { CampoContrasena } from '../../../../shared/ui/molecules/CampoContrasena';
+import { PantallaDeCarga } from '../../../../shared/ui/organisms/PantallaDeCarga';
 import { PlantillaAuth } from '../../../../shared/ui/templates/PlantillaAuth';
 import { useSesion } from '../../application/SesionProvider';
 import { useCuentaRegresiva } from '../../application/useCuentaRegresiva';
@@ -23,7 +24,7 @@ interface Formulario {
 /** A01: ingreso con usuario y contraseña; A01b: cargando, credenciales incorrectas y bloqueo con cuenta regresiva. */
 export function IngresoPage() {
   const { t } = useTranslation(['auth', 'errores']);
-  const { sesion, vencida } = useSesion();
+  const { sesion, vencida, restaurando } = useSesion();
   const ubicacion = useLocation();
   const ingresar = useIngresar();
   const { register, handleSubmit } = useForm<Formulario>({
@@ -38,6 +39,7 @@ export function IngresoPage() {
   const credenciales = error?.code === 'sesion.credenciales_invalidas';
   const bloqueo = error?.code === 'sesion.bloqueada';
 
+  if (restaurando) return <PantallaDeCarga />;
   if (sesion) {
     const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/';
     return <Navigate to={destino} replace />;

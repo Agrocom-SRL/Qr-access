@@ -1,5 +1,6 @@
 import type { AlmacenSesion } from '../../../shared/api/almacenSesion';
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
+import { ErrorApi } from '../../../shared/api/errorApi';
 import type { PerfilAdmin, SesionIniciada } from '../domain/sesion';
 import type { SeguridadRepositorio } from './SeguridadRepositorio';
 
@@ -38,7 +39,40 @@ export function crearSeguridadHttp(
   cliente: ClienteHttp,
   sesion: AlmacenSesion,
 ): SeguridadRepositorio {
+  /** Un solo intento por carga: el refresco rota y un segundo uso lo invalidaría (StrictMode monta dos veces). */
+  let restauracion: Promise<SesionIniciada | null> | null = null;
+
+  async function restaurarSesion(): Promise<SesionIniciada | null> {
+    const refresco = sesion.refrescoRecordado();
+    if (refresco === null) return null;
+    try {
+      const nuevos = await cliente.solicitar<{ acceso: string; refresco: string }>({
+        metodo: 'POST',
+        ruta: '/sesiones/refresco',
+        cuerpo: { refresco },
+      });
+      sesion.guardar(nuevos);
+      const perfil = perfilDesdeDto(
+        await cliente.solicitar<PerfilDto>({ metodo: 'GET', ruta: '/plataforma/perfil' }),
+      );
+      return {
+        usuario: { id: perfil.id, nombre: perfil.nombre, usuario: perfil.usuario },
+        debeCambiarContrasena: perfil.debeCambiarContrasena,
+        permisos: perfil.permisos,
+      };
+    } catch (error) {
+      // Sin red el refresco sigue siendo válido: se conserva para el próximo intento.
+      if (!(error instanceof ErrorApi) || error.status !== 0) sesion.limpiar();
+      return null;
+    }
+  }
+
   return {
+    restaurar() {
+      restauracion ??= restaurarSesion();
+      return restauracion;
+    },
+
     async ingresar(usuario, contrasena) {
       const dto = await cliente.solicitar<IngresoDto>({
         metodo: 'POST',

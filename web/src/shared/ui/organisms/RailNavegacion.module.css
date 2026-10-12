@@ -16,9 +16,8 @@
 }
 
 .logo {
-  width: var(--tam40);
   height: var(--tam40);
-  border-radius: var(--radio10);
+  width: auto;
 }
 
 .nombre {

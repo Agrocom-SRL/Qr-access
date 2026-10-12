@@ -19,6 +19,7 @@ WORKDIR /app
 COPY pubspec.yaml pubspec.lock l10n.yaml analysis_options.yaml ./
 COPY lib/l10n ./lib/l10n
 RUN flutter pub get
+COPY assets ./assets
 COPY lib ./lib
 COPY web ./web
 ARG API_URL=

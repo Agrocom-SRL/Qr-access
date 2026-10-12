@@ -295,6 +295,7 @@ export function crearServiciosDePrueba(
 ): Servicios {
   const almacen = new AlmacenSesion();
   const seguridad: SeguridadRepositorio = {
+    restaurar: () => Promise.resolve(null),
     ingresar: () => Promise.resolve({ ...SUPER_ADMIN, permisos: [...SUPER_ADMIN.permisos] }),
     cerrarSesion: () => {
       almacen.limpiar();
@@ -335,7 +336,6 @@ export function crearServiciosDePrueba(
   };
   const planes: PlanesRepositorio = {
     listar: () => Promise.resolve(PLANES),
-    guardarPrecios: () => Promise.resolve(),
     crear: () => Promise.resolve(),
     editar: () => Promise.resolve(),
     retirar: () => Promise.resolve('retirado' as const),

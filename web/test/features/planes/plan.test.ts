@@ -1,19 +1,4 @@
-import {
-  cambiosDePrecio,
-  parsearCupo,
-  parsearPrecio,
-  validarPlan,
-  type Plan,
-} from '@/features/planes/domain/plan';
-
-const plan = (id: string, precioAnual: number): Plan => ({
-  id,
-  nombre: `Plan ${id}`,
-  cupoUsuarios: 100,
-  precioAnual,
-  cuentas: 0,
-  usuariosEnUso: 0,
-});
+import { parsearCupo, parsearPrecio, validarPlan } from '@/features/planes/domain/plan';
 
 describe('parsearPrecio', () => {
   it('acepta enteros con o sin puntos de miles', () => {
@@ -25,19 +10,6 @@ describe('parsearPrecio', () => {
 
   it('rechaza vacío, texto, negativos y decimales', () => {
     for (const texto of ['', 'abc', '-5', '12,5', '1e3']) expect(parsearPrecio(texto)).toBeNull();
-  });
-});
-
-describe('cambiosDePrecio', () => {
-  it('solo devuelve los planes cuyo precio cambió', () => {
-    const planes = [plan('1', 12000), plan('2', 21600)];
-    expect(cambiosDePrecio(planes, { '1': 12000, '2': 22000 })).toEqual([
-      { planId: '2', precioAnual: 22000 },
-    ]);
-  });
-
-  it('sin borrador no hay cambios', () => {
-    expect(cambiosDePrecio([plan('1', 1)], {})).toEqual([]);
   });
 });
 

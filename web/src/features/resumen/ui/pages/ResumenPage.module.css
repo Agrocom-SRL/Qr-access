@@ -91,3 +91,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.banner {
+  display: block;
+  width: 100%;
+  height: var(--tam160);
+  margin-bottom: var(--esp24);
+  object-fit: cover;
+  object-position: center 60%;
+  border-radius: var(--radio20);
+}

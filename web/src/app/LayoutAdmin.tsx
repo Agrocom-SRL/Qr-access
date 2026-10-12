@@ -1,7 +1,9 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { tienePermiso, useSesion } from '../features/seguridad';
 import { PlantillaAdmin } from '../shared/ui/templates/PlantillaAdmin';
 import { RailNavegacion, type ItemRail } from '../shared/ui/organisms/RailNavegacion';
+import { PantallaSesionVencida } from '../shared/ui/organisms/PantallasDeEstado';
+import { PantallaDeCarga } from '../shared/ui/organisms/PantallaDeCarga';
 import { RUTAS } from './rutas';
 
 const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
@@ -54,8 +56,19 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
  * solo se oculta lo que el rol no puede (ADR 0021).
  */
 export function LayoutAdmin() {
-  const { sesion } = useSesion();
+  const { sesion, restaurando, vencida } = useSesion();
   const ubicacion = useLocation();
+  const navegar = useNavigate();
+  if (restaurando) return <PantallaDeCarga />;
+  if (!sesion && vencida) {
+    return (
+      <PantallaSesionVencida
+        onIngresar={() => {
+          void navegar(RUTAS.ingreso, { state: { desde: ubicacion.pathname } });
+        }}
+      />
+    );
+  }
   if (!sesion) return <Navigate to={RUTAS.ingreso} replace state={{ desde: ubicacion.pathname }} />;
   if (sesion.debeCambiarContrasena && ubicacion.pathname !== RUTAS.perfil) {
     return <Navigate to={RUTAS.perfil} replace />;

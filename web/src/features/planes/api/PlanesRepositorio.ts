@@ -14,5 +14,4 @@ export interface PlanesRepositorio {
   editar: (id: string, cambios: Partial<DatosDePlan>) => Promise<void>;
   /** Lo saca de la venta; sigue valiendo para las cuentas que ya lo tienen. */
   retirar: (id: string) => Promise<ResultadoDeRetiro>;
-  guardarPrecios: (cambios: readonly { planId: string; precioAnual: number }[]) => Promise<void>;
 }
