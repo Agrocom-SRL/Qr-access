@@ -125,6 +125,7 @@ CREATE TABLE usuarios (
   pin_generado_at DATETIME(3) NULL,
   username VARCHAR(60) NULL,
   contrasena_hash VARCHAR(255) NULL,
+  contrasena_temporal TINYINT(1) NOT NULL DEFAULT 0,
   rol_preferido_id BIGINT UNSIGNED NULL,
   activo TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -184,7 +185,7 @@ Migración: `db/migrations/20261009100008_create_usuario_roles.sql`
 ```sql
 CREATE TABLE usuario_roles (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  tenant_id BIGINT UNSIGNED NOT NULL,
+  tenant_id BIGINT UNSIGNED NULL,
   usuario_id BIGINT UNSIGNED NOT NULL,
   rol_id BIGINT UNSIGNED NOT NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

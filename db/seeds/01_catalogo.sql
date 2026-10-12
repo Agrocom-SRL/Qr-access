@@ -16,5 +16,17 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.ver', 'cuenta'),
   ('seguridad.usuario.crear', 'cuenta'),
   ('seguridad.usuario.editar', 'cuenta'),
-  ('seguridad.usuario.eliminar', 'cuenta')
+  ('seguridad.usuario.eliminar', 'cuenta'),
+  ('seguridad.equipo.ver', 'plataforma'),
+  ('seguridad.equipo.crear', 'plataforma'),
+  ('seguridad.equipo.desactivar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
+
+-- Rol de plataforma (tenant_id NULL): el super admin recibe todos los permisos de ámbito plataforma.
+INSERT INTO roles (tenant_id, nombre, protegido, activo) VALUES
+  (NULL, 'Super admin', 1, 1)
+ON DUPLICATE KEY UPDATE protegido = VALUES(protegido), activo = 1;
+
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'
+  WHERE r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL;
