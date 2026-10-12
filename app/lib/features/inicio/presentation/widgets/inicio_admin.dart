@@ -133,13 +133,22 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
-                  if (puedeVerMisQr)
+                  if (puedeEmitir)
+                    AccesoBoton(
+                      texto: l10n.inicioQrPropio,
+                      icono: Icons.person_pin_outlined,
+                      variante: VarianteBoton.tonal,
+                      onPressed: () => context.go(Rutas.qrRapido),
+                    ),
+                  if (puedeVerMisQr) ...[
+                    SizedBox(width: tokens.espacio.m),
                     AccesoBoton(
                       texto: l10n.navMisQr,
                       icono: Icons.list_alt,
                       variante: VarianteBoton.tonal,
                       onPressed: () => context.go(Rutas.qrMios),
                     ),
+                  ],
                   if (puedeEmitir) ...[
                     SizedBox(width: tokens.espacio.m),
                     AccesoBoton(
@@ -157,6 +166,12 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (puedeEmitir)
+                            IconButton.outlined(
+                              tooltip: l10n.inicioQrPropio,
+                              onPressed: () => context.go(Rutas.qrRapido),
+                              icon: const Icon(Icons.person_pin_outlined),
+                            ),
                           if (puedeVerMisQr)
                             IconButton.outlined(
                               tooltip: l10n.navMisQr,

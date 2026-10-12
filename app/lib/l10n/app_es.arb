@@ -593,6 +593,37 @@
       "n": { "type": "int" }
     }
   },
+  "qrRapidoTitulo": "Mi QR de acceso",
+  "@qrRapidoTitulo": {
+    "description": "Título de la pantalla del QR rápido"
+  },
+  "qrRapidoEtiquetaSinNombre": "Entrada personal",
+  "@qrRapidoEtiquetaSinNombre": {
+    "description": "Etiqueta del QR rápido cuando la persona no tiene nombre"
+  },
+  "qrRapidoAviso": "Solo para ti. Acércalo al lector de la puerta; no se puede compartir.",
+  "@qrRapidoAviso": {
+    "description": "Aviso bajo el QR rápido"
+  },
+  "qrRapidoListo": "Listo",
+  "@qrRapidoListo": {
+    "description": "Botón que cierra la pantalla del QR rápido"
+  },
+  "inicioQrPropio": "QR propio",
+  "@inicioQrPropio": {
+    "description": "Acceso rápido que emite el QR personal al instante"
+  },
+  "qrRapidoEtiqueta": "Entrada para {nombre}",
+  "@qrRapidoEtiqueta": {
+    "description": "Etiqueta con la que se emite el QR rápido",
+    "placeholders": {
+      "nombre": { "type": "String" }
+    }
+  },
+  "qrRapidoError": "No pudimos generar tu QR",
+  "@qrRapidoError": {
+    "description": "Falla al emitir el QR rápido"
+  },
   "qrVenceCorto": "vence {hora}",
   "@qrVenceCorto": {
     "description": "Vencimiento en la tarjeta corta del inicio, en mono",

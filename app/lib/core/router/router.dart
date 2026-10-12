@@ -89,6 +89,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: Rutas.qrRapido,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const QrRapidoPagina(),
+          transicion: Transicion.flujo,
+        ),
+      ),
+      GoRoute(
         path: Rutas.eventos,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const EventosPagina()),
