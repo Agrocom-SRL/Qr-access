@@ -9,11 +9,21 @@ function localeDe(idioma: string): string {
 export function formatearMonto(monto: number, idioma = 'es'): string {
   const numero = new Intl.NumberFormat(localeDe(idioma), {
     maximumFractionDigits: 0,
-    useGrouping: true,
+    useGrouping: 'always',
   })
     .format(monto)
     .replaceAll(/\p{Z}/gu, '.');
   return `Bs ${numero}`;
+}
+
+/** Cifra con punto de miles también de 4 dígitos (`1.604`): `es` no agrupa por defecto bajo 5 dígitos. */
+export function formatearNumero(valor: number, idioma = 'es'): string {
+  return new Intl.NumberFormat(localeDe(idioma), {
+    maximumFractionDigits: 0,
+    useGrouping: 'always',
+  })
+    .format(valor)
+    .replaceAll(/\p{Z}/gu, '.');
 }
 
 /** `dd/mm/aaaa`, siempre en la zona horaria dada (por defecto La Paz; invariante 7). */

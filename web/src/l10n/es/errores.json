@@ -18,5 +18,6 @@
   "usuario_no_encontrado": "No encontramos a esa persona.",
   "equipo_no_desactivarse": "No puedes desactivar tu propia cuenta.",
   "equipo_ultimo_activo": "Siempre tiene que quedar al menos un super admin activo.",
-  "permiso_denegado": "No tienes permiso para hacer esto."
+  "permiso_denegado": "No tienes permiso para hacer esto.",
+  "plan_no_encontrado": "Ese plan no existe o ya no se vende."
 }

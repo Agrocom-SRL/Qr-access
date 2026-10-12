@@ -4,6 +4,7 @@ import {
   formatearFecha,
   formatearHora,
   formatearMonto,
+  formatearNumero,
   relacionDeDia,
 } from '@/l10n/formatos';
 import { traducirError } from '@/l10n/traducirError';
@@ -12,6 +13,9 @@ describe('formatos', () => {
   it('monto en bolivianos sin decimales y con punto de miles', () => {
     expect(formatearMonto(12000)).toBe('Bs 12.000');
     expect(formatearMonto(950)).toBe('Bs 950');
+    expect(formatearMonto(1500)).toBe('Bs 1.500');
+    expect(formatearNumero(1604)).toBe('1.604');
+    expect(formatearNumero(7650)).toBe('7.650');
   });
 
   it('fecha dd/mm/aaaa y hora HH:mm en La Paz', () => {

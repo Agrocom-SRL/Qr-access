@@ -2,13 +2,20 @@ import { AlmacenSesion } from '@/shared/api/almacenSesion';
 import { ErrorApi } from '@/shared/api/errorApi';
 import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
+import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
 
 export const SUPER_ADMIN = {
   usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
   debeCambiarContrasena: false,
-  permisos: ['seguridad.equipo.ver', 'seguridad.equipo.crear', 'seguridad.equipo.desactivar'],
+  permisos: [
+    'seguridad.equipo.ver',
+    'seguridad.equipo.crear',
+    'seguridad.equipo.desactivar',
+    'suscripciones.plan.ver',
+    'suscripciones.plan.editar',
+  ],
 } as const;
 
 export const MIEMBROS: MiembroEquipo[] = [
@@ -38,11 +45,39 @@ export const MIEMBROS: MiembroEquipo[] = [
   },
 ];
 
+export const PLANES = [
+  {
+    id: '1',
+    nombre: '100 usuarios',
+    cupoUsuarios: 100,
+    precioAnual: 12000,
+    cuentas: 21,
+    usuariosEnUso: 1604,
+  },
+  {
+    id: '2',
+    nombre: '200 usuarios',
+    cupoUsuarios: 200,
+    precioAnual: 21600,
+    cuentas: 14,
+    usuariosEnUso: 2140,
+  },
+  {
+    id: '3',
+    nombre: '350 usuarios',
+    cupoUsuarios: 350,
+    precioAnual: 33600,
+    cuentas: 7,
+    usuariosEnUso: 1470,
+  },
+];
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
     seguridad?: Partial<SeguridadRepositorio>;
     equipo?: Partial<EquipoRepositorio>;
+    planes?: Partial<PlanesRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -85,7 +120,12 @@ export function crearServiciosDePrueba(
     desactivar: () => Promise.resolve(),
     ...parcial.equipo,
   };
-  return { almacen, seguridad, equipo };
+  const planes: PlanesRepositorio = {
+    listar: () => Promise.resolve(PLANES),
+    guardarPrecios: () => Promise.resolve(),
+    ...parcial.planes,
+  };
+  return { almacen, seguridad, equipo, planes };
 }
 
 export { ErrorApi };

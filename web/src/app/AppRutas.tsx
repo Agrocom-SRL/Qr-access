@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { EquipoPage } from '../features/equipo';
+import { PlanesPage } from '../features/planes';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
 import { LayoutAdmin } from './LayoutAdmin';
 import { PaginaProximamente } from './PaginaProximamente';
@@ -14,7 +15,7 @@ export function AppRutas() {
         <Route path={RUTAS.resumen} element={<PaginaProximamente />} />
         <Route path={RUTAS.cuentas} element={<PaginaProximamente />} />
         <Route path={RUTAS.cobranza} element={<PaginaProximamente />} />
-        <Route path={RUTAS.planes} element={<PaginaProximamente />} />
+        <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<PaginaProximamente />} />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />
         <Route path={RUTAS.perfil} element={<PerfilPage />} />

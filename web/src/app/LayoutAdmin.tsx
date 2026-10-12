@@ -13,7 +13,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
   },
   { clave: 'cuentas', ruta: RUTAS.cuentas, icono: 'apartment', iconoActivo: 'apartment_fill' },
   { clave: 'cobranza', ruta: RUTAS.cobranza, icono: 'payments', iconoActivo: 'payments_fill' },
-  { clave: 'planes', ruta: RUTAS.planes, icono: 'sell', iconoActivo: 'sell_fill' },
+  {
+    clave: 'planes',
+    ruta: RUTAS.planes,
+    icono: 'sell',
+    iconoActivo: 'sell_fill',
+    permiso: 'suscripciones.plan.ver',
+  },
   { clave: 'bitacora', ruta: RUTAS.bitacora, icono: 'history', iconoActivo: 'history_fill' },
   {
     clave: 'equipo',

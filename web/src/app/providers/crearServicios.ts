@@ -1,6 +1,7 @@
 import { AlmacenSesion } from '../../shared/api/almacenSesion';
 import { crearClienteFetch } from '../../shared/api/clienteHttp';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
+import { crearPlanesHttp, type PlanesRepositorio } from '../../features/planes';
 import { crearSeguridadHttp, type SeguridadRepositorio } from '../../features/seguridad';
 
 /** Todo lo inyectable de la aplicación: en producción son las implementaciones HTTP; en tests, mocks. */
@@ -8,6 +9,7 @@ export interface Servicios {
   almacen: AlmacenSesion;
   seguridad: SeguridadRepositorio;
   equipo: EquipoRepositorio;
+  planes: PlanesRepositorio;
 }
 
 /** Compone las implementaciones HTTP sobre un único cliente y almacén de sesión. */
@@ -21,5 +23,6 @@ export function crearServicios(
     almacen,
     seguridad: crearSeguridadHttp(cliente, almacen),
     equipo: crearEquipoHttp(cliente),
+    planes: crearPlanesHttp(cliente),
   };
 }

@@ -6,5 +6,20 @@
   "qrIlimitados": "QR ilimitados",
   "fijo": "Fijo",
   "guardar": "Guardar precios",
-  "descartar": "Descartar"
+  "descartar": "Descartar",
+  "hasta": "Hasta",
+  "usuarios": "{{count}} usuarios",
+  "cuentas": "Cuentas",
+  "usuariosEnUso": "Usuarios en uso",
+  "tabla": "Planes",
+  "errorCarga": "No pudimos cargar los planes",
+  "guardando": "Guardando",
+  "guardado": "Precios guardados",
+  "precioInvalido": "Escribe un monto entero en bolivianos",
+  "moneda": "Bs",
+  "editarPrecio": "Editar precio de {{plan}}",
+  "vacio": {
+    "titulo": "Aún no hay planes",
+    "texto": "Los planes se siembran con la plataforma. Revisa la configuración."
+  }
 }
