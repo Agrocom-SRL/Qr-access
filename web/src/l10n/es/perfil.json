@@ -1,0 +1,15 @@
+{
+  "titulo": "Perfil",
+  "cambiarContrasena": "Cambiar contraseña",
+  "actual": "Actual",
+  "nueva": "Nueva",
+  "repetir": "Repite la nueva",
+  "actualizar": "Actualizar contraseña",
+  "tema": "Tema",
+  "temas": {
+    "claro": "Claro",
+    "oscuro": "Oscuro",
+    "sistema": "Según el sistema"
+  },
+  "cerrarSesion": "Cerrar sesión"
+}

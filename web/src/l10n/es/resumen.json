@@ -1,0 +1,16 @@
+{
+  "titulo": "Resumen",
+  "actualizado": "actualizado {{hora}}",
+  "cuentasActivas": "Cuentas activas",
+  "cuentasActivasDetalle": "de {{total}} cuentas · {{porVencer}} por vencer",
+  "usuariosEnUso": "Usuarios en uso",
+  "cupoVendido": "de {{cupo}} de cupo vendido",
+  "porVencer30": "Por vencer en 30 días",
+  "suman": "Suman {{monto}}",
+  "ingresosEsperados": "Ingresos anuales esperados",
+  "ingresosDetalle": "Cuentas activas y por vencer",
+  "renovacionesProximas": "Renovaciones próximas",
+  "ultimasAcciones": "Últimas acciones",
+  "verCobranza": "Ver cobranza",
+  "verBitacora": "Ver bitácora"
+}

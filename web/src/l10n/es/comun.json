@@ -1,0 +1,16 @@
+{
+  "continuar": "Continuar",
+  "atras": "Atrás",
+  "cancelar": "Cancelar",
+  "editar": "Editar",
+  "ver": "Ver",
+  "reintentar": "Reintentar",
+  "mostrando": "Mostrando {{desde}}–{{hasta}} de {{total}}",
+  "sinConexion": "Sin conexión. Datos de las {{hora}}; las acciones vuelven al reconectar.",
+  "sinConexionTotal": {
+    "titulo": "No hay conexión",
+    "texto": "Revisa tu internet. El panel vuelve a cargar solo cuando se recupere."
+  },
+  "errorGenerico": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos.",
+  "codigo": "Código {{codigo}}"
+}

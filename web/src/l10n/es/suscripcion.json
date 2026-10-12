@@ -1,0 +1,8 @@
+{
+  "estado": {
+    "activa": "Activa",
+    "porVencer": "Por vencer",
+    "vencida": "Vencida",
+    "suspendida": "Suspendida"
+  }
+}

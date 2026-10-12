@@ -1,0 +1,22 @@
+{
+  "titulo": "Bitácora",
+  "subtitulo": "Todo cambio relevante en cuentas, planes y equipo",
+  "columna": {
+    "cuando": "Cuándo",
+    "quien": "Quién",
+    "cuenta": "Cuenta",
+    "que": "Qué",
+    "antes": "Antes",
+    "despues": "Después",
+    "origen": "Origen"
+  },
+  "origen": {
+    "panel": "Panel",
+    "app": "App",
+    "automatico": "Automático"
+  },
+  "vacio": {
+    "titulo": "Sin acciones con estos filtros",
+    "texto": "Prueba con otras fechas o quita los filtros."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "titulo": "Equipo AGROCOM",
+  "agregar": "Agregar super admin",
+  "agregarTitulo": "Agrega a alguien del equipo",
+  "contrasenaTemporal": "Contraseña temporal",
+  "contrasenaTemporalAyuda": "Tendrá que cambiarla en su primer ingreso.",
+  "desactivar": "Desactivar",
+  "noAutodesactivar": "No puedes desactivarte. Siempre queda al menos un super admin activo.",
+  "vacio": {
+    "titulo": "Solo estás tú",
+    "texto": "Agrega a otra persona para no quedarte sin acceso al panel."
+  }
+}

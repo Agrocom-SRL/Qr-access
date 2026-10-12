@@ -1,0 +1,13 @@
+{
+  "sesion_credenciales_invalidas": "Credenciales incorrectas",
+  "sesion_bloqueada": "Demasiados intentos, espera unos minutos.",
+  "autenticacion_requerida": "Tu sesión terminó",
+  "cuenta_codigo_existente": "Ese código ya es de otra cuenta",
+  "plan_solo_mejora": "Solo puedes cambiar a un plan con más cupo de usuarios.",
+  "plan_limite_usuarios": "La cuenta alcanzó el cupo de usuarios de su plan.",
+  "suscripcion_vencida": "Suscripción vencida",
+  "validacion_invalida": "Revisa los datos del formulario.",
+  "solicitud_demasiadas": "Demasiados intentos, espera unos minutos.",
+  "red_sin_conexion": "No hay conexión",
+  "desconocido": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos."
+}

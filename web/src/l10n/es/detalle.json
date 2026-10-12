@@ -1,0 +1,19 @@
+{
+  "tabs": {
+    "resumen": "Resumen",
+    "suscripcion": "Suscripción",
+    "sitios": "Sitios y puertas",
+    "bitacora": "Bitácora"
+  },
+  "planActual": "Plan actual",
+  "hastaUsuarios": "Hasta {{count}} usuarios",
+  "usuariosActivos": "Usuarios activos",
+  "puedeCrear": "Puede crear {{count}} usuarios más",
+  "venceEl": "Vence el {{fecha}}, en {{dias}} días. Después, los accesos se rechazan con \"Suscripción vencida\".",
+  "sitiosSoloLectura": "Los sitios y puertas los administra la cuenta desde la app. Aquí solo se consultan.",
+  "renovar": "Renovar",
+  "renovarPago": "Renovar y registrar pago",
+  "cambiarPlan": "Cambiar plan",
+  "suspender": "Suspender",
+  "renovacionesPagos": "Renovaciones y pagos"
+}

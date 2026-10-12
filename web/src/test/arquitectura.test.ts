@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /** Archivos donde sí se permiten valores literales de color: los tokens. */
-const TOKENS = ['theme/primitivos.css', 'theme/tokens.css'];
+const TOKENS = ['theme/acceso-tokens.css', 'theme/theme.ts'];
 
 function archivos(dir: string): string[] {
   return readdirSync(dir).flatMap((nombre) => {

@@ -1,12 +1,12 @@
 .boton {
-  min-height: var(--alto-control);
-  padding: 0 var(--espacio-24);
+  min-height: var(--altoControl);
+  padding: 0 var(--esp24);
   border: 1px solid transparent;
-  border-radius: var(--radio-completo);
+  border-radius: var(--radioCompleto);
   font: inherit;
-  font-weight: var(--peso-seminegrita);
+  font-weight: var(--peso600);
   cursor: pointer;
-  transition: background var(--duracion-normal) var(--curva);
+  transition: background var(--dur200) var(--easeOutCubic);
 }
 
 .boton:disabled {
@@ -15,22 +15,22 @@
 }
 
 .primario {
-  background: var(--color-primario);
-  color: var(--color-sobre-primario);
+  background: var(--primario);
+  color: var(--sobrePrimario);
 }
 
 .secundario {
-  background: var(--color-superficie);
-  border-color: var(--color-borde);
-  color: var(--color-texto);
+  background: var(--superficie);
+  border-color: var(--borde);
+  color: var(--texto);
 }
 
 .texto {
   background: transparent;
-  color: var(--color-primario);
+  color: var(--primario);
 }
 
 .peligro {
-  background: var(--color-peligro);
-  color: var(--color-sobre-primario);
+  background: var(--peligro);
+  color: var(--sobrePrimario);
 }

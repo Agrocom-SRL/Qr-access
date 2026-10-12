@@ -1,0 +1,19 @@
+{
+  "titulo": "Registra el pago",
+  "monto": "Monto",
+  "montoAyuda": "Precio vigente del plan",
+  "fecha": "Fecha de pago",
+  "medio": "Medio de pago",
+  "medios": {
+    "transferencia": "Transferencia",
+    "deposito": "Depósito",
+    "efectivo": "Efectivo"
+  },
+  "referencia": "Referencia",
+  "referenciaAyuda": "Número de transacción o de boleta",
+  "comprobante": "Comprobante · opcional",
+  "nuevaVigencia": "Nueva vigencia",
+  "confirmarTitulo": "¿Registrar el pago y renovar?",
+  "confirmarTexto": "{{cuenta}} quedará vigente hasta el {{fecha}}.",
+  "registrar": "Registrar pago"
+}

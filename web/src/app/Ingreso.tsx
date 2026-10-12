@@ -1,9 +1,10 @@
-import { t } from '../l10n';
+import { useTranslation } from 'react-i18next';
 import { AccesoBoton } from '../shared/componentes/AccesoBoton';
 import styles from './Ingreso.module.css';
 
 /** Esqueleto de la pantalla de ingreso: se completa con el handoff de diseño. */
 export function Ingreso() {
+  const { t } = useTranslation(['auth', 'app']);
   return (
     <main className={styles.pagina}>
       <form
@@ -12,17 +13,17 @@ export function Ingreso() {
           e.preventDefault();
         }}
       >
-        <h1 className={styles.titulo}>{t.appTitulo}</h1>
-        <p className={styles.subtitulo}>{t.appSubtitulo}</p>
+        <h1 className={styles.titulo}>{t('app:nombre')}</h1>
+        <p className={styles.subtitulo}>{t('app:subtitulo')}</p>
         <label className={styles.campo}>
-          {t.ingresoUsuario}
+          {t('auth:usuario')}
           <input name="usuario" autoComplete="username" />
         </label>
         <label className={styles.campo}>
-          {t.ingresoContrasena}
+          {t('auth:contrasena')}
           <input name="contrasena" type="password" autoComplete="current-password" />
         </label>
-        <AccesoBoton type="submit">{t.ingresoBoton}</AccesoBoton>
+        <AccesoBoton type="submit">{t('auth:ingresar')}</AccesoBoton>
       </form>
     </main>
   );

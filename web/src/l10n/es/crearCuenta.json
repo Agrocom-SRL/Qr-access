@@ -1,0 +1,33 @@
+{
+  "titulo": "Crea una cuenta",
+  "pasos": {
+    "empresa": "Empresa",
+    "plan": "Plan",
+    "vigencia": "Vigencia y admin",
+    "confirmar": "Confirmar"
+  },
+  "razonSocial": "Razón social",
+  "nit": "NIT",
+  "ciudad": "Ciudad",
+  "codigo": "Código de cuenta · 3 letras",
+  "codigoAyuda": "Es el inicio del PIN de todos los usuarios de la cuenta. No se puede cambiar después.",
+  "codigoExiste": "Ese código ya es de {{cuenta}}",
+  "disponibles": "Disponibles:",
+  "contacto": "Contacto de facturación",
+  "telefono": "Teléfono",
+  "elegirPlan": "Elige el plan",
+  "avisoPlanes": "Precios de ejemplo; se editan en Planes. El único límite es el cupo de usuarios activos. Para pasar el cupo, la cuenta cambia a un plan mayor.",
+  "inicio": "Inicio",
+  "vence": "Vence",
+  "venceAyuda": "12 meses desde el inicio",
+  "adminInicial": "Administrador inicial",
+  "adminInicialAyuda": "Recibe el primer PIN y crea al resto de los usuarios desde la app.",
+  "nombreEtiqueta": "Nombre o etiqueta",
+  "revisa": "Revisa y confirma",
+  "creada": "Cuenta creada",
+  "creadaTexto": "{{cuenta}} ya puede ingresar a la app.",
+  "pinDe": "PIN de {{nombre}} · Administrador",
+  "copiarPin": "Copiar PIN",
+  "pinUnaVez": "Este PIN no se vuelve a mostrar. Cópialo y entrégalo al administrador. Si se pierde, tendrás que restablecerlo.",
+  "irCuenta": "Ya lo copié, ir a la cuenta"
+}

@@ -2,47 +2,47 @@
   display: grid;
   min-height: 100vh;
   place-items: center;
-  padding: var(--espacio-16);
+  padding: var(--esp16);
 }
 
 .tarjeta {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-16);
+  gap: var(--esp16);
   width: 100%;
-  max-width: var(--ancho-formulario);
-  padding: var(--espacio-32);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-xl);
-  box-shadow: var(--sombra-1);
+  max-width: var(--anchoFormulario);
+  padding: var(--esp32);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
 }
 
 .titulo {
   margin: 0;
-  font-size: var(--texto-24);
-  font-weight: var(--peso-seminegrita);
+  font-size: var(--texto24);
+  font-weight: var(--peso600);
 }
 
 .subtitulo {
   margin: 0;
-  color: var(--color-texto-secundario);
+  color: var(--textoSecundario);
 }
 
 .campo {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-4);
-  font-size: var(--texto-14);
-  font-weight: var(--peso-medio);
+  gap: var(--esp4);
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
 }
 
 .campo input {
-  min-height: var(--alto-control);
-  padding: 0 var(--espacio-12);
-  background: var(--color-superficie);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-m);
-  color: var(--color-texto);
+  min-height: var(--altoControl);
+  padding: 0 var(--esp12);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio10);
+  color: var(--texto);
   font: inherit;
 }

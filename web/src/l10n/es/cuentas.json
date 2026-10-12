@@ -1,0 +1,27 @@
+{
+  "titulo": "Cuentas",
+  "subtitulo": "{{count}} empresas cliente",
+  "crear": "Crear cuenta",
+  "buscar": "Busca por nombre o código",
+  "filtro": {
+    "todas": "Todas",
+    "activas": "Activas",
+    "porVencer": "Por vencer",
+    "vencidas": "Vencidas",
+    "suspendidas": "Suspendidas"
+  },
+  "columna": {
+    "cuenta": "Cuenta",
+    "codigo": "Código",
+    "plan": "Plan",
+    "usuarios": "Usuarios",
+    "vence": "Vence",
+    "estado": "Estado",
+    "acciones": "Acciones"
+  },
+  "vacio": {
+    "titulo": "Aún no hay cuentas",
+    "texto": "Crea la primera empresa cliente para empezar a vender."
+  },
+  "error": "No pudimos cargar las cuentas"
+}
