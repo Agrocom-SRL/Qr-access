@@ -117,7 +117,7 @@ describe('equipo (A11)', () => {
   async function irAEquipo(servicios: Servicios) {
     montar(servicios, '/ingreso');
     await ingresar();
-    await userEvent.click(await screen.findByRole('link', { name: /Equipo AGROCOM/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /Usuarios/ }));
   }
 
   it('lista al equipo: "Tú" sin acción y desactivar solo en otra persona activa', async () => {
@@ -194,42 +194,10 @@ describe('planes (A09)', () => {
   it('muestra los tres planes con su precio, cuentas y usuarios en uso', async () => {
     await irAPlanes(crearServiciosDePrueba());
     expect(await screen.findByText('100 usuarios')).toBeInTheDocument();
-    expect(screen.getByLabelText('Editar precio de 200 usuarios')).toHaveValue('21.600');
+    expect(screen.getByText('21.600')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guardar precios' })).not.toBeInTheDocument();
     expect(screen.getByText('1.604')).toBeInTheDocument();
     expect(screen.getAllByText('QR ilimitados')).toHaveLength(3);
-  });
-
-  it('guardar manda solo los precios que cambiaron', async () => {
-    const guardarPrecios = vi.fn(() => Promise.resolve());
-    await irAPlanes(crearServiciosDePrueba({ planes: { guardarPrecios } }));
-    const guardar = await screen.findByRole('button', { name: 'Guardar precios' });
-    expect(guardar).toBeDisabled();
-    const campo = screen.getByLabelText('Editar precio de 100 usuarios');
-    await userEvent.clear(campo);
-    await userEvent.type(campo, '13000');
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar precios' }));
-    await waitFor(() => {
-      expect(guardarPrecios).toHaveBeenCalledWith([{ planId: '1', precioAnual: 13000 }]);
-    });
-  });
-
-  it('un monto inválido marca el campo y no habilita guardar', async () => {
-    await irAPlanes(crearServiciosDePrueba());
-    const campo = await screen.findByLabelText('Editar precio de 100 usuarios');
-    await userEvent.clear(campo);
-    await userEvent.type(campo, '12,5');
-    expect(campo).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByRole('button', { name: 'Guardar precios' })).toBeDisabled();
-  });
-
-  it('descartar vuelve a los precios vigentes', async () => {
-    await irAPlanes(crearServiciosDePrueba());
-    const campo = await screen.findByLabelText('Editar precio de 100 usuarios');
-    await userEvent.clear(campo);
-    await userEvent.type(campo, '15000');
-    await userEvent.click(screen.getByRole('button', { name: 'Descartar' }));
-    await userEvent.tab();
-    expect(screen.getByLabelText('Editar precio de 100 usuarios')).toHaveValue('12.000');
   });
 });
 

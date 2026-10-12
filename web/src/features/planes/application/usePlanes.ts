@@ -10,24 +10,6 @@ export function usePlanes() {
   return useQuery({ queryKey: CLAVE_PLANES, queryFn: () => repositorio.listar() });
 }
 
-export function useGuardarPrecios() {
-  const repositorio = usePlanesRepositorio();
-  const clienteConsultas = useQueryClient();
-  return useMutation({
-    mutationFn: (cambios: readonly { planId: string; precioAnual: number }[]) =>
-      repositorio.guardarPrecios(cambios),
-    onSuccess: async () => {
-      await Promise.all([
-        clienteConsultas.invalidateQueries({ queryKey: CLAVE_PLANES }),
-        // La bitácora de la plataforma registra el cambio de precio.
-        clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
-        clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
-        clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
-      ]);
-    },
-  });
-}
-
 /** Tras crear, editar o retirar un plan se refresca todo lo que lo muestra. */
 function useInvalidarPlanes() {
   const clienteConsultas = useQueryClient();

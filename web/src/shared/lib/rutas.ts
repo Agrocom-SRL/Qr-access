@@ -12,6 +12,7 @@ export const RUTAS = {
   bitacora: '/bitacora',
   equipo: '/equipo',
   perfil: '/perfil',
+  estados: '/estados',
 } as const;
 
 export const rutaDeCuenta = (id: string, pestana?: string): string =>

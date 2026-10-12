@@ -91,3 +91,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.banner {
+  display: block;
+  width: 100%;
+  height: var(--tam120);
+  margin-bottom: var(--esp24);
+  object-fit: cover;
+  border-radius: var(--radio20);
+}

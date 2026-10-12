@@ -11,10 +11,13 @@ import {
 } from 'react';
 import type { AlmacenSesion } from '../../../shared/api/almacenSesion';
 import type { SesionIniciada } from '../domain/sesion';
+import { useSeguridadRepositorio } from './contextos';
 
 interface ContextoSesion {
   /** `null` si no hay sesión. */
   sesion: SesionIniciada | null;
+  /** `true` mientras se recupera la sesión que recordaba la pestaña (recarga o URL nueva). */
+  restaurando: boolean;
   /** `true` cuando la API cortó la sesión (refresco fallido): se muestra PE5c. */
   vencida: boolean;
   iniciar: (sesion: SesionIniciada) => void;
@@ -41,7 +44,22 @@ export function SesionProvider({
   );
   const [sesion, setSesion] = useState<SesionIniciada | null>(null);
   const [vencida, setVencida] = useState(false);
+  const [restaurando, setRestaurando] = useState(() => almacen.refrescoRecordado() !== null);
   const cierreVoluntario = useRef(false);
+  const repositorio = useSeguridadRepositorio();
+
+  useEffect(() => {
+    if (!restaurando) return;
+    let activo = true;
+    void repositorio.restaurar().then((recuperada) => {
+      if (!activo) return;
+      if (recuperada) setSesion((actual) => actual ?? recuperada);
+      setRestaurando(false);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [repositorio, restaurando]);
 
   useEffect(() => {
     if (tokens === null && sesion !== null && !cierreVoluntario.current) {
@@ -61,8 +79,8 @@ export function SesionProvider({
   }, []);
 
   const valor = useMemo(
-    () => ({ sesion, vencida, iniciar, terminar }),
-    [sesion, vencida, iniciar, terminar],
+    () => ({ sesion, vencida, restaurando, iniciar, terminar }),
+    [sesion, vencida, restaurando, iniciar, terminar],
   );
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }

@@ -46,9 +46,10 @@ export function useCerrarSesion() {
   const clienteConsultas = useQueryClient();
   const { terminar } = useSesion();
   return useMutation({
+    // Se marca como cierre voluntario antes de limpiar los tokens: no es una sesión vencida.
+    onMutate: terminar,
     mutationFn: () => repositorio.cerrarSesion(),
     onSettled: () => {
-      terminar();
       clienteConsultas.clear();
     },
   });

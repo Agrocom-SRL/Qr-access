@@ -17,6 +17,12 @@ body {
   line-height: var(--interlineadoCuerpo);
 }
 
+/* El navegador (Edge, Safari) dibuja su propio ojo; el campo ya trae el suyo. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
 h1,
 h2,
 h3,

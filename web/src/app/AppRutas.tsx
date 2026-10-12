@@ -12,7 +12,8 @@ import { PlanesPage } from '../features/planes';
 import { ResumenPage } from '../features/resumen';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
 import { LayoutAdmin } from './LayoutAdmin';
-import { PaginaProximamente } from './PaginaProximamente';
+import { EstadosPage } from './EstadosPage';
+import { RutaNoEncontrada } from './RutaNoEncontrada';
 import { RUTAS } from './rutas';
 
 /** Árbol de rutas; el módulo de cada pantalla se agrega aquí a medida que se construye. */
@@ -31,7 +32,8 @@ export function AppRutas() {
         <Route path={RUTAS.bitacora} element={<BitacoraPage />} />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />
         <Route path={RUTAS.perfil} element={<PerfilPage />} />
-        <Route path="*" element={<PaginaProximamente />} />
+        <Route path={RUTAS.estados} element={<EstadosPage />} />
+        <Route path="*" element={<RutaNoEncontrada />} />
       </Route>
     </Routes>
   );

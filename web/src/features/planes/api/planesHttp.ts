@@ -61,14 +61,5 @@ export function crearPlanesHttp(cliente: ClienteHttp): PlanesRepositorio {
       });
       return dto.resultado;
     },
-    async guardarPrecios(cambios) {
-      await cliente.solicitar({
-        metodo: 'PUT',
-        ruta: '/plataforma/planes/precios',
-        cuerpo: {
-          precios: cambios.map((c) => ({ plan_id: c.planId, precio_anual: c.precioAnual })),
-        },
-      });
-    },
   };
 }
