@@ -49,3 +49,7 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+.tabla td.ajustable {
+  white-space: normal;
+}

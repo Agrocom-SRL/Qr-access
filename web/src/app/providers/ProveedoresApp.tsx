@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { ProveedorBitacora } from '../../features/bitacora';
 import { ProveedorCuentas } from '../../features/cuentas';
 import { ProveedorEquipo } from '../../features/equipo';
 import { ProveedorPagos } from '../../features/pagos';
 import { ProveedorPlanes } from '../../features/planes';
+import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
 import { ProveedorSuscripciones } from '../../features/suscripciones';
 import { ProveedorTema } from '../../theme/ProveedorTema';
@@ -48,7 +50,11 @@ export function ProveedoresApp({
               <ProveedorCuentas valor={servicios.cuentas}>
                 <ProveedorSuscripciones valor={servicios.suscripciones}>
                   <ProveedorPagos valor={servicios.pagos}>
-                    <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
+                    <ProveedorBitacora valor={servicios.bitacora}>
+                      <ProveedorResumen valor={servicios.resumen}>
+                        <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
+                      </ProveedorResumen>
+                    </ProveedorBitacora>
                   </ProveedorPagos>
                 </ProveedorSuscripciones>
               </ProveedorCuentas>

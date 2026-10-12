@@ -1,5 +1,5 @@
+import { celdaCsv } from '@/shared/lib/csv';
 import {
-  celdaCsv,
   cobranzaACsv,
   parsearMonto,
   validarPago,

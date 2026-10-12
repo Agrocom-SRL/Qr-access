@@ -32,7 +32,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     iconoActivo: 'sell_fill',
     permiso: 'suscripciones.plan.ver',
   },
-  { clave: 'bitacora', ruta: RUTAS.bitacora, icono: 'history', iconoActivo: 'history_fill' },
+  {
+    clave: 'bitacora',
+    ruta: RUTAS.bitacora,
+    icono: 'history',
+    iconoActivo: 'history_fill',
+    permiso: 'bitacora.registro.ver',
+  },
   {
     clave: 'equipo',
     ruta: RUTAS.equipo,

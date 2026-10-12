@@ -10,6 +10,8 @@ export interface Columna<T> {
   celda: (fila: T) => ReactNode;
   /** Se oculta entre 768 y 1023 px (tablet). */
   secundaria?: boolean;
+  /** El texto puede partirse en varias líneas (valores largos de antes/después). */
+  ajustable?: boolean;
   alinear?: 'inicio' | 'fin';
 }
 
@@ -45,7 +47,11 @@ export function TablaDatos<T>({
   incrustada = false,
 }: Props<T>) {
   const clase = (c: Columna<T>) =>
-    [c.secundaria ? styles.secundaria : '', c.alinear === 'fin' ? styles.fin : '']
+    [
+      c.secundaria ? styles.secundaria : '',
+      c.alinear === 'fin' ? styles.fin : '',
+      c.ajustable ? styles.ajustable : '',
+    ]
       .filter(Boolean)
       .join(' ');
   return (

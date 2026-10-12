@@ -1,3 +1,5 @@
+import { celdaCsv } from '../../../shared/lib/csv';
+
 /** Reglas puras de los pagos y la cobranza (A07 y A08), ADR 0022. */
 
 export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
@@ -67,12 +69,6 @@ export interface Cobranza {
   };
   conteos: Record<VentanaDeCobranza, number>;
   filas: readonly FilaDeCobranza[];
-}
-
-/** Una celda de CSV: se encomilla si lleva coma, comilla o salto de línea (RFC 4180). */
-export function celdaCsv(valor: string | number): string {
-  const texto = String(valor);
-  return /[",\n\r]/.test(texto) ? `"${texto.replaceAll('"', '""')}"` : texto;
 }
 
 /** El CSV de la cobranza visible: una fila por cuenta, fechas `aaaa-mm-dd` para que Excel las ordene. */

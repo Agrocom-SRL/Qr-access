@@ -20,6 +20,8 @@ export function useGuardarPrecios() {
         clienteConsultas.invalidateQueries({ queryKey: CLAVE_PLANES }),
         // La bitácora de la plataforma registra el cambio de precio.
         clienteConsultas.invalidateQueries({ queryKey: ['bitacora'] }),
+        clienteConsultas.invalidateQueries({ queryKey: ['resumen'] }),
+        clienteConsultas.invalidateQueries({ queryKey: ['cobranza'] }),
       ]);
     },
   });

@@ -2,6 +2,8 @@ import { AlmacenSesion } from '@/shared/api/almacenSesion';
 import { ErrorApi } from '@/shared/api/errorApi';
 import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
+import type { BitacoraRepositorio, EventoBitacora } from '@/features/bitacora';
+import type { ResumenRepositorio } from '@/features/resumen';
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
@@ -24,6 +26,8 @@ export const SUPER_ADMIN = {
     'suscripciones.suscripcion.editar',
     'suscripciones.pago.registrar',
     'suscripciones.cobranza.ver',
+    'bitacora.registro.ver',
+    'resumen.panel.ver',
   ],
 } as const;
 
@@ -184,6 +188,67 @@ export const SUSCRIPCION = {
   ],
 };
 
+export const EVENTOS: EventoBitacora[] = [
+  {
+    id: '1',
+    ocurridoEn: new Date(),
+    usuario: { id: '1', nombre: 'Lucía Paz' },
+    cuenta: { id: '2', codigo: 'FRO' },
+    accion: 'creado' as const,
+    codigo: 'pago.registrado',
+    canal: 'panel' as const,
+    antes: null,
+    despues: { monto: 12000, referencia: 'TRF-1' },
+  },
+  {
+    id: '2',
+    ocurridoEn: new Date('2026-10-09T22:30:00Z'),
+    usuario: { id: '3', nombre: 'Marco Suárez' },
+    cuenta: { id: '1', codigo: 'AVC' },
+    accion: 'actualizado' as const,
+    codigo: 'suscripcion.plan_cambiado',
+    canal: 'panel' as const,
+    antes: { plan: '100 usuarios' },
+    despues: { plan: '200 usuarios' },
+  },
+  {
+    id: '3',
+    ocurridoEn: new Date('2026-10-11T04:00:00Z'),
+    usuario: null,
+    cuenta: { id: '4', codigo: 'LAM' },
+    accion: 'actualizado' as const,
+    codigo: 'suscripcion.suspendida',
+    canal: 'automatico' as const,
+    antes: { estado: 'vigente' },
+    despues: { estado: 'suspendida' },
+  },
+];
+
+export const RESUMEN = {
+  actualizadoEn: new Date('2026-10-12T14:42:00Z'),
+  cuentas: { activas: 38, total: 42, porVencer: 5 },
+  usuarios: { enUso: 5214, cupoVendido: 7650 },
+  porVencer30: { cuentas: 5, monto: 100800 },
+  ingresosEsperados: 812400,
+  renovaciones: [
+    {
+      cuenta: { id: '1', codigo: 'SDE', nombre: 'Semillas del Este' },
+      venceEl: new Date('2026-10-18T12:00:00Z'),
+      diasRestantes: 6,
+      monto: 12000,
+      estado: 'porVencer' as const,
+    },
+    {
+      cuenta: { id: '2', codigo: 'LAM', nombre: 'Lácteos Montero' },
+      venceEl: new Date('2026-10-02T12:00:00Z'),
+      diasRestantes: -10,
+      monto: 21600,
+      estado: 'vencida' as const,
+    },
+  ],
+  ultimasAcciones: EVENTOS,
+};
+
 export const COBRANZA = {
   totales: {
     porCobrar30: { monto: 100800, cuentas: 5 },
@@ -214,6 +279,8 @@ export function crearServiciosDePrueba(
     cuentas?: Partial<CuentasRepositorio>;
     suscripciones?: Partial<SuscripcionesRepositorio>;
     pagos?: Partial<PagosRepositorio>;
+    bitacora?: Partial<BitacoraRepositorio>;
+    resumen?: Partial<ResumenRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -311,7 +378,16 @@ export function crearServiciosDePrueba(
     cobranza: () => Promise.resolve(COBRANZA),
     ...parcial.pagos,
   };
-  return { almacen, seguridad, equipo, planes, cuentas, suscripciones, pagos };
+  const bitacora: BitacoraRepositorio = {
+    listar: () => Promise.resolve({ elementos: EVENTOS, pagina: 1, porPagina: 10, total: 184 }),
+    cuentas: () => Promise.resolve([{ id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' }]),
+    ...parcial.bitacora,
+  };
+  const resumen: ResumenRepositorio = {
+    obtener: () => Promise.resolve(RESUMEN),
+    ...parcial.resumen,
+  };
+  return { almacen, seguridad, equipo, planes, cuentas, suscripciones, pagos, bitacora, resumen };
 }
 
 export { ErrorApi };

@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { COBRANZA, ErrorApi, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
+import { COBRANZA, ErrorApi, EVENTOS, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
 import { ProveedoresApp } from '@/app/providers/ProveedoresApp';
@@ -669,5 +669,124 @@ describe('cobranza (A08)', () => {
     await abrirCobranza(crearServiciosDePrueba());
     await userEvent.click(await screen.findByRole('button', { name: 'Exportar CSV' }));
     expect(crear).toHaveBeenCalledOnce();
+  });
+});
+
+describe('bitácora (A10)', () => {
+  async function abrirBitacora(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Bitácora/ }));
+  }
+
+  it('describe cada evento con su texto, antes y después, y el origen', async () => {
+    await abrirBitacora(crearServiciosDePrueba());
+    const tabla = await screen.findByRole('table', { name: 'Bitácora' });
+    expect(within(tabla).getByText('Registró pago')).toBeInTheDocument();
+    expect(within(tabla).getByText('Bs 12.000 · TRF-1')).toBeInTheDocument();
+    expect(within(tabla).getByText('Cambió plan')).toBeInTheDocument();
+    expect(within(tabla).getByText('100 usuarios')).toBeInTheDocument();
+    expect(within(tabla).getByText('Sistema')).toBeInTheDocument();
+    expect(within(tabla).getByText('Automático')).toBeInTheDocument();
+    expect(within(tabla).getAllByText('Panel')).toHaveLength(2);
+    expect(screen.getByText('Mostrando 1–10 de 184')).toBeInTheDocument();
+  });
+
+  it('filtrar por cuenta y por acción consulta la API con esos filtros', async () => {
+    const listar = vi.fn(() =>
+      Promise.resolve({ elementos: [], pagina: 1, porPagina: 10, total: 0 }),
+    );
+    await abrirBitacora(crearServiciosDePrueba({ bitacora: { listar } }));
+    await userEvent.selectOptions(await screen.findByLabelText('Acción'), 'creado');
+    await waitFor(() => {
+      expect(listar).toHaveBeenLastCalledWith(expect.objectContaining({ accion: 'creado' }), 10);
+    });
+    await userEvent.selectOptions(screen.getByLabelText('Cuenta'), '1');
+    await waitFor(() => {
+      expect(listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ cuentaId: '1', accion: 'creado' }),
+        10,
+      );
+    });
+    expect(await screen.findByText('Sin acciones con estos filtros')).toBeInTheDocument();
+  });
+
+  it('error de carga con reintento', async () => {
+    await abrirBitacora(
+      crearServiciosDePrueba({
+        bitacora: { listar: () => Promise.reject(new ErrorApi(500, 'interno')) },
+      }),
+    );
+    expect(await screen.findByText('No pudimos cargar la bitácora')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('un código de evento que el panel no conoce no sale en crudo', async () => {
+    await abrirBitacora(
+      crearServiciosDePrueba({
+        bitacora: {
+          listar: () =>
+            Promise.resolve({
+              elementos: [
+                {
+                  ...EVENTOS[0],
+                  id: '9',
+                  codigo: 'cosa.nueva',
+                  despues: null,
+                } as (typeof EVENTOS)[number],
+              ],
+              pagina: 1,
+              porPagina: 10,
+              total: 1,
+            }),
+        },
+      }),
+    );
+    expect(await screen.findByText('Creó cosa')).toBeInTheDocument();
+  });
+
+  it('la pestaña Bitácora de una cuenta filtra por esa cuenta y no repite la columna Cuenta', async () => {
+    const listar = vi.fn(() =>
+      Promise.resolve({ elementos: EVENTOS, pagina: 1, porPagina: 10, total: 3 }),
+    );
+    const servicios = crearServiciosDePrueba({ bitacora: { listar } });
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+    await userEvent.click(await screen.findByRole('tab', { name: 'Bitácora' }));
+    await waitFor(() => {
+      expect(listar).toHaveBeenCalledWith(expect.objectContaining({ cuentaId: '1' }), 10);
+    });
+    const tabla = await screen.findByRole('table', { name: 'Bitácora' });
+    expect(within(tabla).queryByRole('columnheader', { name: 'Cuenta' })).not.toBeInTheDocument();
+  });
+});
+
+describe('resumen (A02)', () => {
+  it('es la pantalla de inicio: indicadores, renovaciones y últimas acciones', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    expect(await screen.findByRole('heading', { name: 'Resumen' })).toBeInTheDocument();
+    expect(await screen.findByText('38')).toBeInTheDocument();
+    expect(screen.getByText('de 42 cuentas · 5 por vencer')).toBeInTheDocument();
+    expect(screen.getByText('5.214')).toBeInTheDocument();
+    expect(screen.getByText('de 7.650 de cupo vendido · 68%')).toBeInTheDocument();
+    expect(screen.getByText('Suman Bs 100.800')).toBeInTheDocument();
+    expect(screen.getByText('Bs 812.400')).toBeInTheDocument();
+    expect(screen.getByText('en 6 días')).toBeInTheDocument();
+    expect(screen.getByText('hace 10 días')).toBeInTheDocument();
+    expect(screen.getByText(/Registró pago · FRO/)).toBeInTheDocument();
+  });
+
+  it('error de carga con reintento', async () => {
+    montar(
+      crearServiciosDePrueba({
+        resumen: { obtener: () => Promise.reject(new ErrorApi(500, 'interno')) },
+      }),
+      '/ingreso',
+    );
+    await ingresar();
+    expect(await screen.findByText('No pudimos cargar el resumen')).toBeInTheDocument();
   });
 });
