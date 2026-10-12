@@ -1,5 +1,7 @@
 # ADR 0018 — Inicio de sesión de los usuarios de cuenta por PIN
 
+**Nota (ADR 0023):** el hash del PIN ya no incluye el código de la cuenta (`argon2id(<id de la cuenta>|<sufijo>)`), para poder cambiar el código sin invalidar los PIN.
+
 **Estado:** Propuesta (2026-10-08); formato del PIN y quién lo genera confirmados el 2026-10-09 (D-22, D-23). Queda abierta D-24. Modifica el ADR 0004 §3 para los usuarios de cuenta.
 
 ## Contexto

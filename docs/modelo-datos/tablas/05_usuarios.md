@@ -14,7 +14,7 @@ Quien entra a la app. Un usuario de cuenta es un PIN con su etiqueta (ADR 0018);
 | `tenant_id` | `BIGINT UNSIGNED` | sí | FK a `cuentas` |
 | `etiqueta` | `VARCHAR(80)` | sí |  |
 | `pin_indice` | `CHAR(64)` | sí | HMAC del PIN (sensible) |
-| `pin_hash` | `VARCHAR(255)` | sí | argon2id del PIN (sensible) |
+| `pin_hash` | `VARCHAR(255)` | sí | argon2id de `<id de la cuenta>\|<sufijo>` (sensible, ADR 0023) |
 | `pin_generado_at` | `DATETIME(3)` | sí |  |
 | `username` | `VARCHAR(60)` | sí |  |
 | `contrasena_hash` | `VARCHAR(255)` | sí | argon2id (solo plataforma, sensible) |
