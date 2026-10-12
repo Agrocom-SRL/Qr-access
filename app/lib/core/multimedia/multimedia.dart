@@ -7,6 +7,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 abstract final class Multimedia {
   static const fotoBienvenida = 'assets/imagenes/bienvenida_edificio.jpg';
   static const fotoIngreso = 'assets/imagenes/ingreso_acceso.jpg';
+  static const fotoCerradura = 'assets/imagenes/cerradura_biometrica.jpg';
+  static const fotoIntercomunicador = 'assets/imagenes/intercomunicador.jpg';
+  static const fotoPorton = 'assets/imagenes/porton_atardecer.jpg';
+  static const fotoMuro = 'assets/imagenes/muro_jardin.jpg';
   static const logoPlaca = 'assets/logo/logo_placa.png';
   static const fondoSplash = 'assets/logo/fondo_splash.png';
   static const fondoSplashOscuro = 'assets/logo/fondo_splash_oscuro.png';

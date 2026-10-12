@@ -14,6 +14,7 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/hero_con_foto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -195,12 +196,8 @@ class _HeroEmitir extends StatelessWidget {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
-    return Container(
-      padding: EdgeInsets.all(tokens.espacio.xl),
-      decoration: BoxDecoration(
-        color: colores.hero,
-        borderRadius: BorderRadius.circular(tokens.radio.xl),
-      ),
+    return HeroConFoto(
+      ruta: Multimedia.fotoMuro,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
