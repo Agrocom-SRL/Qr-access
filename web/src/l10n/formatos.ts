@@ -43,3 +43,25 @@ export function formatearHora(
     timeZone: zona,
   }).format(new Date(fecha));
 }
+
+/** Cuenta regresiva `mm:ss` (A01b: "Ingresar en 04:32"). */
+export function formatearCuentaRegresiva(segundos: number): string {
+  const total = Math.max(0, Math.ceil(segundos));
+  const minutos = Math.floor(total / 60);
+  const resto = total % 60;
+  return `${String(minutos).padStart(2, '0')}:${String(resto).padStart(2, '0')}`;
+}
+
+/** Día de `fecha` respecto de `ahora` en la zona dada: lo que decide "Hoy", "Ayer" o la fecha completa. */
+export function relacionDeDia(
+  fecha: Date | string,
+  ahora: Date = new Date(),
+  zona = 'America/La_Paz',
+): 'hoy' | 'ayer' | 'otro' {
+  const diaDe = (f: Date) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: zona, dateStyle: 'short' }).format(f);
+  const dia = diaDe(new Date(fecha));
+  if (dia === diaDe(ahora)) return 'hoy';
+  if (dia === diaDe(new Date(ahora.getTime() - 86_400_000))) return 'ayer';
+  return 'otro';
+}

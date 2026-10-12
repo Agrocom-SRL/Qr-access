@@ -18,5 +18,15 @@
   "siguiente": "Página siguiente",
   "cerrar": "Cerrar",
   "cargando": "Cargando",
-  "abrirMenu": "Menú"
+  "abrirMenu": "Menú",
+  "hoy": "Hoy",
+  "ayer": "Ayer",
+  "copiar": "Copiar",
+  "copiado": "Copiado",
+  "pronto": {
+    "titulo": "Esta sección llega pronto",
+    "texto": "La estamos construyendo junto con su API."
+  },
+  "desde": "desde {{fecha}}",
+  "volver": "Volver"
 }

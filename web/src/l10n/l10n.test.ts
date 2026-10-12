@@ -1,5 +1,11 @@
 import { i18next } from '.';
-import { formatearFecha, formatearHora, formatearMonto } from './formatos';
+import {
+  formatearCuentaRegresiva,
+  formatearFecha,
+  formatearHora,
+  formatearMonto,
+  relacionDeDia,
+} from './formatos';
 import { traducirError } from './traducirError';
 
 describe('formatos', () => {
@@ -26,5 +32,20 @@ describe('traducirError', () => {
       'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.',
     );
     expect(traducirError(t, undefined)).toContain('Algo falló');
+  });
+});
+
+describe('cuenta regresiva y día relativo', () => {
+  it('formatea mm:ss', () => {
+    expect(formatearCuentaRegresiva(272)).toBe('04:32');
+    expect(formatearCuentaRegresiva(0)).toBe('00:00');
+    expect(formatearCuentaRegresiva(-3)).toBe('00:00');
+  });
+
+  it('hoy, ayer u otro según la zona de La Paz', () => {
+    const ahora = new Date('2026-10-12T16:00:00Z');
+    expect(relacionDeDia('2026-10-12T12:12:00Z', ahora)).toBe('hoy');
+    expect(relacionDeDia('2026-10-11T22:30:00Z', ahora)).toBe('ayer');
+    expect(relacionDeDia('2026-09-02T12:00:00Z', ahora)).toBe('otro');
   });
 });

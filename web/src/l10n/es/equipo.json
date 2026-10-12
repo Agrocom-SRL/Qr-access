@@ -9,5 +9,32 @@
   "vacio": {
     "titulo": "Solo estás tú",
     "texto": "Agrega a otra persona para no quedarte sin acceso al panel."
-  }
+  },
+  "columna": {
+    "nombre": "Nombre",
+    "usuario": "Usuario",
+    "ultimoIngreso": "Último ingreso",
+    "estado": "Estado",
+    "accion": "Acción"
+  },
+  "yo": "Tú",
+  "activo": "Activo",
+  "desactivado": "Desactivado",
+  "nuncaIngreso": "Sin ingresos",
+  "nombreCompleto": "Nombre completo",
+  "usuario": "Usuario",
+  "disponible": "Disponible",
+  "noDisponible": "Ese usuario no está disponible",
+  "verificando": "Verificando",
+  "regenerar": "Generar otra contraseña",
+  "agregarConfirmar": "Agregar",
+  "agregando": "Agregando",
+  "confirmarTitulo": "¿Desactivar a {{nombre}}?",
+  "confirmarTexto": "Dejará de poder ingresar al panel y se cerrarán sus sesiones.",
+  "desactivando": "Desactivando",
+  "tabla": "Equipo AGROCOM",
+  "errorCarga": "No pudimos cargar el equipo",
+  "requerido": "Este campo es obligatorio",
+  "subtitulo_one": "Quienes administran la plataforma · {{count}} activo",
+  "subtitulo_other": "Quienes administran la plataforma · {{count}} activos"
 }

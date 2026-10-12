@@ -10,3 +10,9 @@
   font-size: var(--texto14);
   font-weight: var(--peso600);
 }
+
+.grande {
+  width: var(--tam56);
+  height: var(--tam56);
+  font-size: var(--texto20);
+}

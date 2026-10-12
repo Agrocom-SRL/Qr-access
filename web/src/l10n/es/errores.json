@@ -9,5 +9,14 @@
   "validacion_invalida": "Revisa los datos del formulario.",
   "solicitud_demasiadas": "Demasiados intentos, espera unos minutos.",
   "red_sin_conexion": "No hay conexión",
-  "desconocido": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos."
+  "desconocido": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos.",
+  "contrasena_actual_incorrecta": "La contraseña actual no es correcta.",
+  "contrasena_invalida": "La contraseña debe tener al menos 10 caracteres.",
+  "contrasena_sin_cambio": "La nueva contraseña tiene que ser distinta de la actual.",
+  "usuario_existente": "Ese usuario ya existe.",
+  "usuario_formato_invalido": "Usa de 3 a 60 caracteres: letras minúsculas, números, punto, guion o guion bajo.",
+  "usuario_no_encontrado": "No encontramos a esa persona.",
+  "equipo_no_desactivarse": "No puedes desactivar tu propia cuenta.",
+  "equipo_ultimo_activo": "Siempre tiene que quedar al menos un super admin activo.",
+  "permiso_denegado": "No tienes permiso para hacer esto."
 }

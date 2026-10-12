@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--esp24);
-  width: var(--railExtendido);
+  width: calc(var(--railExtendido) + 2 * var(--esp12));
   padding: var(--esp24) var(--esp12);
   background: var(--superficie);
   border-right: 1px solid var(--borde);
@@ -90,9 +90,11 @@
   .rail {
     width: var(--railColapsado);
     align-items: center;
+    padding-inline: var(--esp8);
   }
 
   .etiqueta,
+  .usuario .etiqueta,
   .nombre {
     display: none;
   }

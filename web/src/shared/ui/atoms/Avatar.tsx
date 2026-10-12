@@ -1,3 +1,4 @@
+import { cx } from '../../lib/cx';
 import styles from './Avatar.module.css';
 
 /** Iniciales de un nombre: primera letra de las dos primeras palabras. */
@@ -10,9 +11,9 @@ export function iniciales(nombre: string): string {
     .join('');
 }
 
-export function Avatar({ nombre }: { nombre: string }) {
+export function Avatar({ nombre, grande = false }: { nombre: string; grande?: boolean }) {
   return (
-    <span className={styles.avatar} aria-hidden="true">
+    <span className={cx(styles.avatar, grande && styles.grande)} aria-hidden="true">
       {iniciales(nombre)}
     </span>
   );

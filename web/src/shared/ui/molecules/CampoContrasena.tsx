@@ -6,14 +6,26 @@ import type { PropsCampoTexto } from './AccesoCampoTexto';
 import estilos from './controles.module.css';
 import styles from './CampoContrasena.module.css';
 
-type Props = Omit<PropsCampoTexto, 'type' | 'mono'>;
+type Props = Omit<PropsCampoTexto, 'type' | 'mono'> & {
+  /** A12 no dibuja el ojo; el resto de los formularios sí. */
+  sinOjo?: boolean;
+};
 
 /** Campo de contraseña con botón de ojo para mostrar u ocultar (A01). */
-export function CampoContrasena({ etiqueta, ayuda, error, className, ref, ...resto }: Props) {
+export function CampoContrasena({
+  etiqueta,
+  ayuda,
+  error,
+  invalido,
+  sinOjo = false,
+  className,
+  ref,
+  ...resto
+}: Props) {
   const { t } = useTranslation('auth');
   const [visible, setVisible] = useState(false);
   return (
-    <CampoFormulario etiqueta={etiqueta} ayuda={ayuda} error={error}>
+    <CampoFormulario etiqueta={etiqueta} ayuda={ayuda} error={error} invalido={invalido}>
       {(control) => (
         <div className={styles.envoltorio}>
           <input
@@ -23,16 +35,18 @@ export function CampoContrasena({ etiqueta, ayuda, error, className, ref, ...res
             {...control}
             {...resto}
           />
-          <span className={styles.ojo}>
-            <BotonIcono
-              icono={visible ? 'visibility_off' : 'visibility'}
-              etiqueta={visible ? t('ocultar') : t('mostrar')}
-              aria-pressed={visible}
-              onClick={() => {
-                setVisible((v) => !v);
-              }}
-            />
-          </span>
+          {sinOjo ? null : (
+            <span className={styles.ojo}>
+              <BotonIcono
+                icono={visible ? 'visibility_off' : 'visibility'}
+                etiqueta={visible ? t('ocultar') : t('mostrar')}
+                aria-pressed={visible}
+                onClick={() => {
+                  setVisible((v) => !v);
+                }}
+              />
+            </span>
+          )}
         </div>
       )}
     </CampoFormulario>

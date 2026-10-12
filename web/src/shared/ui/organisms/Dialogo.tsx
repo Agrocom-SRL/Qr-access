@@ -38,7 +38,10 @@ export function Dialogo({
       if (typeof dialogo.showModal === 'function') dialogo.showModal();
       else dialogo.setAttribute('open', '');
     }
-    if (!abierto && dialogo.open) dialogo.close();
+    if (!abierto && dialogo.open) {
+      if (typeof dialogo.close === 'function') dialogo.close();
+      else dialogo.removeAttribute('open');
+    }
   }, [abierto]);
 
   return (
