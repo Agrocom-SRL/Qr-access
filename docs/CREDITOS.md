@@ -26,6 +26,10 @@ para ciudades, edificios, parqueos, condominios y haciendas.
 | `app/assets/ilustraciones/bloqueo.svg` | PIN bloqueado | Storyset (Freepik), «Security-pana», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
 | `app/assets/imagenes/bienvenida_edificio.jpg` | Bienvenida y panel de marca | Foto de Dany Kosenko en Pexels (`pexels-dany-kosenko-2159773600-38877340`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
 | `app/assets/imagenes/ingreso_acceso.jpg` | Cabecera del ingreso (PIN) | Foto de Estrella Bastías en Pexels (`pexels-estrella-bastias-2153724301-33041706`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
+| `app/assets/imagenes/cerradura_biometrica.jpg` | Elegir rol y PIN generado | Foto de Fotografía GMAZG en Pexels (`pexels-fotografiagmazg-7522609`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
+| `app/assets/imagenes/intercomunicador.jpg` | Cabecera de Puertas | Foto de Lolim Joshing You en Pexels (`pexels-lolimjoshingyou-13007854`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
+| `app/assets/imagenes/porton_atardecer.jpg` | Perfil y eventos vacío | Foto de Talha Resitoglu en Pexels (`pexels-talharesitoglu-30242716`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
+| `app/assets/imagenes/muro_jardin.jpg` | Cabecera de Inicio | Foto de Vitor Monthay en Pexels (`pexels-vitor-monthay-1541001-8365306`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
 | `app/assets/fuentes/IBMPlex*.ttf` | Tipografía | IBM Plex | SIL OFL 1.1 (`OFL-*.txt`) |
 
 ## Límites de peso

@@ -1,5 +1,6 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
@@ -70,6 +71,9 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
     return PlantillaAuth(
       // En expandido (E03) no hay panel de marca: tarjetas en fila, centradas.
       conPanelDeMarca: false,
+      cabeceraConFoto: true,
+      fotoCabecera: Multimedia.fotoCerradura,
+      alineacionFotoCabecera: const Alignment(0, 0.15),
       centrado: true,
       anchoMaximo: expandida ? tokens.tamano.maxFormulario : null,
       pie: expandida

@@ -1,7 +1,7 @@
 name: agrocom_acceso
 description: "AGROCOM Acceso: QR de acceso a puertas"
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.3.0+4
 
 environment:
   sdk: ^3.13.3
@@ -41,6 +41,10 @@ flutter:
     - assets/imagenes/logo_agrocom.png
     - assets/imagenes/bienvenida_edificio.jpg
     - assets/imagenes/ingreso_acceso.jpg
+    - assets/imagenes/cerradura_biometrica.jpg
+    - assets/imagenes/intercomunicador.jpg
+    - assets/imagenes/porton_atardecer.jpg
+    - assets/imagenes/muro_jardin.jpg
     - assets/logo/
     - assets/lottie/
     - assets/ilustraciones/

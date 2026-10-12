@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
@@ -35,7 +36,7 @@ class VistaPuertas extends ConsumerWidget {
       ),
       ahora: ahora,
     );
-    return ListadoPaginado<Puerta>(
+    final listado = ListadoPaginado<Puerta>(
       estado: estado,
       tituloDeError: l10n.puertasErrorCargar,
       alReintentar: () => ref.invalidate(puertasDisponiblesProvider),
@@ -96,6 +97,29 @@ class VistaPuertas extends ConsumerWidget {
             ),
           ),
         ),
+      ],
+    );
+    // En compacto, una banda de foto sobre el listado; en medio y expandido
+    // la tabla ya llena la pantalla.
+    if (context.clasePantalla != ClasePantalla.compacta) return listado;
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(tokens.espacio.l),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(tokens.radio.xl),
+            child: SizedBox(
+              height: tokens.tamano.cabeceraFoto / 2,
+              width: double.infinity,
+              child: const AccesoFoto(
+                ruta: Multimedia.fotoIntercomunicador,
+                alineacion: Alignment(0.6, 0),
+                fundirConFondo: true,
+              ),
+            ),
+          ),
+        ),
+        Expanded(child: listado),
       ],
     );
   }
