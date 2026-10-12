@@ -10,4 +10,5 @@ export 'domain/qr_acceso.dart';
 export 'presentation/emitir_qr_pagina.dart' show EmitirQrPagina;
 export 'presentation/mis_qr_pagina.dart' show MisQrPagina;
 export 'presentation/mostrar_qr_pagina.dart' show MostrarQrPagina;
+export 'presentation/qr_rapido_pagina.dart' show QrRapidoPagina;
 export 'presentation/widgets/tarjeta_qr.dart' show TarjetaQr;

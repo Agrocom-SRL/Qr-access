@@ -13,6 +13,9 @@ abstract final class Rutas {
   /// Emitir un QR nuevo.
   static const qrNuevo = '/qr/nuevo';
 
+  /// QR rápido: emite al instante el QR propio, sin formulario ni compartir.
+  static const qrRapido = '/qr/rapido';
+
   /// El QR recién emitido, con su token. Solo llega con `extra`: no tiene
   /// URL que se pueda volver a abrir.
   static const qrEmitido = '/qr/emitido';

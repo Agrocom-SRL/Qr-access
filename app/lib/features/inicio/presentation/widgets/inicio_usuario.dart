@@ -52,6 +52,14 @@ class InicioUsuario extends ConsumerWidget {
                   ),
                 ),
         ),
+      // Emite al instante el QR propio, sin formulario, para usarlo en este
+      // mismo dispositivo.
+      if (puedeEmitir)
+        _AccesoRapido(
+          icono: Icons.person_pin_outlined,
+          etiqueta: l10n.inicioQrPropio,
+          alTocar: () => context.go(Rutas.qrRapido),
+        ),
       if (sesion.tiene(Permisos.verQr))
         _AccesoRapido(
           icono: Icons.qr_code_2,
