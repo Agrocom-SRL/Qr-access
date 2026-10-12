@@ -1,12 +1,13 @@
 # CLAUDE.md — invariantes de AGROCOM Acceso
 
-Este repo es **AGROCOM Acceso** (`acceso.agrocom.com.bo`): plataforma multitenant de control de acceso a puertas eléctricas con lectura de QR. Es un **monorepo** con tres partes (ADR 0001):
+Este repo es **AGROCOM Acceso** (`acceso.agrocom.com.bo`): plataforma multitenant de control de acceso a puertas eléctricas con lectura de QR. Es un **monorepo** con cuatro partes (ADR 0001 y 0021):
 
 | Carpeta | Qué es | Stack |
 |---|---|---|
 | `api/` | Backend REST | Node.js 22 LTS + TypeScript + Fastify, **SQL a mano con `mysql2`, sin ORM** (ADR 0002) |
 | `app/` | App de usuarios, administradores y guardias | Flutter (Android, iOS y web) |
 | `firmware/` | Controlador de la puerta | ESP32 con framework Arduino, compilado con PlatformIO |
+| `web/` | Panel web del equipo AGROCOM (cuentas, planes, suscripciones y cobranza) | React + TypeScript + Vite, tokens CSS (ADR 0021) |
 | `db/` | Esquema MySQL 8 | Migraciones `.sql` con dbmate (ADR 0011) |
 
 El desarrollo lo hace un equipo chico con agentes de IA como implementadores principales; estas invariantes existen para que la coherencia no dependa de la memoria de nadie. El kit de procesos (gitflow, CI/CD, agentes, skills, hooks, ADRs) viene del proyecto ACRECIA, adaptado.
@@ -32,7 +33,7 @@ Fuentes de verdad:
 9. **Bitácora de cambios en toda mutación relevante:** quién, cuándo, qué entidad, qué acción, valores antes/después y origen. La registra el repositorio base en la misma transacción, no cada caso de uso (ADR 0007).
 10. **Un usuario, un login (PIN de 7 caracteres: código de la cuenta + 4 al azar generados por el servidor, ADR 0018; el super admin, usuario + contraseña), múltiples roles, un rol activo por sesión.** Los permisos efectivos son los del rol activo, nunca la unión; se definen por acción y tienen ámbito: un rol de cuenta nunca recibe un permiso de plataforma (ADR 0004).
 11. **La API tiene un contrato y se respeta:** OpenAPI generado desde los esquemas, versión en la ruta (`/api/v1`), errores con un formato único (RFC 9457) y ningún cambio incompatible dentro de una misma versión (ADR 0005).
-12. **Nada visible hardcodeado en la app:** ningún color, tamaño ni duración fuera de los tokens del tema (ADR 0012) y ningún texto de interfaz fuera de los ARB (`app/lib/l10n/app_es.arb`) (ADR 0013). La API responde códigos de error, no frases: la app los traduce.
+12. **Nada visible hardcodeado en la app ni en el panel web:** ningún color, tamaño ni duración fuera de los tokens del tema (ADR 0012; en `web/`, `src/theme/`, ADR 0021) y ningún texto de interfaz fuera de los ARB (`app/lib/l10n/app_es.arb`) ni de `web/src/l10n/` (ADR 0013). La API responde códigos de error, no frases: la app los traduce.
 
 ## Convenciones
 
@@ -41,6 +42,7 @@ Fuentes de verdad:
 - **Toda escritura de negocio pasa por una acción** (`actions/<verbo-objeto>.ts`, una función exportada `ejecutar`). Las rutas solo validan, autorizan e invocan.
 - **SQL a mano, siempre parametrizado** (`?` de `mysql2`); jamás concatenar un valor del usuario en un SQL (ADR 0002).
 - **App Flutter por funcionalidad** (ADR 0012): `app/lib/features/<modulo>/{data,domain,presentation}`, sistema de diseño en `app/lib/core/theme/` y componentes compartidos en `app/lib/shared/widgets/{atoms,molecules,organisms}`.
+- **Web admin por funcionalidad** (ADR 0021): `web/src/{app,features,shared,theme,l10n}`; solo super admin; la autoridad de los permisos es siempre la API.
 - **Firmware por responsabilidad** (ADR 0009): `firmware/src/{red,lector_qr,cerradura,api,config}`; nada de lógica de negocio en el firmware: lee, pregunta y obedece.
 - **Código limpio y SOLID, sin sobreingeniería, con comentarios que explican el porqué** (en español; documentación en todo lo público; lo crítico cita su invariante o ADR): skill `codigo-limpio`.
 - **Dominio en español, infraestructura en inglés**: `Puerta`, `eventos_acceso`, `validarQr`, pero `routes.ts`, `repository.ts`, `plugin`, `middleware`.
@@ -51,7 +53,7 @@ Fuentes de verdad:
 
 ## Testing
 
-- `bin/verify` es la compuerta: ejecuta lo que exista de cada parte (`api`: ESLint + Prettier + `tsc --noEmit` + dependency-cruiser + Vitest; `app`: `dart format` + `flutter analyze` + `flutter test` + `flutter build web`; `firmware`: `pio run` + `pio test -e native`). Un cambio está terminado cuando pasa entero.
+- `bin/verify` es la compuerta: ejecuta lo que exista de cada parte (`api`: ESLint + Prettier + `tsc --noEmit` + dependency-cruiser + Vitest; `app`: `dart format` + `flutter analyze` + `flutter test` + `flutter build web`; `firmware`: `pio run` + `pio test -e native`; `web`: ESLint + Prettier + `tsc --noEmit` + Vitest + `vite build`). Un cambio está terminado cuando pasa entero.
 - Los tests de la API corren contra **MySQL 8** real, base `qr_access_testing` del contenedor `db`; **nunca** SQLite ni la base de desarrollo.
 - Prioridad de cobertura: aislamiento entre cuentas (1), falla segura de la puerta (2), un solo uso y vencimiento del QR (3), registro de todo intento (4), autenticación de dispositivos y bloqueo de PIN (5), límites del plan (6).
 - Una migración nueva se verifica además contra un MySQL descartable (migrar, sembrar dos veces, revertir; skill `modelo-datos`). Nunca `dbmate drop`, `DROP DATABASE`, `docker compose down -v` ni `docker volume rm` sobre la base de desarrollo.

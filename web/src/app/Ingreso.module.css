@@ -1,0 +1,48 @@
+.pagina {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--espacio-16);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-16);
+  width: 100%;
+  max-width: var(--ancho-formulario);
+  padding: var(--espacio-32);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-1);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--texto-24);
+  font-weight: var(--peso-seminegrita);
+}
+
+.subtitulo {
+  margin: 0;
+  color: var(--color-texto-secundario);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+  font-size: var(--texto-14);
+  font-weight: var(--peso-medio);
+}
+
+.campo input {
+  min-height: var(--alto-control);
+  padding: 0 var(--espacio-12);
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-m);
+  color: var(--color-texto);
+  font: inherit;
+}

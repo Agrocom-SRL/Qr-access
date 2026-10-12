@@ -12,7 +12,7 @@ El porqué está en `docs/decisiones/0006-gitflow-simplificado.md` y `0014-relea
 
 No hay `release/*` ni `hotfix/*`: un equipo chico no necesita esa ceremonia.
 
-Una rama puede tocar `api/`, `app/`, `firmware/` y `db/` a la vez: el monorepo existe justamente para que una historia que cruza las tres partes entre en un solo PR (ADR 0001).
+Una rama puede tocar `api/`, `app/`, `web/`, `firmware/` y `db/` a la vez: el monorepo existe justamente para que una historia que cruza las partes entre en un solo PR (ADR 0001).
 
 ## Flujo de una historia de usuario
 
@@ -32,7 +32,7 @@ git push -u origin feature/nombre-de-la-hu
 ./bin/verify
 ```
 
-Es la misma cascada que corre CI, por partes (`api`, `app`, `firmware`), y devuelve 0 solo si todo pasa. Una parte que todavía no existe se saltea con un aviso.
+Es la misma cascada que corre CI, por partes (`api`, `app`, `firmware`, `web`), y devuelve 0 solo si todo pasa. Una parte que todavía no existe se saltea con un aviso.
 
 El merge no es manual: `.github/workflows/auto-merge.yml` integra el PR con squash en cuanto el check `ci` queda verde. Solo atiende ramas `feature/*` y `bugfix/*` hacia `develop`. Un PR en **draft** queda excluido a propósito: es la forma de decir "esto espera revisión". Al marcarlo *Ready for review* el auto-merge corre.
 

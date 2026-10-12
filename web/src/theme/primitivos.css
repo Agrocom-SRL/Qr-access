@@ -1,0 +1,54 @@
+/*
+ * Primitivos del sistema de diseño (ADR 0012 y 0021): ÚNICO lugar con valores
+ * literales. Todo lo demás usa los tokens semánticos de tokens.css.
+ */
+:root {
+  --verde-50: #e8f5ee;
+  --verde-100: #c5e6d2;
+  --verde-200: #93d0ab;
+  --verde-300: #5cb683;
+  --verde-400: #2b9a5d;
+  --verde-500: #007a33;
+  --verde-600: #006b2d;
+  --verde-700: #005824;
+  --verde-800: #00451c;
+  --verde-900: #002f13;
+
+  --espacio-2: 2px;
+  --espacio-4: 4px;
+  --espacio-8: 8px;
+  --espacio-12: 12px;
+  --espacio-16: 16px;
+  --espacio-24: 24px;
+  --espacio-32: 32px;
+  --espacio-48: 48px;
+
+  --radio-s: 6px;
+  --radio-m: 10px;
+  --radio-l: 14px;
+  --radio-xl: 20px;
+  --radio-completo: 9999px;
+
+  --texto-12: 0.75rem;
+  --texto-14: 0.875rem;
+  --texto-16: 1rem;
+  --texto-20: 1.25rem;
+  --texto-24: 1.5rem;
+  --texto-32: 2rem;
+
+  --peso-regular: 400;
+  --peso-medio: 500;
+  --peso-seminegrita: 600;
+
+  --duracion-rapida: 120ms;
+  --duracion-normal: 200ms;
+  --duracion-lenta: 300ms;
+  --curva: cubic-bezier(0.215, 0.61, 0.355, 1);
+
+  --alto-control: 44px;
+  --ancho-formulario: 480px;
+  --ancho-contenido: 1200px;
+
+  --fuente-texto: 'IBM Plex Sans', system-ui, sans-serif;
+  --fuente-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
