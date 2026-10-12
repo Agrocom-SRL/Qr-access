@@ -21,3 +21,8 @@
   background: var(--peligroSuave);
   color: var(--peligro);
 }
+
+.exito {
+  background: var(--primarioSuave);
+  color: var(--primario);
+}

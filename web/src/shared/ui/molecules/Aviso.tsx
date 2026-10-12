@@ -4,12 +4,13 @@ import type { NombreIcono } from '../atoms/iconos';
 import { cx } from '../../lib/cx';
 import styles from './Aviso.module.css';
 
-export type TonoAviso = 'informacion' | 'advertencia' | 'peligro';
+export type TonoAviso = 'informacion' | 'advertencia' | 'peligro' | 'exito';
 
 const ICONO: Readonly<Record<TonoAviso, NombreIcono>> = {
   informacion: 'info',
   advertencia: 'warning',
   peligro: 'error',
+  exito: 'info',
 };
 
 /** Aviso en línea con fondo `*Suave`, ícono y texto (nunca solo color). */

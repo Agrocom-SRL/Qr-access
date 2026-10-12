@@ -46,3 +46,14 @@
   gap: var(--esp12);
   margin-top: var(--esp24);
 }
+
+.icono {
+  display: grid;
+  place-items: center;
+  width: var(--tam48);
+  height: var(--tam48);
+  margin-bottom: var(--esp24);
+  background: var(--primarioSuave);
+  border-radius: var(--radio14);
+  color: var(--primario);
+}

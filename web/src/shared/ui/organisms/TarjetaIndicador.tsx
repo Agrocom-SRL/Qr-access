@@ -11,7 +11,8 @@ interface Props {
   /** Cifra en mono 32/600, ya formateada. */
   valor: string;
   detalle?: string;
-  icono: NombreIcono;
+  /** Sin ícono, la tarjeta no dibuja la caja (A08). */
+  icono?: NombreIcono;
   /** `hero` usa hero/sobreHero y el ícono sobre heroAcento. */
   tono?: TonoIndicador;
   /** Contenido extra bajo la cifra, p. ej. una `BarraUso`. */
@@ -30,9 +31,11 @@ export function TarjetaIndicador({
     <article className={cx(styles.tarjeta, tono === 'hero' && styles.hero)}>
       <div className={styles.cabecera}>
         <span className={styles.etiqueta}>{etiqueta}</span>
-        <span className={cx(styles.icono, styles[tono])}>
-          <Icono nombre={icono} />
-        </span>
+        {icono ? (
+          <span className={cx(styles.icono, styles[tono])}>
+            <Icono nombre={icono} />
+          </span>
+        ) : null}
       </div>
       <p className={cx(styles.valor, tono === 'peligro' && styles.valorPeligro)}>{valor}</p>
       {children}

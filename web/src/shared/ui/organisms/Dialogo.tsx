@@ -1,6 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotonIcono } from '../atoms/BotonIcono';
+import { Icono } from '../atoms/Icono';
+import type { NombreIcono } from '../atoms/iconos';
 import { cx } from '../../lib/cx';
 import styles from './Dialogo.module.css';
 
@@ -13,6 +15,8 @@ interface Props {
   children: ReactNode;
   /** Acciones a la derecha: texto + primario. */
   acciones?: ReactNode;
+  /** Ícono en caja `primarioSuave` sobre el título (A07b); sin él no hay caja ni botón de cierre propio. */
+  icono?: NombreIcono;
 }
 
 /**
@@ -26,6 +30,7 @@ export function Dialogo({
   ancho = 'angosto',
   children,
   acciones,
+  icono,
 }: Props) {
   const { t } = useTranslation('comun');
   const ref = useRef<HTMLDialogElement>(null);
@@ -55,11 +60,16 @@ export function Dialogo({
         onCerrar();
       }}
     >
+      {icono ? (
+        <span className={styles.icono}>
+          <Icono nombre={icono} />
+        </span>
+      ) : null}
       <div className={styles.cabecera}>
         <h2 id="titulo-dialogo" className={styles.titulo}>
           {titulo}
         </h2>
-        <BotonIcono icono="close" etiqueta={t('cerrar')} onClick={onCerrar} />
+        {icono ? null : <BotonIcono icono="close" etiqueta={t('cerrar')} onClick={onCerrar} />}
       </div>
       <div className={styles.cuerpo}>{children}</div>
       {acciones ? <div className={styles.acciones}>{acciones}</div> : null}
