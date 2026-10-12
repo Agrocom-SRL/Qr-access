@@ -28,6 +28,7 @@ export const cuerpoDePrecios = z.object({
 });
 
 export const parametrosDeCuenta = z.object({ id: esquemaId });
+export const parametrosDeComprobante = z.object({ id: esquemaId });
 
 export const cuerpoDeCambioDePlan = z.object({ plan_id: esquemaId });
 
@@ -40,16 +41,53 @@ export const respuestaDeCambioDePlan = z.object({
   diferencia_precio: z.number(),
 });
 
-export const cuerpoDePago = z.object({
-  tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
-  monto: z
-    .number()
-    .positive()
-    .max(99_999_999)
-    .refine((n) => Math.round(n * 100) / 100 === n),
-  fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  medio: z.enum(['transferencia', 'deposito', 'efectivo']),
-  referencia: z.string().trim().min(1).max(80),
+/**
+ * Dónde llegó el dinero y su comprobante (ADR 0024). Una transferencia o un depósito exigen los tres
+ * datos; un pago en efectivo no los lleva. Lo usan también el alta de una cuenta y el registro de un pago.
+ */
+export const camposDeBancoYComprobante = {
+  banco: z.string().trim().min(1).max(60).optional(),
+  cuenta_destino: z.string().trim().min(1).max(60).optional(),
+  comprobante_id: esquemaId.optional(),
+};
+
+/** Falla si un pago no efectivo no trae banco, cuenta de destino y comprobante. */
+export function exigirRespaldoDelPago(
+  pago: {
+    medio: string;
+    banco?: string | undefined;
+    cuenta_destino?: string | undefined;
+    comprobante_id?: string | undefined;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if (pago.medio === 'efectivo') return;
+  for (const campo of ['banco', 'cuenta_destino', 'comprobante_id'] as const) {
+    if (pago[campo] === undefined) {
+      ctx.addIssue({ code: 'custom', path: [campo], message: 'requerido' });
+    }
+  }
+}
+
+export const cuerpoDePago = z
+  .object({
+    tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
+    monto: z
+      .number()
+      .positive()
+      .max(99_999_999)
+      .refine((n) => Math.round(n * 100) / 100 === n),
+    fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+    referencia: z.string().trim().min(1).max(80),
+    ...camposDeBancoYComprobante,
+  })
+  .superRefine(exigirRespaldoDelPago);
+
+export const respuestaDeComprobante = z.object({
+  id: z.string(),
+  tipo_mime: z.string(),
+  tamano: z.number().int(),
 });
 
 export const respuestaDePago = z.object({

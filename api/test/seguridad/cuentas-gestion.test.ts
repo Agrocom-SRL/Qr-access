@@ -7,6 +7,7 @@ import {
   conUsuario,
   iniciarSesion,
   iniciarSesionDePlataforma,
+  respaldoDePago,
   type Problema,
 } from '../helpers/http.js';
 
@@ -54,7 +55,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
   });
   const crear = (cuerpo: Record<string, unknown>) =>
     prueba.app.inject({ method: 'POST', url: `${BASE}/cuentas`, headers, payload: cuerpo });
-  const pagar = (cuentaId: string, cuerpo: Record<string, unknown> = {}) =>
+  const pagar = async (cuentaId: string, cuerpo: Record<string, unknown> = {}) =>
     prueba.app.inject({
       method: 'POST',
       url: `${BASE}/cuentas/${cuentaId}/pagos`,
@@ -65,6 +66,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
         fecha_pago: '2026-10-14',
         medio: 'transferencia',
         referencia: 'TRF-1',
+        ...(cuerpo.medio === 'efectivo' ? {} : await respaldoDePago(prueba.app, headers)),
         ...cuerpo,
       },
     });

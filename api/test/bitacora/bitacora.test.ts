@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
 import { crearEscenario, crearSuperAdmin } from '../helpers/fixtures.js';
-import { conUsuario, iniciarSesion, iniciarSesionDePlataforma } from '../helpers/http.js';
+import {
+  conUsuario,
+  iniciarSesion,
+  iniciarSesionDePlataforma,
+  respaldoDePago,
+} from '../helpers/http.js';
 
 const BASE = '/api/v1/plataforma';
 const DIA = 86_400_000;
@@ -77,6 +82,7 @@ describe('plataforma: bitácora y resumen (A10, A05d, A02)', () => {
       fecha_pago: '2026-10-12',
       medio: 'transferencia',
       referencia: 'TRF-1',
+      ...(await respaldoDePago(prueba.app, headers)),
     });
     await prueba.app.inject({
       method: 'PUT',

@@ -30,6 +30,9 @@ export interface SuscripcionDeCuentaVista {
     fecha_pago: string;
     medio: 'transferencia' | 'deposito' | 'efectivo';
     referencia: string;
+    banco: string | null;
+    cuenta_destino: string | null;
+    comprobante_id: string | null;
     periodo_desde: string;
     periodo_hasta: string;
     registro: { id: string; nombre: string } | null;
@@ -86,6 +89,9 @@ export async function ejecutar(
       fecha_pago: pago.fechaPago,
       medio: pago.medio,
       referencia: pago.referencia,
+      banco: pago.banco,
+      cuenta_destino: pago.cuentaDestino,
+      comprobante_id: pago.comprobanteId,
       periodo_desde: pago.periodoDesde.toISOString(),
       periodo_hasta: pago.periodoHasta.toISOString(),
       registro:

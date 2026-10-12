@@ -109,6 +109,9 @@ export const rutasDeCuentas =
                   fechaPago: cuerpo.pago.fecha_pago,
                   medio: cuerpo.pago.medio,
                   referencia: cuerpo.pago.referencia,
+                  banco: cuerpo.pago.banco,
+                  cuentaDestino: cuerpo.pago.cuenta_destino,
+                  comprobanteId: cuerpo.pago.comprobante_id,
                 },
               }),
         });

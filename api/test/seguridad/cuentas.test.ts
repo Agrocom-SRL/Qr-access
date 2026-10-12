@@ -57,7 +57,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
     inicio: '2026-10-12',
     administrador_nombre: 'Rodrigo Añez',
     // Con el primer pago registrado, la cuenta nace activa; sin él, pendiente de pago.
-    pago: { monto: 21_600, fecha_pago: '2026-10-12', medio: 'transferencia', referencia: 'TRF-1' },
+    pago: { monto: 21_600, fecha_pago: '2026-10-12', medio: 'efectivo', referencia: 'R-1' },
     ...cambios,
   });
 

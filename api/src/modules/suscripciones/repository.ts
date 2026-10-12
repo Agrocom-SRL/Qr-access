@@ -270,6 +270,9 @@ export interface PagoFila extends RowDataPacket {
   fecha_pago: Date;
   medio: MedioDePago;
   referencia: string;
+  banco: string | null;
+  cuenta_destino: string | null;
+  comprobante_id: string | null;
   periodo_desde: Date;
   periodo_hasta: Date;
   created_by: string | null;
@@ -285,12 +288,16 @@ export interface NuevoPago {
   readonly fechaPago: string;
   readonly medio: MedioDePago;
   readonly referencia: string;
+  /** Banco y cuenta de AGROCOM donde llegó el dinero; ausentes en un pago en efectivo. */
+  readonly banco?: string | undefined;
+  readonly cuentaDestino?: string | undefined;
+  readonly comprobanteId?: string | undefined;
   readonly periodoDesde: Date;
   readonly periodoHasta: Date;
 }
 
 const COLUMNAS_DE_PAGO =
-  't.id, t.tenant_id, t.suscripcion_id, t.plan_id, p.nombre AS plan_nombre, t.tipo, t.monto, t.fecha_pago, t.medio, t.referencia, t.periodo_desde, t.periodo_hasta, t.created_by, t.created_at';
+  't.id, t.tenant_id, t.suscripcion_id, t.plan_id, p.nombre AS plan_nombre, t.tipo, t.monto, t.fecha_pago, t.medio, t.referencia, t.banco, t.cuenta_destino, t.comprobante_id, t.periodo_desde, t.periodo_hasta, t.created_by, t.created_at';
 const UNION_PLAN_DE_PAGO = 'JOIN planes AS p ON p.id = t.plan_id';
 
 /** Dueño de `pagos`: los de la cuenta del contexto. */
@@ -306,6 +313,9 @@ export class RepositorioDePagos extends RepositorioDeCuenta {
         'fecha_pago',
         'medio',
         'referencia',
+        'banco',
+        'cuenta_destino',
+        'comprobante_id',
         'periodo_desde',
         'periodo_hasta',
       ],
@@ -323,6 +333,9 @@ export class RepositorioDePagos extends RepositorioDeCuenta {
       fecha_pago: pago.fechaPago,
       medio: pago.medio,
       referencia: pago.referencia,
+      banco: pago.banco ?? null,
+      cuenta_destino: pago.cuentaDestino ?? null,
+      comprobante_id: pago.comprobanteId ?? null,
       periodo_desde: pago.periodoDesde,
       periodo_hasta: pago.periodoHasta,
     });
@@ -381,5 +394,46 @@ export class RepositorioDeTotalesDePagos extends RepositorioDePlataforma {
       params: [desde, hasta],
     });
     return { monto: Number(fila?.monto ?? 0), pagos: Number(fila?.pagos ?? 0) };
+  }
+}
+
+export interface ComprobanteFila extends RowDataPacket {
+  id: string;
+  ruta: string;
+  tipo_mime: string;
+  tamano: number;
+}
+
+/**
+ * Dueño de `comprobantes` (ADR 0024): archivos de plataforma que respaldan un pago. No llevan
+ * `tenant_id`: se suben antes de que el pago (o la cuenta) exista y los referencia el pago.
+ */
+export class RepositorioDeComprobantes extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'comprobantes',
+      columnas: ['ruta', 'tipo_mime', 'tamano'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  registrar(
+    tx: Transaccion,
+    comprobante: { ruta: string; tipoMime: string; tamano: number },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      ruta: comprobante.ruta,
+      tipo_mime: comprobante.tipoMime,
+      tamano: comprobante.tamano,
+    });
+  }
+
+  buscarPorId(id: string): Promise<ComprobanteFila | null> {
+    return this.seleccionarUna<ComprobanteFila>({
+      columnas: 't.id, t.ruta, t.tipo_mime, t.tamano',
+      donde: 't.id = ?',
+      params: [id],
+    });
   }
 }

@@ -66,11 +66,14 @@ services:
       DB_DATABASE: ${MYSQL_DATABASE:-qr_access}
       DB_USERNAME: ${MYSQL_USER:-qr_access}
       DB_PASSWORD: ${MYSQL_PASSWORD:-qr_access}
+      # Los comprobantes de pago viven en un volumen, fuera del contenedor (ADR 0024).
+      ARCHIVOS_RUTA: /archivos
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:
       - ./:/repo
       - api-node-modules:/repo/api/node_modules
+      - archivos:/archivos
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/salud"]
       interval: 10s
@@ -114,4 +117,5 @@ services:
 volumes:
   qr-access-db-data:
   api-node-modules:
+  archivos:
   platformio-cache:

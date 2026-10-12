@@ -39,6 +39,9 @@ export interface DatosDeNuevaCuenta {
     readonly fechaPago: string;
     readonly medio: 'transferencia' | 'deposito' | 'efectivo';
     readonly referencia: string;
+    readonly banco?: string | undefined;
+    readonly cuentaDestino?: string | undefined;
+    readonly comprobanteId?: string | undefined;
   };
 }
 

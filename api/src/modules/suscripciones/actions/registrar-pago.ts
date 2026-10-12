@@ -3,6 +3,7 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { inicioDelDia, sumarMeses } from '../../../platform/tiempo/fechas.js';
 import {
+  RepositorioDeComprobantes,
   RepositorioDePagos,
   RepositorioDeSuscripciones,
   type MedioDePago,
@@ -17,6 +18,10 @@ export interface DatosDePago {
   readonly fechaPago: string;
   readonly medio: MedioDePago;
   readonly referencia: string;
+  /** Banco y cuenta de AGROCOM donde llegó el dinero, y su comprobante (ADR 0024). */
+  readonly banco?: string | undefined;
+  readonly cuentaDestino?: string | undefined;
+  readonly comprobanteId?: string | undefined;
 }
 
 export interface PagoRegistrado {
@@ -37,6 +42,10 @@ export interface PagoRegistrado {
  * Una suscripción suspendida no se renueva: primero se reactiva.
  */
 export async function ejecutar(pool: Pool, datos: DatosDePago): Promise<PagoRegistrado> {
+  if (datos.comprobanteId !== undefined) {
+    const comprobante = await new RepositorioDeComprobantes(pool).buscarPorId(datos.comprobanteId);
+    if (comprobante === null) throw new ErrorDeDominio('comprobante.no_encontrado', 422);
+  }
   const suscripcion = await suscripcionActualODeLaCuenta(pool);
   const pendiente = suscripcion.estado === 'pendiente';
   if (pendiente !== (datos.tipo === 'alta')) {
@@ -63,6 +72,9 @@ export async function ejecutar(pool: Pool, datos: DatosDePago): Promise<PagoRegi
       fechaPago: datos.fechaPago,
       medio: datos.medio,
       referencia: datos.referencia,
+      banco: datos.banco,
+      cuentaDestino: datos.cuentaDestino,
+      comprobanteId: datos.comprobanteId,
       periodoDesde,
       periodoHasta: nuevoHasta,
     });
@@ -94,6 +106,9 @@ async function registrarAlta(
       fechaPago: datos.fechaPago,
       medio: datos.medio,
       referencia: datos.referencia,
+      banco: datos.banco,
+      cuentaDestino: datos.cuentaDestino,
+      comprobanteId: datos.comprobanteId,
       periodoDesde: desde,
       periodoHasta: hasta,
     });

@@ -12,6 +12,7 @@ import {
   conUsuario,
   iniciarSesion,
   iniciarSesionDePlataforma,
+  respaldoDePago,
   type Problema,
 } from '../helpers/http.js';
 
@@ -63,7 +64,7 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
   });
 
   const url = (ruta: string) => `${BASE}/cuentas/${escenario.cuenta.id}${ruta}`;
-  const pago = (cuerpo: Record<string, unknown> = {}) =>
+  const pago = async (cuerpo: Record<string, unknown> = {}) =>
     prueba.app.inject({
       method: 'POST',
       url: url('/pagos'),
@@ -74,6 +75,7 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
         fecha_pago: '2026-10-12',
         medio: 'transferencia',
         referencia: 'TRF-912204',
+        ...(cuerpo.medio === 'efectivo' ? {} : await respaldoDePago(prueba.app, headers)),
         ...cuerpo,
       },
     });
