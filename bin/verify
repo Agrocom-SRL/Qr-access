@@ -3,16 +3,16 @@
 # Compuerta de calidad de AGROCOM Acceso: la misma cascada que corre CI.
 #
 #   bin/verify               todas las partes que existan
-#   bin/verify api app       solo esas partes (api | app | firmware)
+#   bin/verify api web       solo esas partes (api | app | firmware | web)
 #
-# Una parte que todavía no existe (sin api/package.json, app/pubspec.yaml o
-# firmware/platformio.ini) se saltea con un aviso. Devuelve 0 solo si todo pasa.
+# Una parte que todavía no existe (sin api/package.json, app/pubspec.yaml,
+# firmware/platformio.ini o web/package.json) se saltea con un aviso. Devuelve 0 solo si todo pasa.
 #
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 partes=("$@")
-[ ${#partes[@]} -eq 0 ] && partes=(api app firmware)
+[ ${#partes[@]} -eq 0 ] && partes=(api app firmware web)
 
 fallos=0
 paso() { printf '\n\033[1m── %s ──\033[0m\n' "$1"; }
@@ -83,12 +83,24 @@ verificar_firmware() {
     fi
 }
 
+verificar_web() {
+    paso "web"
+    [ -f web/package.json ] || { aviso "web/ todavía no existe: se saltea"; return; }
+    (cd web && { [ -d node_modules ] || npm ci --no-audit --no-fund; }) || { mal "npm ci"; return; }
+    correr "lint (ESLint)"           npm --prefix web run --silent lint
+    correr "formato (Prettier)"      npm --prefix web run --silent format:check
+    correr "tipos (tsc --noEmit)"    npm --prefix web run --silent typecheck
+    correr "tests (Vitest)"          npm --prefix web run --silent test
+    correr "build (Vite)"            npm --prefix web run --silent build
+}
+
 for p in "${partes[@]}"; do
     case "$p" in
         api) verificar_api ;;
         app) verificar_app ;;
         firmware) verificar_firmware ;;
-        *) mal "parte desconocida: $p (usa api, app o firmware)" ;;
+        web) verificar_web ;;
+        *) mal "parte desconocida: $p (usa api, app, firmware o web)" ;;
     esac
 done
 

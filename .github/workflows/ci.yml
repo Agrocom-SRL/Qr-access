@@ -22,6 +22,7 @@ jobs:
       api: ${{ steps.partes.outputs.api }}
       app: ${{ steps.partes.outputs.app }}
       firmware: ${{ steps.partes.outputs.firmware }}
+      web: ${{ steps.partes.outputs.web }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -48,6 +49,7 @@ jobs:
             decidir api api/package.json api
             decidir app app/pubspec.yaml app
             decidir firmware firmware/platformio.ini firmware
+            decidir web web/package.json web
           } | tee -a "$GITHUB_OUTPUT"
 
   api:
@@ -162,9 +164,36 @@ jobs:
       - name: Tests nativos (pio test)
         run: pio test -e native
 
+  web:
+    name: web
+    needs: detectar
+    if: needs.detectar.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Lint (ESLint)
+        run: npm run lint
+      - name: Formato (Prettier)
+        run: npm run format:check
+      - name: Tipos (tsc)
+        run: npm run typecheck
+      - name: Tests (Vitest)
+        run: npm test
+      - name: Build (Vite)
+        run: npm run build
+
   ci:
     name: ci
-    needs: [detectar, api, app, firmware]
+    needs: [detectar, api, app, firmware, web]
     if: always()
     runs-on: ubuntu-latest
     steps:
