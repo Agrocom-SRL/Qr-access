@@ -1,0 +1,36 @@
+.icono {
+  display: inline-flex;
+  flex: none;
+  color: inherit;
+}
+
+.icono svg {
+  width: 100%;
+  height: 100%;
+  fill: currentcolor;
+}
+
+.t16 {
+  width: var(--tam16);
+  height: var(--tam16);
+}
+
+.t18 {
+  width: var(--tam18);
+  height: var(--tam18);
+}
+
+.t20 {
+  width: var(--tam20);
+  height: var(--tam20);
+}
+
+.t24 {
+  width: var(--tam24);
+  height: var(--tam24);
+}
+
+.t32 {
+  width: var(--tam32);
+  height: var(--tam32);
+}

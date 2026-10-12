@@ -1,0 +1,22 @@
+.fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp16);
+  min-height: var(--tam56);
+  border-top: 1px solid var(--borde);
+}
+
+.fila:first-child {
+  border-top: 0;
+}
+
+.clave {
+  color: var(--textoSecundario);
+}
+
+.valor {
+  margin: 0;
+  font-weight: var(--peso500);
+  text-align: right;
+}

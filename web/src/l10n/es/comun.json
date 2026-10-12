@@ -12,5 +12,11 @@
     "texto": "Revisa tu internet. El panel vuelve a cargar solo cuando se recupere."
   },
   "errorGenerico": "Algo falló de nuestro lado. Intenta de nuevo en unos segundos.",
-  "codigo": "Código {{codigo}}"
+  "codigo": "Código {{codigo}}",
+  "paginacion": "Paginación",
+  "anterior": "Página anterior",
+  "siguiente": "Página siguiente",
+  "cerrar": "Cerrar",
+  "cargando": "Cargando",
+  "abrirMenu": "Menú"
 }

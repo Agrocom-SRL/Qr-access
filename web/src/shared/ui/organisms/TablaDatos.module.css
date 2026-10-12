@@ -1,0 +1,45 @@
+.tarjeta {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: var(--esp12) var(--esp24);
+  background: var(--fondo);
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+  text-align: start;
+}
+
+.tabla td {
+  min-height: var(--tam56);
+  padding: var(--esp12) var(--esp24);
+  border-top: 1px solid var(--borde);
+  vertical-align: middle;
+}
+
+.tabla tbody tr {
+  height: var(--tam56);
+}
+
+.fila:hover {
+  background: var(--fondo);
+}
+
+.fin {
+  text-align: end;
+}
+
+@media (width < 1024px) {
+  .secundaria {
+    display: none;
+  }
+}

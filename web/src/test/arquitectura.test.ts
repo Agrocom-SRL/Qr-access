@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /** Archivos donde sí se permiten valores literales de color: los tokens. */
-const TOKENS = ['theme/acceso-tokens.css', 'theme/theme.ts'];
+const TOKENS = ['theme/acceso-tokens.css', 'theme/theme.ts', 'theme/escalas.css'];
 
 function archivos(dir: string): string[] {
   return readdirSync(dir).flatMap((nombre) => {
@@ -21,6 +21,17 @@ describe('arquitectura (ADR 0012 y 0021)', () => {
     const infractores = fuentes.filter((f) =>
       /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/.test(readFileSync(f, 'utf8')),
     );
+    expect(infractores.map((f) => relative(raiz, f))).toEqual([]);
+  });
+
+  it('ninguna dimensión en px fuera de los tokens (salvo bordes de 1 y 2 px)', () => {
+    const infractores = fuentes
+      .filter((f) => f.endsWith('.css') && !f.includes('escalas.css'))
+      .filter((f) =>
+        /(?<![\d.])(?!0?\.?[12]px\b)\d+(\.\d+)?px/.test(
+          readFileSync(f, 'utf8').replaceAll(/@media[^{]*/g, ''),
+        ),
+      );
     expect(infractores.map((f) => relative(raiz, f))).toEqual([]);
   });
 

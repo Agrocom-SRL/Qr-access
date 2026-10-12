@@ -1,0 +1,51 @@
+.plantilla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--esp48);
+  background: var(--hero);
+  color: var(--sobreHero);
+}
+
+.logo {
+  width: var(--tam80);
+  height: var(--tam80);
+  border-radius: var(--radio20);
+}
+
+.nombre {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.subtitulo {
+  font-size: var(--texto20);
+}
+
+.formulario {
+  display: grid;
+  place-items: center;
+  padding: var(--esp24);
+}
+
+.contenido {
+  width: 100%;
+  max-width: var(--anchoLogin);
+}
+
+@media (width < 768px) {
+  .plantilla {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    display: none;
+  }
+}

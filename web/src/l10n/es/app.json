@@ -1,4 +1,6 @@
 {
   "nombre": "AGROCOM Acceso",
-  "subtitulo": "Plataforma"
+  "subtitulo": "Plataforma",
+  "panel": "Panel de la plataforma",
+  "superAdmin": "Super admin"
 }

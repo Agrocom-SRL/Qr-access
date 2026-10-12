@@ -1,0 +1,38 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp4);
+  height: var(--tam24);
+  padding: 0 var(--esp8) 0 var(--tam6);
+  border: 1px solid transparent;
+  border-radius: var(--radioCompleto);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+  white-space: nowrap;
+}
+
+.primario {
+  background: var(--primarioSuave);
+  color: var(--primario);
+}
+
+.advertencia {
+  background: var(--advertenciaSuave);
+  color: var(--advertencia);
+}
+
+.peligro {
+  background: var(--peligroSuave);
+  color: var(--peligro);
+}
+
+.informacion {
+  background: var(--informacionSuave);
+  color: var(--informacion);
+}
+
+.neutro {
+  background: var(--fondo);
+  border-color: var(--borde);
+  color: var(--textoSecundario);
+}

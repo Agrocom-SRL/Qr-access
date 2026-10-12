@@ -1,0 +1,38 @@
+.contenedor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp12);
+}
+
+.pista {
+  display: block;
+  flex: 1;
+  min-width: var(--tam80);
+  height: var(--tam8);
+  overflow: hidden;
+  background: var(--primarioSuave);
+  border-radius: var(--radioCompleto);
+}
+
+.grande {
+  height: var(--tam12);
+}
+
+.relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--radioCompleto);
+  transition: width var(--dur300) var(--easeOutCubic);
+}
+
+.normal {
+  background: var(--primario);
+}
+
+.advertencia {
+  background: var(--advertencia);
+}
+
+.peligro {
+  background: var(--peligro);
+}

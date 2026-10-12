@@ -1,0 +1,30 @@
+.lista {
+  display: flex;
+  gap: var(--esp8);
+  border-bottom: 1px solid var(--borde);
+}
+
+.pestana {
+  min-height: var(--altoMinimoTactil);
+  padding: 0 var(--esp16);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--textoSecundario);
+  font: inherit;
+  font-weight: var(--peso500);
+  cursor: pointer;
+  transition:
+    color var(--dur200) var(--easeOutCubic),
+    border-color var(--dur200) var(--easeOutCubic);
+}
+
+.pestana:hover {
+  color: var(--texto);
+}
+
+.activa {
+  border-bottom-color: var(--primario);
+  color: var(--primario);
+  font-weight: var(--peso600);
+}
