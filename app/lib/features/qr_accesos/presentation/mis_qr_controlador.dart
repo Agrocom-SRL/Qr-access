@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 
 /// Filtro del listado de QR: estado y página que se ven. Inmutable.
 @immutable
@@ -42,9 +43,8 @@ final NotifierProvider<FiltroQrControlador, FiltroQr> filtroQrProvider =
 /// Listado de QR de un filtro. Es una familia para que cada pestaña tenga el
 /// suyo mientras se desliza entre ellas. Al anular o cambiar un QR se invalida
 /// entera.
-// ignore: specify_nonobvious_property_types, el tipo de la familia no se exporta.
-final listadoQrProvider = FutureProvider.autoDispose
-    .family<Pagina<QrAcceso>, FiltroQr>(
+final FutureProviderFamily<Pagina<QrAcceso>, FiltroQr> listadoQrProvider =
+    FutureProvider.autoDispose.family<Pagina<QrAcceso>, FiltroQr>(
       (ref, filtro) => ref
           .watch(qrAccesosRepositorioProvider)
           .listar(

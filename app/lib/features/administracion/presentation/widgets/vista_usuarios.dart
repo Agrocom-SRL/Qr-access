@@ -188,6 +188,7 @@ class VistaUsuarios extends ConsumerWidget {
                 ruta: Multimedia.fotoCerradura,
                 alineacion: Alignment(0.2, -0.2),
                 fundirConFondo: true,
+                verdeEnClaro: true,
               ),
             ),
           ),

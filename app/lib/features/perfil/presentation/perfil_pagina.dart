@@ -199,6 +199,7 @@ class _TarjetaCuenta extends StatelessWidget {
               child: const AccesoFoto(
                 ruta: Multimedia.fotoPorton,
                 fundirConFondo: true,
+                verdeEnClaro: true,
               ),
             ),
             Padding(

@@ -10,6 +10,7 @@ class AccesoFoto extends StatelessWidget {
     required this.ruta,
     this.alineacion = Alignment.center,
     this.fundirConFondo = false,
+    this.verdeEnClaro = false,
     super.key,
   });
 
@@ -20,10 +21,16 @@ class AccesoFoto extends StatelessWidget {
   /// Termina en el fondo de la pantalla (cabecera) en vez de en verde (hero).
   final bool fundirConFondo;
 
+  /// Con [fundirConFondo], en el tema claro el fundido llega al verde de marca
+  /// en lugar de al fondo (que es casi blanco y vela la foto como un brillo);
+  /// en el oscuro sigue fundiéndose con el fondo.
+  final bool verdeEnClaro;
+
   @override
   Widget build(BuildContext context) {
     final colores = context.tokens.colores;
-    final fin = fundirConFondo
+    final claro = Theme.of(context).brightness == Brightness.light;
+    final fin = fundirConFondo && !(verdeEnClaro && claro)
         ? Theme.of(context).scaffoldBackgroundColor
         : colores.hero.withValues(alpha: 0.88);
     return ExcludeSemantics(

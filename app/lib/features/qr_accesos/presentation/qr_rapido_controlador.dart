@@ -40,6 +40,9 @@ class QrRapidoControlador extends Notifier<AsyncValue<QrEmitido>> {
       vigencia: Vigencia.porDefecto,
       etiqueta: recortarEtiqueta(etiqueta),
       ahora: ahora,
+      // La API anula el QR propio anterior: solo el último sirve, aunque a
+      // alguien le hayan sacado una foto del anterior.
+      propio: true,
     );
     return await ref
         .read(qrAccesosRepositorioProvider)

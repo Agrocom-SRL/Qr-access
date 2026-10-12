@@ -57,6 +57,11 @@ class _UsuarioFormularioPaginaEstado
     );
   }
 
+  /// La lista de usuarios: la pestaña de Admin en compacto; su propio destino
+  /// en medio y expandido.
+  String get _rutaLista =>
+      context.esCompacta ? Rutas.admin : Rutas.adminUsuarios;
+
   Future<void> _guardar() async {
     final controlador = ref.read(formularioUsuarioProvider.notifier);
     if (_esNuevo) {
@@ -90,6 +95,7 @@ class _UsuarioFormularioPaginaEstado
       } else if (!usuarios.isLoading) {
         return PlantillaAdmin(
           destino: DestinoNav.usuarios,
+          rutaAtras: _rutaLista,
           titulo: l10n.usuariosEditarTitulo,
           child: EstadoVacio.error(
             titulo: l10n.usuariosErrorCargar,
@@ -99,6 +105,7 @@ class _UsuarioFormularioPaginaEstado
       } else {
         return PlantillaAdmin(
           destino: DestinoNav.usuarios,
+          rutaAtras: _rutaLista,
           titulo: l10n.usuariosEditarTitulo,
           child: const AccesoCargando(),
         );
@@ -107,6 +114,7 @@ class _UsuarioFormularioPaginaEstado
 
     return PlantillaAdmin(
       destino: DestinoNav.usuarios,
+      rutaAtras: _rutaLista,
       titulo: _esNuevo ? l10n.usuariosNuevo : l10n.usuariosEditarTitulo,
       conRelleno: false,
       child: FormularioSecciones(
@@ -194,7 +202,7 @@ class _UsuarioFormularioPaginaEstado
           AccesoBoton(
             texto: l10n.comunCancelar,
             variante: VarianteBoton.texto,
-            onPressed: () => context.go(Rutas.adminUsuarios),
+            onPressed: () => context.go(_rutaLista),
           ),
           AccesoBoton(
             texto: _esNuevo ? l10n.usuariosGenerarPin : l10n.comunGuardar,

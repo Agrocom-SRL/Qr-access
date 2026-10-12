@@ -5,7 +5,7 @@
 ## Decisión
 
 - **Local** (`docker-compose.yml`):
-  - `db`: MySQL 8.4 en UTC y `utf8mb4`. Publica el puerto **3307** (para no chocar con el MySQL de MAMP) y guarda los datos en el volumen `qr-access-db-data`. Al inicializar el volumen, `docker/mysql/01-base-testing.sql` crea `qr_access_testing`.
+  - `db`: MySQL 8.4 en UTC y `utf8mb4`. Publica el puerto **3307** (para no chocar con el MySQL de MAMP) y guarda los datos en el volumen `qr-access-db-data`. Al inicializar el volumen, `db/init/01-base-testing.sql` crea `qr_access_testing`.
   - `api`: `api/Dockerfile`, target `desarrollo`. Monta el repo y corre `tsx watch`; `node_modules` va en un volumen propio y un healthcheck consulta `/api/v1/salud`.
   - `web` (perfil `web`): `app/Dockerfile`. Compila Flutter web con la misma versión que el host (clonada por tag) y la sirve con Nginx sin root en el puerto 8080, con proxy de `/api` hacia `api`.
   - `dbmate` (perfil `herramientas`): aplica `db/migrations`.

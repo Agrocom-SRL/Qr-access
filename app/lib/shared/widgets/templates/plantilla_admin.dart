@@ -22,6 +22,7 @@ class PlantillaAdmin extends ConsumerWidget {
     this.accion,
     this.accionCompacta,
     this.fab,
+    this.rutaAtras,
     this.anchoMaximo,
     this.conRelleno = true,
     super.key,
@@ -42,6 +43,10 @@ class PlantillaAdmin extends ConsumerWidget {
 
   /// Botón flotante (compacto): "Emitir QR" en Mis QR.
   final Widget? fab;
+
+  /// A dónde lleva "atrás" en una pantalla que no es un destino principal
+  /// (un formulario, por ejemplo); por defecto, a Inicio.
+  final String? rutaAtras;
   final double? anchoMaximo;
 
   /// Relleno horizontal alrededor del contenido; `false` si el contenido lo
@@ -105,8 +110,9 @@ class PlantillaAdmin extends ConsumerWidget {
     }
 
     if (clase == ClasePantalla.compacta) {
-      return _VuelveAlInicio(
+      return _AtrasA(
         destino: destino,
+        rutaAtras: rutaAtras,
         child: Scaffold(
           body: SafeArea(child: contenido),
           floatingActionButton: fab,
@@ -126,8 +132,9 @@ class PlantillaAdmin extends ConsumerWidget {
       );
     }
     final extendido = clase == ClasePantalla.expandida;
-    return _VuelveAlInicio(
+    return _AtrasA(
       destino: destino,
+      rutaAtras: rutaAtras,
       child: Scaffold(
         body: SafeArea(
           child: Row(
@@ -336,21 +343,26 @@ class _Rail extends StatelessWidget {
   }
 }
 
-/// "Atrás" en un destino que no es Inicio vuelve a Inicio; solo desde Inicio
-/// se sale de la app. Los destinos se abren con `go` (reemplazan la pila), así
-/// que sin esto el sistema cerraría la app al primer "atrás".
-class _VuelveAlInicio extends StatelessWidget {
-  const new({required this.destino, required this.child});
+/// "Atrás" no sale de la app salvo desde Inicio: en un destino vuelve a Inicio
+/// y en una pantalla de flujo, a [rutaAtras]. Todo se abre con `go` (reemplaza
+/// la pila), así que sin esto el sistema cerraría la app al primer "atrás".
+class _AtrasA extends StatelessWidget {
+  const new({
+    required this.destino,
+    required this.rutaAtras,
+    required this.child,
+  });
 
   final DestinoNav destino;
+  final String? rutaAtras;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: destino == DestinoNav.inicio,
+      canPop: destino == DestinoNav.inicio && rutaAtras == null,
       onPopInvokedWithResult: (salio, _) {
-        if (!salio) context.go(DestinoNav.inicio.ruta);
+        if (!salio) context.go(rutaAtras ?? DestinoNav.inicio.ruta);
       },
       child: child,
     );

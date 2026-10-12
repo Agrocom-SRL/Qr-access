@@ -81,7 +81,7 @@ Para el firmware en la mesa: la credencial del dispositivo es `9001.<clave>` (la
 
 ## La base de tests en un volumen existente
 
-`docker/mysql/01-base-testing.sql` crea `qr_access_testing` solo al inicializar el volumen. Si el volumen ya existía:
+`db/init/01-base-testing.sql` crea `qr_access_testing` solo al inicializar el volumen. Si el volumen ya existía:
 
 ```
 docker compose exec db mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS qr_access_testing; GRANT ALL ON qr_access_testing.* TO 'qr_access'@'%';"

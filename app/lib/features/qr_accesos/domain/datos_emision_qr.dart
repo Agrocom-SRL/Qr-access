@@ -112,6 +112,7 @@ class DatosEmision {
     required this.vigencia,
     required String etiqueta,
     required DateTime ahora,
+    this.propio = false,
   }) : assert(
          errorDe(
                puertaIds: puertaIds,
@@ -130,6 +131,10 @@ class DatosEmision {
 
   final List<String> puertaIds;
   final Vigencia vigencia;
+
+  /// Es el QR de "Mi QR de acceso": la API anula el propio anterior y no lo
+  /// lista en "Mis QR".
+  final bool propio;
 
   /// Nota libre, sin espacios sobrantes; `null` si no se escribió nada.
   final String? etiqueta;

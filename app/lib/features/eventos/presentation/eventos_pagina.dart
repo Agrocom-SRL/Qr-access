@@ -11,8 +11,8 @@ import 'package:agrocom_acceso/features/eventos/presentation/widgets/fila_evento
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_selector.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/desliza_entre_opciones.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
@@ -39,13 +39,23 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
     final tokens = context.tokens;
     final consulta = ref.watch(consultaEventosProvider);
     final controlador = ref.read(consultaEventosProvider.notifier);
-    final eventos = ref.watch(eventosProvider);
     final puertas = ref.watch(puertasDisponiblesProvider).value ?? const [];
-    final ahora = ref.read(relojProvider)();
     final expandida = context.esExpandida;
     final conFiltroDePuerta = expandida || _mostrarFiltroDePuerta;
-    final hayFiltro =
-        consulta.filtro.resultado != null || consulta.filtro.puertaId != null;
+    final segmentosDeResultado = [
+      SegmentoDeSelector<ResultadoEvento?>(
+        valor: null,
+        etiqueta: l10n.eventosFiltroTodos,
+      ),
+      SegmentoDeSelector<ResultadoEvento?>(
+        valor: ResultadoEvento.permitido,
+        etiqueta: l10n.eventosFiltroPermitidos,
+      ),
+      SegmentoDeSelector<ResultadoEvento?>(
+        valor: ResultadoEvento.rechazado,
+        etiqueta: l10n.eventosFiltroRechazados,
+      ),
+    ];
 
     final selectorDePuerta = AccesoSelector<String?>(
       placeholder: l10n.eventosTodasLasPuertas,
@@ -122,120 +132,165 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
         ),
       ),
       conRelleno: false,
-      child: DeslizaEntreOpciones<ResultadoEvento?>(
-        activo: !expandida,
-        opciones: const [
-          null,
-          ResultadoEvento.permitido,
-          ResultadoEvento.rechazado,
-        ],
-        seleccionada: consulta.filtro.resultado,
-        alCambiar: controlador.elegirResultado,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            filtros,
-            Expanded(
-              child: ListadoPaginado<EventoAcceso>(
-                estado: estadoDesdeAsync(eventos, ahora: ahora),
-                tituloDeError: l10n.eventosErrorCargar,
-                alReintentar: () => ref.invalidate(eventosProvider),
-                alCambiarPagina: controlador.irAPagina,
-                vacio: EstadoVacio(
-                  ilustracion: Multimedia.vacioEventos,
-                  titulo: hayFiltro
-                      ? l10n.eventosSinResultadosFiltro
-                      : l10n.eventosSinResultados,
-                  ayuda: hayFiltro
-                      ? l10n.eventosSinResultadosFiltroAyuda
-                      : l10n.eventosSinResultadosAyuda,
-                  textoAccion: hayFiltro ? l10n.comunQuitarFiltros : null,
-                  alAccionar: hayFiltro
-                      ? () {
-                          controlador
-                            ..elegirResultado(null)
-                            ..elegirPuerta(null);
-                        }
-                      : null,
+      child: expandida
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                filtros,
+                Expanded(
+                  child: _ListaEventos(resultado: consulta.filtro.resultado),
                 ),
-                encabezadoDe: (evento, anterior) =>
-                    anterior == null ||
-                        !mismoDiaLocal(evento.ocurridoAt, anterior.ocurridoAt)
-                    ? _tituloDelDia(l10n, evento.ocurridoAt, ahora)
-                    : null,
-                tarjeta: (context, evento) => TarjetaEvento(evento: evento),
-                columnas: [
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaHora,
-                    ancho: tokens.tamano.columnaHora,
-                    celda: (context, evento) => Text(
-                      formatearHoraConSegundos(evento.ocurridoAt),
-                      style: tokens.tipografia.mono(
-                        tokens.tipografia.t14,
-                        color: tokens.colores.texto,
-                      ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_mostrarFiltroDePuerta)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      tokens.espacio.l,
+                      tokens.espacio.l,
+                      tokens.espacio.l,
+                      0,
                     ),
+                    child: selectorDePuerta,
                   ),
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaPuerta,
-                    celda: (context, evento) => Text(
-                      evento.puertaNombre,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
+                Expanded(
+                  child: PestanasDeslizables<ResultadoEvento?>(
+                    segmentos: segmentosDeResultado,
+                    seleccionado: consulta.filtro.resultado,
+                    alElegir: controlador.elegirResultado,
+                    paginaDe: (context, resultado) =>
+                        _ListaEventos(resultado: resultado),
                   ),
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaSitio,
-                    celda: (context, evento) => Text(
-                      evento.sitioNombre,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: tokens.colores.textoSecundario),
-                    ),
-                  ),
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaQr,
-                    celda: (context, evento) => Text(
-                      evento.qrEtiqueta == null && evento.emisorEtiqueta == null
-                          ? l10n.comunGuion
-                          : textoDetalleEvento(
-                              l10n,
-                              EventoAcceso(
-                                id: evento.id,
-                                ocurridoAt: evento.ocurridoAt,
-                                resultado: ResultadoEvento.permitido,
-                                motivoCode: evento.motivoCode,
-                                puertaNombre: evento.puertaNombre,
-                                sitioNombre: evento.sitioNombre,
-                                qrEtiqueta: evento.qrEtiqueta,
-                                emisorEtiqueta: evento.emisorEtiqueta,
-                              ),
-                            ),
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: tokens.colores.textoSecundario),
-                    ),
-                  ),
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaResultado,
-                    celda: (context, evento) => AccesoBadge(
-                      texto: textoResultadoEvento(l10n, evento.resultado),
-                      tono: tonoResultadoEvento(evento.resultado),
-                    ),
-                  ),
-                  ColumnaListado(
-                    titulo: l10n.eventosColumnaMotivo,
-                    celda: (context, evento) => Text(
-                      evento.esPermitido
-                          ? l10n.comunGuion
-                          : textoMotivoEvento(l10n, evento.motivoCode),
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: tokens.colores.textoSecundario),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+    );
+  }
+}
+
+/// La lista de un resultado (todos, permitidos o rechazados): tarjetas
+/// agrupadas por día en compacto y tabla en expandido. Cada pestaña tiene la
+/// suya; la página elegida solo aplica a la pestaña activa.
+class _ListaEventos extends ConsumerWidget {
+  const new({required this.resultado});
+
+  final ResultadoEvento? resultado;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    final elegida = ref.watch(consultaEventosProvider);
+    final controlador = ref.read(consultaEventosProvider.notifier);
+    final consulta = ConsultaEventos(
+      filtro: elegida.filtro.copiar(
+        resultado: resultado,
+        quitarResultado: resultado == null,
       ),
+      pagina: elegida.filtro.resultado == resultado ? elegida.pagina : 1,
+    );
+    final eventos = ref.watch(eventosProvider(consulta));
+    final ahora = ref.read(relojProvider)();
+    final hayFiltro =
+        consulta.filtro.resultado != null || consulta.filtro.puertaId != null;
+
+    return ListadoPaginado<EventoAcceso>(
+      estado: estadoDesdeAsync(eventos, ahora: ahora),
+      tituloDeError: l10n.eventosErrorCargar,
+      alReintentar: () => ref.invalidate(eventosProvider),
+      alCambiarPagina: controlador.irAPagina,
+      vacio: EstadoVacio(
+        ilustracion: Multimedia.vacioEventos,
+        titulo: hayFiltro
+            ? l10n.eventosSinResultadosFiltro
+            : l10n.eventosSinResultados,
+        ayuda: hayFiltro
+            ? l10n.eventosSinResultadosFiltroAyuda
+            : l10n.eventosSinResultadosAyuda,
+        textoAccion: hayFiltro ? l10n.comunQuitarFiltros : null,
+        alAccionar: hayFiltro
+            ? () {
+                controlador
+                  ..elegirResultado(null)
+                  ..elegirPuerta(null);
+              }
+            : null,
+      ),
+      encabezadoDe: (evento, anterior) =>
+          anterior == null ||
+              !mismoDiaLocal(evento.ocurridoAt, anterior.ocurridoAt)
+          ? _tituloDelDia(l10n, evento.ocurridoAt, ahora)
+          : null,
+      tarjeta: (context, evento) => TarjetaEvento(evento: evento),
+      columnas: [
+        ColumnaListado(
+          titulo: l10n.eventosColumnaHora,
+          ancho: tokens.tamano.columnaHora,
+          celda: (context, evento) => Text(
+            formatearHoraConSegundos(evento.ocurridoAt),
+            style: tokens.tipografia.mono(
+              tokens.tipografia.t14,
+              color: tokens.colores.texto,
+            ),
+          ),
+        ),
+        ColumnaListado(
+          titulo: l10n.eventosColumnaPuerta,
+          celda: (context, evento) => Text(
+            evento.puertaNombre,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+        ColumnaListado(
+          titulo: l10n.eventosColumnaSitio,
+          celda: (context, evento) => Text(
+            evento.sitioNombre,
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: tokens.colores.textoSecundario),
+          ),
+        ),
+        ColumnaListado(
+          titulo: l10n.eventosColumnaQr,
+          celda: (context, evento) => Text(
+            evento.qrEtiqueta == null && evento.emisorEtiqueta == null
+                ? l10n.comunGuion
+                : textoDetalleEvento(
+                    l10n,
+                    EventoAcceso(
+                      id: evento.id,
+                      ocurridoAt: evento.ocurridoAt,
+                      resultado: ResultadoEvento.permitido,
+                      motivoCode: evento.motivoCode,
+                      puertaNombre: evento.puertaNombre,
+                      sitioNombre: evento.sitioNombre,
+                      qrEtiqueta: evento.qrEtiqueta,
+                      emisorEtiqueta: evento.emisorEtiqueta,
+                    ),
+                  ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: tokens.colores.textoSecundario),
+          ),
+        ),
+        ColumnaListado(
+          titulo: l10n.eventosColumnaResultado,
+          celda: (context, evento) => AccesoBadge(
+            texto: textoResultadoEvento(l10n, evento.resultado),
+            tono: tonoResultadoEvento(evento.resultado),
+          ),
+        ),
+        ColumnaListado(
+          titulo: l10n.eventosColumnaMotivo,
+          celda: (context, evento) => Text(
+            evento.esPermitido
+                ? l10n.comunGuion
+                : textoMotivoEvento(l10n, evento.motivoCode),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: tokens.colores.textoSecundario),
+          ),
+        ),
+      ],
     );
   }
 }

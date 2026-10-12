@@ -48,6 +48,7 @@
   "comunErrorQrNoEncontrado": "Não encontramos esse QR. Ele pode não estar mais disponível.",
   "comunErrorQrVigenciaInvalida": "A validade escolhida não é válida. Escolha outra.",
   "comunErrorQrVigenciaExcedida": "Essa validade excede o que seu plano permite. Escolha uma mais curta.",
+  "comunErrorQrPropioEnCurso": "Seu QR de acesso já está sendo gerado. Tente novamente.",
   "comunErrorQrYaUsado": "Este QR já foi usado, por isso não pode ser cancelado.",
   "comunErrorValidacionInvalida": "Verifique os dados e tente novamente.",
   "comunErrorUsuarioNoEncontrado": "Não encontramos esse usuário. Atualize a lista.",

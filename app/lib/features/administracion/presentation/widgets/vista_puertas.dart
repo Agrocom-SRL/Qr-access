@@ -115,6 +115,7 @@ class VistaPuertas extends ConsumerWidget {
                 ruta: Multimedia.fotoIntercomunicador,
                 alineacion: Alignment(0.6, 0),
                 fundirConFondo: true,
+                verdeEnClaro: true,
               ),
             ),
           ),

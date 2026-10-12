@@ -121,8 +121,7 @@ void main() {
     final textos = textosEn(tester);
 
     await tester.tap(find.text(textos.eventosFiltroRechazados));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(
       repositorio.filtrosPedidos.last.resultado,
