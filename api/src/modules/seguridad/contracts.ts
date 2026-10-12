@@ -1,7 +1,7 @@
 import type { Pool } from 'mysql2/promise';
 import { RepositorioDeCuentas, RepositorioDeUsuarios } from './repository.js';
 
-export { crearAutenticadorDeUsuario } from './autenticador.js';
+export { crearAutenticadorDePlataforma, crearAutenticadorDeUsuario } from './autenticador.js';
 
 export interface ServicioDeUsuarios {
   /** ¿El usuario de la cuenta del contexto existe y está activo? (RF-06: uno desactivado no abre puertas) */

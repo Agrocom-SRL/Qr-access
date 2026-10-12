@@ -69,3 +69,60 @@ export const parametrosDeUsuario = z.object({ id: esquemaId });
 export const respuestaDePinGenerado = z.object({ pin: z.string(), pin_generado_at: esquemaFecha });
 
 export const respuestaListadoDeRoles = z.object({ datos: z.array(esquemaRol) });
+
+// --- Equipo AGROCOM (super admin, web admin) ---
+
+export const cuerpoDeIngresoDePlataforma = z.object({
+  usuario: z.string().min(1).max(60),
+  contrasena: z.string().min(1).max(128),
+});
+
+export const respuestaDeIngresoDePlataforma = z.object({
+  acceso: z.string(),
+  refresco: z.string(),
+  usuario: z.object({ id: z.string(), nombre: z.string().nullable(), usuario: z.string() }),
+  debe_cambiar_contrasena: z.boolean(),
+  permisos: z.array(z.string()),
+});
+
+export const respuestaDePerfilDePlataforma = z.object({
+  id: z.string(),
+  nombre: z.string().nullable(),
+  usuario: z.string(),
+  creado_at: esquemaFecha,
+  ultimo_ingreso_at: esquemaFecha.nullable(),
+  debe_cambiar_contrasena: z.boolean(),
+  permisos: z.array(z.string()),
+});
+
+export const cuerpoDeCambioDeContrasena = z.object({
+  actual: z.string().min(1).max(128),
+  nueva: z.string().min(1).max(128),
+});
+
+const esquemaMiembroDelEquipo = z.object({
+  id: z.string(),
+  nombre: z.string().nullable(),
+  usuario: z.string(),
+  activo: z.boolean(),
+  es_actual: z.boolean(),
+  ultimo_ingreso_at: esquemaFecha.nullable(),
+  created_at: esquemaFecha,
+});
+
+export const respuestaDelEquipo = esquemaListado(esquemaMiembroDelEquipo).extend({
+  activos: z.number().int(),
+});
+
+export const respuestaDeMiembroCreado = esquemaMiembroDelEquipo;
+
+export const cuerpoDeNuevoMiembro = z.object({
+  nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
+  usuario: z.string().min(1).max(60),
+  contrasena_temporal: z.string().min(1).max(128),
+});
+
+export const consultaDeUsuarioDisponible = z.object({ usuario: z.string().max(60).default('') });
+export const respuestaDeUsuarioDisponible = z.object({ disponible: z.boolean() });
+
+export const cuerpoDeEdicionDeMiembro = z.object({ activo: z.literal(false) });

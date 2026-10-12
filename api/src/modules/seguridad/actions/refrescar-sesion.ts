@@ -4,7 +4,7 @@ import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
 import { decidirRolActivo } from '../domain/rol-activo.js';
-import { sesionVigente } from '../domain/sesion.js';
+import { sesionVigente, type SesionRefrescada } from '../domain/sesion.js';
 import {
   RepositorioDeCuentas,
   RepositorioDeRolesDeUsuario,
@@ -13,11 +13,7 @@ import {
   RepositorioDeUsuarios,
 } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
-
-export interface SesionRefrescada {
-  acceso: string;
-  refresco: string;
-}
+import { ejecutar as refrescarDePlataforma } from './refrescar-sesion-plataforma.js';
 
 /**
  * Refresco rotativo (ADR 0004 §4): el refresh presentado deja de servir y se entrega otro. La
@@ -38,13 +34,17 @@ export async function ejecutar(
   );
   if (sesion === null || !sesionVigente(sesion, ahora)) throw invalido;
 
-  return ContextoCuenta.ejecutarEn(sesion.tenant_id, async () => {
+  // Sesión de un super admin (sin cuenta): su propio camino, que nunca toca datos de cuentas.
+  if (sesion.tenant_id === null) {
+    return refrescarDePlataforma(servicios, sesion.id, sesion.usuario_id, hashActual, ahora);
+  }
+  const cuentaId = sesion.tenant_id;
+
+  return ContextoCuenta.ejecutarEn(cuentaId, async () => {
     const usuario = await new RepositorioDeUsuarios(servicios.pool).buscarActivoPorId(
       sesion.usuario_id,
     );
-    const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorId(
-      sesion.tenant_id,
-    );
+    const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorId(cuentaId);
     if (usuario === null || cuenta === null) throw invalido;
 
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
@@ -70,7 +70,7 @@ export async function ejecutar(
 
     const acceso = await servicios.jwt.firmar({
       usuarioId: usuario.id,
-      cuentaId: sesion.tenant_id,
+      cuentaId,
       sesionId: sesion.id,
       rolActivoId,
     });

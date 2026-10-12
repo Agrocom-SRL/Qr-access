@@ -5,7 +5,8 @@ const ALGORITMO = 'HS256';
 
 export interface ReclamosDeAcceso {
   readonly usuarioId: string;
-  readonly cuentaId: string;
+  /** `null` = sesión de plataforma (super admin): el JWT no lleva `tid`. */
+  readonly cuentaId: string | null;
   readonly sesionId: string;
   readonly rolActivoId: string | null;
 }
@@ -22,7 +23,7 @@ export function crearEmisorDeJwt(secreto: string, minutosDeVida: number): Emisor
   return {
     firmar(reclamos) {
       const jwt = new SignJWT({
-        tid: reclamos.cuentaId,
+        ...(reclamos.cuentaId === null ? {} : { tid: reclamos.cuentaId }),
         sid: reclamos.sesionId,
         ...(reclamos.rolActivoId === null ? {} : { rid: reclamos.rolActivoId }),
       })
@@ -41,10 +42,10 @@ export function crearEmisorDeJwt(secreto: string, minutosDeVida: number): Emisor
           algorithms: [ALGORITMO],
         });
         const { sub, tid, sid, rid } = payload;
-        if (typeof sub !== 'string' || typeof tid !== 'string' || typeof sid !== 'string')
-          return null;
+        if (typeof sub !== 'string' || typeof sid !== 'string') return null;
+        if (tid !== undefined && typeof tid !== 'string') return null;
         if (rid !== undefined && typeof rid !== 'string') return null;
-        return { usuarioId: sub, cuentaId: tid, sesionId: sid, rolActivoId: rid ?? null };
+        return { usuarioId: sub, cuentaId: tid ?? null, sesionId: sid, rolActivoId: rid ?? null };
       } catch {
         return null;
       }

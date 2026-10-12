@@ -3,7 +3,10 @@ import { rutas as rutasDeAccesos } from './modules/accesos/routes.js';
 import { crearAutenticadorDeDispositivo } from './modules/dispositivos/contracts.js';
 import { rutas as rutasDeDispositivos } from './modules/dispositivos/routes.js';
 import { rutas as rutasDeOrganizacion } from './modules/organizacion/routes.js';
-import { crearAutenticadorDeUsuario } from './modules/seguridad/contracts.js';
+import {
+  crearAutenticadorDePlataforma,
+  crearAutenticadorDeUsuario,
+} from './modules/seguridad/contracts.js';
 import { rutas as rutasDeSeguridad } from './modules/seguridad/routes.js';
 import type { DependenciasDeModulo } from './platform/http/dependencias.js';
 import type { Autenticadores } from './platform/seguridad/principal.js';
@@ -24,12 +27,14 @@ export const MODULOS: readonly ModuloRegistrado[] = [
   { nombre: 'dispositivos', rutas: rutasDeDispositivos },
 ];
 
-/** Cómo se autentica un usuario y un dispositivo: lo aportan sus módulos, el plugin solo los usa. */
+/** Cómo se autentica un usuario, un super admin y un dispositivo: lo aportan sus módulos, el plugin solo los usa. */
 export function crearAutenticadores(dependencias: DependenciasDeModulo): Autenticadores {
   const autenticarUsuario = crearAutenticadorDeUsuario(dependencias);
   const autenticarDispositivo = crearAutenticadorDeDispositivo(dependencias);
+  const autenticarPlataforma = crearAutenticadorDePlataforma(dependencias);
   return {
     autenticarUsuario: (jwt) => autenticarUsuario(jwt),
     autenticarDispositivo: (id, clave) => autenticarDispositivo(id, clave),
+    autenticarPlataforma: (jwt) => autenticarPlataforma(jwt),
   };
 }

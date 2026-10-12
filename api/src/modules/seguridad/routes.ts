@@ -30,6 +30,7 @@ import {
   respuestaListadoDeRoles,
   respuestaListadoDeUsuarios,
 } from './schemas.js';
+import { rutasDePlataforma } from './rutas-plataforma.js';
 import { crearServiciosDeSeguridad } from './servicios.js';
 
 const LARGO_MAXIMO_DEL_AGENTE = 255;
@@ -178,6 +179,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       },
       (request) => generarPin(servicios, usuarioDe(request), request.params.id),
     );
+    app.register(rutasDePlataforma(servicios));
     listo();
   };
 }

@@ -1,5 +1,6 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import { RepositorioDeFilasDePlataforma } from '../../platform/db/repositorio-de-fila-de-plataforma.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 
@@ -313,7 +314,8 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
 
 export interface SesionFila extends RowDataPacket {
   id: string;
-  tenant_id: string;
+  /** `null` en la sesión de un super admin. */
+  tenant_id: string | null;
   usuario_id: string;
   rol_activo_id: string | null;
   expira_at: Date;
@@ -464,5 +466,251 @@ export class RepositorioDeSesionesDePlataforma extends RepositorioDePlataforma {
       donde: 't.refresh_hash = ?',
       params: [refreshHash],
     });
+  }
+}
+
+export interface SuperAdminFila extends RowDataPacket {
+  id: string;
+  etiqueta: string | null;
+  username: string;
+  contrasena_hash: string;
+  contrasena_temporal: number;
+  activo: number;
+  created_at: Date;
+}
+
+const COLUMNAS_DE_SUPER_ADMIN =
+  't.id, t.etiqueta, t.username, t.contrasena_hash, t.contrasena_temporal, t.activo, t.created_at';
+
+export interface NuevoSuperAdmin {
+  readonly nombre: string;
+  readonly username: string;
+  readonly contrasenaHash: string;
+}
+
+/**
+ * Dueño de las filas de `usuarios` con `tenant_id NULL`: el equipo de AGROCOM. Solo ve y toca
+ * esas filas (por construcción), nunca a un usuario de una cuenta.
+ */
+export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'usuarios',
+      columnas: ['etiqueta', 'username', 'contrasena_hash', 'contrasena_temporal', 'activo'],
+      sensibles: ['contrasena_hash'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
+    return this.seleccionarUna<SuperAdminFila>({
+      columnas: COLUMNAS_DE_SUPER_ADMIN,
+      donde: 't.username = ? AND t.activo = 1',
+      params: [username],
+    });
+  }
+
+  buscarActivoPorId(id: string): Promise<SuperAdminFila | null> {
+    return this.seleccionarUna<SuperAdminFila>({
+      columnas: COLUMNAS_DE_SUPER_ADMIN,
+      donde: 't.id = ? AND t.activo = 1',
+      params: [id],
+    });
+  }
+
+  buscarPorId(id: string): Promise<SuperAdminFila | null> {
+    return this.seleccionarUna<SuperAdminFila>({
+      columnas: COLUMNAS_DE_SUPER_ADMIN,
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  /** ¿Hay un super admin vigente (activo o no) con ese usuario? El usuario es único entre los vigentes. */
+  async existeUsername(username: string): Promise<boolean> {
+    return (await this.contar({ donde: 't.username = ?', params: [username] })) > 0;
+  }
+
+  listar(limite: number, desplazamiento: number): Promise<SuperAdminFila[]> {
+    return this.seleccionar<SuperAdminFila>({
+      columnas: COLUMNAS_DE_SUPER_ADMIN,
+      orden: 't.activo DESC, t.etiqueta, t.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  contarTodos(): Promise<number> {
+    return this.contar({});
+  }
+
+  contarActivos(): Promise<number> {
+    return this.contar({ donde: 't.activo = 1' });
+  }
+
+  /** Bloquea las filas de los super admin activos hasta el fin de la transacción (nunca queda un equipo sin activos). */
+  async idsActivosBloqueados(tx: Transaccion): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>(
+      { columnas: 't.id', donde: 't.activo = 1', orden: 't.id', bloquear: true },
+      tx,
+    );
+    return filas.map((fila) => fila.id);
+  }
+
+  crear(tx: Transaccion, nuevo: NuevoSuperAdmin): Promise<string> {
+    return this.insertar(tx, {
+      etiqueta: nuevo.nombre,
+      username: nuevo.username,
+      contrasena_hash: nuevo.contrasenaHash,
+      contrasena_temporal: 1,
+      activo: 1,
+    });
+  }
+
+  cambiarContrasena(tx: Transaccion, id: string, contrasenaHash: string): Promise<boolean> {
+    return this.actualizar(tx, id, { contrasena_hash: contrasenaHash, contrasena_temporal: 0 });
+  }
+
+  desactivar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.actualizar(tx, id, { activo: 0 });
+  }
+}
+
+/** Dueño de las filas de `sesiones` con `tenant_id NULL`: las de los super admin. */
+export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, { ...DESCRIPCION_DE_SESIONES, deCuenta: false });
+  }
+
+  crear(tx: Transaccion, sesion: Omit<NuevaSesion, 'rolActivoId'>): Promise<string> {
+    return this.insertar(tx, {
+      usuario_id: sesion.usuarioId,
+      rol_activo_id: null,
+      refresh_hash: sesion.refreshHash,
+      agente: sesion.agente,
+      ip: sesion.ip,
+      expira_at: sesion.expiraAt,
+    });
+  }
+
+  buscarPorId(id: string): Promise<SesionFila | null> {
+    return this.seleccionarUna<SesionFila>({
+      columnas: COLUMNAS_DE_SESION,
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  rotar(
+    tx: Transaccion,
+    id: string,
+    refreshActual: string,
+    refreshNuevo: string,
+    expiraAt: Date,
+    ahora: Date,
+  ): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { refresh_hash: refreshNuevo, expira_at: expiraAt },
+      {
+        cuando: {
+          sql: 'refresh_hash = ? AND revocada_at IS NULL AND expira_at > ?',
+          params: [refreshActual, ahora],
+        },
+      },
+    );
+  }
+
+  revocar(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { revocada_at: ahora },
+      { cuando: { sql: 'revocada_at IS NULL' } },
+    );
+  }
+
+  /** Corta todas las sesiones vivas de un super admin (al desactivarlo). */
+  async revocarTodasDe(tx: Transaccion, usuarioId: string, ahora: Date): Promise<number> {
+    const vivas = await this.seleccionar<SesionFila>(
+      {
+        columnas: COLUMNAS_DE_SESION,
+        donde: 't.usuario_id = ? AND t.revocada_at IS NULL',
+        params: [usuarioId],
+      },
+      tx,
+    );
+    let revocadas = 0;
+    for (const sesion of vivas) {
+      if (await this.revocar(tx, sesion.id, ahora)) revocadas += 1;
+    }
+    return revocadas;
+  }
+
+  /** `usuarioId -> fecha del último inicio de sesión`; quien nunca entró no figura. */
+  async ultimoIngresoDe(usuarioIds: readonly string[]): Promise<Map<string, Date>> {
+    const mapa = new Map<string, Date>();
+    if (usuarioIds.length === 0) return mapa;
+    const filas = await this.seleccionar<UltimoIngresoFila>({
+      columnas: 't.usuario_id, MAX(t.created_at) AS ultimo_ingreso_at',
+      donde: 't.usuario_id IN (?)',
+      params: [usuarioIds],
+      agrupar: 't.usuario_id',
+    });
+    for (const fila of filas) mapa.set(fila.usuario_id, fila.ultimo_ingreso_at);
+    return mapa;
+  }
+}
+
+/** Dueño de los roles de plataforma (`roles` con `tenant_id NULL`): hoy solo "Super admin". */
+export class RepositorioDeRolesDePlataforma extends RepositorioDeFilasDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'roles',
+      columnas: ['nombre', 'protegido', 'activo'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  buscarSuperAdmin(): Promise<RolFila | null> {
+    return this.seleccionarUna<RolFila>({
+      columnas: 't.id, t.nombre',
+      donde: "t.nombre = 'Super admin' AND t.activo = 1",
+    });
+  }
+}
+
+/** Asignaciones y permisos del rol de plataforma de un super admin (`usuario_roles` con `tenant_id NULL`). */
+export class RepositorioDeRolesDeSuperAdmin extends RepositorioDeFilasDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'usuario_roles',
+      columnas: ['usuario_id', 'rol_id'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  asignar(tx: Transaccion, usuarioId: string, rolId: string): Promise<string> {
+    return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
+  }
+
+  /** Permisos de ámbito plataforma de TODOS sus roles de plataforma (hoy solo uno). */
+  async permisosDe(usuarioId: string): Promise<string[]> {
+    const filas = await this.seleccionar<PermisoFila>({
+      columnas: 'DISTINCT p.codigo',
+      uniones: [
+        'JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id IS NULL AND r.deleted_at IS NULL AND r.activo = 1',
+        'JOIN rol_permisos AS rp ON rp.rol_id = r.id',
+        "JOIN permisos AS p ON p.id = rp.permiso_id AND p.ambito = 'plataforma'",
+      ].join(' '),
+      donde: 't.usuario_id = ?',
+      params: [usuarioId],
+      orden: 'p.codigo',
+    });
+    return filas.map((fila) => fila.codigo);
   }
 }

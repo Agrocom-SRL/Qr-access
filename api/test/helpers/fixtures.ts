@@ -279,3 +279,34 @@ export async function contarFilas(
   );
   return Number(filas[0]?.total);
 }
+
+export interface SuperAdminDePrueba {
+  readonly id: string;
+  readonly usuario: string;
+  readonly contrasena: string;
+}
+
+/** Un super admin (`tenant_id NULL`) con el rol "Super admin" que siembra el catálogo. */
+export async function crearSuperAdmin(
+  pool: Pool,
+  usuario: string,
+  opciones: { contrasena?: string; nombre?: string; activo?: boolean; temporal?: boolean } = {},
+): Promise<SuperAdminDePrueba> {
+  const contrasena = opciones.contrasena ?? 'contrasena-de-prueba-1';
+  const id = await insertar(
+    pool,
+    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES (NULL, ?, ?, ?, ?, ?)',
+    [
+      opciones.nombre ?? `Admin ${usuario}`,
+      usuario,
+      await hashear(contrasena),
+      opciones.temporal === true ? 1 : 0,
+      opciones.activo === false ? 0 : 1,
+    ],
+  );
+  await pool.query(
+    "INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id) SELECT NULL, ?, id FROM roles WHERE tenant_id IS NULL AND nombre = 'Super admin'",
+    [id],
+  );
+  return { id, usuario, contrasena };
+}

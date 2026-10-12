@@ -13,9 +13,14 @@ async function identificar(
 ): Promise<Principal> {
   const encabezado = request.headers.authorization ?? '';
 
-  if (acceso === 'usuario') {
+  if (acceso === 'usuario' || acceso === 'plataforma') {
     const jwt = ENCABEZADO_USUARIO.exec(encabezado)?.[1];
-    const principal = jwt === undefined ? null : await autenticadores.autenticarUsuario(jwt);
+    const principal =
+      jwt === undefined
+        ? null
+        : acceso === 'usuario'
+          ? await autenticadores.autenticarUsuario(jwt)
+          : await autenticadores.autenticarPlataforma(jwt);
     if (principal === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
     return principal;
   }
@@ -30,6 +35,16 @@ async function identificar(
 }
 
 function contextoDe(principal: Principal): DatosContexto {
+  if (principal.tipo === 'plataforma') {
+    // Sin cuenta: tocar una tabla de cuenta falla cerrado (ADR 0004 §7).
+    return {
+      cuentaId: null,
+      usuarioId: principal.usuarioId,
+      rolActivoId: null,
+      dispositivoId: null,
+      origen: 'api',
+    };
+  }
   if (principal.tipo === 'usuario') {
     return {
       cuentaId: principal.cuentaId,
