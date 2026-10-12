@@ -19,8 +19,39 @@ export const respuestaDeResumen = z.object({
       vence_el: z.string(),
       dias_restantes: z.number().int(),
       monto: z.number(),
-      estado: z.enum(['activa', 'por_vencer', 'vencida', 'suspendida']),
+      estado: z.enum(['activa', 'por_vencer', 'vencida', 'suspendida', 'pendiente_pago']),
     }),
   ),
   ultimas_acciones: z.array(esquemaEventoDeBitacora),
+});
+
+const esquemaMes = z.string().regex(/^\d{4}-\d{2}$/);
+
+/** Las series de las gráficas del Resumen y de Cobranza. */
+export const respuestaDeEstadisticas = z.object({
+  cobrado_por_mes: z.array(
+    z.object({ mes: esquemaMes, monto: z.number(), pagos: z.number().int() }),
+  ),
+  altas_por_mes: z.array(z.object({ mes: esquemaMes, cuentas: z.number().int() })),
+  cuentas_por_estado: z.object({
+    activa: z.number().int(),
+    por_vencer: z.number().int(),
+    vencida: z.number().int(),
+    suspendida: z.number().int(),
+    pendiente_pago: z.number().int(),
+  }),
+  cuentas_por_plan: z.array(
+    z.object({
+      plan: z.string(),
+      cuentas: z.number().int(),
+      cupo_usuarios: z.number().int().nullable(),
+    }),
+  ),
+  accesos_por_dia: z.array(
+    z.object({
+      dia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      permitidos: z.number().int(),
+      rechazados: z.number().int(),
+    }),
+  ),
 });

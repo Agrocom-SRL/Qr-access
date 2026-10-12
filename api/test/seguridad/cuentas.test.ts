@@ -20,7 +20,7 @@ const BASE = '/api/v1/plataforma/cuentas';
 interface CuentaCreadaDto {
   cuenta: { id: string; codigo: string; nombre: string };
   administrador: { id: string; etiqueta: string; pin: string };
-  suscripcion: { desde: string; hasta: string };
+  suscripcion: { desde: string; hasta: string; estado: string };
 }
 
 describe('plataforma: cuentas (A03, A04, A05)', () => {
@@ -52,9 +52,12 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
     ciudad: 'Ascensión de Guarayos',
     contacto_nombre: 'Rodrigo Añez',
     contacto_telefono: '7 712 4405',
+    contacto_correo: 'rodrigo@guarayos.bo',
     plan_id: planIds[1],
     inicio: '2026-10-12',
     administrador_nombre: 'Rodrigo Añez',
+    // Con el primer pago registrado, la cuenta nace activa; sin él, pendiente de pago.
+    pago: { monto: 21_600, fecha_pago: '2026-10-12', medio: 'transferencia', referencia: 'TRF-1' },
     ...cambios,
   });
 
@@ -71,6 +74,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       expect(creada.suscripcion).toEqual({
         desde: '2026-10-12T04:00:00.000Z',
         hasta: '2027-10-12T04:00:00.000Z',
+        estado: 'activa',
       });
       expect(respuesta.headers.location).toBe(`/api/v1/plataforma/cuentas/${creada.cuenta.id}`);
     });
@@ -313,7 +317,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       ]);
       const respuesta = await prueba.app.inject({
         method: 'GET',
-        url: `${BASE}/${a.cuenta.id}/puertas`,
+        url: `${BASE}/${a.cuenta.id}/sitios`,
         headers,
       });
       const { datos } = respuesta.json<{
@@ -330,7 +334,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
     });
 
     it('una cuenta inexistente da 404', async () => {
-      for (const sufijo of ['', '/puertas']) {
+      for (const sufijo of ['', '/sitios']) {
         const respuesta = await prueba.app.inject({
           method: 'GET',
           url: `${BASE}/999999${sufijo}`,

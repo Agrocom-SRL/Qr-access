@@ -4,9 +4,18 @@ import {
   ejecutar as listarPuertasDeLaCuenta,
   type PuertaListada,
 } from './actions/listar-puertas.js';
+import * as estructura from './actions/gestionar-estructura.js';
 import { RepositorioDePuertas, RepositorioDeSitios, type PuertaFila } from './repository.js';
 
 export type { PuertaListada } from './actions/listar-puertas.js';
+export type {
+  CambiosDePuerta,
+  CambiosDeSitio,
+  DatosDePuerta,
+  DatosDeSitio,
+  SitioDeEstructura,
+} from './actions/gestionar-estructura.js';
+export { SEGUNDOS_MAXIMOS, SEGUNDOS_MINIMOS } from './actions/gestionar-estructura.js';
 
 /** Lo que otros módulos pueden saber de una puerta (accesos, dispositivos). */
 export interface PuertaDeCuenta {
@@ -27,6 +36,14 @@ export interface ServicioDeOrganizacion {
   contarSitiosYPuertas(): Promise<{ sitios: number; puertas: number }>;
   /** Las puertas activas de la cuenta del contexto con su sitio y el estado de su lector. */
   listarPuertasConEstado(paginacion: Paginacion, ahora: Date): Promise<Listado<PuertaListada>>;
+  /** Sitios con TODAS sus puertas y lectores de la cuenta del contexto: la vista de gestión. */
+  verEstructura(ahora: Date): Promise<estructura.SitioDeEstructura[]>;
+  crearSitio(datos: estructura.DatosDeSitio): Promise<{ id: string }>;
+  editarSitio(id: string, cambios: estructura.CambiosDeSitio): Promise<void>;
+  eliminarSitio(id: string): Promise<void>;
+  crearPuerta(sitioId: string, datos: estructura.DatosDePuerta): Promise<{ id: string }>;
+  editarPuerta(id: string, cambios: estructura.CambiosDePuerta): Promise<void>;
+  eliminarPuerta(id: string): Promise<void>;
 }
 
 function aPuerta(fila: PuertaFila): PuertaDeCuenta {
@@ -55,5 +72,12 @@ export function crearServicioDeOrganizacion(pool: Pool): ServicioDeOrganizacion 
     async buscarPuertas(ids) {
       return (await puertas.buscarPorIds(ids)).map(aPuerta);
     },
+    verEstructura: (ahora) => estructura.verEstructura(pool, ahora),
+    crearSitio: (datos) => estructura.crearSitio(pool, datos),
+    editarSitio: (id, cambios) => estructura.editarSitio(pool, id, cambios),
+    eliminarSitio: (id) => estructura.eliminarSitio(pool, id),
+    crearPuerta: (sitioId, datos) => estructura.crearPuerta(pool, sitioId, datos),
+    editarPuerta: (id, cambios) => estructura.editarPuerta(pool, id, cambios),
+    eliminarPuerta: (id) => estructura.eliminarPuerta(pool, id),
   };
 }

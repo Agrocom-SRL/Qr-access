@@ -3,7 +3,10 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
 import { inicioDelDia, sumarMeses } from '../../../platform/tiempo/fechas.js';
-import { crearServicioDeSuscripcionesDePlataforma } from '../../suscripciones/contracts.js';
+import {
+  crearServicioDeSuscripcionesDePlataforma,
+  type EstadoDeSuscripcion,
+} from '../../suscripciones/contracts.js';
 import { normalizarCodigoDeCuenta } from '../domain/cuentas.js';
 import { ROLES_BASE } from '../domain/roles-base.js';
 import {
@@ -25,23 +28,33 @@ export interface DatosDeNuevaCuenta {
   readonly ciudad: string;
   readonly contactoNombre: string;
   readonly contactoTelefono: string;
+  readonly contactoCorreo: string | null;
   readonly planId: string;
   /** `aaaa-mm-dd`: el día de inicio, en la zona de la plataforma. */
   readonly inicio: string;
   readonly administradorNombre: string;
+  /** El primer pago, si ya se cobró: la cuenta nace activa. Sin él, nace pendiente de pago. */
+  readonly pago?: {
+    readonly monto: number;
+    readonly fechaPago: string;
+    readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+    readonly referencia: string;
+  };
 }
 
 export interface CuentaCreada {
   cuenta: { id: string; codigo: string; nombre: string };
   /** El PIN en claro existe solo en esta respuesta (invariante 6, ADR 0018 §3). */
   administrador: { id: string; etiqueta: string; pin: string };
-  suscripcion: { desde: string; hasta: string };
+  suscripcion: { desde: string; hasta: string; estado: EstadoDeSuscripcion };
 }
 
 /**
  * Alta de una cuenta cliente (HU-01), todo o nada en una transacción: la cuenta con su código
  * inmutable, los datos de la empresa, los tres roles base, su suscripción de 12 meses y el primer
  * administrador con un PIN sorteado por el servidor. Se firma con el usuario del super admin.
+ * Sin `pago`, la suscripción queda pendiente de su primer pago: la cuenta existe, el administrador
+ * tiene su PIN, pero nada abre hasta registrar el pago de alta (cobranza).
  */
 export async function ejecutar(
   servicios: Pick<ServiciosDeSeguridad, 'pool' | 'config'>,
@@ -75,6 +88,7 @@ export async function ejecutar(
         ciudad: datos.ciudad,
         contactoNombre: datos.contactoNombre,
         contactoTelefono: datos.contactoTelefono,
+        contactoCorreo: datos.contactoCorreo,
       });
 
       const roles = new RepositorioDeRoles(pool);
@@ -106,12 +120,21 @@ export async function ejecutar(
         },
       );
       await new RepositorioDeRolesDeUsuario(pool).asignar(tx, administradorId, rolAdministradorId);
-      await suscripciones.crear(tx, { planId: datos.planId, desde, hasta });
+      await suscripciones.crear(tx, {
+        planId: datos.planId,
+        desde,
+        hasta,
+        ...(datos.pago === undefined ? {} : { pago: datos.pago }),
+      });
 
       return {
         cuenta: { id: cuentaId, codigo, nombre: datos.razonSocial },
         administrador: { id: administradorId, etiqueta: datos.administradorNombre, pin },
-        suscripcion: { desde: desde.toISOString(), hasta: hasta.toISOString() },
+        suscripcion: {
+          desde: desde.toISOString(),
+          hasta: hasta.toISOString(),
+          estado: datos.pago === undefined ? 'pendiente_pago' : 'activa',
+        },
       };
     });
   });

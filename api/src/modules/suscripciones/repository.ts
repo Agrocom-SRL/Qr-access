@@ -21,13 +21,15 @@ export interface SuscripcionActualFila extends RowDataPacket {
   precio_anual: string;
   desde: Date;
   hasta: Date;
-  estado: 'vigente' | 'suspendida' | 'vencida';
+  estado: 'vigente' | 'suspendida' | 'vencida' | 'pendiente';
 }
 
 export interface NuevaSuscripcion {
   readonly planId: string;
   readonly desde: Date;
   readonly hasta: Date;
+  /** `pendiente`: espera su primer pago; sin indicarlo, nace `vigente`. */
+  readonly estado?: 'vigente' | 'pendiente';
 }
 
 const COLUMNAS_ACTUAL =
@@ -54,14 +56,19 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
     });
   }
 
-  /** Alta de la suscripción de la cuenta del contexto (HU-01); queda `vigente` entre `desde` y `hasta`. */
+  /** Alta de la suscripción de la cuenta del contexto (HU-01): `vigente` entre `desde` y `hasta`, o `pendiente` de su primer pago. */
   crear(tx: Transaccion, suscripcion: NuevaSuscripcion): Promise<string> {
     return this.insertar(tx, {
       plan_id: suscripcion.planId,
       desde: suscripcion.desde,
       hasta: suscripcion.hasta,
-      estado: 'vigente',
+      estado: suscripcion.estado ?? 'vigente',
     });
+  }
+
+  /** Primer pago de una cuenta nueva: empieza a operar con el periodo que cubre el pago. */
+  activar(tx: Transaccion, id: string, desde: Date, hasta: Date): Promise<boolean> {
+    return this.actualizar(tx, id, { estado: 'vigente', desde, hasta });
   }
 
   /** Extiende la vigencia: el nuevo `hasta` ya viene calculado por el dominio. */
@@ -249,7 +256,7 @@ export class RepositorioDeSuscripcionesDeTodas extends RepositorioDePlataforma {
   }
 }
 
-export type TipoDePago = 'renovacion' | 'mejora_de_plan';
+export type TipoDePago = 'alta' | 'renovacion' | 'mejora_de_plan';
 export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
 
 export interface PagoFila extends RowDataPacket {
@@ -343,6 +350,28 @@ interface TotalCobradoFila extends RowDataPacket {
 export class RepositorioDeTotalesDePagos extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, { nombre: 'pagos', columnas: [], perfil: 'dominio', deCuenta: true });
+  }
+
+  /** Lo cobrado en cada mes con pagos entre `desde` (incl.) y `hasta` (excl.): `aaaa-mm`, monto y cantidad. */
+  async cobradoPorMes(
+    desde: string,
+    hasta: string,
+  ): Promise<{ mes: string; monto: number; pagos: number }[]> {
+    const filas = await this.seleccionar<
+      RowDataPacket & { mes: string; monto: string; pagos: string }
+    >({
+      columnas:
+        "DATE_FORMAT(t.fecha_pago, '%Y-%m') AS mes, SUM(t.monto) AS monto, COUNT(*) AS pagos",
+      donde: 't.fecha_pago >= ? AND t.fecha_pago < ?',
+      agrupar: 'mes',
+      params: [desde, hasta],
+      orden: 'mes',
+    });
+    return filas.map((fila) => ({
+      mes: fila.mes,
+      monto: Number(fila.monto),
+      pagos: Number(fila.pagos),
+    }));
   }
 
   async cobradoEn(desde: string, hasta: string): Promise<{ monto: number; pagos: number }> {

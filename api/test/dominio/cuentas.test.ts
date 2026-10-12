@@ -68,6 +68,7 @@ describe('filtrarCuentas y contarPorEstado', () => {
       por_vencer: 1,
       vencida: 1,
       suspendida: 0,
+      pendiente_pago: 0,
     });
   });
 });

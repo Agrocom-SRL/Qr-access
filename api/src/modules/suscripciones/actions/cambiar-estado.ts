@@ -10,6 +10,8 @@ import { suscripcionActualODeLaCuenta } from './contexto-de-suscripcion.js';
  */
 export async function ejecutar(pool: Pool, nuevo: 'vigente' | 'suspendida'): Promise<void> {
   const suscripcion = await suscripcionActualODeLaCuenta(pool);
+  if (suscripcion.estado === 'pendiente')
+    throw new ErrorDeDominio('suscripcion.pendiente_de_pago', 422);
   if (suscripcion.estado === nuevo) return;
   if (suscripcion.estado === 'vencida') throw new ErrorDeDominio('suscripcion.vencida', 422);
   await enTransaccion(pool, (tx) =>

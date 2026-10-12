@@ -856,6 +856,16 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   cambiarCodigo(tx: Transaccion, id: string, codigo: string): Promise<boolean> {
     return this.actualizar(tx, id, { codigo });
   }
+
+  /** Corrige la razón social. */
+  renombrar(tx: Transaccion, id: string, nombre: string): Promise<boolean> {
+    return this.actualizar(tx, id, { nombre });
+  }
+
+  /** Baja lógica de la cuenta: nadie de ella vuelve a ingresar y su código queda libre. */
+  eliminar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
 }
 
 export interface DatosDeEmpresa {
@@ -863,13 +873,16 @@ export interface DatosDeEmpresa {
   readonly ciudad: string;
   readonly contactoNombre: string;
   readonly contactoTelefono: string;
+  readonly contactoCorreo: string | null;
 }
 
 export interface DatosDeEmpresaFila extends RowDataPacket {
+  id: string;
   nit: string;
   ciudad: string;
   contacto_nombre: string;
   contacto_telefono: string;
+  contacto_correo: string | null;
 }
 
 /** Dueño de `cuenta_datos_empresa`: la ve y la escribe solo con el contexto de la cuenta. */
@@ -877,7 +890,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuenta_datos_empresa',
-      columnas: ['nit', 'ciudad', 'contacto_nombre', 'contacto_telefono'],
+      columnas: ['nit', 'ciudad', 'contacto_nombre', 'contacto_telefono', 'contacto_correo'],
       perfil: 'dominio',
       deCuenta: true,
     });
@@ -885,7 +898,18 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
 
   buscar(): Promise<DatosDeEmpresaFila | null> {
     return this.seleccionarUna<DatosDeEmpresaFila>({
-      columnas: 't.nit, t.ciudad, t.contacto_nombre, t.contacto_telefono',
+      columnas: 't.id, t.nit, t.ciudad, t.contacto_nombre, t.contacto_telefono, t.contacto_correo',
+    });
+  }
+
+  /** Corrige los datos de la empresa de la cuenta del contexto. */
+  corregir(tx: Transaccion, id: string, datos: DatosDeEmpresa): Promise<boolean> {
+    return this.actualizar(tx, id, {
+      nit: datos.nit,
+      ciudad: datos.ciudad,
+      contacto_nombre: datos.contactoNombre,
+      contacto_telefono: datos.contactoTelefono,
+      contacto_correo: datos.contactoCorreo,
     });
   }
 
@@ -895,6 +919,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
       ciudad: datos.ciudad,
       contacto_nombre: datos.contactoNombre,
       contacto_telefono: datos.contactoTelefono,
+      contacto_correo: datos.contactoCorreo,
     });
   }
 }

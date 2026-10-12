@@ -51,6 +51,7 @@ describe('plataforma: código de la cuenta y PIN de los administradores (ADR 002
         plan_id: plan,
         inicio: '2026-10-12',
         administrador_nombre: `Admin ${codigo}`,
+        pago: { monto: 12_000, fecha_pago: '2026-10-12', medio: 'efectivo', referencia: 'R-1' },
       },
     });
     expect(respuesta.statusCode, respuesta.body).toBe(201);

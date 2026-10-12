@@ -63,6 +63,7 @@ describe('plataforma: bitácora y resumen (A10, A05d, A02)', () => {
       plan_id: planes[100],
       inicio: '2026-10-12',
       administrador_nombre: `Admin ${codigo}`,
+      pago: { monto: 12_000, fecha_pago: '2026-10-12', medio: 'efectivo', referencia: 'R-1' },
     });
     expect(respuesta.statusCode, respuesta.body).toBe(201);
     return respuesta.json<{ cuenta: { id: string } }>().cuenta.id;

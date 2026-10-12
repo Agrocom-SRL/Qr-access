@@ -4,14 +4,17 @@ import * as administradores from './actions/administradores-de-cuenta.js';
 import { ejecutar as cambiarCodigo } from './actions/cambiar-codigo-de-cuenta.js';
 import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
+import { ejecutar as editarCuenta } from './actions/editar-cuenta.js';
+import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
 import { ejecutar as verSuscripcionDeCuenta } from './actions/ver-suscripcion-de-cuenta.js';
-import { ejecutar as verPuertasDeCuenta } from './actions/ver-puertas-de-cuenta.js';
 import {
   consultaDeCobranza,
+  cuerpoDeBajaDeCuenta,
   cuerpoDeCambioDeCodigo,
+  cuerpoDeEdicionDeCuenta,
   parametrosDeAdministrador,
   respuestaDeAdministradores,
   respuestaDeCambioDeCodigo,
@@ -26,7 +29,6 @@ import {
   respuestaDeCuentas,
   respuestaDePinGenerado,
   respuestaDeDetalleDeCuenta,
-  respuestaDePuertasDeCuenta,
 } from './schemas.js';
 import type { ServiciosDeSeguridad } from './servicios.js';
 
@@ -95,9 +97,20 @@ export const rutasDeCuentas =
           ciudad: cuerpo.ciudad,
           contactoNombre: cuerpo.contacto_nombre,
           contactoTelefono: cuerpo.contacto_telefono,
+          contactoCorreo: cuerpo.contacto_correo,
           planId: cuerpo.plan_id,
           inicio: cuerpo.inicio,
           administradorNombre: cuerpo.administrador_nombre,
+          ...(cuerpo.pago === undefined
+            ? {}
+            : {
+                pago: {
+                  monto: cuerpo.pago.monto,
+                  fechaPago: cuerpo.pago.fecha_pago,
+                  medio: cuerpo.pago.medio,
+                  referencia: cuerpo.pago.referencia,
+                },
+              }),
         });
         return reply
           .status(201)
@@ -120,20 +133,39 @@ export const rutasDeCuentas =
       (request) => verCuenta(pool, plataformaDe(request), request.params.id),
     );
 
-    app.get(
-      '/plataforma/cuentas/:id/puertas',
+    app.patch(
+      '/plataforma/cuentas/:id',
       {
-        schema: {
-          tags: ETIQUETA,
-          params: parametrosDeCuenta,
-          response: { 200: respuestaDePuertasDeCuenta },
-        },
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeEdicionDeCuenta },
         config: plataforma,
-        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
       },
-      async (request) => ({
-        datos: await verPuertasDeCuenta(pool, plataformaDe(request), request.params.id),
-      }),
+      async (request, reply) => {
+        const cuerpo = request.body;
+        await editarCuenta(pool, plataformaDe(request), request.params.id, {
+          razonSocial: cuerpo.razon_social,
+          nit: cuerpo.nit,
+          ciudad: cuerpo.ciudad,
+          contactoNombre: cuerpo.contacto_nombre,
+          contactoTelefono: cuerpo.contacto_telefono,
+          contactoCorreo: cuerpo.contacto_correo,
+        });
+        return reply.status(204).send();
+      },
+    );
+
+    // DELETE con cuerpo: el código de la cuenta confirma que se borra la correcta.
+    app.delete(
+      '/plataforma/cuentas/:id',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeBajaDeCuenta },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.eliminar'),
+      },
+      async (request, reply) => {
+        await eliminarCuenta(pool, request.params.id, request.body.codigo);
+        return reply.status(204).send();
+      },
     );
 
     app.get(
