@@ -105,43 +105,49 @@ class PlantillaAdmin extends ConsumerWidget {
     }
 
     if (clase == ClasePantalla.compacta) {
-      return Scaffold(
-        body: SafeArea(child: contenido),
-        floatingActionButton: fab,
-        bottomNavigationBar: BarraNavegacion(
-          indice: indice < 0 ? 0 : indice,
-          alElegir: irA,
-          destinos: [
-            for (final d in destinos)
-              DestinoBarra(
-                icono: _icono(d, activo: false),
-                iconoActivo: _icono(d, activo: true),
-                etiqueta: _etiqueta(context.l10n, d),
-              ),
-          ],
+      return _VuelveAlInicio(
+        destino: destino,
+        child: Scaffold(
+          body: SafeArea(child: contenido),
+          floatingActionButton: fab,
+          bottomNavigationBar: BarraNavegacion(
+            indice: indice < 0 ? 0 : indice,
+            alElegir: irA,
+            destinos: [
+              for (final d in destinos)
+                DestinoBarra(
+                  icono: _icono(d, activo: false),
+                  iconoActivo: _icono(d, activo: true),
+                  etiqueta: _etiqueta(context.l10n, d),
+                ),
+            ],
+          ),
         ),
       );
     }
     final extendido = clase == ClasePantalla.expandida;
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            _Rail(
-              destinos: destinos,
-              indice: indice,
-              extendido: extendido,
-              sesion: sesion,
-              irA: irA,
-            ),
-            VerticalDivider(width: tokens.tamano.bordeFino),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.espacio.xl),
-                child: contenido,
+    return _VuelveAlInicio(
+      destino: destino,
+      child: Scaffold(
+        body: SafeArea(
+          child: Row(
+            children: [
+              _Rail(
+                destinos: destinos,
+                indice: indice,
+                extendido: extendido,
+                sesion: sesion,
+                irA: irA,
               ),
-            ),
-          ],
+              VerticalDivider(width: tokens.tamano.bordeFino),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.espacio.xl),
+                  child: contenido,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -326,6 +332,27 @@ class _Rail extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// "Atrás" en un destino que no es Inicio vuelve a Inicio; solo desde Inicio
+/// se sale de la app. Los destinos se abren con `go` (reemplazan la pila), así
+/// que sin esto el sistema cerraría la app al primer "atrás".
+class _VuelveAlInicio extends StatelessWidget {
+  const new({required this.destino, required this.child});
+
+  final DestinoNav destino;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: destino == DestinoNav.inicio,
+      onPopInvokedWithResult: (salio, _) {
+        if (!salio) context.go(DestinoNav.inicio.ruta);
+      },
+      child: child,
     );
   }
 }

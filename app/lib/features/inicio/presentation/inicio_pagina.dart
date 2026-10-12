@@ -25,15 +25,21 @@ class InicioPagina extends ConsumerWidget {
     final esAdmin = veTableroDeAdministracion(sesion);
     return PlantillaAdmin(
       destino: DestinoNav.inicio,
-      // Atajo para emitir un QR desde el inicio del usuario (el administrador
-      // tiene su tablero y emite desde el rail o desde Mis QR).
-      fab: !esAdmin && sesion.tiene(Permisos.emitirQr)
-          ? FloatingActionButton.extended(
-              onPressed: () => context.go(Rutas.qrNuevo),
-              icon: const Icon(Icons.add),
-              label: Text(context.l10n.inicioNuevoQr),
-            )
-          : null,
+      // Un solo botón flotante, el atajo del rol: emitir un QR para el
+      // usuario; "Mi QR de acceso" para el administrador, que ya tiene su
+      // tablero y emite desde la cabecera.
+      fab: !sesion.tiene(Permisos.emitirQr)
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () =>
+                  context.go(esAdmin ? Rutas.qrRapido : Rutas.qrNuevo),
+              icon: Icon(esAdmin ? Icons.person_pin_outlined : Icons.add),
+              label: Text(
+                esAdmin
+                    ? context.l10n.inicioQrPropio
+                    : context.l10n.inicioNuevoQr,
+              ),
+            ),
       child: esAdmin
           ? InicioAdmin(sesion: sesion)
           : InicioUsuario(sesion: sesion),

@@ -30,8 +30,11 @@ const maxDestinosCompactos = 4;
 /// |---|---|---|
 /// | Usuario | Inicio · Mis QR · Eventos · Perfil | + Emitir QR |
 /// | Guardia | Inicio · Eventos · Puertas · Perfil | igual |
-/// | Administrador | Inicio · Eventos · Admin · Perfil | Inicio · Emitir QR ·
+/// | Administrador | Inicio · Mis QR · Admin · Perfil | Inicio · Emitir QR ·
 ///   Eventos · Puertas · Usuarios · Perfil |
+///
+/// En compacto caben cuatro: si sobran, Eventos cede el lugar (los ve desde
+/// el tablero) antes que Mis QR o Admin, que son de uso diario.
 ///
 /// No se mira el nombre del rol sino lo que puede hacer (ADR 0004): un rol a
 /// medida cae en la combinación que le corresponda.
@@ -39,15 +42,22 @@ List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
   final administra = sesion.tiene(Permisos.verUsuarios);
   final supervisa = sesion.tiene(Permisos.supervisarPuertas);
   if (clase == ClasePantalla.compacta) {
-    final centrales = [
-      if (!administra && !supervisa && sesion.tiene(Permisos.verQr))
-        DestinoNav.misQr,
-      if (sesion.tiene(Permisos.verEventos)) DestinoNav.eventos,
+    // Por prioridad: lo primero que se queda si no caben todos.
+    final porPrioridad = [
+      if (sesion.tiene(Permisos.verQr)) DestinoNav.misQr,
       if (administra) DestinoNav.admin else if (supervisa) DestinoNav.puertas,
+      if (sesion.tiene(Permisos.verEventos)) DestinoNav.eventos,
+    ].take(maxDestinosCompactos - 2).toSet();
+    // Y se muestran en el orden de siempre.
+    const ordenVisible = [
+      DestinoNav.misQr,
+      DestinoNav.eventos,
+      DestinoNav.admin,
+      DestinoNav.puertas,
     ];
     return [
       DestinoNav.inicio,
-      ...centrales.take(maxDestinosCompactos - 2),
+      ...ordenVisible.where(porPrioridad.contains),
       DestinoNav.perfil,
     ];
   }

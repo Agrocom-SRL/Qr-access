@@ -198,7 +198,7 @@ void main() {
       expect(find.text(textosEn(tester).inicioVigentesHoy), findsNothing);
     });
 
-    testWidgets('la barra inferior lleva Inicio, Eventos, Admin y Perfil', (
+    testWidgets('la barra inferior lleva Inicio, Mis QR, Admin y Perfil', (
       tester,
     ) async {
       await _montar(tester, permisos: _administrador);
@@ -209,9 +209,9 @@ void main() {
       final barra = find.byType(BarraNavegacion);
       Finder enBarra(IconData icono) =>
           find.descendant(of: barra, matching: find.byIcon(icono));
-      expect(enBarra(Icons.history), findsWidgets);
+      expect(enBarra(Icons.qr_code_2), findsWidgets);
       expect(enBarra(Icons.tune), findsWidgets);
-      expect(enBarra(Icons.qr_code_2), findsNothing);
+      expect(enBarra(Icons.history), findsNothing);
 
       await tester.tap(enBarra(Icons.person_outline).first);
       await tester.pumpAndSettle();
