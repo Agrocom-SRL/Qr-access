@@ -1,14 +1,7 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import type { EventoBitacora } from '../../bitacora';
-import type { EstadoRenovacion, Resumen } from '../domain/resumen';
-
-type EstadoDto = 'activa' | 'por_vencer' | 'vencida' | 'suspendida';
-const ESTADO: Readonly<Record<EstadoDto, EstadoRenovacion>> = {
-  activa: 'activa',
-  por_vencer: 'porVencer',
-  vencida: 'vencida',
-  suspendida: 'suspendida',
-};
+import { ESTADO_DESDE_DTO, type EstadoDto } from '../../../shared/api/estados';
+import type { Resumen } from '../domain/resumen';
 
 interface EventoDto {
   id: string;
@@ -61,7 +54,7 @@ export function crearResumenHttp(cliente: ClienteHttp): { obtener: () => Promise
           venceEl: new Date(r.vence_el),
           diasRestantes: r.dias_restantes,
           monto: r.monto,
-          estado: ESTADO[r.estado],
+          estado: ESTADO_DESDE_DTO[r.estado],
         })),
         ultimasAcciones: dto.ultimas_acciones.map((e) => ({
           id: e.id,
