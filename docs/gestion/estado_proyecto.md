@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-12 (rama `feature/web-cuentas-puertas`)
+**Última actualización:** 2026-10-13 (rama `feature/vinculacion-de-placas`)
 
 ## Qué ya existe
 
@@ -41,6 +41,7 @@ Sale de `develop` (ya con el panel #28, #29 y el QR propio #31):
 
 ### Segunda tanda de la rama (2026-10-12): comprobantes, pagos y fichas de cuenta
 
+- **Solo Ethernet y vinculación remota de placas (ADR 0025, rama `feature/vinculacion-de-placas`):** las placas ya no llevan WiFi ni se programan una por una con la cuenta. Cada placa tiene su MAC y un código de vinculación que sortea el servidor al registrarla; AGROCOM la asigna a una puerta desde el panel (**Placas**: registrar, vincular, liberar, dar de baja) y la placa recibe su vínculo sola. Una placa puede pasar por varias cuentas: reasignarla crea otro dispositivo y revoca el anterior. API: tabla `placas` y `dispositivos.placa_id` (migraciones `…100001` y `…100002`), `POST /dispositivos/reclamar` (sin credencial, con límite de intentos) y `/plataforma/placas` (permisos `dispositivos.placa.*`), 23 tests nuevos. Firmware: sin WiFi, la placa sortea su clave, `lib/vinculo` y reclamo cada 30 s; sin vínculo no valida ningún QR. Panel web: pantalla Placas en es/en/pt. **Pendiente:** flashear y probar con la placa real, y retirar `ultimo_rssi` cuando el latido deje de enviarlo.
 - **Almacén de archivos (ADR 0024):** interfaz `Almacenamiento` + implementación en disco (volumen `archivos`), `POST/GET /plataforma/comprobantes` con el archivo crudo (JPG, PNG, WEBP o PDF hasta 5 MB, tipo por los bytes), tablas `comprobantes` y `pagos.banco/cuenta_destino/comprobante_id` (migraciones `…100008` y `…100009`). Transferencia y depósito exigen banco, cuenta y comprobante; el efectivo no.
 - **Panel:** formulario de pago con banco, cuenta de destino y comprobante (vista previa), historial con "Ver comprobante"; ficha de cuenta con indicadores arriba (sitios y puertas enlazan a su pestaña) y "Persona responsable de la cuenta" propio; acciones por fila en Cuentas (ver, sitios y puertas, editar, eliminar); botón Editar en advertencia; Suscripción sin "Renovar" si está activa (muestra "Al día"); Equipo con editar y reactivar; Perfil en orden datos → tema → contraseña con nombre editable (`PATCH /plataforma/perfil`, `PATCH /plataforma/equipo/{id}` con `nombre` y `activo`); se quitó el aviso de precios de Planes; el botón de volver alinea igual con o sin migas.
 - **Pendiente:** catálogo de bancos y cuentas de AGROCOM (hoy lista fija en `web/src/features/pagos/domain/pago.ts`), purga de comprobantes huérfanos, selector de idioma del panel (solo hay español), y revisar el plan de la cuenta demo (precio 0).
