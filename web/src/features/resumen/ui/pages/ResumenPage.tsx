@@ -9,6 +9,7 @@ import {
 } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { RUTAS } from '../../../../shared/lib/rutas';
+import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
@@ -24,6 +25,8 @@ import { useResumen } from '../../application/useResumen';
 import { porcentajeDeUso } from '../../domain/resumen';
 import foto from '../../../../shared/ui/assets/fotos/portico_banner.webp';
 import styles from './ResumenPage.module.css';
+
+const DISPOSITIVOS_A_MOSTRAR = 8;
 
 /** A02: el tablero con cuentas, usuarios, vencimientos, ingresos, renovaciones próximas y últimas acciones. */
 export function ResumenPage() {
@@ -136,6 +139,61 @@ export function ResumenPage() {
       )}
 
       <GraficasDelResumen />
+
+      <section className={styles.dispositivos} aria-labelledby="dispositivos">
+        <header className={styles.cabecera}>
+          <div>
+            <h2 id="dispositivos" className={styles.titulo}>
+              {t('resumen:dispositivos')}
+            </h2>
+            {datos ? (
+              <p className={styles.sub}>
+                {t('resumen:dispositivosResumen', {
+                  enLinea: datos.dispositivos.enLinea,
+                  sinConexion: datos.dispositivos.sinConexion,
+                })}
+              </p>
+            ) : null}
+          </div>
+          <Link to={RUTAS.cuentas} className={styles.enlace}>
+            {t('resumen:verCuentas')}
+          </Link>
+        </header>
+        {datos === undefined ? (
+          <Skeleton alto="bloque" />
+        ) : datos.dispositivos.lista.length === 0 ? (
+          <EstadoVacio titulo={t('resumen:dispositivosVacio')} />
+        ) : (
+          <ul className={styles.filas}>
+            {datos.dispositivos.lista.slice(0, DISPOSITIVOS_A_MOSTRAR).map((d) => (
+              <li key={d.id} className={styles.dispositivo}>
+                <div>
+                  <strong>{d.nombre}</strong>
+                  <p className={styles.sub}>
+                    <TextoMono>
+                      {t('resumen:dispositivoDe', { puerta: d.puerta, codigo: d.cuenta.codigo })}
+                    </TextoMono>
+                  </p>
+                </div>
+                <span className={styles.cuando}>
+                  {d.ultimoLatidoEn === null
+                    ? t('resumen:sinLatido')
+                    : t('resumen:ultimoLatido', { cuando: cuando(d.ultimoLatidoEn) })}
+                </span>
+                {d.enLinea ? (
+                  <AccesoBadge tono="primario" icono="wifi">
+                    {t('resumen:enLinea')}
+                  </AccesoBadge>
+                ) : (
+                  <AccesoBadge tono="peligro" icono="wifi_off">
+                    {t('resumen:sinConexion')}
+                  </AccesoBadge>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <div className={styles.listas}>
         <section className={styles.tarjeta} aria-labelledby="renovaciones">

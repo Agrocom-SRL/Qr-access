@@ -763,6 +763,16 @@ describe('resumen (A02)', () => {
     expect(screen.getByText(/Registró pago · FRO/)).toBeInTheDocument();
   });
 
+  it('muestra los dispositivos con los que no reportan primero', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    expect(await screen.findByText('1 en línea · 1 sin conexión')).toBeInTheDocument();
+    const filas = screen.getAllByText(/Controlador/).map((e) => e.textContent);
+    expect(filas).toEqual(['Controlador portón', 'Controlador principal']);
+    expect(screen.getByText('Sin conexión')).toBeInTheDocument();
+    expect(screen.getByText('En línea')).toBeInTheDocument();
+  });
+
   it('error de carga con reintento', async () => {
     montar(
       crearServiciosDePrueba({

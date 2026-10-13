@@ -269,6 +269,30 @@ export const RESUMEN = {
       estado: 'vencida' as const,
     },
   ],
+  dispositivos: {
+    enLinea: 1,
+    sinConexion: 1,
+    lista: [
+      {
+        id: '2',
+        nombre: 'Controlador portón',
+        puerta: 'Portón norte',
+        cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+        firmware: '1.0.0',
+        enLinea: false,
+        ultimoLatidoEn: new Date('2026-10-12T10:00:00Z'),
+      },
+      {
+        id: '1',
+        nombre: 'Controlador principal',
+        puerta: 'Puerta principal',
+        cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+        firmware: '1.0.0',
+        enLinea: true,
+        ultimoLatidoEn: new Date('2026-10-12T14:41:00Z'),
+      },
+    ],
+  },
   ultimasAcciones: EVENTOS,
 };
 
