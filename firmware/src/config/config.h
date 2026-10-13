@@ -22,9 +22,12 @@ struct Dispositivo {
   String id;
   String clave;
 
+  /// Con Ethernet (ESP32-ETH01) el WiFi es solo respaldo: no hace falta para estar completa.
   bool completa() const {
-    return wifiSsid.length() > 0 &&
-           aprovisionamiento::urlValida(apiUrl.c_str(), MODO_DESARROLLO) &&
+#ifndef ACCESO_ETH01
+    if (wifiSsid.length() == 0) return false;
+#endif
+    return aprovisionamiento::urlValida(apiUrl.c_str(), MODO_DESARROLLO) &&
            aprovisionamiento::idValido(id.c_str()) &&
            aprovisionamiento::claveValida(clave.c_str());
   }
