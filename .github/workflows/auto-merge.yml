@@ -31,7 +31,7 @@ permissions:
 jobs:
   merge-when-green:
     name: merge-when-green
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Un PR en draft se abre justamente para que NO se integre solo: es el
     # modo en que una tarea automatizada entrega trabajo para revisión. Sin
     # esta guarda el job igual llegaba a `gh pr merge` y moría con

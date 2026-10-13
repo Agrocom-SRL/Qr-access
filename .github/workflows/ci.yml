@@ -17,7 +17,7 @@ on:
 jobs:
   detectar:
     name: detectar
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       api: ${{ steps.partes.outputs.api }}
       app: ${{ steps.partes.outputs.app }}
@@ -56,7 +56,7 @@ jobs:
     name: api
     needs: detectar
     if: needs.detectar.outputs.api == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # MySQL 8, el mismo motor que producción: los tests nunca usan SQLite.
     services:
       mysql:
@@ -117,7 +117,7 @@ jobs:
     name: app
     needs: detectar
     if: needs.detectar.outputs.app == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: app
@@ -141,7 +141,7 @@ jobs:
     name: firmware
     needs: detectar
     if: needs.detectar.outputs.firmware == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: firmware
@@ -168,7 +168,7 @@ jobs:
     name: web
     needs: detectar
     if: needs.detectar.outputs.web == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: web
@@ -195,7 +195,7 @@ jobs:
     name: ci
     needs: [detectar, api, app, firmware, web]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Resumen de las partes
         env:
