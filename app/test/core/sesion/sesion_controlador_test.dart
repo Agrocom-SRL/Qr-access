@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
+import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_guardada.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +79,7 @@ ProviderContainer _contenedor({
   String refrescoValido = 'ref-1',
   bool red = false,
   bool sinRol = false,
+  AlmacenPreferenciasFalso? preferencias,
 }) {
   final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
     ..httpClientAdapter = AdaptadorHttpFalso(
@@ -91,6 +94,9 @@ ProviderContainer _contenedor({
     overrides: [
       clienteApiProvider.overrideWithValue(ClienteApi(dio)),
       almacenRefrescoProvider.overrideWithValue(almacen),
+      almacenPreferenciasProvider.overrideWithValue(
+        preferencias ?? AlmacenPreferenciasFalso(),
+      ),
     ],
   );
 }
@@ -286,6 +292,81 @@ void main() {
       expect(eligiendo.roles.map((r) => r.id), ['r1', 'r2']);
       expect(eligiendo.usuario.etiqueta, isNull);
       expect(almacen.refresco, 'ref-2');
+    });
+  });
+
+  group('sin internet', () {
+    const guardada = SesionAutenticada(
+      usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+      cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Cuenta Demo'),
+      rolActivo: RolSesion(id: 'r2', nombre: 'Guardia'),
+      permisos: {Permisos.emitirQr},
+      roles: [
+        RolSesion(id: 'r1', nombre: 'Usuario'),
+        RolSesion(id: 'r2', nombre: 'Guardia'),
+      ],
+    );
+
+    test('al abrir la app entra con la última sesión y su mismo rol', () async {
+      almacen.refresco = 'ref-1';
+      final preferencias = AlmacenPreferenciasFalso()
+        ..valores[claveSesionGuardada] = codificarSesion(guardada);
+      final contenedor = _contenedor(
+        almacen: almacen,
+        red: true,
+        preferencias: preferencias,
+      );
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      final estado = contenedor.read(sesionControladorProvider);
+      expect(estado, isA<SesionAutenticada>());
+      expect((estado as SesionAutenticada).rolActivo.nombre, 'Guardia');
+      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      // El refresco se conserva para renovar cuando vuelva la red.
+      expect(almacen.refresco, 'ref-1');
+    });
+
+    test(
+      'sin sesión guardada pide ingresar pero no borra el refresco',
+      () async {
+        almacen.refresco = 'ref-1';
+        final contenedor = _contenedor(almacen: almacen, red: true);
+        addTearDown(contenedor.dispose);
+        contenedor.read(sesionControladorProvider.notifier);
+        await _asentar();
+
+        expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+        expect(almacen.refresco, 'ref-1');
+      },
+    );
+
+    test('cambiar de rol y volver atrás deja la sesión como estaba', () async {
+      almacen.refresco = 'ref-1';
+      final preferencias = AlmacenPreferenciasFalso()
+        ..valores[claveSesionGuardada] = codificarSesion(guardada);
+      final contenedor = _contenedor(
+        almacen: almacen,
+        red: true,
+        preferencias: preferencias,
+      );
+      addTearDown(contenedor.dispose);
+      final controlador = contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      controlador.pedirCambioDeRol();
+      expect(
+        contenedor.read(sesionControladorProvider),
+        isA<SesionEligiendoRol>(),
+      );
+      expect(controlador.puedeCancelarCambioDeRol, isTrue);
+
+      controlador.cancelarCambioDeRol();
+      final estado = contenedor.read(sesionControladorProvider);
+      expect(estado, isA<SesionAutenticada>());
+      expect((estado as SesionAutenticada).rolActivo.nombre, 'Guardia');
+      expect(controlador.puedeCancelarCambioDeRol, isFalse);
     });
   });
 

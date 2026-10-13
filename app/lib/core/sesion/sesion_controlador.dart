@@ -6,7 +6,9 @@ import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
+import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_guardada.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Dueño de la sesión: guarda el acceso en memoria, el refresco en el almacén
@@ -18,8 +20,17 @@ class SesionControlador extends Notifier<SesionEstado>
     implements ProveedorTokens {
   String? _acceso;
 
+  /// La sesión que estaba activa al pedir "Cambiar rol": a ella se vuelve si la
+  /// persona se arrepiente (atrás) o no hay internet para cambiar.
+  SesionAutenticada? _previaAlCambiarRol;
+
   ClienteApi get _api => ref.read(clienteApiProvider);
   AlmacenRefresco get _almacen => ref.read(almacenRefrescoProvider);
+  AlmacenPreferencias get _preferencias =>
+      ref.read(almacenPreferenciasProvider);
+
+  /// ¿Se puede volver a la sesión anterior desde la pantalla de elegir rol?
+  bool get puedeCancelarCambioDeRol => _previaAlCambiarRol != null;
 
   @override
   SesionEstado build() {
@@ -35,35 +46,65 @@ class SesionControlador extends Notifier<SesionEstado>
   /// Si el servidor rechaza el refresco, la sesión se cierra; si no hay red,
   /// la sesión se conserva para reintentar.
   @override
-  Future<bool> renovar() async {
+  Future<bool> renovar() async =>
+      await _renovar() == _ResultadoRenovacion.hecha;
+
+  Future<_ResultadoRenovacion> _renovar() async {
     final refresco = await _almacen.leer();
     if (refresco == null) {
       await _caducar();
-      return false;
+      return _ResultadoRenovacion.rechazada;
     }
     try {
       final tokens = await _api.refrescar(refresco);
       await _guardarTokens(tokens.acceso, tokens.refresco);
-      return true;
+      return _ResultadoRenovacion.hecha;
     } on ErrorApi catch (error) {
-      if (error.code == 'sesion.refresco_invalido') await _caducar();
-      return false;
+      if (error.code == 'sesion.refresco_invalido') {
+        await _caducar();
+        return _ResultadoRenovacion.rechazada;
+      }
+      return error.esSinConexion
+          ? _ResultadoRenovacion.sinRed
+          : _ResultadoRenovacion.fallida;
     }
   }
 
   /// Al abrir la app: si hay un refresco guardado (móvil), restaura la sesión.
+  /// Sin internet no se cierra: se entra con la última sesión guardada (mismo
+  /// rol y permisos) y los datos se actualizan cuando vuelva la red.
   Future<void> restaurar() async {
-    if (await _almacen.leer() == null || !await renovar()) {
+    if (await _almacen.leer() == null) {
       state = const SinSesion();
       return;
     }
-    try {
-      await _cargarSesionActual();
-    } on ErrorApi {
-      // Sin red o con un fallo del servidor: se pide ingresar de nuevo, pero
-      // el refresco se conserva para la próxima vez.
-      state = const SinSesion();
+    switch (await _renovar()) {
+      case _ResultadoRenovacion.rechazada:
+        state = const SinSesion();
+      case _ResultadoRenovacion.sinRed:
+        await _entrarConSesionGuardada();
+      case _ResultadoRenovacion.fallida:
+        // Fallo del servidor: el refresco se conserva para la próxima vez.
+        state = const SinSesion();
+      case _ResultadoRenovacion.hecha:
+        try {
+          await _cargarSesionActual();
+        } on ErrorApi catch (error) {
+          if (error.esSinConexion) {
+            await _entrarConSesionGuardada();
+          } else {
+            state = const SinSesion();
+          }
+        }
     }
+  }
+
+  /// Usa la última sesión conocida; si no hay (primera vez o dañada), pide
+  /// ingresar sin borrar el refresco.
+  Future<void> _entrarConSesionGuardada() async {
+    final texto = await _preferencias.leer(claveSesionGuardada);
+    final guardada = texto == null ? null : decodificarSesion(texto);
+    state = guardada ?? const SinSesion();
   }
 
   /// Adopta los tokens de un inicio de sesión exitoso. Sin rol activo, el
@@ -86,9 +127,12 @@ class SesionControlador extends Notifier<SesionEstado>
     }
   }
 
-  /// Cambia el rol activo (ADR 0004). Si falla, la sesión queda como estaba.
+  /// Cambia el rol activo (ADR 0004). Si falla (p. ej. sin internet), la
+  /// sesión queda como estaba y se sigue en la pantalla con el error.
   Future<void> elegirRol(String rolId) async {
-    _acceso = await _api.cambiarRolActivo(rolId);
+    final nuevoAcceso = await _api.cambiarRolActivo(rolId);
+    _acceso = nuevoAcceso;
+    _previaAlCambiarRol = null;
     await _cargarSesionActual();
   }
 
@@ -111,12 +155,22 @@ class SesionControlador extends Notifier<SesionEstado>
   void pedirCambioDeRol() {
     final actual = state;
     if (actual is! SesionAutenticada || !actual.tieneVariosRoles) return;
+    _previaAlCambiarRol = actual;
     state = SesionEligiendoRol(
       usuario: actual.usuario,
       cuenta: actual.cuenta,
       roles: actual.roles,
       rolPreferidoId: actual.rolActivo.id,
     );
+  }
+
+  /// Deja "Cambiar rol" sin elegir y vuelve a la sesión que había (atrás): no
+  /// se cierra la sesión ni se pierde el rol.
+  void cancelarCambioDeRol() {
+    final previa = _previaAlCambiarRol;
+    if (previa == null || state is! SesionEligiendoRol) return;
+    _previaAlCambiarRol = null;
+    state = previa;
   }
 
   /// Vuelve a pedir la sesión a la API (p. ej. tras un cambio de plan).
@@ -145,7 +199,7 @@ class SesionControlador extends Notifier<SesionEstado>
       return;
     }
     final suscripcion = actual.suscripcion;
-    state = SesionAutenticada(
+    final autenticada = SesionAutenticada(
       usuario: _usuario(actual.usuario),
       cuenta: _cuenta(actual.cuenta),
       rolActivo: RolSesion(id: rol.id, nombre: rol.nombre),
@@ -154,6 +208,11 @@ class SesionControlador extends Notifier<SesionEstado>
       suscripcion: suscripcion == null
           ? null
           : SuscripcionSesion(plan: suscripcion.plan, hasta: suscripcion.hasta),
+    );
+    state = autenticada;
+    await _preferencias.guardar(
+      claveSesionGuardada,
+      codificarSesion(autenticada),
     );
   }
 
@@ -165,7 +224,9 @@ class SesionControlador extends Notifier<SesionEstado>
   /// Olvida la sesión en memoria y en el almacén (cierre o refresco rechazado).
   Future<void> _caducar() async {
     _acceso = null;
+    _previaAlCambiarRol = null;
     await _almacen.borrar();
+    await _preferencias.borrar(claveSesionGuardada);
     state = const SinSesion();
   }
 }
@@ -175,6 +236,9 @@ UsuarioSesion _usuario(UsuarioDto dto) =>
 
 CuentaSesion _cuenta(CuentaDto dto) =>
     CuentaSesion(id: dto.id, codigo: dto.codigo, nombre: dto.nombre);
+
+/// Resultado de renovar el par de tokens: distingue "sin red" de "rechazado".
+enum _ResultadoRenovacion { hecha, rechazada, sinRed, fallida }
 
 /// Proveedor del estado de la sesión.
 final NotifierProvider<SesionControlador, SesionEstado>
