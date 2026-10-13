@@ -18,6 +18,8 @@ interface Props {
   error?: string;
   onBlur?: () => void;
   deshabilitado?: boolean;
+  /** El filtrado lo hace quien llama (búsqueda en el servidor): recibe lo que se escribe y las opciones no se filtran acá. */
+  onBusqueda?: (texto: string) => void;
   /** `false` en listas cortas (filtros, bancos): se elige sin escribir. Por defecto, con búsqueda. */
   conBusqueda?: boolean;
 }
@@ -38,6 +40,7 @@ export function AccesoSelectorBuscable({
   error,
   onBlur,
   deshabilitado = false,
+  onBusqueda,
   conBusqueda = true,
 }: Props) {
   const { t } = useTranslation('comun');
@@ -100,6 +103,14 @@ export function AccesoSelectorBuscable({
           isDisabled={deshabilitado}
           isClearable={false}
           isSearchable={conBusqueda}
+          {...(onBusqueda
+            ? {
+                filterOption: null,
+                onInputChange: (texto: string, meta: { action: string }) => {
+                  if (meta.action === 'input-change') onBusqueda(texto);
+                },
+              }
+            : {})}
           placeholder={placeholder ?? ''}
           getOptionValue={(opcion) => opcion.valor}
           getOptionLabel={(opcion) => opcion.etiqueta}

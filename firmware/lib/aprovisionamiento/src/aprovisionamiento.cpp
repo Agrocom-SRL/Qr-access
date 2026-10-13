@@ -12,47 +12,24 @@ struct NombreCampo {
 };
 
 constexpr NombreCampo CAMPOS[] = {
-    {"wifi_ssid", Campo::WifiSsid},
-    {"wifi_clave", Campo::WifiClave},
     {"api_url", Campo::ApiUrl},
+    {"codigo", Campo::Codigo},
     {"disp_id", Campo::DispositivoId},
     {"disp_clave", Campo::DispositivoClave},
 };
 
 bool esEspacio(char c) { return c == ' ' || c == '\t'; }
 bool esFinDeLinea(char c) { return c == '\r' || c == '\n'; }
-bool esImprimible(char c) { return c >= 0x20 && c < 0x7f; }
 bool esVisible(char c) { return c > 0x20 && c < 0x7f; }
 
 bool empiezaCon(const char* texto, const char* prefijo) {
   return strncmp(texto, prefijo, strlen(prefijo)) == 0;
 }
 
-bool ssidValido(const char* ssid) {
-  const size_t largo = strlen(ssid);
-  if (largo < 1 || largo > 32) return false;
-  for (size_t i = 0; i < largo; ++i) {
-    if (!esImprimible(ssid[i])) return false;
-  }
-  return true;
-}
-
-// Vacía (red abierta) o de 8 a 63 caracteres imprimibles (WPA2).
-bool claveWifiValida(const char* clave) {
-  const size_t largo = strlen(clave);
-  if (largo == 0) return true;
-  if (largo < 8 || largo > 63) return false;
-  for (size_t i = 0; i < largo; ++i) {
-    if (!esImprimible(clave[i])) return false;
-  }
-  return true;
-}
-
 bool valorValido(Campo campo, const char* valor, bool permitirHttp) {
   switch (campo) {
-    case Campo::WifiSsid: return ssidValido(valor);
-    case Campo::WifiClave: return claveWifiValida(valor);
     case Campo::ApiUrl: return urlValida(valor, permitirHttp);
+    case Campo::Codigo: return codigoValido(valor);
     case Campo::DispositivoId: return idValido(valor);
     case Campo::DispositivoClave: return claveValida(valor);
   }
@@ -115,6 +92,29 @@ bool claveValida(const char* clave) {
   for (size_t i = 0; i < largo; ++i) {
     if (!esVisible(clave[i])) return false;
   }
+  return true;
+}
+
+bool codigoValido(const char* codigo) {
+  if (codigo == nullptr || strlen(codigo) != LARGO_CODIGO) return false;
+  for (size_t i = 0; i < LARGO_CODIGO; ++i) {
+    const char c = codigo[i];
+    const bool permitido = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
+    if (!permitido || c == 'I' || c == 'L' || c == 'O' || c == 'U') return false;
+  }
+  return true;
+}
+
+bool claveDesdeBytes(const unsigned char* bytes, size_t cantidad, char* salida, size_t capacidad) {
+  if (salida == nullptr || capacidad == 0) return false;
+  salida[0] = '\0';
+  if (bytes == nullptr || cantidad == 0 || capacidad < cantidad * 2 + 1) return false;
+  static const char HEX[] = "0123456789abcdef";
+  for (size_t i = 0; i < cantidad; ++i) {
+    salida[i * 2] = HEX[bytes[i] >> 4];
+    salida[i * 2 + 1] = HEX[bytes[i] & 0x0f];
+  }
+  salida[cantidad * 2] = '\0';
   return true;
 }
 

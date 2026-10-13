@@ -1,0 +1,29 @@
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp16);
+  margin-bottom: var(--esp16);
+}
+
+.buscador {
+  flex: 1;
+  min-width: 0;
+}
+
+.acciones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp4);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}
+
+.asignada {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+}

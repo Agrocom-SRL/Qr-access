@@ -17,6 +17,7 @@ import es_estructura from './es/estructura.json';
 import es_nav from './es/nav.json';
 import es_pago from './es/pago.json';
 import es_perfil from './es/perfil.json';
+import es_placas from './es/placas.json';
 import es_planes from './es/planes.json';
 import es_resumen from './es/resumen.json';
 import es_suscripcion from './es/suscripcion.json';
@@ -37,6 +38,7 @@ import en_estructura from './en/estructura.json';
 import en_nav from './en/nav.json';
 import en_pago from './en/pago.json';
 import en_perfil from './en/perfil.json';
+import en_placas from './en/placas.json';
 import en_planes from './en/planes.json';
 import en_resumen from './en/resumen.json';
 import en_suscripcion from './en/suscripcion.json';
@@ -57,6 +59,7 @@ import pt_estructura from './pt/estructura.json';
 import pt_nav from './pt/nav.json';
 import pt_pago from './pt/pago.json';
 import pt_perfil from './pt/perfil.json';
+import pt_placas from './pt/placas.json';
 import pt_planes from './pt/planes.json';
 import pt_resumen from './pt/resumen.json';
 import pt_suscripcion from './pt/suscripcion.json';
@@ -90,6 +93,7 @@ export const recursos = {
     nav: es_nav,
     pago: es_pago,
     perfil: es_perfil,
+    placas: es_placas,
     planes: es_planes,
     resumen: es_resumen,
     suscripcion: es_suscripcion,
@@ -112,6 +116,7 @@ export const recursos = {
     nav: en_nav,
     pago: en_pago,
     perfil: en_perfil,
+    placas: en_placas,
     planes: en_planes,
     resumen: en_resumen,
     suscripcion: en_suscripcion,
@@ -134,6 +139,7 @@ export const recursos = {
     nav: pt_nav,
     pago: pt_pago,
     perfil: pt_perfil,
+    placas: pt_placas,
     planes: pt_planes,
     resumen: pt_resumen,
     suscripcion: pt_suscripcion,

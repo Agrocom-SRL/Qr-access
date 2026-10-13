@@ -15,23 +15,23 @@ bool descartando = false;
 void mostrarAyuda() {
   Serial.println("Comandos:");
   Serial.println("  estado                  que hay cargado (sin claves)");
-  Serial.println("  set wifi_ssid <valor>   red WiFi");
-  Serial.println("  set wifi_clave <valor>  clave WiFi (vacia = red abierta)");
   Serial.println("  set api_url <valor>     https://... de la API");
-  Serial.println("  set disp_id <valor>     id del dispositivo");
-  Serial.println("  set disp_clave <valor>  clave del dispositivo");
+  Serial.println("  set codigo <valor>      codigo de vinculacion (16 caracteres, del panel)");
+  Serial.println("  set disp_id <valor>     solo desarrollo o recuperacion: id del dispositivo");
+  Serial.println("  set disp_clave <valor>  solo desarrollo o recuperacion: clave del dispositivo");
   Serial.println("  borrar                  borra lo aprovisionado");
   Serial.println("  reiniciar               aplica los cambios");
 }
 
 void mostrarEstado() {
   const config::Dispositivo d = config::cargar();
-  Serial.printf("wifi_ssid : %s\n", d.wifiSsid.length() > 0 ? d.wifiSsid.c_str() : "(falta)");
-  Serial.printf("wifi_clave: %s\n", d.wifiClave.length() > 0 ? "definida" : "(vacia)");
+  Serial.printf("mac       : %s  (con esta MAC se registra la placa en el panel)\n",
+                config::macDeLaPlaca().c_str());
   Serial.printf("api_url   : %s\n", d.apiUrl.length() > 0 ? d.apiUrl.c_str() : "(falta)");
-  Serial.printf("disp_id   : %s\n", d.id.length() > 0 ? d.id.c_str() : "(falta)");
-  Serial.printf("disp_clave: %s\n", d.clave.length() > 0 ? "definida" : "(falta)");
-  Serial.printf("completa  : %s\n", d.completa() ? "si" : "no");
+  Serial.printf("codigo    : %s\n", d.codigo.length() > 0 ? "definido" : "(falta)");
+  Serial.printf("disp_id   : %s\n", d.id.length() > 0 ? d.id.c_str() : "(sin vincular)");
+  Serial.printf("disp_clave: %s\n", d.clave.length() > 0 ? "definida" : "(se sortea al arrancar)");
+  Serial.printf("vinculada : %s\n", d.completa() ? "si" : "no");
 }
 
 void ejecutar(const char* texto) {

@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { COBRANZA, ErrorApi, EVENTOS, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
+import type { PlacasRepositorio } from '@/features/placas';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
 import { ProveedoresApp } from '@/app/providers/ProveedoresApp';
@@ -1030,5 +1031,149 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
     await waitFor(() => {
       expect(cambiarCodigo).toHaveBeenCalledWith('1', 'XYZ');
     });
+  });
+});
+
+describe('placas (ADR 0025)', () => {
+  async function irAPlacas(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Placas/ }));
+  }
+
+  it('lista el inventario con su estado y solo ofrece cada acción donde corresponde', async () => {
+    await irAPlacas(crearServiciosDePrueba());
+    const tabla = await screen.findByRole('table', { name: 'Placas' });
+    expect(within(tabla).getByText('AA:BB:CC:00:11:22')).toBeInTheDocument();
+    expect(within(tabla).getByText('Agroindustrial Norte', { exact: false })).toBeInTheDocument();
+    expect(within(tabla).getByText('Vinculada')).toBeInTheDocument();
+    expect(within(tabla).getByText('Lista para vincular')).toBeInTheDocument();
+    expect(within(tabla).getByText('Sin conectar')).toBeInTheDocument();
+    // Vincular solo en la libre que ya reclamó; liberar solo en la vinculada; baja en las libres.
+    expect(within(tabla).getAllByRole('button', { name: /^Vincular la placa / })).toHaveLength(1);
+    expect(within(tabla).getAllByRole('button', { name: /^Liberar la placa / })).toHaveLength(1);
+    expect(within(tabla).getAllByRole('button', { name: /^Dar de baja la placa / })).toHaveLength(
+      2,
+    );
+  });
+
+  it('registrar: valida la MAC, envía normalizada y muestra el código una sola vez', async () => {
+    const registrar = vi.fn((mac: string) =>
+      Promise.resolve({ id: '9', mac, codigo: '0123456789ABCDEF' }),
+    );
+    await irAPlacas(crearServiciosDePrueba({ placas: { registrar } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Registrar placa' }));
+    const dialogo = await screen.findByRole('dialog');
+    const campo = within(dialogo).getByLabelText('MAC de la placa');
+    await userEvent.type(campo, 'no es una mac');
+    await userEvent.tab();
+    expect(within(dialogo).getByText(/Escribe una MAC válida/)).toBeInTheDocument();
+    expect(within(dialogo).getByRole('button', { name: 'Registrar' })).toBeDisabled();
+
+    await userEvent.clear(campo);
+    await userEvent.type(campo, 'aa-bb-cc-00-11-55');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Registrar' }));
+    await waitFor(() => {
+      expect(registrar).toHaveBeenCalledWith('AA:BB:CC:00:11:55');
+    });
+    expect(await screen.findByText('0123-4567-89AB-CDEF')).toBeInTheDocument();
+    expect(screen.getByText('set codigo 0123456789ABCDEF')).toBeInTheDocument();
+    expect(screen.getByText(/no se vuelve a mostrar/)).toBeInTheDocument();
+  });
+
+  it('vincular: elige cuenta y una puerta sin lector y envía los ids', async () => {
+    const vincular = vi.fn<PlacasRepositorio['vincular']>(() => Promise.resolve());
+    const sitiosYPuertas = () =>
+      Promise.resolve([
+        {
+          id: '1',
+          nombre: 'Planta Warnes',
+          direccion: null,
+          zonaHoraria: 'America/La_Paz',
+          activo: true,
+          puertas: [
+            {
+              id: '1',
+              nombre: 'Portón vehicular',
+              segundosApertura: 5,
+              activa: true,
+              dispositivo: { id: '1', nombre: 'LECT-0042', enLinea: true, ultimaSenal: new Date() },
+            },
+            {
+              id: '3',
+              nombre: 'Garaje',
+              segundosApertura: 5,
+              activa: true,
+              dispositivo: null,
+            },
+          ],
+        },
+      ]);
+    await irAPlacas(crearServiciosDePrueba({ placas: { vincular }, cuentas: { sitiosYPuertas } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Vincular la placa AA:BB:CC:00:11:33' }),
+    );
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.click(within(dialogo).getByLabelText('Cuenta'));
+    await userEvent.click(
+      await screen.findByRole('option', { name: 'AGR · Agroindustrial Norte' }),
+    );
+    await userEvent.click(within(dialogo).getByLabelText('Puerta'));
+    // La puerta que ya tiene lector no se ofrece.
+    expect(
+      screen.queryByRole('option', { name: 'Planta Warnes · Portón vehicular' }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('option', { name: 'Planta Warnes · Garaje' }));
+    expect(within(dialogo).getByLabelText('Nombre del lector')).toHaveValue('Garaje');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Vincular' }));
+    await waitFor(() => {
+      expect(vincular).toHaveBeenCalledWith('2', {
+        cuentaId: '1',
+        puertaId: '3',
+        nombre: 'Garaje',
+      });
+    });
+  });
+
+  it('liberar pide confirmación y la API recibe el id de la placa', async () => {
+    const liberar = vi.fn(() => Promise.resolve());
+    await irAPlacas(crearServiciosDePrueba({ placas: { liberar } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Liberar la placa AA:BB:CC:00:11:22' }),
+    );
+    expect(await screen.findByText('¿Liberar la placa AA:BB:CC:00:11:22?')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Liberar' }));
+    await waitFor(() => {
+      expect(liberar).toHaveBeenCalledWith('1');
+    });
+  });
+
+  it('un error de la API se muestra traducido', async () => {
+    const liberar = () => Promise.reject(new ErrorApi(409, 'placa.sin_dispositivo'));
+    await irAPlacas(crearServiciosDePrueba({ placas: { liberar } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Liberar la placa AA:BB:CC:00:11:22' }),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Liberar' }));
+    expect(
+      await screen.findByText('La placa no está vinculada a ninguna puerta.'),
+    ).toBeInTheDocument();
+  });
+
+  it('sin el permiso de placas, el rail no la ofrece', async () => {
+    const servicios = crearServiciosDePrueba({
+      seguridad: {
+        ingresar: () =>
+          Promise.resolve({
+            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
+            debeCambiarContrasena: false,
+            permisos: ['resumen.panel.ver'],
+          }),
+      },
+    });
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
+    expect(screen.queryByRole('link', { name: /Placas/ })).not.toBeInTheDocument();
   });
 });

@@ -5,10 +5,18 @@ Control de acceso a puertas eléctricas con QR — `acceso.agrocom.com.bo`. Plat
 ```
 api/        Node.js 22 + TypeScript + Fastify, SQL a mano con mysql2 (sin ORM)
 app/        Flutter (Android, iOS y web): login por PIN, emisión de QR, administración
-firmware/   ESP32 (framework Arduino, PlatformIO): lector QR + pulso de cerradura por WiFi
+firmware/   ESP32 (framework Arduino, PlatformIO): lector QR + pulso de cerradura por Ethernet
 db/         Migraciones SQL (dbmate) sobre MySQL 8
 docs/       Funcional, modelo de datos, ADRs, diseño, hardware y gestión
 ```
+
+## Versión
+
+**Versión actual: `v0.4.0`** (2026-10-13). Una sola versión para todo el monorepo (ADR 0014): `api/package.json`, `web/package.json`, `app/pubspec.yaml` (`0.4.0+5`) y `firmware/include/version.h` (`0.4.0`) la llevan igual.
+
+- **v0.4.0** — Solo Ethernet y vinculación remota de placas (ADR 0025): inventario de placas y vinculación a una puerta desde el panel web, reclamo de la placa a la API y reasignación entre cuentas sin reprogramar.
+
+Para publicar una versión nueva: sube el número en esos cuatro archivos y en esta sección, y luego `git tag -a vX.Y.Z -m vX.Y.Z` sobre `develop` y `git push origin vX.Y.Z`; `release.yml` hace el resto.
 
 ## Arranque local (Docker)
 

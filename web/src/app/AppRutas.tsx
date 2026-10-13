@@ -8,6 +8,7 @@ import {
 import { BitacoraPage } from '../features/bitacora';
 import { CobranzaPage, RegistrarPagoPage } from '../features/pagos';
 import { EquipoPage } from '../features/equipo';
+import { PlacasPage } from '../features/placas';
 import { PlanesPage } from '../features/planes';
 import { ResumenPage } from '../features/resumen';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
@@ -28,6 +29,7 @@ export function AppRutas() {
         <Route path={`${RUTAS.cuentas}/:id`} element={<DetalleCuentaPage />} />
         <Route path={RUTAS.cobranza} element={<CobranzaPage />} />
         <Route path={`${RUTAS.cobranza}/:cuentaId/pago`} element={<RegistrarPagoPage />} />
+        <Route path={RUTAS.placas} element={<PlacasPage />} />
         <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<BitacoraPage />} />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />

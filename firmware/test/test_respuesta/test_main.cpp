@@ -192,6 +192,54 @@ void test_motivos_conocidos_y_mensajes() {
   TEST_ASSERT_TRUE(strlen(puerta::mensaje(Motivo::SinRed)) > 0);
 }
 
+static respuesta::Reclamo reclamar(int http, const char* cuerpo) {
+  return respuesta::interpretarReclamo(http, cuerpo, cuerpo == nullptr ? 0 : strlen(cuerpo));
+}
+
+using Estado = respuesta::Reclamo::Estado;
+
+void test_reclamo_pendiente() {
+  auto r = reclamar(200, "{\"estado\":\"pendiente\"}");
+  TEST_ASSERT_EQUAL(Estado::Pendiente, r.estado);
+  TEST_ASSERT_FALSE(r.rechazado);
+}
+
+void test_reclamo_vinculado_trae_el_id() {
+  auto r = reclamar(200, "{\"estado\":\"vinculado\",\"dispositivo_id\":\"1234\"}");
+  TEST_ASSERT_EQUAL(Estado::Vinculado, r.estado);
+  TEST_ASSERT_EQUAL_STRING("1234", r.dispositivoId);
+}
+
+void test_reclamo_401_y_429_son_rechazos() {
+  TEST_ASSERT_TRUE(reclamar(401, "{}").rechazado);
+  TEST_ASSERT_TRUE(reclamar(429, nullptr).rechazado);
+  TEST_ASSERT_EQUAL(Estado::Invalido, reclamar(401, "{}").estado);
+}
+
+void test_reclamo_mal_formado_no_cambia_nada() {
+  const char* malos[] = {
+      "",
+      "no es json",
+      "[]",
+      "{}",
+      "{\"estado\":\"otro\"}",
+      "{\"estado\":1}",
+      "{\"estado\":\"vinculado\"}",                                         // sin id
+      "{\"estado\":\"vinculado\",\"dispositivo_id\":\"\"}",                  // id vacío
+      "{\"estado\":\"vinculado\",\"dispositivo_id\":12}",                    // id no es texto
+      "{\"estado\":\"vinculado\",\"dispositivo_id\":\"12.34\"}",             // el punto separa id y clave
+      "{\"estado\":\"vinculado\",\"dispositivo_id\":\"1\\r\\nX-Evil: 1\"}",  // inyección en el encabezado
+      "{\"estado\":\"vinculado\",\"dispositivo_id\":\"123456789012345678901\"}",  // 21 > 20
+  };
+  for (const char* cuerpo : malos) {
+    auto r = reclamar(200, cuerpo);
+    TEST_ASSERT_EQUAL_MESSAGE(Estado::Invalido, r.estado, cuerpo);
+    TEST_ASSERT_EQUAL_STRING("", r.dispositivoId);
+  }
+  TEST_ASSERT_EQUAL(Estado::Invalido, reclamar(500, "{\"estado\":\"pendiente\"}").estado);
+  TEST_ASSERT_EQUAL(Estado::Invalido, reclamar(204, nullptr).estado);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_abrir_true_con_segundos);
@@ -211,5 +259,9 @@ int main() {
   RUN_TEST(test_configuracion_se_acota_al_maximo);
   RUN_TEST(test_configuracion_invalida_se_descarta);
   RUN_TEST(test_motivos_conocidos_y_mensajes);
+  RUN_TEST(test_reclamo_pendiente);
+  RUN_TEST(test_reclamo_vinculado_trae_el_id);
+  RUN_TEST(test_reclamo_401_y_429_son_rechazos);
+  RUN_TEST(test_reclamo_mal_formado_no_cambia_nada);
   return UNITY_END();
 }

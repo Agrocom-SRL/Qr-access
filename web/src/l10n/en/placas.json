@@ -1,0 +1,73 @@
+{
+  "titulo": "Boards",
+  "subtitulo_one": "{{count}} board",
+  "subtitulo_other": "{{count}} boards",
+  "registrar": "Register board",
+  "buscar": "Search by MAC, account or door",
+  "filtro": "Board status",
+  "tabla": "Boards",
+  "errorCarga": "We couldn't load the boards",
+  "estado": {
+    "todas": "All",
+    "de_fabrica": "Factory",
+    "vinculada": "Linked"
+  },
+  "badge": {
+    "vinculada": "Linked",
+    "sinConectar": "Not connected",
+    "lista": "Ready to link"
+  },
+  "conexion": {
+    "enLinea": "Online",
+    "sinConexion": "Offline"
+  },
+  "columna": {
+    "mac": "MAC",
+    "estado": "Status",
+    "asignada": "Account and door",
+    "firmware": "Firmware",
+    "contacto": "Last contact",
+    "accion": "Action"
+  },
+  "sinAsignar": "Unassigned",
+  "nunca": "Never",
+  "vacio": {
+    "titulo": "No boards yet",
+    "texto": "Register a board with its MAC to link it to a door."
+  },
+  "vincularA": "Link board {{mac}}",
+  "liberarA": "Release board {{mac}}",
+  "darDeBajaA": "Remove board {{mac}}",
+  "registrarTitulo": "Register a board",
+  "registrarAyuda": "The MAC shows up when you power the board on, over the serial port (status command).",
+  "mac": "Board MAC",
+  "macPlaceholder": "AA:BB:CC:00:11:22",
+  "macInvalida": "Enter a valid MAC: six pairs of hexadecimal digits.",
+  "registrando": "Registering…",
+  "registrarConfirmar": "Register",
+  "codigoTitulo": "Linking code",
+  "codigoDe": "Board {{mac}}",
+  "codigoInstruccion": "Load it onto the board over the serial port with this command:",
+  "codigoAviso": "This code is not shown again. If you lose it, remove the board and register it again.",
+  "copiarComando": "Copy command",
+  "comandoCopiado": "Command copied",
+  "listo": "Done",
+  "vincularTitulo": "Link the board to a door",
+  "vincularTexto": "Board {{mac}} will be assigned to the account and door you choose.",
+  "cuenta": "Account",
+  "cuentaPlaceholder": "Search by name or code",
+  "puerta": "Door",
+  "puertaPlaceholder": "Choose a door without a reader",
+  "sinPuertasLibres": "This account has no doors without a reader.",
+  "nombreLector": "Reader name",
+  "vincularConfirmar": "Link",
+  "vinculando": "Linking…",
+  "liberarTitulo": "Release board {{mac}}?",
+  "liberarTexto": "The door is left without a reader and the board stops opening it. You can then link it to another account.",
+  "liberar": "Release",
+  "liberando": "Releasing…",
+  "bajaTitulo": "Remove board {{mac}}?",
+  "bajaTexto": "It leaves the inventory. Use this if the board was lost or damaged.",
+  "darDeBaja": "Remove",
+  "dandoDeBaja": "Removing…"
+}

@@ -28,6 +28,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     permiso: 'suscripciones.cobranza.ver',
   },
   {
+    clave: 'placas',
+    ruta: RUTAS.placas,
+    icono: 'memory',
+    iconoActivo: 'memory_fill',
+    permiso: 'dispositivos.placa.ver',
+  },
+  {
     clave: 'planes',
     ruta: RUTAS.planes,
     icono: 'sell',

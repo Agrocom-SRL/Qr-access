@@ -8,6 +8,7 @@ import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisti
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
+import type { PlacasRepositorio, Placa } from '@/features/placas';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
@@ -38,6 +39,10 @@ export const SUPER_ADMIN = {
     'suscripciones.cobranza.ver',
     'bitacora.registro.ver',
     'resumen.panel.ver',
+    'dispositivos.placa.ver',
+    'dispositivos.placa.registrar',
+    'dispositivos.placa.vincular',
+    'dispositivos.placa.liberar',
   ],
 } as const;
 
@@ -153,6 +158,48 @@ export const DETALLE = {
     administradores: 2,
   },
 };
+
+export const PLACAS: Placa[] = [
+  {
+    id: '1',
+    mac: 'AA:BB:CC:00:11:22',
+    estado: 'vinculada',
+    firmware: '1.4.0',
+    ip: '192.168.1.40',
+    ultimoContactoEn: new Date(),
+    enLinea: true,
+    reclamoHecho: true,
+    dispositivo: { id: '7', nombre: 'Portón vehicular' },
+    cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+    puerta: { id: '1', nombre: 'Portón vehicular' },
+  },
+  {
+    id: '2',
+    mac: 'AA:BB:CC:00:11:33',
+    estado: 'de_fabrica',
+    firmware: '1.4.0',
+    ip: '192.168.1.41',
+    ultimoContactoEn: new Date(),
+    enLinea: true,
+    reclamoHecho: true,
+    dispositivo: null,
+    cuenta: null,
+    puerta: null,
+  },
+  {
+    id: '3',
+    mac: 'AA:BB:CC:00:11:44',
+    estado: 'de_fabrica',
+    firmware: null,
+    ip: null,
+    ultimoContactoEn: null,
+    enLinea: false,
+    reclamoHecho: false,
+    dispositivo: null,
+    cuenta: null,
+    puerta: null,
+  },
+];
 
 export const SITIOS = [
   {
@@ -350,6 +397,7 @@ export function crearServiciosDePrueba(
     seguridad?: Partial<SeguridadRepositorio>;
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
+    placas?: Partial<PlacasRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
     suscripciones?: Partial<SuscripcionesRepositorio>;
     pagos?: Partial<PagosRepositorio>;
@@ -408,6 +456,15 @@ export function crearServiciosDePrueba(
     editar: () => Promise.resolve(),
     retirar: () => Promise.resolve('retirado' as const),
     ...parcial.planes,
+  };
+  const placas: PlacasRepositorio = {
+    listar: () =>
+      Promise.resolve({ elementos: PLACAS, pagina: 1, porPagina: 10, total: PLACAS.length }),
+    registrar: (mac) => Promise.resolve({ id: '9', mac, codigo: '0123456789ABCDEF' }),
+    vincular: () => Promise.resolve(),
+    liberar: () => Promise.resolve(),
+    darDeBaja: () => Promise.resolve(),
+    ...parcial.placas,
   };
   const cuentas: CuentasRepositorio = {
     listar: () =>
@@ -505,6 +562,7 @@ export function crearServiciosDePrueba(
     seguridad,
     equipo,
     planes,
+    placas,
     cuentas,
     suscripciones,
     pagos,

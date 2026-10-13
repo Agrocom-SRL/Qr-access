@@ -119,12 +119,18 @@ export async function crearSuscripcion(
     vigente?: boolean;
     maxVigenciaQrHoras?: number | null;
     maxUsuarios?: number | null;
+    maxDispositivos?: number | null;
   } = {},
 ): Promise<void> {
   const planId = await insertar(
     pool,
-    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios) VALUES (?, ?, ?)',
-    [`Plan ${cuenta.codigo}`, opciones.maxVigenciaQrHoras ?? null, opciones.maxUsuarios ?? null],
+    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios, max_dispositivos) VALUES (?, ?, ?, ?)',
+    [
+      `Plan ${cuenta.codigo}`,
+      opciones.maxVigenciaQrHoras ?? null,
+      opciones.maxUsuarios ?? null,
+      opciones.maxDispositivos ?? null,
+    ],
   );
   const dia = 86_400_000;
   const ahora = Date.now();

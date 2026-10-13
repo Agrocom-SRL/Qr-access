@@ -38,5 +38,14 @@
   "puerta_no_encontrada": "Não encontramos essa porta.",
   "puerta_nombre_existente": "Já existe uma porta com esse nome no local.",
   "puerta_con_dispositivo": "A porta tem um leitor em serviço: desative-o primeiro.",
-  "puerta_segundos_invalidos": "Os segundos de abertura vão de 1 a 30."
+  "puerta_segundos_invalidos": "Os segundos de abertura vão de 1 a 30.",
+  "placa_mac_invalida": "A MAC não é válida.",
+  "placa_mac_existente": "Essa MAC já está registrada.",
+  "placa_no_encontrada": "Não encontramos essa placa.",
+  "placa_sin_reclamo": "A placa ainda não se conectou: ligue-a com o cabo de rede e aguarde alguns segundos.",
+  "placa_ya_vinculada": "A placa já está vinculada: libere-a primeiro.",
+  "placa_sin_dispositivo": "A placa não está vinculada a nenhuma porta.",
+  "plan_limite_dispositivos": "A conta atingiu o limite de leitores do plano.",
+  "dispositivo_reclamo_invalido": "A placa não reconheceu o código.",
+  "dispositivo_reclamo_bloqueado": "Muitas tentativas, aguarde alguns minutos."
 }

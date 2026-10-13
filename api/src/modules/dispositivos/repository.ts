@@ -7,6 +7,7 @@ const DESCRIPCION_DE_DISPOSITIVOS = {
   nombre: 'dispositivos',
   columnas: [
     'puerta_id',
+    'placa_id',
     'nombre',
     'clave_hash',
     'firmware_version',
@@ -44,6 +45,16 @@ export class RepositorioDeDispositivosDePlataforma extends RepositorioDePlatafor
       donde: 't.id = ? AND t.revocado_at IS NULL AND t.activo = 1',
       params: [id],
     });
+  }
+
+  /** El dispositivo en servicio de una placa (a lo sumo uno, `uq_dispositivos_placa`). */
+  async buscarEnServicioDePlaca(placaId: string): Promise<{ id: string; cuentaId: string } | null> {
+    const fila = await this.seleccionarUna<RowDataPacket>({
+      columnas: 't.id, t.tenant_id',
+      donde: 't.placa_id = ? AND t.revocado_at IS NULL',
+      params: [placaId],
+    });
+    return fila === null ? null : { id: String(fila.id), cuentaId: String(fila.tenant_id) };
   }
 
   /**
@@ -109,6 +120,29 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
       },
       { sinBitacora: true },
     );
+  }
+
+  /** Alta de un dispositivo para una placa (ADR 0025); la cuenta es la del contexto. */
+  crearParaPlaca(
+    tx: Transaccion,
+    datos: { placaId: string; puertaId: string; nombre: string; claveHash: string },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      placa_id: datos.placaId,
+      puerta_id: datos.puertaId,
+      nombre: datos.nombre,
+      clave_hash: datos.claveHash,
+    });
+  }
+
+  /** Deja de autenticar: la placa recibe 401 y vuelve a reclamar (ADR 0025). */
+  revocar(tx: Transaccion, id: string, en: Date): Promise<boolean> {
+    return this.actualizar(tx, id, { revocado_at: en });
+  }
+
+  /** Cuántos dispositivos en servicio tiene la cuenta del contexto (cupo del plan). */
+  contarEnServicioDeLaCuenta(): Promise<number> {
+    return this.contar({ donde: 't.revocado_at IS NULL' });
   }
 
   /** El dispositivo en servicio de cada una de esas puertas (a lo sumo uno por puerta). */
