@@ -19,6 +19,7 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.eliminar', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
   ('seguridad.equipo.crear', 'plataforma'),
+  ('seguridad.equipo.editar', 'plataforma'),
   ('seguridad.equipo.desactivar', 'plataforma'),
   ('seguridad.cuenta.ver', 'plataforma'),
   ('seguridad.cuenta.crear', 'plataforma'),

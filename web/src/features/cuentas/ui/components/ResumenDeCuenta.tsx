@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { formatearFecha, formatearMonto } from '../../../../l10n/formatos';
+import { rutaDeCuenta } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
+import { Avatar } from '../../../../shared/ui/atoms/Avatar';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { BarraUso } from '../../../../shared/ui/molecules/BarraUso';
@@ -47,8 +50,38 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
   const cupo = suscripcion?.plan.cupoUsuarios ?? null;
   const disponibles = usuariosDisponibles(uso.usuariosActivos, cupo);
 
+  const aSitios = rutaDeCuenta(detalle.cuenta.id, 'sitios');
   return (
     <div className={styles.rejilla}>
+      {/* Lo que más se consulta va arriba: sitios y puertas llevan directo a su pestaña. */}
+      <div className={styles.indicadores}>
+        <Link to={aSitios} className={styles.enlaceIndicador}>
+          <TarjetaIndicador
+            etiqueta={t('detalle:sitios')}
+            valor={String(uso.sitios)}
+            icono="location_on"
+          />
+        </Link>
+        <Link to={aSitios} className={styles.enlaceIndicador}>
+          <TarjetaIndicador
+            etiqueta={t('detalle:puertas')}
+            valor={String(uso.puertas)}
+            icono="door_front"
+          />
+        </Link>
+        <TarjetaIndicador
+          etiqueta={t('detalle:dispositivosSinConexion')}
+          valor={String(uso.dispositivosSinConexion)}
+          icono="wifi_off"
+          tono={uso.dispositivosSinConexion > 0 ? 'peligro' : 'primario'}
+        />
+        <TarjetaIndicador
+          etiqueta={t('detalle:administradores')}
+          valor={String(uso.administradores)}
+          icono="admin_panel_settings"
+        />
+      </div>
+
       <section className={styles.hero} aria-labelledby="plan-actual">
         <img src={foto} alt="" className={styles.foto} />
         {suscripcion ? (
@@ -109,66 +142,65 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
         )}
       </section>
 
-      <section className={styles.empresa} aria-labelledby="datos-empresa">
-        <h2 id="datos-empresa" className={styles.tituloEmpresa}>
-          {t('detalle:empresa')}
-        </h2>
-        {empresa ? (
-          <dl className={styles.datos}>
-            <FilaClaveValor clave={t('detalle:razonSocial')}>
-              {detalle.cuenta.nombre}
-            </FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:codigo')}>
-              <span className={styles.codigo}>
-                <TextoMono fuerte>{detalle.cuenta.codigo}</TextoMono>
-                {puedeCambiarCodigo ? (
-                  <AccesoBoton
-                    variante="texto"
-                    onClick={() => {
-                      setCambiandoCodigo(true);
-                    }}
-                  >
-                    {t('detalle:cambiarCodigo')}
-                  </AccesoBoton>
-                ) : null}
-              </span>
-            </FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:responsable')}>{empresa.contacto}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:telefono')}>{empresa.telefono}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:correo')}>{empresa.correo ?? '—'}</FilaClaveValor>
-            <FilaClaveValor clave={t('detalle:clienteDesde')}>
-              {formatearFecha(detalle.cuenta.clienteDesde)}
-            </FilaClaveValor>
-          </dl>
-        ) : (
-          <p className={styles.sinDatos}>{t('detalle:sinEmpresa')}</p>
-        )}
-      </section>
+      <div className={styles.columna}>
+        <section className={styles.empresa} aria-labelledby="datos-empresa">
+          <h2 id="datos-empresa" className={styles.tituloEmpresa}>
+            {t('detalle:empresa')}
+          </h2>
+          {empresa ? (
+            <dl className={styles.datos}>
+              <FilaClaveValor clave={t('detalle:razonSocial')}>
+                {detalle.cuenta.nombre}
+              </FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:codigo')}>
+                <span className={styles.codigo}>
+                  <TextoMono fuerte>{detalle.cuenta.codigo}</TextoMono>
+                  {puedeCambiarCodigo ? (
+                    <AccesoBoton
+                      variante="texto"
+                      onClick={() => {
+                        setCambiandoCodigo(true);
+                      }}
+                    >
+                      {t('detalle:cambiarCodigo')}
+                    </AccesoBoton>
+                  ) : null}
+                </span>
+              </FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:clienteDesde')}>
+                {formatearFecha(detalle.cuenta.clienteDesde)}
+              </FilaClaveValor>
+            </dl>
+          ) : (
+            <p className={styles.sinDatos}>{t('detalle:sinEmpresa')}</p>
+          )}
+        </section>
+
+        <section className={styles.responsable} aria-labelledby="persona-responsable">
+          <h2 id="persona-responsable" className={styles.tituloEmpresa}>
+            {t('detalle:responsable')}
+          </h2>
+          {empresa ? (
+            <div className={styles.persona}>
+              <Avatar grande nombre={empresa.contacto} />
+              <dl className={styles.contacto}>
+                <strong className={styles.nombrePersona}>{empresa.contacto}</strong>
+                <FilaClaveValor clave={t('detalle:telefono')}>{empresa.telefono}</FilaClaveValor>
+                <FilaClaveValor clave={t('detalle:correo')}>{empresa.correo ?? '—'}</FilaClaveValor>
+              </dl>
+            </div>
+          ) : (
+            <p className={styles.sinDatos}>{t('detalle:sinResponsable')}</p>
+          )}
+        </section>
+      </div>
 
       <div className={styles.administradores}>
         <AdministradoresDeCuenta cuentaId={detalle.cuenta.id} puedeRegenerar={puedeRegenerar} />
       </div>
 
-      <div className={styles.indicadores}>
-        <TarjetaIndicador
-          etiqueta={t('detalle:sitiosYPuertas')}
-          valor={`${String(uso.sitios)} · ${String(uso.puertas)}`}
-          icono="door_front"
-        />
-        <TarjetaIndicador
-          etiqueta={t('detalle:dispositivosSinConexion')}
-          valor={String(uso.dispositivosSinConexion)}
-          icono="wifi_off"
-          tono={uso.dispositivosSinConexion > 0 ? 'peligro' : 'primario'}
-        />
-        <TarjetaIndicador
-          etiqueta={t('detalle:administradores')}
-          valor={String(uso.administradores)}
-          icono="admin_panel_settings"
-        />
-      </div>
       <DialogoCambiarCodigo
         abierto={cambiandoCodigo}
         cuenta={detalle.cuenta}

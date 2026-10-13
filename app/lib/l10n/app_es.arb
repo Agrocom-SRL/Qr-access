@@ -427,14 +427,9 @@
       }
     }
   },
-  "inicioHeroAyudaHoras": "Un solo uso. Vence en {horas} h.",
-  "@inicioHeroAyudaHoras": {
-    "description": "Texto del hero Emitir QR del inicio de usuario, con la vigencia por defecto",
-    "placeholders": {
-      "horas": {
-        "type": "int"
-      }
-    }
+  "inicioHeroAyudaFinDelDia": "Un solo uso. Vence al final del día.",
+  "@inicioHeroAyudaFinDelDia": {
+    "description": "Texto del hero Emitir QR del inicio de usuario, con la vigencia por defecto"
   },
   "inicioNuevoQr": "Nuevo QR",
   "@inicioNuevoQr": {

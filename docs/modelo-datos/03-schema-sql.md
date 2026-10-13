@@ -481,3 +481,36 @@ CREATE TABLE pagos (
   CONSTRAINT ck_pagos_periodo CHECK (periodo_desde < periodo_hasta)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
+
+## comprobantes
+
+Migración: `db/migrations/20261012100008_create_comprobantes.sql`
+
+```sql
+CREATE TABLE comprobantes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ruta VARCHAR(255) NOT NULL,
+  tipo_mime VARCHAR(40) NOT NULL,
+  tamano INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_comprobantes_ruta (ruta),
+  CONSTRAINT ck_comprobantes_tipo CHECK (tipo_mime IN ('image/jpeg', 'image/png', 'image/webp', 'application/pdf'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## pagos: banco, cuenta de destino y comprobante
+
+Migración: `db/migrations/20261012100009_add_banco_y_comprobante_a_pagos.sql`
+
+```sql
+ALTER TABLE pagos
+  ADD COLUMN banco VARCHAR(60) NULL AFTER referencia,
+  ADD COLUMN cuenta_destino VARCHAR(60) NULL AFTER banco,
+  ADD COLUMN comprobante_id BIGINT UNSIGNED NULL AFTER cuenta_destino,
+  ADD CONSTRAINT fk_pagos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes (id);
+```

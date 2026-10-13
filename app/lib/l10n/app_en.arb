@@ -90,7 +90,7 @@
   "inicioSaludoSinNombre": "Hello",
   "inicioSaludo": "Hello, {nombre}",
   "inicioCuentaYRol": "{cuenta} · {rol}",
-  "inicioHeroAyudaHoras": "Single use. Expires in {horas} h.",
+  "inicioHeroAyudaFinDelDia": "Single use. Expires at the end of the day.",
   "inicioNuevoQr": "New QR",
   "inicioRepetirUltimo": "Repeat last",
   "inicioVigentesHoy": "Active today",

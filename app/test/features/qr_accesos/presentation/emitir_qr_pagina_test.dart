@@ -113,8 +113,7 @@ void main() {
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
-    await tester.tap(find.text(textos.qrVigenciaModoDias));
-    await tester.pump();
+    // Abre en modo días (por defecto, todo el día): no hace falta cambiar.
     expect(find.text(textos.qrVigenciaFinDelDia), findsOneWidget);
     for (final dias in [2, 3, 5, 7]) {
       expect(find.text(textos.qrVigenciaDias(dias)), findsOneWidget);
@@ -145,8 +144,10 @@ void main() {
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
-    // Por defecto, en modo horas, con 2 h elegidas.
+    // Por defecto abre en modo días, con "todo el día"; se pasa a horas.
     expect(find.text(textos.qrVigenciaModoHoras), findsOneWidget);
+    await tester.tap(find.text(textos.qrVigenciaModoHoras));
+    await tester.pump();
     expect(find.text(textos.qrVigenciaHoras(24)), findsOneWidget);
     await tester.tap(find.text(textos.qrVigenciaHoras(1)));
     await tester.pump();

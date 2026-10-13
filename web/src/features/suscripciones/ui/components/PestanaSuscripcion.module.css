@@ -34,6 +34,12 @@
   font-weight: var(--peso600);
 }
 
+.alDia {
+  color: var(--primario);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
 .peligro {
   color: var(--peligro);
   font-size: var(--texto20);

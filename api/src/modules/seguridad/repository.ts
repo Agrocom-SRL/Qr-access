@@ -613,6 +613,14 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   desactivar(tx: Transaccion, id: string): Promise<boolean> {
     return this.actualizar(tx, id, { activo: 0 });
   }
+
+  reactivar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.actualizar(tx, id, { activo: 1 });
+  }
+
+  renombrar(tx: Transaccion, id: string, nombre: string): Promise<boolean> {
+    return this.actualizar(tx, id, { etiqueta: nombre });
+  }
 }
 
 /** Dueño de las filas de `sesiones` con `tenant_id NULL`: las de los super admin. */

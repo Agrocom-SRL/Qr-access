@@ -23,6 +23,8 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 COPY --from=build /repo/api/dist ./dist
+# Almacén de comprobantes (ADR 0024): el volumen se monta acá y tiene que poder escribirlo `node`.
+RUN mkdir -p /archivos && chown node:node /archivos
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1:3000/api/v1/salud || exit 1

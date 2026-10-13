@@ -20,6 +20,8 @@ const esquema = z.object({
   JWT_SECRETO: z.string().min(32),
   JWT_ACCESO_MINUTOS: z.coerce.number().int().positive().default(15),
   JWT_REFRESH_DIAS: z.coerce.number().int().positive().default(30),
+  // Carpeta del almacén de archivos (comprobantes de pago, ADR 0024): en docker es un volumen
+  ARCHIVOS_RUTA: z.string().min(1).default('./archivos'),
   // Pimienta del índice de PIN (ADR 0018): 32 bytes en base64; nunca en la base
   PIN_PIMIENTA: z.string().min(32),
 });

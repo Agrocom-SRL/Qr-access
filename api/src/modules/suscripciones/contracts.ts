@@ -1,7 +1,9 @@
 import type { Pool } from 'mysql2/promise';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { diasRestantes, estadoDeSuscripcion, type EstadoDeSuscripcion } from './domain/estado.js';
 import {
+  RepositorioDeComprobantes,
   RepositorioDePagos,
   RepositorioDePlanes,
   RepositorioDeTotalesDePagos,
@@ -129,6 +131,9 @@ export interface PagoDeAlta {
   readonly fechaPago: string;
   readonly medio: 'transferencia' | 'deposito' | 'efectivo';
   readonly referencia: string;
+  readonly banco?: string | undefined;
+  readonly cuentaDestino?: string | undefined;
+  readonly comprobanteId?: string | undefined;
 }
 
 /** Un pago ya registrado de una cuenta. */
@@ -141,6 +146,9 @@ export interface PagoRegistrado {
   readonly fechaPago: string;
   readonly medio: 'transferencia' | 'deposito' | 'efectivo';
   readonly referencia: string;
+  readonly banco: string | null;
+  readonly cuentaDestino: string | null;
+  readonly comprobanteId: string | null;
   readonly periodoDesde: Date;
   readonly periodoHasta: Date;
   /** Id del super admin que lo registró (para mostrar su nombre). */
@@ -179,6 +187,12 @@ export function crearServicioDeSuscripcionesDePlataforma(
         estado: pago === undefined ? 'pendiente' : 'vigente',
       });
       if (pago !== undefined) {
+        if (pago.comprobanteId !== undefined) {
+          const comprobante = await new RepositorioDeComprobantes(pool).buscarPorId(
+            pago.comprobanteId,
+          );
+          if (comprobante === null) throw new ErrorDeDominio('comprobante.no_encontrado', 422);
+        }
         await new RepositorioDePagos(pool).registrar(tx, {
           suscripcionId: id,
           planId: suscripcion.planId,
@@ -187,6 +201,9 @@ export function crearServicioDeSuscripcionesDePlataforma(
           fechaPago: pago.fechaPago,
           medio: pago.medio,
           referencia: pago.referencia,
+          banco: pago.banco,
+          cuentaDestino: pago.cuentaDestino,
+          comprobanteId: pago.comprobanteId,
           periodoDesde: suscripcion.desde,
           periodoHasta: suscripcion.hasta,
         });
@@ -202,6 +219,9 @@ export function crearServicioDeSuscripcionesDePlataforma(
         fechaPago: fechaIso(fila.fecha_pago),
         medio: fila.medio,
         referencia: fila.referencia,
+        banco: fila.banco,
+        cuentaDestino: fila.cuenta_destino,
+        comprobanteId: fila.comprobante_id,
         periodoDesde: fila.periodo_desde,
         periodoHasta: fila.periodo_hasta,
         registradoPor: fila.created_by,

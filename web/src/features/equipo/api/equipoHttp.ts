@@ -58,6 +58,22 @@ export function crearEquipoHttp(cliente: ClienteHttp): EquipoRepositorio {
       );
     },
 
+    async reactivar(id) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/equipo/${id}`,
+        cuerpo: { activo: true },
+      });
+    },
+
+    async renombrar(id, nombre) {
+      await cliente.solicitar({
+        metodo: 'PATCH',
+        ruta: `/plataforma/equipo/${id}`,
+        cuerpo: { nombre: nombre.trim() },
+      });
+    },
+
     async desactivar(id) {
       await cliente.solicitar({
         metodo: 'PATCH',

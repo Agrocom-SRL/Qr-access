@@ -17,4 +17,6 @@ export interface EquipoRepositorio {
   usuarioDisponible: (usuario: string) => Promise<boolean>;
   agregar: (nuevo: NuevoMiembro) => Promise<MiembroEquipo>;
   desactivar: (id: string) => Promise<void>;
+  reactivar: (id: string) => Promise<void>;
+  renombrar: (id: string, nombre: string) => Promise<void>;
 }

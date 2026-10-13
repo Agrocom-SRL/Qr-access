@@ -1,13 +1,17 @@
 import { useTranslation } from 'react-i18next';
+import { AccesoSelector } from '../../../../shared/ui/molecules/AccesoSelector';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { CampoMonto } from '../../../../shared/ui/molecules/CampoMonto';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import {
+  BANCOS,
   MEDIOS,
+  requiereRespaldo,
   type ErrorDePago,
   type FormularioDePago,
   type MedioDePago,
 } from '../../domain/pago';
+import { CampoComprobante } from './CampoComprobante';
 import styles from './CamposDePago.module.css';
 
 interface Props {
@@ -27,7 +31,8 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
   const mensaje = (campo: keyof FormularioDePago): string | undefined => {
     const error = errores[campo];
     if (!tocados.has(campo) || !error) return undefined;
-    return campo === 'monto' && error === 'formato' ? t('montoInvalido') : t(error);
+    if (campo === 'monto' && error === 'formato') return t('montoInvalido');
+    return t(error);
   };
   return (
     <div className={styles.campos}>
@@ -86,6 +91,52 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
           onCambio({ referencia: e.target.value });
         }}
       />
+
+      {requiereRespaldo(datos.medio) ? (
+        <>
+          <div className={styles.fila}>
+            <AccesoSelector
+              etiqueta={t('banco')}
+              value={datos.banco}
+              error={mensaje('banco')}
+              opciones={[
+                { valor: '', etiqueta: t('bancoElegir') },
+                ...BANCOS.map((banco) => ({ valor: banco, etiqueta: banco })),
+              ]}
+              onBlur={() => {
+                onTocar('banco');
+              }}
+              onChange={(e) => {
+                onCambio({ banco: e.target.value });
+              }}
+            />
+            <AccesoCampoTexto
+              etiqueta={t('cuentaDestino')}
+              mono
+              value={datos.cuentaDestino}
+              ayuda={t('cuentaDestinoAyuda')}
+              error={mensaje('cuentaDestino')}
+              autoComplete="off"
+              onBlur={() => {
+                onTocar('cuentaDestino');
+              }}
+              onChange={(e) => {
+                onCambio({ cuentaDestino: e.target.value });
+              }}
+            />
+          </div>
+          <CampoComprobante
+            archivo={datos.comprobante}
+            error={mensaje('comprobante')}
+            onCambio={(comprobante) => {
+              onCambio({ comprobante });
+            }}
+            onBlur={() => {
+              onTocar('comprobante');
+            }}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

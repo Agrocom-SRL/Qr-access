@@ -1,10 +1,12 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as agregarMiembro } from './actions/agregar-miembro-equipo.js';
 import { ejecutar as cambiarContrasena } from './actions/cambiar-contrasena.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion-plataforma.js';
-import { ejecutar as desactivarMiembro } from './actions/desactivar-miembro-equipo.js';
+import { ejecutar as editarMiembro } from './actions/editar-miembro-equipo.js';
+import { ejecutar as editarPerfil } from './actions/editar-perfil-plataforma.js';
 import { ejecutar as iniciarSesion } from './actions/iniciar-sesion-plataforma.js';
 import { ejecutar as listarEquipo } from './actions/listar-equipo.js';
 import { ejecutar as usuarioDisponible } from './actions/usuario-disponible.js';
@@ -13,6 +15,7 @@ import {
   consultaDeUsuarioDisponible,
   cuerpoDeCambioDeContrasena,
   cuerpoDeEdicionDeMiembro,
+  cuerpoDeEdicionDePerfil,
   cuerpoDeIngresoDePlataforma,
   cuerpoDeNuevoMiembro,
   parametrosDeUsuario,
@@ -72,6 +75,18 @@ export const rutasDePlataforma =
         config: { acceso: 'plataforma' },
       },
       (request) => verPerfil(pool, plataformaDe(request)),
+    );
+
+    app.patch(
+      '/plataforma/perfil',
+      {
+        schema: { tags: ETIQUETA, body: cuerpoDeEdicionDePerfil },
+        config: { acceso: 'plataforma' },
+      },
+      async (request, reply) => {
+        await editarPerfil(pool, plataformaDe(request), request.body.nombre);
+        return reply.status(204).send();
+      },
     );
 
     app.put(
@@ -138,16 +153,27 @@ export const rutasDePlataforma =
       },
     );
 
-    // Desactivar es el único cambio de estado del equipo: `activo` solo admite `false`.
+    // Renombrar o reactivar exige `seguridad.equipo.editar`; desactivar, `seguridad.equipo.desactivar`.
     app.patch(
       '/plataforma/equipo/:id',
       {
         schema: { tags: ETIQUETA, params: parametrosDeUsuario, body: cuerpoDeEdicionDeMiembro },
         config: { acceso: 'plataforma' },
-        preHandler: permisoDePlataforma('seguridad.equipo.desactivar'),
+        preHandler: permisoDePlataforma('seguridad.equipo.ver'),
       },
       async (request, reply) => {
-        await desactivarMiembro(servicios, plataformaDe(request), request.params.id);
+        const principal = plataformaDe(request);
+        const { nombre, activo } = request.body;
+        const requeridos = [
+          ...(nombre !== undefined || activo === true ? ['seguridad.equipo.editar'] : []),
+          ...(activo === false ? ['seguridad.equipo.desactivar'] : []),
+        ];
+        for (const codigo of requeridos) {
+          if (!principal.permisos.has(codigo)) {
+            throw new ErrorDeDominio('permiso.denegado', 403, { permiso: codigo });
+          }
+        }
+        await editarMiembro(servicios, principal, request.params.id, { nombre, activo });
         return reply.status(204).send();
       },
     );

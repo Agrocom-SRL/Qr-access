@@ -112,6 +112,9 @@ describe('validarPagoDeAlta', () => {
     fechaPago: '2026-10-12',
     medio: 'transferencia' as const,
     referencia: 'TRF-1',
+    banco: 'Banco Unión',
+    cuentaDestino: '10000123456',
+    comprobante: new File(['x'], 'comprobante.png', { type: 'image/png' }),
   };
 
   it('cobrar después no pide nada', () => {

@@ -36,5 +36,8 @@
   "ver": "Ver {{cuenta}}",
   "filtroEtiqueta": "Filtrar por estado",
   "usuariosDe": "{{count}} usuarios",
-  "sinPlan": "Sin plan"
+  "sinPlan": "Sin plan",
+  "verPuertas": "Sitios y puertas de {{cuenta}}",
+  "editar": "Editar {{cuenta}}",
+  "eliminar": "Eliminar {{cuenta}}"
 }

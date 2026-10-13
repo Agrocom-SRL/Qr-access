@@ -1,3 +1,6 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 /**
  * Los tests corren sobre MySQL real, SIEMPRE sobre la base de tests (CLAUDE.md, skill
  * `verificacion`). Esta guarda no se debilita: en ACRECIA una variable de entorno que pisaba
@@ -18,3 +21,5 @@ process.env.DB_PASSWORD ??= 'qr_access';
 // Secretos de prueba: solo existen en los tests (el entorno real los trae de .env o del servidor).
 process.env.JWT_SECRETO = 'secreto-de-pruebas-jwt-0123456789abcdef0123456789abcdef';
 process.env.PIN_PIMIENTA = 'cGltaWVudGEtZGUtcHJ1ZWJhcy0wMTIzNDU2Nzg5YWJjZGVm';
+// Los comprobantes de los tests van a una carpeta temporal, nunca al almacén de desarrollo.
+process.env.ARCHIVOS_RUTA = join(tmpdir(), 'agrocom-acceso-tests-archivos');

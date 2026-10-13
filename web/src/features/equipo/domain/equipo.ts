@@ -15,6 +15,11 @@ export function puedeDesactivar(miembro: MiembroEquipo): boolean {
   return miembro.activo && !miembro.esActual;
 }
 
+/** Un miembro desactivado se puede volver a activar. */
+export function puedeReactivar(miembro: MiembroEquipo): boolean {
+  return !miembro.activo;
+}
+
 const USUARIO_ADMITIDO = /^[a-z0-9][a-z0-9._-]{2,59}$/;
 
 export function usuarioConFormatoValido(usuario: string): boolean {

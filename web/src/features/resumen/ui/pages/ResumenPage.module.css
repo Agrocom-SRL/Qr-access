@@ -5,6 +5,21 @@
   margin-bottom: var(--esp24);
 }
 
+.dispositivos {
+  margin-bottom: var(--esp24);
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.dispositivo {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--esp24);
+}
+
 .listas {
   display: grid;
   grid-template-columns: 7fr 5fr;

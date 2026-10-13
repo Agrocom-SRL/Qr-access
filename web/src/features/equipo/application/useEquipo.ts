@@ -44,3 +44,22 @@ export function useDesactivarMiembro() {
     onSuccess: () => clienteConsultas.invalidateQueries({ queryKey: CLAVE_EQUIPO }),
   });
 }
+
+export function useReactivarMiembro() {
+  const repositorio = useEquipoRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => repositorio.reactivar(id),
+    onSuccess: () => clienteConsultas.invalidateQueries({ queryKey: CLAVE_EQUIPO }),
+  });
+}
+
+export function useRenombrarMiembro() {
+  const repositorio = useEquipoRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, nombre }: { id: string; nombre: string }) =>
+      repositorio.renombrar(id, nombre),
+    onSuccess: () => clienteConsultas.invalidateQueries({ queryKey: CLAVE_EQUIPO }),
+  });
+}

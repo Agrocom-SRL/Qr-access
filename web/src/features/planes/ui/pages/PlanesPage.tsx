@@ -7,7 +7,6 @@ import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { Icono } from '../../../../shared/ui/atoms/Icono';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
-import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagina';
 import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
@@ -48,7 +47,6 @@ export function PlanesPage() {
           ) : undefined
         }
       />
-      <Aviso tono="informacion">{t('planes:aviso')}</Aviso>
 
       {planes.isError ? (
         <EstadoError

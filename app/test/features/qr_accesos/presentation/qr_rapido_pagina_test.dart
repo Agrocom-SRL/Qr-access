@@ -75,7 +75,7 @@ void main() {
 
     final emision = repositorio.emisiones.single;
     expect(emision.puertaIds, ['p1', 'p2']);
-    expect(emision.vigencia.opcion, OpcionVigencia.dosHoras);
+    expect(emision.vigencia.opcion, OpcionVigencia.finDelDia);
     expect(emision.etiqueta, isNotNull);
     expect(find.byType(VisorQr), findsOneWidget);
   });

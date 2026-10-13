@@ -125,7 +125,14 @@ export const cuerpoDeNuevoMiembro = z.object({
 export const consultaDeUsuarioDisponible = z.object({ usuario: z.string().max(60).default('') });
 export const respuestaDeUsuarioDisponible = z.object({ disponible: z.boolean() });
 
-export const cuerpoDeEdicionDeMiembro = z.object({ activo: z.literal(false) });
+const esquemaNombreDePersona = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO);
+
+/** Cambiar el nombre, reactivar (`activo: true`) o desactivar (`activo: false`); al menos una cosa. */
+export const cuerpoDeEdicionDeMiembro = z
+  .object({ nombre: esquemaNombreDePersona.optional(), activo: z.boolean().optional() })
+  .refine((cuerpo) => cuerpo.nombre !== undefined || cuerpo.activo !== undefined);
+
+export const cuerpoDeEdicionDePerfil = z.object({ nombre: esquemaNombreDePersona });
 
 // --- Cuentas (administración por AGROCOM, web admin) ---
 
@@ -212,6 +219,18 @@ export const cuerpoDeNuevaCuenta = z.object({
       fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       medio: z.enum(['transferencia', 'deposito', 'efectivo']),
       referencia: z.string().trim().min(1).max(80),
+      // Una transferencia o un depósito exigen banco, cuenta y comprobante (ADR 0024).
+      banco: z.string().trim().min(1).max(60).optional(),
+      cuenta_destino: z.string().trim().min(1).max(60).optional(),
+      comprobante_id: esquemaId.optional(),
+    })
+    .superRefine((pago, ctx) => {
+      if (pago.medio === 'efectivo') return;
+      for (const campo of ['banco', 'cuenta_destino', 'comprobante_id'] as const) {
+        if (pago[campo] === undefined) {
+          ctx.addIssue({ code: 'custom', path: [campo], message: 'requerido' });
+        }
+      }
     })
     .optional(),
 });
@@ -374,6 +393,9 @@ export const respuestaDeSuscripcionDeCuenta = z.object({
       fecha_pago: z.string(),
       medio: z.enum(['transferencia', 'deposito', 'efectivo']),
       referencia: z.string(),
+      banco: z.string().nullable(),
+      cuenta_destino: z.string().nullable(),
+      comprobante_id: z.string().nullable(),
       periodo_desde: esquemaFecha,
       periodo_hasta: esquemaFecha,
       registro: z.object({ id: z.string(), nombre: z.string() }).nullable(),

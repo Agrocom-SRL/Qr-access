@@ -23,5 +23,14 @@
   "haceDias_other": "hace {{count}} días",
   "hoy": "hoy",
   "cuentasDe_one": "de {{total}} cuenta · {{porVencer}} por vencer",
-  "cuentasDe_other": "de {{total}} cuentas · {{porVencer}} por vencer"
+  "cuentasDe_other": "de {{total}} cuentas · {{porVencer}} por vencer",
+  "dispositivos": "Dispositivos",
+  "dispositivosResumen": "{{enLinea}} en línea · {{sinConexion}} sin conexión",
+  "dispositivosVacio": "Todavía no hay dispositivos en servicio.",
+  "verCuentas": "Ver cuentas",
+  "enLinea": "En línea",
+  "sinConexion": "Sin conexión",
+  "ultimoLatido": "Último latido {{cuando}}",
+  "sinLatido": "Nunca reportó",
+  "dispositivoDe": "{{puerta}} · {{codigo}}"
 }

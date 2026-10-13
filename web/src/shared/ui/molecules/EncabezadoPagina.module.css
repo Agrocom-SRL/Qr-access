@@ -17,5 +17,5 @@
 }
 
 .volver {
-  margin: calc(-1 * var(--esp8)) 0 var(--esp4) calc(-1 * var(--esp16));
+  margin: calc(-1 * var(--esp8)) 0 var(--esp4);
 }

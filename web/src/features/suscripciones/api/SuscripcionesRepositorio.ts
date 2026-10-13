@@ -10,6 +10,8 @@ export interface SuscripcionesRepositorio {
   obtener: (cuentaId: string) => Promise<SuscripcionDeCuenta>;
   /** Solo sube a un plan mayor; la API rechaza lo demás con `plan.solo_mejora`. */
   cambiarPlan: (cuentaId: string, planId: string) => Promise<PlanCambiado>;
+  /** El archivo de un comprobante de pago (imagen o PDF). */
+  verComprobante: (comprobanteId: string) => Promise<Blob>;
   suspender: (cuentaId: string) => Promise<void>;
   reactivar: (cuentaId: string) => Promise<void>;
 }

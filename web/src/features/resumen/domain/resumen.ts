@@ -14,6 +14,16 @@ export interface RenovacionProxima {
   estado: EstadoRenovacion;
 }
 
+export interface DispositivoDelTablero {
+  id: string;
+  nombre: string;
+  puerta: string;
+  cuenta: { id: string; codigo: string; nombre: string };
+  firmware: string | null;
+  enLinea: boolean;
+  ultimoLatidoEn: Date | null;
+}
+
 export interface Resumen {
   actualizadoEn: Date;
   cuentas: { activas: number; total: number; porVencer: number };
@@ -21,6 +31,8 @@ export interface Resumen {
   porVencer30: { cuentas: number; monto: number };
   ingresosEsperados: number;
   renovaciones: readonly RenovacionProxima[];
+  /** Los que no reportan van primero: son los que hay que revisar antes de una queja. */
+  dispositivos: { enLinea: number; sinConexion: number; lista: readonly DispositivoDelTablero[] };
   ultimasAcciones: readonly EventoBitacora[];
 }
 

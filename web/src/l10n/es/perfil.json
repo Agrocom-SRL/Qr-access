@@ -21,5 +21,9 @@
   "actualizada": "Contraseña actualizada",
   "noCoinciden": "Las contraseñas no coinciden",
   "requerido": "Este campo es obligatorio",
-  "corta": "Usa al menos {{count}} caracteres"
+  "corta": "Usa al menos {{count}} caracteres",
+  "editarNombre": "Editar nombre",
+  "nombre": "Nombre",
+  "guardarNombre": "Guardar nombre",
+  "guardando": "Guardando"
 }

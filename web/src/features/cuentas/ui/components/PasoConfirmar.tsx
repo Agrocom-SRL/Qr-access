@@ -30,12 +30,7 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
   const { t } = useTranslation('crearCuenta');
   const { empresa, vigencia, pago } = borrador;
   const [tocados, setTocados] = useState<ReadonlySet<keyof FormularioDePago>>(new Set());
-  const datosDePago: FormularioDePago = {
-    monto: pago.monto,
-    fechaPago: pago.fechaPago,
-    medio: pago.medio,
-    referencia: pago.referencia,
-  };
+  const datosDePago: FormularioDePago = pago;
   const fecha = (iso: string) => formatearFecha(`${iso}T12:00:00Z`);
   const editar = (paso: number) => (
     <AccesoBoton

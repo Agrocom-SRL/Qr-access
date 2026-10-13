@@ -18,6 +18,7 @@ export const SUPER_ADMIN = {
   permisos: [
     'seguridad.equipo.ver',
     'seguridad.equipo.crear',
+    'seguridad.equipo.editar',
     'seguridad.equipo.desactivar',
     'suscripciones.plan.ver',
     'suscripciones.plan.crear',
@@ -204,6 +205,9 @@ export const SUSCRIPCION = {
       fechaPago: '2025-10-30',
       medio: 'transferencia' as const,
       referencia: 'TRF-884120',
+      banco: 'Banco Unión',
+      cuentaDestino: '10000123456',
+      comprobanteId: '77',
       periodoDesde: new Date('2025-11-05T12:00:00Z'),
       periodoHasta: new Date('2026-11-05T12:00:00Z'),
       registro: { id: '1', nombre: 'Lucía Paz' },
@@ -269,6 +273,30 @@ export const RESUMEN = {
       estado: 'vencida' as const,
     },
   ],
+  dispositivos: {
+    enLinea: 1,
+    sinConexion: 1,
+    lista: [
+      {
+        id: '2',
+        nombre: 'Controlador portón',
+        puerta: 'Portón norte',
+        cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+        firmware: '1.0.0',
+        enLinea: false,
+        ultimoLatidoEn: new Date('2026-10-12T10:00:00Z'),
+      },
+      {
+        id: '1',
+        nombre: 'Controlador principal',
+        puerta: 'Puerta principal',
+        cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+        firmware: '1.0.0',
+        enLinea: true,
+        ultimoLatidoEn: new Date('2026-10-12T14:41:00Z'),
+      },
+    ],
+  },
   ultimasAcciones: EVENTOS,
 };
 
@@ -346,6 +374,7 @@ export function crearServiciosDePrueba(
         debeCambiarContrasena: false,
         permisos: [...SUPER_ADMIN.permisos],
       }),
+    cambiarNombre: () => Promise.resolve(),
     cambiarContrasena: () => Promise.resolve(),
     ...parcial.seguridad,
   };
@@ -369,6 +398,8 @@ export function crearServiciosDePrueba(
         ultimoIngresoEn: null,
       }),
     desactivar: () => Promise.resolve(),
+    reactivar: () => Promise.resolve(),
+    renombrar: () => Promise.resolve(),
     ...parcial.equipo,
   };
   const planes: PlanesRepositorio = {
@@ -441,6 +472,7 @@ export function crearServiciosDePrueba(
         plan: { id: '2', nombre: '200 usuarios', cupoUsuarios: 200 },
         diferenciaPrecio: 9600,
       }),
+    verComprobante: () => Promise.resolve(new Blob(['x'], { type: 'image/png' })),
     suspender: () => Promise.resolve(),
     reactivar: () => Promise.resolve(),
     ...parcial.suscripciones,

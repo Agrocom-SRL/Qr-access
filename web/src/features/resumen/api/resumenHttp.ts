@@ -28,6 +28,19 @@ interface ResumenDto {
     monto: number;
     estado: EstadoDto;
   }[];
+  dispositivos: {
+    en_linea: number;
+    sin_conexion: number;
+    lista: {
+      id: string;
+      nombre: string;
+      puerta: string;
+      cuenta: { id: string; codigo: string; nombre: string };
+      firmware: string | null;
+      en_linea: boolean;
+      ultimo_latido_at: string | null;
+    }[];
+  };
   ultimas_acciones: EventoDto[];
 }
 
@@ -56,6 +69,19 @@ export function crearResumenHttp(cliente: ClienteHttp): { obtener: () => Promise
           monto: r.monto,
           estado: ESTADO_DESDE_DTO[r.estado],
         })),
+        dispositivos: {
+          enLinea: dto.dispositivos.en_linea,
+          sinConexion: dto.dispositivos.sin_conexion,
+          lista: dto.dispositivos.lista.map((d) => ({
+            id: d.id,
+            nombre: d.nombre,
+            puerta: d.puerta,
+            cuenta: d.cuenta,
+            firmware: d.firmware,
+            enLinea: d.en_linea,
+            ultimoLatidoEn: d.ultimo_latido_at === null ? null : new Date(d.ultimo_latido_at),
+          })),
+        },
         ultimasAcciones: dto.ultimas_acciones.map((e) => ({
           id: e.id,
           ocurridoEn: new Date(e.ocurrido_at),

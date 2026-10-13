@@ -49,3 +49,19 @@ export function useReactivar(cuentaId: string) {
 export function useInvalidarSuscripcion(cuentaId: string) {
   return useInvalidarTrasCambio(cuentaId);
 }
+
+/** Baja un comprobante y lo abre en otra pestaña (la API lo entrega solo con la sesión del panel). */
+export function useAbrirComprobante() {
+  const repositorio = useSuscripcionesRepositorio();
+  return useMutation({
+    mutationFn: (comprobanteId: string) => repositorio.verComprobante(comprobanteId),
+    onSuccess: (archivo) => {
+      const url = URL.createObjectURL(archivo);
+      globalThis.open(url, '_blank', 'noopener');
+      // La pestaña nueva ya cargó el contenido: el enlace temporal se libera pasado un rato.
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 60_000);
+    },
+  });
+}

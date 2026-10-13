@@ -189,6 +189,27 @@ describe('plataforma: perfil y contraseña', () => {
     });
   });
 
+  it('cambia su propio nombre y el perfil lo refleja', async () => {
+    const sesion = await iniciarSesionDePlataforma(prueba.app, 'lucia.paz', lucia.contrasena);
+    const headers = conUsuario(sesion);
+    const respuesta = await prueba.app.inject({
+      method: 'PATCH',
+      url: `${BASE}/perfil`,
+      headers,
+      payload: { nombre: '  Lucía Paz Rojas ' },
+    });
+    expect(respuesta.statusCode, respuesta.body).toBe(204);
+    const perfil = await prueba.app.inject({ method: 'GET', url: `${BASE}/perfil`, headers });
+    expect(perfil.json()).toMatchObject({ nombre: 'Lucía Paz Rojas' });
+    const vacio = await prueba.app.inject({
+      method: 'PATCH',
+      url: `${BASE}/perfil`,
+      headers,
+      payload: { nombre: '   ' },
+    });
+    expect(vacio.statusCode).toBe(400);
+  });
+
   it('cambia la contraseña: la vieja deja de servir y la nueva entra', async () => {
     const sesion = await iniciarSesionDePlataforma(prueba.app, 'lucia.paz', lucia.contrasena);
     const cambio = await prueba.app.inject({
@@ -422,6 +443,41 @@ describe('plataforma: equipo AGROCOM', () => {
       payload: { activo: false },
     });
     expect(reintento.statusCode).toBe(422);
+  });
+
+  it('renombra a otro miembro y lo reactiva después de desactivarlo', async () => {
+    const marco = await crearSuperAdmin(prueba.pool, 'marco.suarez');
+    const headers = await como('lucia.paz', lucia.contrasena);
+    const editar = (payload: Record<string, unknown>) =>
+      prueba.app.inject({
+        method: 'PATCH',
+        url: `${BASE}/equipo/${marco.id}`,
+        headers,
+        payload,
+      });
+    expect((await editar({ nombre: 'Marco Suárez' })).statusCode).toBe(204);
+    expect((await editar({ activo: false })).statusCode).toBe(204);
+    expect((await editar({ activo: true })).statusCode).toBe(204);
+    const equipo = (
+      await prueba.app.inject({ method: 'GET', url: `${BASE}/equipo`, headers })
+    ).json<{
+      datos: { id: string; nombre: string; activo: boolean }[];
+    }>().datos;
+    expect(equipo.find((m) => m.id === marco.id)).toMatchObject({
+      nombre: 'Marco Suárez',
+      activo: true,
+    });
+    // Reactivado, vuelve a entrar con su contraseña.
+    expect(
+      (
+        await prueba.app.inject({
+          method: 'POST',
+          url: `${BASE}/sesiones`,
+          payload: { usuario: 'marco.suarez', contrasena: marco.contrasena },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect((await editar({})).statusCode).toBe(400);
   });
 
   it('un usuario inexistente da 404', async () => {

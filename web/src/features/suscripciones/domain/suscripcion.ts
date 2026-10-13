@@ -25,6 +25,11 @@ export interface PagoDeCuenta {
   fechaPago: string;
   medio: MedioDePago;
   referencia: string;
+  /** Banco y cuenta de AGROCOM donde llegó el dinero; `null` en un pago en efectivo. */
+  banco: string | null;
+  cuentaDestino: string | null;
+  /** El archivo del comprobante, que se baja con `verComprobante`. */
+  comprobanteId: string | null;
   periodoDesde: Date;
   periodoHasta: Date;
   registro: { id: string; nombre: string } | null;

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm, type FieldErrors, type Resolver } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha, formatearHora } from '../../../../l10n/formatos';
@@ -8,13 +9,19 @@ import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Avatar } from '../../../../shared/ui/atoms/Avatar';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
+import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { CampoContrasena } from '../../../../shared/ui/molecules/CampoContrasena';
 import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagina';
 import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import { useTema, type PreferenciaTema } from '../../../../theme/ProveedorTema';
 import { useSesion } from '../../application/SesionProvider';
-import { useCambiarContrasena, useCerrarSesion, usePerfil } from '../../application/useSeguridad';
+import {
+  useCambiarContrasena,
+  useCambiarNombre,
+  useCerrarSesion,
+  usePerfil,
+} from '../../application/useSeguridad';
 import {
   LARGO_MINIMO_DE_CONTRASENA,
   validarCambioDeContrasena,
@@ -44,6 +51,9 @@ export function PerfilPage() {
   const perfil = usePerfil();
   const cambiar = useCambiarContrasena();
   const cerrar = useCerrarSesion();
+  const cambiarNombre = useCambiarNombre();
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [nombre, setNombre] = useState('');
   const { preferencia, elegir } = useTema();
   const { register, handleSubmit, reset, formState } = useForm<CambioDeContrasena>({
     defaultValues: { actual: '', nueva: '', repetida: '' },
@@ -78,7 +88,7 @@ export function PerfilPage() {
       <section className={styles.tarjeta}>
         <div className={styles.persona}>
           <Avatar grande nombre={datos?.nombre ?? sesion?.usuario.nombre ?? ''} />
-          <div>
+          <div className={styles.identidad}>
             <h2 className={styles.nombre}>{datos?.nombre ?? sesion?.usuario.nombre}</h2>
             {datos ? (
               <p className={styles.rol}>
@@ -86,7 +96,62 @@ export function PerfilPage() {
               </p>
             ) : null}
           </div>
+          {editandoNombre ? null : (
+            <AccesoBoton
+              variante="advertencia"
+              icono="edit"
+              onClick={() => {
+                setNombre(datos?.nombre ?? sesion?.usuario.nombre ?? '');
+                setEditandoNombre(true);
+              }}
+            >
+              {t('perfil:editarNombre')}
+            </AccesoBoton>
+          )}
         </div>
+        {editandoNombre ? (
+          <form
+            className={styles.nombreEdicion}
+            onSubmit={(e) => {
+              e.preventDefault();
+              cambiarNombre.mutate(nombre, {
+                onSuccess: () => {
+                  setEditandoNombre(false);
+                },
+              });
+            }}
+          >
+            <AccesoCampoTexto
+              etiqueta={t('perfil:nombre')}
+              value={nombre}
+              autoComplete="name"
+              error={
+                cambiarNombre.error ? traducirError(t, codigoDe(cambiarNombre.error)) : undefined
+              }
+              onChange={(e) => {
+                setNombre(e.target.value);
+              }}
+            />
+            <div className={styles.accion}>
+              <AccesoBoton
+                variante="texto"
+                onClick={() => {
+                  setEditandoNombre(false);
+                  cambiarNombre.reset();
+                }}
+              >
+                {t('comun:cancelar')}
+              </AccesoBoton>
+              <AccesoBoton
+                type="submit"
+                cargando={cambiarNombre.isPending}
+                disabled={nombre.trim() === ''}
+              >
+                {cambiarNombre.isPending ? t('perfil:guardando') : t('perfil:guardarNombre')}
+              </AccesoBoton>
+            </div>
+          </form>
+        ) : null}
         <dl className={styles.datos}>
           <FilaClaveValor clave={t('perfil:usuario')}>
             <TextoMono>{datos?.usuario ?? sesion?.usuario.usuario}</TextoMono>
@@ -99,6 +164,16 @@ export function PerfilPage() {
             ) : null}
           </FilaClaveValor>
         </dl>
+      </section>
+
+      <section className={cx(styles.tarjeta, styles.tema)}>
+        <h2 className={styles.seccion}>{t('perfil:tema')}</h2>
+        <FiltroSegmentado
+          etiqueta={t('perfil:tema')}
+          valor={preferencia}
+          onCambio={elegir}
+          opciones={TEMAS.map((tema) => ({ valor: tema, etiqueta: t(`perfil:temas.${tema}`) }))}
+        />
       </section>
 
       <form className={styles.tarjeta} onSubmit={(e) => void enviar(e)} noValidate>
@@ -134,16 +209,6 @@ export function PerfilPage() {
           {cambiar.isSuccess ? <span role="status">{t('perfil:actualizada')}</span> : null}
         </div>
       </form>
-
-      <section className={cx(styles.tarjeta, styles.tema)}>
-        <h2 className={styles.seccion}>{t('perfil:tema')}</h2>
-        <FiltroSegmentado
-          etiqueta={t('perfil:tema')}
-          valor={preferencia}
-          onCambio={elegir}
-          opciones={TEMAS.map((tema) => ({ valor: tema, etiqueta: t(`perfil:temas.${tema}`) }))}
-        />
-      </section>
 
       <div>
         <AccesoBoton
