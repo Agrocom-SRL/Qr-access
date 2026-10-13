@@ -1,0 +1,23 @@
+{
+  "titulo": "Change plan",
+  "actual": "Current",
+  "nuevo": "New",
+  "diferencia": "Annual price difference",
+  "efecto": "It will be able to create up to {{count}} users once you confirm.",
+  "elegirOtro": "Choose another plan",
+  "confirmar": "Switch to {{count}} users",
+  "soloMejora": "You can only move up a plan. To move down, the account changes at renewal: no money is refunded.",
+  "cobro": "The difference is charged on confirmation: record the payment next.",
+  "precioAnio": "{{precio}} / year",
+  "usuarios": "{{count}} users",
+  "sinMejora": "This account already has the highest plan.",
+  "elegir": "New plan",
+  "qr": "QR",
+  "qrIlimitados": "Unlimited, no change",
+  "vencimiento": "Expiration",
+  "sinCambio": "{{fecha}}, no change",
+  "cambiando": "Changing",
+  "cerrar": "Close",
+  "subtitulo_one": "{{cuenta}} · {{codigo}} · {{count}} active user",
+  "subtitulo_other": "{{cuenta}} · {{codigo}} · {{count}} active users"
+}

@@ -1,0 +1,75 @@
+{
+  "titulo": "Cobrança",
+  "subtitulo": "Assinaturas anuais por vencimento",
+  "exportar": "Exportar para Excel",
+  "porCobrar30": "A cobrar em 30 dias",
+  "porCobrar90": "A cobrar em 90 dias",
+  "vencidoSinPagar": "Vencido sem pagar",
+  "cobradoAnio": "Cobrado em {{anio}}",
+  "filtro": {
+    "d30": "30 dias",
+    "d60": "60 dias",
+    "d90": "90 dias",
+    "vencidas": "Vencidas",
+    "pendientes": "A ativar"
+  },
+  "estadoPago": {
+    "pendiente": "Pendente",
+    "sinPagar": "Sem pagar",
+    "pagado": "Pago",
+    "porActivar": "Primeiro pagamento"
+  },
+  "vacio": {
+    "titulo": "Nada a cobrar em 30 dias",
+    "texto": "Nenhuma assinatura vence neste período."
+  },
+  "buscar": "Busque uma conta",
+  "tabla": "Contas a cobrar",
+  "errorCarga": "Não conseguimos carregar a cobrança",
+  "cuentas_one": "{{count}} conta",
+  "cuentas_other": "{{count}} contas",
+  "vencidasRechazadas_one": "{{count}} conta com acessos recusados",
+  "vencidasRechazadas_other": "{{count}} contas com acessos recusados",
+  "pagosRegistrados_one": "{{count}} pagamento registrado",
+  "pagosRegistrados_other": "{{count}} pagamentos registrados",
+  "enDias_one": "em {{count}} dia",
+  "enDias_other": "em {{count}} dias",
+  "haceDias_one": "há {{count}} dia",
+  "haceDias_other": "há {{count}} dias",
+  "hoy": "hoje",
+  "columna": {
+    "cuenta": "Conta",
+    "plan": "Plano",
+    "monto": "Valor",
+    "vence": "Vence",
+    "pago": "Pagamento",
+    "estado": "Status",
+    "accion": "Ação"
+  },
+  "registrarPago": "Registrar pagamento",
+  "registrarPagoDe": "Registrar pagamento de {{cuenta}}",
+  "filtroEtiqueta": "Janela de vencimento",
+  "vacioVencidas": {
+    "titulo": "Nenhuma assinatura vencida",
+    "texto": "Todas as contas estão em dia."
+  },
+  "excel": {
+    "hoja": "Cobrança",
+    "cuenta": "Conta",
+    "codigo": "Código",
+    "plan": "Plano",
+    "monto": "Valor (Bs)",
+    "vence": "Vence",
+    "pago": "Pagamento",
+    "archivo": "cobranca"
+  },
+  "porActivar": "A ativar · contas novas",
+  "cuentasNuevas_one": "{{count}} conta nova sem pagar",
+  "cuentasNuevas_other": "{{count}} contas novas sem pagar",
+  "sinVigencia": "Ainda não começou",
+  "registrarPrimerPago": "Registrar primeiro pagamento",
+  "vacioPendientes": {
+    "titulo": "Nenhuma conta a ativar",
+    "texto": "Todas as contas novas já pagaram o primeiro ano."
+  }
+}

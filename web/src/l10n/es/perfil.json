@@ -11,6 +11,12 @@
     "oscuro": "Oscuro",
     "sistema": "Según el sistema"
   },
+  "idioma": "Idioma",
+  "idiomas": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
   "cerrarSesion": "Cerrar sesión",
   "temporal": "Tu contraseña es temporal. Cámbiala para seguir usando el panel.",
   "rol": "Super admin · desde {{fecha}}",

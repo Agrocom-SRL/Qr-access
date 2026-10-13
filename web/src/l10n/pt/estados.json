@@ -1,0 +1,12 @@
+{
+  "titulo": "Estados do painel",
+  "subtitulo": "Assim aparecem o carregamento, o vazio, o erro e a falta de conexão em cada lista.",
+  "cargando": "Carregando",
+  "vacio": "Vazio",
+  "error": "Erro de carregamento",
+  "sinConexion": "Sem conexão com dados em cache",
+  "pantallas": "Telas completas",
+  "ejemploVacioTitulo": "Ainda não há contas",
+  "ejemploVacioTexto": "Quando você criar a primeira, ela aparecerá aqui.",
+  "ejemploErrorTitulo": "Não conseguimos carregar os dados"
+}
