@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useForm, type FieldErrors, type Resolver } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { IDIOMAS, cambiarIdioma, type Idioma } from '../../../../l10n';
 import { formatearFecha, formatearHora } from '../../../../l10n/formatos';
 import { traducirError } from '../../../../l10n/traducirError';
 import { cx } from '../../../../shared/lib/cx';
@@ -46,7 +47,7 @@ const resolver: Resolver<CambioDeContrasena> = (valores) => {
 
 /** A12: datos del perfil, cambio de contraseña, tema y cierre de sesión. */
 export function PerfilPage() {
-  const { t } = useTranslation(['perfil', 'comun']);
+  const { t, i18n } = useTranslation(['perfil', 'comun']);
   const { sesion } = useSesion();
   const perfil = usePerfil();
   const cambiar = useCambiarContrasena();
@@ -173,6 +174,21 @@ export function PerfilPage() {
           valor={preferencia}
           onCambio={elegir}
           opciones={TEMAS.map((tema) => ({ valor: tema, etiqueta: t(`perfil:temas.${tema}`) }))}
+        />
+      </section>
+
+      <section className={cx(styles.tarjeta, styles.tema)}>
+        <h2 className={styles.seccion}>{t('perfil:idioma')}</h2>
+        <FiltroSegmentado
+          etiqueta={t('perfil:idioma')}
+          valor={IDIOMAS.find((idioma) => idioma === i18n.language) ?? 'es'}
+          onCambio={(idioma: Idioma) => {
+            void cambiarIdioma(idioma);
+          }}
+          opciones={IDIOMAS.map((idioma) => ({
+            valor: idioma,
+            etiqueta: t(`perfil:idiomas.${idioma}`),
+          }))}
         />
       </section>
 

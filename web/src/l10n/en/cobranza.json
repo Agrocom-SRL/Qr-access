@@ -1,0 +1,75 @@
+{
+  "titulo": "Collections",
+  "subtitulo": "Annual subscriptions by expiration",
+  "exportar": "Export to Excel",
+  "porCobrar30": "To collect in 30 days",
+  "porCobrar90": "To collect in 90 days",
+  "vencidoSinPagar": "Overdue and unpaid",
+  "cobradoAnio": "Collected in {{anio}}",
+  "filtro": {
+    "d30": "30 days",
+    "d60": "60 days",
+    "d90": "90 days",
+    "vencidas": "Expired",
+    "pendientes": "To activate"
+  },
+  "estadoPago": {
+    "pendiente": "Pending",
+    "sinPagar": "Unpaid",
+    "pagado": "Paid",
+    "porActivar": "First payment"
+  },
+  "vacio": {
+    "titulo": "Nothing to collect in 30 days",
+    "texto": "No subscription expires in this period."
+  },
+  "buscar": "Search for an account",
+  "tabla": "Accounts to collect",
+  "errorCarga": "We couldn't load collections",
+  "cuentas_one": "{{count}} account",
+  "cuentas_other": "{{count}} accounts",
+  "vencidasRechazadas_one": "{{count}} account with rejected access",
+  "vencidasRechazadas_other": "{{count}} accounts with rejected access",
+  "pagosRegistrados_one": "{{count}} payment recorded",
+  "pagosRegistrados_other": "{{count}} payments recorded",
+  "enDias_one": "in {{count}} day",
+  "enDias_other": "in {{count}} days",
+  "haceDias_one": "{{count}} day ago",
+  "haceDias_other": "{{count}} days ago",
+  "hoy": "today",
+  "columna": {
+    "cuenta": "Account",
+    "plan": "Plan",
+    "monto": "Amount",
+    "vence": "Expires",
+    "pago": "Payment",
+    "estado": "Status",
+    "accion": "Action"
+  },
+  "registrarPago": "Record payment",
+  "registrarPagoDe": "Record payment for {{cuenta}}",
+  "filtroEtiqueta": "Expiration window",
+  "vacioVencidas": {
+    "titulo": "No expired subscriptions",
+    "texto": "All accounts are up to date."
+  },
+  "excel": {
+    "hoja": "Collections",
+    "cuenta": "Account",
+    "codigo": "Code",
+    "plan": "Plan",
+    "monto": "Amount (Bs)",
+    "vence": "Expires",
+    "pago": "Payment",
+    "archivo": "collections"
+  },
+  "porActivar": "To activate · new accounts",
+  "cuentasNuevas_one": "{{count}} new unpaid account",
+  "cuentasNuevas_other": "{{count}} new unpaid accounts",
+  "sinVigencia": "Not started yet",
+  "registrarPrimerPago": "Record first payment",
+  "vacioPendientes": {
+    "titulo": "No accounts to activate",
+    "texto": "All new accounts have already paid their first year."
+  }
+}

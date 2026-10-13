@@ -1,0 +1,43 @@
+{
+  "titulo": "Accounts",
+  "subtitulo": "{{count}} client companies",
+  "crear": "Create account",
+  "buscar": "Search by name or code",
+  "filtro": {
+    "todas": "All",
+    "activa": "Active",
+    "porVencer": "Expiring",
+    "vencida": "Expired",
+    "suspendida": "Suspended",
+    "pendientePago": "To activate"
+  },
+  "columna": {
+    "cuenta": "Account",
+    "codigo": "Code",
+    "plan": "Plan",
+    "usuarios": "Users",
+    "vence": "Expires",
+    "estado": "Status",
+    "acciones": "Actions"
+  },
+  "vacio": {
+    "titulo": "No accounts yet",
+    "texto": "Create the first client company to start selling."
+  },
+  "error": "We couldn't load the accounts",
+  "subtitulo_one": "{{count}} client company",
+  "subtitulo_other": "{{count}} client companies",
+  "tabla": "Accounts",
+  "errorCarga": "We couldn't load the accounts",
+  "sinResultados": {
+    "titulo": "No results",
+    "texto": "Try another name or code, or clear the filter."
+  },
+  "ver": "View {{cuenta}}",
+  "filtroEtiqueta": "Filter by status",
+  "usuariosDe": "{{count}} users",
+  "sinPlan": "No plan",
+  "verPuertas": "Sites and doors of {{cuenta}}",
+  "editar": "Edit {{cuenta}}",
+  "eliminar": "Delete {{cuenta}}"
+}

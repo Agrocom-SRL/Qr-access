@@ -1,12 +1,19 @@
+import i18next from 'i18next';
+
 /** Formatos con `Intl` según el idioma activo (README del handoff, "Formato"). */
-const LOCALES: Readonly<Record<string, string>> = { es: 'es-BO', en: 'en-US' };
+const LOCALES: Readonly<Record<string, string>> = { es: 'es-BO', en: 'en-US', pt: 'pt-BR' };
+
+/** El idioma que está viendo la persona; antes de iniciar i18next, el español. */
+function idiomaActivo(): string {
+  return i18next.language || 'es';
+}
 
 function localeDe(idioma: string): string {
   return LOCALES[idioma] ?? LOCALES.es ?? 'es-BO';
 }
 
 /** `Bs 12.000`: moneda boliviana, sin decimales y punto como separador de miles. */
-export function formatearMonto(monto: number, idioma = 'es'): string {
+export function formatearMonto(monto: number, idioma = idiomaActivo()): string {
   const numero = new Intl.NumberFormat(localeDe(idioma), {
     maximumFractionDigits: 0,
     useGrouping: 'always',
@@ -17,7 +24,7 @@ export function formatearMonto(monto: number, idioma = 'es'): string {
 }
 
 /** Cifra con punto de miles también de 4 dígitos (`1.604`): `es` no agrupa por defecto bajo 5 dígitos. */
-export function formatearNumero(valor: number, idioma = 'es'): string {
+export function formatearNumero(valor: number, idioma = idiomaActivo()): string {
   return new Intl.NumberFormat(localeDe(idioma), {
     maximumFractionDigits: 0,
     useGrouping: 'always',
@@ -29,7 +36,7 @@ export function formatearNumero(valor: number, idioma = 'es'): string {
 /** `dd/mm/aaaa`, siempre en la zona horaria dada (por defecto La Paz; invariante 7). */
 export function formatearFecha(
   fecha: Date | string,
-  idioma = 'es',
+  idioma = idiomaActivo(),
   zona = 'America/La_Paz',
 ): string {
   return new Intl.DateTimeFormat(localeDe(idioma), {
@@ -43,7 +50,7 @@ export function formatearFecha(
 /** `HH:mm` de 24 horas. */
 export function formatearHora(
   fecha: Date | string,
-  idioma = 'es',
+  idioma = idiomaActivo(),
   zona = 'America/La_Paz',
 ): string {
   return new Intl.DateTimeFormat(localeDe(idioma), {
@@ -80,7 +87,7 @@ export function relacionDeDia(
 export function formatearTranscurrido(
   fecha: Date | string,
   ahora: Date = new Date(),
-  idioma = 'es',
+  idioma = idiomaActivo(),
 ): string {
   const segundos = Math.max(0, Math.round((ahora.getTime() - new Date(fecha).getTime()) / 1000));
   const relativo = new Intl.RelativeTimeFormat(localeDe(idioma), {
