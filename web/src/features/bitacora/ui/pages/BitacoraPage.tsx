@@ -5,7 +5,7 @@ import { celdaCsv } from '../../../../shared/lib/csv';
 import { descargarTexto } from '../../../../shared/lib/descargar';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
-import { AccesoSelector } from '../../../../shared/ui/molecules/AccesoSelector';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagina';
 import { useBitacora, useCuentasDeLaBitacora } from '../../application/useBitacora';
 import { ACCIONES, POR_PAGINA_DE_BITACORA, type FiltrosDeBitacora } from '../../domain/evento';
@@ -88,9 +88,9 @@ export function BitacoraPage() {
         }
       />
       <div className={styles.filtros}>
-        <AccesoSelector
+        <AccesoSelectorBuscable
           etiqueta={t('bitacora:filtros.cuenta')}
-          value={filtros.cuentaId ?? ''}
+          valor={filtros.cuentaId ?? ''}
           opciones={[
             { valor: '', etiqueta: t('bitacora:filtros.todas') },
             ...(cuentas.data ?? []).map((c) => ({
@@ -98,21 +98,20 @@ export function BitacoraPage() {
               etiqueta: `${c.codigo} · ${c.nombre}`,
             })),
           ]}
-          onChange={(e) => {
-            cambiar({ cuentaId: e.target.value === '' ? null : e.target.value });
+          onCambio={(valor) => {
+            cambiar({ cuentaId: valor === '' ? null : valor });
           }}
         />
-        <AccesoSelector
+        <AccesoSelectorBuscable
+          conBusqueda={false}
           etiqueta={t('bitacora:filtros.accion')}
-          value={filtros.accion ?? ''}
+          valor={filtros.accion ?? ''}
           opciones={[
             { valor: '', etiqueta: t('bitacora:filtros.todos') },
             ...ACCIONES.map((a) => ({ valor: a, etiqueta: t(`bitacora:acciones.${a}`) })),
           ]}
-          onChange={(e) => {
-            cambiar({
-              accion: ACCIONES.find((a) => a === e.target.value) ?? null,
-            });
+          onCambio={(valor) => {
+            cambiar({ accion: ACCIONES.find((a) => a === valor) ?? null });
           }}
         />
         <AccesoCampoTexto

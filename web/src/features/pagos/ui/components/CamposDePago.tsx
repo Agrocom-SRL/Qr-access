@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { AccesoSelector } from '../../../../shared/ui/molecules/AccesoSelector';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { CampoMonto } from '../../../../shared/ui/molecules/CampoMonto';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
@@ -95,9 +95,10 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
       {requiereRespaldo(datos.medio) ? (
         <>
           <div className={styles.fila}>
-            <AccesoSelector
+            <AccesoSelectorBuscable
+              conBusqueda={false}
               etiqueta={t('banco')}
-              value={datos.banco}
+              valor={datos.banco}
               error={mensaje('banco')}
               opciones={[
                 { valor: '', etiqueta: t('bancoElegir') },
@@ -106,8 +107,8 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
               onBlur={() => {
                 onTocar('banco');
               }}
-              onChange={(e) => {
-                onCambio({ banco: e.target.value });
+              onCambio={(banco) => {
+                onCambio({ banco });
               }}
             />
             <AccesoCampoTexto

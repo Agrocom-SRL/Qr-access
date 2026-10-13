@@ -33,3 +33,8 @@
   font-variant-numeric: tabular-nums;
   outline: none;
 }
+
+/* El foco ya lo marca la caja (borde de 2 px): sin esto el `:focus-visible` global dibuja un segundo borde cuadrado adentro. */
+.entrada:focus-visible {
+  outline: none;
+}

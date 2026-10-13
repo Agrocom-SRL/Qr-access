@@ -1,7 +1,11 @@
 import Select, { type StylesConfig } from 'react-select';
 import { useTranslation } from 'react-i18next';
 import { CampoFormulario } from './CampoFormulario';
-import type { OpcionSelector } from './AccesoSelector';
+
+export interface OpcionSelector {
+  valor: string;
+  etiqueta: string;
+}
 
 interface Props {
   etiqueta: string;
@@ -14,11 +18,14 @@ interface Props {
   error?: string;
   onBlur?: () => void;
   deshabilitado?: boolean;
+  /** `false` en listas cortas (filtros, bancos): se elige sin escribir. Por defecto, con búsqueda. */
+  conBusqueda?: boolean;
 }
 
 /**
- * Lista desplegable con búsqueda (react-select) con el aspecto de los campos del panel: sirve para
- * listas largas, como las ciudades, donde escribir las primeras letras es más rápido que recorrerlas.
+ * Lista desplegable (react-select) con el aspecto de los campos del panel. Con búsqueda sirve para
+ * listas largas, como las ciudades, donde escribir las primeras letras es más rápido que recorrerlas;
+ * sin ella (`conBusqueda={false}`) reemplaza al `<select>` nativo en las listas cortas.
  * Todos los colores y medidas salen de los tokens (variables CSS), así que sigue el tema claro u oscuro.
  */
 export function AccesoSelectorBuscable({
@@ -31,6 +38,7 @@ export function AccesoSelectorBuscable({
   error,
   onBlur,
   deshabilitado = false,
+  conBusqueda = true,
 }: Props) {
   const { t } = useTranslation('comun');
   const elegida = opciones.find((opcion) => opcion.valor === valor) ?? null;
@@ -91,6 +99,7 @@ export function AccesoSelectorBuscable({
           onBlur={onBlur}
           isDisabled={deshabilitado}
           isClearable={false}
+          isSearchable={conBusqueda}
           placeholder={placeholder ?? ''}
           getOptionValue={(opcion) => opcion.valor}
           getOptionLabel={(opcion) => opcion.etiqueta}

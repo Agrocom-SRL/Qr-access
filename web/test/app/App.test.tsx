@@ -669,7 +669,8 @@ describe('registrar pago (A07)', () => {
     // Un depósito exige banco, cuenta y el comprobante: sin ellos no se llega a confirmar.
     await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    await userEvent.selectOptions(screen.getByLabelText('Banco donde se recibió'), 'Banco Unión');
+    await userEvent.click(screen.getByLabelText('Banco donde se recibió'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Banco Unión' }));
     await userEvent.type(screen.getByLabelText('Cuenta de destino'), '10000123456');
     const comprobante = new File(['x'], 'boleta.png', { type: 'image/png' });
     await userEvent.upload(screen.getByLabelText('Comprobante'), comprobante);
@@ -789,11 +790,13 @@ describe('bitácora (A10)', () => {
       Promise.resolve({ elementos: [], pagina: 1, porPagina: 10, total: 0 }),
     );
     await abrirBitacora(crearServiciosDePrueba({ bitacora: { listar } }));
-    await userEvent.selectOptions(await screen.findByLabelText('Acción'), 'creado');
+    await userEvent.click(await screen.findByLabelText('Acción'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Creó' }));
     await waitFor(() => {
       expect(listar).toHaveBeenLastCalledWith(expect.objectContaining({ accion: 'creado' }), 10);
     });
-    await userEvent.selectOptions(screen.getByLabelText('Cuenta'), '1');
+    await userEvent.click(screen.getByLabelText('Cuenta'));
+    await userEvent.click(await screen.findByRole('option', { name: /AGR/ }));
     await waitFor(() => {
       expect(listar).toHaveBeenLastCalledWith(
         expect.objectContaining({ cuentaId: '1', accion: 'creado' }),
