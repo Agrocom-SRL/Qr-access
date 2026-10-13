@@ -38,7 +38,11 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('suscripciones.plan.ver', 'plataforma'),
   ('suscripciones.plan.crear', 'plataforma'),
   ('suscripciones.plan.editar', 'plataforma'),
-  ('suscripciones.plan.eliminar', 'plataforma')
+  ('suscripciones.plan.eliminar', 'plataforma'),
+  ('dispositivos.placa.ver', 'plataforma'),
+  ('dispositivos.placa.registrar', 'plataforma'),
+  ('dispositivos.placa.vincular', 'plataforma'),
+  ('dispositivos.placa.liberar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
 
 -- Rol de plataforma (tenant_id NULL). Sus permisos de ámbito plataforma se asignan al final de este archivo.
