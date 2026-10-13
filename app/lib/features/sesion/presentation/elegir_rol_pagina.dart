@@ -36,6 +36,9 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     final errorApi = estado.errorApi;
+    final puedeCancelar = ref
+        .read(sesionControladorProvider.notifier)
+        .puedeCancelarCambioDeRol;
     final elegido =
         _elegido ?? sesion.rolPreferidoId ?? sesion.roles.firstOrNull?.id;
 
@@ -47,11 +50,19 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
       expandido: true,
       onPressed: elegido == null ? null : () => controlador.elegir(elegido),
     );
-    final cerrar = AccesoBoton(
-      texto: l10n.sesionCerrar,
-      variante: VarianteBoton.texto,
-      onPressed: controlador.cerrar,
-    );
+    final cerrar = puedeCancelar
+        ? AccesoBoton(
+            texto: l10n.comunCancelar,
+            variante: VarianteBoton.texto,
+            onPressed: ref
+                .read(sesionControladorProvider.notifier)
+                .cancelarCambioDeRol,
+          )
+        : AccesoBoton(
+            texto: l10n.sesionCerrar,
+            variante: VarianteBoton.texto,
+            onPressed: controlador.cerrar,
+          );
     final alineacion = expandida
         ? CrossAxisAlignment.center
         : CrossAxisAlignment.start;
@@ -68,7 +79,7 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
         ),
     ];
 
-    return PlantillaAuth(
+    final pagina = PlantillaAuth(
       // En expandido (E03) no hay panel de marca: tarjetas en fila, centradas.
       conPanelDeMarca: false,
       cabeceraConFoto: true,
@@ -162,6 +173,17 @@ class _ElegirRolPaginaEstado extends ConsumerState<ElegirRolPagina> {
           ],
         ],
       ),
+    );
+    // Atrás en "Cambiar rol" deja todo como estaba (mismo rol, misma sesión) y
+    // vuelve al inicio; al elegir rol por primera vez no hay a dónde volver.
+    return PopScope(
+      canPop: !puedeCancelar,
+      onPopInvokedWithResult: (volvio, _) {
+        if (!volvio && puedeCancelar) {
+          ref.read(sesionControladorProvider.notifier).cancelarCambioDeRol();
+        }
+      },
+      child: pagina,
     );
   }
 }

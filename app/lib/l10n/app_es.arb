@@ -604,7 +604,7 @@
   "@qrRapidoAviso": {
     "description": "Aviso bajo el QR rápido"
   },
-  "qrRapidoRespaldoAviso": "Sin conexión: este es tu último QR guardado. Si sigue vigente, el lector lo valida igual.",
+  "qrRapidoRespaldoAviso": "Sin conexión. Si tu QR sigue vigente, el lector lo valida igual.",
   "@qrRapidoRespaldoAviso": {
     "description": "Aviso bajo el QR rápido cuando se muestra el respaldo guardado por falta de internet"
   },
