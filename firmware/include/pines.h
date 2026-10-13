@@ -10,8 +10,8 @@
 #define ETH_PIN_MDC 23
 #define ETH_PIN_MDIO 18
 
-#define PIN_LECTOR_RX 5   // TX del lector QR -> pin "RXD" del conector de la placa
-#define PIN_LECTOR_TX 17  // pin "TXD" -> RX del lector (configuración)
+#define PIN_LECTOR_RX 5   // salida RO del módulo TTL-RS485 -> pin "RXD" del conector de la placa
+#define PIN_LECTOR_TX 17  // pin "TXD" -> entrada DI del módulo (sin uso mientras DE esté a GND)
 #define PIN_CERRADURA 4   // relé o MOSFET de la cerradura (pulso)
 #define PIN_SENSOR_PUERTA 14
 #define PIN_PULSADOR_SALIDA 12  // con INPUT_PULLUP; al arrancar GPIO12 debe estar bajo

@@ -1,4 +1,5 @@
-// Módulo lector QR por UART (GM65 / GM861S): entrega líneas completas.
+// Lector por UART (hoy, un lector RS485 detrás del módulo TTL-RS485; antes se pensó en un
+// GM65 / GM861S): entrega líneas completas. El módulo del lector no cambia esta interfaz.
 #pragma once
 
 #include <Arduino.h>
