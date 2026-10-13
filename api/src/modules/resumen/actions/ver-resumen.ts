@@ -1,5 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { ultimosEventos, type EventoDeBitacora } from '../../bitacora/contracts.js';
+import { crearServicioDeDispositivosDePlataforma } from '../../dispositivos/contracts.js';
 import {
   crearServicioDeConteoDeUsuarios,
   crearServicioDeIdentidades,
@@ -19,6 +20,16 @@ export interface RenovacionProxima {
   estado: EstadoDeSuscripcion;
 }
 
+export interface DispositivoDelTablero {
+  id: string;
+  nombre: string;
+  puerta: string;
+  cuenta: { id: string; codigo: string; nombre: string };
+  firmware: string | null;
+  en_linea: boolean;
+  ultimo_latido_at: string | null;
+}
+
 export interface Resumen {
   actualizado_at: string;
   cuentas: { activas: number; total: number; por_vencer: number };
@@ -26,6 +37,8 @@ export interface Resumen {
   por_vencer_30: { cuentas: number; monto: number };
   ingresos_esperados: { monto: number };
   renovaciones: RenovacionProxima[];
+  /** Los que no reportan van primero: son los que hay que revisar antes de una queja. */
+  dispositivos: { en_linea: number; sin_conexion: number; lista: DispositivoDelTablero[] };
   ultimas_acciones: EventoDeBitacora[];
 }
 
@@ -38,10 +51,11 @@ const RENOVACIONES_A_MOSTRAR = 5;
  */
 export async function ejecutar(pool: Pool, ahora: Date = new Date()): Promise<Resumen> {
   const cuentas = await crearServicioDeIdentidades(pool).todasLasCuentas();
-  const [suscripciones, usuarios, ultimas] = await Promise.all([
+  const [suscripciones, usuarios, ultimas, dispositivos] = await Promise.all([
     crearServicioDeSuscripcionesDePlataforma(pool).deTodasLasCuentas(ahora),
     crearServicioDeConteoDeUsuarios(pool).activosPorCuenta(cuentas.map((c) => c.id)),
     ultimosEventos(pool, 5),
+    crearServicioDeDispositivosDePlataforma(pool).deTodasLasCuentas(ahora),
   ]);
 
   const filas = cuentas.flatMap((cuenta) => {
@@ -98,6 +112,21 @@ export async function ejecutar(pool: Pool, ahora: Date = new Date()): Promise<Re
       ...proximas.slice(0, RENOVACIONES_A_MOSTRAR - (ultimaVencida === undefined ? 0 : 1)),
       ...(ultimaVencida === undefined ? [] : [ultimaVencida]),
     ].map(aRenovacion),
+    dispositivos: {
+      en_linea: dispositivos.filter((d) => d.enLinea).length,
+      sin_conexion: dispositivos.filter((d) => !d.enLinea).length,
+      lista: [...dispositivos]
+        .sort((a, b) => Number(a.enLinea) - Number(b.enLinea))
+        .map((d) => ({
+          id: d.id,
+          nombre: d.nombre,
+          puerta: d.puertaNombre,
+          cuenta: d.cuenta,
+          firmware: d.firmware,
+          en_linea: d.enLinea,
+          ultimo_latido_at: d.ultimoLatidoAt?.toISOString() ?? null,
+        })),
+    },
     ultimas_acciones: ultimas,
   };
 }

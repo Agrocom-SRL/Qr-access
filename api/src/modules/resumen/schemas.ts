@@ -22,6 +22,21 @@ export const respuestaDeResumen = z.object({
       estado: z.enum(['activa', 'por_vencer', 'vencida', 'suspendida', 'pendiente_pago']),
     }),
   ),
+  dispositivos: z.object({
+    en_linea: z.number().int(),
+    sin_conexion: z.number().int(),
+    lista: z.array(
+      z.object({
+        id: z.string(),
+        nombre: z.string(),
+        puerta: z.string(),
+        cuenta: esquemaCuenta,
+        firmware: z.string().nullable(),
+        en_linea: z.boolean(),
+        ultimo_latido_at: z.string().nullable(),
+      }),
+    ),
+  }),
   ultimas_acciones: z.array(esquemaEventoDeBitacora),
 });
 

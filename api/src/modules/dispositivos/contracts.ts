@@ -1,6 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { estaEnLinea } from './domain/en-linea.js';
-import { RepositorioDeDispositivos } from './repository.js';
+import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from './repository.js';
 
 export { crearAutenticadorDeDispositivo } from './autenticador.js';
 
@@ -41,6 +41,42 @@ export function crearServicioDeDispositivos(pool: Pool): ServicioDeDispositivos 
           },
         ]),
       );
+    },
+  };
+}
+
+/** Un dispositivo en servicio visto desde la plataforma, con su cuenta y su puerta. */
+export interface DispositivoDeCuenta {
+  readonly id: string;
+  readonly nombre: string;
+  readonly puertaNombre: string;
+  readonly cuenta: { readonly id: string; readonly codigo: string; readonly nombre: string };
+  readonly firmware: string | null;
+  readonly enLinea: boolean;
+  readonly ultimoLatidoAt: Date | null;
+}
+
+export interface ServicioDeDispositivosDePlataforma {
+  /** Los dispositivos en servicio de todas las cuentas (solo el super admin; HU-09). */
+  deTodasLasCuentas(ahora: Date): Promise<DispositivoDeCuenta[]>;
+}
+
+export function crearServicioDeDispositivosDePlataforma(
+  pool: Pool,
+): ServicioDeDispositivosDePlataforma {
+  const dispositivos = new RepositorioDeDispositivosDePlataforma(pool);
+  return {
+    async deTodasLasCuentas(ahora) {
+      const filas = await dispositivos.listarEnServicioDeTodas();
+      return filas.map((fila) => ({
+        id: fila.id,
+        nombre: fila.nombre,
+        puertaNombre: fila.puerta_nombre,
+        cuenta: { id: fila.cuenta_id, codigo: fila.cuenta_codigo, nombre: fila.cuenta_nombre },
+        firmware: fila.firmware_version,
+        enLinea: estaEnLinea(fila.ultimo_latido_at, ahora),
+        ultimoLatidoAt: fila.ultimo_latido_at,
+      }));
     },
   };
 }

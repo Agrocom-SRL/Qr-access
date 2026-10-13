@@ -45,6 +45,35 @@ export class RepositorioDeDispositivosDePlataforma extends RepositorioDePlatafor
       params: [id],
     });
   }
+
+  /**
+   * Los dispositivos en servicio de TODAS las cuentas, para el tablero del super admin: salto
+   * explícito del aislamiento, solo lectura. Los que el cliente desactivó (`activo = 0`) o
+   * revocó no figuran: no se espera que reporten.
+   */
+  listarEnServicioDeTodas(): Promise<DispositivoDeCuentaFila[]> {
+    return this.seleccionar<DispositivoDeCuentaFila>({
+      columnas:
+        't.id, t.nombre, t.ultimo_latido_at, t.firmware_version, p.nombre AS puerta_nombre, ' +
+        'c.id AS cuenta_id, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre',
+      uniones:
+        'JOIN puertas AS p ON p.id = t.puerta_id AND p.tenant_id = t.tenant_id ' +
+        'JOIN cuentas AS c ON c.id = t.tenant_id',
+      donde: 't.revocado_at IS NULL AND t.activo = 1',
+      orden: 'c.codigo, p.nombre',
+    });
+  }
+}
+
+export interface DispositivoDeCuentaFila extends RowDataPacket {
+  id: string;
+  nombre: string;
+  ultimo_latido_at: Date | null;
+  firmware_version: string | null;
+  puerta_nombre: string;
+  cuenta_id: string;
+  cuenta_codigo: string;
+  cuenta_nombre: string;
 }
 
 export interface Latido {
