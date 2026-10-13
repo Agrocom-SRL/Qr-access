@@ -1,10 +1,10 @@
 # 13 — `dispositivos`
 
-**Módulo dueño:** `dispositivos` · **Tenant:** sí · **Migración:** `db/migrations/20261009100013_create_dispositivos.sql`
+**Módulo dueño:** `dispositivos` · **Tenant:** sí · **Migraciones:** `db/migrations/20261009100013_create_dispositivos.sql` y `20261013100002_add_placa_id_a_dispositivos.sql`
 
 ## Propósito
 
-Controlador ESP32 de una puerta, con su propia credencial (invariante 5).
+Asignación de una placa (ESP32) a una puerta, con su propia credencial (invariante 5). Reasignar una placa crea otro dispositivo (ADR 0025).
 
 ## Columnas
 
@@ -13,6 +13,7 @@ Controlador ESP32 de una puerta, con su propia credencial (invariante 5).
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
 | `puerta_id` | `BIGINT UNSIGNED` | no |  |
+| `placa_id` | `BIGINT UNSIGNED` | sí | FK a `placas`; nulo solo en los dispositivos de desarrollo anteriores al ADR 0025 |
 | `nombre` | `VARCHAR(100)` | no |  |
 | `clave_hash` | `VARCHAR(255)` | no | argon2id de la clave del dispositivo (sensible) |
 | `firmware_version` | `VARCHAR(20)` | sí |  |
@@ -27,6 +28,7 @@ Controlador ESP32 de una puerta, con su propia credencial (invariante 5).
 ## Índices y restricciones
 
 - `uq_dispositivos_puerta`
+- `uq_dispositivos_placa`: una placa tiene un solo dispositivo en servicio
 
 El SQL completo está en `03-schema-sql.md`.
 
@@ -34,6 +36,7 @@ El SQL completo está en `03-schema-sql.md`.
 
 - Credencial `Dispositivo <id>.<clave>`; `clave_hash` es argon2id y nunca va a la bitácora. La clave en claro se muestra una sola vez.
 - `en_servicio` (columna generada) garantiza un solo dispositivo sin revocar ni borrar por puerta.
+- `clave_hash` se copia de `placas.clave_hash` al vincular: la clave la genera la placa y el servidor nunca la guarda en claro.
 - Revocado (`revocado_at`), inactivo o borrado: la API responde 401 y el firmware no abre.
 - El latido actualiza `firmware_version`, `ultimo_latido_at`, `ultimo_rssi` y `ultima_puerta_abierta` sin pasar por la bitácora (telemetría).
 

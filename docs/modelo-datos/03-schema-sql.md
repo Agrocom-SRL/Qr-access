@@ -303,15 +303,41 @@ CREATE TABLE puertas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
 
+## placas
+
+Migración: `db/migrations/20261013100001_create_placas.sql` (ADR 0025). De la plataforma: sin `tenant_id`.
+
+```sql
+CREATE TABLE placas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  mac CHAR(17) NOT NULL,
+  codigo_hash VARCHAR(255) NOT NULL,
+  clave_hash VARCHAR(255) NULL,
+  firmware_version VARCHAR(20) NULL,
+  ultimo_reclamo_at DATETIME(3) NULL,
+  ultima_ip VARCHAR(45) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_placas_mac (mac, vigente),
+  CONSTRAINT ck_placas_mac CHECK (mac REGEXP '^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
 ## dispositivos
 
-Migración: `db/migrations/20261009100013_create_dispositivos.sql`
+Migraciones: `db/migrations/20261009100013_create_dispositivos.sql` y `20261013100002_add_placa_id_a_dispositivos.sql` (`placa_id`, `fk_dispositivos_placa` y `uq_dispositivos_placa`, ya incluidos abajo)
 
 ```sql
 CREATE TABLE dispositivos (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
   puerta_id BIGINT UNSIGNED NOT NULL,
+  placa_id BIGINT UNSIGNED NULL,
   nombre VARCHAR(100) NOT NULL,
   clave_hash VARCHAR(255) NOT NULL,
   firmware_version VARCHAR(20) NULL,
@@ -330,7 +356,9 @@ CREATE TABLE dispositivos (
   en_servicio TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL AND revocado_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_dispositivos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   CONSTRAINT fk_dispositivos_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
-  UNIQUE KEY uq_dispositivos_puerta (puerta_id, en_servicio)
+  CONSTRAINT fk_dispositivos_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
+  UNIQUE KEY uq_dispositivos_puerta (puerta_id, en_servicio),
+  UNIQUE KEY uq_dispositivos_placa (placa_id, en_servicio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
 
