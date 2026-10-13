@@ -30,5 +30,9 @@
     "texto": "O endereço não existe ou não está mais disponível. Sua sessão continua aberta.",
     "volver": "Ir para o resumo"
   },
-  "sinResultados": "Sem resultados"
+  "sinResultados": "Sem resultados",
+  "elegirFecha": "Escolha uma data",
+  "mesAnterior": "Mês anterior",
+  "mesSiguiente": "Próximo mês",
+  "limpiar": "Limpar"
 }

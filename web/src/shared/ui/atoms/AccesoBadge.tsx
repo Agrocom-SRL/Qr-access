@@ -4,7 +4,8 @@ import type { NombreIcono } from './iconos';
 import { cx } from '../../lib/cx';
 import styles from './AccesoBadge.module.css';
 
-export type TonoBadge = 'primario' | 'advertencia' | 'peligro' | 'informacion' | 'neutro';
+export type TonoBadge =
+  'primario' | 'advertencia' | 'peligro' | 'informacion' | 'acento' | 'neutro';
 
 interface Props {
   tono: TonoBadge;

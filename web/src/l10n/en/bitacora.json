@@ -20,7 +20,6 @@
     "titulo": "No actions match these filters",
     "texto": "Try other dates or clear the filters."
   },
-  "exportar": "Export CSV",
   "filtros": {
     "cuenta": "Account",
     "accion": "Action",

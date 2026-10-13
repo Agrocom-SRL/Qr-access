@@ -1,0 +1,128 @@
+.raiz {
+  position: relative;
+}
+
+.disparador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp8);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vacio {
+  color: var(--textoSecundario);
+}
+
+.calendario {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--esp8));
+  left: 0;
+  width: max-content;
+  min-width: 100%;
+  padding: var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+  box-shadow: var(--elevacion3);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp8);
+  margin-bottom: var(--esp8);
+}
+
+.titulo {
+  color: var(--texto);
+  font-size: var(--texto16);
+  font-weight: var(--peso600);
+  text-transform: capitalize;
+}
+
+.mes,
+.dia,
+.accion {
+  background: transparent;
+  border: 0;
+  color: var(--texto);
+  cursor: pointer;
+  font: inherit;
+}
+
+.mes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tam40);
+  height: var(--tam40);
+  border-radius: var(--radioCompleto);
+  color: var(--textoSecundario);
+}
+
+.mes:hover,
+.dia:hover {
+  background: var(--primarioSuave);
+}
+
+.tabla {
+  border-collapse: collapse;
+}
+
+.diaSemana {
+  padding: var(--esp4);
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.dia {
+  width: var(--tam40);
+  height: var(--tam40);
+  border-radius: var(--radioCompleto);
+  font-family: var(--fuenteMono);
+  font-size: var(--texto14);
+  font-variant-numeric: tabular-nums;
+}
+
+.hoy {
+  border: 1px solid var(--primario);
+}
+
+.elegido,
+.elegido:hover {
+  background: var(--primario);
+  color: var(--sobrePrimario);
+  font-weight: var(--peso600);
+}
+
+.pie {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--esp8);
+}
+
+.accion {
+  padding: var(--esp8) var(--esp12);
+  border-radius: var(--radio10);
+  color: var(--primario);
+  font-size: var(--texto14);
+  font-weight: var(--peso600);
+}
+
+.accion:hover {
+  background: var(--primarioSuave);
+}
+
+.mes:focus-visible,
+.dia:focus-visible,
+.accion:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}

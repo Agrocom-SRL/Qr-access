@@ -20,7 +20,6 @@
     "titulo": "Sin acciones con estos filtros",
     "texto": "Prueba con otras fechas o quita los filtros."
   },
-  "exportar": "Exportar CSV",
   "filtros": {
     "cuenta": "Cuenta",
     "accion": "Acción",
