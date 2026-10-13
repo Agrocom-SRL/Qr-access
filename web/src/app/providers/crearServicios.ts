@@ -5,6 +5,7 @@ import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuenta
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
 import { crearEstadisticasHttp, type EstadisticasRepositorio } from '../../features/estadisticas';
 import { crearPagosHttp, type PagosRepositorio } from '../../features/pagos';
+import { crearPlacasHttp, type PlacasRepositorio } from '../../features/placas';
 import { crearPlanesHttp, type PlanesRepositorio } from '../../features/planes';
 import {
   crearSuscripcionesHttp,
@@ -19,6 +20,7 @@ export interface Servicios {
   seguridad: SeguridadRepositorio;
   equipo: EquipoRepositorio;
   planes: PlanesRepositorio;
+  placas: PlacasRepositorio;
   cuentas: CuentasRepositorio;
   suscripciones: SuscripcionesRepositorio;
   pagos: PagosRepositorio;
@@ -39,6 +41,7 @@ export function crearServicios(
     seguridad: crearSeguridadHttp(cliente, almacen),
     equipo: crearEquipoHttp(cliente),
     planes: crearPlanesHttp(cliente),
+    placas: crearPlacasHttp(cliente),
     cuentas: crearCuentasHttp(cliente),
     suscripciones: crearSuscripcionesHttp(cliente),
     pagos: crearPagosHttp(cliente),

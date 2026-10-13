@@ -1,0 +1,73 @@
+{
+  "titulo": "Placas",
+  "subtitulo_one": "{{count}} placa",
+  "subtitulo_other": "{{count}} placas",
+  "registrar": "Registrar placa",
+  "buscar": "Buscar por MAC, cuenta o puerta",
+  "filtro": "Estado de la placa",
+  "tabla": "Placas",
+  "errorCarga": "No pudimos cargar las placas",
+  "estado": {
+    "todas": "Todas",
+    "de_fabrica": "De fábrica",
+    "vinculada": "Vinculadas"
+  },
+  "badge": {
+    "vinculada": "Vinculada",
+    "sinConectar": "Sin conectar",
+    "lista": "Lista para vincular"
+  },
+  "conexion": {
+    "enLinea": "En línea",
+    "sinConexion": "Sin conexión"
+  },
+  "columna": {
+    "mac": "MAC",
+    "estado": "Estado",
+    "asignada": "Cuenta y puerta",
+    "firmware": "Firmware",
+    "contacto": "Último contacto",
+    "accion": "Acción"
+  },
+  "sinAsignar": "Sin asignar",
+  "nunca": "Nunca",
+  "vacio": {
+    "titulo": "Aún no hay placas",
+    "texto": "Registra una placa con su MAC para vincularla a una puerta."
+  },
+  "vincularA": "Vincular la placa {{mac}}",
+  "liberarA": "Liberar la placa {{mac}}",
+  "darDeBajaA": "Dar de baja la placa {{mac}}",
+  "registrarTitulo": "Registra una placa",
+  "registrarAyuda": "La MAC aparece al encender la placa por el puerto serie (comando estado).",
+  "mac": "MAC de la placa",
+  "macPlaceholder": "AA:BB:CC:00:11:22",
+  "macInvalida": "Escribe una MAC válida: seis pares de dígitos hexadecimales.",
+  "registrando": "Registrando…",
+  "registrarConfirmar": "Registrar",
+  "codigoTitulo": "Código de vinculación",
+  "codigoDe": "Placa {{mac}}",
+  "codigoInstruccion": "Cárgalo en la placa por el puerto serie con este comando:",
+  "codigoAviso": "Este código no se vuelve a mostrar. Si lo pierdes, da de baja la placa y regístrala de nuevo.",
+  "copiarComando": "Copiar comando",
+  "comandoCopiado": "Comando copiado",
+  "listo": "Listo",
+  "vincularTitulo": "Vincula la placa a una puerta",
+  "vincularTexto": "La placa {{mac}} quedará asignada a la cuenta y la puerta que elijas.",
+  "cuenta": "Cuenta",
+  "cuentaPlaceholder": "Busca por nombre o código",
+  "puerta": "Puerta",
+  "puertaPlaceholder": "Elige una puerta sin lector",
+  "sinPuertasLibres": "Esta cuenta no tiene puertas sin lector.",
+  "nombreLector": "Nombre del lector",
+  "vincularConfirmar": "Vincular",
+  "vinculando": "Vinculando…",
+  "liberarTitulo": "¿Liberar la placa {{mac}}?",
+  "liberarTexto": "La puerta se queda sin lector y la placa deja de abrir. Después podrás vincularla a otra cuenta.",
+  "liberar": "Liberar",
+  "liberando": "Liberando…",
+  "bajaTitulo": "¿Dar de baja la placa {{mac}}?",
+  "bajaTexto": "Sale del inventario. Úsalo si la placa se perdió o se dañó.",
+  "darDeBaja": "Dar de baja",
+  "dandoDeBaja": "Dando de baja…"
+}

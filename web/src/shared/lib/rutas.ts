@@ -9,6 +9,7 @@ export const RUTAS = {
   cuentaNueva: '/cuentas/nueva',
   cobranza: '/cobranza',
   planes: '/planes',
+  placas: '/placas',
   bitacora: '/bitacora',
   equipo: '/equipo',
   perfil: '/perfil',

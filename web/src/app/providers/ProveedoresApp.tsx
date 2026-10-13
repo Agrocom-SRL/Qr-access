@@ -5,6 +5,7 @@ import { ProveedorCuentas } from '../../features/cuentas';
 import { ProveedorEquipo } from '../../features/equipo';
 import { ProveedorEstadisticas } from '../../features/estadisticas';
 import { ProveedorPagos } from '../../features/pagos';
+import { ProveedorPlacas } from '../../features/placas';
 import { ProveedorPlanes } from '../../features/planes';
 import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
@@ -48,19 +49,21 @@ export function ProveedoresApp({
         <ProveedorSeguridad valor={servicios.seguridad}>
           <ProveedorEquipo valor={servicios.equipo}>
             <ProveedorPlanes valor={servicios.planes}>
-              <ProveedorCuentas valor={servicios.cuentas}>
-                <ProveedorSuscripciones valor={servicios.suscripciones}>
-                  <ProveedorPagos valor={servicios.pagos}>
-                    <ProveedorBitacora valor={servicios.bitacora}>
-                      <ProveedorResumen valor={servicios.resumen}>
-                        <ProveedorEstadisticas valor={servicios.estadisticas}>
-                          <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
-                        </ProveedorEstadisticas>
-                      </ProveedorResumen>
-                    </ProveedorBitacora>
-                  </ProveedorPagos>
-                </ProveedorSuscripciones>
-              </ProveedorCuentas>
+              <ProveedorPlacas valor={servicios.placas}>
+                <ProveedorCuentas valor={servicios.cuentas}>
+                  <ProveedorSuscripciones valor={servicios.suscripciones}>
+                    <ProveedorPagos valor={servicios.pagos}>
+                      <ProveedorBitacora valor={servicios.bitacora}>
+                        <ProveedorResumen valor={servicios.resumen}>
+                          <ProveedorEstadisticas valor={servicios.estadisticas}>
+                            <SesionProvider almacen={servicios.almacen}>{children}</SesionProvider>
+                          </ProveedorEstadisticas>
+                        </ProveedorResumen>
+                      </ProveedorBitacora>
+                    </ProveedorPagos>
+                  </ProveedorSuscripciones>
+                </ProveedorCuentas>
+              </ProveedorPlacas>
             </ProveedorPlanes>
           </ProveedorEquipo>
         </ProveedorSeguridad>

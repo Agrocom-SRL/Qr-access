@@ -58,6 +58,10 @@ import delete_icono from '@material-symbols/svg-400/outlined/delete.svg?raw';
 import pending_actions from '@material-symbols/svg-400/outlined/pending_actions.svg?raw';
 import add_location from '@material-symbols/svg-400/outlined/add_location.svg?raw';
 import add_business from '@material-symbols/svg-400/outlined/add_business.svg?raw';
+import memory from '@material-symbols/svg-400/outlined/memory.svg?raw';
+import memory_fill from '@material-symbols/svg-400/outlined/memory-fill.svg?raw';
+import link from '@material-symbols/svg-400/outlined/link.svg?raw';
+import link_off from '@material-symbols/svg-400/outlined/link_off.svg?raw';
 import translate from '@material-symbols/svg-400/outlined/translate.svg?raw';
 import group_fill from '@material-symbols/svg-400/outlined/group-fill.svg?raw';
 
@@ -123,6 +127,10 @@ const registro = {
   add_location,
   add_business,
   translate,
+  memory,
+  memory_fill,
+  link,
+  link_off,
 } as const;
 
 export type NombreIcono = keyof typeof registro;
