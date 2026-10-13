@@ -79,7 +79,7 @@ class PasoVigencia extends StatelessWidget {
               alElegir(
                 dias
                     ? const Vigencia(OpcionVigencia.dosDias)
-                    : Vigencia.porDefecto,
+                    : const Vigencia(OpcionVigencia.dosHoras),
               );
             }
           },
@@ -98,7 +98,7 @@ class PasoVigencia extends StatelessWidget {
             titulo: l10n.qrVigenciaFinDelDia,
             subtitulo: l10n.qrVenceHoyALas(l10n.qrFinDelDiaHora),
             seleccionada: opcion == OpcionVigencia.finDelDia,
-            alElegir: () => alElegir(const Vigencia(OpcionVigencia.finDelDia)),
+            alElegir: () => alElegir(Vigencia.porDefecto),
           ),
         ] else ...[
           _TarjetaPlazos(

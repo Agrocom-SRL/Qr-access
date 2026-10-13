@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 
 /// Plazos de vigencia que la persona puede elegir al emitir (handoff C05b):
 /// por **horas** (cortas 1, 2, 4, 8; largas 12, 16, 20, 24; o una hora exacta
-/// del día) o por **días** (2, 3, 5, 7, o todo el día). Por defecto, 2 horas.
+/// del día) o por **días** (2, 3, 5, 7, o todo el día). Por defecto vence al
+/// fin del día.
 /// La API acepta hasta el máximo del plan, con techo de 7 días (ADR 0020).
 enum OpcionVigencia {
   unaHora(horas: 1),
@@ -67,7 +68,10 @@ enum OpcionVigencia {
 class Vigencia {
   const new(this.opcion, {this.minutosDelDia});
 
-  static const porDefecto = Vigencia(OpcionVigencia.dosHoras);
+  /// Por defecto, hasta el fin del día: así el QR sigue sirviendo si el
+  /// teléfono se queda sin internet (modo sin conexión) y la API lo acota al
+  /// máximo del plan.
+  static const porDefecto = Vigencia(OpcionVigencia.finDelDia);
 
   final OpcionVigencia opcion;
 

@@ -77,19 +77,13 @@ void main() {
   });
 
   group('Vigencia.venceAtPara', () {
-    test('por defecto son 2 horas desde la emisión', () {
-      expect(Vigencia.porDefecto.opcion, OpcionVigencia.dosHoras);
-      expect(
-        Vigencia.porDefecto.venceAtPara(ahora),
-        DateTime.utc(2026, 10, 9, 16, 30),
-      );
+    test('por defecto es todo el día, para que sirva sin internet', () {
+      expect(Vigencia.porDefecto.opcion, OpcionVigencia.finDelDia);
+      expect(Vigencia.porDefecto.venceAtPara(ahora), isNull);
     });
 
     test('todo el día lo calcula la API: la app no manda vence_at', () {
-      expect(
-        const Vigencia(OpcionVigencia.finDelDia).venceAtPara(ahora),
-        isNull,
-      );
+      expect(Vigencia.porDefecto.venceAtPara(ahora), isNull);
     });
 
     test('los plazos largos llegan hasta las 24 horas', () {

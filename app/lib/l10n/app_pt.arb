@@ -90,7 +90,7 @@
   "inicioSaludoSinNombre": "Olá",
   "inicioSaludo": "Olá, {nombre}",
   "inicioCuentaYRol": "{cuenta} · {rol}",
-  "inicioHeroAyudaHoras": "Uso único. Vence em {horas} h.",
+  "inicioHeroAyudaFinDelDia": "Uso único. Vence no fim do dia.",
   "inicioNuevoQr": "Novo QR",
   "inicioRepetirUltimo": "Repetir último",
   "inicioVigentesHoy": "Ativos hoje",
