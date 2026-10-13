@@ -2,13 +2,21 @@ import { useTranslation } from 'react-i18next';
 import { formatearFecha, formatearHora, relacionDeDia } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import type { Paginado } from '../../../../shared/api/tipos';
-import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
+import { AccesoBadge, type TonoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
-import type { EventoBitacora } from '../../domain/evento';
+import type { CanalBitacora, EventoBitacora } from '../../domain/evento';
 import { describirEvento } from '../describirEvento';
 import styles from './TablaBitacora.module.css';
+
+/** Cada origen con su color, para distinguir de un vistazo qué panel, app o lector hizo el cambio. */
+const TONO_DE_ORIGEN: Readonly<Record<CanalBitacora, TonoBadge>> = {
+  panel: 'informacion',
+  app: 'acento',
+  automatico: 'neutro',
+  dispositivo: 'neutro',
+};
 
 interface Props {
   datos: Paginado<EventoBitacora> | undefined;
@@ -92,7 +100,9 @@ export function TablaBitacora({
     {
       id: 'origen',
       encabezado: t('bitacora:columna.origen'),
-      celda: (e) => <AccesoBadge tono="neutro">{t(`bitacora:origen.${e.canal}`)}</AccesoBadge>,
+      celda: (e) => (
+        <AccesoBadge tono={TONO_DE_ORIGEN[e.canal]}>{t(`bitacora:origen.${e.canal}`)}</AccesoBadge>
+      ),
     },
   ];
 

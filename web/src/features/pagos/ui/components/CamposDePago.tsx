@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
+import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { CampoMonto } from '../../../../shared/ui/molecules/CampoMonto';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
@@ -50,17 +51,15 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
             onCambio({ monto: e.target.value });
           }}
         />
-        <AccesoCampoTexto
+        <AccesoCampoFecha
           etiqueta={t('fecha')}
-          type="date"
-          mono
-          value={datos.fechaPago}
+          valor={datos.fechaPago}
           error={mensaje('fechaPago')}
           onBlur={() => {
             onTocar('fechaPago');
           }}
-          onChange={(e) => {
-            onCambio({ fechaPago: e.target.value });
+          onCambio={(fechaPago) => {
+            onCambio({ fechaPago });
           }}
         />
       </div>

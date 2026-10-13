@@ -30,5 +30,9 @@
     "texto": "The address doesn't exist or is no longer available. Your session is still open.",
     "volver": "Go to summary"
   },
-  "sinResultados": "No results"
+  "sinResultados": "No results",
+  "elegirFecha": "Choose a date",
+  "mesAnterior": "Previous month",
+  "mesSiguiente": "Next month",
+  "limpiar": "Clear"
 }

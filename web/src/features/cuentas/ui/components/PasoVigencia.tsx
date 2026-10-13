@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha } from '../../../../l10n/formatos';
 import { AccesoInterruptor } from '../../../../shared/ui/atoms/AccesoInterruptor';
+import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
 import {
@@ -45,17 +46,15 @@ export function PasoVigencia({ datos, nombreDelResponsable, onCambio }: Props) {
           titulo: t('vigenciaTitulo'),
           contenido: (
             <div className={styles.fila}>
-              <AccesoCampoTexto
+              <AccesoCampoFecha
                 etiqueta={t('inicio')}
-                type="date"
-                mono
-                value={datos.inicio}
+                valor={datos.inicio}
                 error={mensaje('inicio')}
                 onBlur={() => {
                   tocar('inicio');
                 }}
-                onChange={(e) => {
-                  onCambio({ ...datos, inicio: e.target.value });
+                onCambio={(inicio) => {
+                  onCambio({ ...datos, inicio });
                 }}
               />
               <AccesoCampoTexto

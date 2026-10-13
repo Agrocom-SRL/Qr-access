@@ -8,7 +8,7 @@ function idiomaActivo(): string {
   return i18next.language || 'es';
 }
 
-function localeDe(idioma: string): string {
+export function localeDe(idioma: string): string {
   return LOCALES[idioma] ?? LOCALES.es ?? 'es-BO';
 }
 
