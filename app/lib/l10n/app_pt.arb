@@ -123,6 +123,7 @@
   "qrRapidoTitulo": "Meu QR de acesso",
   "qrRapidoEtiquetaSinNombre": "Entrada pessoal",
   "qrRapidoAviso": "Só para você. Aproxime-o do leitor da porta; não pode ser compartilhado.",
+  "qrRapidoRespaldoAviso": "Sem conexão: este é o seu último QR salvo. Se ainda for válido, o leitor o aceita normalmente.",
   "qrRapidoListo": "Pronto",
   "inicioQrPropio": "Meu QR",
   "qrRapidoEtiqueta": "Entrada para {nombre}",

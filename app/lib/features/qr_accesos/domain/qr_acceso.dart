@@ -55,6 +55,7 @@ class QrEmitido {
     required this.etiqueta,
     required this.puertas,
     this.repaso = false,
+    this.respaldo = false,
   });
 
   final String id;
@@ -66,6 +67,10 @@ class QrEmitido {
   /// `true` si se vuelve a abrir desde Mis QR: el QR ya se emitió y se puede
   /// ver de nuevo, así que cerrar no pide confirmación.
   final bool repaso;
+
+  /// `true` si es el último QR propio guardado en el dispositivo, mostrado
+  /// porque no hay conexión para emitir uno nuevo.
+  final bool respaldo;
 
   String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }

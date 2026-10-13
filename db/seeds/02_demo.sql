@@ -38,7 +38,7 @@ INSERT INTO roles (id, tenant_id, nombre, protegido, activo) VALUES
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), protegido = VALUES(protegido), activo = 1, deleted_at = NULL;
 
 -- Administrador: todos los permisos de cuenta. Usuario: emite y ve lo suyo. Guardia: ve todos los
--- eventos y el estado de las puertas, no emite.
+-- eventos y el estado de las puertas, y emite solo su QR propio de acceso.
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT 9001, id FROM permisos WHERE ambito = 'cuenta';
 
@@ -49,7 +49,7 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
 
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT 9003, id FROM permisos WHERE codigo IN (
-    'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.evento.ver', 'accesos.evento.ver_todos'
+    'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.qr.emitir', 'accesos.evento.ver', 'accesos.evento.ver_todos'
   );
 
 -- PIN DEMADM1 (administrador y usuario), DEMUSR1 (usuario) y DEMGRD1 (guardia y usuario).

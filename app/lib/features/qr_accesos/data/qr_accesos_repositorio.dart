@@ -25,6 +25,10 @@ abstract interface class QrAccesosRepositorio {
   /// Cuántos QR hay en cada estado (las pastillas de Mis QR).
   Future<Map<EstadoQr, int>> resumir();
 
+  /// El último QR propio emitido con conexión, guardado en este dispositivo
+  /// como respaldo sin internet; `null` si no hay o ya venció.
+  Future<QrEmitido?> ultimoPropioGuardado();
+
   /// Anula un QR vigente. La API responde `qr.ya_usado` (409) si ya se usó.
   Future<void> anular(String id);
 }
@@ -49,13 +53,35 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     // El texto solo existe ahora: se guarda en el dispositivo para poder
     // volver a mostrarlo desde Mis QR (ADR 0008, addendum).
     await _guardarSinFallar(dto.id, dto.texto, dto.venceAt);
-    return QrEmitido(
+    final emitido = QrEmitido(
       id: dto.id,
       texto: dto.texto,
       venceAt: dto.venceAt,
       etiqueta: dto.etiqueta,
       puertas: dto.puertas.map(_aPuertaDeQr).toList(),
     );
+    if (datos.propio) await _guardarPropioSinFallar(emitido);
+    return emitido;
+  }
+
+  @override
+  Future<QrEmitido?> ultimoPropioGuardado() async {
+    try {
+      final qr = await _almacenQr.leerUltimoPropio();
+      if (qr == null) return null;
+      return QrEmitido(
+        id: qr.id,
+        texto: qr.texto,
+        venceAt: qr.venceAt,
+        etiqueta: qr.etiqueta,
+        puertas: [
+          for (final p in qr.puertas) PuertaDeQr(id: p.id, nombre: p.nombre),
+        ],
+        respaldo: true,
+      );
+    } on Object {
+      return null;
+    }
   }
 
   @override
@@ -88,6 +114,25 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     await _api.anularQr(id);
     // Anulado, el texto ya no abre nada: no tiene sentido conservarlo.
     await _almacenQr.borrar(id);
+    await _almacenQr.borrarUltimoPropio(id);
+  }
+
+  /// Respaldo sin internet (ADR 0008): cada QR propio emitido con conexión
+  /// reemplaza al anterior. Si el almacén falla, el QR se emitió igual.
+  Future<void> _guardarPropioSinFallar(QrEmitido qr) async {
+    try {
+      await _almacenQr.guardarUltimoPropio(
+        QrPropioGuardado(
+          id: qr.id,
+          texto: qr.texto,
+          venceAt: qr.venceAt,
+          etiqueta: qr.etiqueta,
+          puertas: [for (final p in qr.puertas) (id: p.id, nombre: p.nombre)],
+        ),
+      );
+    } on Object {
+      // Sin respaldo, sin internet simplemente no habrá QR que mostrar.
+    }
   }
 
   /// Guardar el texto es una comodidad: si el almacén falla, el QR se emitió

@@ -37,10 +37,12 @@ Future<QrAccesosRepositorioFalso> _montar(
   WidgetTester tester, {
   List<Puerta> puertas = _puertas,
   Exception? errorEmitir,
+  QrEmitido? respaldo,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(
     emitido: _emitido,
     errorEmitir: errorEmitir,
+    respaldo: respaldo,
   );
   await montarPantalla(
     tester,
@@ -113,5 +115,39 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(repositorio.emisiones, hasLength(2));
+  });
+
+  testWidgets('sin internet muestra el último QR propio guardado', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      errorEmitir: const ErrorApi(code: ErrorApi.sinConexion),
+      respaldo: QrEmitido(
+        id: 'qr0',
+        texto: 'AQ1.respaldo',
+        venceAt: _emitido.venceAt,
+        etiqueta: 'Entrada para Ana',
+        puertas: _emitido.puertas,
+        respaldo: true,
+      ),
+    );
+    final textos = textosEn(tester);
+
+    expect(find.byType(VisorQr), findsOneWidget);
+    expect(find.text(textos.qrRapidoRespaldoAviso), findsOneWidget);
+    expect(find.text(textos.qrRapidoError), findsNothing);
+  });
+
+  testWidgets('un error distinto de sin conexión no usa el respaldo', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      errorEmitir: const ErrorApi(code: 'servidor.error'),
+      respaldo: _emitido,
+    );
+
+    expect(find.byType(VisorQr), findsNothing);
   });
 }
