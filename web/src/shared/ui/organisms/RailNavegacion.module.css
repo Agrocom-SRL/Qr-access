@@ -6,6 +6,13 @@
   padding: var(--esp24) var(--esp12);
   background: var(--superficie);
   border-right: 1px solid var(--borde);
+
+  /* Fijo a la altura de la ventana: el perfil queda abajo aunque el contenido haga scroll. */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .marca {
