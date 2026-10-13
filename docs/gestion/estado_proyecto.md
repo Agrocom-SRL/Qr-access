@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-13 (rama `feature/vinculacion-de-placas`)
+**Última actualización:** 2026-10-13 (rama `feature/lector-rs485`)
 
 ## Qué ya existe
 
@@ -93,4 +93,4 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 - Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24).
 - Hex oficial del verde de marca (D-08).
 - Servidor de producción y DNS (D-13): de eso dependen el `docker-compose.prod.yml` con TLS y la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
-- Modelo exacto del lector QR y detalle eléctrico de la cerradura: se confirman al comprar el hardware.
+- Lector de la mesa: es RS485 (con Wiegand) detrás de un módulo TTL-RS485, cableado en `docs/hardware/README.md`. Falta confirmar su modelo, que lea QR, su velocidad y su formato de salida (rama `feature/lector-rs485`, sin PR). Detalle eléctrico de la cerradura: se confirma al comprar.

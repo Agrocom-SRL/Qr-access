@@ -1,13 +1,13 @@
 # Hardware del controlador de puerta
 
-**Estado:** Referencia (2026-10-08). Confirmado: ESP32 con lector QR en la puerta y cerradura por pulso (D-01, D-03, D-04). El modelo del lector y la cerradura se eligen al comprar. ADR 0009 y ADR 0025 (solo Ethernet y vinculación remota).
+**Estado:** Referencia (2026-10-13, lector RS485 de mesa). Confirmado: ESP32 con lector QR en la puerta y cerradura por pulso (D-01, D-03, D-04). La cerradura se elige al comprar; el lector de la mesa de trabajo es RS485 (ver abajo). ADR 0009 y ADR 0025 (solo Ethernet y vinculación remota).
 
 ## Lista de materiales (por puerta)
 
 | Componente | Referencia sugerida | Notas |
 |---|---|---|
 | Microcontrolador | ESP32-ETH01 (ESP32 + Ethernet LAN8720) | Ethernet por cable, **sin WiFi** (ADR 0025); TLS por hardware; framework Arduino |
-| Lector QR | GM65 o GM861S (UART, 5 V / 3.3 V) | Lee QR en pantalla de teléfono; configurar modo continuo/sensor |
+| Lector | Lector de control de acceso con salida RS485 y Wiegand (etiqueta "ID RS485 USB, WG26/34/32/66"; modelo exacto sin confirmar) + módulo TTL-RS485 (MAX485) | Sustituye al GM65/GM861S previsto; confirmar que lee QR y su velocidad y formato de salida |
 | Actuador | Módulo relé 1 canal con optoacoplador (5 V) **o** MOSFET logic-level (IRLZ44N) + diodo flyback | El MOSFET es silencioso y más durable para electroimán |
 | Cerradura | Electroimán 280 kg (fail-safe) o cerradero eléctrico 12 V (fail-secure) | D-04: definir según la puerta y la norma de evacuación |
 | Sensor de puerta | Contacto magnético (reed) NC | Detecta puerta abierta y apertura forzada |
@@ -21,15 +21,45 @@
 
 | Señal | Pin ESP32 | Notas |
 |---|---|---|
-| Lector QR TX → ESP32 RX | GPIO16 (UART2 RX) | Si el lector es de 5 V, divisor resistivo o level shifter |
-| ESP32 TX → Lector QR RX | GPIO17 (UART2 TX) | Para configurar el lector por comandos |
+| Módulo RS485 RO → ESP32 RX | GPIO5 (pin "RXD" del conector) | Si el módulo va a 5 V, divisor resistivo o level shifter |
+| ESP32 TX → módulo RS485 DI | GPIO17 (pin "TXD" del conector) | Sin uso mientras DE esté a GND |
 | Relé / MOSFET | GPIO25 | Salida; nivel activo configurable |
 | Sensor de puerta | GPIO26 | `INPUT_PULLUP` |
 | Pulsador de salida | GPIO27 | `INPUT_PULLUP`, con antirrebote por software |
 | LED verde / rojo / azul | GPIO18 / GPIO19 / GPIO21 | Con resistencia |
 | Buzzer | GPIO22 | |
 
+En la ESP32-ETH01 el GPIO16 enciende el oscilador de la PHY y no está libre; por eso el lector usa GPIO5 y GPIO17.
+
 Los pines viven solo en `firmware/include/pines.h`. Evitar GPIO 0, 2, 12 y 15 (pines de arranque) y 34–39 como salidas (son solo entrada).
+
+## Lector RS485 en la mesa de trabajo (2026-10-13)
+
+El lector trae un cable de 9 hilos (etiqueta del lector):
+
+| Color | Señal | Se usa |
+|---|---|---|
+| Rojo | VCC | Sí: alimentación del lector (la fuente de la mesa es de 12 V, confirmar el voltaje del lector) |
+| Negro | GND | Sí |
+| Azul | 485A | Sí, a A del módulo RS485 |
+| Naranja | 485B | Sí, a B del módulo RS485 |
+| Blanco / Verde | WD1 / WD0 (Wiegand) | No |
+| Morado / Gris | Beeper / LED | No |
+| Amarillo | NC | No |
+
+Cableado:
+
+1. **Tierra común:** negativo de la fuente, GND del lector, GND del módulo RS485 y GND de la placa son un solo nodo. Se mide continuidad antes de energizar.
+2. **RE y DE del módulo a GND:** RE es activo en bajo (receptor siempre encendido) y DE activo en alto (transmisor apagado). El módulo solo recibe, porque el lector transmite y la placa escucha. Si algún día el firmware tiene que mandar comandos al lector, DE pasa a un GPIO. RE y DE **nunca** a 12 V.
+3. **Módulo RS485 ↔ placa:** RO a GPIO5 (RXD). VCC del módulo a 3,3 V si es posible; a 5 V obliga a un divisor en RO porque el ESP32 tolera 3,3 V. El módulo de la foto (MAX485, serigrafía "TTL to RS-485 module") es de 5 V.
+4. **La placa nunca recibe los 12 V.** Se alimenta a 5 V (buck 12→5 V, o el módulo USB-serie en la mesa).
+5. Si no llegan datos, se invierten A y B. La velocidad por defecto es 9600; se cambia con `-DLECTOR_BAUDIOS=<n>` en `build_flags`.
+
+**Pendiente:** el modelo y el protocolo del lector. Con el lector enchufado se lee por el monitor serie lo que llega al pasar un QR; el firmware espera una línea de texto terminada en CR o LF (`lector_qr`). Si el lector manda tramas binarias o un formato distinto, se ajusta `lector_qr` y se anota aquí.
+
+### Alimentar y programar la placa con el módulo USB-serie
+
+Conexiones: TX del módulo a RXO de la placa, RX del módulo a TXO, GND con GND y 5 V con el pin 5V (o 3,3 V con 3V3, pero un módulo USB suele quedarse corto de corriente con el Ethernet). Para flashear se puentea IO0 a GND y se resetea (EN a GND un instante); **se quita el puente** después. Esta placa puede no tener LED de encendido: que no alumbre no indica falla. Se comprueba con un multímetro (3V3 contra GND) o con el arranque por el monitor serie a 115200.
 
 ## Seguridad física
 
