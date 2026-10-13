@@ -23,18 +23,14 @@ void test_comando_desconocido() {
   TEST_ASSERT_EQUAL(Tipo::Invalido, c.tipo);
   TEST_ASSERT_EQUAL(Error::ComandoDesconocido, c.error);
   TEST_ASSERT_EQUAL(Tipo::Invalido, interpretar("borrartodo", false).tipo);
-  TEST_ASSERT_EQUAL(Tipo::Invalido, interpretar("setx wifi_ssid a", false).tipo);
+  TEST_ASSERT_EQUAL(Tipo::Invalido, interpretar("setx api_url a", false).tipo);
 }
 
 void test_fijar_cada_campo() {
-  auto ssid = interpretar("set wifi_ssid Mi Red 2.4", false);
-  TEST_ASSERT_EQUAL(Tipo::Fijar, ssid.tipo);
-  TEST_ASSERT_EQUAL(Campo::WifiSsid, ssid.campo);
-  TEST_ASSERT_EQUAL_STRING("Mi Red 2.4", ssid.valor);
-
-  auto clave = interpretar("set wifi_clave claveSegura1", false);
-  TEST_ASSERT_EQUAL(Campo::WifiClave, clave.campo);
-  TEST_ASSERT_EQUAL_STRING("claveSegura1", clave.valor);
+  auto codigo = interpretar("set codigo 0123456789ABCDEF\r\n", false);
+  TEST_ASSERT_EQUAL(Tipo::Fijar, codigo.tipo);
+  TEST_ASSERT_EQUAL(Campo::Codigo, codigo.campo);
+  TEST_ASSERT_EQUAL_STRING("0123456789ABCDEF", codigo.valor);
 
   auto url = interpretar("set api_url https://acceso.agrocom.com.bo/", false);
   TEST_ASSERT_EQUAL(Campo::ApiUrl, url.campo);
@@ -49,23 +45,57 @@ void test_fijar_cada_campo() {
   TEST_ASSERT_EQUAL_STRING("Zx9.abc-DEF_12345", secreto.valor);
 }
 
-void test_wifi_abierta_con_clave_vacia() {
-  auto c = interpretar("set wifi_clave", false);
-  TEST_ASSERT_EQUAL(Tipo::Fijar, c.tipo);
-  TEST_ASSERT_EQUAL_STRING("", c.valor);
+void test_ya_no_hay_comandos_de_wifi() {
+  TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set wifi_ssid Mi Red", false).error);
+  TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set wifi_clave claveSegura1", false).error);
+}
+
+void test_codigo_de_vinculacion() {
+  TEST_ASSERT_TRUE(codigoValido("0123456789ABCDEF"));
+  TEST_ASSERT_TRUE(codigoValido("ZYXWVTSRQPNMKJHG"));
+  TEST_ASSERT_FALSE(codigoValido(nullptr));
+  TEST_ASSERT_FALSE(codigoValido(""));
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDE"));    // 15
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDEFG"));  // 17
+  TEST_ASSERT_FALSE(codigoValido("0123456789abcdef"));   // minúsculas: el servidor las acepta, la placa guarda el original
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDEI"));   // I, L, O y U no existen en el alfabeto
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDEL"));
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDEO"));
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCDEU"));
+  TEST_ASSERT_FALSE(codigoValido("0123456789ABCD-F"));
+  TEST_ASSERT_EQUAL(Error::ValorInvalido, interpretar("set codigo 123", false).error);
+}
+
+void test_clave_desde_bytes_es_hexadecimal() {
+  const unsigned char bytes[] = {0x00, 0x0f, 0xa5, 0xff};
+  char salida[9];
+  TEST_ASSERT_TRUE(claveDesdeBytes(bytes, sizeof(bytes), salida, sizeof(salida)));
+  TEST_ASSERT_EQUAL_STRING("000fa5ff", salida);
+  char corta[8];
+  TEST_ASSERT_FALSE(claveDesdeBytes(bytes, sizeof(bytes), corta, sizeof(corta)));
+  TEST_ASSERT_EQUAL_STRING("", corta);
+  TEST_ASSERT_FALSE(claveDesdeBytes(nullptr, 4, salida, sizeof(salida)));
+  TEST_ASSERT_FALSE(claveDesdeBytes(bytes, 0, salida, sizeof(salida)));
+
+  // 32 bytes -> 64 caracteres: lo que espera la API (y pasa claveValida).
+  unsigned char treinta2[32];
+  for (size_t i = 0; i < sizeof(treinta2); ++i) treinta2[i] = static_cast<unsigned char>(i * 7);
+  char clave[65];
+  TEST_ASSERT_TRUE(claveDesdeBytes(treinta2, sizeof(treinta2), clave, sizeof(clave)));
+  TEST_ASSERT_EQUAL(64, strlen(clave));
+  TEST_ASSERT_TRUE(claveValida(clave));
 }
 
 void test_campo_desconocido_o_faltante() {
   TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set nada x", false).error);
   TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set", false).error);
-  TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set wifi_ssidd x", false).error);
+  TEST_ASSERT_EQUAL(Error::CampoDesconocido, interpretar("set codigoo x", false).error);
 }
 
 void test_valores_invalidos_se_rechazan_y_no_quedan_en_el_comando() {
   const char* malos[] = {
-      "set wifi_ssid",                                       // vacío
-      "set wifi_ssid 123456789012345678901234567890123",     // 33 > 32
-      "set wifi_clave corta",                                // < 8
+      "set codigo",                                          // vacío
+      "set codigo 0123456789abcdef",                         // minúsculas
       "set api_url http://192.168.1.5:3000",                 // http sin modo desarrollo
       "set api_url ftp://x.com",
       "set api_url https://",
@@ -137,7 +167,9 @@ int main() {
   RUN_TEST(test_comandos_simples);
   RUN_TEST(test_comando_desconocido);
   RUN_TEST(test_fijar_cada_campo);
-  RUN_TEST(test_wifi_abierta_con_clave_vacia);
+  RUN_TEST(test_ya_no_hay_comandos_de_wifi);
+  RUN_TEST(test_codigo_de_vinculacion);
+  RUN_TEST(test_clave_desde_bytes_es_hexadecimal);
   RUN_TEST(test_campo_desconocido_o_faltante);
   RUN_TEST(test_valores_invalidos_se_rechazan_y_no_quedan_en_el_comando);
   RUN_TEST(test_valor_demasiado_largo);

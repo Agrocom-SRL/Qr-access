@@ -11,7 +11,7 @@
 
 namespace api {
 
-enum class Tipo : uint8_t { Validacion, Latido, Configuracion };
+enum class Tipo : uint8_t { Validacion, Latido, Configuracion, Reclamo };
 
 // Resultado de una llamada, ya interpretado por lib/respuesta.
 struct Respuesta {
@@ -20,17 +20,28 @@ struct Respuesta {
   int http;     // código HTTP, o negativo si no hubo respuesta (timeout, TLS, sin red)
   puerta::Resultado resultado;         // Validacion
   respuesta::Configuracion config;     // Configuracion
+  respuesta::Reclamo reclamo;          // Reclamo
 };
 
+// Arranca la tarea si hay URL válida. Con id y clave válidos queda lista para operar; sin ellos
+// solo puede reclamar su vínculo (ADR 0025).
 void iniciar(const config::Dispositivo& dispositivo);
+
+// Cambia la credencial en caliente (la placa acaba de vincularse, o se la rechazaron).
+void fijarCredencial(const String& id, const String& clave);
+void quitarCredencial();
 
 // Encola la validación `id` del texto leído (`leidoEn`: epoch UTC de la lectura).
 // false si no se pudo encolar.
 bool validar(uint32_t id, const char* qr, int64_t leidoEn);
 
 // Encola un latido (POST /dispositivos/latidos) o la descarga de la configuración.
-bool enviarLatido(int rssi, bool puertaAbierta);
+bool enviarLatido(bool puertaAbierta);
 bool pedirConfiguracion();
+
+// Pregunta al servidor si la placa ya tiene vínculo (POST /dispositivos/reclamar, sin
+// credencial de dispositivo): MAC + código de vinculación + la clave que sorteó la placa.
+bool reclamar(const char* codigo, const char* clave);
 
 // true si terminó alguna llamada; deja su respuesta en `respuesta`.
 bool siguienteRespuesta(Respuesta& respuesta);

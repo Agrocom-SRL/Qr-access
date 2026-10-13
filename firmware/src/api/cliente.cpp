@@ -29,8 +29,9 @@ struct PedidoValidacion {
 
 struct TrabajoSegundoPlano {
   Tipo tipo;
-  int rssi;
   bool puertaAbierta;
+  char codigo[aprovisionamiento::LARGO_CODIGO + 1];  // solo Reclamo
+  char clave[aprovisionamiento::MAX_VALOR + 1];      // solo Reclamo
 };
 
 struct Llamada {
@@ -44,13 +45,20 @@ QueueHandle_t respuestas = nullptr;
 volatile uint32_t idVigente = 0;
 
 String urlBase;
-char autorizacion[MAX_AUTORIZACION];
+char autorizacion[MAX_AUTORIZACION];  // vacío = sin credencial
+portMUX_TYPE candado = portMUX_INITIALIZER_UNLOCKED;  // loop() la cambia, la tarea la lee
 
 // Una llamada HTTP(S) a la API. TLS siempre verificado con la CA embebida;
 // solo la compilación de desarrollo admite http:// (y lo declara al arrancar).
 Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeoutConexionMs,
-               uint16_t timeoutLecturaMs) {
+               uint16_t timeoutLecturaMs, bool conCredencial = true) {
   const Llamada fallo{-1, String()};
+  char credencial[MAX_AUTORIZACION];
+  portENTER_CRITICAL(&candado);
+  memcpy(credencial, autorizacion, sizeof(credencial));
+  portEXIT_CRITICAL(&candado);
+  // Sin credencial no se llama: una ruta de dispositivo sin encabezado solo daría 401.
+  if (conCredencial && credencial[0] == '\0') return fallo;
   const String url = urlBase + ruta;
 
   WiFiClientSecure tls;
@@ -73,7 +81,8 @@ Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeout
   http.setReuse(false);
   if (!http.begin(*cliente, url)) return fallo;
 
-  http.addHeader("Authorization", autorizacion);
+  if (conCredencial) http.addHeader("Authorization", credencial);
+  memset(credencial, 0, sizeof(credencial));
   int estado;
   if (post) {
     http.addHeader("Content-Type", "application/json");
@@ -102,7 +111,7 @@ void atenderValidacion(const PedidoValidacion& pedido) {
 
   char leidoEn[tiempo::CAPACIDAD_ISO];
   Respuesta r{Tipo::Validacion, pedido.id, -1, puerta::Resultado::invalido(puerta::Motivo::SinRed),
-              respuesta::Configuracion{false, 0}};
+              respuesta::Configuracion{false, 0}, respuesta::Reclamo{}};
   if (tiempo::formatearIso(pedido.leidoEn, leidoEn, sizeof(leidoEn))) {
     JsonDocument cuerpo;
     cuerpo["token"] = pedido.qr;
@@ -121,11 +130,25 @@ void atenderValidacion(const PedidoValidacion& pedido) {
 
 void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
   Respuesta r{trabajo.tipo, 0, -1, puerta::Resultado::invalido(puerta::Motivo::RespuestaInvalida),
-              respuesta::Configuracion{false, 0}};
-  if (trabajo.tipo == Tipo::Latido) {
+              respuesta::Configuracion{false, 0}, respuesta::Reclamo{}};
+  if (trabajo.tipo == Tipo::Reclamo) {
+    JsonDocument cuerpo;
+    cuerpo["mac"] = config::macDeLaPlaca();
+    cuerpo["codigo"] = trabajo.codigo;
+    cuerpo["clave"] = trabajo.clave;
+    cuerpo["firmware"] = FIRMWARE_VERSION;
+    String json;
+    serializeJson(cuerpo, json);
+    const Llamada llamada = llamar(true, "/api/v1/dispositivos/reclamar", json,
+                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, false);
+    r.http = llamada.http;
+    r.reclamo = respuesta::interpretarReclamo(llamada.http, llamada.cuerpo.c_str(),
+                                              llamada.cuerpo.length());
+    json = String();  // llevaba el código y la clave
+  } else if (trabajo.tipo == Tipo::Latido) {
     JsonDocument cuerpo;
     cuerpo["firmware"] = FIRMWARE_VERSION;
-    cuerpo["rssi"] = trabajo.rssi;
+    cuerpo["rssi"] = 0;  // por cable no hay señal que medir; la API todavía exige el campo
     cuerpo["puerta_abierta"] = trabajo.puertaAbierta;
     String json;
     serializeJson(cuerpo, json);
@@ -163,14 +186,28 @@ bool encolarSegundoPlano(const TrabajoSegundoPlano& trabajo) {
 
 }  // namespace
 
+void fijarCredencial(const String& id, const String& clave) {
+  char nueva[MAX_AUTORIZACION];
+  // Si el id o la clave no sirven para un encabezado, queda sin credencial (no abre ni late).
+  if (!aprovisionamiento::armarAutorizacion(id.c_str(), clave.c_str(), nueva, sizeof(nueva))) {
+    nueva[0] = '\0';
+  }
+  portENTER_CRITICAL(&candado);
+  memcpy(autorizacion, nueva, sizeof(autorizacion));
+  portEXIT_CRITICAL(&candado);
+  memset(nueva, 0, sizeof(nueva));
+}
+
+void quitarCredencial() {
+  portENTER_CRITICAL(&candado);
+  memset(autorizacion, 0, sizeof(autorizacion));
+  portEXIT_CRITICAL(&candado);
+}
+
 void iniciar(const config::Dispositivo& dispositivo) {
   urlBase = dispositivo.apiUrl;
-  // `completa()` ya validó id y clave; si el encabezado no se puede armar, la tarea no arranca.
-  if (!aprovisionamiento::armarAutorizacion(dispositivo.id.c_str(), dispositivo.clave.c_str(),
-                                            autorizacion, sizeof(autorizacion))) {
-    Serial.println("[api] credencial invalida: el cliente no arranca");
-    return;
-  }
+  quitarCredencial();
+  if (dispositivo.completa()) fijarCredencial(dispositivo.id, dispositivo.clave);
   validaciones = xQueueCreate(1, sizeof(PedidoValidacion));
   segundoPlano = xQueueCreate(2, sizeof(TrabajoSegundoPlano));
   respuestas = xQueueCreate(4, sizeof(Respuesta));
@@ -190,12 +227,27 @@ bool validar(uint32_t id, const char* qr, int64_t leidoEn) {
   return ok;
 }
 
-bool enviarLatido(int rssi, bool puertaAbierta) {
-  return encolarSegundoPlano(TrabajoSegundoPlano{Tipo::Latido, rssi, puertaAbierta});
+bool enviarLatido(bool puertaAbierta) {
+  TrabajoSegundoPlano trabajo{};
+  trabajo.tipo = Tipo::Latido;
+  trabajo.puertaAbierta = puertaAbierta;
+  return encolarSegundoPlano(trabajo);
 }
 
 bool pedirConfiguracion() {
-  return encolarSegundoPlano(TrabajoSegundoPlano{Tipo::Configuracion, 0, false});
+  TrabajoSegundoPlano trabajo{};
+  trabajo.tipo = Tipo::Configuracion;
+  return encolarSegundoPlano(trabajo);
+}
+
+bool reclamar(const char* codigo, const char* clave) {
+  TrabajoSegundoPlano trabajo{};
+  trabajo.tipo = Tipo::Reclamo;
+  strncpy(trabajo.codigo, codigo, sizeof(trabajo.codigo) - 1);
+  strncpy(trabajo.clave, clave, sizeof(trabajo.clave) - 1);
+  const bool ok = encolarSegundoPlano(trabajo);
+  memset(trabajo.clave, 0, sizeof(trabajo.clave));
+  return ok;
 }
 
 bool siguienteRespuesta(Respuesta& r) {

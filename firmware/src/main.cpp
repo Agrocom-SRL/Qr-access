@@ -5,6 +5,7 @@
 #include <esp_task_wdt.h>
 #include <puerta.h>
 #include <temporizador.h>
+#include <vinculo.h>
 
 #include "api/cliente.h"
 #include "cerradura/cerradura.h"
@@ -22,12 +23,16 @@ constexpr uint32_t WATCHDOG_S = 8;
 constexpr uint32_t PERIODO_LATIDO_MS = 60000;
 constexpr uint32_t PERIODO_CONFIGURACION_MS = 300000;
 constexpr uint32_t REINTENTO_CONFIGURACION_MS = 5000;
+// Sin vínculo la placa pregunta cada 30 s (ADR 0025); el servidor limita los intentos fallidos.
+constexpr uint32_t PERIODO_RECLAMO_MS = 30000;
 
 puerta::Maquina maquina;
 RelojMillis reloj;
 temporizador::Periodico latido(reloj, PERIODO_LATIDO_MS, true);
 temporizador::Tarea configuracion(reloj, PERIODO_CONFIGURACION_MS, REINTENTO_CONFIGURACION_MS);
-bool configurado = false;
+temporizador::Periodico reclamo(reloj, PERIODO_RECLAMO_MS, true);
+config::Dispositivo dispositivo;
+vinculo::Vinculo estadoVinculo(false);  // se rearma en setup() con lo que haya en la NVS
 char linea[puerta::MAX_QR + 1];
 
 void ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs);
@@ -38,7 +43,7 @@ void pedirValidacion(uint32_t ahoraMs) {
   const uint32_t id = maquina.idValidacion();
   // Solo los primeros caracteres: el token completo nunca va a un log.
   Serial.printf("[puerta] validando %.8s...\n", maquina.qr());
-  const bool salio = configurado && red::lista() && api::validar(id, maquina.qr(), red::epoch());
+  const bool salio = estadoVinculo.opera() && red::lista() && api::validar(id, maquina.qr(), red::epoch());
   if (!salio) {
     Serial.println("[puerta] sin red u hora valida: no se valida");
     ejecutar(maquina.alResponder(id, puerta::Resultado::invalido(puerta::Motivo::SinRed), ahoraMs),
@@ -53,7 +58,40 @@ void ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs) {
   if (acciones.enviarValidacion) pedirValidacion(ahoraMs);
 }
 
+// El servidor contestó el reclamo: la placa aprende si ya tiene vínculo (ADR 0025).
+void atenderReclamo(const respuesta::Reclamo& r) {
+  const bool mismoId = r.estado == respuesta::Reclamo::Estado::Vinculado &&
+                       dispositivo.id.equals(r.dispositivoId);
+  switch (estadoVinculo.alReclamar(r, mismoId)) {
+    case vinculo::Efecto::GuardarId:
+      if (!config::guardar(aprovisionamiento::Campo::DispositivoId, r.dispositivoId)) {
+        Serial.println("[vinculo] no se pudo guardar el id: se repite al reiniciar");
+      }
+      dispositivo.id = r.dispositivoId;
+      api::fijarCredencial(dispositivo.id, dispositivo.clave);
+      Serial.printf("[vinculo] vinculada al dispositivo %s\n", r.dispositivoId);
+      break;
+    case vinculo::Efecto::OlvidarVinculo:
+      // La liberaron: se borra el id y se sortea una clave nueva para la próxima cuenta.
+      api::quitarCredencial();
+      config::olvidarId();
+      dispositivo.id = "";
+      config::sortearClave(dispositivo);
+      Serial.println("[vinculo] liberada: espera una nueva vinculacion");
+      break;
+    case vinculo::Efecto::Nada:
+      if (estadoVinculo.opera()) Serial.println("[vinculo] credencial retomada");
+      break;
+  }
+}
+
 void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
+  // La API rechazó la credencial (cuenta suspendida, dispositivo liberado): no se valida más
+  // hasta que el servidor confirme el vínculo (falla segura).
+  if (r.tipo != api::Tipo::Reclamo && r.http == 401 && estadoVinculo.opera()) {
+    estadoVinculo.alRechazarCredencial();
+    Serial.println("[vinculo] la API rechazo la credencial: se pregunta al servidor");
+  }
   switch (r.tipo) {
     case api::Tipo::Validacion:
       Serial.printf("[puerta] %s\n", puerta::mensaje(r.resultado.motivo));
@@ -69,17 +107,27 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
       configuracion.terminada(r.config.valida);
       break;
     case api::Tipo::Latido:
-      if (r.http == 401) Serial.println("[latido] la API rechazo la credencial del dispositivo");
-      else if (r.http != 204 && r.http != 200) Serial.printf("[latido] fallo (http %d)\n", r.http);
+      if (r.http != 204 && r.http != 200 && r.http != 401) {
+        Serial.printf("[latido] fallo (http %d)\n", r.http);
+      }
+      break;
+    case api::Tipo::Reclamo:
+      atenderReclamo(r.reclamo);
       break;
   }
 }
 
-// Latido y configuración solo con la puerta en reposo y red lista: no le quitan
+// Latido, configuración y reclamo solo con la puerta en reposo y red lista: no le quitan
 // la tarea de red a una validación.
 void segundoPlano() {
-  if (!configurado || !red::lista() || maquina.estado() != puerta::Estado::Reposo) return;
-  if (latido.vencio()) api::enviarLatido(red::rssi(), cerradura::puertaAbierta());
+  if (!red::lista() || maquina.estado() != puerta::Estado::Reposo) return;
+  if (estadoVinculo.debeReclamar()) {
+    if (dispositivo.reclamable() && reclamo.vencio()) {
+      api::reclamar(dispositivo.codigo.c_str(), dispositivo.clave.c_str());
+    }
+    return;
+  }
+  if (latido.vencio()) api::enviarLatido(cerradura::puertaAbierta());
   if (configuracion.toca()) api::pedirConfiguracion();
 }
 
@@ -103,14 +151,26 @@ void setup() {
 #endif
   esp_task_wdt_add(nullptr);
 
-  const config::Dispositivo dispositivo = config::cargar();
-  configurado = dispositivo.completa();
-  if (configurado) {
-    red::iniciar(dispositivo.wifiSsid, dispositivo.wifiClave);
+  dispositivo = config::cargar();
+  // Con código de vinculación y sin clave (primer arranque, o recién liberada), la placa
+  // sortea la suya: la clave nunca viaja del servidor a la placa (ADR 0025 §4).
+  if (aprovisionamiento::codigoValido(dispositivo.codigo.c_str()) &&
+      !aprovisionamiento::claveValida(dispositivo.clave.c_str())) {
+    config::sortearClave(dispositivo);
+  }
+  estadoVinculo = vinculo::Vinculo(dispositivo.completa());
+  Serial.printf("[placa] mac %s\n", config::macDeLaPlaca().c_str());
+  if (aprovisionamiento::urlValida(dispositivo.apiUrl.c_str(), config::MODO_DESARROLLO)) {
+    red::iniciar();
     api::iniciar(dispositivo);
+    if (!estadoVinculo.opera()) {
+      Serial.println(dispositivo.reclamable()
+                         ? "[vinculo] sin vincular: espera a que AGROCOM la asigne a una puerta"
+                         : "[config] falta el codigo de vinculacion (set codigo ...)");
+    }
   } else {
     // Sin configuración no se valida nada (solo funciona el pulsador de salida).
-    Serial.println("[config] sin configuracion: falta aprovisionar el dispositivo");
+    Serial.println("[config] sin configuracion: falta aprovisionar la placa (set api_url ...)");
   }
   consola::iniciar();
   lector_qr::iniciar();
@@ -121,7 +181,7 @@ void loop() {
   const uint32_t ahora = millis();
 
   consola::tick();
-  if (configurado) red::tick(ahora);
+  if (estadoVinculo.opera() || dispositivo.reclamable()) red::tick(ahora);
 
   if (cerradura::pulsadorPresionado(ahora)) ejecutar(maquina.alPulsarSalida(ahora), ahora);
 

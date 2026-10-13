@@ -31,7 +31,7 @@
   Para instalar sin cable, activa **Depuración inalámbrica** en el teléfono (Android 11 o superior; *Opciones de desarrollador*) y empareja una sola vez: `adb pair <ip-del-telefono>:<puerto-de-emparejamiento>` y después `adb connect <ip-del-telefono>:<puerto>`. Con cable USB también funciona: solo cambia cómo se instala la app, no cómo llega a la API.
 
   HTTP sin TLS se permite **solo en debug** (`android/app/src/debug/res/xml/network_security_config.xml`); el APK de release exige HTTPS. En web: `http://localhost:3000`, o `:8080` si la sirve el contenedor `web`.
-- **firmware**: credenciales en NVS por aprovisionamiento; `secretos.h` solo para desarrollo en la mesa.
+- **firmware**: la placa lleva en NVS la URL de la API y su código de vinculación; AGROCOM la asigna a una puerta desde el panel (ADR 0025). `secretos.h` (URL, id y clave) solo para desarrollo en la mesa. Sin WiFi: Ethernet.
 - **CI**: variables del job; firmas y claves de OTA en GitHub Actions secrets.
 
 ## Datos de desarrollo: la cuenta demo `DEM`

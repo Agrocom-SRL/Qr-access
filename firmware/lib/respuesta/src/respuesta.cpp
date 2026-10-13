@@ -1,6 +1,7 @@
 #include "respuesta.h"
 
 #include <ArduinoJson.h>
+#include <string.h>
 
 namespace respuesta {
 
@@ -74,6 +75,38 @@ Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_
   uint16_t segundos = 0;
   if (!segundosEnRango(doc["segundos_apertura"], segundos)) return invalida;
   return Configuracion{true, segundos};
+}
+
+Reclamo interpretarReclamo(int estadoHttp, const char* cuerpo, size_t largo) {
+  Reclamo reclamo;
+  if (estadoHttp == 401 || estadoHttp == 429) {
+    reclamo.rechazado = true;
+    return reclamo;
+  }
+  if (estadoHttp != 200) return reclamo;
+
+  JsonDocument doc;
+  if (!leerObjeto(cuerpo, largo, doc)) return reclamo;
+  const char* estado = nullptr;
+  if (!textoNoVacio(doc["estado"], estado)) return reclamo;
+
+  if (strcmp(estado, "pendiente") == 0) {
+    reclamo.estado = Reclamo::Estado::Pendiente;
+    return reclamo;
+  }
+  if (strcmp(estado, "vinculado") != 0) return reclamo;
+
+  // El id llega en un encabezado `Dispositivo <id>.<clave>`: solo dígitos, sin separadores.
+  const char* id = nullptr;
+  if (!textoNoVacio(doc["dispositivo_id"], id)) return reclamo;
+  const size_t largoId = strlen(id);
+  if (largoId > MAX_ID_DISPOSITIVO) return reclamo;
+  for (size_t i = 0; i < largoId; ++i) {
+    if (id[i] < '0' || id[i] > '9') return reclamo;
+  }
+  memcpy(reclamo.dispositivoId, id, largoId + 1);
+  reclamo.estado = Reclamo::Estado::Vinculado;
+  return reclamo;
 }
 
 }  // namespace respuesta
