@@ -12,8 +12,9 @@ docs/       Funcional, modelo de datos, ADRs, diseño, hardware y gestión
 
 ## Versión
 
-**Versión actual: `v0.4.0`** (2026-10-13). Una sola versión para todo el monorepo (ADR 0014): `api/package.json`, `web/package.json`, `app/pubspec.yaml` (`0.4.0+5`) y `firmware/include/version.h` (`0.4.0`) la llevan igual.
+**Versión actual: `v0.5.0`** (2026-10-14). Una sola versión para todo el monorepo (ADR 0014): `api/package.json`, `web/package.json`, `app/pubspec.yaml` (`0.5.0+6`) y `firmware/include/version.h` (`0.5.0`) la llevan igual.
 
+- **v0.5.0** — El lector de QR es RS485 detrás del módulo TTL-RS485, con velocidad configurable por bandera de compilación; documentado el cableado del lector y el módulo USB-serie.
 - **v0.4.0** — Solo Ethernet y vinculación remota de placas (ADR 0025): inventario de placas y vinculación a una puerta desde el panel web, reclamo de la placa a la API y reasignación entre cuentas sin reprogramar.
 
 Para publicar una versión nueva: sube el número en esos cuatro archivos y en esta sección, y luego `git tag -a vX.Y.Z -m vX.Y.Z` sobre `develop` y `git push origin vX.Y.Z`; `release.yml` hace el resto.
