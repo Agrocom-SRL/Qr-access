@@ -5,7 +5,13 @@
 namespace lector_qr {
 
 namespace {
-constexpr uint32_t BAUDIOS = 9600;
+// El lector habla RS485 a través del módulo TTL-RS485 (docs/hardware/README.md). Con RE y DE a
+// GND el módulo solo recibe, que es lo que hace falta: el lector transmite y la placa escucha.
+// La velocidad depende del lector; se cambia con -DLECTOR_BAUDIOS=<n> sin tocar el código.
+#ifndef LECTOR_BAUDIOS
+#define LECTOR_BAUDIOS 9600
+#endif
+constexpr uint32_t BAUDIOS = LECTOR_BAUDIOS;
 char buffer[puerta::MAX_QR + 1];
 size_t largo = 0;
 bool descartando = false;
