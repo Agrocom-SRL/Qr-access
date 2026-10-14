@@ -1,6 +1,6 @@
 # ADR 0026 — Vinculación automática de placas con confirmación física
 
-**Estado:** Propuesta (2026-10-14) · Reemplaza el §2 y el §8 del ADR 0025 (código de vinculación por placa y alta manual) y mantiene el resto (clave generada por la placa, dispositivo = placa asignada a una puerta, liberar, solo Ethernet).
+**Estado:** Aceptada (2026-10-14) · Reemplaza el §2 y el §8 del ADR 0025 (código de vinculación por placa y alta manual) y mantiene el resto (clave generada por la placa, dispositivo = placa asignada a una puerta, liberar, solo Ethernet).
 
 ## Contexto
 
@@ -13,9 +13,9 @@ El riesgo que el código por placa cubría: la MAC es pública y falsificable, a
 ## Decisión
 
 1. **Un solo binario para todas las placas**, sin código ni secreto por placa. Se elimina `placas.codigo_hash` y el comando `set codigo`.
-2. **Anuncio.** Sin vínculo, la placa sortea su clave (32 bytes, `esp_random()`, NVS; ADR 0025 §4) y cada 30 s llama a `POST /api/v1/dispositivos/anunciar` con `{ mac, clave, firmware_version }`, sin autenticación. El servidor crea o actualiza una fila de **`placas` en estado `detectada`** (sin `tenant_id`) guardando `argon2id(clave)` por cada pareja `(mac, clave)`: una misma MAC puede tener varios candidatos, y solo uno es el real.
+2. **Anuncio.** Sin vínculo, la placa sortea su clave (32 bytes, `esp_random()`, NVS; ADR 0025 §4) y cada 30 s llama a `POST /api/v1/dispositivos/anunciar` con `{ mac, clave, firmware }`, sin autenticación. El servidor crea o actualiza la fila de **`placas`** (sin `tenant_id`, estado `detectada`) y registra cada pareja `(mac, clave)` como candidato en `placas_anuncios`, guardando solo la **huella SHA-256** de la clave (256 bits aleatorios, no adivinable; evita gastar un argon2id en una ruta anónima). El argon2id se calcula una sola vez, al confirmar, y es el que queda en `dispositivos.clave_hash` (invariante 6). Una misma MAC puede tener hasta 5 candidatos vivos, y solo uno es el real.
 3. **Panel.** El super admin ve las placas detectadas con MAC, IP pública, versión y último contacto, y las vincula eligiendo cuenta, sitio, puerta y nombre (como hoy). Al pulsar **Vincular** la placa pasa a `por_confirmar` con una ventana de 10 minutos; todavía no existe el dispositivo.
-4. **Confirmación física.** En su siguiente sondeo, la placa recibe `estado: "confirmar"` y lo anuncia con el LED azul parpadeando lento y un beep cada 2 s. El instalador mantiene **pulsado el pulsador de salida 5 s**; la placa llama a `POST /dispositivos/confirmar` con `{ mac, clave }`. Solo entonces el servidor crea el `dispositivo` con la clave de **esa** pareja `(mac, clave)`, revoca los demás candidatos de esa MAC y responde `vinculado`. Un atacante que solo conoce la MAC puede anunciarse, pero nunca confirmar: no tiene la mano en el pulsador. Si la ventana vence, la placa vuelve a `detectada`.
+4. **Confirmación física.** En su siguiente anuncio (cada 5 s mientras espera, para enterarse pronto de que se canceló o venció), la placa recibe `estado: "confirmar"` y lo anuncia con el LED azul parpadeando lento y un beep cada 2 s. El instalador mantiene **pulsado el pulsador de salida 5 s**; la placa llama a `POST /dispositivos/confirmar` con `{ mac, clave }`. Solo entonces el servidor crea el `dispositivo` con la clave de **esa** pareja `(mac, clave)`, descarta los demás candidatos de esa MAC (`descartada_at`) y responde `vinculado`. Un atacante que solo conoce la MAC puede anunciarse, pero nunca confirmar: no tiene la mano en el pulsador. Si la ventana vence, la placa vuelve a `detectada`.
 5. **El pulsador sigue siendo apertura física.** Mantenerlo 5 s solo cuenta como confirmación si la placa está en `confirmar`; en cualquier otro estado conserva su función (invariante 2).
 6. **Higiene del inventario** (el endpoint es anónimo y crea filas):
    - límite de anuncios por IP y por MAC, con `429` creciente;

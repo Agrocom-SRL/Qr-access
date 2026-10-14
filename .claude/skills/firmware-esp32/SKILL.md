@@ -1,6 +1,6 @@
 ---
 name: firmware-esp32
-description: Mapa del firmware del controlador de puerta de AGROCOM Acceso (ESP32-ETH01 solo Ethernet, framework Arduino, PlatformIO) — estructura, máquina de estados no bloqueante, falla segura, lector QR por UART, relé, sensor de puerta, pulsador de salida, cliente HTTPS, vinculación remota (ADR 0025), NVS, OTA y tests nativos. Usar antes de escribir o cambiar código en firmware/.
+description: Mapa del firmware del controlador de puerta de AGROCOM Acceso (ESP32-ETH01 solo Ethernet, framework Arduino, PlatformIO) — estructura, máquina de estados no bloqueante, falla segura, lector QR por UART, relé, sensor de puerta, pulsador de salida, cliente HTTPS, vinculación automática (ADR 0026), NVS, OTA y tests nativos. Usar antes de escribir o cambiar código en firmware/.
 ---
 
 # Firmware — mapa de `firmware/`
@@ -18,18 +18,19 @@ firmware/
     ca_servidor.h       certificado raíz para verificar TLS
   lib/                  lógica PURA, sin Arduino.h → se prueba con `pio test -e native`
     puerta/             máquina de estados (Reposo → Validando → Abierta), id por validación, tope de apertura; motivo.h: motivo_code
-    respuesta/          parseo de validación, configuración y reclamo (ArduinoJson, tamaño acotado, estricto)
+    respuesta/          parseo de validación, configuración y anuncio (ArduinoJson, tamaño acotado, estricto)
     temporizador/       Periodico, Backoff y Tarea sobre un reloj inyectable
     tiempo/             hora válida y formato ISO 8601 UTC (leido_en)
     patron/             patrones de LED y buzzer en función del tiempo
-    aprovisionamiento/  comandos serie (set api_url|codigo|disp_id|disp_clave, estado, borrar, reiniciar), validación del código de vinculación, clave aleatoria en hex y encabezado Authorization
-    vinculo/            estado del vínculo (opera / debe reclamar) y qué hacer con cada respuesta del reclamo
+    aprovisionamiento/  comandos serie (set api_url|disp_id|disp_clave, estado, borrar, reiniciar), clave aleatoria en hex y encabezado Authorization
+    vinculo/            estado del vínculo (opera / debe anunciar / espera confirmación) y qué hacer con cada respuesta del anuncio
+    pulsacion/          pulsación larga de 5 s del pulsador: la prueba de presencia física que confirma el vínculo
   src/
     main.cpp            setup()/loop(): solo arma componentes y llama a tick()
     red/                Ethernet (LAN8720 por RMII; sin WiFi), hora por NTP
     lector_qr/          UART del módulo GM65/GM861 (lectura por línea, longitud máxima)
     cerradura/          relé con tiempo máximo forzado, sensor magnético, pulsador de salida
-    api/                tarea FreeRTOS: validación (prioritaria), latido, configuración y reclamo del vínculo; HTTPClient + WiFiClientSecure (CA embebida)
+    api/                tarea FreeRTOS: validación (prioritaria), latido, configuración, anuncio y confirmación del vínculo; HTTPClient + WiFiClientSecure (CA embebida)
     indicadores/        LED RGB y buzzer (patrones: permitido, denegado, sin red, error)
     config/             NVS (Preferences) y consola serie de aprovisionamiento
     ota/                actualización firmada desde la URL que entrega la API
@@ -48,8 +49,8 @@ firmware/
 
 - **Falla segura** (invariante 2). Ningún camino de código activa el relé sin `abrir: true`, salvo el pulsador de salida (entrada física directa).
 - **No bloqueante**: nada de `delay()` en `loop()`; todo con `millis()` y `tick()`. Watchdog (`esp_task_wdt`) activo.
-- **Secretos en NVS**: la URL y el código de vinculación los carga el taller por serie (`set api_url|codigo <valor>`, `borrar`); la **clave la sortea la propia placa** (`esp_fill_random`) y nunca viaja del servidor a la placa. AGROCOM vincula la placa desde el panel; ver `docs/hardware/README.md` y ADR 0025.
-- **Vínculo** (`lib/vinculo`): sin id, o con la credencial rechazada (HTTP 401), la placa **no valida ni late**: pregunta cada 30 s con `POST /dispositivos/reclamar {mac, codigo, clave, firmware}` (sin credencial de dispositivo). `pendiente` → espera (y, si tenía vínculo, lo olvida y sortea clave nueva); `vinculado` → guarda el id y opera. Nunca se registra la clave ni el código en un log. `secretos.h` solo lo lee `pio run -e esp32-dev` (flag `ACCESO_DESARROLLO`, que además permite HTTP plano para la API local); el env `esp32` no tiene esos caminos y es el único que se publica.
+- **Secretos en NVS**: la URL de la API va en el binario (`URL_API_POR_DEFECTO`; `set api_url` solo la reemplaza) y no hay código de fábrica: todas las placas son iguales; la **clave la sortea la propia placa** (`esp_fill_random`) y nunca viaja del servidor a la placa. AGROCOM vincula la placa desde el panel y alguien confirma con el botón; ver `docs/hardware/README.md` y ADR 0026.
+- **Vínculo** (`lib/vinculo`): sin id, o con la credencial rechazada (HTTP 401), la placa **no valida ni late**: se anuncia cada 30 s con `POST /dispositivos/anunciar {mac, clave, firmware}` (sin credencial de dispositivo). `detectada` → espera (y, si tenía vínculo, lo olvida y sortea clave nueva); `confirmar` → LED azul lento y beep, se anuncia cada 5 s y, si se mantiene pulsado el botón 5 s, llama a `POST /dispositivos/confirmar {mac, clave}` (fuera de esa ventana el botón solo abre); `vinculado` → guarda el id y opera. Nunca se registra la clave en un log. `secretos.h` solo lo lee `pio run -e esp32-dev` (flag `ACCESO_DESARROLLO`, que además permite HTTP plano para la API local); el env `esp32` no tiene esos caminos y es el único que se publica.
 - **Contrato con la API** (V1): `POST /dispositivos/validaciones` `{token, leido_en}` → 200 `{abrir, segundos, evento_id, motivo_code}`; `POST /dispositivos/latidos`; `GET /dispositivos/configuracion`. Autenticación `Authorization: Dispositivo <id>.<clave>`. Cada validación lleva un id: una respuesta de otra lectura o tardía se descarta. Solo `abrir:true` con `acceso.permitido` y `segundos` entero en 1..3600 abre, acotado por el tope vigente (config, por defecto 5 s, duro 10 s).
 - **TLS verificado** con `setCACert(CA_SERVIDOR)`; nunca `setInsecure()`.
 - **Hora** por NTP (UTC) antes de la primera validación; sin hora válida no se valida.

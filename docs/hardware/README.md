@@ -67,37 +67,29 @@ Conexiones: TX del módulo a RXO de la placa, RX del módulo a TXO, GND con GND 
 - Diodo flyback en la bobina de la cerradura; masa común entre la lógica y el relé solo si el módulo no está optoacoplado.
 - Puerto USB del ESP32 inaccesible desde afuera (permite reflashear).
 
-## Alta y vinculación de una placa (ADR 0025)
+## Alta y vinculación de una placa (ADR 0026)
 
-La placa **no lleva credenciales de ninguna cuenta**: sale del taller con su MAC y un código de vinculación, y AGROCOM la asigna a una puerta desde el panel web. No hace falta volver a conectarle un cable USB cuando cambia de cuenta.
+**Todas las placas son iguales**: no llevan credenciales de ninguna cuenta ni código de fábrica, y la URL de la API va en el binario. No hay nada que registrar ni que cargar por serie: la placa se anuncia sola y AGROCOM la asigna a una puerta desde el panel web.
 
-**En el taller, una vez por placa** (USB, 115200 baudios; `pio device monitor`):
+**En el taller, una vez por placa:** flashear el firmware de producción (`pio run -e esp32 -t upload`). Para cargar por USB-serie en la ESP32-ETH01 se puentea GPIO0 a GND y se resetea; **se quita el puente** después de flashear. El mismo binario sirve para todas las placas.
 
-1. Flashear el firmware de producción (`pio run -t upload`, env `esp32`). Para cargar por USB-serie en la ESP32-ETH01 se puentea GPIO0 a GND y se resetea; **se quita el puente** después de flashear.
-2. Por serie, `estado` muestra la **MAC** de la placa.
-3. En el panel web (**Placas › Registrar placa**) se registra la MAC; el panel muestra **una sola vez** el código de vinculación y el comando para cargarlo.
-4. Por serie, un campo por línea (el firmware no repite nunca un valor y una clave no aparece en ningún log):
+**En la instalación** (lo hace cualquiera, sin conocimientos técnicos):
 
-```
-set api_url https://acceso.agrocom.com.bo
-set codigo <código de 16 caracteres del panel>
-estado                        (qué hay cargado, sin claves)
-reiniciar
-```
+1. Conectar el cable de red y la corriente. La placa sortea su clave (generador del hardware, nunca viaja del servidor a la placa) y se anuncia cada 30 s (`POST /dispositivos/anunciar`). En el panel aparece sola como **Detectada**.
+2. En el panel (**Placas**, solo super admin), **Vincular**: elige cuenta, una puerta sin lector y un nombre. La placa pasa a **Esperando el botón** durante 10 minutos.
+3. En la puerta, la placa lo avisa con el **LED azul parpadeando y un beep cada 2 s**. Se **mantiene pulsado el pulsador de salida 5 segundos**: esa es la prueba de presencia física que impide que alguien que solo conoce la MAC se quede con el vínculo.
+4. La placa avisa al servidor (`POST /dispositivos/confirmar`), recibe el id de su dispositivo, da un destello verde con un beep y empieza a validar QR y a enviar latidos.
 
-La placa sortea su propia clave en el primer arranque (generador del hardware) y la guarda en la NVS; nunca viaja del servidor a la placa.
+Si la ventana vence o se cancela desde el panel, la placa vuelve a **Detectada**; basta con volver a vincular.
 
-**En la instalación:** el cliente conecta el cable de red y la corriente. La placa pregunta a la API cada 30 s (`POST /dispositivos/reclamar`) y el panel la muestra como **Lista para vincular**.
+**Liberar y dar de baja** (panel web, solo super admin):
 
-**Vincular y liberar** (panel web, solo super admin):
+- **Liberar:** revoca el dispositivo. La placa recibe 401, olvida su id, sortea una clave nueva y vuelve a anunciarse como detectada; para otra cuenta se repite la confirmación con el botón.
+- **Dar de baja:** una placa libre que se perdió o dañó sale del inventario. Una placa detectada que no se anuncia en 7 días sale sola; si sigue enchufada, reaparece.
 
-- **Vincular:** elige cuenta, una puerta sin lector y un nombre. En su siguiente sondeo la placa recibe el id de su dispositivo y empieza a validar QR y a enviar latidos.
-- **Liberar:** revoca el dispositivo. La placa recibe 401, olvida su id, sortea una clave nueva y vuelve a esperar; se puede vincular a otra cuenta sin tocarla.
-- **Dar de baja:** una placa libre que se perdió o dañó sale del inventario.
+Sin vínculo (o con la credencial rechazada, por ejemplo una cuenta suspendida) la placa **no valida ningún QR**: solo atiende el pulsador de salida. Con la credencial rechazada sigue anunciándose con la misma clave, y retoma sola si el servidor confirma el mismo dispositivo. La URL tiene que ser `https://`: el firmware de producción no acepta `http://`.
 
-Sin vínculo (o con la credencial rechazada, por ejemplo una cuenta suspendida) la placa **no valida ningún QR**: solo atiende el pulsador de salida. Con la credencial rechazada sigue preguntando con la misma clave, y retoma sola si el servidor confirma el mismo dispositivo. La URL tiene que ser `https://`: el firmware de producción no acepta `http://`.
-
-**Recuperación:** `borrar` elimina lo cargado (solo el espacio `acceso` de la NVS; no borra la flash). Para una mesa de trabajo, `set disp_id` y `set disp_clave` cargan una credencial a mano, como antes.
+**Recuperación:** `borrar` elimina lo cargado (solo el espacio `acceso` de la NVS; no borra la flash). `set api_url <https://…>` reemplaza la URL de fábrica si hiciera falta. Para una mesa de trabajo, `set disp_id` y `set disp_clave` cargan una credencial a mano.
 
 ## Compilación de desarrollo
 
