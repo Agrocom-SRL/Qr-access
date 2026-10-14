@@ -13,29 +13,31 @@ export const respuestaDeConfiguracion = z.object({
   ota: z.null(),
 });
 
-/** El reclamo de una placa sin vínculo (ADR 0025 §5). La clave la sortea la placa. */
-export const cuerpoDeReclamo = z.object({
+/** El anuncio de una placa sin vínculo (ADR 0026 §2). La clave la sortea la placa. */
+export const cuerpoDeAnuncio = z.object({
   mac: z.string().min(11).max(17),
-  codigo: z.string().min(8).max(32),
   clave: z.string().regex(/^[A-Za-z0-9_-]{32,128}$/),
   firmware: z.string().min(1).max(20),
 });
 
-export const respuestaDeReclamo = z.discriminatedUnion('estado', [
-  z.object({ estado: z.literal('pendiente') }),
+export const respuestaDeAnuncio = z.discriminatedUnion('estado', [
+  z.object({ estado: z.literal('detectada') }),
+  z.object({ estado: z.literal('confirmar') }),
   z.object({ estado: z.literal('vinculado'), dispositivo_id: z.string() }),
 ]);
 
-export const parametrosDePlaca = z.object({ id: z.string().regex(/^\d+$/) });
-
-export const cuerpoDeNuevaPlaca = z.object({ mac: z.string().min(11).max(17) });
-
-export const respuestaDePlacaCreada = z.object({
-  id: z.string(),
-  mac: z.string(),
-  /** Se muestra una sola vez: hay que cargarlo en la placa. */
-  codigo: z.string(),
+/** La placa avisa que alguien mantuvo pulsado su botón (ADR 0026 §4). */
+export const cuerpoDeConfirmacion = z.object({
+  mac: z.string().min(11).max(17),
+  clave: z.string().regex(/^[A-Za-z0-9_-]{32,128}$/),
 });
+
+export const respuestaDeConfirmacion = z.object({
+  estado: z.literal('vinculado'),
+  dispositivo_id: z.string(),
+});
+
+export const parametrosDePlaca = z.object({ id: z.string().regex(/^\d+$/) });
 
 export const cuerpoDeVinculo = z.object({
   cuenta_id: z.string().regex(/^\d+$/),
@@ -43,23 +45,24 @@ export const cuerpoDeVinculo = z.object({
   nombre: z.string().trim().min(1).max(100),
 });
 
-export const respuestaDeVinculo = z.object({ dispositivo_id: z.string() });
+/** Hasta cuándo espera la placa que alguien pulse su botón. */
+export const respuestaDeVinculo = z.object({ por_confirmar_hasta: z.string() });
 
 export const consultaDePlacas = esquemaPaginacion.extend({
   busqueda: z.string().trim().min(1).max(60).optional(),
-  estado: z.enum(['de_fabrica', 'vinculada']).optional(),
+  estado: z.enum(['detectada', 'por_confirmar', 'vinculada']).optional(),
 });
 
 export const respuestaDePlacas = esquemaListado(
   z.object({
     id: z.string(),
     mac: z.string(),
-    estado: z.enum(['de_fabrica', 'vinculada']),
+    estado: z.enum(['detectada', 'por_confirmar', 'vinculada']),
     firmware: z.string().nullable(),
     ip: z.string().nullable(),
     ultimo_contacto_at: z.string().nullable(),
     en_linea: z.boolean(),
-    reclamo_hecho: z.boolean(),
+    por_confirmar_hasta: z.string().nullable(),
     dispositivo: z.object({ id: z.string(), nombre: z.string() }).nullable(),
     cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }).nullable(),
     puerta: z.object({ id: z.string(), nombre: z.string() }).nullable(),

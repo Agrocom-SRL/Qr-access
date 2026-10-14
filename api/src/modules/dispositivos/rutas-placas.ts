@@ -1,17 +1,15 @@
 import type { Pool } from 'mysql2/promise';
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
+import { ejecutar as cancelarVinculo } from './actions/cancelar-vinculo-de-placa.js';
 import { ejecutar as darDeBaja } from './actions/dar-de-baja-placa.js';
 import { ejecutar as liberar } from './actions/liberar-placa.js';
 import { ejecutar as listar } from './actions/listar-placas.js';
-import { ejecutar as registrar } from './actions/registrar-placa.js';
 import { ejecutar as vincular } from './actions/vincular-placa.js';
 import {
   consultaDePlacas,
-  cuerpoDeNuevaPlaca,
   cuerpoDeVinculo,
   parametrosDePlaca,
-  respuestaDePlacaCreada,
   respuestaDePlacas,
   respuestaDeVinculo,
 } from './schemas.js';
@@ -19,7 +17,7 @@ import {
 const ETIQUETA = ['plataforma'];
 const plataforma = { acceso: 'plataforma' } as const;
 
-/** Inventario y vinculación de placas para el super admin (ADR 0025). */
+/** Inventario y vinculación de placas para el super admin (ADR 0025 y 0026). */
 export const rutasDePlacas =
   (pool: Pool): FastifyPluginCallbackZod =>
   (app, _opciones, listo) => {
@@ -41,38 +39,43 @@ export const rutasDePlacas =
     );
 
     app.post(
-      '/plataforma/placas',
-      {
-        schema: {
-          tags: ETIQUETA,
-          body: cuerpoDeNuevaPlaca,
-          response: { 201: respuestaDePlacaCreada },
-        },
-        config: plataforma,
-        preHandler: permisoDePlataforma('dispositivos.placa.registrar'),
-      },
-      async (request, reply) => reply.status(201).send(await registrar(pool, request.body.mac)),
-    );
-
-    app.post(
       '/plataforma/placas/:id/vincular',
       {
         schema: {
           tags: ETIQUETA,
           params: parametrosDePlaca,
           body: cuerpoDeVinculo,
-          response: { 201: respuestaDeVinculo },
+          response: { 202: respuestaDeVinculo },
         },
         config: plataforma,
         preHandler: permisoDePlataforma('dispositivos.placa.vincular'),
       },
       async (request, reply) => {
-        const { dispositivoId } = await vincular(pool, plataformaDe(request), request.params.id, {
-          cuentaId: request.body.cuenta_id,
-          puertaId: request.body.puerta_id,
-          nombre: request.body.nombre,
-        });
-        return reply.status(201).send({ dispositivo_id: dispositivoId });
+        const { porConfirmarHasta } = await vincular(
+          pool,
+          plataformaDe(request),
+          request.params.id,
+          {
+            cuentaId: request.body.cuenta_id,
+            puertaId: request.body.puerta_id,
+            nombre: request.body.nombre,
+          },
+        );
+        // 202: el dispositivo todavía no existe, falta el botón de la placa (ADR 0026).
+        return reply.status(202).send({ por_confirmar_hasta: porConfirmarHasta.toISOString() });
+      },
+    );
+
+    app.post(
+      '/plataforma/placas/:id/cancelar-vinculo',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDePlaca },
+        config: plataforma,
+        preHandler: permisoDePlataforma('dispositivos.placa.vincular'),
+      },
+      async (request, reply) => {
+        await cancelarVinculo(pool, request.params.id);
+        return reply.status(204).send();
       },
     );
 

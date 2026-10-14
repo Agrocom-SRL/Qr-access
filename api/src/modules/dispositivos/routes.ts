@@ -6,12 +6,16 @@ import { ejecutar as obtenerConfiguracion } from './actions/obtener-configuracio
 import { ejecutar as registrarLatido } from './actions/registrar-latido.js';
 import { rutasDePlacas } from './rutas-placas.js';
 import {
+  cuerpoDeAnuncio,
+  cuerpoDeConfirmacion,
   cuerpoDeLatido,
-  cuerpoDeReclamo,
+  respuestaDeAnuncio,
   respuestaDeConfiguracion,
-  respuestaDeReclamo,
+  respuestaDeConfirmacion,
 } from './schemas.js';
-import { ejecutar as reclamarPlaca } from './actions/reclamar-placa.js';
+import { ejecutar as anunciarPlaca } from './actions/anunciar-placa.js';
+import { ejecutar as confirmarPlaca } from './actions/confirmar-placa.js';
+import { ejecutar as depurarPlacas } from './actions/depurar-placas.js';
 
 export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod {
   // En memoria: vale para una sola instancia de la API (V1), igual que el límite del login.
@@ -26,27 +30,60 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       bloqueoBaseSegundos: 60,
       bloqueoMaximoSegundos: 3600,
     }),
+    // Placas nuevas por IP: una instalación entera sale por una misma IP, así que el tope es holgado.
+    nuevasPorIp: new LimitadorDeIntentos({
+      maxFallos: 30,
+      bloqueoBaseSegundos: 300,
+      bloqueoMaximoSegundos: 3600,
+    }),
+  };
+  // La limpieza del inventario corre a lo sumo una vez por hora, colgada de un anuncio.
+  let ultimaDepuracion = Date.now();
+  const depurarSiToca = (log: { error: (error: unknown) => void }): void => {
+    if (Date.now() - ultimaDepuracion < 3_600_000) return;
+    ultimaDepuracion = Date.now();
+    depurarPlacas(pool).catch((error: unknown) => log.error(error));
   };
   return (app, _opciones, listo) => {
     app.register(rutasDePlacas(pool));
 
-    // Sin credencial de dispositivo: la placa aún no tiene vínculo (ADR 0025 §5).
+    // Sin credencial de dispositivo: la placa aún no tiene vínculo (ADR 0026 §2).
     app.post(
-      '/dispositivos/reclamar',
+      '/dispositivos/anunciar',
       {
         schema: {
           tags: ['dispositivos'],
-          body: cuerpoDeReclamo,
-          response: { 200: respuestaDeReclamo },
+          body: cuerpoDeAnuncio,
+          response: { 200: respuestaDeAnuncio },
+        },
+        config: { acceso: 'publica' },
+      },
+      (request) => {
+        depurarSiToca(request.log);
+        return anunciarPlaca(pool, limitadores, {
+          mac: request.body.mac,
+          clave: request.body.clave,
+          firmware: request.body.firmware,
+          ip: request.ip,
+        });
+      },
+    );
+
+    // Alguien mantuvo pulsado el botón de la placa: la prueba de presencia física (ADR 0026 §4).
+    app.post(
+      '/dispositivos/confirmar',
+      {
+        schema: {
+          tags: ['dispositivos'],
+          body: cuerpoDeConfirmacion,
+          response: { 200: respuestaDeConfirmacion },
         },
         config: { acceso: 'publica' },
       },
       (request) =>
-        reclamarPlaca(pool, limitadores, {
+        confirmarPlaca(pool, limitadores, {
           mac: request.body.mac,
-          codigo: request.body.codigo,
           clave: request.body.clave,
-          firmware: request.body.firmware,
           ip: request.ip,
         }),
     );

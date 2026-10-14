@@ -3,13 +3,13 @@ import { ContextoCuenta } from '../../../platform/contexto/contexto-cuenta.js';
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
-import { RepositorioDePlacas } from '../placas-repository.js';
 import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from '../repository.js';
 
 /**
- * Libera una placa (ADR 0025 §7): revoca su dispositivo y olvida su clave, de modo que la placa
- * recibe 401, borra su vínculo y vuelve a reclamar para otra cuenta. Si el dispositivo es de una
- * cuenta, se revoca en su contexto para que la bitácora quede en esa cuenta.
+ * Libera una placa (ADR 0026 §7): revoca su dispositivo. La placa recibe 401, borra su vínculo,
+ * sortea una clave nueva y vuelve a anunciarse como detectada, lista para otra cuenta tras una
+ * nueva confirmación física. Si el dispositivo es de una cuenta, se revoca en su contexto para
+ * que la bitácora quede en esa cuenta.
  */
 export async function ejecutar(
   pool: Pool,
@@ -17,7 +17,6 @@ export async function ejecutar(
   placaId: string,
   ahora: Date = new Date(),
 ): Promise<void> {
-  const placas = new RepositorioDePlacas(pool);
   const dispositivo = await new RepositorioDeDispositivosDePlataforma(pool).buscarEnServicioDePlaca(
     placaId,
   );
@@ -27,7 +26,6 @@ export async function ejecutar(
     enTransaccion(pool, async (tx) => {
       const revocado = await new RepositorioDeDispositivos(pool).revocar(tx, dispositivo.id, ahora);
       if (!revocado) throw new ErrorDeDominio('placa.sin_dispositivo', 409);
-      await placas.olvidarClave(tx, placaId);
     }),
   );
 }
