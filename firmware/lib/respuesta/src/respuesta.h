@@ -32,18 +32,20 @@ struct Configuracion {
 };
 Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_t largo);
 
-// POST /api/v1/dispositivos/reclamar (ADR 0025 §5), sin credencial de dispositivo:
-//   {"estado":"pendiente"}  |  {"estado":"vinculado","dispositivo_id":"<dígitos>"}
-// Cualquier otra cosa (HTTP distinto de 200, JSON fuera de forma, id que no sean
-// dígitos) es `Invalido`: la placa no cambia de estado y vuelve a preguntar.
+// POST /api/v1/dispositivos/anunciar y /confirmar (ADR 0026), sin credencial de dispositivo:
+//   {"estado":"detectada"}  |  {"estado":"confirmar"}
+//   |  {"estado":"vinculado","dispositivo_id":"<dígitos>"}
+// `confirmar` pide que alguien mantenga pulsado el botón de la placa. Cualquier otra cosa (HTTP
+// distinto de 200, JSON fuera de forma, id que no sean dígitos) es `Invalido`: la placa no cambia
+// de estado y vuelve a preguntar.
 constexpr size_t MAX_ID_DISPOSITIVO = 20;
-struct Reclamo {
-  enum class Estado : uint8_t { Invalido, Pendiente, Vinculado };
+struct Anuncio {
+  enum class Estado : uint8_t { Invalido, Detectada, Confirmar, Vinculado };
   Estado estado = Estado::Invalido;
   char dispositivoId[MAX_ID_DISPOSITIVO + 1] = {0};  // solo con Vinculado
-  // `rechazado`: 401 (código o clave no reconocidos) o 429 (bloqueo por intentos).
+  // `rechazado`: 401 (clave no reconocida) o 429 (bloqueo por intentos).
   bool rechazado = false;
 };
-Reclamo interpretarReclamo(int estadoHttp, const char* cuerpo, size_t largo);
+Anuncio interpretarAnuncio(int estadoHttp, const char* cuerpo, size_t largo);
 
 }  // namespace respuesta

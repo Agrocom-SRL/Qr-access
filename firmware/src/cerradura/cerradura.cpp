@@ -58,4 +58,6 @@ bool pulsadorPresionado(uint32_t ahoraMs) {
   return estable == LOW;  // INPUT_PULLUP: presionado = LOW
 }
 
+bool pulsadorAbajo() { return estable == LOW; }
+
 }  // namespace cerradura

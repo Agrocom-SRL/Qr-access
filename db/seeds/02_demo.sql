@@ -2,7 +2,7 @@
 -- SOLO DESARROLLO. NUNCA EN PRODUCCIÓN.
 --
 -- Cuenta demo `DEM` con todo lo que la app y el firmware necesitan para probar de punta a punta:
--- plan y suscripción vigentes, un sitio, dos puertas, un dispositivo por puerta, un administrador,
+-- plan y suscripción vigentes, un sitio (sin puertas ni dispositivos), un administrador,
 -- un usuario y un guardia. El administrador y el guardia tienen además el rol Usuario, para probar
 -- la elección de rol (handoff C03). Los PIN y las claves de dispositivo están publicados en docs/gestion/entornos.md
 -- y en el repositorio: cualquiera puede entrar con ellos. En producción, las cuentas, los PIN y
@@ -15,6 +15,9 @@
 --
 -- Idempotente: se puede correr las veces que haga falta.
 -- ============================================================================================
+
+-- Sin esto, un cliente `mysql` en latin1 guarda 'Lucía' como 'LucÃ­a' (doble codificación).
+SET NAMES utf8mb4;
 
 INSERT INTO cuentas (id, nombre, codigo, activo) VALUES
   (9001, 'Cuenta demo (desarrollo)', 'DEM', 1)
@@ -77,20 +80,16 @@ INSERT INTO sitios (id, tenant_id, nombre, direccion, zona_horaria, activo) VALU
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), direccion = VALUES(direccion),
   zona_horaria = VALUES(zona_horaria), activo = 1, deleted_at = NULL;
 
-INSERT INTO puertas (id, tenant_id, sitio_id, nombre, segundos_apertura, activo) VALUES
-  (9001, 9001, 9001, 'Portón principal', 5, 1),
-  (9002, 9001, 9001, 'Puerta trasera', 5, 1)
-ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), segundos_apertura = VALUES(segundos_apertura),
-  activo = 1, deleted_at = NULL;
+-- Sin puertas ni dispositivos a propósito (ADR 0026): se crean desde la app y las placas se
+-- vinculan desde el panel, como en producción. Las credenciales de dispositivo de desarrollo se
+-- cargan a mano en la placa (`set disp_id` / `set disp_clave`) contra un dispositivo creado así.
 
--- Credenciales de dispositivo: `Dispositivo 9001.<clave>` y `Dispositivo 9002.<clave>` (ver entornos.md)
-INSERT INTO dispositivos (id, tenant_id, puerta_id, nombre, clave_hash, revocado_at, activo) VALUES
-  (9001, 9001, 9001, 'Lector portón principal',
-   '$argon2id$v=19$m=19456,p=1,t=2$3yZIZ0D52SSjRYo380PIvg$+6NeEYIgDioIafNBdryVpzaXUuAQlP+oubwYmNl8ojw', NULL, 1),
-  (9002, 9001, 9002, 'Lector puerta trasera',
-   '$argon2id$v=19$m=19456,p=1,t=2$8FAOrCcsjZcaxWw7ePAA+Q$1gWRVRI18wWXBH8qznAOMHRmNeRytCe3RXd7SFnPy4I', NULL, 1)
-ON DUPLICATE KEY UPDATE puerta_id = VALUES(puerta_id), nombre = VALUES(nombre), clave_hash = VALUES(clave_hash),
-  revocado_at = NULL, activo = 1, deleted_at = NULL;
+-- Retira las puertas y los lectores que traían versiones anteriores de este seed (ids 9001 y 9002),
+-- para que una base ya cargada también quede sin puertas. Soft delete: el historial se conserva.
+UPDATE dispositivos SET revocado_at = COALESCE(revocado_at, NOW(3)), deleted_at = NOW(3)
+  WHERE tenant_id = 9001 AND id IN (9001, 9002) AND deleted_at IS NULL;
+UPDATE puertas SET deleted_at = NOW(3)
+  WHERE tenant_id = 9001 AND id IN (9001, 9002) AND deleted_at IS NULL;
 
 -- Super admin de desarrollo (web admin): usuario lucia.paz, contraseña agrocom-demo-2026
 INSERT INTO usuarios (id, tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES

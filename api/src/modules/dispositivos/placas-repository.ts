@@ -1,4 +1,4 @@
-import type { Pool, RowDataPacket } from 'mysql2/promise';
+import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 
@@ -6,28 +6,38 @@ const DESCRIPCION_DE_PLACAS = {
   nombre: 'placas',
   columnas: [
     'mac',
-    'codigo_hash',
-    'clave_hash',
     'firmware_version',
-    'ultimo_reclamo_at',
+    'ultimo_anuncio_at',
     'ultima_ip',
+    'por_confirmar_hasta',
+    'vinculo_cuenta_id',
+    'vinculo_puerta_id',
+    'vinculo_nombre',
+    'vinculo_solicitado_por',
   ],
-  sensibles: ['codigo_hash', 'clave_hash'],
   perfil: 'dominio',
   deCuenta: false,
 } as const;
 
-export interface PlacaParaReclamar extends RowDataPacket {
+/** Lo que hace falta de una placa para anunciarla, solicitar su vínculo o confirmarlo. */
+export interface PlacaBasica extends RowDataPacket {
   id: string;
-  codigo_hash: string;
-  clave_hash: string | null;
+  por_confirmar_hasta: Date | null;
+  vinculo_cuenta_id: string | null;
+  vinculo_puerta_id: string | null;
+  vinculo_nombre: string | null;
+  vinculo_solicitado_por: string | null;
 }
+
+/** Estado derivado de una placa (ADR 0026). */
+export type EstadoDePlaca = 'detectada' | 'por_confirmar' | 'vinculada';
 
 export interface PlacaListada extends RowDataPacket {
   id: string;
   mac: string;
   firmware_version: string | null;
-  ultimo_reclamo_at: Date | null;
+  ultimo_anuncio_at: Date | null;
+  por_confirmar_hasta: Date | null;
   ultima_ip: string | null;
   dispositivo_id: string | null;
   dispositivo_nombre: string | null;
@@ -40,6 +50,10 @@ export interface PlacaListada extends RowDataPacket {
   cuenta_nombre: string | null;
 }
 
+const COLUMNAS_BASICAS =
+  't.id, t.por_confirmar_hasta, t.vinculo_cuenta_id, t.vinculo_puerta_id, ' +
+  't.vinculo_nombre, t.vinculo_solicitado_por';
+
 /** Quién tiene hoy la placa: el dispositivo en servicio y su cuenta y puerta. */
 const UNIONES_DE_ASIGNACION =
   'LEFT JOIN dispositivos AS d ON d.placa_id = t.id AND d.deleted_at IS NULL AND d.revocado_at IS NULL ' +
@@ -49,71 +63,110 @@ const UNIONES_DE_ASIGNACION =
 /**
  * Dueño de `placas` (ADR 0025). La tabla es de la plataforma y no lleva `tenant_id`: ningún
  * repositorio de cuenta la ve, y esta clase solo la alcanzan acciones de plataforma o el
- * reclamo de la propia placa. Las uniones a `dispositivos` son lectura para el inventario.
+ * anuncio de la propia placa. Las uniones a `dispositivos` son lectura para el inventario.
  */
 export class RepositorioDePlacas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, DESCRIPCION_DE_PLACAS);
   }
 
-  buscarPorMac(mac: string): Promise<PlacaParaReclamar | null> {
-    return this.seleccionarUna<PlacaParaReclamar>({
-      columnas: 't.id, t.codigo_hash, t.clave_hash',
+  buscarPorMac(mac: string): Promise<PlacaBasica | null> {
+    return this.seleccionarUna<PlacaBasica>({
+      columnas: COLUMNAS_BASICAS,
       donde: 't.mac = ?',
       params: [mac],
     });
   }
 
-  /** Para vincular o liberar: bloquea la fila hasta cerrar la transacción. */
-  buscarPorId(id: string, tx: Transaccion): Promise<PlacaParaReclamar | null> {
-    return this.seleccionarUna<PlacaParaReclamar>(
-      {
-        columnas: 't.id, t.codigo_hash, t.clave_hash',
-        donde: 't.id = ?',
-        params: [id],
-        bloquear: true,
-      },
+  /** Para solicitar, cancelar o confirmar un vínculo: bloquea la fila hasta cerrar la transacción. */
+  buscarPorId(id: string, tx: Transaccion): Promise<PlacaBasica | null> {
+    return this.seleccionarUna<PlacaBasica>(
+      { columnas: COLUMNAS_BASICAS, donde: 't.id = ?', params: [id], bloquear: true },
       tx,
     );
   }
 
-  crear(tx: Transaccion, mac: string, codigoHash: string): Promise<string> {
-    return this.insertar(tx, { mac, codigo_hash: codigoHash });
+  /** Una placa nueva que se anuncia sola. Anónimo: sin autoría y sin datos de ninguna cuenta. */
+  crear(
+    tx: Transaccion,
+    datos: { mac: string; firmware: string; ip: string; en: Date },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      mac: datos.mac,
+      firmware_version: datos.firmware,
+      ultima_ip: datos.ip,
+      ultimo_anuncio_at: datos.en,
+    });
   }
 
-  /**
-   * Telemetría del reclamo (y, si cambió, la clave nueva de la placa). Sin bitácora: la placa
-   * sondea cada 30 s y la clave es un secreto; el vínculo sí queda registrado al vincular.
-   */
-  registrarReclamo(
+  /** Telemetría de cada anuncio (cada 30 s): no es un cambio relevante, va sin bitácora. */
+  registrarAnuncio(
     tx: Transaccion,
     id: string,
-    datos: { firmware: string; ip: string; en: Date; claveHash?: string },
+    datos: { firmware: string; ip: string; en: Date },
   ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      {
-        firmware_version: datos.firmware,
-        ultima_ip: datos.ip,
-        ultimo_reclamo_at: datos.en,
-        ...(datos.claveHash === undefined ? {} : { clave_hash: datos.claveHash }),
-      },
+      { firmware_version: datos.firmware, ultima_ip: datos.ip, ultimo_anuncio_at: datos.en },
       { sinBitacora: true },
     );
   }
 
-  /** Al liberar: la placa vuelve a empezar y sortea una clave nueva. */
-  olvidarClave(tx: Transaccion, id: string): Promise<boolean> {
-    return this.actualizar(tx, id, { clave_hash: null });
+  /** El super admin pidió vincular: queda a la espera del pulsador (ADR 0026 §3). */
+  solicitarVinculo(
+    tx: Transaccion,
+    id: string,
+    datos: {
+      hasta: Date;
+      cuentaId: string;
+      puertaId: string;
+      nombre: string;
+      solicitadoPor: string;
+    },
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, {
+      por_confirmar_hasta: datos.hasta,
+      vinculo_cuenta_id: datos.cuentaId,
+      vinculo_puerta_id: datos.puertaId,
+      vinculo_nombre: datos.nombre,
+      vinculo_solicitado_por: datos.solicitadoPor,
+    });
+  }
+
+  /** Cancela o consume la solicitud de vínculo. */
+  limpiarSolicitud(tx: Transaccion, id: string): Promise<boolean> {
+    return this.actualizar(tx, id, {
+      por_confirmar_hasta: null,
+      vinculo_cuenta_id: null,
+      vinculo_puerta_id: null,
+      vinculo_nombre: null,
+      vinculo_solicitado_por: null,
+    });
   }
 
   darDeBaja(tx: Transaccion, id: string): Promise<boolean> {
     return this.borrar(tx, id);
   }
 
+  /**
+   * Da de baja (soft delete) las placas sin dispositivo en servicio que no se anuncian desde
+   * `antes`: la limpieza del inventario que llena el anuncio anónimo (ADR 0026 §6).
+   */
+  async depurarSinContacto(antes: Date, ahora: Date): Promise<number> {
+    const [resultado] = await this.pool.query<ResultSetHeader>(
+      'UPDATE placas AS t SET t.deleted_at = ? ' +
+        'WHERE t.deleted_at IS NULL AND COALESCE(t.ultimo_anuncio_at, t.created_at) < ? ' +
+        'AND NOT EXISTS (SELECT 1 FROM dispositivos AS d WHERE d.placa_id = t.id ' +
+        'AND d.deleted_at IS NULL AND d.revocado_at IS NULL)',
+      [ahora, antes],
+    );
+    return resultado.affectedRows;
+  }
+
   async listar(
-    filtros: { busqueda?: string | undefined; estado?: 'de_fabrica' | 'vinculada' | undefined },
+    filtros: { busqueda?: string | undefined; estado?: EstadoDePlaca | undefined },
+    ahora: Date,
     limite: number,
     desplazamiento: number,
   ): Promise<{ filas: PlacaListada[]; total: number }> {
@@ -124,8 +177,15 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       const patron = `%${filtros.busqueda}%`;
       params.push(patron, patron, patron, patron);
     }
-    if (filtros.estado === 'de_fabrica') donde.push('d.id IS NULL');
     if (filtros.estado === 'vinculada') donde.push('d.id IS NOT NULL');
+    if (filtros.estado === 'por_confirmar') {
+      donde.push('d.id IS NULL AND t.por_confirmar_hasta > ?');
+      params.push(ahora);
+    }
+    if (filtros.estado === 'detectada') {
+      donde.push('d.id IS NULL AND (t.por_confirmar_hasta IS NULL OR t.por_confirmar_hasta <= ?)');
+      params.push(ahora);
+    }
     const consulta = {
       uniones: UNIONES_DE_ASIGNACION,
       ...(donde.length > 0 ? { donde: donde.join(' AND '), params } : {}),
@@ -134,7 +194,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       this.seleccionar<PlacaListada>({
         ...consulta,
         columnas:
-          't.id, t.mac, t.firmware_version, t.ultimo_reclamo_at, t.ultima_ip, ' +
+          't.id, t.mac, t.firmware_version, t.ultimo_anuncio_at, t.por_confirmar_hasta, t.ultima_ip, ' +
           'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.ultimo_latido_at, ' +
           'd.firmware_version AS firmware_del_dispositivo, ' +
           'p.id AS puerta_id, p.nombre AS puerta_nombre, ' +

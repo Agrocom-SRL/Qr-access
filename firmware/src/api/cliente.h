@@ -11,7 +11,7 @@
 
 namespace api {
 
-enum class Tipo : uint8_t { Validacion, Latido, Configuracion, Reclamo };
+enum class Tipo : uint8_t { Validacion, Latido, Configuracion, Anuncio, Confirmacion };
 
 // Resultado de una llamada, ya interpretado por lib/respuesta.
 struct Respuesta {
@@ -20,11 +20,11 @@ struct Respuesta {
   int http;     // código HTTP, o negativo si no hubo respuesta (timeout, TLS, sin red)
   puerta::Resultado resultado;         // Validacion
   respuesta::Configuracion config;     // Configuracion
-  respuesta::Reclamo reclamo;          // Reclamo
+  respuesta::Anuncio anuncio;          // Anuncio y Confirmacion
 };
 
 // Arranca la tarea si hay URL válida. Con id y clave válidos queda lista para operar; sin ellos
-// solo puede reclamar su vínculo (ADR 0025).
+// solo puede anunciarse (ADR 0026).
 void iniciar(const config::Dispositivo& dispositivo);
 
 // Cambia la credencial en caliente (la placa acaba de vincularse, o se la rechazaron).
@@ -39,9 +39,12 @@ bool validar(uint32_t id, const char* qr, int64_t leidoEn);
 bool enviarLatido(bool puertaAbierta);
 bool pedirConfiguracion();
 
-// Pregunta al servidor si la placa ya tiene vínculo (POST /dispositivos/reclamar, sin
-// credencial de dispositivo): MAC + código de vinculación + la clave que sorteó la placa.
-bool reclamar(const char* codigo, const char* clave);
+// La placa dice quién es (POST /dispositivos/anunciar, sin credencial de dispositivo): MAC + la
+// clave que sorteó. El servidor responde si sigue detectada, si espera su botón o si ya está vinculada.
+bool anunciar(const char* clave);
+
+// Alguien mantuvo pulsado el botón (POST /dispositivos/confirmar): la prueba de presencia física.
+bool confirmar(const char* clave);
 
 // true si terminó alguna llamada; deja su respuesta en `respuesta`.
 bool siguienteRespuesta(Respuesta& respuesta);

@@ -21,7 +21,6 @@ const char* llave(aprovisionamiento::Campo campo) {
   using aprovisionamiento::Campo;
   switch (campo) {
     case Campo::ApiUrl: return "api_url";
-    case Campo::Codigo: return "codigo";
     case Campo::DispositivoId: return "disp_id";
     case Campo::DispositivoClave: return "disp_clave";
   }
@@ -35,17 +34,22 @@ Dispositivo cargar() {
   Preferences nvs;
   if (nvs.begin(ESPACIO, true)) {
     d.apiUrl = nvs.getString("api_url", "");
-    d.codigo = nvs.getString("codigo", "");
     d.id = nvs.getString("disp_id", "");
     d.clave = nvs.getString("disp_clave", "");
     nvs.end();
   }
 #ifdef HAY_SECRETOS_DE_DESARROLLO
-  if (!d.completa()) {
-    d.apiUrl = API_URL;
+  // Solo desarrollo: la URL de la mesa de trabajo, y una credencial fija únicamente si secretos.h
+  // trae una (el flujo normal es anunciarse y vincularse desde el panel, ADR 0026).
+  if (d.apiUrl.length() == 0) d.apiUrl = API_URL;
+  if (!d.completa() && DISPOSITIVO_ID[0] != '\0') {
     d.id = DISPOSITIVO_ID;
     d.clave = DISPOSITIVO_CLAVE;
   }
+#endif
+#ifdef URL_API_POR_DEFECTO
+  // La URL de producción va en el binario: una placa nueva no necesita que le carguen nada.
+  if (d.apiUrl.length() == 0) d.apiUrl = URL_API_POR_DEFECTO;
 #endif
   return d;
 }

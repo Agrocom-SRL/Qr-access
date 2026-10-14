@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <esp_task_wdt.h>
 #include <puerta.h>
+#include <pulsacion.h>
 #include <temporizador.h>
 #include <vinculo.h>
 
@@ -23,14 +24,19 @@ constexpr uint32_t WATCHDOG_S = 8;
 constexpr uint32_t PERIODO_LATIDO_MS = 60000;
 constexpr uint32_t PERIODO_CONFIGURACION_MS = 300000;
 constexpr uint32_t REINTENTO_CONFIGURACION_MS = 5000;
-// Sin vínculo la placa pregunta cada 30 s (ADR 0025); el servidor limita los intentos fallidos.
-constexpr uint32_t PERIODO_RECLAMO_MS = 30000;
+// Sin vínculo la placa se anuncia cada 30 s (ADR 0026); el servidor limita los intentos fallidos.
+// Mientras espera que pulsen su botón lo hace cada 5 s, para enterarse pronto de que se canceló
+// o venció la ventana.
+constexpr uint32_t PERIODO_ANUNCIO_MS = 30000;
+constexpr uint32_t PERIODO_ANUNCIO_CONFIRMANDO_MS = 5000;
 
 puerta::Maquina maquina;
 RelojMillis reloj;
 temporizador::Periodico latido(reloj, PERIODO_LATIDO_MS, true);
 temporizador::Tarea configuracion(reloj, PERIODO_CONFIGURACION_MS, REINTENTO_CONFIGURACION_MS);
-temporizador::Periodico reclamo(reloj, PERIODO_RECLAMO_MS, true);
+temporizador::Periodico anuncio(reloj, PERIODO_ANUNCIO_MS, true);
+temporizador::Periodico anuncioConfirmando(reloj, PERIODO_ANUNCIO_CONFIRMANDO_MS, true);
+pulsacion::Larga pulsacionLarga;
 config::Dispositivo dispositivo;
 vinculo::Vinculo estadoVinculo(false);  // se rearma en setup() con lo que haya en la NVS
 char linea[puerta::MAX_QR + 1];
@@ -58,11 +64,12 @@ void ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs) {
   if (acciones.enviarValidacion) pedirValidacion(ahoraMs);
 }
 
-// El servidor contestó el reclamo: la placa aprende si ya tiene vínculo (ADR 0025).
-void atenderReclamo(const respuesta::Reclamo& r) {
-  const bool mismoId = r.estado == respuesta::Reclamo::Estado::Vinculado &&
+// El servidor contestó el anuncio o la confirmación: la placa aprende si ya tiene vínculo
+// (ADR 0026) y, si espera su botón, se lo indica a quien está en la puerta.
+void atenderAnuncio(const respuesta::Anuncio& r, uint32_t ahoraMs) {
+  const bool mismoId = r.estado == respuesta::Anuncio::Estado::Vinculado &&
                        dispositivo.id.equals(r.dispositivoId);
-  switch (estadoVinculo.alReclamar(r, mismoId)) {
+  switch (estadoVinculo.alAnunciar(r, mismoId)) {
     case vinculo::Efecto::GuardarId:
       if (!config::guardar(aprovisionamiento::Campo::DispositivoId, r.dispositivoId)) {
         Serial.println("[vinculo] no se pudo guardar el id: se repite al reiniciar");
@@ -70,6 +77,7 @@ void atenderReclamo(const respuesta::Reclamo& r) {
       dispositivo.id = r.dispositivoId;
       api::fijarCredencial(dispositivo.id, dispositivo.clave);
       Serial.printf("[vinculo] vinculada al dispositivo %s\n", r.dispositivoId);
+      indicadores::mostrar(puerta::Indicacion::Permitido, ahoraMs);  // verde: quedó vinculada
       break;
     case vinculo::Efecto::OlvidarVinculo:
       // La liberaron: se borra el id y se sortea una clave nueva para la próxima cuenta.
@@ -77,18 +85,24 @@ void atenderReclamo(const respuesta::Reclamo& r) {
       config::olvidarId();
       dispositivo.id = "";
       config::sortearClave(dispositivo);
-      Serial.println("[vinculo] liberada: espera una nueva vinculacion");
+      Serial.println("[vinculo] liberada: vuelve a anunciarse");
       break;
     case vinculo::Efecto::Nada:
       if (estadoVinculo.opera()) Serial.println("[vinculo] credencial retomada");
       break;
+  }
+  if (estadoVinculo.esperaConfirmacion()) {
+    // Azul parpadeando y un beep cada 2 s; cada anuncio lo renueva mientras siga pidiéndolo.
+    indicadores::mostrar(puerta::Indicacion::Confirmar, ahoraMs);
+    Serial.println("[vinculo] AGROCOM pidio vincularla: mantén pulsado el boton 5 s para confirmar");
   }
 }
 
 void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
   // La API rechazó la credencial (cuenta suspendida, dispositivo liberado): no se valida más
   // hasta que el servidor confirme el vínculo (falla segura).
-  if (r.tipo != api::Tipo::Reclamo && r.http == 401 && estadoVinculo.opera()) {
+  if (r.tipo != api::Tipo::Anuncio && r.tipo != api::Tipo::Confirmacion && r.http == 401 &&
+      estadoVinculo.opera()) {
     estadoVinculo.alRechazarCredencial();
     Serial.println("[vinculo] la API rechazo la credencial: se pregunta al servidor");
   }
@@ -111,20 +125,29 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
         Serial.printf("[latido] fallo (http %d)\n", r.http);
       }
       break;
-    case api::Tipo::Reclamo:
-      atenderReclamo(r.reclamo);
+    case api::Tipo::Anuncio:
+      atenderAnuncio(r.anuncio, ahoraMs);
+      break;
+    case api::Tipo::Confirmacion:
+      // La confirmación que no termina en `vinculado` (ventana vencida, plan sin cupo...) se avisa.
+      if (r.anuncio.estado != respuesta::Anuncio::Estado::Vinculado) {
+        Serial.printf("[vinculo] no se pudo confirmar (http %d): AGROCOM debe volver a vincularla\n",
+                      r.http);
+        indicadores::mostrar(puerta::Indicacion::Error, ahoraMs);
+      }
+      atenderAnuncio(r.anuncio, ahoraMs);
       break;
   }
 }
 
-// Latido, configuración y reclamo solo con la puerta en reposo y red lista: no le quitan
+// Latido, configuración y anuncio solo con la puerta en reposo y red lista: no le quitan
 // la tarea de red a una validación.
 void segundoPlano() {
   if (!red::lista() || maquina.estado() != puerta::Estado::Reposo) return;
-  if (estadoVinculo.debeReclamar()) {
-    if (dispositivo.reclamable() && reclamo.vencio()) {
-      api::reclamar(dispositivo.codigo.c_str(), dispositivo.clave.c_str());
-    }
+  if (estadoVinculo.debeAnunciar()) {
+    temporizador::Periodico& temporizadorDeAnuncio =
+        estadoVinculo.esperaConfirmacion() ? anuncioConfirmando : anuncio;
+    if (dispositivo.anunciable() && temporizadorDeAnuncio.vencio()) api::anunciar(dispositivo.clave.c_str());
     return;
   }
   if (latido.vencio()) api::enviarLatido(cerradura::puertaAbierta());
@@ -152,10 +175,9 @@ void setup() {
   esp_task_wdt_add(nullptr);
 
   dispositivo = config::cargar();
-  // Con código de vinculación y sin clave (primer arranque, o recién liberada), la placa
-  // sortea la suya: la clave nunca viaja del servidor a la placa (ADR 0025 §4).
-  if (aprovisionamiento::codigoValido(dispositivo.codigo.c_str()) &&
-      !aprovisionamiento::claveValida(dispositivo.clave.c_str())) {
+  // Sin clave (primer arranque, o recién liberada), la placa sortea la suya: la clave nunca viaja
+  // del servidor a la placa (ADR 0026 §2).
+  if (!aprovisionamiento::claveValida(dispositivo.clave.c_str())) {
     config::sortearClave(dispositivo);
   }
   estadoVinculo = vinculo::Vinculo(dispositivo.completa());
@@ -164,9 +186,9 @@ void setup() {
     red::iniciar();
     api::iniciar(dispositivo);
     if (!estadoVinculo.opera()) {
-      Serial.println(dispositivo.reclamable()
-                         ? "[vinculo] sin vincular: espera a que AGROCOM la asigne a una puerta"
-                         : "[config] falta el codigo de vinculacion (set codigo ...)");
+      Serial.println(dispositivo.anunciable()
+                         ? "[vinculo] sin vincular: se anuncia sola y espera a que AGROCOM la asigne"
+                         : "[config] falta la clave propia: reinicia para sortearla");
     }
   } else {
     // Sin configuración no se valida nada (solo funciona el pulsador de salida).
@@ -181,9 +203,16 @@ void loop() {
   const uint32_t ahora = millis();
 
   consola::tick();
-  if (estadoVinculo.opera() || dispositivo.reclamable()) red::tick(ahora);
+  if (estadoVinculo.opera() || dispositivo.anunciable()) red::tick(ahora);
 
   if (cerradura::pulsadorPresionado(ahora)) ejecutar(maquina.alPulsarSalida(ahora), ahora);
+  // Con la ventana de confirmación abierta, mantener el botón 5 s es la prueba de presencia física
+  // (ADR 0026 §4). Fuera de esa ventana el botón solo abre, como siempre (invariante 2).
+  if (pulsacionLarga.actualizar(estadoVinculo.esperaConfirmacion(), cerradura::pulsadorAbajo(),
+                                ahora)) {
+    Serial.println("[vinculo] boton mantenido: se confirma la vinculacion");
+    api::confirmar(dispositivo.clave.c_str());
+  }
 
   if (lector_qr::leer(linea)) {
     ejecutar(maquina.alLeer(linea, ahora), ahora);

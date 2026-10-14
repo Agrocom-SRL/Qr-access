@@ -305,17 +305,20 @@ CREATE TABLE puertas (
 
 ## placas
 
-Migración: `db/migrations/20261013100001_create_placas.sql` (ADR 0025). De la plataforma: sin `tenant_id`.
+Migraciones: `db/migrations/20261013100001_create_placas.sql` y `20261014100001_placas_por_anuncio.sql` (ADR 0026). De la plataforma: sin `tenant_id`.
 
 ```sql
 CREATE TABLE placas (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   mac CHAR(17) NOT NULL,
-  codigo_hash VARCHAR(255) NOT NULL,
-  clave_hash VARCHAR(255) NULL,
   firmware_version VARCHAR(20) NULL,
-  ultimo_reclamo_at DATETIME(3) NULL,
+  ultimo_anuncio_at DATETIME(3) NULL,
   ultima_ip VARCHAR(45) NULL,
+  por_confirmar_hasta DATETIME(3) NULL,
+  vinculo_cuenta_id BIGINT UNSIGNED NULL,
+  vinculo_puerta_id BIGINT UNSIGNED NULL,
+  vinculo_nombre VARCHAR(100) NULL,
+  vinculo_solicitado_por BIGINT UNSIGNED NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   deleted_at DATETIME(3) NULL,
@@ -325,6 +328,26 @@ CREATE TABLE placas (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_placas_mac (mac, vigente),
   CONSTRAINT ck_placas_mac CHECK (mac REGEXP '^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## placas_anuncios
+
+Migración: `db/migrations/20261014100001_placas_por_anuncio.sql` (ADR 0026). De la plataforma; transitoria.
+
+```sql
+CREATE TABLE placas_anuncios (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  placa_id BIGINT UNSIGNED NOT NULL,
+  clave_huella CHAR(64) NOT NULL,
+  firmware_version VARCHAR(20) NULL,
+  ip VARCHAR(45) NULL,
+  ultimo_anuncio_at DATETIME(3) NOT NULL,
+  descartada_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_placas_anuncios_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
+  UNIQUE KEY uq_placas_anuncios_clave (placa_id, clave_huella)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
 

@@ -1,6 +1,6 @@
 # ADR 0025 — Solo Ethernet y vinculación remota de placas desde el panel
 
-**Estado:** Aceptada (2026-10-13) · Ajusta el ADR 0009 (comunicación y aprovisionamiento) y se apoya en el ADR 0004 §6 (credencial de dispositivo) y el ADR 0021 (panel web, solo super admin).
+**Estado:** Aceptada (2026-10-13); el §2 (código por placa), el §5 (reclamo) y el §8 (alta manual) los reemplaza el ADR 0026 · Ajusta el ADR 0009 (comunicación y aprovisionamiento) y se apoya en el ADR 0004 §6 (credencial de dispositivo) y el ADR 0021 (panel web, solo super admin).
 
 ## Contexto
 

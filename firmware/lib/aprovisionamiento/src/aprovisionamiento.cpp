@@ -13,7 +13,6 @@ struct NombreCampo {
 
 constexpr NombreCampo CAMPOS[] = {
     {"api_url", Campo::ApiUrl},
-    {"codigo", Campo::Codigo},
     {"disp_id", Campo::DispositivoId},
     {"disp_clave", Campo::DispositivoClave},
 };
@@ -29,7 +28,6 @@ bool empiezaCon(const char* texto, const char* prefijo) {
 bool valorValido(Campo campo, const char* valor, bool permitirHttp) {
   switch (campo) {
     case Campo::ApiUrl: return urlValida(valor, permitirHttp);
-    case Campo::Codigo: return codigoValido(valor);
     case Campo::DispositivoId: return idValido(valor);
     case Campo::DispositivoClave: return claveValida(valor);
   }
@@ -91,16 +89,6 @@ bool claveValida(const char* clave) {
   if (largo < 8 || largo > MAX_VALOR) return false;
   for (size_t i = 0; i < largo; ++i) {
     if (!esVisible(clave[i])) return false;
-  }
-  return true;
-}
-
-bool codigoValido(const char* codigo) {
-  if (codigo == nullptr || strlen(codigo) != LARGO_CODIGO) return false;
-  for (size_t i = 0; i < LARGO_CODIGO; ++i) {
-    const char c = codigo[i];
-    const bool permitido = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z');
-    if (!permitido || c == 'I' || c == 'L' || c == 'O' || c == 'U') return false;
   }
   return true;
 }

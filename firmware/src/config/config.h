@@ -17,8 +17,7 @@ constexpr bool MODO_DESARROLLO = false;
 
 struct Dispositivo {
   String apiUrl;
-  String codigo;  // código de vinculación de la placa (ADR 0025); lo carga el taller
-  String id;      // lo recibe al vincularla AGROCOM; vacío mientras está de fábrica
+  String id;      // lo recibe al confirmarse su vínculo (ADR 0026); vacío mientras no está vinculada
   String clave;   // la sortea la propia placa; el servidor solo guarda su hash
 
   /// Puede operar con su credencial: URL, id y clave válidos.
@@ -28,10 +27,9 @@ struct Dispositivo {
            aprovisionamiento::claveValida(clave.c_str());
   }
 
-  /// Puede preguntar al servidor por su vínculo: URL, código y clave válidos.
-  bool reclamable() const {
+  /// Puede anunciarse al servidor: URL y clave válidas. No necesita nada de fábrica por placa.
+  bool anunciable() const {
     return aprovisionamiento::urlValida(apiUrl.c_str(), MODO_DESARROLLO) &&
-           aprovisionamiento::codigoValido(codigo.c_str()) &&
            aprovisionamiento::claveValida(clave.c_str());
   }
 };
@@ -45,10 +43,10 @@ bool guardar(aprovisionamiento::Campo campo, const char* valor);
 // `dispositivo.clave`. La usa la placa la primera vez y cada vez que el servidor la libera.
 bool sortearClave(Dispositivo& dispositivo);
 
-// Olvida el id del dispositivo (la placa fue liberada); conserva URL, código y clave.
+// Olvida el id del dispositivo (la placa fue liberada); conserva la URL y la clave.
 void olvidarId();
 
-// MAC Ethernet de la placa ("AA:BB:CC:00:11:22"): con ella se registra en el panel de AGROCOM.
+// MAC Ethernet de la placa ("AA:BB:CC:00:11:22"): con ella la reconoce el panel de AGROCOM.
 String macDeLaPlaca();
 
 // Borra solo lo aprovisionado (el espacio "acceso" de la NVS); no toca el resto de la flash.

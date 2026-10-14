@@ -48,13 +48,21 @@ export class RepositorioDeDispositivosDePlataforma extends RepositorioDePlatafor
   }
 
   /** El dispositivo en servicio de una placa (a lo sumo uno, `uq_dispositivos_placa`). */
-  async buscarEnServicioDePlaca(placaId: string): Promise<{ id: string; cuentaId: string } | null> {
+  async buscarEnServicioDePlaca(
+    placaId: string,
+  ): Promise<{ id: string; cuentaId: string; claveHash: string } | null> {
     const fila = await this.seleccionarUna<RowDataPacket>({
-      columnas: 't.id, t.tenant_id',
+      columnas: 't.id, t.tenant_id, t.clave_hash',
       donde: 't.placa_id = ? AND t.revocado_at IS NULL',
       params: [placaId],
     });
-    return fila === null ? null : { id: String(fila.id), cuentaId: String(fila.tenant_id) };
+    return fila === null
+      ? null
+      : {
+          id: String(fila.id),
+          cuentaId: String(fila.tenant_id),
+          claveHash: String(fila.clave_hash),
+        };
   }
 
   /**
@@ -135,7 +143,7 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
     });
   }
 
-  /** Deja de autenticar: la placa recibe 401 y vuelve a reclamar (ADR 0025). */
+  /** Deja de autenticar: la placa recibe 401 y vuelve a anunciarse (ADR 0025). */
   revocar(tx: Transaccion, id: string, en: Date): Promise<boolean> {
     return this.actualizar(tx, id, { revocado_at: en });
   }

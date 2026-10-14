@@ -58,26 +58,13 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 | PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
 | PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
 | Sitio | `Sede demo` (zona `America/La_Paz`) |
-| Puertas | `9001` Portón principal, `9002` Puerta trasera (pulso de 5 s) |
-| Dispositivo del portón principal | `Authorization: Dispositivo 9001.1vopRZ7ET7vnEN3pMkYtgGFp8RRqZ7AOx7wJtFv01t0` |
-| Dispositivo de la puerta trasera | `Authorization: Dispositivo 9002.Zp244bmr-MTP2l5CdQmdjMWcn6ZpltbPVekWSKUmsYM` |
+| Puertas y dispositivos | Ninguno a propósito (ADR 0026): las puertas se crean desde la app y las placas se vinculan desde el panel, como en producción. El seed retira las puertas 9001 y 9002 de versiones anteriores. |
 
 El PIN se escribe sin importar mayúsculas (`demadm1` entra igual).
 
-Probar de punta a punta con `curl` (la app hace lo mismo con la IP del Mac):
+Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `lucia.paz` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se emite un QR para esa puerta y se lee con el lector.
 
-```
-API=http://localhost:3000/api/v1
-ACCESO=$(curl -s -X POST $API/sesiones -H 'content-type: application/json' -d '{"pin":"DEMADM1"}' | jq -r .acceso)
-curl -s $API/puertas -H "authorization: Bearer $ACCESO"
-TEXTO=$(curl -s -X POST $API/qr-accesos -H "authorization: Bearer $ACCESO" -H 'content-type: application/json' \
-  -d '{"puerta_ids":["9001"],"etiqueta":"Prueba"}' | jq -r .texto)
-curl -s -X POST $API/dispositivos/validaciones -H 'content-type: application/json' \
-  -H 'authorization: Dispositivo 9001.1vopRZ7ET7vnEN3pMkYtgGFp8RRqZ7AOx7wJtFv01t0' -d "{\"token\":\"$TEXTO\"}"
-# → {"abrir":true,"segundos":5,...}; la segunda lectura del mismo QR responde "abrir":false,"motivo_code":"qr.usado"
-```
-
-Para el firmware en la mesa: la credencial del dispositivo es `9001.<clave>` (la clave de la tabla) y la API se alcanza por la IP del Mac, igual que desde la app. Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
+Para el firmware en la mesa: compilar con `pio run -e esp32-dev -t upload` y, por serie, `set api_url http://<IP del Mac>:3000` y `reiniciar` (la compilación de desarrollo admite HTTP plano; la de producción trae la URL real de fábrica). Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
 
 ## La base de tests en un volumen existente
 

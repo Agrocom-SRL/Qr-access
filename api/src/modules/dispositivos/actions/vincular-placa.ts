@@ -1,13 +1,10 @@
 import type { Pool } from 'mysql2/promise';
-import { ContextoCuenta } from '../../../platform/contexto/contexto-cuenta.js';
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
-import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
-import { crearServicioDeCuentas } from '../../seguridad/contracts.js';
-import { crearServicioDeSuscripciones } from '../../suscripciones/contracts.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
-import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from '../repository.js';
+import { RepositorioDeDispositivosDePlataforma } from '../repository.js';
+import { VENTANA_DE_CONFIRMACION_MS, conVinculoValido } from '../vinculo.js';
 
 export interface DatosDeVinculo {
   readonly cuentaId: string;
@@ -16,10 +13,10 @@ export interface DatosDeVinculo {
 }
 
 /**
- * Asigna una placa a una puerta de una cuenta (ADR 0025 §6): crea el dispositivo con la clave
- * que la placa ya propuso al reclamar. Exige que la placa haya reclamado, que no esté ya
- * vinculada, que la puerta sea de la cuenta y no tenga otro lector y que el plan tenga cupo.
- * Corre en el contexto de la cuenta elegida (ADR 0004 §7), firmado por el super admin.
+ * Pide vincular una placa a una puerta de una cuenta (ADR 0026 §3). Todavía no crea el
+ * dispositivo: deja la solicitud en la placa y abre una ventana de 10 minutos para que alguien
+ * pulse su botón (`confirmar-placa`). Valida de una vez lo que se pueda (cuenta, puerta, plan)
+ * para que el error le llegue al super admin y no al instalador; se vuelve a validar al confirmar.
  */
 export async function ejecutar(
   pool: Pool,
@@ -27,37 +24,18 @@ export async function ejecutar(
   placaId: string,
   datos: DatosDeVinculo,
   ahora: Date = new Date(),
-): Promise<{ dispositivoId: string }> {
+): Promise<{ porConfirmarHasta: Date }> {
   const placas = new RepositorioDePlacas(pool);
-  if (!(await crearServicioDeCuentas(pool).estaActiva(datos.cuentaId))) {
-    throw new ErrorDeDominio('cuenta.no_encontrada', 404);
-  }
+  const hasta = new Date(ahora.getTime() + VENTANA_DE_CONFIRMACION_MS);
 
-  return ContextoCuenta.comoPlataformaEn(datos.cuentaId, principal.usuarioId, async () => {
-    const [puerta] = await crearServicioDeOrganizacion(pool).buscarPuertas([datos.puertaId]);
-    if (puerta === undefined) throw new ErrorDeDominio('puerta.no_encontrada', 404);
-
-    const suscripcion = await crearServicioDeSuscripciones(pool).obtenerVigente(ahora);
-    if (suscripcion === null) throw new ErrorDeDominio('suscripcion.vencida', 403);
-
-    const dispositivos = new RepositorioDeDispositivos(pool);
-    if (
-      suscripcion.maxDispositivos !== null &&
-      (await dispositivos.contarEnServicioDeLaCuenta()) >= suscripcion.maxDispositivos
-    ) {
-      throw new ErrorDeDominio('plan.limite_dispositivos', 422, {
-        maximo: suscripcion.maxDispositivos,
-      });
-    }
-    if ((await dispositivos.listarEnServicioPorPuertas([puerta.id])).length > 0) {
-      throw new ErrorDeDominio('puerta.con_dispositivo', 409);
-    }
-
-    try {
-      return await enTransaccion(pool, async (tx) => {
+  return conVinculoValido(
+    pool,
+    { cuentaId: datos.cuentaId, puertaId: datos.puertaId, usuarioId: principal.usuarioId },
+    ahora,
+    ({ puertaId }) =>
+      enTransaccion(pool, async (tx) => {
         const placa = await placas.buscarPorId(placaId, tx);
         if (placa === null) throw new ErrorDeDominio('placa.no_encontrada', 404);
-        if (placa.clave_hash === null) throw new ErrorDeDominio('placa.sin_reclamo', 409);
         if (
           (await new RepositorioDeDispositivosDePlataforma(pool).buscarEnServicioDePlaca(
             placa.id,
@@ -65,25 +43,14 @@ export async function ejecutar(
         ) {
           throw new ErrorDeDominio('placa.ya_vinculada', 409);
         }
-        const dispositivoId = await dispositivos.crearParaPlaca(tx, {
-          placaId: placa.id,
-          puertaId: puerta.id,
+        await placas.solicitarVinculo(tx, placa.id, {
+          hasta,
+          cuentaId: datos.cuentaId,
+          puertaId,
           nombre: datos.nombre,
-          claveHash: placa.clave_hash,
+          solicitadoPor: principal.usuarioId,
         });
-        return { dispositivoId };
-      });
-    } catch (error) {
-      // `uq_dispositivos_puerta` / `uq_dispositivos_placa`: otra vinculación llegó primero.
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === 'ER_DUP_ENTRY'
-      ) {
-        throw new ErrorDeDominio('puerta.con_dispositivo', 409);
-      }
-      throw error;
-    }
-  });
+        return { porConfirmarHasta: hasta };
+      }),
+  );
 }

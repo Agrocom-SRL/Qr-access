@@ -18,4 +18,8 @@ bool puertaAbierta();
 // true una sola vez por pulsación (con antirrebote).
 bool pulsadorPresionado(uint32_t ahoraMs);
 
+// Nivel estable (con antirrebote) del pulsador: true mientras se mantiene presionado. Lo usa la
+// pulsación larga que confirma la vinculación (ADR 0026).
+bool pulsadorAbajo();
+
 }  // namespace cerradura

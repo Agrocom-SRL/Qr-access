@@ -3,6 +3,9 @@
 -- Código: <modulo>.<entidad>.<accion>. Ámbito: 'cuenta' o 'plataforma'.
 -- Los tests cargan este mismo archivo: cada sentencia termina en ';' al final de una línea.
 
+-- Sin esto, un cliente `mysql` en latin1 guarda 'Lucía' como 'LucÃ­a' (doble codificación).
+SET NAMES utf8mb4;
+
 INSERT INTO permisos (codigo, ambito) VALUES
   ('organizacion.puerta.ver', 'cuenta'),
   ('organizacion.puerta.supervisar', 'cuenta'),

@@ -55,6 +55,17 @@ void test_validando_es_azul_y_no_dura_para_siempre() {
   TEST_ASSERT_TRUE(patron::en(Indicacion::Validando, 4000).terminado);
 }
 
+void test_confirmar_parpadea_lento_con_un_beep_cada_2_s() {
+  TEST_ASSERT_TRUE(patron::en(Indicacion::Confirmar, 0).azul);
+  TEST_ASSERT_TRUE(patron::en(Indicacion::Confirmar, 0).buzzer);
+  TEST_ASSERT_FALSE(patron::en(Indicacion::Confirmar, 600).azul);
+  TEST_ASSERT_FALSE(patron::en(Indicacion::Confirmar, 600).buzzer);
+  TEST_ASSERT_TRUE(patron::en(Indicacion::Confirmar, 2050).buzzer);
+  // Nunca verde, y se apaga solo si el servidor deja de pedirla.
+  for (uint32_t t = 0; t < 6000; t += 10) TEST_ASSERT_FALSE(patron::en(Indicacion::Confirmar, t).verde);
+  TEST_ASSERT_TRUE(patron::en(Indicacion::Confirmar, 6000).terminado);
+}
+
 void test_ninguna_esta_apagada() {
   auto s = patron::en(Indicacion::Ninguna, 0);
   TEST_ASSERT_TRUE(s.terminado);
@@ -69,6 +80,7 @@ int main() {
   RUN_TEST(test_error_es_rojo_rapido_con_beep_largo);
   RUN_TEST(test_los_cuatro_patrones_son_distintos);
   RUN_TEST(test_validando_es_azul_y_no_dura_para_siempre);
+  RUN_TEST(test_confirmar_parpadea_lento_con_un_beep_cada_2_s);
   RUN_TEST(test_ninguna_esta_apagada);
   return UNITY_END();
 }

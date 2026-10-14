@@ -22,6 +22,7 @@ struct Salida {
 //   Denegado:  rojo fijo y dos beeps.
 //   SinRed:    azul parpadeando y tres beeps cortos.
 //   Error:     rojo parpadeando rápido y un beep largo.
+//   Confirmar: azul parpadeando lento y un beep cada 2 s, hasta 6 s (se renueva en cada anuncio).
 Salida en(puerta::Indicacion indicacion, uint32_t transcurridoMs);
 
 }  // namespace patron
