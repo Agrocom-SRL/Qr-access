@@ -16,6 +16,9 @@
 -- Idempotente: se puede correr las veces que haga falta.
 -- ============================================================================================
 
+-- Sin esto, un cliente `mysql` en latin1 guarda 'Lucía' como 'LucÃ­a' (doble codificación).
+SET NAMES utf8mb4;
+
 INSERT INTO cuentas (id, nombre, codigo, activo) VALUES
   (9001, 'Cuenta demo (desarrollo)', 'DEM', 1)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), codigo = VALUES(codigo), activo = 1, deleted_at = NULL;
@@ -80,6 +83,13 @@ ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), direccion = VALUES(direccion),
 -- Sin puertas ni dispositivos a propósito (ADR 0026): se crean desde la app y las placas se
 -- vinculan desde el panel, como en producción. Las credenciales de dispositivo de desarrollo se
 -- cargan a mano en la placa (`set disp_id` / `set disp_clave`) contra un dispositivo creado así.
+
+-- Retira las puertas y los lectores que traían versiones anteriores de este seed (ids 9001 y 9002),
+-- para que una base ya cargada también quede sin puertas. Soft delete: el historial se conserva.
+UPDATE dispositivos SET revocado_at = COALESCE(revocado_at, NOW(3)), deleted_at = NOW(3)
+  WHERE tenant_id = 9001 AND id IN (9001, 9002) AND deleted_at IS NULL;
+UPDATE puertas SET deleted_at = NOW(3)
+  WHERE tenant_id = 9001 AND id IN (9001, 9002) AND deleted_at IS NULL;
 
 -- Super admin de desarrollo (web admin): usuario lucia.paz, contraseña agrocom-demo-2026
 INSERT INTO usuarios (id, tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES
