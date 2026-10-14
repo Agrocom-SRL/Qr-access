@@ -42,7 +42,9 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
   const depurarSiToca = (log: { error: (error: unknown) => void }): void => {
     if (Date.now() - ultimaDepuracion < 3_600_000) return;
     ultimaDepuracion = Date.now();
-    depurarPlacas(pool).catch((error: unknown) => log.error(error));
+    depurarPlacas(pool).catch((error: unknown) => {
+      log.error(error);
+    });
   };
   return (app, _opciones, listo) => {
     app.register(rutasDePlacas(pool));

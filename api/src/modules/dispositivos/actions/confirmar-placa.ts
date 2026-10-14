@@ -56,7 +56,8 @@ export async function ejecutar(
   const anuncios = new RepositorioDeAnuncios(pool);
   const huella = huellaDeClave(datos.clave);
   const candidato = await anuncios.buscar(placa.id, huella);
-  if (candidato === null || candidato.descartada_at !== null) {
+  // Sin candidato (`undefined`) o ya descartado: no es la placa que se anunció.
+  if (candidato?.descartada_at !== null) {
     return rechazarAnuncio(limitadores, datos.ip, mac);
   }
   const { por_confirmar_hasta: hasta, vinculo_cuenta_id: cuentaId } = placa;
@@ -83,10 +84,12 @@ export async function ejecutar(
         enTransaccion(pool, async (tx) => {
           // Con la fila bloqueada: si el super admin cancelo o cambió la solicitud, no vale.
           const bloqueada = await placas.buscarPorId(placa.id, tx);
+          const vigenteHasta = bloqueada?.por_confirmar_hasta;
           if (
             bloqueada === null ||
-            bloqueada.por_confirmar_hasta === null ||
-            bloqueada.por_confirmar_hasta <= ahora ||
+            vigenteHasta === null ||
+            vigenteHasta === undefined ||
+            vigenteHasta <= ahora ||
             bloqueada.vinculo_cuenta_id !== cuentaId ||
             bloqueada.vinculo_puerta_id !== puertaId
           ) {
