@@ -37,7 +37,7 @@
   "sitio_con_puertas": "El sitio tiene puertas: elimínalas o muévelas primero.",
   "puerta_no_encontrada": "No encontramos esa puerta.",
   "puerta_nombre_existente": "Ya hay una puerta con ese nombre en el sitio.",
-  "puerta_con_dispositivo": "La puerta tiene un lector en servicio: dalo de baja primero.",
+  "puerta_con_dispositivo": "La puerta tiene un lector en servicio: libera su placa desde Placas antes de quitarla.",
   "puerta_segundos_invalidos": "Los segundos de apertura van de 1 a 30.",
   "placa_mac_invalida": "La MAC no es válida.",
   "placa_no_encontrada": "No encontramos esa placa.",
