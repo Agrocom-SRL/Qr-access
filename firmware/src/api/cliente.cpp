@@ -30,8 +30,7 @@ struct PedidoValidacion {
 struct TrabajoSegundoPlano {
   Tipo tipo;
   bool puertaAbierta;
-  char codigo[aprovisionamiento::LARGO_CODIGO + 1];  // solo Reclamo
-  char clave[aprovisionamiento::MAX_VALOR + 1];      // solo Reclamo
+  char clave[aprovisionamiento::MAX_VALOR + 1];  // solo Anuncio y Confirmacion
 };
 
 struct Llamada {
@@ -111,7 +110,7 @@ void atenderValidacion(const PedidoValidacion& pedido) {
 
   char leidoEn[tiempo::CAPACIDAD_ISO];
   Respuesta r{Tipo::Validacion, pedido.id, -1, puerta::Resultado::invalido(puerta::Motivo::SinRed),
-              respuesta::Configuracion{false, 0}, respuesta::Reclamo{}};
+              respuesta::Configuracion{false, 0}, respuesta::Anuncio{}};
   if (tiempo::formatearIso(pedido.leidoEn, leidoEn, sizeof(leidoEn))) {
     JsonDocument cuerpo;
     cuerpo["token"] = pedido.qr;
@@ -130,21 +129,22 @@ void atenderValidacion(const PedidoValidacion& pedido) {
 
 void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
   Respuesta r{trabajo.tipo, 0, -1, puerta::Resultado::invalido(puerta::Motivo::RespuestaInvalida),
-              respuesta::Configuracion{false, 0}, respuesta::Reclamo{}};
-  if (trabajo.tipo == Tipo::Reclamo) {
+              respuesta::Configuracion{false, 0}, respuesta::Anuncio{}};
+  if (trabajo.tipo == Tipo::Anuncio || trabajo.tipo == Tipo::Confirmacion) {
+    const bool anuncio = trabajo.tipo == Tipo::Anuncio;
     JsonDocument cuerpo;
     cuerpo["mac"] = config::macDeLaPlaca();
-    cuerpo["codigo"] = trabajo.codigo;
     cuerpo["clave"] = trabajo.clave;
-    cuerpo["firmware"] = FIRMWARE_VERSION;
+    if (anuncio) cuerpo["firmware"] = FIRMWARE_VERSION;
     String json;
     serializeJson(cuerpo, json);
-    const Llamada llamada = llamar(true, "/api/v1/dispositivos/reclamar", json,
-                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, false);
+    const Llamada llamada = llamar(true, anuncio ? "/api/v1/dispositivos/anunciar"
+                                                 : "/api/v1/dispositivos/confirmar",
+                                   json, TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, false);
     r.http = llamada.http;
-    r.reclamo = respuesta::interpretarReclamo(llamada.http, llamada.cuerpo.c_str(),
+    r.anuncio = respuesta::interpretarAnuncio(llamada.http, llamada.cuerpo.c_str(),
                                               llamada.cuerpo.length());
-    json = String();  // llevaba el código y la clave
+    json = String();  // llevaba la clave
   } else if (trabajo.tipo == Tipo::Latido) {
     JsonDocument cuerpo;
     cuerpo["firmware"] = FIRMWARE_VERSION;
@@ -240,15 +240,18 @@ bool pedirConfiguracion() {
   return encolarSegundoPlano(trabajo);
 }
 
-bool reclamar(const char* codigo, const char* clave) {
+bool encolarClave(Tipo tipo, const char* clave) {
   TrabajoSegundoPlano trabajo{};
-  trabajo.tipo = Tipo::Reclamo;
-  strncpy(trabajo.codigo, codigo, sizeof(trabajo.codigo) - 1);
+  trabajo.tipo = tipo;
   strncpy(trabajo.clave, clave, sizeof(trabajo.clave) - 1);
   const bool ok = encolarSegundoPlano(trabajo);
   memset(trabajo.clave, 0, sizeof(trabajo.clave));
   return ok;
 }
+
+bool anunciar(const char* clave) { return encolarClave(Tipo::Anuncio, clave); }
+
+bool confirmar(const char* clave) { return encolarClave(Tipo::Confirmacion, clave); }
 
 bool siguienteRespuesta(Respuesta& r) {
   return respuestas != nullptr && xQueueReceive(respuestas, &r, 0) == pdTRUE;

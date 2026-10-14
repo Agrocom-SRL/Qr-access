@@ -77,36 +77,40 @@ Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_
   return Configuracion{true, segundos};
 }
 
-Reclamo interpretarReclamo(int estadoHttp, const char* cuerpo, size_t largo) {
-  Reclamo reclamo;
+Anuncio interpretarAnuncio(int estadoHttp, const char* cuerpo, size_t largo) {
+  Anuncio anuncio;
   if (estadoHttp == 401 || estadoHttp == 429) {
-    reclamo.rechazado = true;
-    return reclamo;
+    anuncio.rechazado = true;
+    return anuncio;
   }
-  if (estadoHttp != 200) return reclamo;
+  if (estadoHttp != 200) return anuncio;
 
   JsonDocument doc;
-  if (!leerObjeto(cuerpo, largo, doc)) return reclamo;
+  if (!leerObjeto(cuerpo, largo, doc)) return anuncio;
   const char* estado = nullptr;
-  if (!textoNoVacio(doc["estado"], estado)) return reclamo;
+  if (!textoNoVacio(doc["estado"], estado)) return anuncio;
 
-  if (strcmp(estado, "pendiente") == 0) {
-    reclamo.estado = Reclamo::Estado::Pendiente;
-    return reclamo;
+  if (strcmp(estado, "detectada") == 0) {
+    anuncio.estado = Anuncio::Estado::Detectada;
+    return anuncio;
   }
-  if (strcmp(estado, "vinculado") != 0) return reclamo;
+  if (strcmp(estado, "confirmar") == 0) {
+    anuncio.estado = Anuncio::Estado::Confirmar;
+    return anuncio;
+  }
+  if (strcmp(estado, "vinculado") != 0) return anuncio;
 
   // El id llega en un encabezado `Dispositivo <id>.<clave>`: solo dígitos, sin separadores.
   const char* id = nullptr;
-  if (!textoNoVacio(doc["dispositivo_id"], id)) return reclamo;
+  if (!textoNoVacio(doc["dispositivo_id"], id)) return anuncio;
   const size_t largoId = strlen(id);
-  if (largoId > MAX_ID_DISPOSITIVO) return reclamo;
+  if (largoId > MAX_ID_DISPOSITIVO) return anuncio;
   for (size_t i = 0; i < largoId; ++i) {
-    if (id[i] < '0' || id[i] > '9') return reclamo;
+    if (id[i] < '0' || id[i] > '9') return anuncio;
   }
-  memcpy(reclamo.dispositivoId, id, largoId + 1);
-  reclamo.estado = Reclamo::Estado::Vinculado;
-  return reclamo;
+  memcpy(anuncio.dispositivoId, id, largoId + 1);
+  anuncio.estado = Anuncio::Estado::Vinculado;
+  return anuncio;
 }
 
 }  // namespace respuesta

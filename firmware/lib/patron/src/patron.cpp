@@ -6,6 +6,8 @@ namespace {
 
 constexpr uint32_t DURACION_MS = 1500;
 constexpr uint32_t DURACION_VALIDANDO_MS = 4000;  // por encima del timeout de la máquina
+// Cada anuncio con `confirmar` lo renueva (cada 5 s); si deja de llegar, se apaga solo.
+constexpr uint32_t DURACION_CONFIRMAR_MS = 6000;
 
 constexpr Salida APAGADO{false, false, false, false, true};
 
@@ -32,6 +34,9 @@ Salida en(puerta::Indicacion indicacion, uint32_t t) {
     case Indicacion::Error:
       if (t >= DURACION_MS) return APAGADO;
       return Salida{false, (t / 100) % 2 == 0, false, dentro(t, 0, 600), false};
+    case Indicacion::Confirmar:
+      if (t >= DURACION_CONFIRMAR_MS) return APAGADO;
+      return Salida{false, false, (t / 500) % 2 == 0, (t % 2000) < 100, false};
     case Indicacion::Ninguna:
       break;
   }

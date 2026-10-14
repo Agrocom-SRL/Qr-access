@@ -25,8 +25,9 @@ constexpr size_t MAX_QR = 256;
 enum class Estado : uint8_t { Reposo, Validando, Abierta };
 
 // Qué mostrar: permitido, denegado (la API dijo que no), sin red (no se pudo
-// preguntar) y error (algo falló al preguntar o la respuesta no sirve).
-enum class Indicacion : uint8_t { Ninguna, Validando, Permitido, Denegado, SinRed, Error };
+// preguntar), error (algo falló al preguntar o la respuesta no sirve) y confirmar (la placa espera
+// que mantengan pulsado su botón para vincularse, ADR 0026).
+enum class Indicacion : uint8_t { Ninguna, Validando, Permitido, Denegado, SinRed, Error, Confirmar };
 
 // Resultado de una validación, ya interpretado por lib/respuesta.
 struct Resultado {
