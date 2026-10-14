@@ -66,5 +66,11 @@
   "confirmarPaso2": "Mantenha pressionado o botão de saída por 5 segundos, até o LED piscar e soar um aviso.",
   "confirmarPaso3": "A placa se vincula sozinha; este painel mostrará em alguns segundos.",
   "confirmarVentana_one": "Você tem {{count}} minuto para apertar o botão. Se acabar, vincule a placa de novo.",
-  "confirmarVentana_other": "Você tem {{count}} minutos para apertar o botão. Se acabar, vincule a placa de novo."
+  "confirmarVentana_other": "Você tem {{count}} minutos para apertar o botão. Se acabar, vincule a placa de novo.",
+  "vincularAPuertaTitulo": "Vincule uma placa a {{puerta}}",
+  "vincularAPuertaTexto": "Escolha uma das placas detectadas. Ela será atribuída a esta porta quando você confirmar com o botão dela.",
+  "placa": "Placa",
+  "placaPlaceholder": "Escolha uma placa detectada",
+  "sinPlacasDetectadas": "Não há placas detectadas. Conecte-as ao cabo de rede e aguarde alguns segundos.",
+  "vincularPlacaAPuerta": "Vincular uma placa à porta {{puerta}}"
 }

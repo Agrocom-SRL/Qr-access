@@ -66,5 +66,11 @@
   "confirmarPaso2": "Hold the exit button for 5 seconds, until the LED blinks and a beep sounds.",
   "confirmarPaso3": "The board links itself; this panel will show it in a few seconds.",
   "confirmarVentana_one": "You have {{count}} minute to press the button. If it runs out, link the board again.",
-  "confirmarVentana_other": "You have {{count}} minutes to press the button. If it runs out, link the board again."
+  "confirmarVentana_other": "You have {{count}} minutes to press the button. If it runs out, link the board again.",
+  "vincularAPuertaTitulo": "Link a board to {{puerta}}",
+  "vincularAPuertaTexto": "Pick one of the detected boards. It will be assigned to this door once you confirm with its button.",
+  "placa": "Board",
+  "placaPlaceholder": "Pick a detected board",
+  "sinPlacasDetectadas": "No boards detected. Plug them into the network cable and wait a few seconds.",
+  "vincularPlacaAPuerta": "Link a board to door {{puerta}}"
 }

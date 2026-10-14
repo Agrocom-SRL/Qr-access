@@ -12,7 +12,8 @@ import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { useCuentas, useSitiosYPuertas, type SitioConPuertas } from '../../../cuentas';
 import { useVincularPlaca } from '../../application/usePlacas';
-import { minutosRestantes, type Placa } from '../../domain/placa';
+import type { Placa } from '../../domain/placa';
+import { DialogoConfirmarEnPuerta } from './DialogoConfirmarEnPuerta';
 
 /** Las puertas activas de la cuenta que todavía no tienen lector, con su sitio. */
 function puertasLibres(sitios: readonly SitioConPuertas[] | undefined): OpcionSelector[] {
@@ -79,23 +80,7 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
 
   if (esperaHasta !== null) {
     return (
-      <Dialogo
-        abierto
-        titulo={t('placas:confirmarTitulo')}
-        onCerrar={onCerrar}
-        ancho="angosto"
-        acciones={<AccesoBoton onClick={onCerrar}>{t('placas:listo')}</AccesoBoton>}
-      >
-        <p>{t('placas:confirmarTexto', { mac: placa.mac })}</p>
-        <ol>
-          <li>{t('placas:confirmarPaso1')}</li>
-          <li>{t('placas:confirmarPaso2')}</li>
-          <li>{t('placas:confirmarPaso3')}</li>
-        </ol>
-        <Aviso tono="informacion">
-          {t('placas:confirmarVentana', { count: minutosRestantes(esperaHasta, new Date()) })}
-        </Aviso>
-      </Dialogo>
+      <DialogoConfirmarEnPuerta mac={placa.mac} esperaHasta={esperaHasta} onCerrar={onCerrar} />
     );
   }
 

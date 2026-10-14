@@ -14,6 +14,7 @@ import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialo
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { TablaDatos, type Columna } from '../../../../shared/ui/organisms/TablaDatos';
+import { DialogoVincularAPuerta } from '../../../placas';
 import { tienePermiso, useSesion } from '../../../seguridad';
 import { useGestionDeEstructura, useSitiosYPuertas } from '../../application/useCuentas';
 import type { PuertaDeSitio, SitioConPuertas } from '../../domain/cuenta';
@@ -26,7 +27,8 @@ type Dialogo =
   | { tipo: 'sitio'; sitio: SitioConPuertas | null }
   | { tipo: 'puerta'; sitio: SitioConPuertas; puerta: PuertaDeSitio | null }
   | { tipo: 'quitarSitio'; sitio: SitioConPuertas }
-  | { tipo: 'quitarPuerta'; puerta: PuertaDeSitio };
+  | { tipo: 'quitarPuerta'; puerta: PuertaDeSitio }
+  | { tipo: 'vincularPlaca'; puerta: PuertaDeSitio };
 
 /**
  * Pestaña "Sitios y puertas" (A05c): AGROCOM registra los sitios y las puertas de la cuenta; luego
@@ -34,7 +36,7 @@ type Dialogo =
  * deshabilita puertas desde la app. Cada puerta muestra el estado de su lector.
  */
 export function SitiosYPuertas({ cuentaId }: { cuentaId: string }) {
-  const { t } = useTranslation(['detalle', 'estructura']);
+  const { t } = useTranslation(['detalle', 'estructura', 'placas']);
   const sitios = useSitiosYPuertas(cuentaId, true);
   const gestion = useGestionDeEstructura(cuentaId);
   const { sesion } = useSesion();
@@ -114,6 +116,16 @@ export function SitiosYPuertas({ cuentaId }: { cuentaId: string }) {
             alinear: 'fin' as const,
             celda: (p: PuertaDeSitio) => (
               <span className={styles.botones}>
+                {p.activa && p.dispositivo === null ? (
+                  <BotonIcono
+                    icono="link"
+                    accion="editar"
+                    etiqueta={t('placas:vincularPlacaAPuerta', { puerta: p.nombre })}
+                    onClick={() => {
+                      setDialogo({ tipo: 'vincularPlaca', puerta: p });
+                    }}
+                  />
+                ) : null}
                 <BotonIcono
                   icono="edit"
                   accion="editar"
@@ -273,6 +285,14 @@ export function SitiosYPuertas({ cuentaId }: { cuentaId: string }) {
           cuentaId={cuentaId}
           sitio={dialogo.sitio}
           puerta={dialogo.puerta}
+        />
+      ) : null}
+      {dialogo?.tipo === 'vincularPlaca' ? (
+        <DialogoVincularAPuerta
+          key={dialogo.puerta.id}
+          cuentaId={cuentaId}
+          puerta={dialogo.puerta}
+          onCerrar={cerrar}
         />
       ) : null}
       <ConfirmarDialogo
