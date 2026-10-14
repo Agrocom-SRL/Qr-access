@@ -67,7 +67,8 @@ void ejecutar(const char* texto) {
                          : "error: comando desconocido (ver 'ayuda')");
       break;
   }
-  memset(&comando, 0, sizeof(comando));  // el valor puede ser una clave
+  // El valor puede ser una clave: se borra el arreglo (no el struct entero, que no es trivial).
+  memset(comando.valor, 0, sizeof(comando.valor));
 }
 
 }  // namespace
