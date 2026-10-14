@@ -5,7 +5,6 @@ import { formatearFecha, formatearHora, relacionDeDia } from '../../../../l10n/f
 import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
-import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
@@ -15,17 +14,23 @@ import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmenta
 import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
-import { useDarDeBajaPlaca, useLiberarPlaca, usePlacas } from '../../application/usePlacas';
+import {
+  useCancelarVinculoDePlaca,
+  useDarDeBajaPlaca,
+  useLiberarPlaca,
+  usePlacas,
+} from '../../application/usePlacas';
 import {
   FILTROS_DE_ESTADO,
   POR_PAGINA_DE_PLACAS,
+  minutosRestantes,
+  puedeCancelarVinculo,
   puedeDarDeBaja,
   puedeLiberar,
   puedeVincular,
   type FiltrosDePlacas,
   type Placa,
 } from '../../domain/placa';
-import { DialogoRegistrarPlaca } from '../components/DialogoRegistrarPlaca';
 import { DialogoVincularPlaca } from '../components/DialogoVincularPlaca';
 import styles from './PlacasPage.module.css';
 
@@ -39,7 +44,7 @@ function filtrosDeLaUrl(parametros: URLSearchParams): FiltrosDePlacas {
   };
 }
 
-/** Inventario de placas: estado, a quién sirven y las acciones de vincular, liberar y dar de baja (ADR 0025). */
+/** Inventario de placas: estado, a quién sirven y las acciones de vincular, liberar y dar de baja (ADR 0026). */
 export function PlacasPage() {
   const { t } = useTranslation(['placas', 'comun']);
   const [parametros, setParametros] = useSearchParams();
@@ -47,7 +52,7 @@ export function PlacasPage() {
   const placas = usePlacas(filtros);
   const liberar = useLiberarPlaca();
   const darDeBaja = useDarDeBajaPlaca();
-  const [registrando, setRegistrando] = useState(false);
+  const cancelarVinculo = useCancelarVinculoDePlaca();
   const [aVincular, setAVincular] = useState<Placa | null>(null);
   const [aLiberar, setALiberar] = useState<Placa | null>(null);
   const [aDarDeBaja, setADarDeBaja] = useState<Placa | null>(null);
@@ -84,13 +89,22 @@ export function PlacasPage() {
           <AccesoBadge tono="primario" icono="link">
             {t('placas:badge.vinculada')}
           </AccesoBadge>
-        ) : p.reclamoHecho ? (
-          <AccesoBadge tono="informacion" icono="check_circle">
-            {t('placas:badge.lista')}
-          </AccesoBadge>
+        ) : p.estado === 'por_confirmar' ? (
+          <span className={styles.asignada}>
+            <AccesoBadge tono="advertencia" icono="pending_actions">
+              {t('placas:badge.porConfirmar')}
+            </AccesoBadge>
+            {p.porConfirmarHasta ? (
+              <span className={styles.suave}>
+                {t('placas:minutosRestantes', {
+                  count: minutosRestantes(p.porConfirmarHasta, new Date()),
+                })}
+              </span>
+            ) : null}
+          </span>
         ) : (
-          <AccesoBadge tono="neutro" icono="schedule">
-            {t('placas:badge.sinConectar')}
+          <AccesoBadge tono="informacion" icono="check_circle">
+            {t('placas:badge.detectada')}
           </AccesoBadge>
         ),
     },
@@ -147,6 +161,16 @@ export function PlacasPage() {
               }}
             />
           ) : null}
+          {puedeCancelarVinculo(p) ? (
+            <BotonIcono
+              icono="close"
+              accion="eliminar"
+              etiqueta={t('placas:cancelarVinculoA', { mac: p.mac })}
+              onClick={() => {
+                cancelarVinculo.mutate(p.id);
+              }}
+            />
+          ) : null}
           {puedeLiberar(p) ? (
             <BotonIcono
               icono="link_off"
@@ -177,16 +201,6 @@ export function PlacasPage() {
       <EncabezadoPagina
         titulo={t('placas:titulo')}
         subtitulo={placas.data ? t('placas:subtitulo', { count: placas.data.total }) : undefined}
-        accion={
-          <AccesoBoton
-            icono="add"
-            onClick={() => {
-              setRegistrando(true);
-            }}
-          >
-            {t('placas:registrar')}
-          </AccesoBoton>
-        }
       />
       <div className={styles.barra}>
         <Buscador
@@ -210,8 +224,10 @@ export function PlacasPage() {
           }))}
         />
       </div>
-      {liberar.isError || darDeBaja.isError ? (
-        <Aviso tono="peligro">{traducirError(t, codigoDe(liberar.error ?? darDeBaja.error))}</Aviso>
+      {liberar.isError || darDeBaja.isError || cancelarVinculo.isError ? (
+        <Aviso tono="peligro">
+          {traducirError(t, codigoDe(liberar.error ?? darDeBaja.error ?? cancelarVinculo.error))}
+        </Aviso>
       ) : null}
       <ListadoPaginado
         etiqueta={t('placas:tabla')}
@@ -240,12 +256,6 @@ export function PlacasPage() {
               }
             : undefined
         }
-      />
-      <DialogoRegistrarPlaca
-        abierto={registrando}
-        onCerrar={() => {
-          setRegistrando(false);
-        }}
       />
       {aVincular ? (
         <DialogoVincularPlaca

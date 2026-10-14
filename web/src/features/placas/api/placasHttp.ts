@@ -12,7 +12,7 @@ interface PlacaDto {
   ip: string | null;
   ultimo_contacto_at: string | null;
   en_linea: boolean;
-  reclamo_hecho: boolean;
+  por_confirmar_hasta: string | null;
   dispositivo: { id: string; nombre: string } | null;
   cuenta: { id: string; codigo: string; nombre: string } | null;
   puerta: { id: string; nombre: string } | null;
@@ -27,7 +27,7 @@ export function placaDesdeDto(dto: PlacaDto): Placa {
     ip: dto.ip,
     ultimoContactoEn: dto.ultimo_contacto_at === null ? null : new Date(dto.ultimo_contacto_at),
     enLinea: dto.en_linea,
-    reclamoHecho: dto.reclamo_hecho,
+    porConfirmarHasta: dto.por_confirmar_hasta === null ? null : new Date(dto.por_confirmar_hasta),
     dispositivo: dto.dispositivo,
     cuenta: dto.cuenta,
     puerta: dto.puerta,
@@ -50,17 +50,18 @@ export function crearPlacasHttp(cliente: ClienteHttp): PlacasRepositorio {
       });
       return paginadoDesde(dto, placaDesdeDto);
     },
-    registrar: (mac) =>
-      cliente.solicitar<{ id: string; mac: string; codigo: string }>({
-        metodo: 'POST',
-        ruta: '/plataforma/placas',
-        cuerpo: { mac },
-      }),
     async vincular(placaId, datos) {
-      await cliente.solicitar({
+      const respuesta = await cliente.solicitar<{ por_confirmar_hasta: string }>({
         metodo: 'POST',
         ruta: `/plataforma/placas/${placaId}/vincular`,
         cuerpo: { cuenta_id: datos.cuentaId, puerta_id: datos.puertaId, nombre: datos.nombre },
+      });
+      return { porConfirmarHasta: new Date(respuesta.por_confirmar_hasta) };
+    },
+    async cancelarVinculo(placaId) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/placas/${placaId}/cancelar-vinculo`,
       });
     },
     async liberar(placaId) {

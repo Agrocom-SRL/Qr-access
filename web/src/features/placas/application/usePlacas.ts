@@ -15,8 +15,12 @@ export function usePlacas(filtros: FiltrosDePlacas) {
     queryKey: [...CLAVE_PLACAS, 'lista', busqueda, filtros.estado, filtros.pagina],
     queryFn: () => repositorio.listar({ ...filtros, busqueda }),
     placeholderData: keepPreviousData,
-    // Una placa sin vincular sondea cada 30 s: el estado "en línea" se refresca solo.
-    refetchInterval: 30_000,
+    // Una placa sin vincular se anuncia cada 30 s; mientras alguna espera su botón se mira más
+    // seguido para que el panel vea el vínculo apenas se confirma.
+    refetchInterval: (consulta) =>
+      consulta.state.data?.elementos.some((placa) => placa.estado === 'por_confirmar')
+        ? 5_000
+        : 30_000,
   });
 }
 
@@ -31,23 +35,21 @@ function useInvalidarTodo() {
     );
 }
 
-/** El código llega en la respuesta: la mutación no se retiene en la caché (`gcTime: 0`). */
-export function useRegistrarPlaca() {
-  const repositorio = usePlacasRepositorio();
-  const invalidar = useInvalidarTodo();
-  return useMutation({
-    mutationFn: (mac: string) => repositorio.registrar(mac),
-    gcTime: 0,
-    onSuccess: invalidar,
-  });
-}
-
 export function useVincularPlaca() {
   const repositorio = usePlacasRepositorio();
   const invalidar = useInvalidarTodo();
   return useMutation({
     mutationFn: ({ placaId, datos }: { placaId: string; datos: DatosDeVinculo }) =>
       repositorio.vincular(placaId, datos),
+    onSuccess: invalidar,
+  });
+}
+
+export function useCancelarVinculoDePlaca() {
+  const repositorio = usePlacasRepositorio();
+  const invalidar = useInvalidarTodo();
+  return useMutation({
+    mutationFn: (placaId: string) => repositorio.cancelarVinculo(placaId),
     onSuccess: invalidar,
   });
 }

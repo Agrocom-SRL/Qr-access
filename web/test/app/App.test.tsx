@@ -1034,7 +1034,7 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   });
 });
 
-describe('placas (ADR 0025)', () => {
+describe('placas (ADR 0026)', () => {
   async function irAPlacas(servicios: Servicios) {
     montar(servicios, '/ingreso');
     await ingresar();
@@ -1047,42 +1047,30 @@ describe('placas (ADR 0025)', () => {
     expect(within(tabla).getByText('AA:BB:CC:00:11:22')).toBeInTheDocument();
     expect(within(tabla).getByText('Agroindustrial Norte', { exact: false })).toBeInTheDocument();
     expect(within(tabla).getByText('Vinculada')).toBeInTheDocument();
-    expect(within(tabla).getByText('Lista para vincular')).toBeInTheDocument();
-    expect(within(tabla).getByText('Sin conectar')).toBeInTheDocument();
-    // Vincular solo en la libre que ya reclamó; liberar solo en la vinculada; baja en las libres.
+    expect(within(tabla).getByText('Detectada')).toBeInTheDocument();
+    expect(within(tabla).getByText('Esperando el botón')).toBeInTheDocument();
+    // Vincular solo en la detectada, cancelar solo en la que espera su botón, liberar solo en la
+    // vinculada y baja en las que no tienen dispositivo.
     expect(within(tabla).getAllByRole('button', { name: /^Vincular la placa / })).toHaveLength(1);
+    expect(
+      within(tabla).getAllByRole('button', { name: /^Cancelar el vínculo de la placa / }),
+    ).toHaveLength(1);
     expect(within(tabla).getAllByRole('button', { name: /^Liberar la placa / })).toHaveLength(1);
     expect(within(tabla).getAllByRole('button', { name: /^Dar de baja la placa / })).toHaveLength(
       2,
     );
   });
 
-  it('registrar: valida la MAC, envía normalizada y muestra el código una sola vez', async () => {
-    const registrar = vi.fn((mac: string) =>
-      Promise.resolve({ id: '9', mac, codigo: '0123456789ABCDEF' }),
-    );
-    await irAPlacas(crearServiciosDePrueba({ placas: { registrar } }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Registrar placa' }));
-    const dialogo = await screen.findByRole('dialog');
-    const campo = within(dialogo).getByLabelText('MAC de la placa');
-    await userEvent.type(campo, 'no es una mac');
-    await userEvent.tab();
-    expect(within(dialogo).getByText(/Escribe una MAC válida/)).toBeInTheDocument();
-    expect(within(dialogo).getByRole('button', { name: 'Registrar' })).toBeDisabled();
-
-    await userEvent.clear(campo);
-    await userEvent.type(campo, 'aa-bb-cc-00-11-55');
-    await userEvent.click(within(dialogo).getByRole('button', { name: 'Registrar' }));
-    await waitFor(() => {
-      expect(registrar).toHaveBeenCalledWith('AA:BB:CC:00:11:55');
-    });
-    expect(await screen.findByText('0123-4567-89AB-CDEF')).toBeInTheDocument();
-    expect(screen.getByText('set codigo 0123456789ABCDEF')).toBeInTheDocument();
-    expect(screen.getByText(/no se vuelve a mostrar/)).toBeInTheDocument();
+  it('ya no se registra a mano: no hay botón de registrar', async () => {
+    await irAPlacas(crearServiciosDePrueba());
+    await screen.findByRole('table', { name: 'Placas' });
+    expect(screen.queryByRole('button', { name: 'Registrar placa' })).not.toBeInTheDocument();
   });
 
   it('vincular: elige cuenta y una puerta sin lector y envía los ids', async () => {
-    const vincular = vi.fn<PlacasRepositorio['vincular']>(() => Promise.resolve());
+    const vincular = vi.fn<PlacasRepositorio['vincular']>(() =>
+      Promise.resolve({ porConfirmarHasta: new Date(Date.now() + 10 * 60_000) }),
+    );
     const sitiosYPuertas = () =>
       Promise.resolve([
         {
@@ -1125,13 +1113,29 @@ describe('placas (ADR 0025)', () => {
     ).not.toBeInTheDocument();
     await userEvent.click(await screen.findByRole('option', { name: 'Planta Warnes · Garaje' }));
     expect(within(dialogo).getByLabelText('Nombre del lector')).toHaveValue('Garaje');
-    await userEvent.click(within(dialogo).getByRole('button', { name: 'Vincular' }));
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Pedir vínculo' }));
     await waitFor(() => {
       expect(vincular).toHaveBeenCalledWith('2', {
         cuentaId: '1',
         puertaId: '3',
         nombre: 'Garaje',
       });
+    });
+    // El vínculo no está hecho: el panel explica cómo confirmarlo en la puerta.
+    expect(await screen.findByText('Confirma en la puerta')).toBeInTheDocument();
+    expect(screen.getByText(/Mantén pulsado el pulsador de salida/)).toBeInTheDocument();
+  });
+
+  it('cancelar el vínculo de una placa que espera su botón envía su id', async () => {
+    const cancelarVinculo = vi.fn(() => Promise.resolve());
+    await irAPlacas(crearServiciosDePrueba({ placas: { cancelarVinculo } }));
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Cancelar el vínculo de la placa AA:BB:CC:00:11:44',
+      }),
+    );
+    await waitFor(() => {
+      expect(cancelarVinculo).toHaveBeenCalledWith('3');
     });
   });
 

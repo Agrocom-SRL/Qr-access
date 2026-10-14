@@ -12,7 +12,7 @@ import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { useCuentas, useSitiosYPuertas, type SitioConPuertas } from '../../../cuentas';
 import { useVincularPlaca } from '../../application/usePlacas';
-import type { Placa } from '../../domain/placa';
+import { minutosRestantes, type Placa } from '../../domain/placa';
 
 /** Las puertas activas de la cuenta que todavía no tienen lector, con su sitio. */
 function puertasLibres(sitios: readonly SitioConPuertas[] | undefined): OpcionSelector[] {
@@ -28,7 +28,11 @@ interface Props {
   onCerrar: () => void;
 }
 
-/** Asigna la placa a una puerta sin lector de una cuenta; el nombre del lector arranca con el de la puerta. */
+/**
+ * Asigna la placa a una puerta sin lector de una cuenta; el nombre del lector arranca con el de la
+ * puerta. Es de dos pasos (ADR 0026): elegir y, una vez pedido el vínculo, la instrucción de
+ * pulsar el botón de la placa, que es lo que lo confirma.
+ */
 export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
   const { t } = useTranslation(['placas', 'comun']);
   const vincular = useVincularPlaca();
@@ -37,6 +41,7 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
   const [puertaId, setPuertaId] = useState('');
   const [nombre, setNombre] = useState('');
   const [nombreEditado, setNombreEditado] = useState(false);
+  const [esperaHasta, setEsperaHasta] = useState<Date | null>(null);
 
   const cuentas = useCuentas({ busqueda, estado: 'todas', pagina: 1 });
   const sitios = useSitiosYPuertas(cuenta?.valor ?? '', cuenta !== null);
@@ -64,9 +69,35 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
     if (cuenta === null) return;
     vincular.mutate(
       { placaId: placa.id, datos: { cuentaId: cuenta.valor, puertaId, nombre: nombre.trim() } },
-      { onSuccess: onCerrar },
+      {
+        onSuccess: ({ porConfirmarHasta }) => {
+          setEsperaHasta(porConfirmarHasta);
+        },
+      },
     );
   };
+
+  if (esperaHasta !== null) {
+    return (
+      <Dialogo
+        abierto
+        titulo={t('placas:confirmarTitulo')}
+        onCerrar={onCerrar}
+        ancho="angosto"
+        acciones={<AccesoBoton onClick={onCerrar}>{t('placas:listo')}</AccesoBoton>}
+      >
+        <p>{t('placas:confirmarTexto', { mac: placa.mac })}</p>
+        <ol>
+          <li>{t('placas:confirmarPaso1')}</li>
+          <li>{t('placas:confirmarPaso2')}</li>
+          <li>{t('placas:confirmarPaso3')}</li>
+        </ol>
+        <Aviso tono="informacion">
+          {t('placas:confirmarVentana', { count: minutosRestantes(esperaHasta, new Date()) })}
+        </Aviso>
+      </Dialogo>
+    );
+  }
 
   return (
     <Dialogo

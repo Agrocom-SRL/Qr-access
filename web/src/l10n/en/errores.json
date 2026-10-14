@@ -40,12 +40,11 @@
   "puerta_con_dispositivo": "The door has a reader in service: decommission it first.",
   "puerta_segundos_invalidos": "Opening seconds range from 1 to 30.",
   "placa_mac_invalida": "The MAC is not valid.",
-  "placa_mac_existente": "That MAC is already registered.",
   "placa_no_encontrada": "We couldn't find that board.",
-  "placa_sin_reclamo": "The board hasn't connected yet: power it on with the network cable and wait a few seconds.",
   "placa_ya_vinculada": "The board is already linked: release it first.",
   "placa_sin_dispositivo": "The board isn't linked to any door.",
   "plan_limite_dispositivos": "The account reached its plan's reader limit.",
-  "dispositivo_reclamo_invalido": "The board didn't recognize the code.",
-  "dispositivo_reclamo_bloqueado": "Too many attempts, wait a few minutes."
+  "placa_sin_solicitud": "The board has no pending link or time ran out. Link it again.",
+  "dispositivo_anuncio_invalido": "The board was not recognized.",
+  "dispositivo_anuncio_bloqueado": "Too many attempts, wait a few minutes."
 }
