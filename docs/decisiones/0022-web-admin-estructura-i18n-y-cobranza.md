@@ -23,3 +23,7 @@ El handoff de diseño del panel (`docs/diseno/web-admin/`) pide pantallas de cue
 ## Addendum (2026-10-12): el refresco sobrevive a la recarga
 
 El token de acceso sigue solo en memoria, pero el de refresco se recuerda en el `sessionStorage` de la pestaña: recargar o escribir otra URL ya no cierra la sesión; cerrar la pestaña o la sesión lo borra (nunca `localStorage`). Al arrancar, `restaurar()` lo rota y trae el perfil. Riesgo asumido: un XSS podría leerlo; se resuelve con la cookie httpOnly cuando la API la soporte.
+
+## Addendum (2026-10-15): la app Flutter web aplica el mismo criterio
+
+La app Flutter en su versión web (ADR 0012) también guarda el refresco en el `sessionStorage` de la pestaña (`almacen_refresco_web.dart`): recargar la página no cierra la sesión; cerrar la pestaña o la sesión lo borra, nunca `localStorage`. El acceso sigue solo en memoria. La caché de datos y el texto de los QR emitidos siguen solo en memoria en web. Mismo riesgo asumido y misma salida: la cookie httpOnly cuando la API la soporte.
