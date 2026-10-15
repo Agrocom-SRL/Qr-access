@@ -26,6 +26,9 @@ abstract final class Rutas {
   /// Administración en compacto: Puertas y Usuarios en pestañas.
   static const admin = '/admin';
   static const adminPuertas = '/admin/puertas';
+
+  /// Gestión de sitios y puertas de la cuenta (HU-07).
+  static const adminEstructura = '/admin/estructura';
   static const adminUsuarios = '/admin/usuarios';
   static const adminUsuarioNuevo = '/admin/usuarios/nuevo';
 

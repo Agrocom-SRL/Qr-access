@@ -7,7 +7,9 @@ import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
+import 'package:agrocom_acceso/features/administracion/data/estructura_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
 import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
@@ -233,15 +235,55 @@ class EventosRepositorioFalso implements EventosRepositorio {
   }
 }
 
+class EstructuraRepositorioFalso implements EstructuraRepositorio {
+  new(this.sitios, {this.error});
+
+  final List<SitioGestionado> sitios;
+  final Exception? error;
+  final List<DatosSitio> sitiosCreados = [];
+  final List<(String, DatosPuerta)> puertasCreadas = [];
+  final List<String> puertasEliminadas = [];
+  final List<String> sitiosEliminados = [];
+
+  @override
+  Future<List<SitioGestionado>> listar() async {
+    if (error != null) throw error!;
+    return sitios;
+  }
+
+  @override
+  Future<void> crearSitio(DatosSitio datos) async => sitiosCreados.add(datos);
+
+  @override
+  Future<void> editarSitio(String id, DatosSitio datos) async {}
+
+  @override
+  Future<void> eliminarSitio(String id) async => sitiosEliminados.add(id);
+
+  @override
+  Future<void> crearPuerta(String sitioId, DatosPuerta datos) async =>
+      puertasCreadas.add((sitioId, datos));
+
+  @override
+  Future<void> editarPuerta(String id, DatosPuerta datos) async {}
+
+  @override
+  Future<void> eliminarPuerta(String id) async => puertasEliminadas.add(id);
+}
+
 class UsuariosRepositorioFalso implements UsuariosRepositorio {
   new({
     this.usuarios = const [],
     this.rolesDisponibles = const [],
     this.pinGenerado,
     this.error,
+    this.asignadas = const PuertasAsignadas(),
   });
 
   final List<Usuario> usuarios;
+  final PuertasAsignadas asignadas;
+  final List<(String, PuertasAsignadas)> asignaciones = [];
+  final List<String?> sufijosPedidos = [];
   final List<Rol> rolesDisponibles;
   final PinGenerado? pinGenerado;
   final Exception? error;
@@ -288,10 +330,26 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   }
 
   @override
-  Future<PinGenerado> generarPin(Usuario usuario) async {
+  Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {
     if (error != null) throw error!;
     pinesRegenerados.add(usuario.id);
+    sufijosPedidos.add(sufijo);
     return pinGenerado!;
+  }
+
+  @override
+  Future<PuertasAsignadas> puertasAsignadas(String usuarioId) async {
+    if (error != null) throw error!;
+    return asignadas;
+  }
+
+  @override
+  Future<void> asignarPuertas(
+    String usuarioId,
+    PuertasAsignadas puertas,
+  ) async {
+    if (error != null) throw error!;
+    asignaciones.add((usuarioId, puertas));
   }
 }
 

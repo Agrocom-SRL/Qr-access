@@ -1418,5 +1418,172 @@
   "usuariosColumnaUltimoIngreso": "Último ingreso",
   "@usuariosColumnaUltimoIngreso": {
     "description": "Encabezado de la tabla de usuarios"
+  },
+  "comunErrorPinSufijoEnUso": "Esos 4 caracteres ya los usa otra persona de la cuenta. Elige otros.",
+  "@comunErrorPinSufijoEnUso": {
+    "description": "Error al elegir un PIN que ya existe en la cuenta"
+  },
+  "comunErrorSitioNombreExistente": "Ya hay un sitio con ese nombre.",
+  "@comunErrorSitioNombreExistente": {
+    "description": "Error al repetir el nombre de un sitio"
+  },
+  "comunErrorPuertaNombreExistente": "Ya hay una puerta con ese nombre en el sitio.",
+  "@comunErrorPuertaNombreExistente": {
+    "description": "Error al repetir el nombre de una puerta"
+  },
+  "comunErrorSitioConPuertas": "Quita primero las puertas del sitio.",
+  "@comunErrorSitioConPuertas": {
+    "description": "Error al eliminar un sitio con puertas"
+  },
+  "comunErrorPuertaConDispositivo": "La puerta tiene un lector vinculado. Pide a AGROCOM que lo libere antes de eliminarla.",
+  "@comunErrorPuertaConDispositivo": {
+    "description": "Error al eliminar una puerta con lector"
+  },
+  "comunErrorSitioNoEncontrado": "No encontramos ese sitio.",
+  "@comunErrorSitioNoEncontrado": {
+    "description": "Error de sitio inexistente"
+  },
+  "estructuraTitulo": "Sitios y puertas",
+  "@estructuraTitulo": {
+    "description": "Título de la pantalla de gestión de sitios y puertas"
+  },
+  "estructuraGestionar": "Gestionar sitios y puertas",
+  "@estructuraGestionar": {
+    "description": "Botón que abre la gestión de sitios y puertas"
+  },
+  "estructuraErrorCargar": "No pudimos cargar los sitios y puertas.",
+  "@estructuraErrorCargar": {
+    "description": "Error al cargar la estructura"
+  },
+  "estructuraSinSitios": "Aún no hay sitios",
+  "@estructuraSinSitios": {
+    "description": "Vacío de la gestión de sitios"
+  },
+  "estructuraSinSitiosAyuda": "Crea el primero para registrar sus puertas.",
+  "@estructuraSinSitiosAyuda": {
+    "description": "Ayuda del vacío de sitios"
+  },
+  "estructuraSitioNuevo": "Nuevo sitio",
+  "@estructuraSitioNuevo": {
+    "description": "Acción y título del diálogo de alta de sitio"
+  },
+  "estructuraSitioEditar": "Editar sitio",
+  "@estructuraSitioEditar": {
+    "description": "Título del diálogo de edición de sitio"
+  },
+  "estructuraSitioNombre": "Nombre del sitio",
+  "@estructuraSitioNombre": {
+    "description": "Campo nombre del sitio"
+  },
+  "estructuraSitioDireccion": "Dirección (opcional)",
+  "@estructuraSitioDireccion": {
+    "description": "Campo dirección del sitio"
+  },
+  "estructuraPuertaNueva": "Nueva puerta",
+  "@estructuraPuertaNueva": {
+    "description": "Acción y título del diálogo de alta de puerta"
+  },
+  "estructuraPuertaEditar": "Editar puerta",
+  "@estructuraPuertaEditar": {
+    "description": "Título del diálogo de edición de puerta"
+  },
+  "estructuraPuertaNombre": "Nombre de la puerta",
+  "@estructuraPuertaNombre": {
+    "description": "Campo nombre de la puerta"
+  },
+  "estructuraPuertaSegundos": "Segundos que queda abierta",
+  "@estructuraPuertaSegundos": {
+    "description": "Campo duración del pulso de apertura"
+  },
+  "estructuraPuertaSegundosAyuda": "Entre 1 y 30 segundos.",
+  "@estructuraPuertaSegundosAyuda": {
+    "description": "Ayuda del campo de segundos"
+  },
+  "estructuraPuertaSegundosValor": "{segundos} s de apertura",
+  "@estructuraPuertaSegundosValor": {
+    "description": "Duración del pulso en la fila de una puerta",
+    "placeholders": {
+      "segundos": {
+        "type": "int"
+      }
+    }
+  },
+  "estructuraErrorNombre": "Escribe un nombre.",
+  "@estructuraErrorNombre": {
+    "description": "Error de nombre vacío"
+  },
+  "estructuraErrorSegundos": "Escribe un número entre 1 y 30.",
+  "@estructuraErrorSegundos": {
+    "description": "Error de segundos fuera de rango"
+  },
+  "estructuraSinPuertas": "Sin puertas",
+  "@estructuraSinPuertas": {
+    "description": "Sitio sin puertas"
+  },
+  "estructuraEliminarSitioTitulo": "¿Eliminar el sitio {nombre}?",
+  "@estructuraEliminarSitioTitulo": {
+    "description": "Título de la confirmación de baja de un sitio",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "estructuraEliminarSitioMensaje": "Solo se puede eliminar un sitio que no tenga puertas.",
+  "@estructuraEliminarSitioMensaje": {
+    "description": "Mensaje de la baja de un sitio"
+  },
+  "estructuraEliminarPuertaTitulo": "¿Eliminar la puerta {nombre}?",
+  "@estructuraEliminarPuertaTitulo": {
+    "description": "Título de la confirmación de baja de una puerta",
+    "placeholders": {
+      "nombre": {
+        "type": "String"
+      }
+    }
+  },
+  "estructuraEliminarPuertaMensaje": "Los QR vigentes ya no servirán para esta puerta. Si tiene un lector vinculado, pide a AGROCOM que lo libere antes.",
+  "@estructuraEliminarPuertaMensaje": {
+    "description": "Mensaje de la baja de una puerta"
+  },
+  "usuariosSeccionPuertas": "Puertas asignadas",
+  "@usuariosSeccionPuertas": {
+    "description": "Sección del formulario de usuario con las puertas asignadas"
+  },
+  "usuariosPuertasAyuda": "Un guardia ve los eventos de las puertas que tenga asignadas.",
+  "@usuariosPuertasAyuda": {
+    "description": "Ayuda de las puertas asignadas"
+  },
+  "usuariosPuertasTodas": "Todas las puertas",
+  "@usuariosPuertasTodas": {
+    "description": "Opción de asignar todas las puertas"
+  },
+  "usuariosPuertasSinPuertas": "La cuenta aún no tiene puertas.",
+  "@usuariosPuertasSinPuertas": {
+    "description": "Aviso cuando no hay puertas que asignar"
+  },
+  "usuariosPinManual": "Elegir yo los 4 últimos caracteres",
+  "@usuariosPinManual": {
+    "description": "Interruptor para escribir el sufijo del PIN"
+  },
+  "usuariosPinSufijoCampo": "4 letras o números",
+  "@usuariosPinSufijoCampo": {
+    "description": "Campo del sufijo del PIN"
+  },
+  "usuariosPinSufijoAyuda": "Los 3 primeros son el código de tu cuenta. Evita secuencias fáciles como 1234.",
+  "@usuariosPinSufijoAyuda": {
+    "description": "Ayuda del sufijo del PIN"
+  },
+  "usuariosPinSufijoError": "Escribe exactamente 4 letras o números.",
+  "@usuariosPinSufijoError": {
+    "description": "Error del sufijo del PIN"
+  },
+  "usuariosPinAzar": "Los 4 últimos caracteres se generan al azar.",
+  "@usuariosPinAzar": {
+    "description": "Aviso de PIN al azar"
+  },
+  "usuariosSeccionPin": "PIN de acceso",
+  "@usuariosSeccionPin": {
+    "description": "Sección del formulario de usuario nuevo para elegir cómo se forma el PIN"
   }
 }

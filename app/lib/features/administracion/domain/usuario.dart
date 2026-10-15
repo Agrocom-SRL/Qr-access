@@ -40,6 +40,7 @@ class PinGenerado {
     required this.usuarioEtiqueta,
     required this.roles,
     required this.esNuevo,
+    this.usuarioId,
   });
 
   /// Los 7 caracteres en claro. No se guarda en el cliente.
@@ -51,17 +52,36 @@ class PinGenerado {
   /// (y el anterior dejó de funcionar).
   final bool esNuevo;
 
+  /// El usuario creado (para asignarle puertas a continuación).
+  final String? usuarioId;
+
   String get codigoDeCuenta => pin.substring(0, 3);
   String get clave => pin.substring(3);
 }
 
+/// Puertas a las que está asignado un usuario (típicamente un guardia): todas
+/// o una lista. Sin asignación, un guardia no ve eventos de ninguna puerta.
+@immutable
+class PuertasAsignadas {
+  const new({this.todas = false, this.puertaIds = const {}});
+
+  final bool todas;
+  final Set<String> puertaIds;
+}
+
+/// Los 4 caracteres finales del PIN que el administrador puede elegir (ADR
+/// 0018, addendum): letras y números, sin distinguir mayúsculas.
+final _formatoSufijoDePin = RegExp(r'^[A-Za-z0-9]{4}$');
+
+bool sufijoDePinValido(String sufijo) => _formatoSufijoDePin.hasMatch(sufijo);
+
 /// Qué está mal en el formulario de usuario.
-enum ErrorDatosUsuario { sinEtiqueta, etiquetaLarga, sinRoles }
+enum ErrorDatosUsuario { sinEtiqueta, etiquetaLarga, sinRoles, sufijoInvalido }
 
 /// Datos validados del formulario de usuario.
 @immutable
 class DatosUsuario {
-  new({required String etiqueta, required Set<String> rolIds})
+  new({required String etiqueta, required Set<String> rolIds, this.sufijoDePin})
     : assert(
         errorDe(etiqueta: etiqueta, rolIds: rolIds) == null,
         'Los datos del usuario tienen que validarse antes',
@@ -74,6 +94,9 @@ class DatosUsuario {
 
   final String etiqueta;
   final List<String> rolIds;
+
+  /// Los 4 caracteres del PIN si el administrador los eligió; `null` = al azar.
+  final String? sufijoDePin;
 
   static ErrorDatosUsuario? errorDe({
     required String etiqueta,

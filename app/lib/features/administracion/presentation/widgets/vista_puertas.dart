@@ -2,10 +2,15 @@ import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/sesion/permisos.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
@@ -13,6 +18,7 @@ import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Puertas con su lector y su estado (handoff C10a/E10a, HU-09): tarjetas
 /// agrupadas por sitio en compacto, tabla con "última señal" en expandido.
@@ -99,11 +105,44 @@ class VistaPuertas extends ConsumerWidget {
         ),
       ],
     );
+    final gestiona = ref
+        .watch(sesionControladorProvider)
+        .tiene(Permisos.administrarPuertas);
+    // El administrador llega desde aquí a crear y editar sitios y puertas.
+    final gestionar = gestiona
+        ? Padding(
+            padding: EdgeInsets.fromLTRB(
+              tokens.espacio.l,
+              tokens.espacio.l,
+              tokens.espacio.l,
+              0,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AccesoBoton(
+                texto: l10n.estructuraGestionar,
+                icono: Icons.edit_location_alt_outlined,
+                variante: VarianteBoton.secundaria,
+                onPressed: () => context.go(Rutas.adminEstructura),
+              ),
+            ),
+          )
+        : null;
     // En compacto, una banda de foto sobre el listado; en medio y expandido
     // la tabla ya llena la pantalla.
-    if (context.clasePantalla != ClasePantalla.compacta) return listado;
+    if (context.clasePantalla != ClasePantalla.compacta) {
+      return gestionar == null
+          ? listado
+          : Column(
+              children: [
+                gestionar,
+                Expanded(child: listado),
+              ],
+            );
+    }
     return Column(
       children: [
+        ?gestionar,
         Padding(
           padding: EdgeInsets.all(tokens.espacio.l),
           child: ClipRRect(

@@ -118,6 +118,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             paginaAnimada(context, state, const PuertasAdminPagina()),
       ),
       GoRoute(
+        path: Rutas.adminEstructura,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const EstructuraPagina()),
+      ),
+      GoRoute(
         path: Rutas.adminUsuarios,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const UsuariosPagina()),

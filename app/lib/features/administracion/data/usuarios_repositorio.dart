@@ -18,7 +18,10 @@ abstract interface class UsuariosRepositorio {
   Future<void> eliminar(String id);
 
   /// Regenera el PIN: el anterior deja de servir.
-  Future<PinGenerado> generarPin(Usuario usuario);
+  Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo});
+
+  Future<PuertasAsignadas> puertasAsignadas(String usuarioId);
+  Future<void> asignarPuertas(String usuarioId, PuertasAsignadas puertas);
 }
 
 class UsuariosRepositorioApi implements UsuariosRepositorio {
@@ -43,8 +46,10 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
     final dto = await _api.crearUsuario(
       etiqueta: datos.etiqueta,
       rolIds: datos.rolIds,
+      sufijo: datos.sufijoDePin,
     );
     return PinGenerado(
+      usuarioId: dto.usuario.id,
       pin: dto.pin,
       usuarioEtiqueta: dto.usuario.etiqueta,
       roles: dto.usuario.roles.map(_aRol).toList(),
@@ -65,8 +70,8 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
   Future<void> eliminar(String id) => _api.eliminarUsuario(id);
 
   @override
-  Future<PinGenerado> generarPin(Usuario usuario) async {
-    final dto = await _api.generarPin(usuario.id);
+  Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {
+    final dto = await _api.generarPin(usuario.id, sufijo: sufijo);
     return PinGenerado(
       pin: dto.pin,
       usuarioEtiqueta: usuario.etiqueta,
@@ -74,6 +79,20 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
       esNuevo: false,
     );
   }
+
+  @override
+  Future<PuertasAsignadas> puertasAsignadas(String usuarioId) async {
+    final dto = await _api.puertasAsignadas(usuarioId);
+    return PuertasAsignadas(todas: dto.todas, puertaIds: dto.puertaIds.toSet());
+  }
+
+  @override
+  Future<void> asignarPuertas(String usuarioId, PuertasAsignadas puertas) =>
+      _api.asignarPuertas(
+        usuarioId,
+        todas: puertas.todas,
+        puertaIds: puertas.todas ? const [] : puertas.puertaIds.toList(),
+      );
 }
 
 Rol _aRol(RolDto dto) => Rol(id: dto.id, nombre: dto.nombre);

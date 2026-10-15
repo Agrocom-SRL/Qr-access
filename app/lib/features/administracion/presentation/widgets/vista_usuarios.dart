@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogo_regenerar_pin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
@@ -206,17 +207,11 @@ class VistaUsuarios extends ConsumerWidget {
   ) async {
     final l10n = context.l10n;
     final nombre = usuario.etiqueta ?? l10n.qrSinEtiqueta;
-    final confirmado = await ConfirmarDialogo.mostrar(
-      context,
-      titulo: l10n.usuariosGenerarPinTitulo,
-      mensaje: l10n.usuariosGenerarPinMensaje(nombre),
-      textoConfirmar: l10n.usuariosGenerarPin,
-      variante: VarianteBoton.primaria,
-    );
-    if (!confirmado || !context.mounted) return;
+    final eleccion = await pedirRegeneracionDePin(context, nombre: nombre);
+    if (eleccion == null || !context.mounted) return;
     final resultado = await ref
         .read(accionesUsuarioProvider.notifier)
-        .generarPin(usuario);
+        .generarPin(usuario, sufijo: eleccion.sufijo);
     if (!context.mounted) return;
     final error = resultado.error;
     if (error != null) {
