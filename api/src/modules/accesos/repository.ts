@@ -229,6 +229,8 @@ export interface EventoFila extends RowDataPacket {
 export interface FiltroDeEventos {
   /** Solo los de QR emitidos por este usuario; `null` = todos los de la cuenta. */
   readonly emitidoPor: string | null;
+  /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
+  readonly puertaIds: readonly string[] | null;
   readonly resultado: 'permitido' | 'rechazado' | null;
   readonly puertaId: string | null;
   /** Ventana `[desde, hasta)` en UTC. */
@@ -249,6 +251,14 @@ function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params
   if (filtro.emitidoPor !== null) {
     condiciones.push('q.emitido_por = ?');
     params.push(filtro.emitidoPor);
+  }
+  if (filtro.puertaIds !== null) {
+    if (filtro.puertaIds.length === 0) {
+      condiciones.push('1 = 0');
+    } else {
+      condiciones.push('t.puerta_id IN (?)');
+      params.push(filtro.puertaIds);
+    }
   }
   if (filtro.resultado !== null) {
     condiciones.push('t.resultado = ?');

@@ -10,6 +10,8 @@ import {
   cuerpoDeNuevaPuerta,
   cuerpoDeNuevoSitio,
   esquemaListadoDePuertas,
+  esquemaPuertasAsignadas,
+  parametrosDeUsuario,
   parametrosDePuerta,
   parametrosDeSitio,
   respuestaDeCreado,
@@ -138,6 +140,42 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       },
       async (request, reply) => {
         await organizacion.eliminarPuerta(request.params.puertaId);
+        return reply.status(204).send();
+      },
+    );
+
+    // A qué puertas está asignado un usuario (guardia): de ellas ve los eventos y el estado.
+    app.get(
+      '/usuarios/:usuarioId/puertas-asignadas',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuario,
+          response: { 200: esquemaPuertasAsignadas },
+        },
+        preHandler: permiso('organizacion.guardia.asignar'),
+      },
+      async (request) => {
+        const asignadas = await organizacion.puertasAsignadasA(request.params.usuarioId);
+        return { todas: asignadas.todas, puerta_ids: [...asignadas.puertaIds] };
+      },
+    );
+
+    app.put(
+      '/usuarios/:usuarioId/puertas-asignadas',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuario,
+          body: esquemaPuertasAsignadas,
+        },
+        preHandler: permiso('organizacion.guardia.asignar'),
+      },
+      async (request, reply) => {
+        await organizacion.asignarPuertas(request.params.usuarioId, {
+          todas: request.body.todas,
+          puertaIds: request.body.puerta_ids,
+        });
         return reply.status(204).send();
       },
     );

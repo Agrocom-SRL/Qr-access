@@ -15,7 +15,9 @@ export async function ejecutar(
   principal: PrincipalUsuario,
   filtros: FiltrosDeEventos,
 ): Promise<ResumenDeEventos> {
-  const filas = await new RepositorioDeEventos(pool).resumir(alcanceDe(principal, filtros));
+  const filas = await new RepositorioDeEventos(pool).resumir(
+    await alcanceDe(pool, principal, filtros),
+  );
   const resumen: ResumenDeEventos = { permitidos: 0, rechazados: 0, rechazados_por_motivo: [] };
   for (const fila of filas) {
     const total = Number(fila.total);

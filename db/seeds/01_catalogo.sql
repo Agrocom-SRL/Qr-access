@@ -19,6 +19,7 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('accesos.qr.anular_todos', 'cuenta'),
   ('accesos.evento.ver', 'cuenta'),
   ('accesos.evento.ver_todos', 'cuenta'),
+  ('accesos.evento.ver_asignadas', 'cuenta'),
   ('seguridad.usuario.ver', 'cuenta'),
   ('seguridad.usuario.crear', 'cuenta'),
   ('seguridad.usuario.editar', 'cuenta'),
@@ -74,3 +75,12 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'cuenta'
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 1 AND r.nombre = 'Administrador' AND r.deleted_at IS NULL;
+
+-- Los guardias ven los eventos de las puertas que se les asignan, no los de toda la cuenta: el rol base
+-- "Guardia" (no protegido) cambia `ver_todos` por `ver_asignadas`. Un rol propio de la cuenta no se toca.
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo = 'accesos.evento.ver_asignadas'
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Guardia' AND r.deleted_at IS NULL;
+DELETE rp FROM rol_permisos AS rp
+  JOIN roles AS r ON r.id = rp.rol_id AND r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Guardia'
+  JOIN permisos AS p ON p.id = rp.permiso_id AND p.codigo = 'accesos.evento.ver_todos';

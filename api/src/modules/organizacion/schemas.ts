@@ -77,3 +77,11 @@ export const cuerpoDeEdicionDePuerta = z.object({
 export const parametrosDeSitio = z.object({ sitioId: esquemaIdDeRuta });
 export const parametrosDePuerta = z.object({ puertaId: esquemaIdDeRuta });
 export const respuestaDeCreado = z.object({ id: z.string() });
+
+export const parametrosDeUsuario = z.object({ usuarioId: esquemaIdDeRuta });
+
+/** Puertas asignadas a un usuario: `todas` o una lista de puertas (nunca las dos cosas). */
+export const esquemaPuertasAsignadas = z.object({
+  todas: z.boolean(),
+  puerta_ids: z.array(esquemaIdDeRuta).max(500),
+});
