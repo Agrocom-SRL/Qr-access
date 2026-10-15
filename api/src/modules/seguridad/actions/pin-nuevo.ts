@@ -1,4 +1,5 @@
 import type { Transaccion } from '../../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { hashear } from '../../../platform/seguridad/hash.js';
 import { calcularIndiceDePin, generarSufijoDePin, secretoDePin } from '../domain/pin.js';
 
@@ -21,16 +22,17 @@ function esSufijoRepetido(error: unknown): boolean {
 
 /**
  * Sortea un PIN para la cuenta (ADR 0018 §1) y lo escribe con `guardar`; si el sufijo choca
- * con uno existente, sortea otro. El índice y el hash salen de acá; el texto nunca se persiste.
+ * con uno existente, sortea otro. Con `sufijoElegido` (ADR 0028) usa ese: si ya existe, 409. El índice y el hash salen de acá; el texto nunca se persiste.
  */
 export async function conPinNuevo(
   tx: Transaccion,
   cuenta: { readonly id: string; readonly codigo: string },
   pimienta: string,
   guardar: (pin: PinSorteado) => Promise<void>,
+  sufijoElegido?: string,
 ): Promise<string> {
   for (let intento = 1; ; intento += 1) {
-    const sufijo = generarSufijoDePin();
+    const sufijo = sufijoElegido ?? generarSufijoDePin();
     const completo = `${cuenta.codigo}${sufijo}`;
     const pin: PinSorteado = {
       completo,
@@ -41,7 +43,10 @@ export async function conPinNuevo(
       await guardar(pin);
       return completo;
     } catch (error) {
-      if (!esSufijoRepetido(error) || intento >= INTENTOS_DE_SORTEO) throw error;
+      if (!esSufijoRepetido(error)) throw error;
+      // Uno elegido a mano no se re-sortea: el administrador tiene que elegir otro.
+      if (sufijoElegido !== undefined) throw new ErrorDeDominio('pin.sufijo_en_uso', 409);
+      if (intento >= INTENTOS_DE_SORTEO) throw error;
     }
   }
 }

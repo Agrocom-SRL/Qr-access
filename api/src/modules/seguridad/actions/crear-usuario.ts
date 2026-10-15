@@ -16,6 +16,8 @@ export interface DatosDeNuevoUsuario {
   /** A quién se le entrega el PIN (ADR 0018 §2). */
   readonly etiqueta: string;
   readonly rolIds: readonly string[];
+  /** Los 4 caracteres del PIN si el administrador los eligió; si no, los sortea el servidor. */
+  readonly sufijo?: string;
 }
 
 export interface UsuarioCreado extends UsuarioListado {
@@ -64,6 +66,7 @@ export async function ejecutar(
           ahora,
         });
       },
+      datos.sufijo,
     );
     const asignaciones = new RepositorioDeRolesDeUsuario(pool);
     for (const rolId of rolIds) await asignaciones.asignar(tx, usuarioId, rolId);

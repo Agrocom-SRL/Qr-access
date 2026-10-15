@@ -15,10 +15,11 @@ export async function ejecutar(
   principal: PrincipalUsuario,
   usuarioId: string,
   ahora: Date = new Date(),
+  sufijoElegido?: string,
 ): Promise<PinGenerado> {
   const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorId(
     principal.cuentaId,
   );
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
-  return regenerarPinDeUsuario(servicios, cuenta, usuarioId, ahora);
+  return regenerarPinDeUsuario(servicios, cuenta, usuarioId, ahora, sufijoElegido);
 }

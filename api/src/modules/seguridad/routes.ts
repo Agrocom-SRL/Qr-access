@@ -17,6 +17,7 @@ import {
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
   cuerpoDeNuevoUsuario,
+  cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
   cuerpoDeRolActivo,
   esquemaUsuario,
@@ -133,6 +134,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         const usuario = await crearUsuario(servicios, usuarioDe(request), {
           etiqueta: request.body.etiqueta,
           rolIds: request.body.rol_ids,
+          ...(request.body.sufijo === undefined ? {} : { sufijo: request.body.sufijo }),
         });
         return reply.status(201).header('location', `/api/v1/usuarios/${usuario.id}`).send(usuario);
       },
@@ -175,11 +177,19 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         schema: {
           tags: ['seguridad'],
           params: parametrosDeUsuario,
+          body: cuerpoDeRegeneracionDePin.nullish(),
           response: { 200: respuestaDePinGenerado },
         },
         preHandler: permiso('seguridad.usuario.editar'),
       },
-      (request) => generarPin(servicios, usuarioDe(request), request.params.id),
+      (request) =>
+        generarPin(
+          servicios,
+          usuarioDe(request),
+          request.params.id,
+          new Date(),
+          request.body?.sufijo,
+        ),
     );
     app.register(rutasDePlataforma(servicios));
     app.register(rutasDeCuentas(servicios));
