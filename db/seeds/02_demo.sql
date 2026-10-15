@@ -91,10 +91,10 @@ UPDATE dispositivos SET revocado_at = COALESCE(revocado_at, NOW(3)), deleted_at 
 UPDATE puertas SET deleted_at = NOW(3)
   WHERE tenant_id = 9001 AND id IN (9001, 9002) AND deleted_at IS NULL;
 
--- Super admin de desarrollo (web admin): usuario lucia.paz, contraseña agrocom-demo-2026
+-- Super admin de desarrollo (web admin): usuario root, contraseña 12345678
 INSERT INTO usuarios (id, tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES
-  (9100, NULL, 'Lucía Paz', 'lucia.paz', '$argon2id$v=19$m=19456,p=1,t=2$VCPmfr1DVGOmQK6EW+K5fg$eDOgMSV+rhf1WSN5eX+YA2PjSEdDFAWN6/i7A9jl8Zo', 0, 1)
-ON DUPLICATE KEY UPDATE etiqueta = VALUES(etiqueta), contrasena_hash = VALUES(contrasena_hash), activo = 1, deleted_at = NULL;
+  (9100, NULL, 'Root', 'root', '$argon2id$v=19$m=19456,p=1,t=2$NRcwaBfCTiX8FgW0y18mfg$SUI+cnQZNQ/LmXeaS1puV66pCoHr1G0gVkWGoC6uS+4', 0, 1)
+ON DUPLICATE KEY UPDATE etiqueta = VALUES(etiqueta), username = VALUES(username), contrasena_hash = VALUES(contrasena_hash), activo = 1, deleted_at = NULL;
 
 INSERT INTO usuario_roles (id, tenant_id, usuario_id, rol_id)
   SELECT 9100, NULL, 9100, id FROM roles WHERE tenant_id IS NULL AND nombre = 'Super admin' AND deleted_at IS NULL

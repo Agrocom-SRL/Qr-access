@@ -53,7 +53,7 @@ Cableado:
 2. **RE y DE del módulo a GND:** RE es activo en bajo (receptor siempre encendido) y DE activo en alto (transmisor apagado). El módulo solo recibe, porque el lector transmite y la placa escucha. Si algún día el firmware tiene que mandar comandos al lector, DE pasa a un GPIO. RE y DE **nunca** a 12 V.
 3. **Módulo RS485 ↔ placa:** RO a GPIO5 (RXD). VCC del módulo a 3,3 V si es posible; a 5 V obliga a un divisor en RO porque el ESP32 tolera 3,3 V. El módulo de la foto (MAX485, serigrafía "TTL to RS-485 module") es de 5 V.
 4. **La placa nunca recibe los 12 V.** Se alimenta a 5 V (buck 12→5 V, o el módulo USB-serie en la mesa).
-5. Si no llegan datos, se invierten A y B. La velocidad por defecto es 9600; se cambia con `-DLECTOR_BAUDIOS=<n>` en `build_flags`.
+5. Si no llegan datos, se invierten A y B. La velocidad por defecto es 115200 (confirmada con el ZKTeco QR600); se cambia con `-DLECTOR_BAUDIOS=<n>` en `build_flags`.
 
 **Pendiente:** el modelo y el protocolo del lector. Con el lector enchufado se lee por el monitor serie lo que llega al pasar un QR; el firmware espera una línea de texto terminada en CR o LF (`lector_qr`). Si el lector manda tramas binarias o un formato distinto, se ajusta `lector_qr` y se anota aquí.
 

@@ -53,7 +53,7 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 | Qué | Valor |
 |---|---|
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
-| Super admin del panel web (solo desarrollo) | usuario `lucia.paz`, contraseña `agrocom-demo-2026` |
+| Super admin del panel web (solo desarrollo) | usuario `root`, contraseña `12345678` |
 | PIN del **administrador** (todos los permisos de cuenta; también tiene el rol Usuario, así que elige rol al entrar) | `DEMADM1` |
 | PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
 | PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
@@ -62,7 +62,7 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 
 El PIN se escribe sin importar mayúsculas (`demadm1` entra igual).
 
-Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `lucia.paz` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se emite un QR para esa puerta y se lee con el lector.
+Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `root` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se emite un QR para esa puerta y se lee con el lector.
 
 Para el firmware en la mesa: compilar con `pio run -e esp32-dev -t upload` y, por serie, `set api_url http://<IP del Mac>:3000` y `reiniciar` (la compilación de desarrollo admite HTTP plano; la de producción trae la URL real de fábrica). Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
 
