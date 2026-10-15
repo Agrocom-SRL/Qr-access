@@ -1,22 +1,48 @@
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco_contrato.dart';
+import 'package:web/web.dart' as web;
 
-/// Implementación web: el refresco solo vive en memoria. No va a
-/// localStorage ni a sessionStorage, que cualquier script de la página podría
-/// leer. Al recargar la pestaña hay que volver a ingresar.
+/// Implementación web: el refresco vive en el `sessionStorage` de la pestaña,
+/// así recargar la página no cierra la sesión (ADR 0022, addendum). Se borra
+/// al cerrar la pestaña o la sesión; nunca va a `localStorage`.
 ///
-/// Cuando la API entregue el refresco en una cookie HttpOnly (pendiente), esta
-/// clase deja de guardar nada y el navegador la envía sola.
+/// Riesgo asumido: un script inyectado (XSS) podría leerlo. Cuando la API
+/// entregue el refresco en una cookie HttpOnly (pendiente), esta clase deja de
+/// guardar nada y el navegador la envía sola.
 class AlmacenRefrescoWeb implements AlmacenRefresco {
-  String? _refresco;
+  static const _clave = 'sesion.refresco';
+
+  /// En memoria por si el navegador bloquea el almacenamiento (modo privado
+  /// estricto): la sesión dura entonces hasta recargar, como antes.
+  String? _respaldo;
 
   @override
-  Future<String?> leer() async => _refresco;
+  Future<String?> leer() async {
+    try {
+      return web.window.sessionStorage.getItem(_clave) ?? _respaldo;
+    } on Object {
+      return _respaldo;
+    }
+  }
 
   @override
-  Future<void> guardar(String refresco) async => _refresco = refresco;
+  Future<void> guardar(String refresco) async {
+    _respaldo = refresco;
+    try {
+      web.window.sessionStorage.setItem(_clave, refresco);
+    } on Object {
+      // Sin almacenamiento disponible: queda solo el respaldo en memoria.
+    }
+  }
 
   @override
-  Future<void> borrar() async => _refresco = null;
+  Future<void> borrar() async {
+    _respaldo = null;
+    try {
+      web.window.sessionStorage.removeItem(_clave);
+    } on Object {
+      // Nada que borrar si el navegador no deja usar el almacenamiento.
+    }
+  }
 }
 
 /// Fábrica que elige `almacen_refresco.dart` por importación condicional.
