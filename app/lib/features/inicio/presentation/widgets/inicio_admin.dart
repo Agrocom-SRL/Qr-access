@@ -210,15 +210,18 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 alReintentar: () => ref.invalidate(tableroProvider),
               )
             else if (expandida)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < indicadores.length; i++) ...[
-                    Expanded(child: indicadores[i]),
-                    if (i < indicadores.length - 1)
-                      SizedBox(width: tokens.espacio.xl),
+              // Las tres tarjetas miden lo mismo, lleven nota o no.
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < indicadores.length; i++) ...[
+                      Expanded(child: indicadores[i]),
+                      if (i < indicadores.length - 1)
+                        SizedBox(width: tokens.espacio.xl),
+                    ],
                   ],
-                ],
+                ),
               )
             else ...[
               indicadores[0],
