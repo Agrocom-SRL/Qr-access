@@ -68,6 +68,11 @@ export const cuerpoDeNuevoUsuario = z.object({
 /** Regenerar el PIN: sin cuerpo (lo sortea el servidor) o con el sufijo elegido. */
 export const cuerpoDeRegeneracionDePin = z.object({ sufijo: esquemaSufijoDePin.optional() });
 
+/** Lo que una persona edita de sí misma: su nombre. */
+export const cuerpoDeMiPerfil = z.object({ etiqueta: esquemaEtiqueta });
+
+export const respuestaDeMiPerfil = z.object({ id: z.string(), etiqueta: z.string() });
+
 /** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
 export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() });
 

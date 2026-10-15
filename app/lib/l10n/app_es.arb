@@ -1585,5 +1585,17 @@
   "usuariosSeccionPin": "PIN de acceso",
   "@usuariosSeccionPin": {
     "description": "Sección del formulario de usuario nuevo para elegir cómo se forma el PIN"
+  },
+  "perfilEditarNombre": "Editar nombre",
+  "@perfilEditarNombre": {
+    "description": "Acción y título del diálogo para cambiar el propio nombre"
+  },
+  "perfilNombreCampo": "Tu nombre",
+  "@perfilNombreCampo": {
+    "description": "Campo del nombre en el perfil"
+  },
+  "perfilNombreError": "Escribe tu nombre.",
+  "@perfilNombreError": {
+    "description": "Error de nombre vacío en el perfil"
   }
 }
