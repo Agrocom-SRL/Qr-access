@@ -5,7 +5,10 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/mostrar_qr_controlador.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/aviso_seguimiento_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_concedido.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_revelado.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/seguimiento_de_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
@@ -75,37 +78,48 @@ class MostrarQrPagina extends ConsumerWidget {
               tokens: tokens,
             ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(child: QrRevelado(texto: qr.texto)),
-          SizedBox(height: tokens.espacio.xl),
-          Text(
-            titulo,
-            style: texto.headlineMedium,
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: tokens.espacio.xs),
-          Text(
-            puertas,
-            style: texto.bodyLarge?.copyWith(
-              color: tokens.colores.textoSecundario,
+      child: SeguimientoDeQr(
+        qrId: qr.id,
+        builder: (context, seguimiento) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Aceptado, el QR ya no sirve: se reemplaza por la confirmación.
+            if (seguimiento?.concedido ?? false)
+              const QrConcedido()
+            else
+              Center(child: QrRevelado(texto: qr.texto)),
+            SizedBox(height: tokens.espacio.xl),
+            Text(
+              titulo,
+              style: texto.headlineMedium,
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: tokens.espacio.s),
-          Text(vence, style: texto.titleMedium, textAlign: TextAlign.center),
-          SizedBox(height: tokens.espacio.xl),
-          if (estado.fallo)
-            AccesoAviso(tono: TonoAviso.peligro, texto: l10n.qrCompartirFallo)
-          else if (estado.descargado)
-            AccesoAviso(tono: TonoAviso.primario, texto: l10n.qrDescargado)
-          else
-            AccesoAviso(
-              icono: Icons.visibility_off_outlined,
-              texto: l10n.qrMostrarAviso,
+            SizedBox(height: tokens.espacio.xs),
+            Text(
+              puertas,
+              style: texto.bodyLarge?.copyWith(
+                color: tokens.colores.textoSecundario,
+              ),
+              textAlign: TextAlign.center,
             ),
-        ],
+            SizedBox(height: tokens.espacio.s),
+            Text(vence, style: texto.titleMedium, textAlign: TextAlign.center),
+            SizedBox(height: tokens.espacio.xl),
+            if (seguimiento != null) ...[
+              AvisoSeguimientoQr(seguimiento: seguimiento),
+              SizedBox(height: tokens.espacio.m),
+            ],
+            if (estado.fallo)
+              AccesoAviso(tono: TonoAviso.peligro, texto: l10n.qrCompartirFallo)
+            else if (estado.descargado)
+              AccesoAviso(tono: TonoAviso.primario, texto: l10n.qrDescargado)
+            else
+              AccesoAviso(
+                icono: Icons.visibility_off_outlined,
+                texto: l10n.qrMostrarAviso,
+              ),
+          ],
+        ),
       ),
     );
   }

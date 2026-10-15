@@ -1597,5 +1597,51 @@
   "perfilNombreError": "Escribe tu nombre.",
   "@perfilNombreError": {
     "description": "Error de nombre vacío en el perfil"
+  },
+  "seguimientoConcedidoTitulo": "Acceso concedido",
+  "@seguimientoConcedidoTitulo": {
+    "description": "Resultado: la puerta aceptó el QR"
+  },
+  "seguimientoConcedidoTexto": "Se abrió {puerta}. Ya puedes cerrar esta pantalla.",
+  "@seguimientoConcedidoTexto": {
+    "description": "Detalle del acceso concedido",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "seguimientoRechazadoTitulo": "No se abrió {puerta}",
+  "@seguimientoRechazadoTitulo": {
+    "description": "Resultado: la puerta rechazó el QR",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "seguimientoRechazoUsado": "Este QR ya se usó. Emite uno nuevo.",
+  "@seguimientoRechazoUsado": {
+    "description": "Explicación del rechazo qr.usado"
+  },
+  "seguimientoRechazoVencido": "Este QR venció. Emite uno nuevo.",
+  "@seguimientoRechazoVencido": {
+    "description": "Explicación del rechazo qr.vencido"
+  },
+  "seguimientoRechazoAnulado": "Este QR fue anulado. Emite uno nuevo.",
+  "@seguimientoRechazoAnulado": {
+    "description": "Explicación del rechazo qr.anulado"
+  },
+  "seguimientoRechazoOtraPuerta": "Este QR no sirve para esa puerta. Revisa las puertas del QR.",
+  "@seguimientoRechazoOtraPuerta": {
+    "description": "Explicación del rechazo qr.otra_puerta"
+  },
+  "seguimientoRechazoSuscripcion": "La suscripción de la cuenta venció. Avisa al administrador.",
+  "@seguimientoRechazoSuscripcion": {
+    "description": "Explicación del rechazo suscripcion.vencida"
+  },
+  "seguimientoRechazoGenerico": "No se pudo validar el QR. Avisa al administrador.",
+  "@seguimientoRechazoGenerico": {
+    "description": "Explicación de un rechazo sin texto propio"
   }
 }

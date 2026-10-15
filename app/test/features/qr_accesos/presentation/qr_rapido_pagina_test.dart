@@ -5,7 +5,9 @@ import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/qr_rapido_pagina.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/visor_qr.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -149,5 +151,64 @@ void main() {
     );
 
     expect(find.byType(VisorQr), findsNothing);
+  });
+
+  group('seguimiento del QR', () {
+    final intento = IntentoQr(
+      ocurridoAt: _ahora,
+      permitido: true,
+      motivoCode: 'acceso.permitido',
+      puertaNombre: 'Portón principal',
+    );
+
+    Future<void> esperarSondeo(WidgetTester tester) async {
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      await tester.pump();
+    }
+
+    testWidgets('si la puerta lo aceptó, reemplaza el QR por la confirmación', (
+      tester,
+    ) async {
+      final repositorio = await _montar(tester);
+      repositorio.seguimiento = SeguimientoQr(
+        estado: EstadoQr.usado,
+        ultimoIntento: intento,
+      );
+      await esperarSondeo(tester);
+
+      expect(find.byType(VisorQr), findsNothing);
+      expect(find.text('Acceso concedido'), findsOneWidget);
+    });
+
+    testWidgets('si lo rechazó, sigue el QR y explica el motivo', (
+      tester,
+    ) async {
+      final repositorio = await _montar(tester);
+      repositorio.seguimiento = SeguimientoQr(
+        estado: EstadoQr.vigente,
+        ultimoIntento: IntentoQr(
+          ocurridoAt: _ahora,
+          permitido: false,
+          motivoCode: 'qr.otra_puerta',
+          puertaNombre: 'Depósito',
+        ),
+      );
+      await esperarSondeo(tester);
+
+      expect(find.byType(VisorQr), findsOneWidget);
+      expect(find.text('No se abrió Depósito'), findsOneWidget);
+      expect(find.textContaining('no sirve para esa puerta'), findsOneWidget);
+    });
+
+    testWidgets('sin respuesta de la API el QR sigue y no hay avisos', (
+      tester,
+    ) async {
+      await _montar(tester);
+      await esperarSondeo(tester);
+
+      expect(find.byType(VisorQr), findsOneWidget);
+      expect(find.text('Acceso concedido'), findsNothing);
+    });
   });
 }

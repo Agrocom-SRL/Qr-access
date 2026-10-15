@@ -314,5 +314,14 @@
   "usuariosColumnaEtiqueta": "Rótulo",
   "usuariosColumnaRoles": "Perfis",
   "usuariosColumnaPin": "PIN",
-  "usuariosColumnaUltimoIngreso": "Último acesso"
+  "usuariosColumnaUltimoIngreso": "Último acesso",
+  "seguimientoConcedidoTitulo": "Acesso concedido",
+  "seguimientoConcedidoTexto": "{puerta} foi aberta. Você já pode fechar esta tela.",
+  "seguimientoRechazadoTitulo": "{puerta} não abriu",
+  "seguimientoRechazoUsado": "Este QR já foi usado. Emita um novo.",
+  "seguimientoRechazoVencido": "Este QR venceu. Emita um novo.",
+  "seguimientoRechazoAnulado": "Este QR foi anulado. Emita um novo.",
+  "seguimientoRechazoOtraPuerta": "Este QR não vale para essa porta. Confira as portas do QR.",
+  "seguimientoRechazoSuscripcion": "A assinatura da conta venceu. Avise o administrador.",
+  "seguimientoRechazoGenerico": "Não foi possível validar o QR. Avise o administrador."
 }

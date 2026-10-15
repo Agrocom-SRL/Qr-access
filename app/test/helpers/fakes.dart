@@ -19,6 +19,7 @@ import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.d
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:agrocom_acceso/features/sesion/data/sesion_repositorio.dart';
 import 'package:agrocom_acceso/features/sesion/domain/pin.dart';
 
@@ -191,6 +192,16 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
 
   @override
   Future<Map<EstadoQr, int>> resumir() async => resumen;
+
+  /// Lo que responde el seguimiento de cualquier QR; `null` simula sin red.
+  SeguimientoQr? seguimiento;
+
+  @override
+  Future<SeguimientoQr> seguir(String id) async {
+    final actual = seguimiento;
+    if (actual == null) throw Exception('sin seguimiento');
+    return actual;
+  }
 
   @override
   Future<void> anular(String id) async {

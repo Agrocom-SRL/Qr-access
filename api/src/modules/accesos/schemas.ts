@@ -48,6 +48,19 @@ export const consultaDeQr = z.object({
   estado: z.enum(ESTADOS_DE_QR as [string, ...string[]]).optional(),
 });
 export const parametrosDeQr = z.object({ id: esquemaId });
+export const respuestaDeEstadoDeQr = z.object({
+  id: z.string(),
+  estado: z.enum(ESTADOS_DE_QR as [string, ...string[]]),
+  vence_at: esquemaFecha,
+  ultimo_intento: z
+    .object({
+      ocurrido_at: esquemaFecha,
+      resultado: z.enum(['permitido', 'rechazado']),
+      motivo_code: z.string(),
+      puerta: esquemaPuertaCorta,
+    })
+    .nullable(),
+});
 export const respuestaListadoDeQr = esquemaListado(esquemaQr);
 
 export const respuestaDeResumenDeQr = z.object({
