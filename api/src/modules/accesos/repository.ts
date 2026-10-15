@@ -226,6 +226,13 @@ export interface EventoFila extends RowDataPacket {
   qr_emitido_por: string | null;
 }
 
+export interface IntentoFila extends RowDataPacket {
+  ocurrido_at: Date;
+  resultado: 'permitido' | 'rechazado';
+  motivo_code: string;
+  puerta_id: string;
+}
+
 export interface FiltroDeEventos {
   /** Solo los de QR emitidos por este usuario; `null` = todos los de la cuenta. */
   readonly emitidoPor: string | null;
@@ -339,6 +346,16 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       orden: 't.ocurrido_at DESC, t.id DESC',
       limite,
       desplazamiento,
+    });
+  }
+
+  /** El intento más reciente sobre un QR (aceptado o rechazado), o `null` si nadie lo leyó. */
+  ultimoDeQr(qrId: string): Promise<IntentoFila | null> {
+    return this.seleccionarUna<IntentoFila>({
+      columnas: 't.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id',
+      donde: 't.qr_acceso_id = ?',
+      params: [qrId],
+      orden: 't.ocurrido_at DESC, t.id DESC',
     });
   }
 

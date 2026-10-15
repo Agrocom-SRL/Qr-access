@@ -4,6 +4,7 @@ import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as anularQr } from './actions/anular-qr.js';
+import { ejecutar as consultarEstadoQr } from './actions/consultar-estado-qr.js';
 import { ejecutar as emitirQr } from './actions/emitir-qr.js';
 import { ejecutar as listarEventos } from './actions/listar-eventos.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
@@ -19,6 +20,7 @@ import {
   esquemaQr,
   parametrosDeQr,
   respuestaDeEmision,
+  respuestaDeEstadoDeQr,
   respuestaDeResumenDeEventos,
   respuestaDeResumenDeQr,
   respuestaDeValidacion,
@@ -91,6 +93,19 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         preHandler: permiso('accesos.qr.ver'),
       },
       (request) => resumirQr(pool, usuarioDe(request)),
+    );
+
+    app.get(
+      '/qr-accesos/:id/estado',
+      {
+        schema: {
+          tags: ['accesos'],
+          params: parametrosDeQr,
+          response: { 200: respuestaDeEstadoDeQr },
+        },
+        preHandler: permiso('accesos.qr.ver'),
+      },
+      (request) => consultarEstadoQr(pool, usuarioDe(request), request.params.id),
     );
 
     app.post(
