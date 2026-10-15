@@ -9,6 +9,9 @@ SET NAMES utf8mb4;
 INSERT INTO permisos (codigo, ambito) VALUES
   ('organizacion.puerta.ver', 'cuenta'),
   ('organizacion.puerta.supervisar', 'cuenta'),
+  ('organizacion.sitio.administrar', 'cuenta'),
+  ('organizacion.puerta.administrar', 'cuenta'),
+  ('organizacion.guardia.asignar', 'cuenta'),
   ('accesos.qr.emitir', 'cuenta'),
   ('accesos.qr.ver', 'cuenta'),
   ('accesos.qr.ver_todos', 'cuenta'),
@@ -65,3 +68,9 @@ ON DUPLICATE KEY UPDATE max_usuarios = VALUES(max_usuarios), activo = 1;
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'
   WHERE r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL;
+
+-- El Administrador protegido de CADA cuenta recibe todos los permisos de ámbito cuenta, también los que se
+-- agregan después de crear la cuenta (las cuentas nuevas los copian de ROLES_BASE al crearse).
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'cuenta'
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 1 AND r.nombre = 'Administrador' AND r.deleted_at IS NULL;

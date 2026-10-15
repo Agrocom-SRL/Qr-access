@@ -22,6 +22,9 @@ async function insertar(pool: Pool, sql: string, valores: unknown[]): Promise<st
 export const PERMISOS_DE_ADMINISTRADOR = [
   'organizacion.puerta.ver',
   'organizacion.puerta.supervisar',
+  'organizacion.sitio.administrar',
+  'organizacion.puerta.administrar',
+  'organizacion.guardia.asignar',
   'accesos.qr.emitir',
   'accesos.qr.ver',
   'accesos.qr.ver_todos',
