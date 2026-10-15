@@ -21,6 +21,7 @@ export async function regenerarPinDeUsuario(
   cuenta: { readonly id: string; readonly codigo: string },
   usuarioId: string,
   ahora: Date,
+  sufijoElegido?: string,
 ): Promise<PinGenerado> {
   const { pool } = servicios;
   const usuarios = new RepositorioDeUsuarios(pool);
@@ -39,6 +40,7 @@ export async function regenerarPinDeUsuario(
           ahora,
         });
       },
+      sufijoElegido,
     );
     await new RepositorioDeSesiones(pool).revocarTodasDe(tx, usuarioId, ahora);
     return completo;

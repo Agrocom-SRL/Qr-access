@@ -6,15 +6,13 @@ import 'package:flutter/material.dart';
 /// Franja "Sin conexión. Datos de las HH:mm." con "Reintentar", sobre los
 /// datos en caché de un listado (handoff §Estados).
 class BannerSinConexion extends StatelessWidget {
-  const new({
-    required this.horaDeLosDatos,
-    required this.alReintentar,
-    super.key,
-  });
+  const new({required this.horaDeLosDatos, this.alReintentar, super.key});
 
   /// Hora local ya formateada de la última carga buena.
   final String horaDeLosDatos;
-  final VoidCallback alReintentar;
+
+  /// Sin él no se ofrece "Reintentar" (el aviso es solo informativo).
+  final VoidCallback? alReintentar;
 
   @override
   Widget build(BuildContext context) {
@@ -44,11 +42,12 @@ class BannerSinConexion extends StatelessWidget {
                   ?.copyWith(color: colores.peligro),
             ),
           ),
-          AccesoBoton(
-            texto: context.l10n.comunReintentar,
-            variante: VarianteBoton.texto,
-            onPressed: alReintentar,
-          ),
+          if (alReintentar != null)
+            AccesoBoton(
+              texto: context.l10n.comunReintentar,
+              variante: VarianteBoton.texto,
+              onPressed: alReintentar,
+            ),
         ],
       ),
     );

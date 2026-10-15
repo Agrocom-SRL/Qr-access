@@ -37,3 +37,7 @@ El cliente pide que cada usuario de una cuenta inicie sesión con un **PIN que g
 - `usuarios` agrega `pin_indice`, `pin_hash`, `pin_generado_at` y `etiqueta`. `username` y `contrasena_hash` quedan solo para el super admin (D-24).
 - CLAUDE.md, invariante 10: el login de cuenta pasa a ser el PIN (código de cuenta + 4 caracteres al azar).
 - Tests obligatorios: un PIN de la cuenta A no entra en la B (mismo sufijo con otro código → rechazo); el PIN se acepta en minúsculas; un PIN regenerado o dado de baja no entra y corta sus sesiones; el bloqueo se activa tras N fallos.
+
+## Addendum (2026-10-15): el administrador puede elegir los 4 caracteres
+
+El administrador de la cuenta (permiso `seguridad.usuario.crear` o `seguridad.usuario.editar`) puede, al crear un usuario o regenerar su PIN, **escribir él mismo los 4 caracteres finales** (`A`–`Z` y `0`–`9`, sin distinguir mayúsculas) en lugar de dejar que el servidor los sortee. Si ya existen en la cuenta, la API responde `409 pin.sufijo_en_uso` y no sortea otro. Sigue sin elegirse el código de la cuenta (lo asigna el super admin). Un sufijo elegido puede ser fácil de adivinar (p. ej. `1234`): la protección sigue siendo el límite de intentos y el mensaje único del §4, y por eso la app ofrece el sorteo como opción por defecto.

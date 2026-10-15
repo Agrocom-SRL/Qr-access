@@ -8,6 +8,7 @@ import {
 import { aIso } from '../../../platform/tiempo/fechas.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import { tienePermiso } from '../../../plugins/permisos.js';
+import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
 import { crearServicioDeUsuarios } from '../../seguridad/contracts.js';
 import { puertasPorId } from '../presentacion.js';
 import { RepositorioDeEventos, type FiltroDeEventos } from '../repository.js';
@@ -34,10 +35,24 @@ export interface FiltrosDeEventos {
   readonly hasta: Date | null;
 }
 
-/** Lo que el usuario puede ver: los eventos de los QR que emitió, o todos con `accesos.evento.ver_todos`. */
-export function alcanceDe(principal: PrincipalUsuario, filtros: FiltrosDeEventos): FiltroDeEventos {
+/**
+ * Lo que el usuario puede ver: todos los de la cuenta con `accesos.evento.ver_todos` (administrador),
+ * los de las puertas que tiene asignadas con `accesos.evento.ver_asignadas` (guardia) o, si no, solo
+ * los de los QR que emitió. Sin puertas asignadas, un guardia no ve ninguno.
+ */
+export async function alcanceDe(
+  pool: Pool,
+  principal: PrincipalUsuario,
+  filtros: FiltrosDeEventos,
+): Promise<FiltroDeEventos> {
+  const verTodos = tienePermiso(principal, 'accesos.evento.ver_todos');
+  const verAsignadas = !verTodos && tienePermiso(principal, 'accesos.evento.ver_asignadas');
+  const asignadas = verAsignadas
+    ? await crearServicioDeOrganizacion(pool).puertasAsignadasA(principal.usuarioId)
+    : null;
   return {
-    emitidoPor: tienePermiso(principal, 'accesos.evento.ver_todos') ? null : principal.usuarioId,
+    emitidoPor: verTodos || verAsignadas ? null : principal.usuarioId,
+    puertaIds: asignadas === null || asignadas.todas ? null : asignadas.puertaIds,
     resultado: filtros.resultado,
     puertaId: filtros.puertaId,
     desde: filtros.desde,
@@ -55,7 +70,7 @@ export async function ejecutar(
   filtros: FiltrosDeEventos,
   paginacion: Paginacion,
 ): Promise<Listado<EventoListado>> {
-  const filtro = alcanceDe(principal, filtros);
+  const filtro = await alcanceDe(pool, principal, filtros);
   const { limite, desplazamiento } = limiteDe(paginacion);
   const repositorio = new RepositorioDeEventos(pool);
   const [filas, total] = await Promise.all([

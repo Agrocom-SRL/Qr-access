@@ -49,6 +49,7 @@ Future<void> montarPantalla(
         Rutas.perfil,
         Rutas.admin,
         Rutas.adminPuertas,
+        Rutas.adminEstructura,
         Rutas.adminUsuarios,
         Rutas.adminUsuarioNuevo,
         Rutas.adminUsuarioEditar,

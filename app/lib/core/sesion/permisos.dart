@@ -25,6 +25,16 @@ abstract final class Permisos {
   static const verEventos = 'accesos.evento.ver';
   static const verTodosLosEventos = 'accesos.evento.ver_todos';
 
+  /// Los eventos de las puertas asignadas al guardia.
+  static const verEventosAsignados = 'accesos.evento.ver_asignadas';
+
+  /// Crear, editar y dar de baja los sitios y las puertas de la cuenta.
+  static const administrarSitios = 'organizacion.sitio.administrar';
+  static const administrarPuertas = 'organizacion.puerta.administrar';
+
+  /// Asignar guardias a puertas.
+  static const asignarGuardias = 'organizacion.guardia.asignar';
+
   static const verUsuarios = 'seguridad.usuario.ver';
   static const crearUsuarios = 'seguridad.usuario.crear';
   static const editarUsuarios = 'seguridad.usuario.editar';

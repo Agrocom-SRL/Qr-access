@@ -157,3 +157,38 @@ export class RepositorioDeSitios extends RepositorioDeCuenta {
     return this.borrar(tx, id);
   }
 }
+
+export interface AsignacionFila extends RowDataPacket {
+  id: string;
+  /** `null` = todas las puertas de la cuenta. */
+  puerta_id: string | null;
+}
+
+/** Dueño de `asignaciones_puerta`: a qué puertas está asignado cada usuario (guardia). */
+export class RepositorioDeAsignaciones extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'asignaciones_puerta',
+      columnas: ['usuario_id', 'puerta_id'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  deUsuario(usuarioId: string): Promise<AsignacionFila[]> {
+    return this.seleccionar<AsignacionFila>({
+      columnas: 't.id, t.puerta_id',
+      donde: 't.usuario_id = ?',
+      params: [usuarioId],
+      orden: 't.id',
+    });
+  }
+
+  asignar(tx: Transaccion, usuarioId: string, puertaId: string | null): Promise<string> {
+    return this.insertar(tx, { usuario_id: usuarioId, puerta_id: puertaId });
+  }
+
+  quitar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+}

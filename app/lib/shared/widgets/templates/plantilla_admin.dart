@@ -1,3 +1,5 @@
+import 'package:agrocom_acceso/core/api/api_providers.dart';
+import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
@@ -5,6 +7,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/banner_sin_conexion.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,6 +82,7 @@ class PlantillaAdmin extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const _AvisoDatosGuardados(),
             if (cabecera != null)
               Padding(
                 padding: EdgeInsets.fromLTRB(
@@ -182,6 +186,25 @@ class PlantillaAdmin extends ConsumerWidget {
     DestinoNav.admin => l10n.navAdmin,
     DestinoNav.perfil => l10n.navPerfil,
   };
+}
+
+/// Avisa que lo que se ve son los últimos datos guardados porque no hay
+/// conexión (modo sin conexión); desaparece cuando el servidor vuelve a
+/// responder.
+class _AvisoDatosGuardados extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guardadoAt = ref.watch(datosGuardadosProvider);
+    if (guardadoAt == null) return const SizedBox.shrink();
+    final espacio = context.tokens.espacio;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: espacio.l)
+          .copyWith(top: espacio.l),
+      child: BannerSinConexion(horaDeLosDatos: formatearHora(guardadoAt)),
+    );
+  }
 }
 
 class _Cabecera extends StatelessWidget {

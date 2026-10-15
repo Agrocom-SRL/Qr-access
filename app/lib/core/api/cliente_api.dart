@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
+import 'package:agrocom_acceso/core/api/contratos/estructura_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/eventos_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
@@ -204,11 +205,12 @@ class ClienteApi {
   Future<UsuarioCreadoDto> crearUsuario({
     required String etiqueta,
     required List<String> rolIds,
+    String? sufijo,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/usuarios',
-        data: {'etiqueta': etiqueta, 'rol_ids': rolIds},
+        data: {'etiqueta': etiqueta, 'rol_ids': rolIds, 'sufijo': ?sufijo},
       );
       return UsuarioCreadoDto.desde(r.data!);
     });
@@ -234,12 +236,120 @@ class ClienteApi {
     });
   }
 
-  Future<PinGeneradoDto> generarPin(String usuarioId) {
+  /// Sin `sufijo`, el servidor sortea los 4 caracteres; con él, usa esos.
+  Future<PinGeneradoDto> generarPin(String usuarioId, {String? sufijo}) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/usuarios/$usuarioId/pin',
+        data: sufijo == null ? null : {'sufijo': sufijo},
       );
       return PinGeneradoDto.desde(r.data!);
+    });
+  }
+
+  Future<List<SitioDeEstructuraDto>> estructura() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/sitios');
+      return [
+        for (final s in r.data!['datos'] as List<dynamic>)
+          SitioDeEstructuraDto.desde(s as Map<String, dynamic>),
+      ];
+    });
+  }
+
+  Future<void> crearSitio({
+    required String nombre,
+    String? direccion,
+    String? zonaHoraria,
+  }) {
+    return _ejecutar(() async {
+      await _dio.post<void>(
+        '/sitios',
+        data: {
+          'nombre': nombre,
+          'direccion': ?direccion,
+          'zona_horaria': ?zonaHoraria,
+        },
+      );
+    });
+  }
+
+  Future<void> editarSitio(
+    String id, {
+    String? nombre,
+    String? direccion,
+    bool? activo,
+  }) {
+    return _ejecutar(() async {
+      await _dio.patch<void>(
+        '/sitios/$id',
+        data: {'nombre': ?nombre, 'direccion': ?direccion, 'activo': ?activo},
+      );
+    });
+  }
+
+  Future<void> eliminarSitio(String id) {
+    return _ejecutar(() async {
+      await _dio.delete<void>('/sitios/$id');
+    });
+  }
+
+  Future<void> crearPuerta(
+    String sitioId, {
+    required String nombre,
+    int? segundosApertura,
+  }) {
+    return _ejecutar(() async {
+      await _dio.post<void>(
+        '/sitios/$sitioId/puertas',
+        data: {'nombre': nombre, 'segundos_apertura': ?segundosApertura},
+      );
+    });
+  }
+
+  Future<void> editarPuerta(
+    String id, {
+    String? nombre,
+    int? segundosApertura,
+    bool? activa,
+  }) {
+    return _ejecutar(() async {
+      await _dio.patch<void>(
+        '/puertas/$id',
+        data: {
+          'nombre': ?nombre,
+          'segundos_apertura': ?segundosApertura,
+          'activa': ?activa,
+        },
+      );
+    });
+  }
+
+  Future<void> eliminarPuerta(String id) {
+    return _ejecutar(() async {
+      await _dio.delete<void>('/puertas/$id');
+    });
+  }
+
+  Future<PuertasAsignadasDto> puertasAsignadas(String usuarioId) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/usuarios/$usuarioId/puertas-asignadas',
+      );
+      return PuertasAsignadasDto.desde(r.data!);
+    });
+  }
+
+  Future<void> asignarPuertas(
+    String usuarioId, {
+    required bool todas,
+    required List<String> puertaIds,
+  }) {
+    return _ejecutar(() async {
+      await _dio.put<void>(
+        '/usuarios/$usuarioId/puertas-asignadas',
+        data: {'todas': todas, 'puerta_ids': puertaIds},
+      );
     });
   }
 

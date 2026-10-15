@@ -27,6 +27,12 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'rol.no_encontrado' => l10n.comunErrorRolNoEncontrado,
     'rol.permisos_excedidos' => l10n.comunErrorRolPermisosExcedidos,
     'plan.limite_usuarios' => l10n.comunErrorPlanLimiteUsuarios,
+    'pin.sufijo_en_uso' => l10n.comunErrorPinSufijoEnUso,
+    'sitio.nombre_existente' => l10n.comunErrorSitioNombreExistente,
+    'puerta.nombre_existente' => l10n.comunErrorPuertaNombreExistente,
+    'sitio.con_puertas' => l10n.comunErrorSitioConPuertas,
+    'puerta.con_dispositivo' => l10n.comunErrorPuertaConDispositivo,
+    'sitio.no_encontrado' => l10n.comunErrorSitioNoEncontrado,
     _ => l10n.comunErrorGenerico,
   };
 }

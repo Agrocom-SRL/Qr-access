@@ -60,11 +60,13 @@ Future<UsuariosRepositorioFalso> _montar(
   Set<String> permisos = _administrador,
   bool expandida = false,
   PinGenerado pin = _pin,
+  PuertasAsignadas asignadas = const PuertasAsignadas(),
 }) async {
   final repositorio = UsuariosRepositorioFalso(
     usuarios: _usuarios,
     rolesDisponibles: _roles,
     pinGenerado: pin,
+    asignadas: asignadas,
   );
   await montarPantalla(
     tester,
@@ -120,6 +122,38 @@ void main() {
       // En compacto, el PIN se muestra a pantalla completa (C10c).
       expect(find.text('destino /admin/usuarios/pin'), findsOneWidget);
     });
+
+    testWidgets(
+      'Generar PIN con los 4 caracteres elegidos los envía en mayúsculas',
+      (tester) async {
+        final repositorio = await _montar(
+          tester,
+          pagina: const UsuariosPagina(),
+        );
+        final textos = textosEn(tester);
+
+        await tester.tap(find.text(textos.usuariosPin).last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(Switch));
+        await tester.pumpAndSettle();
+
+        // Un sufijo corto no se envía.
+        await tester.enterText(find.byType(TextField), 'ab1');
+        await tester.tap(
+          find.widgetWithText(FilledButton, textos.usuariosGenerarPin),
+        );
+        await tester.pump();
+        expect(find.text(textos.usuariosPinSufijoError), findsOneWidget);
+        expect(repositorio.pinesRegenerados, isEmpty);
+
+        await tester.enterText(find.byType(TextField), 'ab12');
+        await tester.tap(
+          find.widgetWithText(FilledButton, textos.usuariosGenerarPin),
+        );
+        await tester.pumpAndSettle();
+        expect(repositorio.sufijosPedidos, ['AB12']);
+      },
+    );
 
     testWidgets('sin el permiso de editar no hay acción PIN', (tester) async {
       await _montar(
@@ -256,5 +290,44 @@ void main() {
         expect(find.text('destino /admin/usuarios'), findsOneWidget);
       },
     );
+  });
+
+  group('puertas asignadas (guardias)', () {
+    testWidgets(
+      'al editar, asignar todas las puertas se guarda con el usuario',
+      (tester) async {
+        final repositorio = await _montar(
+          tester,
+          pagina: const UsuarioFormularioPagina(usuarioId: 'u2'),
+          permisos: {..._administrador, Permisos.asignarGuardias},
+        );
+        final textos = textosEn(tester);
+
+        await tester.scrollUntilVisible(
+          find.text(textos.usuariosPuertasTodas),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(find.text(textos.usuariosPuertasTodas));
+        await tester.pump();
+        await tester.tap(
+          find.widgetWithText(FilledButton, textos.comunGuardar),
+        );
+        await tester.pumpAndSettle();
+
+        expect(repositorio.asignaciones.single.$1, 'u2');
+        expect(repositorio.asignaciones.single.$2.todas, isTrue);
+      },
+    );
+
+    testWidgets('sin el permiso de asignar no se ofrece la sección', (
+      tester,
+    ) async {
+      await _montar(
+        tester,
+        pagina: const UsuarioFormularioPagina(usuarioId: 'u2'),
+      );
+      expect(find.text(textosEn(tester).usuariosSeccionPuertas), findsNothing);
+    });
   });
 }

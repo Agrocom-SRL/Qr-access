@@ -4,10 +4,16 @@ import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/sesion/permisos.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/seccion_puertas_asignadas.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/selector_sufijo_pin.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
@@ -55,6 +61,25 @@ class _UsuarioFormularioPaginaEstado
         () => ref.read(formularioUsuarioProvider.notifier).cargar(usuario),
       ),
     );
+    if (_puedeAsignar) unawaited(_cargarPuertas(usuario.id));
+  }
+
+  bool get _puedeAsignar =>
+      ref.read(sesionControladorProvider).tiene(Permisos.asignarGuardias);
+
+  /// Lee las puertas que el usuario ya tiene asignadas. Si falla, no se
+  /// marca como cargada: guardar no pisa la asignación real con una vacía.
+  Future<void> _cargarPuertas(String usuarioId) async {
+    try {
+      final asignadas = await ref
+          .read(usuariosRepositorioProvider)
+          .puertasAsignadas(usuarioId);
+      if (mounted) {
+        ref.read(formularioUsuarioProvider.notifier).cargarPuertas(asignadas);
+      }
+    } on Object {
+      // El formulario sigue usable; solo no muestra las puertas actuales.
+    }
   }
 
   /// La lista de usuarios: la pestaña de Admin en compacto; su propio destino
@@ -65,14 +90,14 @@ class _UsuarioFormularioPaginaEstado
   Future<void> _guardar() async {
     final controlador = ref.read(formularioUsuarioProvider.notifier);
     if (_esNuevo) {
-      final pin = await controlador.crear();
+      final pin = await controlador.crear(asignarPuertas: _puedeAsignar);
       if (pin != null && mounted) await mostrarPinGenerado(context, pin);
       if (mounted && context.esExpandida && pin != null) {
         context.go(Rutas.adminUsuarios);
       }
       return;
     }
-    await controlador.editar(widget.usuarioId!);
+    await controlador.editar(widget.usuarioId!, asignarPuertas: _puedeAsignar);
   }
 
   @override
@@ -84,6 +109,9 @@ class _UsuarioFormularioPaginaEstado
     final roles = ref.watch(rolesProvider);
     final errorApi = estado.errorApi;
     final errorDatos = estado.errorDatos;
+    final puedeAsignar = ref
+        .watch(sesionControladorProvider)
+        .tiene(Permisos.asignarGuardias);
 
     if (!_esNuevo && !_cargado) {
       final usuarios = ref.watch(usuariosProvider);
@@ -181,6 +209,31 @@ class _UsuarioFormularioPaginaEstado
               ),
             ],
           ),
+          if (_esNuevo)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionPin,
+              campos: [
+                SelectorSufijoPin(
+                  elegir: estado.elegirSufijo,
+                  sufijo: estado.sufijo,
+                  conError: errorDatos == ErrorDatosUsuario.sufijoInvalido,
+                  alElegir: (elegir) =>
+                      controlador.alternarSufijoElegido(elegir: elegir),
+                  alCambiar: controlador.cambiarSufijo,
+                ),
+              ],
+            ),
+          if (puedeAsignar)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionPuertas,
+              campos: [
+                SeccionPuertasAsignadas(
+                  asignadas: estado.puertas,
+                  alAlternarTodas: controlador.alternarTodasLasPuertas,
+                  alAlternarPuerta: controlador.alternarPuerta,
+                ),
+              ],
+            ),
         ],
         aviso: errorApi != null
             ? AccesoAviso(

@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_cache.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -221,12 +222,24 @@ class SesionControlador extends Notifier<SesionEstado>
     await _almacen.guardar(refresco);
   }
 
+  /// Vacía lo guardado para el modo sin conexión: el siguiente que ingrese en
+  /// este teléfono no debe ver datos de otra persona ni de otra cuenta.
+  Future<void> _olvidarCache() async {
+    try {
+      await ref.read(almacenCacheProvider).borrarTodo();
+    } on Object {
+      // Sin caché que borrar (o ilegible): no impide cerrar la sesión.
+    }
+    ref.read(datosGuardadosProvider.notifier).descartar();
+  }
+
   /// Olvida la sesión en memoria y en el almacén (cierre o refresco rechazado).
   Future<void> _caducar() async {
     _acceso = null;
     _previaAlCambiarRol = null;
     await _almacen.borrar();
     await _preferencias.borrar(claveSesionGuardada);
+    await _olvidarCache();
     state = const SinSesion();
   }
 }

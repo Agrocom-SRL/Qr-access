@@ -4,6 +4,7 @@ import {
   ejecutar as listarPuertasDeLaCuenta,
   type PuertaListada,
 } from './actions/listar-puertas.js';
+import * as asignaciones from './actions/asignar-puertas.js';
 import * as estructura from './actions/gestionar-estructura.js';
 import { RepositorioDePuertas, RepositorioDeSitios, type PuertaFila } from './repository.js';
 
@@ -15,6 +16,7 @@ export type {
   DatosDeSitio,
   SitioDeEstructura,
 } from './actions/gestionar-estructura.js';
+export type { PuertasAsignadas } from './actions/asignar-puertas.js';
 export { SEGUNDOS_MAXIMOS, SEGUNDOS_MINIMOS } from './actions/gestionar-estructura.js';
 
 /** Lo que otros módulos pueden saber de una puerta (accesos, dispositivos). */
@@ -44,6 +46,9 @@ export interface ServicioDeOrganizacion {
   crearPuerta(sitioId: string, datos: estructura.DatosDePuerta): Promise<{ id: string }>;
   editarPuerta(id: string, cambios: estructura.CambiosDePuerta): Promise<void>;
   eliminarPuerta(id: string): Promise<void>;
+  /** Puertas a las que está asignado el usuario (guardia) de la cuenta del contexto. */
+  puertasAsignadasA(usuarioId: string): Promise<asignaciones.PuertasAsignadas>;
+  asignarPuertas(usuarioId: string, puertas: asignaciones.PuertasAsignadas): Promise<void>;
 }
 
 function aPuerta(fila: PuertaFila): PuertaDeCuenta {
@@ -79,5 +84,7 @@ export function crearServicioDeOrganizacion(pool: Pool): ServicioDeOrganizacion 
     crearPuerta: (sitioId, datos) => estructura.crearPuerta(pool, sitioId, datos),
     editarPuerta: (id, cambios) => estructura.editarPuerta(pool, id, cambios),
     eliminarPuerta: (id) => estructura.eliminarPuerta(pool, id),
+    puertasAsignadasA: (usuarioId) => asignaciones.ver(pool, usuarioId),
+    asignarPuertas: (usuarioId, puertas) => asignaciones.reemplazar(pool, usuarioId, puertas),
   };
 }

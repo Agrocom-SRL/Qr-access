@@ -43,13 +43,14 @@ class AccionesUsuarioControlador extends Notifier<String?> {
 
   /// Devuelve el PIN nuevo, o el error de la API.
   Future<({PinGenerado? pin, ErrorApi? error})> generarPin(
-    Usuario usuario,
-  ) async {
+    Usuario usuario, {
+    String? sufijo,
+  }) async {
     state = usuario.id;
     try {
       final pin = await ref
           .read(usuariosRepositorioProvider)
-          .generarPin(usuario);
+          .generarPin(usuario, sufijo: sufijo);
       ref.invalidate(usuariosProvider);
       return (pin: pin, error: null);
     } on ErrorApi catch (error) {
@@ -89,6 +90,10 @@ class FormularioUsuarioEstado {
     this.errorDatos,
     this.errorApi,
     this.guardado = false,
+    this.elegirSufijo = false,
+    this.sufijo = '',
+    this.puertas = const PuertasAsignadas(),
+    this.puertasCargadas = false,
   });
 
   final String etiqueta;
@@ -100,6 +105,15 @@ class FormularioUsuarioEstado {
   /// En edición: se guardó y el formulario sigue abierto (guía §2.3).
   final bool guardado;
 
+  /// El administrador escribe los 4 caracteres del PIN en vez de sortearlos.
+  final bool elegirSufijo;
+  final String sufijo;
+
+  /// Puertas asignadas (guardias). `puertasCargadas` evita pisar la asignación
+  /// real con una vacía si todavía no se leyó.
+  final PuertasAsignadas puertas;
+  final bool puertasCargadas;
+
   FormularioUsuarioEstado copiar({
     String? etiqueta,
     Set<String>? rolIds,
@@ -107,6 +121,10 @@ class FormularioUsuarioEstado {
     ErrorDatosUsuario? errorDatos,
     ErrorApi? errorApi,
     bool guardado = false,
+    bool? elegirSufijo,
+    String? sufijo,
+    PuertasAsignadas? puertas,
+    bool? puertasCargadas,
   }) => FormularioUsuarioEstado(
     etiqueta: etiqueta ?? this.etiqueta,
     rolIds: rolIds ?? this.rolIds,
@@ -114,6 +132,10 @@ class FormularioUsuarioEstado {
     errorDatos: errorDatos,
     errorApi: errorApi,
     guardado: guardado,
+    elegirSufijo: elegirSufijo ?? this.elegirSufijo,
+    sufijo: sufijo ?? this.sufijo,
+    puertas: puertas ?? this.puertas,
+    puertasCargadas: puertasCargadas ?? this.puertasCargadas,
   );
 }
 
@@ -131,6 +153,29 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
   void cambiarEtiqueta(String etiqueta) =>
       state = state.copiar(etiqueta: etiqueta);
 
+  void alternarSufijoElegido({required bool elegir}) =>
+      state = state.copiar(elegirSufijo: elegir, sufijo: '');
+
+  void cambiarSufijo(String sufijo) => state = state.copiar(sufijo: sufijo);
+
+  /// Las puertas que ya tiene asignadas el usuario que se edita.
+  void cargarPuertas(PuertasAsignadas puertas) =>
+      state = state.copiar(puertas: puertas, puertasCargadas: true);
+
+  void alternarTodasLasPuertas({required bool todas}) => state = state.copiar(
+    puertas: PuertasAsignadas(todas: todas, puertaIds: state.puertas.puertaIds),
+    puertasCargadas: true,
+  );
+
+  void alternarPuerta(String puertaId) {
+    final ids = {...state.puertas.puertaIds};
+    if (!ids.remove(puertaId)) ids.add(puertaId);
+    state = state.copiar(
+      puertas: PuertasAsignadas(puertaIds: ids),
+      puertasCargadas: true,
+    );
+  }
+
   void alternarRol(String rolId) {
     final ids = {...state.rolIds};
     if (!ids.remove(rolId)) ids.add(rolId);
@@ -146,16 +191,33 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
       state = state.copiar(errorDatos: error);
       return null;
     }
-    return DatosUsuario(etiqueta: state.etiqueta, rolIds: state.rolIds);
+    if (state.elegirSufijo && !sufijoDePinValido(state.sufijo)) {
+      state = state.copiar(errorDatos: ErrorDatosUsuario.sufijoInvalido);
+      return null;
+    }
+    return DatosUsuario(
+      etiqueta: state.etiqueta,
+      rolIds: state.rolIds,
+      sufijoDePin: state.elegirSufijo ? state.sufijo.toUpperCase() : null,
+    );
   }
 
-  Future<PinGenerado?> crear() async {
+  /// Crea el usuario y devuelve su PIN. Con [asignarPuertas], le deja
+  /// asignadas las puertas elegidas.
+  Future<PinGenerado?> crear({bool asignarPuertas = false}) async {
     if (state.enviando) return null;
     final datos = _validar();
     if (datos == null) return null;
     state = state.copiar(enviando: true);
     try {
-      final pin = await ref.read(usuariosRepositorioProvider).crear(datos);
+      final repositorio = ref.read(usuariosRepositorioProvider);
+      final pin = await repositorio.crear(datos);
+      final id = pin.usuarioId;
+      final hayPuertas =
+          state.puertas.todas || state.puertas.puertaIds.isNotEmpty;
+      if (asignarPuertas && id != null && hayPuertas) {
+        await repositorio.asignarPuertas(id, state.puertas);
+      }
       ref.invalidate(usuariosProvider);
       state = state.copiar();
       return pin;
@@ -165,13 +227,17 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
     }
   }
 
-  Future<bool> editar(String id) async {
+  Future<bool> editar(String id, {bool asignarPuertas = false}) async {
     if (state.enviando) return false;
     final datos = _validar();
     if (datos == null) return false;
     state = state.copiar(enviando: true);
     try {
-      await ref.read(usuariosRepositorioProvider).editar(id, datos);
+      final repositorio = ref.read(usuariosRepositorioProvider);
+      await repositorio.editar(id, datos);
+      if (asignarPuertas && state.puertasCargadas) {
+        await repositorio.asignarPuertas(id, state.puertas);
+      }
       ref.invalidate(usuariosProvider);
       state = state.copiar(guardado: true);
       return true;

@@ -74,11 +74,12 @@ describe('usuarios de la cuenta: PIN generados por el servidor (HU-06, ADR 0018)
       url: `/api/v1/usuarios/${id}`,
       headers: conUsuario(sesion),
     });
-  const generarPin = (sesion: Sesion, id: string) =>
+  const generarPin = (sesion: Sesion, id: string, payload?: object) =>
     prueba.app.inject({
       method: 'POST',
       url: `/api/v1/usuarios/${id}/pin`,
       headers: conUsuario(sesion),
+      ...(payload === undefined ? {} : { payload }),
     });
   const ingresar = (pin: string) =>
     prueba.app.inject({ method: 'POST', url: '/api/v1/sesiones', payload: { pin } });
@@ -135,6 +136,23 @@ describe('usuarios de la cuenta: PIN generados por el servidor (HU-06, ADR 0018)
   });
 
   describe('POST /api/v1/usuarios', () => {
+    it('crea un usuario con los 4 caracteres que eligió el administrador', async () => {
+      const respuesta = await crear(sesionAdminA, {
+        etiqueta: 'Guardia Norte',
+        rol_ids: [a.rolUsuarioId],
+        sufijo: 'g0n1',
+      });
+      expect(respuesta.statusCode, respuesta.body).toBe(201);
+      expect(respuesta.json<{ pin: string }>().pin).toBe('AAAG0N1');
+      expect((await ingresar('AAAG0N1')).statusCode).toBe(200);
+      const repetido = await crear(sesionAdminA, {
+        etiqueta: 'Otro',
+        rol_ids: [a.rolUsuarioId],
+        sufijo: 'G0N1',
+      });
+      expect(repetido.statusCode).toBe(409);
+    });
+
     it('crea un usuario con un PIN de 7 caracteres que entra, y lo muestra una sola vez', async () => {
       const respuesta = await crear(sesionAdminA, {
         etiqueta: '  Jorge Rivero ',
@@ -326,6 +344,27 @@ describe('usuarios de la cuenta: PIN generados por el servidor (HU-06, ADR 0018)
         headers: conUsuario(sesionVieja),
       });
       expect(conSesionVieja.statusCode).toBe(401);
+    });
+
+    it('con un sufijo elegido a mano, el PIN es el código de la cuenta más esos 4 caracteres', async () => {
+      const respuesta = await generarPin(sesionAdminA, a.usuario.id, { sufijo: 'ab12' });
+      expect(respuesta.statusCode, respuesta.body).toBe(200);
+      expect(respuesta.json<{ pin: string }>().pin).toBe(`${a.cuenta.codigo}AB12`);
+      expect((await ingresar(`${a.cuenta.codigo.toLowerCase()}ab12`)).statusCode).toBe(200);
+    });
+
+    it('un sufijo ya usado en la cuenta es 409; uno mal formado, 400; y el mismo en otra cuenta sirve', async () => {
+      await generarPin(sesionAdminA, a.usuario.id, { sufijo: 'ZZ99' });
+      const repetido = await generarPin(sesionAdminA, a.administrador.id, { sufijo: 'ZZ99' });
+      expect(repetido.statusCode).toBe(409);
+      expect(repetido.json<{ code: string }>().code).toBe('pin.sufijo_en_uso');
+      expect((await generarPin(sesionAdminA, a.usuario.id, { sufijo: 'ab' })).statusCode).toBe(400);
+      expect((await generarPin(sesionAdminA, a.usuario.id, { sufijo: 'a-b!' })).statusCode).toBe(
+        400,
+      );
+      expect((await generarPin(sesionAdminB, b.usuario.id, { sufijo: 'ZZ99' })).statusCode).toBe(
+        200,
+      );
     });
 
     it('aislamiento: no se regenera el PIN de un usuario de otra cuenta', async () => {

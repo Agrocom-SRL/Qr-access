@@ -31,7 +31,7 @@ export const ROLES_BASE: readonly RolBase[] = [
       'organizacion.puerta.supervisar',
       'accesos.qr.emitir',
       'accesos.evento.ver',
-      'accesos.evento.ver_todos',
+      'accesos.evento.ver_asignadas',
     ],
   },
 ];

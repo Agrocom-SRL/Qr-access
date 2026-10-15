@@ -53,7 +53,20 @@ export const respuestaListadoDeUsuarios = esquemaListado(esquemaUsuario);
 const esquemaEtiqueta = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO);
 const esquemaRolIds = z.array(esquemaId).min(1).max(MAX_ROLES_POR_USUARIO);
 
-export const cuerpoDeNuevoUsuario = z.object({ etiqueta: esquemaEtiqueta, rol_ids: esquemaRolIds });
+/** Los 4 caracteres finales del PIN elegidos por el administrador: `A`–`Z` y `0`–`9`, sin distinguir mayúsculas. */
+const esquemaSufijoDePin = z
+  .string()
+  .regex(/^[A-Za-z0-9]{4}$/)
+  .transform((sufijo) => sufijo.toUpperCase());
+
+export const cuerpoDeNuevoUsuario = z.object({
+  etiqueta: esquemaEtiqueta,
+  rol_ids: esquemaRolIds,
+  sufijo: esquemaSufijoDePin.optional(),
+});
+
+/** Regenerar el PIN: sin cuerpo (lo sortea el servidor) o con el sufijo elegido. */
+export const cuerpoDeRegeneracionDePin = z.object({ sufijo: esquemaSufijoDePin.optional() });
 
 /** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
 export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() });
