@@ -3,6 +3,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +17,7 @@ Future<({SesionFalsa sesion, AlmacenPreferenciasFalso preferencias})> _montar(
   WidgetTester tester, {
   SuscripcionSesion? suscripcion,
   List<RolSesion> roles = const [rolDePrueba],
+  PerfilRepositorioFalso? perfil,
 }) async {
   final sesion = SesionFalsa(sesionCon(roles: roles, suscripcion: suscripcion));
   final preferencias = AlmacenPreferenciasFalso();
@@ -25,6 +27,9 @@ Future<({SesionFalsa sesion, AlmacenPreferenciasFalso preferencias})> _montar(
     overrides: [
       sesionControladorProvider.overrideWith(() => sesion),
       almacenPreferenciasProvider.overrideWithValue(preferencias),
+      perfilRepositorioProvider.overrideWithValue(
+        perfil ?? PerfilRepositorioFalso(),
+      ),
       relojProvider.overrideWithValue(() => _ahora),
     ],
   );
@@ -97,5 +102,32 @@ void main() {
     await tester.tap(cerrar);
     await tester.pump();
     expect(sesion.cierres, 1);
+  });
+
+  testWidgets('cada persona edita su nombre; sin cambios no se envía nada', (
+    tester,
+  ) async {
+    final perfil = PerfilRepositorioFalso();
+    await _montar(tester, perfil: perfil);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.byTooltip(textos.perfilEditarNombre));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
+    await tester.pump();
+    expect(find.text(textos.perfilNombreError), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), ' Ana María ');
+    await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
+    await tester.pumpAndSettle();
+    expect(perfil.nombres, ['Ana María']);
+
+    // Mismo nombre que el actual: se cierra sin llamar a la API.
+    await tester.tap(find.byTooltip(textos.perfilEditarNombre));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
+    await tester.pumpAndSettle();
+    expect(perfil.nombres, hasLength(1));
   });
 }

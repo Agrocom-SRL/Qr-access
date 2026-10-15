@@ -353,6 +353,13 @@ class ClienteApi {
     });
   }
 
+  /// Cambia el nombre del propio usuario (`PATCH /perfil`).
+  Future<void> editarPerfil({required String etiqueta}) {
+    return _ejecutar(() async {
+      await _dio.patch<void>('/perfil', data: {'etiqueta': etiqueta});
+    });
+  }
+
   /// Traduce cualquier fallo de dio a [ErrorApi] para que nadie fuera de
   /// `core/api` vea excepciones de la librería.
   Future<T> _ejecutar<T>(Future<T> Function() peticion) async {

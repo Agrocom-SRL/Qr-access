@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
@@ -7,6 +8,8 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -26,6 +29,25 @@ const diasDeAvisoDeSuscripcion = 15;
 /// activo con "Cambiar rol", el tema y "Cerrar sesión".
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
+
+  /// Cada persona edita solo su nombre; el PIN lo administra la cuenta.
+  Future<void> _cambiarNombre(
+    BuildContext context,
+    WidgetRef ref,
+    String? actual,
+  ) async {
+    final nombre = await pedirNombre(context, actual: actual);
+    if (nombre == null || !context.mounted) return;
+    try {
+      await ref.read(perfilRepositorioProvider).cambiarNombre(nombre);
+      await ref.read(sesionControladorProvider.notifier).refrescarDatos();
+    } on Object catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(textoDeError(context.l10n, error))),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,9 +90,24 @@ class PerfilPagina extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        sesion.usuario.etiqueta ?? l10n.qrSinEtiqueta,
-                        style: textos.headlineSmall,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              sesion.usuario.etiqueta ?? l10n.qrSinEtiqueta,
+                              style: textos.headlineSmall,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: l10n.perfilEditarNombre,
+                            onPressed: () => _cambiarNombre(
+                              context,
+                              ref,
+                              sesion.usuario.etiqueta,
+                            ),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
+                        ],
                       ),
                       Text(
                         l10n.perfilPinDeCuenta(sesion.cuenta.codigo),

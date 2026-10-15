@@ -13,6 +13,7 @@ import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
 import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
@@ -233,6 +234,13 @@ class EventosRepositorioFalso implements EventosRepositorio {
     if (error != null) throw error!;
     return resumen;
   }
+}
+
+class PerfilRepositorioFalso implements PerfilRepositorio {
+  final List<String> nombres = [];
+
+  @override
+  Future<void> cambiarNombre(String nombre) async => nombres.add(nombre);
 }
 
 class EstructuraRepositorioFalso implements EstructuraRepositorio {
