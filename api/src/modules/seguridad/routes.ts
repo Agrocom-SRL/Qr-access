@@ -5,6 +5,7 @@ import { permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as cambiarRolActivo } from './actions/cambiar-rol-activo.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
+import { ejecutar as editarMiPerfil } from './actions/editar-mi-perfil.js';
 import { ejecutar as editarUsuario } from './actions/editar-usuario.js';
 import { ejecutar as eliminarUsuario } from './actions/eliminar-usuario.js';
 import { ejecutar as generarPin } from './actions/generar-pin.js';
@@ -16,6 +17,7 @@ import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
+  cuerpoDeMiPerfil,
   cuerpoDeNuevoUsuario,
   cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
@@ -27,6 +29,7 @@ import {
   respuestaDeRefresco,
   respuestaDeRolActivo,
   respuestaDeSesionActual,
+  respuestaDeMiPerfil,
   respuestaDeUsuarioCreado,
   respuestaListadoDeRoles,
   respuestaListadoDeUsuarios,
@@ -91,6 +94,19 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       '/sesiones/actual',
       { schema: { tags: ['seguridad'], response: { 200: respuestaDeSesionActual } } },
       (request) => verSesionActual(pool, usuarioDe(request)),
+    );
+
+    // Cada persona edita su propio nombre; el PIN y los roles son del administrador de la cuenta.
+    app.patch(
+      '/perfil',
+      {
+        schema: {
+          tags: ['seguridad'],
+          body: cuerpoDeMiPerfil,
+          response: { 200: respuestaDeMiPerfil },
+        },
+      },
+      (request) => editarMiPerfil(pool, usuarioDe(request), request.body.etiqueta),
     );
 
     app.delete('/sesiones/actual', { schema: { tags: ['seguridad'] } }, async (request, reply) => {
