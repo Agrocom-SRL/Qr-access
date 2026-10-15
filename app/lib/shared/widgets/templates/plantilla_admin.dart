@@ -270,6 +270,14 @@ class _Rail extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     final sesion = this.sesion;
     final autenticada = sesion is SesionAutenticada ? sesion : null;
+    if (extendido) {
+      return _BarraLateral(
+        destinos: destinos,
+        indice: indice,
+        autenticada: autenticada,
+        irA: irA,
+      );
+    }
     return SizedBox(
       width: extendido ? tokens.tamano.railExpandido : tokens.tamano.railMedio,
       child: NavigationRail(
@@ -312,43 +320,52 @@ class _Rail extends StatelessWidget {
             ? null
             : Expanded(
                 child: Align(
-                  alignment: Alignment.bottomCenter,
+                  alignment: extendido
+                      ? Alignment.bottomLeft
+                      : Alignment.bottomCenter,
                   child: Padding(
-                    padding: EdgeInsets.all(tokens.espacio.m),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AccesoAvatar(
-                          etiqueta: autenticada.usuario.etiqueta,
-                          tamano: tokens.tamano.avatarChico,
-                        ),
-                        if (extendido) ...[
-                          SizedBox(width: tokens.espacio.m),
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  autenticada.usuario.etiqueta ??
-                                      l10n.inicioSaludoSinNombre,
-                                  style: textos.titleSmall,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  l10n.perfilRolYCuenta(
-                                    autenticada.rolActivo.nombre,
-                                    autenticada.cuenta.codigo,
-                                  ),
-                                  style: textos.bodySmall?.copyWith(
-                                    color: tokens.colores.textoSecundario,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
+                    padding: EdgeInsets.all(tokens.espacio.l),
+                    // Extendido: el bloque ocupa todo el ancho del rail y
+                    // arranca a la izquierda, alineado con el logo de arriba.
+                    child: SizedBox(
+                      width: extendido
+                          ? tokens.tamano.railExpandido - tokens.espacio.xxl
+                          : null,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AccesoAvatar(
+                            etiqueta: autenticada.usuario.etiqueta,
+                            tamano: tokens.tamano.avatarChico,
                           ),
+                          if (extendido) ...[
+                            SizedBox(width: tokens.espacio.m),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    autenticada.usuario.etiqueta ??
+                                        l10n.inicioSaludoSinNombre,
+                                    style: textos.titleSmall,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    l10n.perfilRolYCuenta(
+                                      autenticada.rolActivo.nombre,
+                                      autenticada.cuenta.codigo,
+                                    ),
+                                    style: textos.bodySmall?.copyWith(
+                                      color: tokens.colores.textoSecundario,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -361,6 +378,164 @@ class _Rail extends StatelessWidget {
               label: Text(PlantillaAdmin._etiqueta(l10n, d)),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Barra lateral del ancho expandido (handoff: rail extendido de 240). Se
+/// dibuja a mano porque `NavigationRail` centra el ícono en 80 y deja la
+/// pastilla activa solo alrededor de él: acá cada destino es una fila de ancho
+/// completo con ícono y texto a la izquierda, y el usuario queda fijo abajo.
+class _BarraLateral extends StatelessWidget {
+  const new({
+    required this.destinos,
+    required this.indice,
+    required this.autenticada,
+    required this.irA,
+  });
+
+  final List<DestinoNav> destinos;
+  final int indice;
+  final SesionAutenticada? autenticada;
+  final ValueChanged<int> irA;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final l10n = context.l10n;
+    final textos = Theme.of(context).textTheme;
+    final colores = tokens.colores;
+    final usuario = autenticada;
+    return Container(
+      width: tokens.tamano.railExpandido,
+      color: colores.superficie,
+      padding: EdgeInsets.all(tokens.espacio.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              AccesoLogo(tamano: tokens.tamano.iconoCaja),
+              SizedBox(width: tokens.espacio.m),
+              Expanded(
+                child: Text(
+                  l10n.appTitulo,
+                  style: textos.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: tokens.espacio.xl),
+          for (var i = 0; i < destinos.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: tokens.espacio.xs),
+              child: _ItemLateral(
+                icono: PlantillaAdmin._icono(destinos[i], activo: i == indice),
+                etiqueta: PlantillaAdmin._etiqueta(l10n, destinos[i]),
+                activo: i == indice,
+                alTocar: () => irA(i),
+              ),
+            ),
+          const Spacer(),
+          if (usuario != null)
+            Row(
+              children: [
+                AccesoAvatar(
+                  etiqueta: usuario.usuario.etiqueta,
+                  tamano: tokens.tamano.avatar,
+                ),
+                SizedBox(width: tokens.espacio.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        usuario.usuario.etiqueta ?? l10n.inicioSaludoSinNombre,
+                        style: textos.titleSmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        l10n.perfilRolYCuenta(
+                          usuario.rolActivo.nombre,
+                          usuario.cuenta.codigo,
+                        ),
+                        style: textos.bodySmall?.copyWith(
+                          color: colores.textoSecundario,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemLateral extends StatelessWidget {
+  const new({
+    required this.icono,
+    required this.etiqueta,
+    required this.activo,
+    required this.alTocar,
+  });
+
+  final IconData icono;
+  final String etiqueta;
+  final bool activo;
+  final VoidCallback alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colores = tokens.colores;
+    final textos = Theme.of(context).textTheme;
+    final forma = BorderRadius.circular(tokens.radio.completo);
+    return Semantics(
+      button: true,
+      selected: activo,
+      label: etiqueta,
+      child: Material(
+        color: activo ? colores.primarioSuave : colores.superficie,
+        borderRadius: forma,
+        child: InkWell(
+          borderRadius: forma,
+          onTap: alTocar,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: tokens.tamano.control),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
+              child: Row(
+                children: [
+                  Icon(
+                    icono,
+                    size: tokens.tamano.iconoNav,
+                    color: activo ? colores.primario : colores.textoSecundario,
+                  ),
+                  SizedBox(width: tokens.espacio.m),
+                  Expanded(
+                    child: Text(
+                      etiqueta,
+                      style: textos.labelLarge?.copyWith(
+                        color: activo ? colores.texto : colores.textoSecundario,
+                        fontWeight: activo
+                            ? tokens.tipografia.semiNegrita
+                            : null,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

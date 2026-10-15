@@ -30,7 +30,10 @@ class CampoFormulario extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     final colores = tokens.colores;
     final pie = textoError ?? ayuda;
+    // `min`: dentro de un diálogo el campo mide lo que necesita; con `max` el
+    // diálogo se estiraba a toda la altura de la ventana en web.
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text.rich(
