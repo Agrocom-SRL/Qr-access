@@ -144,6 +144,13 @@ class ClienteApi {
     });
   }
 
+  Future<EstadoQrDto> estadoQr(String id) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/qr-accesos/$id/estado');
+      return EstadoQrDto.desde(r.data!);
+    });
+  }
+
   Future<void> anularQr(String id) {
     return _ejecutar(() async {
       await _dio.post<void>('/qr-accesos/$id/anulacion');

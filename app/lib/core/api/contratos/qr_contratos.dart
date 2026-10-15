@@ -78,3 +78,34 @@ class ResumenQrDto {
   final int vencidos;
   final int anulados;
 }
+
+/// Último intento de lectura de un QR en `GET /qr-accesos/{id}/estado`. El
+/// `motivo_code` llega como código: la presentación lo traduce.
+class IntentoQrDto {
+  new desde(Map<String, dynamic> json)
+    : ocurridoAt = fechaDeApi(json['ocurrido_at'] as String),
+      resultado = json['resultado'] as String,
+      motivoCode = json['motivo_code'] as String,
+      puerta = ReferenciaDto.desde(json['puerta'] as Map<String, dynamic>);
+
+  final DateTime ocurridoAt;
+  final String resultado;
+  final String motivoCode;
+  final ReferenciaDto puerta;
+}
+
+/// Respuesta de `GET /qr-accesos/{id}/estado`.
+class EstadoQrDto {
+  new desde(Map<String, dynamic> json)
+    : id = json['id'] as String,
+      estado = json['estado'] as String,
+      venceAt = fechaDeApi(json['vence_at'] as String),
+      ultimoIntento = json['ultimo_intento'] == null
+          ? null
+          : IntentoQrDto.desde(json['ultimo_intento'] as Map<String, dynamic>);
+
+  final String id;
+  final String estado;
+  final DateTime venceAt;
+  final IntentoQrDto? ultimoIntento;
+}

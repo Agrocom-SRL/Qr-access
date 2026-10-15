@@ -7,6 +7,7 @@ import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 
@@ -28,6 +29,9 @@ abstract interface class QrAccesosRepositorio {
   /// El último QR propio emitido con conexión, guardado en este dispositivo
   /// como respaldo sin internet; `null` si no hay o ya venció.
   Future<QrEmitido?> ultimoPropioGuardado();
+
+  /// Qué pasó con un QR: su estado y el último intento de lectura.
+  Future<SeguimientoQr> seguir(String id);
 
   /// Anula un QR vigente. La API responde `qr.ya_usado` (409) si ya se usó.
   Future<void> anular(String id);
@@ -107,6 +111,23 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
       EstadoQr.vencido: dto.vencidos,
       EstadoQr.anulado: dto.anulados,
     };
+  }
+
+  @override
+  Future<SeguimientoQr> seguir(String id) async {
+    final dto = await _api.estadoQr(id);
+    final intento = dto.ultimoIntento;
+    return SeguimientoQr(
+      estado: EstadoQr.desdeApi(dto.estado),
+      ultimoIntento: intento == null
+          ? null
+          : IntentoQr(
+              ocurridoAt: intento.ocurridoAt,
+              permitido: intento.resultado == 'permitido',
+              motivoCode: intento.motivoCode,
+              puertaNombre: intento.puerta.nombre,
+            ),
+    );
   }
 
   @override

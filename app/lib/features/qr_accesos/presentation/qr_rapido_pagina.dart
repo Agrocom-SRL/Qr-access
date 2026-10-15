@@ -8,8 +8,12 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/qr_rapido_controlador.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/aviso_seguimiento_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_concedido.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_revelado.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/seguimiento_de_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/tiempo_restante.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
@@ -89,14 +93,21 @@ class _QrPropio extends StatelessWidget {
   final QrEmitido qr;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SeguimientoDeQr(qrId: qr.id, builder: _contenido);
+
+  Widget _contenido(BuildContext context, SeguimientoQr? seguimiento) {
     final l10n = context.l10n;
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Center(child: QrRevelado(texto: qr.texto)),
+        // Aceptado, el QR ya no sirve: se reemplaza por la confirmación.
+        if (seguimiento?.concedido ?? false)
+          const QrConcedido()
+        else
+          Center(child: QrRevelado(texto: qr.texto)),
         SizedBox(height: tokens.espacio.xl),
         Text(
           qr.etiqueta ?? l10n.qrSinEtiqueta,
@@ -114,6 +125,10 @@ class _QrPropio extends StatelessWidget {
         SizedBox(height: tokens.espacio.m),
         Center(child: TiempoRestante(venceAt: qr.venceAt)),
         SizedBox(height: tokens.espacio.xl),
+        if (seguimiento != null) ...[
+          AvisoSeguimientoQr(seguimiento: seguimiento),
+          SizedBox(height: tokens.espacio.m),
+        ],
         if (qr.respaldo)
           AccesoAviso(
             icono: Icons.cloud_off_outlined,
