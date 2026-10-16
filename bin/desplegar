@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Despliega AGROCOM Acceso en el CT 120 (ADR 0014). Lo corre `deploy.yml` en el runner `acceso-prod`
+# tras cada push a master, y se puede correr a mano desde un checkout: ./bin/desplegar
+#
+# Idempotente: migra, siembra el catálogo (INSERT ... ON DUPLICATE KEY) y crea el super admin
+# solo si no existe, así que nunca pisa una contraseña que ya cambiaste desde la web.
+# Nunca baja volúmenes (-v): los datos de la base son lo único que no se reconstruye.
+set -euo pipefail
+
+ENV_ARCHIVO="${ENV_ARCHIVO:-/opt/acceso/.env}"
+[ -f "$ENV_ARCHIVO" ] || { echo "Falta $ENV_ARCHIVO (ver docs/gestion/produccion-variables.ejemplo)" >&2; exit 1; }
+
+# Se lee para ADMIN_INICIAL_CLAVE; compose lo vuelve a leer con --env-file.
+set -a
+# shellcheck disable=SC1090
+. "$ENV_ARCHIVO"
+set +a
+
+cd "$(dirname "$0")/.."
+compose() { docker compose -p acceso --env-file "$ENV_ARCHIVO" -f docker-compose.prod.yml "$@"; }
+mysql_en_db() { compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4 "$MYSQL_DATABASE"'; }
+
+echo "==> Construyendo imágenes (api, app, panel)"
+compose build api app panel
+
+echo "==> Base de datos"
+compose up -d db
+compose --profile herramientas run --rm dbmate up
+
+echo "==> Catálogo de permisos, rol y planes por defecto"
+mysql_en_db < db/seeds/01_catalogo.sql
+
+echo "==> Super admin"
+existe=$(echo "SELECT COUNT(*) FROM usuarios WHERE tenant_id IS NULL AND username='root' AND deleted_at IS NULL;" | mysql_en_db | tail -n 1)
+if [ "$existe" = "0" ]; then
+  [ -n "${ADMIN_INICIAL_CLAVE:-}" ] || { echo "No existe 'root' y falta ADMIN_INICIAL_CLAVE en $ENV_ARCHIVO" >&2; exit 1; }
+  # argon2id con los mismos parámetros que los seeds; la clave sale del entorno, nunca del repo.
+  hash=$(compose run --rm --no-deps -e CLAVE="$ADMIN_INICIAL_CLAVE" api node -e "
+    import('argon2').then(async (a) => {
+      process.stdout.write(await a.hash(process.env.CLAVE, { type: a.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 }));
+    });
+  ")
+  # contrasena_temporal = 1: el panel obliga a cambiarla en el primer ingreso.
+  mysql_en_db <<SQL
+SET NAMES utf8mb4;
+INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo)
+  VALUES (NULL, 'Root', 'root', '$hash', 1, 1);
+INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id)
+  SELECT NULL, u.id, r.id FROM usuarios u
+    JOIN roles r ON r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL
+   WHERE u.tenant_id IS NULL AND u.username = 'root' AND u.deleted_at IS NULL;
+SQL
+  echo "Super admin 'root' creado con contraseña temporal."
+else
+  echo "Super admin 'root' ya existe; no se toca."
+fi
+
+echo "==> Levantando api, app y panel"
+compose up -d api app panel
+
+echo "==> Esperando a la API"
+for _ in $(seq 1 40); do
+  if curl -fsS http://127.0.0.1/api/v1/salud >/dev/null 2>&1; then
+    echo "API en línea."
+    docker image prune -f >/dev/null
+    exit 0
+  fi
+  sleep 3
+done
+echo "La API no respondió a tiempo. Últimos logs:" >&2
+compose logs --tail 40 api >&2
+exit 1
