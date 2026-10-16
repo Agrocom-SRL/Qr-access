@@ -27,7 +27,7 @@
 | Sensor de puerta | GPIO14 | `INPUT_PULLUP` |
 | Pulsador de salida | GPIO12 | `INPUT_PULLUP`, con antirrebote por software; al arrancar debe estar bajo |
 | LED verde / rojo / azul | GPIO2 / GPIO32 (pin "CFG") / GPIO33 (pin "485_EN") | Con resistencia |
-| Buzzer | GPIO15 | |
+| Buzzer | GPIO4 (pin "IO4", el mismo del relé) | Buzzer activo en paralelo al relé: suena solo mientras la cerradura está activa. El firmware no lo maneja aparte |
 
 En la ESP32-ETH01 la PHY LAN8720 (RMII) ocupa los GPIO 0, 18, 19, 21, 22, 23, 25, 26 y 27, y el GPIO16 enciende su oscilador: ninguno está libre ni sale al conector. Por eso el lector usa GPIO5 y GPIO17, y el resto de las señales van en los pines de la tabla. Los GPIO25/26/27 y 18/19/21/22 de una ESP32 genérica **no** sirven en esta placa.
 
