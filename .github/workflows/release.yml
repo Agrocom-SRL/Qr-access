@@ -29,9 +29,13 @@ jobs:
       TAG: ${{ github.ref_name }}
       GH_TOKEN: ${{ github.token }}
     steps:
+      # Se clona por SSH con una deploy key (con escritura) porque GITHUB_TOKEN no
+      # puede estar en el bypass del ruleset de master: GitHub solo ofrece roles,
+      # apps y deploy keys. La clave está en el bypass de ese ruleset (ADR 0014).
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - name: Verificar origen del tag
         id: origen
