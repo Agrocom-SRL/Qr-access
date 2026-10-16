@@ -1,0 +1,39 @@
+{
+  "continuar": "Continuar",
+  "atras": "Voltar",
+  "cancelar": "Cancelar",
+  "editar": "Editar",
+  "ver": "Ver",
+  "reintentar": "Tentar novamente",
+  "mostrando": "Mostrando {{desde}}–{{hasta}} de {{total}}",
+  "sinConexion": "Sem conexão. Dados das {{hora}}; as ações voltam ao reconectar.",
+  "sinConexionTotal": {
+    "titulo": "Sem conexão",
+    "texto": "Verifique sua internet. O painel recarrega sozinho quando ela voltar."
+  },
+  "errorGenerico": "Algo falhou do nosso lado. Tente novamente em alguns segundos.",
+  "codigo": "Código {{codigo}}",
+  "paginacion": "Paginação",
+  "anterior": "Página anterior",
+  "siguiente": "Próxima página",
+  "cerrar": "Fechar",
+  "cargando": "Carregando",
+  "abrirMenu": "Menu",
+  "hoy": "Hoje",
+  "ayer": "Ontem",
+  "copiar": "Copiar",
+  "copiado": "Copiado",
+  "desde": "desde {{fecha}}",
+  "volver": "Voltar",
+  "noEncontrada": {
+    "titulo": "Não encontramos essa página",
+    "texto": "O endereço não existe ou não está mais disponível. Sua sessão continua aberta.",
+    "volver": "Ir para o resumo"
+  },
+  "sinResultados": "Sem resultados",
+  "elegirFecha": "Escolha uma data",
+  "mesAnterior": "Mês anterior",
+  "mesSiguiente": "Próximo mês",
+  "limpiar": "Limpar",
+  "seleccionado": "Selecionado"
+}

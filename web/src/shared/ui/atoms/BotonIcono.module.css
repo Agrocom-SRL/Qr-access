@@ -1,0 +1,50 @@
+.boton {
+  display: inline-grid;
+  place-items: center;
+  width: var(--altoMinimoTactil);
+  height: var(--altoMinimoTactil);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radioCompleto);
+  cursor: pointer;
+  transition: background var(--dur120) var(--easeOutCubic);
+}
+
+.boton:disabled {
+  color: var(--textoSecundario);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.neutro {
+  color: var(--textoSecundario);
+}
+
+.neutro:hover:not(:disabled) {
+  background: var(--fondo);
+}
+
+.ver {
+  color: var(--informacion);
+}
+
+.ver:hover:not(:disabled) {
+  background: var(--informacionSuave);
+}
+
+.editar {
+  color: var(--advertencia);
+}
+
+.editar:hover:not(:disabled) {
+  background: var(--advertenciaSuave);
+}
+
+.eliminar {
+  color: var(--peligro);
+}
+
+.eliminar:hover:not(:disabled) {
+  background: var(--peligroSuave);
+}

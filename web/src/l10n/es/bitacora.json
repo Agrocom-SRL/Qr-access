@@ -1,0 +1,99 @@
+{
+  "titulo": "Bitácora",
+  "subtitulo": "Todo cambio relevante en cuentas, planes y equipo",
+  "columna": {
+    "cuando": "Cuándo",
+    "quien": "Quién",
+    "cuenta": "Cuenta",
+    "que": "Qué",
+    "antes": "Antes",
+    "despues": "Después",
+    "origen": "Origen",
+    "detalle": "Ver más",
+    "cambio": "Cambio"
+  },
+  "origen": {
+    "panel": "Panel",
+    "app": "App",
+    "automatico": "Automático",
+    "dispositivo": "Lector"
+  },
+  "vacio": {
+    "titulo": "Sin acciones con estos filtros",
+    "texto": "Prueba con otras fechas o quita los filtros."
+  },
+  "filtros": {
+    "cuenta": "Cuenta",
+    "accion": "Acción",
+    "fecha": "Fecha",
+    "desde": "Desde",
+    "hasta": "Hasta",
+    "todas": "Todas",
+    "todos": "Todas"
+  },
+  "acciones": {
+    "creado": "Creó",
+    "actualizado": "Editó",
+    "eliminado": "Eliminó",
+    "restaurado": "Restauró"
+  },
+  "tabla": "Bitácora",
+  "errorCarga": "No pudimos cargar la bitácora",
+  "sinResultados": {
+    "titulo": "Sin acciones con estos filtros",
+    "texto": "Prueba con otras fechas o quita los filtros."
+  },
+  "sistema": "Sistema",
+  "sinValor": "—",
+  "evento": {
+    "cuenta_creada": "Creó cuenta",
+    "cuenta_editada": "Editó cuenta",
+    "cuenta_eliminada": "Eliminó cuenta",
+    "empresa_registrada": "Registró datos de empresa",
+    "empresa_editada": "Editó datos de empresa",
+    "suscripcion_creada": "Creó suscripción",
+    "suscripcion_plan_cambiado": "Cambió plan",
+    "suscripcion_suspendida": "Suspendió cuenta",
+    "suscripcion_reactivada": "Reactivó cuenta",
+    "suscripcion_renovada": "Renovó suscripción",
+    "pago_registrado": "Registró pago",
+    "plan_precio_editado": "Editó precio de plan",
+    "plan_creado": "Creó plan",
+    "plan_editado": "Editó plan",
+    "plan_eliminado": "Retiró plan",
+    "equipo_agregado": "Agregó super admin",
+    "equipo_desactivado": "Desactivó super admin",
+    "equipo_contrasena_cambiada": "Cambió su contraseña",
+    "usuario_creado": "Creó usuario",
+    "usuario_editado": "Editó usuario",
+    "usuario_eliminado": "Eliminó usuario",
+    "usuario_pin_regenerado": "Restableció PIN de usuario",
+    "cuenta_codigo_cambiado": "Cambió el código de la cuenta",
+    "sitio_creado": "Creó sitio",
+    "sitio_editado": "Editó sitio",
+    "sitio_eliminado": "Eliminó sitio",
+    "puerta_creado": "Creó puerta",
+    "puerta_editado": "Editó puerta",
+    "puerta_eliminado": "Eliminó puerta",
+    "dispositivo_creado": "Creó dispositivo",
+    "dispositivo_editado": "Editó dispositivo",
+    "dispositivo_eliminado": "Eliminó dispositivo"
+  },
+  "valor": {
+    "vence": "vence {{fecha}}",
+    "plan": "Plan {{plan}}",
+    "activa": "Activa",
+    "suspendida": "Suspendida",
+    "activo": "Activo",
+    "desactivado": "Desactivado",
+    "pin": "PIN nuevo emitido"
+  },
+  "detalle": {
+    "abrir": "Ver más",
+    "cerrar": "Cerrar",
+    "titulo": "Detalle",
+    "campo": "Campo",
+    "cambio": "Cambió",
+    "sinCampos": "Este evento no guardó campos."
+  }
+}

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F5F7F6;font-family:'IBM Plex Sans',sans-serif;color:#1B1F1C;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<div style="padding:48px 24px; font-family:'IBM Plex Sans',sans-serif; color:#1B1F1C">
+<div style="max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:32px">
+  <header style="display:flex; flex-direction:column; gap:8px">
+    <div style="font-size:14px; color:#5B635D">AGROCOM Acceso · V1</div>
+    <div style="font-size:32px; font-weight:600">Notas de handoff</div>
+    <div style="font-size:16px; color:#5B635D; line-height:1.5; max-width:720px; text-wrap:pretty">Cada pantalla con sus componentes y tokens. Los ids (C01, E04b…) apuntan a los marcos de <a href="Pantallas Compacto.dc.html">Compacto</a>, <a href="Pantallas Expandido.dc.html">Expandido</a> y <a href="Estados.dc.html">Estados</a>. Tokens y componentes en <a href="Sistema de Diseño.dc.html">Sistema de diseño</a>.</div>
+  </header>
+
+  <section style="background:#FFFFFF; border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:16px; box-shadow:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06)">
+    <div style="font-size:20px; font-weight:600">Reglas generales</div>
+    <sc-for list="{{ reglas }}" as="r" hint-placeholder-count="8">
+      <div style="display:grid; grid-template-columns:200px 1fr; gap:16px; padding:12px 0; border-top:1px solid #DDE2DF">
+        <div style="font-size:14px; font-weight:600">{{ r.t }}</div>
+        <div style="font-size:14px; color:#5B635D; line-height:1.5; text-wrap:pretty">{{ r.d }}</div>
+      </div>
+    </sc-for>
+  </section>
+
+  <section style="background:#FFFFFF; border-radius:20px; padding:32px; display:flex; flex-direction:column; gap:16px; box-shadow:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06)">
+    <div style="font-size:20px; font-weight:600">Navegación por rol</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:16px">
+      <sc-for list="{{ navRoles }}" as="n" hint-placeholder-count="3">
+        <div style="border:1px solid #DDE2DF; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px">
+          <div style="font-size:16px; font-weight:600">{{ n.rol }}</div>
+          <div style="font-size:12px; color:#5B635D">Compacto · NavigationBar</div>
+          <div style="font-size:14px; font-family:'IBM Plex Mono',monospace">{{ n.compacto }}</div>
+          <div style="font-size:12px; color:#5B635D; margin-top:4px">Medio / expandido · NavigationRail</div>
+          <div style="font-size:14px; font-family:'IBM Plex Mono',monospace">{{ n.rail }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex; flex-direction:column; gap:16px">
+    <div style="font-size:24px; font-weight:600">Pantallas</div>
+    <sc-for list="{{ pantallas }}" as="p" hint-placeholder-count="10">
+      <div style="background:#FFFFFF; border-radius:20px; padding:24px 32px; display:flex; flex-direction:column; gap:16px; box-shadow:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06)">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap">
+          <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:#5B635D">{{ p.n }}</span><span style="font-size:20px; font-weight:600">{{ p.nombre }}</span></div>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5B635D">{{ p.ids }}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:24px">
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:12px; font-weight:600; color:#5B635D; letter-spacing:0.04em">COMPONENTES</div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px"><sc-for list="{{ p.comp }}" as="c" hint-placeholder-count="4"><span style="height:24px; padding:0 8px; border-radius:6px; background:#E8F5EE; color:#005824; font-size:12px; font-weight:500; display:inline-flex; align-items:center; font-family:'IBM Plex Mono',monospace">{{ c }}</span></sc-for></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:12px; font-weight:600; color:#5B635D; letter-spacing:0.04em">TOKENS</div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px"><sc-for list="{{ p.tok }}" as="t" hint-placeholder-count="6"><span style="height:24px; padding:0 8px; border-radius:6px; border:1px solid #DDE2DF; font-size:12px; display:inline-flex; align-items:center; font-family:'IBM Plex Mono',monospace">{{ t }}</span></sc-for></div>
+          </div>
+        </div>
+        <div style="font-size:14px; color:#5B635D; line-height:1.5; text-wrap:pretty; border-top:1px solid #DDE2DF; padding-top:12px">{{ p.notas }}</div>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const base = ['fondo', 'superficie', 'texto', 'textoSecundario'];
+    return {
+      reglas: [
+        { t: 'Tokens en Flutter', d: 'ColorScheme de M3 para lo estándar (primary = primario, surface = superficie, error = peligro, outline = borde) y un ThemeExtension AccesoColores para lo propio: primarioSuave, peligroSuave, advertencia(Suave), informacion(Suave), hero, heroAcento, superficieElevada, sobrePrimario. AccesoEspacio, AccesoRadio y AccesoMovimiento como clases de constantes.' },
+        { t: 'Tokens propuestos', d: 'Agregados al sistema: superficieElevada, primarioHover, sobrePrimario, peligroSuave, advertenciaSuave, informacionSuave, hero, heroAcento (claro y oscuro). Valores en la página del sistema.' },
+        { t: 'Escala de espaciado', d: 'Todo margen, padding y gap sale de 2 · 4 · 8 · 12 · 16 · 24 · 32 · 48. Las medidas de componente no son espaciado y se fijan como constantes: alto 24 (badge), 32 (chip de paso, interruptor), 40 (pastilla de filtro), 44 (mínimo táctil), 48 (botón, campo), 56 (casilla PIN, app bar, FAB), 64 (fila de perfil), 80 (NavigationBar); ancho rail 80 / 240; contenido máx. 400 (auth), 720 (formularios), 1200 (listas y tableros).' },
+        { t: 'Breakpoints', d: 'compacto < 600: NavigationBar + tarjetas. medio 600–1023: NavigationRail 80 + tarjetas en 2 columnas. expandido ≥ 1024: rail extendido 240, DataTable con paginación de 20, formularios centrados con ancho máximo, tableros en grilla de 12.' },
+        { t: 'Navegación', d: 'Recomiendo NavigationBar en lugar de drawer en compacto: cada rol tiene 4 destinos o menos, se usan varias veces al día y quedan visibles y al alcance del pulgar. El drawer oculta los destinos y suma un toque. Si un rol futuro supera 4, el 5.º va a Perfil.' },
+        { t: 'QR', d: 'VisorQr siempre #000 sobre #FFF, nunca tematizado. Mínimo 240 dp (320 en expandido) + 16 dp de zona de silencio (≥ 4 módulos). Subir brillo al mostrarlo. La imagen compartida es PNG 1080×1350 con QR, etiqueta, puertas y vencimiento, generada desde el mismo widget con RepaintBoundary.' },
+        { t: 'PIN', d: 'Un único TextField (maxLength 7, textCapitalization.characters, inputFormatter A–Z 0–9, autocorrect off) con overlay de 3 + 4 casillas. Se guarda sin espacio ni guion. Pegar AGR-7K2Q limpia el guion. Semantics anuncia "PIN, 5 de 7 caracteres".' },
+        { t: 'Contraste y estado', d: 'Todos los pares texto/fondo cumplen AA. Los badges llevan punto + texto. Ver = informacion, Editar = advertencia, Eliminar = peligro, siempre con tooltip. En oscuro, primario #5CB683 lleva texto sobrePrimario (verde900).' },
+        { t: 'Movimiento', d: '120 ms: hover, foco, interruptor. 200 ms: pastillas, badges. 300 ms: pasos del stepper, diálogos, rutas. Curves.easeOutCubic. Con MediaQuery.disableAnimations la duración es 0 y el skeleton no pulsa.' },
+        { t: 'Textos', d: 'Español con tuteo en todo ("Ingresa", "Comparte", "Espera"). Sin voseo ni "usted". Mensajes de una línea cuando se pueda.' }
+      ],
+      navRoles: [
+        { rol: 'Usuario', compacto: 'Inicio · Mis QR · Eventos · Perfil', rail: 'Inicio · Emitir QR · Mis QR · Eventos · Perfil' },
+        { rol: 'Guardia', compacto: 'Inicio · Eventos · Puertas · Perfil', rail: 'Inicio · Eventos · Puertas · Perfil' },
+        { rol: 'Administrador', compacto: 'Inicio · Eventos · Admin · Perfil', rail: 'Inicio · Emitir QR · Eventos · Puertas · Usuarios · Perfil' }
+      ],
+      pantallas: [
+        { n: '01', nombre: 'Bienvenida', ids: 'C01 · E01', comp: ['PlantillaAuth', 'AccesoBoton.primario'], tok: ['hero', 'sobreHero', 'heroAcento', 'fondo', 'primario', 'textoSecundario', 'radio20', 'radioCompleto', 'esp24', 'esp32', 'esp48', 'titulo32'], notas: 'Logo como marcador de posición de 80 dp. En expandido, panel de marca a la izquierda (50 %) y contenido a la derecha con ancho máximo 400.' },
+        { n: '02', nombre: 'Ingreso con PIN', ids: 'C02 · C02b · C02c · C02d · C02x · D02 · E02 · DE02 · S01', comp: ['PlantillaAuth', 'AccesoCampoTexto (variante PIN)', 'AccesoBoton.primario', 'AccesoBoton.texto'], tok: base.concat(['borde', 'primario', 'peligro', 'advertencia', 'advertenciaSuave', 'radio10', 'radio14', 'esp8', 'esp16', 'esp24', 'mono24']), notas: 'Ingresar deshabilitado hasta 7 caracteres. Carga: spinner en el botón y casillas bloqueadas. Error "PIN incorrecto": borde peligro en las 7 casillas y vibración corta. Bloqueo "Demasiados intentos, espera unos minutos": casillas deshabilitadas, cuenta regresiva mono. C02x queda documentada como alternativa descartada.' },
+        { n: '03', nombre: 'Elegir rol', ids: 'C03 · E03', comp: ['PlantillaAuth', 'TarjetaSeleccionable (AccesoSelector, variante tarjeta)', 'AccesoBoton.primario'], tok: base.concat(['primario', 'primarioSuave', 'radio14', 'radio20', 'esp12', 'esp16', 'esp24', 'elev1']), notas: 'Solo aparece con 2 roles o más. Selección = borde 2 dp primario + radio relleno. El último rol usado queda preseleccionado.' },
+        { n: '04', nombre: 'Inicio', ids: 'C04a · C04b · D04 · E04a · E04b · DE04', comp: ['PlantillaAdmin', 'TarjetaIndicador', 'TarjetaIndicador.hero', 'AccesoBadge', 'AccesoBoton', 'ListadoPaginado (compacto, 4–5 filas)'], tok: base.concat(['hero', 'sobreHero', 'heroAcento', 'primarioSuave', 'peligro', 'peligroSuave', 'radio14', 'radio20', 'esp16', 'esp24', 'mono32', 'elev1']), notas: 'Usuario: hero "Emitir QR", 4 accesos rápidos (ícono 56 en radio14 + etiqueta 12/500), vigentes de hoy. Administrador: 3 indicadores (accesos de hoy en hero; rechazados; puertas sin conexión con cifra en peligro si > 0) y últimos eventos. Refresco cada 30 s y pull-to-refresh.' },
+        { n: '05', nombre: 'Emitir QR', ids: 'C05a · C05b · C05c · E05 · S02 · S03', comp: ['PlantillaAdmin', 'Stepper (FormularioSecciones)', 'AccesoSelector (casilla)', 'CampoFormulario', 'AccesoCampoTexto', 'FilaClaveValor', 'AccesoBoton.primario', 'AccesoBoton.texto'], tok: base.concat(['primario', 'primarioSuave', 'borde', 'informacion', 'informacionSuave', 'peligro', 'radio6', 'radio10', 'radio14', 'esp8', 'esp12', 'esp16', 'esp24']), notas: 'Paso 1: selección múltiple agrupada por sitio con "Todas"; puertas sin conexión se pueden elegir y se marcan. Paso 2: "Hasta el fin del día" por defecto; "Más corto" con 1 h, 4 h u hora. Etiqueta opcional, máx. 40. Paso 3: resumen con FilaClaveValor. En expandido el resumen va fijo a la derecha (360).' },
+        { n: '06', nombre: 'QR emitido', ids: 'C06 · D06 · E06 · DE06 · S04 · S05', comp: ['PlantillaPantallaCompleta', 'VisorQr', 'AccesoBoton.primario', 'AccesoBoton.secundario', 'ConfirmarDialogo'], tok: ['fondo', 'superficie', 'texto', 'textoSecundario', 'advertencia', 'advertenciaSuave', 'primario', 'radio14', 'radio20', 'esp16', 'esp24', 'esp48', 'titulo20', 'mono16'], notas: 'El QR no se tematiza. "Compartir" abre la hoja nativa con la imagen (share_plus); en web, Web Share API y si no existe, "Descargar imagen". Cerrar sin compartir pide confirmación (S05). FLAG_SECURE desactivado aquí para permitir captura.' },
+        { n: '07', nombre: 'Mis QR', ids: 'C07 · C07b · E07 · L1b–L4b', comp: ['PlantillaAdmin', 'SelectorSegmentado (AccesoSelector)', 'ListadoPaginado', 'AccesoBadge', 'AccesoBoton.peligro', 'ConfirmarDialogo', 'EstadoVacio'], tok: base.concat(['primario', 'primarioSuave', 'informacion', 'advertencia', 'peligro', 'peligroSuave', 'radio14', 'radioCompleto', 'esp12', 'esp16', 'elev1', 'elev3']), notas: 'Filtros: Vigentes / Usados / Vencidos / Anulados. Badge: Vigente = primario, Usado = informacion, Vencido = advertencia, Anulado = textoSecundario. Anular solo en vigentes; diálogo muestra "Vigente → Anulado". Nunca se muestra el QR de nuevo.' },
+        { n: '08', nombre: 'Eventos de acceso', ids: 'C08 · E08 · L1c–L4c · T1–T4', comp: ['PlantillaAdmin', 'SelectorSegmentado', 'AccesoSelector', 'ListadoPaginado', 'AccesoBadge', 'EstadoVacio'], tok: base.concat(['accesoPermitido', 'accesoDenegado', 'primarioSuave', 'peligroSuave', 'radio10', 'radio14', 'esp12', 'esp16', 'mono12', 'mono14']), notas: 'Permitido en verde y Rechazado en rojo, con motivo legible: "QR vencido", "QR ya usado", "Otra puerta", "Suscripción vencida". Hora con segundos en tabla, sin segundos en tarjeta. Filtros por resultado, fecha y puerta.' },
+        { n: '09', nombre: 'Perfil y cuenta', ids: 'C09 · E09 · S06', comp: ['PlantillaAdmin', 'FilaClaveValor (navegable)', 'AccesoInterruptor', 'AccesoBoton.texto', 'AccesoBoton.peligro (tonal)'], tok: base.concat(['hero', 'heroAcento', 'peligro', 'peligroSuave', 'borde', 'radio14', 'radio20', 'esp16', 'esp24', 'mono14']), notas: 'Cuenta y código, rol activo con "Cambiar rol" (lleva a Elegir rol), plan y vencimiento, interruptor de tema y "Cerrar sesión" en rojo suave. Con menos de 15 días de suscripción, la fila pasa a advertencia.' },
+        { n: '10', nombre: 'Administración', ids: 'C10a · C10b · C10c · E10a · E10b · L1d–L4d', comp: ['PlantillaAdmin', 'PlantillaPantallaCompleta (PIN, compacto)', 'ConfirmarDialogo (PIN, expandido)', 'ListadoPaginado', 'AccesoBadge', 'Acciones Ver/Editar/Eliminar', 'FormularioSecciones'], tok: base.concat(['primario', 'peligro', 'peligroSuave', 'informacion', 'informacionSuave', 'advertencia', 'advertenciaSuave', 'radio6', 'radio10', 'radio14', 'radio20', 'mono32']), notas: 'Puertas: sitio, dispositivo y estado (En línea / Sin conexión) con última señal. Usuarios: etiqueta y roles. "Generar PIN" invalida el anterior y lo muestra una sola vez en mono 32 con "Copiar" (pasa a "Copiado" 2 s) y la advertencia. Eliminar siempre con ConfirmarDialogo.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

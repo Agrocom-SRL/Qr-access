@@ -1,0 +1,99 @@
+{
+  "titulo": "Audit log",
+  "subtitulo": "Every relevant change to accounts, plans and team",
+  "columna": {
+    "cuando": "When",
+    "quien": "Who",
+    "cuenta": "Account",
+    "que": "What",
+    "antes": "Before",
+    "despues": "After",
+    "origen": "Source",
+    "detalle": "See more",
+    "cambio": "Change"
+  },
+  "origen": {
+    "panel": "Panel",
+    "app": "App",
+    "automatico": "Automatic",
+    "dispositivo": "Reader"
+  },
+  "vacio": {
+    "titulo": "No actions match these filters",
+    "texto": "Try other dates or clear the filters."
+  },
+  "filtros": {
+    "cuenta": "Account",
+    "accion": "Action",
+    "fecha": "Date",
+    "desde": "From",
+    "hasta": "To",
+    "todas": "All",
+    "todos": "All"
+  },
+  "acciones": {
+    "creado": "Created",
+    "actualizado": "Edited",
+    "eliminado": "Deleted",
+    "restaurado": "Restored"
+  },
+  "tabla": "Audit log",
+  "errorCarga": "We couldn't load the audit log",
+  "sinResultados": {
+    "titulo": "No actions match these filters",
+    "texto": "Try other dates or clear the filters."
+  },
+  "sistema": "System",
+  "sinValor": "—",
+  "evento": {
+    "cuenta_creada": "Created account",
+    "cuenta_editada": "Edited account",
+    "cuenta_eliminada": "Deleted account",
+    "empresa_registrada": "Registered company data",
+    "empresa_editada": "Edited company data",
+    "suscripcion_creada": "Created subscription",
+    "suscripcion_plan_cambiado": "Changed plan",
+    "suscripcion_suspendida": "Suspended account",
+    "suscripcion_reactivada": "Reactivated account",
+    "suscripcion_renovada": "Renewed subscription",
+    "pago_registrado": "Recorded payment",
+    "plan_precio_editado": "Edited plan price",
+    "plan_creado": "Created plan",
+    "plan_editado": "Edited plan",
+    "plan_eliminado": "Retired plan",
+    "equipo_agregado": "Added super admin",
+    "equipo_desactivado": "Deactivated super admin",
+    "equipo_contrasena_cambiada": "Changed their password",
+    "usuario_creado": "Created user",
+    "usuario_editado": "Edited user",
+    "usuario_eliminado": "Deleted user",
+    "usuario_pin_regenerado": "Reset user PIN",
+    "cuenta_codigo_cambiado": "Changed the account code",
+    "sitio_creado": "Created site",
+    "sitio_editado": "Edited site",
+    "sitio_eliminado": "Deleted site",
+    "puerta_creado": "Created door",
+    "puerta_editado": "Edited door",
+    "puerta_eliminado": "Deleted door",
+    "dispositivo_creado": "Created device",
+    "dispositivo_editado": "Edited device",
+    "dispositivo_eliminado": "Deleted device"
+  },
+  "valor": {
+    "vence": "expires {{fecha}}",
+    "plan": "{{plan}} plan",
+    "activa": "Active",
+    "suspendida": "Suspended",
+    "activo": "Active",
+    "desactivado": "Deactivated",
+    "pin": "New PIN issued"
+  },
+  "detalle": {
+    "abrir": "See more",
+    "cerrar": "Close",
+    "titulo": "Details",
+    "campo": "Field",
+    "cambio": "Changed",
+    "sinCampos": "This event stored no fields."
+  }
+}

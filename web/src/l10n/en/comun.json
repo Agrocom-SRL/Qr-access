@@ -1,0 +1,39 @@
+{
+  "continuar": "Continue",
+  "atras": "Back",
+  "cancelar": "Cancel",
+  "editar": "Edit",
+  "ver": "View",
+  "reintentar": "Retry",
+  "mostrando": "Showing {{desde}}–{{hasta}} of {{total}}",
+  "sinConexion": "Offline. Data from {{hora}}; actions resume when you reconnect.",
+  "sinConexionTotal": {
+    "titulo": "No connection",
+    "texto": "Check your internet. The panel reloads on its own once it's back."
+  },
+  "errorGenerico": "Something went wrong on our side. Try again in a few seconds.",
+  "codigo": "Code {{codigo}}",
+  "paginacion": "Pagination",
+  "anterior": "Previous page",
+  "siguiente": "Next page",
+  "cerrar": "Close",
+  "cargando": "Loading",
+  "abrirMenu": "Menu",
+  "hoy": "Today",
+  "ayer": "Yesterday",
+  "copiar": "Copy",
+  "copiado": "Copied",
+  "desde": "since {{fecha}}",
+  "volver": "Back",
+  "noEncontrada": {
+    "titulo": "We couldn't find that page",
+    "texto": "The address doesn't exist or is no longer available. Your session is still open.",
+    "volver": "Go to summary"
+  },
+  "sinResultados": "No results",
+  "elegirFecha": "Choose a date",
+  "mesAnterior": "Previous month",
+  "mesSiguiente": "Next month",
+  "limpiar": "Clear",
+  "seleccionado": "Selected"
+}

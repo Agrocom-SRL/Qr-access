@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0" rel="stylesheet">
+<style>body{margin:0;background:#F5F7F6;font-family:'IBM Plex Sans',sans-serif;color:#1B1F1C;-webkit-font-smoothing:antialiased}a{color:#007A33}a:hover{color:#005824}</style>
+</helmet>
+<div style="--fondo:#F5F7F6; --superficie:#FFFFFF; --superficieElevada:#FFFFFF; --borde:#DDE2DF; --texto:#1B1F1C; --texto2:#5B635D; --primario:#007A33; --primarioHover:#006B2D; --sobrePrimario:#FFFFFF; --primarioSuave:#E8F5EE; --peligro:#C62828; --peligroSuave:#FDECEC; --advertencia:#965A00; --advertenciaSuave:#FFF3E0; --info:#1565C0; --infoSuave:#E8F1FB; --sombra1:0 1px 2px rgba(27,31,28,0.06), 0 1px 3px rgba(27,31,28,0.06); --sombra3:0 8px 24px rgba(27,31,28,0.10), 0 2px 4px rgba(27,31,28,0.04); background:var(--fondo); color:var(--texto); font-family:'IBM Plex Sans',sans-serif; padding:48px 24px">
+<div style="max-width:1200px; margin:0 auto; display:flex; flex-direction:column; gap:32px">
+
+<header style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px">
+  <div style="display:flex; align-items:center; gap:16px">
+    <div style="width:48px; height:48px; border-radius:14px; background:repeating-linear-gradient(135deg,#C5E6D2 0 6px,#E8F5EE 6px 12px); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#005824">logo</div>
+    <div>
+      <div style="font-size:32px; font-weight:600; letter-spacing:-0.01em">AGROCOM Acceso</div>
+      <div style="font-size:16px; color:var(--texto2)">Sistema de diseño · V1 · Flutter / Material 3</div>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap">
+    <a href="Pantallas Compacto.dc.html" style="font-size:14px; font-weight:500">Pantallas compacto</a>
+    <span style="color:var(--borde)">·</span>
+    <a href="Pantallas Expandido.dc.html" style="font-size:14px; font-weight:500">Pantallas expandido</a>
+    <span style="color:var(--borde)">·</span>
+    <a href="Estados.dc.html" style="font-size:14px; font-weight:500">Estados</a>
+    <span style="color:var(--borde)">·</span>
+    <a href="Handoff.dc.html" style="font-size:14px; font-weight:500">Handoff</a>
+  </div>
+</header>
+
+<!-- COLOR -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">01</span><h2 style="margin:0; font-size:24px; font-weight:600">Color</h2></div>
+  <div style="display:flex; flex-direction:column; gap:8px">
+    <div style="font-size:14px; font-weight:600">Rampa de marca · verde</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px">
+      <sc-for list="{{ rampa }}" as="c" hint-placeholder-count="10">
+        <div style="display:flex; flex-direction:column; gap:8px">
+          <div style="height:64px; border-radius:10px; background:{{ c.hex }}; border:1px solid rgba(27,31,28,0.06)"></div>
+          <div style="font-size:12px; font-weight:600">{{ c.nombre }}</div>
+          <div style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2); margin-top:-4px">{{ c.hex }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr)); gap:24px">
+    <div style="border:1px solid var(--borde); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">Semánticos · tema claro</div>
+      <sc-for list="{{ claro }}" as="t" hint-placeholder-count="14">
+        <div style="display:flex; align-items:center; gap:12px">
+          <div style="width:32px; height:32px; border-radius:6px; background:{{ t.hex }}; border:1px solid #DDE2DF; flex:none"></div>
+          <div style="font-size:14px; font-weight:500; flex:1">{{ t.nombre }}</div>
+          <div style="font-size:12px; color:#965A00">{{ t.nota }}</div>
+          <div style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2); width:72px; text-align:right">{{ t.hex }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="border:1px solid #2C332E; background:#121614; color:#E6EAE7; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">Semánticos · tema oscuro</div>
+      <sc-for list="{{ oscuro }}" as="t" hint-placeholder-count="14">
+        <div style="display:flex; align-items:center; gap:12px">
+          <div style="width:32px; height:32px; border-radius:6px; background:{{ t.hex }}; border:1px solid #2C332E; flex:none"></div>
+          <div style="font-size:14px; font-weight:500; flex:1">{{ t.nombre }}</div>
+          <div style="font-size:12px; color:#F2B54A">{{ t.nota }}</div>
+          <div style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:#A3ABA5; width:72px; text-align:right">{{ t.hex }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="font-size:14px; color:var(--texto2); text-wrap:pretty; max-width:720px">Los tokens marcados <span style="color:var(--advertencia); font-weight:500">propuesto</span> no estaban en tu sistema y los necesitan los badges, el hover y la elevación en oscuro. Contraste verificado AA: texto sobre su fondo suave ≥ 4.5:1. En oscuro, <span style="font-family:'IBM Plex Mono',monospace">primario #5CB683</span> lleva texto <span style="font-family:'IBM Plex Mono',monospace">verde900</span>, no blanco (blanco da 2.4:1).</div>
+</section>
+
+<!-- TIPOGRAFÍA -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">02</span><h2 style="margin:0; font-size:24px; font-weight:600">Tipografía</h2></div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr)); gap:32px">
+    <div style="display:flex; flex-direction:column">
+      <sc-for list="{{ tipos }}" as="t" hint-placeholder-count="7">
+        <div style="display:grid; grid-template-columns:160px 1fr; align-items:baseline; gap:16px; padding:12px 0; border-bottom:1px solid var(--borde)">
+          <div style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ t.token }}</div>
+          <div style="font-size:{{ t.size }}; font-weight:{{ t.peso }}; line-height:1.3">{{ t.ejemplo }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px">
+      <div style="font-size:14px; font-weight:600">IBM Plex Mono · PIN, códigos, horas y cifras</div>
+      <div style="background:var(--fondo); border-radius:14px; padding:24px; display:flex; flex-direction:column; gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; letter-spacing:0.12em">AGR 7K2Q</div>
+        <div style="display:flex; gap:24px; flex-wrap:wrap; font-family:'IBM Plex Mono',monospace">
+          <span style="font-size:20px; font-weight:500">23:59</span>
+          <span style="font-size:20px; font-weight:500">1.284</span>
+          <span style="font-size:20px; font-weight:500">#QR-00418</span>
+        </div>
+      </div>
+      <div style="font-size:14px; color:var(--texto2); text-wrap:pretty">Interlineado 1.3 en títulos y 1.5 en cuerpo. Mono con <span style="font-family:'IBM Plex Mono',monospace">tabular-nums</span> en tablas para que las horas alineen. El PIN se muestra con espacio entre bloque de cuenta (3) y clave (4), pero se guarda sin guion.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ESPACIADO · RADIOS · ELEVACIÓN · MOVIMIENTO -->
+<section style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); gap:24px">
+  <div style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:16px">
+    <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">03</span><h2 style="margin:0; font-size:20px; font-weight:600">Espaciado · base 4</h2></div>
+    <sc-for list="{{ espacios }}" as="e" hint-placeholder-count="8">
+      <div style="display:flex; align-items:center; gap:12px">
+        <div style="width:72px; font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">{{ e.token }}</div>
+        <div style="height:12px; width:{{ e.px }}; background:var(--primario); border-radius:2px"></div>
+        <div style="font-size:12px; font-family:'IBM Plex Mono',monospace">{{ e.px }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:16px">
+    <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">04</span><h2 style="margin:0; font-size:20px; font-weight:600">Radios</h2></div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px">
+      <sc-for list="{{ radios }}" as="r" hint-placeholder-count="5">
+        <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-start">
+          <div style="width:64px; height:64px; background:var(--primarioSuave); border:2px solid var(--primario); border-radius:{{ r.px }}"></div>
+          <div style="font-size:12px; font-family:'IBM Plex Mono',monospace">{{ r.token }}</div>
+          <div style="font-size:12px; color:var(--texto2); margin-top:-4px">{{ r.uso }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:16px">
+    <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">05</span><h2 style="margin:0; font-size:20px; font-weight:600">Elevación</h2></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+      <div style="background:var(--fondo); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px">
+        <div style="font-size:12px; font-weight:600">Claro · sombra</div>
+        <div style="background:#FFFFFF; border:1px solid var(--borde); border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace">elev0 · borde</div>
+        <div style="background:#FFFFFF; border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace; box-shadow:var(--sombra1)">elev1 · tarjeta</div>
+        <div style="background:#FFFFFF; border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace; box-shadow:var(--sombra3)">elev3 · diálogo</div>
+      </div>
+      <div style="background:#121614; color:#E6EAE7; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px">
+        <div style="font-size:12px; font-weight:600">Oscuro · superficie</div>
+        <div style="background:#121614; border:1px solid #2C332E; border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace">elev0 · fondo</div>
+        <div style="background:#1C211E; border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace">elev1 · #1C211E</div>
+        <div style="background:#242A26; border-radius:10px; padding:12px; font-size:12px; font-family:'IBM Plex Mono',monospace">elev3 · #242A26</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:baseline; gap:12px; margin-top:8px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">06</span><h2 style="margin:0; font-size:20px; font-weight:600">Movimiento</h2></div>
+    <div style="display:flex; flex-direction:column; gap:8px; font-size:14px">
+      <div style="display:flex; justify-content:space-between; gap:8px"><span style="font-family:'IBM Plex Mono',monospace">duracionCorta 120</span><span style="color:var(--texto2)">hover, foco, interruptor</span></div>
+      <div style="display:flex; justify-content:space-between; gap:8px"><span style="font-family:'IBM Plex Mono',monospace">duracionMedia 200</span><span style="color:var(--texto2)">pastillas, badges, filas</span></div>
+      <div style="display:flex; justify-content:space-between; gap:8px"><span style="font-family:'IBM Plex Mono',monospace">duracionLarga 300</span><span style="color:var(--texto2)">pasos, diálogos, rutas</span></div>
+      <div style="font-size:12px; color:var(--texto2)">Curva <span style="font-family:'IBM Plex Mono',monospace">Curves.easeOutCubic</span>. Con "reducir movimiento" (MediaQuery.disableAnimations) todo pasa a 0 ms salvo el fundido de 120.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ÁTOMOS -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:32px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">07</span><h2 style="margin:0; font-size:24px; font-weight:600">Átomos</h2></div>
+
+  <div style="display:flex; flex-direction:column; gap:16px">
+    <div style="font-size:16px; font-weight:600">AccesoBoton</div>
+    <div style="overflow-x:auto">
+      <div style="display:grid; grid-template-columns:120px repeat(5,minmax(150px,1fr)); gap:16px; align-items:center; min-width:900px">
+        <div></div>
+        <div style="font-size:12px; color:var(--texto2); font-family:'IBM Plex Mono',monospace">normal</div>
+        <div style="font-size:12px; color:var(--texto2); font-family:'IBM Plex Mono',monospace">hover</div>
+        <div style="font-size:12px; color:var(--texto2); font-family:'IBM Plex Mono',monospace">foco</div>
+        <div style="font-size:12px; color:var(--texto2); font-family:'IBM Plex Mono',monospace">deshabilitado</div>
+        <div style="font-size:12px; color:var(--texto2); font-family:'IBM Plex Mono',monospace">carga</div>
+
+        <div style="font-size:14px; font-weight:500">primario</div>
+        <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; cursor:pointer; transition:background 120ms cubic-bezier(.33,1,.68,1)" style-hover="background:var(--primarioHover)">Ingresar</div>
+        <div style="height:48px; border-radius:999px; background:var(--primarioHover); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; outline:2px solid var(--primario); outline-offset:2px">Ingresar</div>
+        <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Ingresar</div>
+        <div style="height:48px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--sobrePrimario); border-right-color:transparent; box-sizing:border-box"></span>Ingresando</div>
+
+        <div style="font-size:14px; font-weight:500">secundario</div>
+        <div style="height:48px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; cursor:pointer" style-hover="background:#C5E6D2">Compartir</div>
+        <div style="height:48px; border-radius:999px; background:#C5E6D2; color:#005824; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Compartir</div>
+        <div style="height:48px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; outline:2px solid var(--primario); outline-offset:2px">Compartir</div>
+        <div style="height:48px; border-radius:999px; background:var(--fondo); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Compartir</div>
+        <div style="height:48px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--primario); border-right-color:transparent; box-sizing:border-box"></span>Preparando</div>
+
+        <div style="font-size:14px; font-weight:500">texto</div>
+        <div style="height:44px; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; cursor:pointer" style-hover="background:var(--primarioSuave)">Cambiar rol</div>
+        <div style="height:44px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Cambiar rol</div>
+        <div style="height:44px; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; outline:2px solid var(--primario); outline-offset:2px">Cambiar rol</div>
+        <div style="height:44px; border-radius:999px; color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Cambiar rol</div>
+        <div style="height:44px; border-radius:999px; color:var(--primario); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--primario); border-right-color:transparent; box-sizing:border-box"></span>Cargando</div>
+
+        <div style="font-size:14px; font-weight:500">peligro <span style="font-size:12px; color:var(--texto2)">tonal</span></div>
+        <div style="height:48px; border-radius:999px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; cursor:pointer" style-hover="background:#F9D6D6">Cerrar sesión</div>
+        <div style="height:48px; border-radius:999px; background:#F9D6D6; color:var(--peligro); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Cerrar sesión</div>
+        <div style="height:48px; border-radius:999px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; outline:2px solid var(--peligro); outline-offset:2px">Cerrar sesión</div>
+        <div style="height:48px; border-radius:999px; background:var(--fondo); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Cerrar sesión</div>
+        <div style="height:48px; border-radius:999px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--peligro); border-right-color:transparent; box-sizing:border-box"></span>Saliendo</div>
+
+        <div style="font-size:14px; font-weight:500">peligro <span style="font-size:12px; color:var(--texto2)">relleno</span></div>
+        <div style="height:48px; border-radius:999px; background:var(--peligro); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; cursor:pointer" style-hover="background:#A82222">Anular QR</div>
+        <div style="height:48px; border-radius:999px; background:#A82222; color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Anular QR</div>
+        <div style="height:48px; border-radius:999px; background:var(--peligro); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600; outline:2px solid var(--peligro); outline-offset:2px">Anular QR</div>
+        <div style="height:48px; border-radius:999px; background:var(--borde); color:var(--texto2); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:600">Anular QR</div>
+        <div style="height:48px; border-radius:999px; background:var(--peligro); color:#FFFFFF; display:flex; align-items:center; justify-content:center; gap:8px; font-size:16px; font-weight:600"><span style="width:16px; height:16px; border-radius:999px; border:2px solid #FFFFFF; border-right-color:transparent; box-sizing:border-box"></span>Anulando</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:24px; align-items:center">
+      <div style="font-size:14px; font-weight:500">Acciones de fila · color fijo</div>
+      <div style="display:flex; gap:8px">
+        <div style="width:44px; height:44px; border-radius:10px; background:var(--infoSuave); color:var(--info); display:flex; align-items:center; justify-content:center"><span style="font-family:'Material Symbols Outlined'; font-size:20px">visibility</span></div>
+        <div style="width:44px; height:44px; border-radius:10px; background:var(--advertenciaSuave); color:var(--advertencia); display:flex; align-items:center; justify-content:center"><span style="font-family:'Material Symbols Outlined'; font-size:20px">edit</span></div>
+        <div style="width:44px; height:44px; border-radius:10px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center"><span style="font-family:'Material Symbols Outlined'; font-size:20px">delete</span></div>
+      </div>
+      <div style="font-size:12px; color:var(--texto2)">Ver = información · Editar = advertencia · Eliminar = peligro. Siempre con tooltip y semántica.</div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:16px">
+    <div style="font-size:16px; font-weight:600">AccesoBadge</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px">
+      <sc-for list="{{ badges }}" as="b" hint-placeholder-count="8">
+        <span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:{{ b.bg }}; color:{{ b.fg }}; font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:{{ b.fg }}"></span>{{ b.label }}</span>
+      </sc-for>
+    </div>
+    <div style="font-size:12px; color:var(--texto2)">Siempre con punto + texto (no depender solo del color). Alto 24, radio completo, 12/600.</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr)); gap:32px">
+    <div style="display:flex; flex-direction:column; gap:16px">
+      <div style="font-size:16px; font-weight:600">AccesoCampoTexto</div>
+      <div style="display:grid; grid-template-columns:96px 1fr; gap:12px; align-items:center">
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">normal</span>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 12px; gap:8px; font-size:16px; color:var(--texto2)" style-hover="border-color:var(--texto2)">Proveedor de gas</div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">foco</span>
+        <div style="height:48px; border:2px solid var(--primario); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 11px; font-size:16px">Proveedor de g<span style="width:1px; height:20px; background:var(--primario)"></span></div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">error</span>
+        <div style="height:48px; border:2px solid var(--peligro); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 11px; gap:8px; font-size:16px"><span style="flex:1">Proveedor de gas y agua potable</span><span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--peligro)">error</span></div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">deshabilitado</span>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); display:flex; align-items:center; padding:0 12px; font-size:16px; color:var(--texto2)">AGR · Agroindustrial Norte</div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">carga</span>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; background:var(--superficie); display:flex; align-items:center; padding:0 12px; gap:8px; font-size:16px; color:var(--texto2)"><span style="flex:1">Validando…</span><span style="width:16px; height:16px; border-radius:999px; border:2px solid var(--primario); border-right-color:transparent; box-sizing:border-box"></span></div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:16px">
+      <div style="font-size:16px; font-weight:600">AccesoSelector</div>
+      <div style="display:grid; grid-template-columns:96px 1fr; gap:12px; align-items:center">
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">normal</span>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; display:flex; align-items:center; padding:0 12px; font-size:16px" style-hover="border-color:var(--texto2)"><span style="flex:1">Planta Warnes</span><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--texto2)">expand_more</span></div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">abierto</span>
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="height:48px; border:2px solid var(--primario); border-radius:10px; display:flex; align-items:center; padding:0 11px; font-size:16px"><span style="flex:1">Planta Warnes</span><span style="font-family:'Material Symbols Outlined'; font-size:24px; color:var(--primario)">expand_less</span></div>
+          <div style="border-radius:10px; background:var(--superficieElevada); box-shadow:var(--sombra3); padding:4px; display:flex; flex-direction:column">
+            <div style="height:44px; display:flex; align-items:center; padding:0 12px; border-radius:6px; background:var(--primarioSuave); color:var(--primario); font-weight:500; font-size:16px; gap:8px"><span style="flex:1">Planta Warnes</span><span style="font-family:'Material Symbols Outlined'; font-size:20px">check</span></div>
+            <div style="height:44px; display:flex; align-items:center; padding:0 12px; border-radius:6px; font-size:16px" style-hover="background:var(--fondo)">Oficina Equipetrol</div>
+          </div>
+        </div>
+        <span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">deshabilitado</span>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; background:var(--fondo); display:flex; align-items:center; padding:0 12px; font-size:16px; color:var(--texto2)"><span style="flex:1">Sin sitios</span><span style="font-family:'Material Symbols Outlined'; font-size:24px">expand_more</span></div>
+      </div>
+      <div style="font-size:16px; font-weight:600; margin-top:8px">AccesoInterruptor</div>
+      <div style="display:flex; gap:24px; flex-wrap:wrap; align-items:center">
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:52px; height:32px; border-radius:999px; background:var(--primario); position:relative"><div style="position:absolute; right:4px; top:4px; width:24px; height:24px; border-radius:999px; background:#FFFFFF"></div></div><span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">activo</span></div>
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:52px; height:32px; border-radius:999px; background:var(--superficie); border:2px solid var(--texto2); box-sizing:border-box; position:relative"><div style="position:absolute; left:6px; top:6px; width:16px; height:16px; border-radius:999px; background:var(--texto2)"></div></div><span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">inactivo</span></div>
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:52px; height:32px; border-radius:999px; background:var(--primario); position:relative; outline:2px solid var(--primario); outline-offset:2px"><div style="position:absolute; right:4px; top:4px; width:24px; height:24px; border-radius:999px; background:#FFFFFF"></div></div><span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">foco</span></div>
+        <div style="display:flex; align-items:center; gap:8px"><div style="width:52px; height:32px; border-radius:999px; background:var(--borde); position:relative"><div style="position:absolute; right:4px; top:4px; width:24px; height:24px; border-radius:999px; background:var(--fondo)"></div></div><span style="font-size:12px; font-family:'IBM Plex Mono',monospace; color:var(--texto2)">deshabilitado</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOLÉCULAS -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">08</span><h2 style="margin:0; font-size:24px; font-weight:600">Moléculas</h2></div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:24px; align-items:start">
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">CampoFormulario</div>
+      <div style="display:flex; flex-direction:column; gap:8px">
+        <label style="font-size:14px; font-weight:500">Etiqueta <span style="color:var(--texto2); font-weight:400">(opcional)</span></label>
+        <div style="height:48px; border:1px solid var(--borde); border-radius:10px; display:flex; align-items:center; padding:0 12px; font-size:16px; color:var(--texto2)">Ej.: Proveedor de gas</div>
+        <div style="font-size:12px; color:var(--texto2)">La verá quien reciba el QR.</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px">
+        <label style="font-size:14px; font-weight:500">Etiqueta</label>
+        <div style="height:48px; border:2px solid var(--peligro); border-radius:10px; display:flex; align-items:center; padding:0 11px; font-size:16px">Proveedor de gas y agua potable de la planta</div>
+        <div style="font-size:12px; color:var(--peligro); display:flex; gap:4px; align-items:center"><span style="font-family:'Material Symbols Outlined'; font-size:16px">error</span>Máximo 40 caracteres</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">TarjetaIndicador</div>
+      <div style="background:var(--superficie); border:1px solid var(--borde); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px">
+        <div style="display:flex; align-items:center; gap:8px; color:var(--texto2); font-size:14px"><span style="width:32px; height:32px; border-radius:10px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px">login</span>Accesos de hoy</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600">148</div>
+        <div style="font-size:12px; color:var(--texto2)">Actualizado 10:42</div>
+      </div>
+      <div style="background:var(--superficie); border:1px solid var(--borde); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px">
+        <div style="display:flex; align-items:center; gap:8px; color:var(--texto2); font-size:14px"><span style="width:32px; height:32px; border-radius:10px; background:var(--peligroSuave); color:var(--peligro); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:20px">wifi_off</span>Puertas sin conexión</div>
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:600; color:var(--peligro)">2</div>
+        <div style="font-size:12px; color:var(--texto2)">Variante alerta: cifra en peligro si &gt; 0</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">EstadoVacio</div>
+      <div style="border:1px dashed var(--borde); border-radius:14px; padding:24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px">
+        <div style="width:56px; height:56px; border-radius:20px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; justify-content:center; font-family:'Material Symbols Outlined'; font-size:32px">qr_code_2</div>
+        <div style="font-size:16px; font-weight:600">No tienes QR vigentes</div>
+        <div style="font-size:14px; color:var(--texto2); text-wrap:pretty">Emite uno y compártelo con quien va a entrar.</div>
+        <div style="height:44px; padding:0 16px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600"><span style="font-family:'Material Symbols Outlined'; font-size:20px">add</span>Emitir QR</div>
+      </div>
+      <div style="font-size:12px; color:var(--texto2)">Variantes: vacío · error (ícono peligro + "Reintentar") · sin conexión (ícono cloud_off + "Reintentar").</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">ConfirmarDialogo</div>
+      <div style="background:var(--superficieElevada); border-radius:20px; box-shadow:var(--sombra3); padding:24px; display:flex; flex-direction:column; gap:16px; border:1px solid var(--borde)">
+        <div style="font-size:20px; font-weight:600">¿Anular este QR?</div>
+        <div style="display:flex; align-items:center; gap:8px">
+          <span style="height:24px; padding:0 8px; border-radius:999px; background:var(--primarioSuave); color:var(--primario); font-size:12px; font-weight:600; display:inline-flex; align-items:center">Vigente</span>
+          <span style="font-family:'Material Symbols Outlined'; font-size:20px; color:var(--texto2)">arrow_forward</span>
+          <span style="height:24px; padding:0 8px; border-radius:999px; background:var(--fondo); color:var(--texto2); border:1px solid var(--borde); font-size:12px; font-weight:600; display:inline-flex; align-items:center">Anulado</span>
+        </div>
+        <div style="font-size:14px; color:var(--texto2); text-wrap:pretty">La puerta dejará de aceptarlo. No se puede deshacer.</div>
+        <div style="display:flex; justify-content:flex-end; gap:8px">
+          <div style="height:44px; padding:0 16px; border-radius:999px; color:var(--primario); display:flex; align-items:center; font-size:14px; font-weight:600">Cancelar</div>
+          <div style="height:44px; padding:0 16px; border-radius:999px; background:var(--peligro); color:#FFFFFF; display:flex; align-items:center; font-size:14px; font-weight:600">Anular</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">FilaClaveValor</div>
+      <div style="border:1px solid var(--borde); border-radius:14px; padding:0 16px">
+        <div style="min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">Cuenta</span><span style="font-weight:500">Agroindustrial Norte</span></div>
+        <div style="min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--borde); font-size:14px"><span style="color:var(--texto2)">Código</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:500">AGR</span></div>
+        <div style="min-height:48px; display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14px"><span style="color:var(--texto2)">Vence</span><span style="font-family:'IBM Plex Mono',monospace; font-weight:500">31/03/2027</span></div>
+      </div>
+      <div style="font-size:12px; color:var(--texto2)">Variante navegable: ícono a la izquierda + chevron (filas de Perfil).</div>
+    </div>
+  </div>
+</section>
+
+<!-- ORGANISMOS -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">09</span><h2 style="margin:0; font-size:24px; font-weight:600">Organismos</h2></div>
+  <div style="display:flex; flex-direction:column; gap:12px">
+    <div style="font-size:14px; font-weight:600">ListadoPaginado · expandido (tabla) / compacto (tarjetas)</div>
+    <div style="border:1px solid var(--borde); border-radius:14px; overflow:hidden">
+      <div style="display:grid; grid-template-columns:96px 1.4fr 1fr 1.2fr; gap:16px; padding:12px 16px; background:var(--fondo); font-size:12px; font-weight:600; color:var(--texto2)"><span>Hora</span><span>Puerta</span><span>Resultado</span><span>Motivo</span></div>
+      <sc-for list="{{ eventos }}" as="e" hint-placeholder-count="3">
+        <div style="display:grid; grid-template-columns:96px 1.4fr 1fr 1.2fr; gap:16px; padding:0 16px; min-height:52px; align-items:center; border-top:1px solid var(--borde); font-size:14px" style-hover="background:var(--fondo)">
+          <span style="font-family:'IBM Plex Mono',monospace">{{ e.hora }}</span><span>{{ e.puerta }}</span>
+          <span><span style="display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:999px; background:{{ e.bg }}; color:{{ e.fg }}; font-size:12px; font-weight:600"><span style="width:6px; height:6px; border-radius:999px; background:{{ e.fg }}"></span>{{ e.resultado }}</span></span>
+          <span style="color:var(--texto2)">{{ e.motivo }}</span>
+        </div>
+      </sc-for>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 16px; border-top:1px solid var(--borde); font-size:14px; color:var(--texto2)">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px">1–20 de 148</span>
+        <div style="display:flex; gap:4px"><span style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; font-family:'Material Symbols Outlined'; color:var(--borde)">chevron_left</span><span style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:10px; font-family:'Material Symbols Outlined'; color:var(--texto)" style-hover="background:var(--fondo)">chevron_right</span></div>
+      </div>
+    </div>
+    <div style="font-size:12px; color:var(--texto2)">Mismo componente: &lt;1024 rinde tarjetas con scroll infinito y "Cargar más"; ≥1024 rinde DataTable con paginación de 20. Estados: carga (skeleton), vacío, error, sin conexión → ver <a href="Estados.dc.html">Estados</a>.</div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr)); gap:24px; align-items:start">
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">FormularioSecciones</div>
+      <div style="border:1px solid var(--borde); border-radius:14px; padding:24px; display:flex; flex-direction:column; gap:24px">
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <div style="font-size:12px; font-weight:600; color:var(--texto2); letter-spacing:0.04em">DATOS DE LA PUERTA</div>
+          <div style="height:48px; border:1px solid var(--borde); border-radius:10px; display:flex; align-items:center; padding:0 12px; font-size:16px">Portón vehicular</div>
+          <div style="height:48px; border:1px solid var(--borde); border-radius:10px; display:flex; align-items:center; padding:0 12px; font-size:16px"><span style="flex:1">Planta Warnes</span><span style="font-family:'Material Symbols Outlined'; color:var(--texto2)">expand_more</span></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px">
+          <div style="font-size:12px; font-weight:600; color:var(--texto2); letter-spacing:0.04em">DISPOSITIVO</div>
+          <div style="height:48px; border:1px solid var(--borde); border-radius:10px; display:flex; align-items:center; padding:0 12px; font-size:16px; font-family:'IBM Plex Mono',monospace">LECT-0042</div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--borde); padding-top:16px">
+          <div style="height:44px; padding:0 16px; border-radius:999px; color:var(--primario); display:flex; align-items:center; font-size:14px; font-weight:600">Cancelar</div>
+          <div style="height:44px; padding:0 24px; border-radius:999px; background:var(--primario); color:var(--sobrePrimario); display:flex; align-items:center; font-size:14px; font-weight:600">Guardar</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--texto2)">Ancho máximo 640 en expandido, centrado. Acciones fijas abajo en compacto.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="font-size:14px; font-weight:600">VisorQr</div>
+      <div style="background:var(--fondo); border-radius:14px; padding:24px; display:flex; flex-direction:column; align-items:center; gap:16px">
+        <div style="background:#FFFFFF; padding:16px; border-radius:14px; box-shadow:var(--sombra1)">
+          <svg width="240" height="240" viewBox="0 0 29 29" shape-rendering="crispEdges" style="display:block"><path d="{{ qr }}" fill="#000000"></path></svg>
+        </div>
+        <div style="font-size:12px; color:var(--texto2); text-align:center; text-wrap:pretty; max-width:320px">Nunca se tematiza: negro #000 sobre blanco #FFF, 240 dp mínimo + zona de silencio 16 dp (≥ 4 módulos). Brillo de pantalla al máximo mientras está visible.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANTILLAS -->
+<section style="background:var(--superficie); border-radius:20px; padding:32px; box-shadow:var(--sombra1); display:flex; flex-direction:column; gap:24px">
+  <div style="display:flex; align-items:baseline; gap:12px"><span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--texto2)">10</span><h2 style="margin:0; font-size:24px; font-weight:600">Plantillas</h2></div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:24px">
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="height:220px; border-radius:14px; background:var(--fondo); border:1px solid var(--borde); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:16px">
+        <div style="width:40px; height:40px; border-radius:10px; background:#C5E6D2"></div>
+        <div style="width:60%; height:12px; border-radius:6px; background:var(--borde)"></div>
+        <div style="width:70%; height:44px; border-radius:10px; background:var(--superficie); border:1px solid var(--borde)"></div>
+        <div style="width:70%; height:24px; border-radius:999px; background:var(--primario)"></div>
+      </div>
+      <div style="font-size:14px; font-weight:600">PlantillaAuth</div>
+      <div style="font-size:12px; color:var(--texto2)">Bienvenida, Ingreso, Elegir rol. Contenido centrado, ancho máximo 400; en expandido, panel de marca a la izquierda.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="height:220px; border-radius:14px; background:var(--fondo); border:1px solid var(--borde); display:flex; overflow:hidden">
+        <div style="width:56px; background:var(--superficie); border-right:1px solid var(--borde); display:flex; flex-direction:column; gap:8px; padding:12px 8px"><div style="height:24px; border-radius:6px; background:var(--primarioSuave)"></div><div style="height:24px; border-radius:6px; background:var(--borde)"></div><div style="height:24px; border-radius:6px; background:var(--borde)"></div></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:8px; padding:12px"><div style="height:16px; width:40%; border-radius:6px; background:var(--borde)"></div><div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px"><div style="height:40px; border-radius:10px; background:var(--superficie)"></div><div style="height:40px; border-radius:10px; background:var(--superficie)"></div><div style="height:40px; border-radius:10px; background:var(--superficie)"></div></div><div style="flex:1; border-radius:10px; background:var(--superficie)"></div></div>
+      </div>
+      <div style="font-size:14px; font-weight:600">PlantillaAdmin</div>
+      <div style="font-size:12px; color:var(--texto2)">App con navegación. Compacto: barra superior + navegación inferior. Medio: rail. Expandido: rail extendido 240 + contenido máx. 1200.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px">
+      <div style="height:220px; border-radius:14px; background:var(--fondo); border:1px solid var(--borde); display:flex; flex-direction:column; padding:12px; gap:8px">
+        <div style="width:24px; height:24px; border-radius:999px; background:var(--borde)"></div>
+        <div style="flex:1; display:flex; align-items:center; justify-content:center"><div style="width:88px; height:88px; background:#FFFFFF; border:1px solid var(--borde); border-radius:10px"></div></div>
+        <div style="height:24px; border-radius:999px; background:var(--primario)"></div>
+      </div>
+      <div style="font-size:14px; font-weight:600">PlantillaPantallaCompleta</div>
+      <div style="font-size:12px; color:var(--texto2)">QR emitido y PIN generado. Sin navegación; cerrar arriba, acción principal abajo, aviso de "solo una vez".</div>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+function qrPath(seed, n) {
+  n = n || 29; let s = seed * 9301 + 49297;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const m = Array.from({ length: n }, () => Array(n).fill(0));
+  const res = (x, y) => (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (res(x, y)) continue;
+    m[y][x] = y === 6 ? (x % 2 === 0 ? 1 : 0) : x === 6 ? (y % 2 === 0 ? 1 : 0) : (rnd() > 0.52 ? 1 : 0);
+  }
+  const f = (ox, oy) => { for (let i = 0; i < 7; i++) for (let j = 0; j < 7; j++) m[oy + i][ox + j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i > 1 && i < 5 && j > 1 && j < 5)) ? 1 : 0; };
+  f(0, 0); f(n - 7, 0); f(0, n - 7);
+  let d = ''; for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += 'M' + x + ' ' + y + 'h1v1h-1z';
+  return d;
+}
+class Component extends DCLogic {
+  renderVals() {
+    const P = 'propuesto';
+    return {
+      qr: qrPath(7),
+      rampa: [['verde50','#E8F5EE'],['verde100','#C5E6D2'],['verde200','#93D0AB'],['verde300','#5CB683'],['verde400','#2B9A5D'],['verde500','#007A33'],['verde600','#006B2D'],['verde700','#005824'],['verde800','#00451C'],['verde900','#002F13']].map(([nombre,hex])=>({nombre,hex})),
+      claro: [['fondo','#F5F7F6'],['superficie','#FFFFFF'],['superficieElevada','#FFFFFF',P],['borde','#DDE2DF'],['texto','#1B1F1C'],['textoSecundario','#5B635D'],['primario','#007A33'],['primarioHover','#006B2D',P],['sobrePrimario','#FFFFFF',P],['primarioSuave','#E8F5EE'],['peligro','#C62828'],['peligroSuave','#FDECEC',P],['advertencia','#965A00'],['advertenciaSuave','#FFF3E0',P],['informacion','#1565C0'],['informacionSuave','#E8F1FB',P],['hero','#007A33',P]].map(([nombre,hex,nota])=>({nombre,hex,nota:nota||''})),
+      oscuro: [['fondo','#121614'],['superficie','#1C211E'],['superficieElevada','#242A26',P],['borde','#2C332E'],['texto','#E6EAE7'],['textoSecundario','#A3ABA5'],['primario','#5CB683'],['primarioHover','#93D0AB',P],['sobrePrimario','#002F13',P],['primarioSuave','#002F13'],['peligro','#EF7A7A'],['peligroSuave','#3A1C1C',P],['advertencia','#F2B54A'],['advertenciaSuave','#33270F',P],['informacion','#7EB6F2'],['informacionSuave','#14263A',P],['hero','#00451C',P]].map(([nombre,hex,nota])=>({nombre,hex,nota:nota||''})),
+      tipos: [['titulo32 · 600','32px',600,'Emitir QR'],['titulo24 · 600','24px',600,'Mis QR'],['titulo20 · 600','20px',600,'¿Anular este QR?'],['cuerpo16 · 400','16px',400,'Comparte el QR con quien va a entrar.'],['cuerpo16 · 500','16px',500,'Portón vehicular'],['cuerpo14 · 400','14px',400,'Planta Warnes · Vence hoy'],['etiqueta12 · 500','12px',500,'Vigente · 10:42']].map(([token,size,peso,ejemplo])=>({token,size,peso,ejemplo})),
+      espacios: [2,4,8,12,16,24,32,48].map((v,i)=>({token:'esp'+v, px:v+'px'})),
+      radios: [['radio6','6px','chips, swatches'],['radio10','10px','campos, íconos'],['radio14','14px','tarjetas'],['radio20','20px','hero, diálogos'],['radioCompleto','999px','botones, badges']].map(([token,px,uso])=>({token,px,uso})),
+      badges: [['Vigente','var(--primarioSuave)','var(--primario)'],['Usado','var(--infoSuave)','var(--info)'],['Vencido','var(--advertenciaSuave)','var(--advertencia)'],['Anulado','var(--fondo)','var(--texto2)'],['Permitido','var(--primarioSuave)','var(--primario)'],['Rechazado','var(--peligroSuave)','var(--peligro)'],['En línea','var(--primarioSuave)','var(--primario)'],['Sin conexión','var(--peligroSuave)','var(--peligro)']].map(([label,bg,fg])=>({label,bg,fg})),
+      eventos: [
+        {hora:'10:42:08',puerta:'Portón vehicular',resultado:'Permitido',motivo:'—',bg:'var(--primarioSuave)',fg:'var(--primario)'},
+        {hora:'10:31:55',puerta:'Acceso peatonal',resultado:'Rechazado',motivo:'QR vencido',bg:'var(--peligroSuave)',fg:'var(--peligro)'},
+        {hora:'10:17:20',puerta:'Depósito 2',resultado:'Rechazado',motivo:'Otra puerta',bg:'var(--peligroSuave)',fg:'var(--peligro)'}
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

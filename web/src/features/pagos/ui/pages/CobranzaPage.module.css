@@ -1,0 +1,57 @@
+.totales {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp16);
+  margin-bottom: var(--esp24);
+}
+
+.codigo {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.dias {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}
+
+.pendiente {
+  color: var(--advertencia);
+  font-weight: var(--peso600);
+}
+
+.sinPagar {
+  color: var(--peligro);
+  font-weight: var(--peso600);
+}
+
+@media (width < 1024px) {
+  .totales {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.graficas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+@media (width < 1024px) {
+  .graficas {
+    grid-template-columns: 1fr;
+  }
+}

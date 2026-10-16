@@ -1,0 +1,8 @@
+/// Superficie pública de la feature `sesion` (ADR 0003): las pantallas que el
+/// router registra.
+library;
+
+export 'presentation/bienvenida_pagina.dart' show BienvenidaPagina;
+export 'presentation/elegir_rol_pagina.dart' show ElegirRolPagina;
+export 'presentation/ingreso_pagina.dart' show IngresoPagina;
+export 'presentation/splash_pagina.dart' show SplashPagina;

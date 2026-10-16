@@ -1,0 +1,117 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  width: calc(var(--railExtendido) + 2 * var(--esp12));
+  padding: var(--esp24) var(--esp12);
+  background: var(--superficie);
+  border-right: 1px solid var(--borde);
+
+  /* Fijo a la altura de la ventana: el perfil queda abajo aunque el contenido haga scroll. */
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  padding: 0 var(--esp12);
+}
+
+.logo {
+  height: var(--tam40);
+  width: auto;
+}
+
+.nombre {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--texto12);
+  color: var(--textoSecundario);
+}
+
+.nombre strong {
+  color: var(--texto);
+  font-size: var(--texto16);
+  font-weight: var(--peso600);
+}
+
+.navegacion {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--esp4);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--esp16);
+  height: var(--altoControl);
+  padding: 0 var(--esp16);
+  border-radius: var(--radioCompleto);
+  color: var(--textoSecundario);
+  font-weight: var(--peso500);
+  text-decoration: none;
+  transition: background var(--dur120) var(--easeOutCubic);
+}
+
+.item:hover {
+  background: var(--fondo);
+}
+
+.item[aria-current='page'] {
+  background: var(--primarioSuave);
+  color: var(--primario);
+  font-weight: var(--peso600);
+}
+
+.usuario {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  padding: var(--esp12);
+  background: var(--fondo);
+  border-radius: var(--radio14);
+  color: var(--texto);
+  font-size: var(--texto14);
+  text-decoration: none;
+}
+
+.usuario .etiqueta {
+  display: flex;
+  flex-direction: column;
+}
+
+.rol {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+@media (width < 1024px) {
+  .rail {
+    width: var(--railColapsado);
+    align-items: center;
+    padding-inline: var(--esp8);
+  }
+
+  .etiqueta,
+  .usuario .etiqueta,
+  .nombre {
+    display: none;
+  }
+
+  .item {
+    justify-content: center;
+    width: var(--altoControl);
+    padding: 0;
+  }
+
+  .usuario {
+    padding: var(--esp8);
+  }
+}

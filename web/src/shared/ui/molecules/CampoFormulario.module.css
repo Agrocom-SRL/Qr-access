@@ -1,0 +1,24 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp8);
+}
+
+.etiqueta {
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+}
+
+.ayuda {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--esp4);
+  color: var(--peligro);
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+}

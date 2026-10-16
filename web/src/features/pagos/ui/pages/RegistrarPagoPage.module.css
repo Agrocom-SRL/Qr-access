@@ -1,0 +1,78 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  max-width: var(--anchoFormulario);
+  margin: 0 auto;
+}
+
+.titulo {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.subtitulo {
+  color: var(--textoSecundario);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  padding: var(--esp32);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--esp16);
+}
+
+.medio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp8);
+}
+
+.etiqueta {
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+}
+
+.nota {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.vigencia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--esp16);
+  background: var(--primarioSuave);
+  border-radius: var(--radio10);
+  color: var(--primario);
+  font-weight: var(--peso500);
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--esp16);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}
+
+@media (width < 1024px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+}

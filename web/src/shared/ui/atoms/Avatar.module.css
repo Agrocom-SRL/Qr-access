@@ -1,0 +1,18 @@
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--tam40);
+  height: var(--tam40);
+  background: var(--primarioSuave);
+  border-radius: var(--radioCompleto);
+  color: var(--primario);
+  font-size: var(--texto14);
+  font-weight: var(--peso600);
+}
+
+.grande {
+  width: var(--tam56);
+  height: var(--tam56);
+  font-size: var(--texto20);
+}

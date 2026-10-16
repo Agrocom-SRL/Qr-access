@@ -1,0 +1,23 @@
+{
+  "titulo": "Alterar plano",
+  "actual": "Atual",
+  "nuevo": "Novo",
+  "diferencia": "Diferença de preço anual",
+  "efecto": "Poderá criar até {{count}} usuários a partir da confirmação.",
+  "elegirOtro": "Escolher outro plano",
+  "confirmar": "Mudar para {{count}} usuários",
+  "soloMejora": "Você só pode subir de plano. Para descer, a conta muda na renovação: não há devolução de dinheiro.",
+  "cobro": "A diferença é cobrada ao confirmar: registre o pagamento a seguir.",
+  "precioAnio": "{{precio}} / ano",
+  "usuarios": "{{count}} usuários",
+  "sinMejora": "Esta conta já tem o plano mais alto.",
+  "elegir": "Novo plano",
+  "qr": "QR",
+  "qrIlimitados": "Ilimitados, sem alteração",
+  "vencimiento": "Vencimento",
+  "sinCambio": "{{fecha}}, sem alteração",
+  "cambiando": "Alterando",
+  "cerrar": "Fechar",
+  "subtitulo_one": "{{cuenta}} · {{codigo}} · {{count}} usuário ativo",
+  "subtitulo_other": "{{cuenta}} · {{codigo}} · {{count}} usuários ativos"
+}

@@ -1,0 +1,11 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp24);
+}
+
+.logo {
+  height: var(--tam80);
+  width: auto;
+}

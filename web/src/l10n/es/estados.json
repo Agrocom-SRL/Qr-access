@@ -1,0 +1,12 @@
+{
+  "titulo": "Estados del panel",
+  "subtitulo": "Así se ven la carga, el vacío, el error y la falta de conexión en cada listado.",
+  "cargando": "Cargando",
+  "vacio": "Vacío",
+  "error": "Error de carga",
+  "sinConexion": "Sin conexión con datos en caché",
+  "pantallas": "Pantallas completas",
+  "ejemploVacioTitulo": "Aún no hay cuentas",
+  "ejemploVacioTexto": "Cuando crees la primera, aparecerá aquí.",
+  "ejemploErrorTitulo": "No pudimos cargar los datos"
+}

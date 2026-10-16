@@ -1,0 +1,35 @@
+/* Aspecto común de campo de texto y selector: alto 48, radio 10, borde 1 px. */
+.control {
+  width: 100%;
+  min-height: var(--altoControl);
+  padding: 0 var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio10);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--texto16);
+}
+
+.control::placeholder {
+  color: var(--textoSecundario);
+}
+
+.control:focus-visible {
+  border: 2px solid var(--primario);
+  outline: none;
+}
+
+.control[aria-invalid='true'] {
+  border: 2px solid var(--peligro);
+}
+
+.control:disabled {
+  background: var(--fondo);
+  cursor: not-allowed;
+}
+
+.mono {
+  font-family: var(--fuenteMono);
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,77 @@
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp8);
+  min-height: var(--altoControl);
+  padding: 0 var(--esp24);
+  border: 1px solid transparent;
+  border-radius: var(--radioCompleto);
+  font: inherit;
+  font-size: var(--texto16);
+  font-weight: var(--peso600);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--dur120) var(--easeOutCubic),
+    color var(--dur120) var(--easeOutCubic);
+}
+
+.bloque {
+  width: 100%;
+}
+
+.primario {
+  background: var(--primario);
+  color: var(--sobrePrimario);
+}
+
+.primario:hover:not(:disabled) {
+  background: var(--primarioHover);
+}
+
+.tonal {
+  background: var(--primarioSuave);
+  color: var(--primario);
+}
+
+.tonal:hover:not(:disabled) {
+  background: var(--borde);
+}
+
+.texto {
+  background: transparent;
+  color: var(--textoSecundario);
+}
+
+.texto:hover:not(:disabled) {
+  background: var(--fondo);
+  color: var(--texto);
+}
+
+.peligro {
+  background: transparent;
+  border-color: var(--peligro);
+  color: var(--peligro);
+}
+
+.peligro:hover:not(:disabled) {
+  background: var(--peligroSuave);
+}
+
+.advertencia {
+  background: transparent;
+  border-color: var(--advertencia);
+  color: var(--advertencia);
+}
+
+.advertencia:hover:not(:disabled) {
+  background: var(--advertenciaSuave);
+}
+
+.boton:disabled {
+  background: var(--borde);
+  border-color: transparent;
+  color: var(--textoSecundario);
+  cursor: not-allowed;
+}

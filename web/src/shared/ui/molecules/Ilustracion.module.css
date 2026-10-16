@@ -1,0 +1,10 @@
+.imagen {
+  width: var(--tam200);
+  height: var(--tam144);
+  object-fit: contain;
+}
+
+.grande {
+  width: var(--tam320);
+  height: var(--tam230);
+}

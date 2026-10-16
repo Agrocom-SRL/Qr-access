@@ -1,0 +1,567 @@
+# Schema SQL de referencia — MySQL 8.4
+
+**Estado:** Vigente (2026-10-09) para las 16 tablas del núcleo V1. Es el contenido de las migraciones de `db/migrations/` (una por tabla, ADR 0011), en el orden en que corren: si una migración cambia, este archivo cambia en el mismo PR. Convenciones: skill `modelo-datos`; unicidad con soft delete: ADR 0016. Las fichas de cada tabla están en `tablas/`.
+
+Verificado contra `mysql:8.4` en un contenedor descartable (2026-10-09): migrar las 16, revertirlas todas, migrar de nuevo y correr los seeds dos veces, sin errores.
+
+## Cambios respecto de la propuesta anterior
+
+- Salen `personas`, `grupos`, `grupo_personas`, `reglas_acceso`, `reglas_acceso_franjas`, `credenciales_qr`, `qr_usos` e `invitaciones` (quien entra no se registra; el anti-reuso es `qr_accesos.usado_at`, ADR 0008).
+- Entran `planes` y `suscripciones` (ADR 0017), `qr_accesos` y `qr_acceso_puertas` (ADR 0008).
+- `cuentas.codigo` pasa a `CHAR(3)` solo `A`–`Z` (ADR 0018). `usuarios` pasa a PIN: `etiqueta`, `pin_indice`, `pin_hash`, `pin_generado_at`; `username` y `contrasena_hash` quedan solo para el super admin y `email` sale. Se agrega `usuarios.rol_preferido_id` (último rol elegido, para arrancar la próxima sesión).
+- `puertas` pierde `tipo_cerradura` (la cerradura se acciona con un pulso, D-04). `dispositivos` gana `ultima_puerta_abierta` y una columna generada `en_servicio` para que una puerta tenga un solo dispositivo sin revocar.
+- `eventos_acceso` guarda `token_hash` (nunca el texto), `qr_acceso_id` y `resultado` en (`permitido`, `rechazado`); `metodo` en (`qr`, `pulsador`, `forzada`).
+- `sesiones` gana `rol_activo_id` y `updated_at` (el refresh se rota en sitio).
+- `cuenta_datos_empresa` se agregó con la administración de cuentas del web admin (ficha 17). `usuario_perfiles` se agrega con su ficha cuando se necesite.
+
+## cuentas
+
+Migración: `db/migrations/20261009100001_create_cuentas.sql`
+
+```sql
+CREATE TABLE cuentas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(150) NOT NULL,
+  codigo CHAR(3) NOT NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_cuentas_codigo (codigo, vigente),
+  CONSTRAINT ck_cuentas_codigo CHECK (REGEXP_LIKE(codigo, '^[A-Z]{3}$', 'c'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## roles
+
+Migración: `db/migrations/20261009100002_create_roles.sql`
+
+```sql
+CREATE TABLE roles (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  nombre VARCHAR(80) NOT NULL,
+  protegido TINYINT(1) NOT NULL DEFAULT 0,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_roles_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  UNIQUE KEY uq_roles_nombre (tenant_clave, nombre, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## planes
+
+Migración: `db/migrations/20261009100003_create_planes.sql`
+
+```sql
+CREATE TABLE planes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(80) NOT NULL,
+  max_dispositivos INT UNSIGNED NULL,
+  max_usuarios INT UNSIGNED NULL,
+  max_vigencia_qr_horas INT UNSIGNED NULL,
+  precio_anual DECIMAL(14,2) NOT NULL DEFAULT 0,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_planes_nombre (nombre, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## suscripciones
+
+Migración: `db/migrations/20261009100004_create_suscripciones.sql`
+
+```sql
+CREATE TABLE suscripciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  plan_id BIGINT UNSIGNED NOT NULL,
+  desde DATETIME(3) NOT NULL,
+  hasta DATETIME(3) NOT NULL,
+  estado VARCHAR(20) NOT NULL DEFAULT 'vigente',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  estado_vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL AND estado = 'vigente', 1, NULL)) STORED,
+  CONSTRAINT fk_suscripciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_suscripciones_plan FOREIGN KEY (plan_id) REFERENCES planes (id),
+  UNIQUE KEY uq_suscripciones_vigente (tenant_id, estado_vigente),
+  CONSTRAINT ck_suscripciones_estado CHECK (estado IN ('vigente', 'suspendida', 'vencida')),
+  CONSTRAINT ck_suscripciones_ventana CHECK (desde < hasta)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## usuarios
+
+Migración: `db/migrations/20261009100005_create_usuarios.sql`
+
+```sql
+CREATE TABLE usuarios (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  etiqueta VARCHAR(80) NULL,
+  pin_indice CHAR(64) NULL,
+  pin_hash VARCHAR(255) NULL,
+  pin_generado_at DATETIME(3) NULL,
+  username VARCHAR(60) NULL,
+  contrasena_hash VARCHAR(255) NULL,
+  contrasena_temporal TINYINT(1) NOT NULL DEFAULT 0,
+  rol_preferido_id BIGINT UNSIGNED NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_usuarios_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_usuarios_rol_preferido FOREIGN KEY (rol_preferido_id) REFERENCES roles (id),
+  UNIQUE KEY uq_usuarios_pin (tenant_clave, pin_indice, vigente),
+  UNIQUE KEY uq_usuarios_username (tenant_clave, username, vigente),
+  CONSTRAINT ck_usuarios_credencial CHECK (
+    (tenant_id IS NOT NULL AND pin_indice IS NOT NULL AND pin_hash IS NOT NULL)
+    OR (tenant_id IS NULL AND username IS NOT NULL AND contrasena_hash IS NOT NULL)
+  )
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## permisos
+
+Migración: `db/migrations/20261009100006_create_permisos.sql`
+
+```sql
+CREATE TABLE permisos (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  codigo VARCHAR(100) NOT NULL,
+  ambito VARCHAR(20) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_permisos_codigo (codigo),
+  CONSTRAINT ck_permisos_ambito CHECK (ambito IN ('plataforma', 'cuenta'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## rol_permisos
+
+Migración: `db/migrations/20261009100007_create_rol_permisos.sql`
+
+```sql
+CREATE TABLE rol_permisos (
+  rol_id BIGINT UNSIGNED NOT NULL,
+  permiso_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  created_by BIGINT UNSIGNED NULL,
+  PRIMARY KEY (rol_id, permiso_id),
+  CONSTRAINT fk_rol_permisos_rol FOREIGN KEY (rol_id) REFERENCES roles (id),
+  CONSTRAINT fk_rol_permisos_permiso FOREIGN KEY (permiso_id) REFERENCES permisos (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## usuario_roles
+
+Migración: `db/migrations/20261009100008_create_usuario_roles.sql`
+
+```sql
+CREATE TABLE usuario_roles (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  rol_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_usuario_roles_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_usuario_roles_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_usuario_roles_rol FOREIGN KEY (rol_id) REFERENCES roles (id),
+  UNIQUE KEY uq_usuario_roles (usuario_id, rol_id, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## sesiones
+
+Migración: `db/migrations/20261009100009_create_sesiones.sql`
+
+```sql
+CREATE TABLE sesiones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  rol_activo_id BIGINT UNSIGNED NULL,
+  refresh_hash CHAR(64) NOT NULL,
+  agente VARCHAR(255) NULL,
+  ip VARCHAR(45) NULL,
+  expira_at DATETIME(3) NOT NULL,
+  revocada_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_sesiones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_sesiones_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_sesiones_rol_activo FOREIGN KEY (rol_activo_id) REFERENCES roles (id),
+  UNIQUE KEY uq_sesiones_refresh (refresh_hash),
+  KEY idx_sesiones_usuario (usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## bitacoras
+
+Migración: `db/migrations/20261009100010_create_bitacoras.sql`
+
+```sql
+CREATE TABLE bitacoras (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  dispositivo_id BIGINT UNSIGNED NULL,
+  tabla VARCHAR(64) NOT NULL,
+  registro_id BIGINT UNSIGNED NOT NULL,
+  accion VARCHAR(12) NOT NULL,
+  origen VARCHAR(12) NOT NULL,
+  antes JSON NULL,
+  despues JSON NULL,
+  ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  KEY idx_bitacoras_registro (tabla, registro_id),
+  KEY idx_bitacoras_tenant (tenant_id, ocurrido_at),
+  CONSTRAINT ck_bitacoras_accion CHECK (accion IN ('creado', 'actualizado', 'eliminado', 'restaurado')),
+  CONSTRAINT ck_bitacoras_origen CHECK (origen IN ('api', 'dispositivo', 'sistema'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## sitios
+
+Migración: `db/migrations/20261009100011_create_sitios.sql`
+
+```sql
+CREATE TABLE sitios (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  nombre VARCHAR(120) NOT NULL,
+  direccion VARCHAR(255) NULL,
+  zona_horaria VARCHAR(64) NOT NULL DEFAULT 'America/La_Paz',
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_sitios_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  UNIQUE KEY uq_sitios_nombre (tenant_clave, nombre, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## puertas
+
+Migración: `db/migrations/20261009100012_create_puertas.sql`
+
+```sql
+CREATE TABLE puertas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  sitio_id BIGINT UNSIGNED NOT NULL,
+  nombre VARCHAR(120) NOT NULL,
+  segundos_apertura TINYINT UNSIGNED NOT NULL DEFAULT 5,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_puertas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_puertas_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
+  UNIQUE KEY uq_puertas_nombre (sitio_id, nombre, vigente),
+  CONSTRAINT ck_puertas_segundos CHECK (segundos_apertura BETWEEN 1 AND 30)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## placas
+
+Migraciones: `db/migrations/20261013100001_create_placas.sql` y `20261014100001_placas_por_anuncio.sql` (ADR 0026). De la plataforma: sin `tenant_id`.
+
+```sql
+CREATE TABLE placas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  mac CHAR(17) NOT NULL,
+  firmware_version VARCHAR(20) NULL,
+  ultimo_anuncio_at DATETIME(3) NULL,
+  ultima_ip VARCHAR(45) NULL,
+  por_confirmar_hasta DATETIME(3) NULL,
+  vinculo_cuenta_id BIGINT UNSIGNED NULL,
+  vinculo_puerta_id BIGINT UNSIGNED NULL,
+  vinculo_nombre VARCHAR(100) NULL,
+  vinculo_solicitado_por BIGINT UNSIGNED NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_placas_mac (mac, vigente),
+  CONSTRAINT ck_placas_mac CHECK (mac REGEXP '^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## placas_anuncios
+
+Migración: `db/migrations/20261014100001_placas_por_anuncio.sql` (ADR 0026). De la plataforma; transitoria.
+
+```sql
+CREATE TABLE placas_anuncios (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  placa_id BIGINT UNSIGNED NOT NULL,
+  clave_huella CHAR(64) NOT NULL,
+  firmware_version VARCHAR(20) NULL,
+  ip VARCHAR(45) NULL,
+  ultimo_anuncio_at DATETIME(3) NOT NULL,
+  descartada_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_placas_anuncios_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
+  UNIQUE KEY uq_placas_anuncios_clave (placa_id, clave_huella)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## dispositivos
+
+Migraciones: `db/migrations/20261009100013_create_dispositivos.sql` y `20261013100002_add_placa_id_a_dispositivos.sql` (`placa_id`, `fk_dispositivos_placa` y `uq_dispositivos_placa`, ya incluidos abajo)
+
+```sql
+CREATE TABLE dispositivos (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  placa_id BIGINT UNSIGNED NULL,
+  nombre VARCHAR(100) NOT NULL,
+  clave_hash VARCHAR(255) NOT NULL,
+  firmware_version VARCHAR(20) NULL,
+  ultimo_latido_at DATETIME(3) NULL,
+  ultimo_rssi SMALLINT NULL,
+  ultima_puerta_abierta TINYINT(1) NULL,
+  revocado_at DATETIME(3) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  en_servicio TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL AND revocado_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_dispositivos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_dispositivos_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT fk_dispositivos_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
+  UNIQUE KEY uq_dispositivos_puerta (puerta_id, en_servicio),
+  UNIQUE KEY uq_dispositivos_placa (placa_id, en_servicio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## qr_accesos
+
+Migraciones: `db/migrations/20261009100014_create_qr_accesos.sql` y `20261012100006_add_es_propio_a_qr_accesos.sql` (`es_propio` y `propio_activo`, ya incluidos abajo)
+
+```sql
+CREATE TABLE qr_accesos (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  emitido_por BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL,
+  etiqueta VARCHAR(60) NULL,
+  es_propio TINYINT(1) NOT NULL DEFAULT 0,
+  vence_at DATETIME(3) NOT NULL,
+  usado_at DATETIME(3) NULL,
+  usado_dispositivo_id BIGINT UNSIGNED NULL,
+  anulado_at DATETIME(3) NULL,
+  anulado_por BIGINT UNSIGNED NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  propio_activo TINYINT GENERATED ALWAYS AS (IF(es_propio = 1 AND anulado_at IS NULL AND usado_at IS NULL AND deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_qr_accesos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_qr_accesos_emisor FOREIGN KEY (emitido_por) REFERENCES usuarios (id),
+  CONSTRAINT fk_qr_accesos_dispositivo FOREIGN KEY (usado_dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_qr_accesos_anulador FOREIGN KEY (anulado_por) REFERENCES usuarios (id),
+  UNIQUE KEY uq_qr_accesos_token (token_hash),
+  UNIQUE KEY uq_qr_accesos_propio_activo (emitido_por, propio_activo),
+  KEY idx_qr_accesos_emisor (tenant_id, emitido_por, created_at),
+  KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## qr_acceso_puertas
+
+Migración: `db/migrations/20261009100015_create_qr_acceso_puertas.sql`
+
+```sql
+CREATE TABLE qr_acceso_puertas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  qr_acceso_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_qr_acceso_puertas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_qr_acceso_puertas_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
+  CONSTRAINT fk_qr_acceso_puertas_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  UNIQUE KEY uq_qr_acceso_puertas (qr_acceso_id, puerta_id, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## eventos_acceso
+
+Migración: `db/migrations/20261009100016_create_eventos_acceso.sql`
+
+```sql
+CREATE TABLE eventos_acceso (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  dispositivo_id BIGINT UNSIGNED NULL,
+  qr_acceso_id BIGINT UNSIGNED NULL,
+  token_hash CHAR(64) NULL,
+  metodo VARCHAR(20) NOT NULL DEFAULT 'qr',
+  resultado VARCHAR(10) NOT NULL,
+  motivo_code VARCHAR(60) NOT NULL,
+  ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  leido_en_dispositivo_at DATETIME(3) NULL,
+  KEY idx_eventos_acceso_puerta (tenant_id, puerta_id, ocurrido_at),
+  KEY idx_eventos_acceso_fecha (tenant_id, ocurrido_at),
+  KEY idx_eventos_acceso_qr (qr_acceso_id),
+  CONSTRAINT fk_eventos_acceso_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_eventos_acceso_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT fk_eventos_acceso_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_eventos_acceso_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
+  CONSTRAINT ck_eventos_acceso_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada')),
+  CONSTRAINT ck_eventos_acceso_resultado CHECK (resultado IN ('permitido', 'rechazado'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## cuenta_datos_empresa
+
+Migración: `db/migrations/20261012100004_create_cuenta_datos_empresa.sql`
+
+```sql
+CREATE TABLE cuenta_datos_empresa (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  nit VARCHAR(20) NOT NULL,
+  ciudad VARCHAR(80) NOT NULL,
+  contacto_nombre VARCHAR(120) NOT NULL,
+  contacto_telefono VARCHAR(30) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_cuenta_datos_empresa_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  UNIQUE KEY uq_cuenta_datos_empresa_cuenta (tenant_clave, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## pagos
+
+Migración: `db/migrations/20261012100005_create_pagos.sql`
+
+```sql
+CREATE TABLE pagos (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  suscripcion_id BIGINT UNSIGNED NOT NULL,
+  plan_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(20) NOT NULL,
+  monto DECIMAL(14,2) NOT NULL,
+  fecha_pago DATE NOT NULL,
+  medio VARCHAR(20) NOT NULL,
+  referencia VARCHAR(80) NOT NULL,
+  periodo_desde DATETIME(3) NOT NULL,
+  periodo_hasta DATETIME(3) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_pagos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_pagos_suscripcion FOREIGN KEY (suscripcion_id) REFERENCES suscripciones (id),
+  CONSTRAINT fk_pagos_plan FOREIGN KEY (plan_id) REFERENCES planes (id),
+  KEY idx_pagos_tenant_fecha (tenant_id, fecha_pago),
+  KEY idx_pagos_fecha (fecha_pago),
+  CONSTRAINT ck_pagos_tipo CHECK (tipo IN ('renovacion', 'mejora_de_plan')),
+  CONSTRAINT ck_pagos_medio CHECK (medio IN ('transferencia', 'deposito', 'efectivo')),
+  CONSTRAINT ck_pagos_monto CHECK (monto > 0),
+  CONSTRAINT ck_pagos_periodo CHECK (periodo_desde < periodo_hasta)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## comprobantes
+
+Migración: `db/migrations/20261012100008_create_comprobantes.sql`
+
+```sql
+CREATE TABLE comprobantes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ruta VARCHAR(255) NOT NULL,
+  tipo_mime VARCHAR(40) NOT NULL,
+  tamano INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  UNIQUE KEY uq_comprobantes_ruta (ruta),
+  CONSTRAINT ck_comprobantes_tipo CHECK (tipo_mime IN ('image/jpeg', 'image/png', 'image/webp', 'application/pdf'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## pagos: banco, cuenta de destino y comprobante
+
+Migración: `db/migrations/20261012100009_add_banco_y_comprobante_a_pagos.sql`
+
+```sql
+ALTER TABLE pagos
+  ADD COLUMN banco VARCHAR(60) NULL AFTER referencia,
+  ADD COLUMN cuenta_destino VARCHAR(60) NULL AFTER banco,
+  ADD COLUMN comprobante_id BIGINT UNSIGNED NULL AFTER cuenta_destino,
+  ADD CONSTRAINT fk_pagos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes (id);
+```

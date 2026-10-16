@@ -1,0 +1,12 @@
+{
+  "titulo": "Panel states",
+  "subtitulo": "How loading, empty, error and offline look in each list.",
+  "cargando": "Loading",
+  "vacio": "Empty",
+  "error": "Load error",
+  "sinConexion": "Offline with cached data",
+  "pantallas": "Full screens",
+  "ejemploVacioTitulo": "No accounts yet",
+  "ejemploVacioTexto": "When you create the first one, it will appear here.",
+  "ejemploErrorTitulo": "We couldn't load the data"
+}

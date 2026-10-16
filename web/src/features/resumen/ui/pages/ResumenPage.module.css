@@ -1,0 +1,130 @@
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+.dispositivos {
+  margin-bottom: var(--esp24);
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.dispositivo {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--esp24);
+}
+
+.listas {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: var(--esp24);
+}
+
+.tarjeta {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--esp24);
+}
+
+.titulo {
+  font-size: var(--texto24);
+  font-weight: var(--peso600);
+}
+
+.enlace {
+  color: var(--primario);
+  font-size: var(--texto14);
+  font-weight: var(--peso600);
+  text-decoration: none;
+}
+
+.enlace:hover {
+  text-decoration: underline;
+}
+
+.filas {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.filas li {
+  padding: var(--esp12) var(--esp24);
+  border-top: 1px solid var(--borde);
+}
+
+.renovacion {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--esp24);
+}
+
+.accion {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
+.sub {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.dias {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cuando {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  white-space: nowrap;
+}
+
+@media (width < 1024px) {
+  .indicadores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .listas {
+    grid-template-columns: 1fr;
+  }
+}
+
+.banner {
+  display: block;
+  width: 100%;
+  height: var(--tam160);
+  margin-bottom: var(--esp24);
+  object-fit: cover;
+  object-position: center 60%;
+  border-radius: var(--radio20);
+}
+
+/* Últimas acciones: cada línea en una sola fila con puntos suspensivos; el detalle está en la bitácora. */
+.textoAccion {
+  flex: 1;
+  min-width: 0;
+}
+
+.truncado {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

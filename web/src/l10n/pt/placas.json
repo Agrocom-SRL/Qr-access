@@ -1,0 +1,82 @@
+{
+  "titulo": "Placas",
+  "subtitulo_one": "{{count}} placa",
+  "subtitulo_other": "{{count}} placas",
+  "buscar": "Buscar por MAC, conta ou porta",
+  "filtro": "Estado da placa",
+  "tabla": "Placas",
+  "errorCarga": "Não conseguimos carregar as placas",
+  "estado": {
+    "todas": "Todas",
+    "detectada": "Detectadas",
+    "por_confirmar": "A confirmar",
+    "vinculada": "Vinculadas"
+  },
+  "badge": {
+    "vinculada": "Vinculada",
+    "detectada": "Detectada",
+    "porConfirmar": "Aguardando o botão"
+  },
+  "conexion": {
+    "enLinea": "Online",
+    "sinConexion": "Offline"
+  },
+  "columna": {
+    "mac": "MAC",
+    "estado": "Estado",
+    "asignada": "Conta e porta",
+    "firmware": "Firmware",
+    "contacto": "Último contato",
+    "accion": "Ação"
+  },
+  "sinAsignar": "Sem atribuição",
+  "nunca": "Nunca",
+  "vacio": {
+    "titulo": "Ainda não há placas",
+    "texto": "As placas aparecem sozinhas quando são ligadas e conectadas ao cabo de rede."
+  },
+  "vincularA": "Vincular a placa {{mac}}",
+  "liberarA": "Liberar a placa {{mac}}",
+  "darDeBajaA": "Dar baixa na placa {{mac}}",
+  "listo": "Pronto",
+  "vincularTitulo": "Vincule a placa a uma porta",
+  "vincularTexto": "A placa {{mac}} será atribuída à conta e à porta que você escolher quando confirmar com o botão dela.",
+  "cuenta": "Conta",
+  "cuentaPlaceholder": "Busque por nome ou código",
+  "puerta": "Porta",
+  "puertaPlaceholder": "Escolha uma porta sem leitor",
+  "sinPuertasLibres": "Esta conta não tem portas sem leitor.",
+  "nombreLector": "Nome do leitor",
+  "vincularConfirmar": "Pedir vínculo",
+  "vinculando": "Solicitando…",
+  "liberarTitulo": "Liberar a placa {{mac}}?",
+  "liberarTexto": "A porta fica sem leitor e a placa deixa de abri-la. Depois você poderá vinculá-la a outra conta.",
+  "liberar": "Liberar",
+  "liberando": "Liberando…",
+  "bajaTitulo": "Dar baixa na placa {{mac}}?",
+  "bajaTexto": "Sai do inventário. Use se a placa foi perdida ou danificada.",
+  "darDeBaja": "Dar baixa",
+  "dandoDeBaja": "Dando baixa…",
+  "minutosRestantes_one": "Resta {{count}} minuto",
+  "minutosRestantes_other": "Restam {{count}} minutos",
+  "cancelarVinculoA": "Cancelar o vínculo da placa {{mac}}",
+  "confirmarTitulo": "Confirme na porta",
+  "confirmarTexto": "A placa {{mac}} aguarda que alguém confirme que está na porta certa.",
+  "confirmarPaso1": "Vá até a porta onde a placa está instalada.",
+  "confirmarPaso2": "Mantenha pressionado o botão de saída por 5 segundos, até o LED piscar e soar um aviso.",
+  "confirmarPaso3": "A placa se vincula sozinha; este painel mostrará em alguns segundos.",
+  "confirmarVentana_one": "Você tem {{count}} minuto para apertar o botão. Se acabar, vincule a placa de novo.",
+  "confirmarVentana_other": "Você tem {{count}} minutos para apertar o botão. Se acabar, vincule a placa de novo.",
+  "vincularAPuertaTitulo": "Vincule uma placa a {{puerta}}",
+  "vincularAPuertaTexto": "Escolha uma das placas detectadas. Ela será atribuída a esta porta quando você confirmar com o botão dela.",
+  "placa": "Placa",
+  "placaPlaceholder": "Escolha uma placa detectada",
+  "sinPlacasDetectadas": "Não há placas detectadas. Conecte-as ao cabo de rede e aguarde alguns segundos.",
+  "vincularPlacaAPuerta": "Vincular uma placa à porta {{puerta}}",
+  "filtroConexion": "Conexão da placa",
+  "conexionFiltro": {
+    "todas": "Todas",
+    "en_linea": "Online",
+    "sin_conexion": "Sem conexão"
+  }
+}

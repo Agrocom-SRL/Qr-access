@@ -1,0 +1,42 @@
+@import './fuentes.css';
+@import './acceso-tokens.css';
+@import './escalas.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--fuenteTexto);
+  font-size: var(--texto16);
+  line-height: var(--interlineadoCuerpo);
+}
+
+/* El navegador (Edge, Safari) dibuja su propio ojo; el campo ya trae el suyo. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+
+@keyframes pulso {
+  50% {
+    opacity: 0.5;
+  }
+}

@@ -1,0 +1,90 @@
+import type { Pool } from 'mysql2/promise';
+import type { Listado, Paginacion } from '../../platform/http/paginacion.js';
+import {
+  ejecutar as listarPuertasDeLaCuenta,
+  type PuertaListada,
+} from './actions/listar-puertas.js';
+import * as asignaciones from './actions/asignar-puertas.js';
+import * as estructura from './actions/gestionar-estructura.js';
+import { RepositorioDePuertas, RepositorioDeSitios, type PuertaFila } from './repository.js';
+
+export type { PuertaListada } from './actions/listar-puertas.js';
+export type {
+  CambiosDePuerta,
+  CambiosDeSitio,
+  DatosDePuerta,
+  DatosDeSitio,
+  SitioDeEstructura,
+} from './actions/gestionar-estructura.js';
+export type { PuertasAsignadas } from './actions/asignar-puertas.js';
+export { SEGUNDOS_MAXIMOS, SEGUNDOS_MINIMOS } from './actions/gestionar-estructura.js';
+
+/** Lo que otros módulos pueden saber de una puerta (accesos, dispositivos). */
+export interface PuertaDeCuenta {
+  readonly id: string;
+  readonly nombre: string;
+  readonly sitioId: string;
+  readonly sitioNombre: string;
+  /** Zona IANA del sitio, en la que se evalúa el fin del día (invariante 7). */
+  readonly zonaHoraria: string;
+  readonly segundosApertura: number;
+  readonly activa: boolean;
+}
+
+export interface ServicioDeOrganizacion {
+  /** Puertas de la cuenta del contexto. Un id inexistente o de otra cuenta simplemente no vuelve. */
+  buscarPuertas(ids: readonly string[]): Promise<PuertaDeCuenta[]>;
+  /** Cuántos sitios y puertas activos tiene la cuenta del contexto. */
+  contarSitiosYPuertas(): Promise<{ sitios: number; puertas: number }>;
+  /** Las puertas activas de la cuenta del contexto con su sitio y el estado de su lector. */
+  listarPuertasConEstado(paginacion: Paginacion, ahora: Date): Promise<Listado<PuertaListada>>;
+  /** Sitios con TODAS sus puertas y lectores de la cuenta del contexto: la vista de gestión. */
+  verEstructura(ahora: Date): Promise<estructura.SitioDeEstructura[]>;
+  crearSitio(datos: estructura.DatosDeSitio): Promise<{ id: string }>;
+  editarSitio(id: string, cambios: estructura.CambiosDeSitio): Promise<void>;
+  eliminarSitio(id: string): Promise<void>;
+  crearPuerta(sitioId: string, datos: estructura.DatosDePuerta): Promise<{ id: string }>;
+  editarPuerta(id: string, cambios: estructura.CambiosDePuerta): Promise<void>;
+  eliminarPuerta(id: string): Promise<void>;
+  /** Puertas a las que está asignado el usuario (guardia) de la cuenta del contexto. */
+  puertasAsignadasA(usuarioId: string): Promise<asignaciones.PuertasAsignadas>;
+  asignarPuertas(usuarioId: string, puertas: asignaciones.PuertasAsignadas): Promise<void>;
+}
+
+function aPuerta(fila: PuertaFila): PuertaDeCuenta {
+  return {
+    id: fila.id,
+    nombre: fila.nombre,
+    sitioId: fila.sitio_id,
+    sitioNombre: fila.sitio_nombre,
+    zonaHoraria: fila.zona_horaria,
+    segundosApertura: fila.segundos_apertura,
+    activa: fila.activo === 1,
+  };
+}
+
+export function crearServicioDeOrganizacion(pool: Pool): ServicioDeOrganizacion {
+  const puertas = new RepositorioDePuertas(pool);
+  return {
+    async contarSitiosYPuertas() {
+      const [sitios, cantidad] = await Promise.all([
+        new RepositorioDeSitios(pool).contarActivos(),
+        puertas.contarActivas(),
+      ]);
+      return { sitios, puertas: cantidad };
+    },
+    listarPuertasConEstado: (paginacion, ahora) => listarPuertasDeLaCuenta(pool, paginacion, ahora),
+    async buscarPuertas(ids) {
+      return (await puertas.buscarPorIds(ids)).map(aPuerta);
+    },
+    verEstructura: (ahora) => estructura.verEstructura(pool, ahora),
+    crearSitio: (datos) => estructura.crearSitio(pool, datos),
+    editarSitio: (id, cambios) => estructura.editarSitio(pool, id, cambios),
+    eliminarSitio: (id) => estructura.eliminarSitio(pool, id),
+    crearPuerta: (sitioId, datos) => estructura.crearPuerta(pool, sitioId, datos),
+    editarPuerta: (id, cambios) => estructura.editarPuerta(pool, id, cambios),
+    eliminarPuerta: (id) => estructura.eliminarPuerta(pool, id),
+    puertasAsignadasA: (usuarioId) => asignaciones.ver(pool, usuarioId),
+    asignarPuertas: (usuarioId, puertas) => asignaciones.reemplazar(pool, usuarioId, puertas),
+  };
+}

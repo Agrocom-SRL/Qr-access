@@ -1,0 +1,81 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.hero {
+  background: var(--hero);
+  color: var(--sobreHero);
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp12);
+}
+
+.etiqueta {
+  font-size: var(--texto16);
+}
+
+.icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tam44);
+  height: var(--tam44);
+  border-radius: var(--radio14);
+}
+
+.primario {
+  background: var(--primarioSuave);
+  color: var(--primario);
+}
+
+.advertencia {
+  background: var(--advertenciaSuave);
+  color: var(--advertencia);
+}
+
+.informacion {
+  background: var(--informacionSuave);
+  color: var(--informacion);
+}
+
+.peligro {
+  background: var(--peligroSuave);
+  color: var(--peligro);
+}
+
+.valorPeligro {
+  color: var(--peligro);
+}
+
+.hero .icono,
+.icono.hero {
+  background: var(--heroAcento);
+  color: var(--sobreHero);
+}
+
+.valor {
+  font-family: var(--fuenteMono);
+  font-size: var(--texto32);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.detalle {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.hero .detalle {
+  color: var(--heroTextoSuave);
+}

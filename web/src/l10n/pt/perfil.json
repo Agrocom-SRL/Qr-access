@@ -1,0 +1,38 @@
+{
+  "titulo": "Perfil",
+  "cambiarContrasena": "Alterar senha",
+  "actual": "Atual",
+  "nueva": "Nova",
+  "repetir": "Repita a nova",
+  "actualizar": "Atualizar senha",
+  "tema": "Tema",
+  "temas": {
+    "claro": "Claro",
+    "oscuro": "Escuro",
+    "sistema": "Conforme o sistema"
+  },
+  "idioma": "Idioma",
+  "idiomas": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
+  "cerrarSesion": "Encerrar sessão",
+  "temporal": "Sua senha é temporária. Altere-a para continuar usando o painel.",
+  "rol": "Super admin · desde {{fecha}}",
+  "usuario": "Usuário",
+  "ultimoIngreso": "Último acesso",
+  "minimo": "Mínimo {{count}}",
+  "actualizando": "Atualizando",
+  "actualizada": "Senha atualizada",
+  "noCoinciden": "As senhas não coincidem",
+  "requerido": "Este campo é obrigatório",
+  "corta": "Use pelo menos {{count}} caracteres",
+  "editarNombre": "Editar nome",
+  "nombre": "Nome",
+  "guardarNombre": "Salvar nome",
+  "guardando": "Salvando",
+  "grupoCuenta": "Conta",
+  "grupoPreferencias": "Preferências",
+  "grupoSeguridad": "Segurança"
+}

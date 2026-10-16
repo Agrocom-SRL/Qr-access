@@ -1,0 +1,52 @@
+.subtitulo {
+  margin-top: calc(-1 * var(--esp8));
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.comparacion {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--esp16);
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+  padding: var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+}
+
+.nuevo {
+  background: var(--primarioSuave);
+  border: 2px solid var(--primario);
+}
+
+.etiqueta {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+  text-transform: uppercase;
+}
+
+.nuevo .etiqueta {
+  color: var(--primario);
+}
+
+.cupo {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.precio {
+  color: var(--textoSecundario);
+}
+
+.nota {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}

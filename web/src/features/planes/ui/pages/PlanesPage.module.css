@@ -1,0 +1,49 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  gap: var(--esp24);
+  margin-top: var(--esp24);
+}
+
+.pequeno {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.fijo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--esp12) var(--esp16);
+  background: var(--fondo);
+  border-radius: var(--radio14);
+}
+
+.qr {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp8);
+  color: var(--primario);
+  font-weight: var(--peso500);
+}
+
+.candado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp4);
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.esquina {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.precio {
+  display: flex;
+  align-items: baseline;
+  gap: var(--esp8);
+  font-size: var(--texto32);
+}

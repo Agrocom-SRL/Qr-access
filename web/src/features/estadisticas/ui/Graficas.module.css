@@ -1,0 +1,88 @@
+.leyenda {
+  display: flex;
+  gap: var(--esp16);
+  margin: 0;
+  padding: 0;
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+  list-style: none;
+}
+
+.leyenda li {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.muestra {
+  display: inline-block;
+  width: var(--esp12);
+  height: var(--esp12);
+  border-radius: var(--radio6);
+}
+
+.vacio {
+  color: var(--textoSecundario);
+}
+
+.partida {
+  display: flex;
+  gap: var(--esp4);
+  height: var(--esp24);
+}
+
+.tramo {
+  min-width: var(--esp8);
+  border-radius: var(--radio6);
+}
+
+.estados,
+.barras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.estado,
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+}
+
+.icono {
+  display: inline-flex;
+}
+
+.nombreEstado {
+  flex: 1;
+}
+
+.cifra {
+  font-family: var(--fuenteMono);
+  font-variant-numeric: tabular-nums;
+}
+
+.etiquetaDeBarra {
+  flex: none;
+  width: var(--tam120);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.pista {
+  flex: 1;
+  height: var(--esp12);
+  background: var(--primarioSuave);
+  border-radius: var(--radio6);
+}
+
+.relleno {
+  display: block;
+  height: 100%;
+  background: var(--primario);
+  border-radius: var(--radio6);
+}

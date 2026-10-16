@@ -1,0 +1,174 @@
+.rejilla {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  align-items: start;
+  gap: var(--esp24);
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  padding: var(--esp32);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+  overflow: hidden;
+}
+
+/* Franja de foto de la app que abre la tarjeta; el resto queda claro, sin bloque verde. */
+.foto {
+  display: block;
+  width: calc(100% + 2 * var(--esp32));
+  height: var(--tam120);
+  margin: calc(-1 * var(--esp32)) calc(-1 * var(--esp32)) 0;
+  object-fit: cover;
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
+.etiqueta {
+  font-size: var(--texto16);
+}
+
+.plan {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.precio {
+  margin-top: var(--esp4);
+  color: var(--textoSecundario);
+}
+
+.medalla {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tam56);
+  height: var(--tam56);
+  background: var(--primarioSuave);
+  color: var(--primario);
+  border-radius: var(--radio14);
+}
+
+.uso {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--esp8);
+  font-size: var(--texto14);
+}
+
+.puede {
+  margin-top: var(--esp8);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.vence {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  padding: var(--esp16);
+  background: var(--primarioSuave);
+  color: var(--primario);
+  border-radius: var(--radio14);
+  font-size: var(--texto14);
+}
+
+.empresa {
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.tituloEmpresa {
+  margin-bottom: var(--esp16);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.datos {
+  margin: 0;
+}
+
+.sinDatos {
+  color: var(--textoSecundario);
+}
+
+.indicadores {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--esp24);
+}
+
+.enlaceIndicador {
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radio20);
+}
+
+.enlaceIndicador:hover > article {
+  box-shadow: var(--elevacion2);
+}
+
+.responsable {
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.persona {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--esp16);
+}
+
+.contacto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--esp8);
+  margin: 0;
+}
+
+.nombrePersona {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+@media (width < 1024px) {
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+
+  .indicadores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.codigo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.administradores {
+  grid-column: 1 / -1;
+}
+
+.columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}

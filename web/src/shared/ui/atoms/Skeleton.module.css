@@ -1,0 +1,36 @@
+.skeleton {
+  display: block;
+  background: var(--skeleton);
+  border-radius: var(--radio6);
+  animation: pulso 1200ms var(--easeOutCubic) infinite;
+}
+
+.completo {
+  width: 100%;
+}
+
+.largo {
+  width: 75%;
+}
+
+.medio {
+  width: 50%;
+}
+
+.corto {
+  width: 25%;
+}
+
+.texto {
+  height: var(--tam16);
+}
+
+.bloque {
+  height: var(--tam56);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

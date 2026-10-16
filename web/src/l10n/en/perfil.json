@@ -1,0 +1,38 @@
+{
+  "titulo": "Profile",
+  "cambiarContrasena": "Change password",
+  "actual": "Current",
+  "nueva": "New",
+  "repetir": "Repeat the new one",
+  "actualizar": "Update password",
+  "tema": "Theme",
+  "temas": {
+    "claro": "Light",
+    "oscuro": "Dark",
+    "sistema": "Match system"
+  },
+  "idioma": "Language",
+  "idiomas": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
+  "cerrarSesion": "Sign out",
+  "temporal": "Your password is temporary. Change it to keep using the panel.",
+  "rol": "Super admin · since {{fecha}}",
+  "usuario": "Username",
+  "ultimoIngreso": "Last sign-in",
+  "minimo": "Minimum {{count}}",
+  "actualizando": "Updating",
+  "actualizada": "Password updated",
+  "noCoinciden": "The passwords don't match",
+  "requerido": "This field is required",
+  "corta": "Use at least {{count}} characters",
+  "editarNombre": "Edit name",
+  "nombre": "Name",
+  "guardarNombre": "Save name",
+  "guardando": "Saving",
+  "grupoCuenta": "Account",
+  "grupoPreferencias": "Preferences",
+  "grupoSeguridad": "Security"
+}

@@ -1,0 +1,60 @@
+{
+  "estado": {
+    "activa": "Activa",
+    "porVencer": "Por vencer",
+    "vencida": "Vencida",
+    "suspendida": "Suspendida",
+    "pendientePago": "Pendiente de pago"
+  },
+  "plan": "Plan",
+  "precioAnual": "Precio anual",
+  "periodo": "Periodo",
+  "proximoPago": "Próximo pago",
+  "pago": {
+    "pendiente": "Pendiente",
+    "sinPagar": "Sin pagar",
+    "porActivar": "Primer pago pendiente"
+  },
+  "renovarPago": "Renovar y registrar pago",
+  "cambiarPlan": "Cambiar plan",
+  "suspender": "Suspender",
+  "reactivar": "Reactivar",
+  "suspendiendo": "Suspendiendo",
+  "reactivando": "Reactivando",
+  "historial": "Renovaciones y pagos",
+  "tablaHistorial": "Renovaciones y pagos",
+  "columna": {
+    "periodo": "Periodo",
+    "plan": "Plan",
+    "monto": "Monto",
+    "pagado": "Pagado",
+    "medio": "Medio",
+    "referencia": "Referencia",
+    "registro": "Registró",
+    "banco": "Banco y cuenta",
+    "comprobante": "Comprobante"
+  },
+  "medios": {
+    "transferencia": "Transferencia",
+    "deposito": "Depósito",
+    "efectivo": "Efectivo"
+  },
+  "mejora": "Mejora de plan",
+  "historialVacio": {
+    "titulo": "Todavía no hay pagos",
+    "texto": "Los pagos que registres aparecen aquí."
+  },
+  "errorCarga": "No pudimos cargar la suscripción",
+  "suspenderTitulo": "¿Suspender la suscripción de {{cuenta}}?",
+  "suspenderTexto": "Mientras esté suspendida, la cuenta no emite QR y sus puertas rechazan los accesos con \"Suscripción vencida\".",
+  "reactivarTitulo": "¿Reactivar la suscripción de {{cuenta}}?",
+  "reactivarTexto": "La cuenta vuelve a emitir QR y sus puertas vuelven a aceptar accesos.",
+  "suspendidaAviso": "La suscripción está suspendida. Reactívala para renovar o cambiar de plan.",
+  "mejoraRegistrada": "El plan cambió a {{plan}}. Falta registrar el pago de la diferencia: {{monto}}.",
+  "registrarDiferencia": "Registrar pago de la diferencia",
+  "pendienteAviso": "La cuenta aún no pagó su primer año: no emite QR ni abre puertas hasta registrar el pago.",
+  "registrarPrimerPago": "Registrar el primer pago",
+  "primerPago": "primer pago",
+  "verComprobante": "Ver comprobante",
+  "alDia": "Al día · vence el {{fecha}}"
+}

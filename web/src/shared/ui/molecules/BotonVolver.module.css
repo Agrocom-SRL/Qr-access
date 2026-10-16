@@ -1,0 +1,7 @@
+/*
+ * El botón de texto tiene 24 px de relleno y 1 de borde: se compensa acá, en un solo lugar, para que
+ * la flecha quede alineada al borde izquierdo del título tanto sola como dentro de las migas.
+ */
+.volver {
+  margin-left: calc(-1 * (var(--esp24) + 1px));
+}

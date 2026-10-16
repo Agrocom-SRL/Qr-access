@@ -1,0 +1,46 @@
+{
+  "titulo": "Acessos",
+  "subtitulo": "O que as placas leram em todas as contas, ao vivo",
+  "tabla": "Acessos",
+  "errorCarga": "Não conseguimos carregar os acessos",
+  "columna": {
+    "cuando": "Quando",
+    "cuenta": "Conta",
+    "puerta": "Porta",
+    "lector": "Leitor",
+    "qr": "QR",
+    "resultado": "Resultado",
+    "motivo": "Motivo"
+  },
+  "resultado": {
+    "permitido": "Permitido",
+    "rechazado": "Recusado"
+  },
+  "filtros": {
+    "cuenta": "Conta",
+    "todas": "Todas",
+    "resultado": "Resultado",
+    "todos": "Todos",
+    "permitido": "Permitidos",
+    "rechazado": "Recusados"
+  },
+  "vacio": {
+    "titulo": "Ainda não há acessos",
+    "texto": "Quando uma placa ler um QR, a tentativa aparece aqui na hora."
+  },
+  "sinResultados": {
+    "titulo": "Sem acessos com estes filtros",
+    "texto": "Tente outras datas ou remova os filtros."
+  },
+  "motivo": {
+    "acceso_permitido": "Acesso permitido",
+    "qr_formato_invalido": "Código inválido",
+    "qr_desconocido": "QR desconhecido",
+    "qr_anulado": "QR anulado",
+    "qr_vencido": "QR vencido",
+    "qr_otra_puerta": "Outra porta",
+    "qr_usado": "QR já usado",
+    "suscripcion_vencida": "Assinatura vencida",
+    "desconocido": "Motivo indisponível"
+  }
+}

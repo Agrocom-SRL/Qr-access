@@ -1,0 +1,29 @@
+.lista {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: var(--tam56);
+  padding: var(--esp12) var(--esp8);
+  border: 0;
+  border-top: 1px solid var(--borde);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.opcion[aria-checked='true'] {
+  color: var(--primario);
+  font-weight: var(--peso600);
+}
+
+.opcion:hover {
+  background: var(--fondo);
+}

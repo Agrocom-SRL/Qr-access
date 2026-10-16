@@ -1,0 +1,194 @@
+import type { Pool, RowDataPacket } from 'mysql2/promise';
+import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import type { Transaccion } from '../../platform/db/transaccion.js';
+
+export interface PuertaFila extends RowDataPacket {
+  id: string;
+  nombre: string;
+  segundos_apertura: number;
+  activo: number;
+  sitio_id: string;
+  sitio_nombre: string;
+  zona_horaria: string;
+}
+
+const COLUMNAS =
+  't.id, t.nombre, t.segundos_apertura, t.activo, s.id AS sitio_id, s.nombre AS sitio_nombre, s.zona_horaria';
+/** El sitio es de la misma cuenta que la puerta: se une también por `tenant_id`. */
+const UNION_SITIO =
+  'JOIN sitios AS s ON s.id = t.sitio_id AND s.tenant_id = t.tenant_id AND s.deleted_at IS NULL';
+
+/** Dueño de `puertas` (y de `sitios`, que por ahora solo se leen unidos a una puerta). */
+export class RepositorioDePuertas extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'puertas',
+      columnas: ['sitio_id', 'nombre', 'segundos_apertura', 'activo'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  /** Todas las puertas de la cuenta del contexto, activas o no (la gestión desde la plataforma). */
+  listarTodas(): Promise<PuertaFila[]> {
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      orden: 's.nombre, t.nombre, t.id',
+    });
+  }
+
+  contarDelSitio(sitioId: string): Promise<number> {
+    return this.contar({ donde: 't.sitio_id = ?', params: [sitioId] });
+  }
+
+  crear(
+    tx: Transaccion,
+    puerta: { sitioId: string; nombre: string; segundosApertura: number },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      sitio_id: puerta.sitioId,
+      nombre: puerta.nombre,
+      segundos_apertura: puerta.segundosApertura,
+      activo: 1,
+    });
+  }
+
+  editar(
+    tx: Transaccion,
+    id: string,
+    cambios: Readonly<Record<string, unknown>>,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, cambios);
+  }
+
+  /** Baja lógica: la puerta deja de existir para la cuenta. */
+  eliminar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+
+  listarActivas(limite: number, desplazamiento: number): Promise<PuertaFila[]> {
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      donde: 't.activo = 1 AND s.activo = 1',
+      orden: 's.nombre, t.nombre, t.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  contarActivas(): Promise<number> {
+    return this.contar({ uniones: UNION_SITIO, donde: 't.activo = 1 AND s.activo = 1' });
+  }
+
+  /** Las puertas de la cuenta del contexto con esos ids; las que no existan o sean de otra cuenta no vuelven. */
+  buscarPorIds(ids: readonly string[]): Promise<PuertaFila[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+  }
+}
+
+export interface SitioFila extends RowDataPacket {
+  id: string;
+  nombre: string;
+  direccion: string | null;
+  zona_horaria: string;
+  activo: number;
+}
+
+/** Dueño de `sitios`: los datos de cada lugar con puertas de la cuenta (HU-07). */
+export class RepositorioDeSitios extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'sitios',
+      columnas: ['nombre', 'direccion', 'zona_horaria', 'activo'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  contarActivos(): Promise<number> {
+    return this.contar({ donde: 't.activo = 1' });
+  }
+
+  listarTodos(): Promise<SitioFila[]> {
+    return this.seleccionar<SitioFila>({
+      columnas: 't.id, t.nombre, t.direccion, t.zona_horaria, t.activo',
+      orden: 't.nombre, t.id',
+    });
+  }
+
+  buscarPorId(id: string): Promise<SitioFila | null> {
+    return this.seleccionarUna<SitioFila>({
+      columnas: 't.id, t.nombre, t.direccion, t.zona_horaria, t.activo',
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  crear(
+    tx: Transaccion,
+    sitio: { nombre: string; direccion: string | null; zonaHoraria: string },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      nombre: sitio.nombre,
+      direccion: sitio.direccion,
+      zona_horaria: sitio.zonaHoraria,
+      activo: 1,
+    });
+  }
+
+  editar(
+    tx: Transaccion,
+    id: string,
+    cambios: Readonly<Record<string, unknown>>,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, cambios);
+  }
+
+  /** Baja lógica: solo de un sitio sin puertas (lo verifica la acción). */
+  eliminar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+}
+
+export interface AsignacionFila extends RowDataPacket {
+  id: string;
+  /** `null` = todas las puertas de la cuenta. */
+  puerta_id: string | null;
+}
+
+/** Dueño de `asignaciones_puerta`: a qué puertas está asignado cada usuario (guardia). */
+export class RepositorioDeAsignaciones extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'asignaciones_puerta',
+      columnas: ['usuario_id', 'puerta_id'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  deUsuario(usuarioId: string): Promise<AsignacionFila[]> {
+    return this.seleccionar<AsignacionFila>({
+      columnas: 't.id, t.puerta_id',
+      donde: 't.usuario_id = ?',
+      params: [usuarioId],
+      orden: 't.id',
+    });
+  }
+
+  asignar(tx: Transaccion, usuarioId: string, puertaId: string | null): Promise<string> {
+    return this.insertar(tx, { usuario_id: usuarioId, puerta_id: puertaId });
+  }
+
+  quitar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+}

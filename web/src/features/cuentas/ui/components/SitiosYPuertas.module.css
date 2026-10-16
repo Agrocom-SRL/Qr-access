@@ -1,0 +1,76 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.nota {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.sitio {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.nombre {
+  display: flex;
+  align-items: center;
+  gap: var(--esp12);
+  padding: var(--esp24);
+  color: var(--texto);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.nombre > span {
+  color: var(--primario);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp24);
+}
+
+.encabezadoSitio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp24);
+  padding-right: var(--esp24);
+}
+
+.detalleSitio {
+  margin-top: calc(-1 * var(--esp16));
+  padding: 0 var(--esp24) var(--esp16) calc(var(--esp24) + var(--esp12) + var(--esp24));
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.botones {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.apagada {
+  color: var(--textoSecundario);
+  text-decoration: line-through;
+}
+
+.sinPuertas {
+  padding: 0 var(--esp24) var(--esp24);
+  color: var(--textoSecundario);
+}

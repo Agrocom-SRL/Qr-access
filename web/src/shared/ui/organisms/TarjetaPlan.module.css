@@ -1,0 +1,56 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  padding: var(--esp24);
+  background: var(--superficie);
+  border: 2px solid transparent;
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.seleccionada {
+  border-color: var(--primario);
+}
+
+.cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
+.hasta {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cupo {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.icono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--tam48);
+  height: var(--tam48);
+  background: var(--primarioSuave);
+  border-radius: var(--radio14);
+  color: var(--primario);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}
+
+.pie {
+  display: flex;
+  gap: var(--esp48);
+  padding-top: var(--esp16);
+  border-top: 1px solid var(--borde);
+}

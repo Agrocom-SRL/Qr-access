@@ -1,0 +1,295 @@
+import 'dart:async';
+
+import 'package:agrocom_acceso/core/api/mensaje_error.dart';
+import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/navegacion/destinos.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/sesion/permisos.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
+import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/pestana_admin.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/seccion_puertas_asignadas.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/selector_sufijo_pin.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
+import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+/// Alta de un usuario (etiqueta y roles → PIN una sola vez) o edición de uno
+/// existente (HU-06). Tras guardar una edición vuelve a la lista de usuarios
+/// con el aviso de "Cambios guardados".
+class UsuarioFormularioPagina extends ConsumerStatefulWidget {
+  const new({this.usuarioId, super.key});
+
+  /// `null` para crear.
+  final String? usuarioId;
+
+  @override
+  ConsumerState<UsuarioFormularioPagina> createState() =>
+      _UsuarioFormularioPaginaEstado();
+}
+
+class _UsuarioFormularioPaginaEstado
+    extends ConsumerState<UsuarioFormularioPagina> {
+  final _etiqueta = TextEditingController();
+  var _cargado = false;
+
+  bool get _esNuevo => widget.usuarioId == null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Salga por donde salga (guardar, cancelar o "atrás"), se vuelve a la
+    // pestaña de Usuarios de Administración y no a la primera.
+    unawaited(
+      Future.microtask(
+        () => ref
+            .read(pestanaAdminProvider.notifier)
+            .elegir(PestanaAdmin.usuarios),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _etiqueta.dispose();
+    super.dispose();
+  }
+
+  void _cargarDesde(Usuario usuario) {
+    if (_cargado) return;
+    _cargado = true;
+    _etiqueta.text = usuario.etiqueta ?? '';
+    unawaited(
+      Future.microtask(
+        () => ref.read(formularioUsuarioProvider.notifier).cargar(usuario),
+      ),
+    );
+    if (_puedeAsignar) unawaited(_cargarPuertas(usuario.id));
+  }
+
+  bool get _puedeAsignar =>
+      ref.read(sesionControladorProvider).tiene(Permisos.asignarGuardias);
+
+  /// Lee las puertas que el usuario ya tiene asignadas. Si falla, no se
+  /// marca como cargada: guardar no pisa la asignación real con una vacía.
+  Future<void> _cargarPuertas(String usuarioId) async {
+    try {
+      final asignadas = await ref
+          .read(usuariosRepositorioProvider)
+          .puertasAsignadas(usuarioId);
+      if (mounted) {
+        ref.read(formularioUsuarioProvider.notifier).cargarPuertas(asignadas);
+      }
+    } on Object {
+      // El formulario sigue usable; solo no muestra las puertas actuales.
+    }
+  }
+
+  /// La lista de usuarios: la pestaña de Admin en compacto; su propio destino
+  /// en medio y expandido.
+  String get _rutaLista =>
+      context.esCompacta ? Rutas.admin : Rutas.adminUsuarios;
+
+  Future<void> _guardar() async {
+    final controlador = ref.read(formularioUsuarioProvider.notifier);
+    if (_esNuevo) {
+      final pin = await controlador.crear(asignarPuertas: _puedeAsignar);
+      if (pin != null && mounted) await mostrarPinGenerado(context, pin);
+      if (mounted && context.esExpandida && pin != null) {
+        context.go(Rutas.adminUsuarios);
+      }
+      return;
+    }
+    final guardado = await controlador.editar(
+      widget.usuarioId!,
+      asignarPuertas: _puedeAsignar,
+    );
+    if (!guardado || !mounted) return;
+    // El aviso va en la lista de usuarios, no en el formulario que se cierra.
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(context.l10n.usuariosGuardado)));
+    context.go(_rutaLista);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    final estado = ref.watch(formularioUsuarioProvider);
+    final controlador = ref.read(formularioUsuarioProvider.notifier);
+    final roles = ref.watch(rolesProvider);
+    final errorApi = estado.errorApi;
+    final errorDatos = estado.errorDatos;
+    final puedeAsignar = ref
+        .watch(sesionControladorProvider)
+        .tiene(Permisos.asignarGuardias);
+
+    if (!_esNuevo && !_cargado) {
+      final usuarios = ref.watch(usuariosProvider);
+      final usuario = usuarios.value?.datos
+          .where((u) => u.id == widget.usuarioId)
+          .firstOrNull;
+      if (usuario != null) {
+        _cargarDesde(usuario);
+      } else if (!usuarios.isLoading) {
+        return PlantillaAdmin(
+          destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
+          rutaAtras: _rutaLista,
+          alVolver: () => context.go(_rutaLista),
+          titulo: l10n.usuariosEditarTitulo,
+          child: EstadoVacio.error(
+            titulo: l10n.usuariosErrorCargar,
+            alReintentar: () => ref.invalidate(usuariosProvider),
+          ),
+        );
+      } else {
+        return PlantillaAdmin(
+          destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
+          rutaAtras: _rutaLista,
+          alVolver: () => context.go(_rutaLista),
+          titulo: l10n.usuariosEditarTitulo,
+          child: const AccesoCargando(),
+        );
+      }
+    }
+
+    return PlantillaAdmin(
+      destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
+      rutaAtras: _rutaLista,
+      alVolver: () => context.go(_rutaLista),
+      titulo: _esNuevo ? l10n.usuariosNuevo : l10n.usuariosEditarTitulo,
+      conRelleno: false,
+      child: FormularioSecciones(
+        secciones: [
+          SeccionDeFormulario(
+            titulo: l10n.usuariosSeccionDatos,
+            campos: [
+              CampoFormulario(
+                etiqueta: l10n.usuariosCampoEtiqueta,
+                ayuda: l10n.usuariosCampoEtiquetaAyuda,
+                textoError: switch (errorDatos) {
+                  ErrorDatosUsuario.sinEtiqueta =>
+                    l10n.usuariosErrorSinEtiqueta,
+                  ErrorDatosUsuario.etiquetaLarga =>
+                    l10n.usuariosErrorEtiquetaLarga(
+                      DatosUsuario.largoMaximoEtiqueta,
+                    ),
+                  _ => null,
+                },
+                largoActual: estado.etiqueta.length,
+                largoMaximo: DatosUsuario.largoMaximoEtiqueta,
+                child: AccesoCampoTexto(
+                  controlador: _etiqueta,
+                  placeholder: l10n.usuariosCampoEtiquetaEjemplo,
+                  maxLargo: DatosUsuario.largoMaximoEtiqueta,
+                  autofoco: _esNuevo,
+                  alCambiar: controlador.cambiarEtiqueta,
+                ),
+              ),
+            ],
+          ),
+          SeccionDeFormulario(
+            titulo: l10n.usuariosSeccionRoles,
+            campos: [
+              roles.when(
+                loading: () => const AccesoCargando(),
+                error: (error, _) => AccesoAviso(
+                  tono: TonoAviso.peligro,
+                  texto: textoDeError(l10n, error),
+                ),
+                data: (lista) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final rol in lista)
+                      CheckboxListTile(
+                        value: estado.rolIds.contains(rol.id),
+                        onChanged: (_) => controlador.alternarRol(rol.id),
+                        title: Text(rol.nombre),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    if (errorDatos == ErrorDatosUsuario.sinRoles)
+                      Padding(
+                        padding: EdgeInsets.only(top: tokens.espacio.s),
+                        child: Text(
+                          l10n.usuariosErrorSinRoles,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: tokens.colores.peligro),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (_esNuevo)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionPin,
+              campos: [
+                SelectorSufijoPin(
+                  elegir: estado.elegirSufijo,
+                  sufijo: estado.sufijo,
+                  conError: errorDatos == ErrorDatosUsuario.sufijoInvalido,
+                  alElegir: (elegir) =>
+                      controlador.alternarSufijoElegido(elegir: elegir),
+                  alCambiar: controlador.cambiarSufijo,
+                ),
+              ],
+            ),
+          if (puedeAsignar)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionPuertas,
+              campos: [
+                SeccionPuertasAsignadas(
+                  asignadas: estado.puertas,
+                  alAlternarTodas: controlador.alternarTodasLasPuertas,
+                  alAlternarPuerta: controlador.alternarPuerta,
+                ),
+              ],
+            ),
+        ],
+        aviso: errorApi != null
+            ? AccesoAviso(
+                tono: TonoAviso.peligro,
+                texto: textoDeError(l10n, errorApi),
+              )
+            : (_esNuevo
+                  ? AccesoAviso(
+                      tono: TonoAviso.informacion,
+                      texto: l10n.usuariosNuevoAviso,
+                    )
+                  : null),
+        acciones: [
+          AccesoBoton(
+            texto: l10n.comunCancelar,
+            variante: VarianteBoton.texto,
+            onPressed: () => context.go(_rutaLista),
+          ),
+          AccesoBoton(
+            texto: _esNuevo ? l10n.usuariosGenerarPin : l10n.comunGuardar,
+            textoCargando: _esNuevo
+                ? l10n.usuariosGenerando
+                : l10n.comunGuardando,
+            icono: _esNuevo ? Icons.key_outlined : null,
+            cargando: estado.enviando,
+            onPressed: _guardar,
+          ),
+        ],
+      ),
+    );
+  }
+}

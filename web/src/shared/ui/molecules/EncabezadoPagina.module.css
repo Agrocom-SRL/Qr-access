@@ -1,0 +1,21 @@
+.encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--esp24);
+  margin-bottom: var(--esp24);
+}
+
+.titulo {
+  font-size: var(--texto32);
+  font-weight: var(--peso600);
+  line-height: var(--interlineadoTitulo);
+}
+
+.subtitulo {
+  color: var(--textoSecundario);
+}
+
+.volver {
+  margin: calc(-1 * var(--esp8)) 0 var(--esp4);
+}

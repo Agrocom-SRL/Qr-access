@@ -1,0 +1,38 @@
+{
+  "titulo": "Perfil",
+  "cambiarContrasena": "Cambiar contraseña",
+  "actual": "Actual",
+  "nueva": "Nueva",
+  "repetir": "Repite la nueva",
+  "actualizar": "Actualizar contraseña",
+  "tema": "Tema",
+  "temas": {
+    "claro": "Claro",
+    "oscuro": "Oscuro",
+    "sistema": "Según el sistema"
+  },
+  "idioma": "Idioma",
+  "idiomas": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
+  "cerrarSesion": "Cerrar sesión",
+  "temporal": "Tu contraseña es temporal. Cámbiala para seguir usando el panel.",
+  "rol": "Super admin · desde {{fecha}}",
+  "usuario": "Usuario",
+  "ultimoIngreso": "Último ingreso",
+  "minimo": "Mínimo {{count}}",
+  "actualizando": "Actualizando",
+  "actualizada": "Contraseña actualizada",
+  "noCoinciden": "Las contraseñas no coinciden",
+  "requerido": "Este campo es obligatorio",
+  "corta": "Usa al menos {{count}} caracteres",
+  "editarNombre": "Editar nombre",
+  "nombre": "Nombre",
+  "guardarNombre": "Guardar nombre",
+  "guardando": "Guardando",
+  "grupoCuenta": "Cuenta",
+  "grupoPreferencias": "Preferencias",
+  "grupoSeguridad": "Seguridad"
+}

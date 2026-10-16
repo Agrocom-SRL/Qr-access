@@ -1,0 +1,13 @@
+.pantalla {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: var(--fondo);
+}
+
+.incrustada {
+  min-height: 0;
+  padding: var(--esp24);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio20);
+}

@@ -1,0 +1,99 @@
+{
+  "titulo": "Registro de atividades",
+  "subtitulo": "Toda alteração relevante em contas, planos e equipe",
+  "columna": {
+    "cuando": "Quando",
+    "quien": "Quem",
+    "cuenta": "Conta",
+    "que": "O quê",
+    "antes": "Antes",
+    "despues": "Depois",
+    "origen": "Origem",
+    "detalle": "Ver mais",
+    "cambio": "Mudança"
+  },
+  "origen": {
+    "panel": "Painel",
+    "app": "App",
+    "automatico": "Automático",
+    "dispositivo": "Leitor"
+  },
+  "vacio": {
+    "titulo": "Nenhuma ação com estes filtros",
+    "texto": "Tente outras datas ou remova os filtros."
+  },
+  "filtros": {
+    "cuenta": "Conta",
+    "accion": "Ação",
+    "fecha": "Data",
+    "desde": "De",
+    "hasta": "Até",
+    "todas": "Todas",
+    "todos": "Todas"
+  },
+  "acciones": {
+    "creado": "Criou",
+    "actualizado": "Editou",
+    "eliminado": "Excluiu",
+    "restaurado": "Restaurou"
+  },
+  "tabla": "Registro de atividades",
+  "errorCarga": "Não conseguimos carregar o registro de atividades",
+  "sinResultados": {
+    "titulo": "Nenhuma ação com estes filtros",
+    "texto": "Tente outras datas ou remova os filtros."
+  },
+  "sistema": "Sistema",
+  "sinValor": "—",
+  "evento": {
+    "cuenta_creada": "Criou conta",
+    "cuenta_editada": "Editou conta",
+    "cuenta_eliminada": "Excluiu conta",
+    "empresa_registrada": "Registrou dados da empresa",
+    "empresa_editada": "Editou dados da empresa",
+    "suscripcion_creada": "Criou assinatura",
+    "suscripcion_plan_cambiado": "Alterou o plano",
+    "suscripcion_suspendida": "Suspendeu a conta",
+    "suscripcion_reactivada": "Reativou a conta",
+    "suscripcion_renovada": "Renovou a assinatura",
+    "pago_registrado": "Registrou pagamento",
+    "plan_precio_editado": "Editou o preço do plano",
+    "plan_creado": "Criou plano",
+    "plan_editado": "Editou plano",
+    "plan_eliminado": "Retirou plano",
+    "equipo_agregado": "Adicionou super admin",
+    "equipo_desactivado": "Desativou super admin",
+    "equipo_contrasena_cambiada": "Alterou a própria senha",
+    "usuario_creado": "Criou usuário",
+    "usuario_editado": "Editou usuário",
+    "usuario_eliminado": "Excluiu usuário",
+    "usuario_pin_regenerado": "Redefiniu o PIN do usuário",
+    "cuenta_codigo_cambiado": "Alterou o código da conta",
+    "sitio_creado": "Criou local",
+    "sitio_editado": "Editou local",
+    "sitio_eliminado": "Excluiu local",
+    "puerta_creado": "Criou porta",
+    "puerta_editado": "Editou porta",
+    "puerta_eliminado": "Excluiu porta",
+    "dispositivo_creado": "Criou dispositivo",
+    "dispositivo_editado": "Editou dispositivo",
+    "dispositivo_eliminado": "Excluiu dispositivo"
+  },
+  "valor": {
+    "vence": "vence {{fecha}}",
+    "plan": "Plano {{plan}}",
+    "activa": "Ativa",
+    "suspendida": "Suspensa",
+    "activo": "Ativo",
+    "desactivado": "Desativado",
+    "pin": "Novo PIN emitido"
+  },
+  "detalle": {
+    "abrir": "Ver mais",
+    "cerrar": "Fechar",
+    "titulo": "Detalhe",
+    "campo": "Campo",
+    "cambio": "Mudou",
+    "sinCampos": "Este evento não guardou campos."
+  }
+}

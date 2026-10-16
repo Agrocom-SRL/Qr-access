@@ -1,0 +1,32 @@
+# .gitignore global del monorepo: lo común a todas las partes.
+# Cada parte tiene el suyo: api/.gitignore, app/.gitignore (y los de android/ e ios/),
+# firmware/.gitignore.
+
+# Entorno y secretos (invariante 6)
+.env
+.env.*
+!.env.example
+*.key
+*.p12
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*~
+
+# Logs
+*.log
+
+# db
+db/schema.sql
+
+# Copias de trabajo de los agentes en paralelo (no se versionan)
+.claude/worktrees/

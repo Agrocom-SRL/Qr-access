@@ -1,0 +1,37 @@
+# Actualizaciones de dependencias. Los PR apuntan a develop (ADR 0006) y no los
+# integra auto-merge.yml (solo toma feature/* y bugfix/*): se revisan a mano.
+# Los ecosistemas npm (/api y /web) y pub (/app) se suman cuando hagan falta.
+# PlatformIO no está soportado por Dependabot: el firmware se actualiza a mano.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: actualiza
+    # Un solo PR semanal con todas las actions, en vez de uno por action:
+    # varias tocan las mismas líneas de ci.yml y por separado chocan entre sí.
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /web
+    target-branch: develop
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: actualiza
+    # React, Vite y Vitest se mueven juntos: un PR semanal en vez de uno por paquete.
+    groups:
+      web:
+        patterns: ['*']
+    # TypeScript 7 aún no lo admite typescript-eslint (peer <6.1.0) y @types/node
+    # debe seguir la versión de Node del proyecto (22 LTS): se suben a mano.
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']

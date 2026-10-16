@@ -1,0 +1,40 @@
+.caja {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+  height: var(--altoControl);
+  padding: 0 var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio10);
+}
+
+.caja:focus-within {
+  border: 2px solid var(--primario);
+}
+
+.caja[data-invalido] {
+  border: 2px solid var(--peligro);
+}
+
+.moneda {
+  color: var(--textoSecundario);
+  font-family: var(--fuenteMono);
+}
+
+.entrada {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--texto);
+  font-family: var(--fuenteMono);
+  font-size: var(--texto16);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+/* El foco ya lo marca la caja (borde de 2 px): sin esto el `:focus-visible` global dibuja un segundo borde cuadrado adentro. */
+.entrada:focus-visible {
+  outline: none;
+}
