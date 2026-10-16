@@ -1,0 +1,46 @@
+{
+  "titulo": "Access",
+  "subtitulo": "What the boards read across all accounts, live",
+  "tabla": "Access",
+  "errorCarga": "We couldn't load the access attempts",
+  "columna": {
+    "cuando": "When",
+    "cuenta": "Account",
+    "puerta": "Door",
+    "lector": "Reader",
+    "qr": "QR",
+    "resultado": "Result",
+    "motivo": "Reason"
+  },
+  "resultado": {
+    "permitido": "Allowed",
+    "rechazado": "Rejected"
+  },
+  "filtros": {
+    "cuenta": "Account",
+    "todas": "All",
+    "resultado": "Result",
+    "todos": "All",
+    "permitido": "Allowed",
+    "rechazado": "Rejected"
+  },
+  "vacio": {
+    "titulo": "No access attempts yet",
+    "texto": "When a board reads a QR, the attempt shows up here right away."
+  },
+  "sinResultados": {
+    "titulo": "No access attempts with these filters",
+    "texto": "Try other dates or clear the filters."
+  },
+  "motivo": {
+    "acceso_permitido": "Access allowed",
+    "qr_formato_invalido": "Invalid code",
+    "qr_desconocido": "Unknown QR",
+    "qr_anulado": "QR cancelled",
+    "qr_vencido": "QR expired",
+    "qr_otra_puerta": "Different door",
+    "qr_usado": "QR already used",
+    "suscripcion_vencida": "Subscription expired",
+    "desconocido": "Reason unavailable"
+  }
+}

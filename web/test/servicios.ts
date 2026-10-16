@@ -3,6 +3,7 @@ import { ErrorApi } from '@/shared/api/errorApi';
 import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
 import type { BitacoraRepositorio, EventoBitacora } from '@/features/bitacora';
+import type { EventosRepositorio } from '@/features/eventos';
 import type { ResumenRepositorio } from '@/features/resumen';
 import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisticas';
 import type { PagosRepositorio } from '@/features/pagos';
@@ -398,6 +399,7 @@ export function crearServiciosDePrueba(
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
     placas?: Partial<PlacasRepositorio>;
+    eventos?: Partial<EventosRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
     suscripciones?: Partial<SuscripcionesRepositorio>;
     pagos?: Partial<PagosRepositorio>;
@@ -549,6 +551,11 @@ export function crearServiciosDePrueba(
     cuentas: () => Promise.resolve([{ id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' }]),
     ...parcial.bitacora,
   };
+  const eventos: EventosRepositorio = {
+    listar: () => Promise.resolve({ elementos: [], pagina: 1, porPagina: 15, total: 0 }),
+    cuentas: () => Promise.resolve([{ id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' }]),
+    ...parcial.eventos,
+  };
   const resumen: ResumenRepositorio = {
     obtener: () => Promise.resolve(RESUMEN),
     ...parcial.resumen,
@@ -567,6 +574,7 @@ export function crearServiciosDePrueba(
     suscripciones,
     pagos,
     bitacora,
+    eventos,
     resumen,
     estadisticas,
   };

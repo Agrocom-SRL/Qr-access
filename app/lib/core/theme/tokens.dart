@@ -194,6 +194,9 @@ class Duraciones {
   /// Cada cuánto se pregunta a la API qué pasó con el QR que se está mostrando.
   Duration get refrescoSeguimientoQr => const Duration(seconds: 3);
 
+  /// Cada cuánto se vuelve a preguntar si las placas de las puertas reportan.
+  Duration get refrescoEstadoPuertas => const Duration(seconds: 15);
+
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 

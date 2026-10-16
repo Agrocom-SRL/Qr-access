@@ -58,6 +58,8 @@ import delete_icono from '@material-symbols/svg-400/outlined/delete.svg?raw';
 import pending_actions from '@material-symbols/svg-400/outlined/pending_actions.svg?raw';
 import add_location from '@material-symbols/svg-400/outlined/add_location.svg?raw';
 import add_business from '@material-symbols/svg-400/outlined/add_business.svg?raw';
+import qr_code_scanner from '@material-symbols/svg-400/outlined/qr_code_scanner.svg?raw';
+import qr_code_scanner_fill from '@material-symbols/svg-400/outlined/qr_code_scanner-fill.svg?raw';
 import memory from '@material-symbols/svg-400/outlined/memory.svg?raw';
 import memory_fill from '@material-symbols/svg-400/outlined/memory-fill.svg?raw';
 import link from '@material-symbols/svg-400/outlined/link.svg?raw';
@@ -129,6 +131,8 @@ const registro = {
   translate,
   memory,
   memory_fill,
+  qr_code_scanner,
+  qr_code_scanner_fill,
   link,
   link_off,
 } as const;

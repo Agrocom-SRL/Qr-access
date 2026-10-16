@@ -72,5 +72,11 @@
   "placa": "Board",
   "placaPlaceholder": "Pick a detected board",
   "sinPlacasDetectadas": "No boards detected. Plug them into the network cable and wait a few seconds.",
-  "vincularPlacaAPuerta": "Link a board to door {{puerta}}"
+  "vincularPlacaAPuerta": "Link a board to door {{puerta}}",
+  "filtroConexion": "Board connection",
+  "conexionFiltro": {
+    "todas": "All",
+    "en_linea": "Online",
+    "sin_conexion": "Offline"
+  }
 }

@@ -441,6 +441,19 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
 
       const soloDetectadas = await plataforma('GET', '/placas?estado=detectada');
       expect(soloDetectadas.json<{ meta: { total: number } }>().meta.total).toBe(1);
+
+      // La detectada acaba de anunciarse; la vinculada aún no mandó su primer latido.
+      const total = async (conexion: string) =>
+        (await plataforma('GET', `/placas?conexion=${conexion}`)).json<{
+          meta: { total: number };
+        }>().meta.total;
+      expect(await total('en_linea')).toBe(1);
+      expect(await total('sin_conexion')).toBe(1);
+      await prueba.pool.query(
+        'UPDATE placas SET ultimo_anuncio_at = DATE_SUB(NOW(3), INTERVAL 1 HOUR)',
+      );
+      expect(await total('en_linea')).toBe(0);
+      expect(await total('sin_conexion')).toBe(2);
       expect(JSON.stringify(respuesta.json())).not.toMatch(/argon2|hash|huella/);
     });
 

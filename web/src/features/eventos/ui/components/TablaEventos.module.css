@@ -1,0 +1,17 @@
+.suave {
+  color: var(--textoSecundario);
+}
+
+.apilado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+}
+
+.recortado {
+  display: block;
+  max-width: var(--anchoValorRecortado);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

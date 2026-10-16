@@ -33,8 +33,8 @@ export const rutasDePlacas =
         preHandler: permisoDePlataforma('dispositivos.placa.ver'),
       },
       (request) => {
-        const { busqueda, estado, ...paginacion } = request.query;
-        return listar(pool, { busqueda, estado }, paginacion);
+        const { busqueda, estado, conexion, ...paginacion } = request.query;
+        return listar(pool, { busqueda, estado, conexion }, paginacion);
       },
     );
 

@@ -72,5 +72,11 @@
   "placa": "Placa",
   "placaPlaceholder": "Escolha uma placa detectada",
   "sinPlacasDetectadas": "Não há placas detectadas. Conecte-as ao cabo de rede e aguarde alguns segundos.",
-  "vincularPlacaAPuerta": "Vincular uma placa à porta {{puerta}}"
+  "vincularPlacaAPuerta": "Vincular uma placa à porta {{puerta}}",
+  "filtroConexion": "Conexão da placa",
+  "conexionFiltro": {
+    "todas": "Todas",
+    "en_linea": "Online",
+    "sin_conexion": "Sem conexão"
+  }
 }

@@ -10,5 +10,7 @@ export function useEstadisticas() {
     queryKey: CLAVE_ESTADISTICAS,
     queryFn: () => repositorio.obtener(),
     staleTime: 60_000,
+    // Los accesos por día cambian con cada lectura de QR: se actualizan solos.
+    refetchInterval: 10_000,
   });
 }

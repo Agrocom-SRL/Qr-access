@@ -1,0 +1,66 @@
+@media (width < 768px) {
+  .resumen {
+    grid-template-columns: 1fr;
+  }
+}
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--esp16);
+  margin: 0 0 var(--esp24);
+}
+
+.resumen dt {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+}
+
+.resumen dd {
+  margin: 0;
+  font-size: var(--texto14);
+}
+
+.contenedor {
+  max-height: var(--altoDetalleBitacora);
+  overflow: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto14);
+}
+
+.tabla th,
+.tabla td {
+  padding: var(--esp8) var(--esp16);
+  border-top: 1px solid var(--borde);
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.tabla thead th {
+  position: sticky;
+  top: 0;
+  border-top: 0;
+  background: var(--fondo);
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+}
+
+.tabla td > :last-child:not(:first-child) {
+  margin-inline-start: var(--esp8);
+}
+
+.campo {
+  font-weight: var(--peso400);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}

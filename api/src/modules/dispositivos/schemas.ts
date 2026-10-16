@@ -51,6 +51,8 @@ export const respuestaDeVinculo = z.object({ por_confirmar_hasta: z.string() });
 export const consultaDePlacas = esquemaPaginacion.extend({
   busqueda: z.string().trim().min(1).max(60).optional(),
   estado: z.enum(['detectada', 'por_confirmar', 'vinculada']).optional(),
+  /** Para dar con las que fallan: las que dejaron de reportar. */
+  conexion: z.enum(['en_linea', 'sin_conexion']).optional(),
 });
 
 export const respuestaDePlacas = esquemaListado(

@@ -31,5 +31,8 @@
   "editarNombre": "Edit name",
   "nombre": "Name",
   "guardarNombre": "Save name",
-  "guardando": "Saving"
+  "guardando": "Saving",
+  "grupoCuenta": "Account",
+  "grupoPreferencias": "Preferences",
+  "grupoSeguridad": "Security"
 }

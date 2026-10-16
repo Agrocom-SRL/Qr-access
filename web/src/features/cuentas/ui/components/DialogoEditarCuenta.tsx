@@ -65,6 +65,7 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
     <Dialogo
       abierto={abierto}
       titulo={t('detalle:editarTitulo', { cuenta: detalle.cuenta.nombre })}
+      ancho="amplio"
       onCerrar={cerrar}
       acciones={
         <>

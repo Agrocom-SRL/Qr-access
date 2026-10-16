@@ -44,6 +44,7 @@ export function crearPlacasHttp(cliente: ClienteHttp): PlacasRepositorio {
       });
       if (filtros.busqueda !== '') parametros.set('busqueda', filtros.busqueda);
       if (filtros.estado !== 'todas') parametros.set('estado', filtros.estado);
+      if (filtros.conexion !== 'todas') parametros.set('conexion', filtros.conexion);
       const dto = await cliente.solicitar<ListadoDto<PlacaDto>>({
         metodo: 'GET',
         ruta: `/plataforma/placas?${parametros.toString()}`,

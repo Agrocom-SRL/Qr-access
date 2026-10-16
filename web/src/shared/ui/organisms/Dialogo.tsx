@@ -10,8 +10,8 @@ interface Props {
   abierto: boolean;
   titulo: string;
   onCerrar: () => void;
-  /** 480 (confirmaciones) o 640 (formularios). */
-  ancho?: 'angosto' | 'ancho';
+  /** 480 (confirmaciones), 640 (formularios) u 880 (formularios con muchos campos). */
+  ancho?: 'angosto' | 'ancho' | 'amplio';
   children: ReactNode;
   /** Acciones a la derecha: texto + primario. */
   acciones?: ReactNode;

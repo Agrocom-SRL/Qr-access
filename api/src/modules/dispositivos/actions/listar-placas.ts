@@ -6,7 +6,11 @@ import {
   type Paginacion,
 } from '../../../platform/http/paginacion.js';
 import { estaEnLinea } from '../domain/en-linea.js';
-import { RepositorioDePlacas, type EstadoDePlaca } from '../placas-repository.js';
+import {
+  RepositorioDePlacas,
+  type EstadoDePlaca,
+  type FiltrosDePlacas,
+} from '../placas-repository.js';
 
 export interface PlacaDeInventario {
   readonly id: string;
@@ -27,7 +31,7 @@ export interface PlacaDeInventario {
 /** El inventario de placas para el super admin, con quién tiene cada una y si está en línea. */
 export async function ejecutar(
   pool: Pool,
-  filtros: { busqueda?: string | undefined; estado?: EstadoDePlaca | undefined },
+  filtros: FiltrosDePlacas,
   paginacion: Paginacion,
   ahora: Date = new Date(),
 ): Promise<Listado<PlacaDeInventario>> {

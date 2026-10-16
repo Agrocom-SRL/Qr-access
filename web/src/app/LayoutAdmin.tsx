@@ -21,6 +21,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     permiso: 'seguridad.cuenta.ver',
   },
   {
+    clave: 'accesos',
+    ruta: RUTAS.accesos,
+    icono: 'qr_code_scanner',
+    iconoActivo: 'qr_code_scanner_fill',
+    permiso: 'resumen.panel.ver',
+  },
+  {
     clave: 'cobranza',
     ruta: RUTAS.cobranza,
     icono: 'payments',

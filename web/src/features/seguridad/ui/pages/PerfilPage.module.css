@@ -10,29 +10,9 @@
   margin-bottom: 0;
 }
 
-.tarjeta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--esp16);
-  padding: var(--esp32);
-  background: var(--superficie);
-  border-radius: var(--radio20);
-  box-shadow: var(--elevacion1);
-}
-
 .persona {
   display: flex;
   align-items: center;
-  gap: var(--esp16);
-}
-
-.identidad {
-  flex: 1;
-}
-
-.nombreEdicion {
-  display: flex;
-  flex-direction: column;
   gap: var(--esp16);
 }
 
@@ -46,36 +26,14 @@
   font-size: var(--texto14);
 }
 
-.datos {
-  margin: 0;
-  border-top: 1px solid var(--borde);
+/* Un grupo de filas en una sola tarjeta; la primera fila no lleva línea superior. */
+.grupo {
+  overflow: hidden;
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
 }
 
-.seccion {
-  font-size: var(--texto20);
-  font-weight: var(--peso600);
-}
-
-.campos {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--esp16);
-}
-
-.accion {
-  display: flex;
-  align-items: center;
-  gap: var(--esp16);
-}
-
-.tema {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-@media (width < 1024px) {
-  .campos {
-    grid-template-columns: 1fr;
-  }
+.grupo > :first-child {
+  border-top: 0;
 }

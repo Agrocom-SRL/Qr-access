@@ -1,3 +1,26 @@
 .suave {
   color: var(--textoSecundario);
 }
+
+/* Antes y después en la tabla: una línea; el detalle completo se despliega con la flecha. */
+.recortado {
+  display: block;
+  max-width: var(--anchoValorRecortado);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Antes y después en una sola columna, una línea cada uno; "Ver más" abre el detalle completo. */
+.cambio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+  font-size: var(--texto14);
+}
+
+.rotulo {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+}

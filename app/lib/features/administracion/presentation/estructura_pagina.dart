@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -12,7 +13,8 @@ import 'package:agrocom_acceso/features/administracion/presentation/estructura_c
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogos_estructura.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
@@ -51,14 +53,20 @@ class EstructuraPagina extends ConsumerWidget {
             )
           : null,
       child: estructura.when(
-        loading: () => const AccesoCargando(),
-        error: (error, _) => EstadoVacio.error(
-          titulo: l10n.estructuraErrorCargar,
-          alReintentar: () => ref.invalidate(estructuraProvider),
-        ),
+        loading: () => const _SitiosSkeleton(),
+        // Sin conexión solo se muestra la ilustración (como en los listados).
+        error: (error, _) => error is ErrorApi && error.esSinConexion
+            ? EstadoVacio.sinConexion(
+                titulo: l10n.estructuraErrorCargar,
+                alReintentar: () => ref.invalidate(estructuraProvider),
+              )
+            : EstadoVacio.error(
+                titulo: l10n.estructuraErrorCargar,
+                alReintentar: () => ref.invalidate(estructuraProvider),
+              ),
         data: (sitios) => sitios.isEmpty
             ? EstadoVacio(
-                icono: Icons.domain_outlined,
+                ilustracion: Multimedia.vacioPuertas,
                 titulo: l10n.estructuraSinSitios,
                 ayuda: l10n.estructuraSinSitiosAyuda,
                 textoAccion: puedeSitios ? l10n.estructuraSitioNuevo : null,
@@ -68,10 +76,111 @@ class EstructuraPagina extends ConsumerWidget {
               )
             : ListView.separated(
                 padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
-                itemCount: sitios.length,
+                // En compacto, la banda de foto va primero (como en Puertas).
+                itemCount: sitios.length + (context.esCompacta ? 1 : 0),
                 separatorBuilder: (_, _) => SizedBox(height: tokens.espacio.l),
-                itemBuilder: (_, i) => _TarjetaSitio(sitio: sitios[i]),
+                itemBuilder: (_, indice) {
+                  if (!context.esCompacta) {
+                    return _TarjetaSitio(sitio: sitios[indice]);
+                  }
+                  return indice == 0
+                      ? const _BandaDeFoto()
+                      : _TarjetaSitio(sitio: sitios[indice - 1]);
+                },
               ),
+      ),
+    );
+  }
+}
+
+/// Banda de foto sobre la lista (compacto), como en Administración › Puertas.
+class _BandaDeFoto extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(tokens.radio.xl),
+      child: SizedBox(
+        height: tokens.tamano.cabeceraFoto / 2,
+        width: double.infinity,
+        child: const AccesoFoto(
+          ruta: Multimedia.fotoIntercomunicador,
+          alineacion: Alignment(0.6, 0),
+          fundirConFondo: true,
+          verdeEnClaro: true,
+        ),
+      ),
+    );
+  }
+}
+
+/// Mientras carga: la forma de una tarjeta de sitio (encabezado y dos puertas),
+/// con el mismo skeleton de los listados.
+class _SitiosSkeleton extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Semantics(
+      label: context.l10n.comunCargando,
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
+        children: [
+          for (var i = 0; i < 2; i++) ...[
+            AccesoTarjeta(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      AccesoSkeleton(
+                        ancho: tokens.tamano.iconoCaja,
+                        alto: tokens.tamano.iconoCaja,
+                      ),
+                      SizedBox(width: tokens.espacio.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AccesoSkeleton(
+                              ancho: tokens.tamano.railExpandido / 1.4,
+                            ),
+                            SizedBox(height: tokens.espacio.s),
+                            AccesoSkeleton(
+                              ancho: tokens.tamano.railExpandido / 2,
+                              alto: tokens.espacio.m,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  for (var j = 0; j < 2; j++)
+                    Padding(
+                      padding: EdgeInsets.only(top: tokens.espacio.l),
+                      child: Row(
+                        children: [
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.icono,
+                            alto: tokens.tamano.icono,
+                          ),
+                          SizedBox(width: tokens.espacio.m),
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.railExpandido / 1.6,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: tokens.espacio.l),
+          ],
+        ],
       ),
     );
   }

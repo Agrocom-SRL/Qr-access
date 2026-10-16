@@ -6,5 +6,6 @@
   "bitacora": "Audit log",
   "equipo": "Users",
   "perfil": "Profile",
-  "placas": "Boards"
+  "placas": "Boards",
+  "accesos": "Access log"
 }
