@@ -3,7 +3,7 @@
 #pragma once
 
 #ifdef ACCESO_DESARROLLO
-#define FIRMWARE_VERSION "0.5.0-dev"
+#define FIRMWARE_VERSION "1.0.0-dev"
 #else
-#define FIRMWARE_VERSION "0.5.0"
+#define FIRMWARE_VERSION "1.0.0"
 #endif

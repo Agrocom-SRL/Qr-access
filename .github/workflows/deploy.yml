@@ -1,0 +1,25 @@
+name: Deploy
+
+# Producción: acceso.agrocom.com.bo, en el CT 120 de Proxmox (ADR 0014).
+# Se dispara con el push a master que hace release.yml al publicar un tag. Corre en el runner
+# `acceso-prod` (self-hosted, dentro del CT) y deja los secretos en /opt/acceso/.env, fuera del repo.
+# Ese push lo hace una deploy key (SSH), no GITHUB_TOKEN: los pushes con GITHUB_TOKEN no disparan workflows.
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    name: desplegar
+    runs-on: [self-hosted, acceso-prod]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Desplegar
+        run: ./bin/desplegar

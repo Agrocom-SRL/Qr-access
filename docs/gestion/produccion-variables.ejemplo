@@ -1,0 +1,14 @@
+# Plantilla del /opt/acceso/.env del CT 120. El real nunca se versiona (invariante 6).
+# Los secretos se generan en el servidor (ver docs/gestion/despliegue.md), no se escriben a mano.
+
+MYSQL_DATABASE=acceso
+MYSQL_USER=acceso
+MYSQL_PASSWORD=            # openssl rand -hex 24
+MYSQL_ROOT_PASSWORD=       # openssl rand -hex 24
+
+JWT_SECRETO=               # openssl rand -hex 32 (mínimo 32 caracteres)
+PIN_PIMIENTA=              # openssl rand -base64 32; cambiarla invalida todos los PIN
+
+# Contraseña inicial del super admin `root`. Solo se usa al crearlo la primera vez y queda como
+# temporal: la web obliga a cambiarla en el primer ingreso. Después de eso, bórrala de este archivo.
+ADMIN_INICIAL_CLAVE=
