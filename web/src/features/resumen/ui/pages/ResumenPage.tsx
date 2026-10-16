@@ -8,6 +8,7 @@ import {
   relacionDeDia,
 } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
+import { cx } from '../../../../shared/lib/cx';
 import { RUTAS } from '../../../../shared/lib/rutas';
 import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
@@ -258,12 +259,12 @@ export function ResumenPage() {
                 const d = describirEvento(e, t);
                 return (
                   <li key={e.id} className={styles.accion}>
-                    <div>
-                      <p>
+                    <div className={styles.textoAccion}>
+                      <p className={styles.truncado}>
                         <strong>{e.usuario?.nombre ?? t('bitacora:sistema')}</strong> · {d.que}
                         {e.cuenta ? ` · ${e.cuenta.codigo}` : ''}
                       </p>
-                      <p className={styles.sub}>
+                      <p className={cx(styles.sub, styles.truncado)}>
                         {d.antes} → {d.despues}
                       </p>
                     </div>

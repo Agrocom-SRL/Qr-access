@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/pestana_admin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_puertas.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_usuarios.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -15,29 +16,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-enum _Pestana { puertas, usuarios }
-
 /// Administración en compacto (handoff C10a/C10b): Puertas y Usuarios en
 /// pestañas. En expandido cada una tiene su destino en el rail.
-class AdministracionPagina extends ConsumerStatefulWidget {
+class AdministracionPagina extends ConsumerWidget {
   const new({super.key});
 
   @override
-  ConsumerState<AdministracionPagina> createState() =>
-      _AdministracionPaginaEstado();
-}
-
-class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
-  _Pestana? _pestana;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final sesion = ref.watch(sesionControladorProvider);
     final vePuertas = sesion.tiene(Permisos.supervisarPuertas);
     final veUsuarios = sesion.tiene(Permisos.verUsuarios);
     final pestana =
-        _pestana ?? (vePuertas ? _Pestana.puertas : _Pestana.usuarios);
+        ref.watch(pestanaAdminProvider) ??
+        (vePuertas ? PestanaAdmin.puertas : PestanaAdmin.usuarios);
     final puedeCrear = sesion.tiene(Permisos.crearUsuarios);
 
     // Desde "medio" cada una tiene su destino en el rail (E10a, E10b): sin
@@ -50,7 +42,7 @@ class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
     return PlantillaAdmin(
       destino: DestinoNav.admin,
       // "Nuevo usuario" es el botón flotante mientras se ven los usuarios.
-      fab: pestana == _Pestana.usuarios && puedeCrear
+      fab: pestana == PestanaAdmin.usuarios && puedeCrear
           ? FloatingActionButton.extended(
               onPressed: () => context.go(Rutas.adminUsuarioNuevo),
               icon: const Icon(Icons.person_add_outlined),
@@ -60,20 +52,20 @@ class _AdministracionPaginaEstado extends ConsumerState<AdministracionPagina> {
       // Sin título: las pestañas ya dicen dónde estás.
       conRelleno: false,
       child: conPestanas
-          ? PestanasDeslizables<_Pestana>(
+          ? PestanasDeslizables<PestanaAdmin>(
               segmentos: [
                 SegmentoDeSelector(
-                  valor: _Pestana.puertas,
+                  valor: PestanaAdmin.puertas,
                   etiqueta: l10n.navPuertas,
                 ),
                 SegmentoDeSelector(
-                  valor: _Pestana.usuarios,
+                  valor: PestanaAdmin.usuarios,
                   etiqueta: l10n.navUsuarios,
                 ),
               ],
               seleccionado: pestana,
-              alElegir: (elegida) => setState(() => _pestana = elegida),
-              paginaDe: (context, valor) => valor == _Pestana.puertas
+              alElegir: ref.read(pestanaAdminProvider.notifier).elegir,
+              paginaDe: (context, valor) => valor == PestanaAdmin.puertas
                   ? const VistaPuertas()
                   : const VistaUsuarios(),
             )

@@ -21,6 +21,7 @@ import {
   usePlacas,
 } from '../../application/usePlacas';
 import {
+  FILTROS_DE_CONEXION,
   FILTROS_DE_ESTADO,
   POR_PAGINA_DE_PLACAS,
   minutosRestantes,
@@ -40,6 +41,7 @@ function filtrosDeLaUrl(parametros: URLSearchParams): FiltrosDePlacas {
   return {
     busqueda: parametros.get('q') ?? '',
     estado: FILTROS_DE_ESTADO.find((e) => e === estado) ?? 'todas',
+    conexion: FILTROS_DE_CONEXION.find((c) => c === parametros.get('conexion')) ?? 'todas',
     pagina: Math.max(1, Number(parametros.get('pagina') ?? 1) || 1),
   };
 }
@@ -62,6 +64,7 @@ export function PlacasPage() {
     const nuevos = new URLSearchParams();
     if (siguiente.busqueda !== '') nuevos.set('q', siguiente.busqueda);
     if (siguiente.estado !== 'todas') nuevos.set('estado', siguiente.estado);
+    if (siguiente.conexion !== 'todas') nuevos.set('conexion', siguiente.conexion);
     if (siguiente.pagina > 1) nuevos.set('pagina', String(siguiente.pagina));
     setParametros(nuevos, { replace: true });
   };
@@ -221,6 +224,17 @@ export function PlacasPage() {
           opciones={FILTROS_DE_ESTADO.map((valor) => ({
             valor,
             etiqueta: t(`placas:estado.${valor}`),
+          }))}
+        />
+        <FiltroSegmentado
+          etiqueta={t('placas:filtroConexion')}
+          valor={filtros.conexion}
+          onCambio={(conexion) => {
+            cambiar({ conexion });
+          }}
+          opciones={FILTROS_DE_CONEXION.map((valor) => ({
+            valor,
+            etiqueta: t(`placas:conexionFiltro.${valor}`),
           }))}
         />
       </div>

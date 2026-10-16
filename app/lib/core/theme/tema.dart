@@ -129,8 +129,8 @@ abstract final class Tema {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: c.primario,
-        foregroundColor: c.sobrePrimario,
+        backgroundColor: c.acento,
+        foregroundColor: c.sobreAcento,
         elevation: 0,
         extendedTextStyle: textoBoton,
         shape: RoundedRectangleBorder(

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { esquemaEventoDeBitacora } from '../bitacora/contracts.js';
 
 const esquemaCuenta = z.object({ id: z.string(), codigo: z.string(), nombre: z.string() });
@@ -70,3 +71,29 @@ export const respuestaDeEstadisticas = z.object({
     }),
   ),
 });
+
+const esquemaFechaDeFiltro = z.iso.datetime({ offset: true }).transform((texto) => new Date(texto));
+
+/** Filtros de los accesos de la plataforma: cuenta, resultado y ventana `[desde, hasta)`. */
+export const consultaDeEventosDePlataforma = esquemaPaginacion.extend({
+  cuenta_id: z
+    .string()
+    .regex(/^\d{1,19}$/)
+    .optional(),
+  resultado: z.enum(['permitido', 'rechazado']).optional(),
+  desde: esquemaFechaDeFiltro.optional(),
+  hasta: esquemaFechaDeFiltro.optional(),
+});
+
+export const respuestaDeEventosDePlataforma = esquemaListado(
+  z.object({
+    id: z.string(),
+    ocurrido_at: z.string(),
+    resultado: z.enum(['permitido', 'rechazado']),
+    motivo_code: z.string(),
+    cuenta: esquemaCuenta,
+    puerta: z.object({ id: z.string(), nombre: z.string(), sitio: z.string() }),
+    dispositivo: z.string().nullable(),
+    qr_etiqueta: z.string().nullable(),
+  }),
+);

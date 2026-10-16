@@ -40,7 +40,7 @@ function etiquetaDe(placa: Placa, ahora: Date): string {
 export function DialogoVincularAPuerta({ cuentaId, puerta, onCerrar }: Props) {
   const { t } = useTranslation(['placas', 'comun']);
   const vincular = useVincularPlaca();
-  const detectadas = usePlacas({ busqueda: '', estado: 'detectada', pagina: 1 });
+  const detectadas = usePlacas({ busqueda: '', estado: 'detectada', conexion: 'todas', pagina: 1 });
   const [placaId, setPlacaId] = useState('');
   const [nombre, setNombre] = useState(puerta.nombre);
   const [esperaHasta, setEsperaHasta] = useState<Date | null>(null);

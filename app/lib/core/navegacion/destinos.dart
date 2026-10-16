@@ -72,6 +72,13 @@ List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
   ];
 }
 
+/// El guardia ve los eventos de sus puertas asignadas y tiene su QR propio,
+/// pero no comparte QR con otras personas (eso es del usuario y del
+/// administrador). Se reconoce por lo que puede ver, no por el nombre del rol.
+bool esGuardia(SesionEstado sesion) =>
+    sesion.tiene(Permisos.verEventosAsignados) &&
+    !sesion.tiene(Permisos.verTodosLosEventos);
+
 /// El tablero del administrador (indicadores y últimos eventos) es para quien
 /// supervisa puertas y ve todos los eventos; el resto ve el inicio de usuario.
 bool veTableroDeAdministracion(SesionEstado sesion) =>

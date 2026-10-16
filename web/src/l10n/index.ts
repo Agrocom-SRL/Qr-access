@@ -12,6 +12,7 @@ import es_detalle from './es/detalle.json';
 import es_equipo from './es/equipo.json';
 import es_errores from './es/errores.json';
 import es_estadisticas from './es/estadisticas.json';
+import es_eventos from './es/eventos.json';
 import es_estados from './es/estados.json';
 import es_estructura from './es/estructura.json';
 import es_nav from './es/nav.json';
@@ -33,6 +34,7 @@ import en_detalle from './en/detalle.json';
 import en_equipo from './en/equipo.json';
 import en_errores from './en/errores.json';
 import en_estadisticas from './en/estadisticas.json';
+import en_eventos from './en/eventos.json';
 import en_estados from './en/estados.json';
 import en_estructura from './en/estructura.json';
 import en_nav from './en/nav.json';
@@ -54,6 +56,7 @@ import pt_detalle from './pt/detalle.json';
 import pt_equipo from './pt/equipo.json';
 import pt_errores from './pt/errores.json';
 import pt_estadisticas from './pt/estadisticas.json';
+import pt_eventos from './pt/eventos.json';
 import pt_estados from './pt/estados.json';
 import pt_estructura from './pt/estructura.json';
 import pt_nav from './pt/nav.json';
@@ -88,6 +91,7 @@ export const recursos = {
     equipo: es_equipo,
     errores: es_errores,
     estadisticas: es_estadisticas,
+    eventos: es_eventos,
     estados: es_estados,
     estructura: es_estructura,
     nav: es_nav,
@@ -111,6 +115,7 @@ export const recursos = {
     equipo: en_equipo,
     errores: en_errores,
     estadisticas: en_estadisticas,
+    eventos: en_eventos,
     estados: en_estados,
     estructura: en_estructura,
     nav: en_nav,
@@ -134,6 +139,7 @@ export const recursos = {
     equipo: pt_equipo,
     errores: pt_errores,
     estadisticas: pt_estadisticas,
+    eventos: pt_eventos,
     estados: pt_estados,
     estructura: pt_estructura,
     nav: pt_nav,

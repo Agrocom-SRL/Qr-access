@@ -18,7 +18,7 @@
 #define PIN_LED_VERDE 2
 #define PIN_LED_ROJO 32  // pin "CFG" del conector
 #define PIN_LED_AZUL 33  // pin "485_EN" del conector
-#define PIN_BUZZER 15
+#define PIN_BUZZER 4  // comparte IO4 con el relé: suena solo mientras la cerradura está activa
 #else
 
 #define PIN_LECTOR_RX 16  // TX del lector QR -> RX2 del ESP32

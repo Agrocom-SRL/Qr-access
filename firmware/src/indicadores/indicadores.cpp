@@ -8,6 +8,10 @@ namespace indicadores {
 
 namespace {
 
+// Si el buzzer comparte pin con la cerradura, ese pin es solo del relé: el buzzer suena
+// cuando la cerradura se activa y ningún patrón de indicador puede accionarlo (invariante 2).
+constexpr bool BUZZER_COMPARTIDO = PIN_BUZZER == PIN_CERRADURA;
+
 puerta::Indicacion actual = puerta::Indicacion::Ninguna;
 uint32_t desdeMs = 0;
 
@@ -15,15 +19,19 @@ void aplicar(const patron::Salida& salida) {
   digitalWrite(PIN_LED_VERDE, salida.verde ? HIGH : LOW);
   digitalWrite(PIN_LED_ROJO, salida.rojo ? HIGH : LOW);
   digitalWrite(PIN_LED_AZUL, salida.azul ? HIGH : LOW);
-  digitalWrite(PIN_BUZZER, salida.buzzer ? HIGH : LOW);
+  if (!BUZZER_COMPARTIDO) digitalWrite(PIN_BUZZER, salida.buzzer ? HIGH : LOW);
 }
 
 }  // namespace
 
 void iniciar() {
-  for (uint8_t pin : {PIN_LED_VERDE, PIN_LED_ROJO, PIN_LED_AZUL, PIN_BUZZER}) {
+  for (uint8_t pin : {PIN_LED_VERDE, PIN_LED_ROJO, PIN_LED_AZUL}) {
     digitalWrite(pin, LOW);
     pinMode(pin, OUTPUT);
+  }
+  if (!BUZZER_COMPARTIDO) {
+    digitalWrite(PIN_BUZZER, LOW);
+    pinMode(PIN_BUZZER, OUTPUT);
   }
 }
 

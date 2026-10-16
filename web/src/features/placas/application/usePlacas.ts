@@ -12,7 +12,14 @@ export function usePlacas(filtros: FiltrosDePlacas) {
   const repositorio = usePlacasRepositorio();
   const busqueda = useDebounce(filtros.busqueda, 300);
   return useQuery({
-    queryKey: [...CLAVE_PLACAS, 'lista', busqueda, filtros.estado, filtros.pagina],
+    queryKey: [
+      ...CLAVE_PLACAS,
+      'lista',
+      busqueda,
+      filtros.estado,
+      filtros.conexion,
+      filtros.pagina,
+    ],
     queryFn: () => repositorio.listar({ ...filtros, busqueda }),
     placeholderData: keepPreviousData,
     // Una placa sin vincular se anuncia cada 30 s; mientras alguna espera su botón se mira más

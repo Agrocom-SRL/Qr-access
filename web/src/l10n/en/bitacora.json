@@ -8,7 +8,9 @@
     "que": "What",
     "antes": "Before",
     "despues": "After",
-    "origen": "Source"
+    "origen": "Source",
+    "detalle": "See more",
+    "cambio": "Change"
   },
   "origen": {
     "panel": "Panel",
@@ -85,5 +87,13 @@
     "activo": "Active",
     "desactivado": "Deactivated",
     "pin": "New PIN issued"
+  },
+  "detalle": {
+    "abrir": "See more",
+    "cerrar": "Close",
+    "titulo": "Details",
+    "campo": "Field",
+    "cambio": "Changed",
+    "sinCampos": "This event stored no fields."
   }
 }

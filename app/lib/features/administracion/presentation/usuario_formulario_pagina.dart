@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/pestana_admin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/seccion_puertas_asignadas.dart';
@@ -27,7 +28,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Alta de un usuario (etiqueta y roles → PIN una sola vez) o edición de uno
-/// existente (HU-06). Tras guardar una edición, se queda en el formulario.
+/// existente (HU-06). Tras guardar una edición vuelve a la lista de usuarios
+/// con el aviso de "Cambios guardados".
 class UsuarioFormularioPagina extends ConsumerStatefulWidget {
   const new({this.usuarioId, super.key});
 
@@ -45,6 +47,20 @@ class _UsuarioFormularioPaginaEstado
   var _cargado = false;
 
   bool get _esNuevo => widget.usuarioId == null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Salga por donde salga (guardar, cancelar o "atrás"), se vuelve a la
+    // pestaña de Usuarios de Administración y no a la primera.
+    unawaited(
+      Future.microtask(
+        () => ref
+            .read(pestanaAdminProvider.notifier)
+            .elegir(PestanaAdmin.usuarios),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -97,7 +113,15 @@ class _UsuarioFormularioPaginaEstado
       }
       return;
     }
-    await controlador.editar(widget.usuarioId!, asignarPuertas: _puedeAsignar);
+    final guardado = await controlador.editar(
+      widget.usuarioId!,
+      asignarPuertas: _puedeAsignar,
+    );
+    if (!guardado || !mounted) return;
+    // El aviso va en la lista de usuarios, no en el formulario que se cierra.
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(context.l10n.usuariosGuardado)));
+    context.go(_rutaLista);
   }
 
   @override
@@ -122,8 +146,9 @@ class _UsuarioFormularioPaginaEstado
         _cargarDesde(usuario);
       } else if (!usuarios.isLoading) {
         return PlantillaAdmin(
-          destino: DestinoNav.usuarios,
+          destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
           rutaAtras: _rutaLista,
+          alVolver: () => context.go(_rutaLista),
           titulo: l10n.usuariosEditarTitulo,
           child: EstadoVacio.error(
             titulo: l10n.usuariosErrorCargar,
@@ -132,8 +157,9 @@ class _UsuarioFormularioPaginaEstado
         );
       } else {
         return PlantillaAdmin(
-          destino: DestinoNav.usuarios,
+          destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
           rutaAtras: _rutaLista,
+          alVolver: () => context.go(_rutaLista),
           titulo: l10n.usuariosEditarTitulo,
           child: const AccesoCargando(),
         );
@@ -141,8 +167,9 @@ class _UsuarioFormularioPaginaEstado
     }
 
     return PlantillaAdmin(
-      destino: DestinoNav.usuarios,
+      destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
       rutaAtras: _rutaLista,
+      alVolver: () => context.go(_rutaLista),
       titulo: _esNuevo ? l10n.usuariosNuevo : l10n.usuariosEditarTitulo,
       conRelleno: false,
       child: FormularioSecciones(
@@ -240,17 +267,12 @@ class _UsuarioFormularioPaginaEstado
                 tono: TonoAviso.peligro,
                 texto: textoDeError(l10n, errorApi),
               )
-            : (estado.guardado
+            : (_esNuevo
                   ? AccesoAviso(
-                      tono: TonoAviso.primario,
-                      texto: l10n.usuariosGuardado,
+                      tono: TonoAviso.informacion,
+                      texto: l10n.usuariosNuevoAviso,
                     )
-                  : (_esNuevo
-                        ? AccesoAviso(
-                            tono: TonoAviso.informacion,
-                            texto: l10n.usuariosNuevoAviso,
-                          )
-                        : null)),
+                  : null),
         acciones: [
           AccesoBoton(
             texto: l10n.comunCancelar,

@@ -10,6 +10,7 @@ export const RUTAS = {
   cobranza: '/cobranza',
   planes: '/planes',
   placas: '/placas',
+  accesos: '/accesos',
   bitacora: '/bitacora',
   equipo: '/equipo',
   perfil: '/perfil',

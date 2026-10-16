@@ -1,0 +1,37 @@
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--esp16);
+  width: 100%;
+  min-height: var(--tam56);
+  padding: var(--esp12) var(--esp24);
+  border: 0;
+  border-top: 1px solid var(--borde);
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: start;
+}
+
+button.fila {
+  cursor: pointer;
+}
+
+button.fila:hover {
+  background: var(--fondo);
+}
+
+button.fila:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+}
+
+.etiqueta {
+  flex: 1;
+  font-size: var(--texto16);
+}
+
+.valor {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}

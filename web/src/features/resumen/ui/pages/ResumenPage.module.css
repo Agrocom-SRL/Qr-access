@@ -116,3 +116,15 @@
   object-position: center 60%;
   border-radius: var(--radio20);
 }
+
+/* Últimas acciones: cada línea en una sola fila con puntos suspensivos; el detalle está en la bitácora. */
+.textoAccion {
+  flex: 1;
+  min-width: 0;
+}
+
+.truncado {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

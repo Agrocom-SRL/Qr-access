@@ -1,5 +1,6 @@
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
+import { LATIDO_MAXIMO_SEGUNDOS } from './domain/en-linea.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 
 const DESCRIPCION_DE_PLACAS = {
@@ -31,6 +32,12 @@ export interface PlacaBasica extends RowDataPacket {
 
 /** Estado derivado de una placa (ADR 0026). */
 export type EstadoDePlaca = 'detectada' | 'por_confirmar' | 'vinculada';
+
+export interface FiltrosDePlacas {
+  busqueda?: string | undefined;
+  estado?: EstadoDePlaca | undefined;
+  conexion?: 'en_linea' | 'sin_conexion' | undefined;
+}
 
 export interface PlacaListada extends RowDataPacket {
   id: string;
@@ -165,7 +172,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
   }
 
   async listar(
-    filtros: { busqueda?: string | undefined; estado?: EstadoDePlaca | undefined },
+    filtros: FiltrosDePlacas,
     ahora: Date,
     limite: number,
     desplazamiento: number,
@@ -185,6 +192,17 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
     if (filtros.estado === 'detectada') {
       donde.push('d.id IS NULL AND (t.por_confirmar_hasta IS NULL OR t.por_confirmar_hasta <= ?)');
       params.push(ahora);
+    }
+    if (filtros.conexion !== undefined) {
+      // Mismo criterio que `estaEnLinea`: el último contacto es el latido si está vinculada y el anuncio si no.
+      const contacto = 'IF(d.id IS NOT NULL, d.ultimo_latido_at, t.ultimo_anuncio_at)';
+      const limite = new Date(ahora.getTime() - LATIDO_MAXIMO_SEGUNDOS * 1000);
+      donde.push(
+        filtros.conexion === 'en_linea'
+          ? `${contacto} >= ?`
+          : `(${contacto} IS NULL OR ${contacto} < ?)`,
+      );
+      params.push(limite);
     }
     const consulta = {
       uniones: UNIONES_DE_ASIGNACION,

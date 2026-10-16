@@ -12,6 +12,7 @@ import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { Pestanas } from '../../../../shared/ui/organisms/Pestanas';
 import { PestanaBitacora } from '../../../bitacora';
+import { PestanaAccesos } from '../../../eventos';
 import { tienePermiso, useSesion } from '../../../seguridad';
 import { PestanaSuscripcion } from '../../../suscripciones';
 import { useDetalleDeCuenta } from '../../application/useCuentas';
@@ -22,8 +23,14 @@ import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
 
-type PestanaDeCuenta = 'resumen' | 'suscripcion' | 'sitios' | 'bitacora';
-const PESTANAS: readonly PestanaDeCuenta[] = ['resumen', 'suscripcion', 'sitios', 'bitacora'];
+type PestanaDeCuenta = 'resumen' | 'suscripcion' | 'sitios' | 'accesos' | 'bitacora';
+const PESTANAS: readonly PestanaDeCuenta[] = [
+  'resumen',
+  'suscripcion',
+  'sitios',
+  'accesos',
+  'bitacora',
+];
 
 /** A05: ficha de una cuenta con pestañas (la pestaña activa vive en la URL: `?pestana=sitios`). */
 export function DetalleCuentaPage() {
@@ -159,6 +166,8 @@ export function DetalleCuentaPage() {
               <Skeleton alto="bloque" />
             </div>
           )
+        ) : pestana === 'accesos' ? (
+          <PestanaAccesos cuentaId={id} />
         ) : pestana === 'bitacora' ? (
           <PestanaBitacora cuentaId={id} />
         ) : (

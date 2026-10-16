@@ -3,6 +3,8 @@
 /** `detectada`: se anunció sola; `por_confirmar`: se pidió vincularla y espera su botón. */
 export type EstadoDePlaca = 'detectada' | 'por_confirmar' | 'vinculada';
 export type FiltroDeEstado = EstadoDePlaca | 'todas';
+/** Para dar con la que falla: las que dejaron de reportar. */
+export type FiltroDeConexion = 'todas' | 'en_linea' | 'sin_conexion';
 
 export interface Placa {
   id: string;
@@ -24,10 +26,17 @@ export interface Placa {
 export interface FiltrosDePlacas {
   busqueda: string;
   estado: FiltroDeEstado;
+  conexion: FiltroDeConexion;
   pagina: number;
 }
 
 export const POR_PAGINA_DE_PLACAS = 10;
+
+export const FILTROS_DE_CONEXION: readonly FiltroDeConexion[] = [
+  'todas',
+  'en_linea',
+  'sin_conexion',
+];
 
 export const FILTROS_DE_ESTADO: readonly FiltroDeEstado[] = [
   'todas',

@@ -28,6 +28,10 @@ abstract final class Primitivos {
   static const neutroOscuro300 = Color(0xFFA3ABA5);
   static const neutroOscuro400 = Color(0xFFE6EAE7);
 
+  static const naranja600 = Color(0xFFD84315);
+  static const naranja300 = Color(0xFFFFA270);
+  static const naranjaOscuro = Color(0xFF3A1500);
+
   static const rojo600 = Color(0xFFC62828);
   static const rojo300 = Color(0xFFEF7A7A);
   static const rojo50 = Color(0xFFFDECEC);

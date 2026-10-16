@@ -88,6 +88,7 @@ describe('perfil (A12)', () => {
     montar(servicios, '/ingreso');
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Lucía Paz/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Cambiar contraseña/ }));
     await userEvent.type(await screen.findByLabelText('Actual'), 'secreta-12345');
     await userEvent.type(screen.getByLabelText('Nueva'), 'corta');
     await userEvent.type(screen.getByLabelText('Repite la nueva'), 'corta');
@@ -105,18 +106,19 @@ describe('perfil (A12)', () => {
     });
   });
 
-  it('muestra datos, tema y contraseña en ese orden y permite cambiar el nombre', async () => {
+  it('lista los ajustes como filas y cada una abre su modal; el nombre se cambia ahí', async () => {
     const cambiarNombre = vi.fn(() => Promise.resolve());
     montar(crearServiciosDePrueba({ seguridad: { cambiarNombre } }), '/ingreso');
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Lucía Paz/ }));
-    const tema = await screen.findByRole('heading', { name: 'Tema' });
-    const contrasena = screen.getByRole('heading', { name: 'Cambiar contraseña' });
+    const tema = await screen.findByRole('button', { name: /Tema/ });
+    const contrasena = screen.getByRole('button', { name: /Cambiar contraseña/ });
+    expect(screen.getByRole('button', { name: /Idioma/ })).toBeInTheDocument();
     expect(
       tema.compareDocumentPosition(contrasena) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar nombre' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Nombre/ }));
     const campo = screen.getByLabelText('Nombre');
     await userEvent.clear(campo);
     await userEvent.type(campo, 'Lucía Paz Rojas');
@@ -124,6 +126,15 @@ describe('perfil (A12)', () => {
     await waitFor(() => {
       expect(cambiarNombre).toHaveBeenCalledWith('Lucía Paz Rojas');
     });
+  });
+
+  it('el tema se elige en un modal de opciones', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Lucía Paz/ }));
+    await userEvent.click(await screen.findByRole('button', { name: /Tema/ }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Oscuro' }));
+    expect(document.documentElement.dataset.tema).toBe('oscuro');
   });
 
   it('cerrar sesión devuelve al ingreso', async () => {

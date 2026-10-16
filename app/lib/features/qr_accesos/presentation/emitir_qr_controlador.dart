@@ -16,7 +16,7 @@ class EmitirQrEstado {
   const new({
     this.paso = PasoEmision.puertas,
     this.puertaIds = const {},
-    this.vigencia = Vigencia.porDefecto,
+    this.vigencia = const Vigencia(OpcionVigencia.dosHoras),
     this.etiqueta = '',
     this.enviando = false,
     this.errorDatos,

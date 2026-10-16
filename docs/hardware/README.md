@@ -8,7 +8,7 @@
 |---|---|---|
 | Microcontrolador | ESP32-ETH01 (ESP32 + Ethernet LAN8720) | Ethernet por cable, **sin WiFi** (ADR 0025); TLS por hardware; framework Arduino |
 | Lector | Lector de control de acceso con salida RS485 y Wiegand (etiqueta "ID RS485 USB, WG26/34/32/66"; modelo exacto sin confirmar) + módulo TTL-RS485 (MAX485) | Sustituye al GM65/GM861S previsto; confirmar que lee QR y su velocidad y formato de salida |
-| Actuador | Módulo relé 1 canal con optoacoplador (5 V) **o** MOSFET logic-level (IRLZ44N) + diodo flyback | El MOSFET es silencioso y más durable para electroimán |
+| Actuador | Módulo relé 1 canal con optoacoplador (5 V, o 12 V como el de la mesa: Tongling JQC-3FF-S-Z, jumper H/L; su bobina va a la fuente de 12 V) **o** MOSFET logic-level (IRLZ44N) + diodo flyback | El MOSFET es silencioso y más durable para electroimán |
 | Cerradura | Electroimán 280 kg (fail-safe) o cerradero eléctrico 12 V (fail-secure) | D-04: definir según la puerta y la norma de evacuación |
 | Sensor de puerta | Contacto magnético (reed) NC | Detecta puerta abierta y apertura forzada |
 | Pulsador de salida | Pulsador NO de "salida" | Abre sin red (RF-08) |
@@ -23,15 +23,15 @@
 |---|---|---|
 | Módulo RS485 RO → ESP32 RX | GPIO5 (pin "RXD" del conector) | Si el módulo va a 5 V, divisor resistivo o level shifter |
 | ESP32 TX → módulo RS485 DI | GPIO17 (pin "TXD" del conector) | Sin uso mientras DE esté a GND |
-| Relé / MOSFET | GPIO25 | Salida; nivel activo configurable |
-| Sensor de puerta | GPIO26 | `INPUT_PULLUP` |
-| Pulsador de salida | GPIO27 | `INPUT_PULLUP`, con antirrebote por software |
-| LED verde / rojo / azul | GPIO18 / GPIO19 / GPIO21 | Con resistencia |
-| Buzzer | GPIO22 | |
+| Relé / MOSFET (cerradura) | GPIO4 (pin "IO4") | Salida; nivel activo configurable (`CERRADURA_NIVEL_ACTIVO`) |
+| Sensor de puerta | GPIO14 | `INPUT_PULLUP` |
+| Pulsador de salida | GPIO12 | `INPUT_PULLUP`, con antirrebote por software; al arrancar debe estar bajo |
+| LED verde / rojo / azul | GPIO2 / GPIO32 (pin "CFG") / GPIO33 (pin "485_EN") | Con resistencia |
+| Buzzer | GPIO4 (pin "IO4", el mismo del relé) | Buzzer activo en paralelo al relé: suena solo mientras la cerradura está activa. El firmware no lo maneja aparte |
 
-En la ESP32-ETH01 el GPIO16 enciende el oscilador de la PHY y no está libre; por eso el lector usa GPIO5 y GPIO17.
+En la ESP32-ETH01 la PHY LAN8720 (RMII) ocupa los GPIO 0, 18, 19, 21, 22, 23, 25, 26 y 27, y el GPIO16 enciende su oscilador: ninguno está libre ni sale al conector. Por eso el lector usa GPIO5 y GPIO17, y el resto de las señales van en los pines de la tabla. Los GPIO25/26/27 y 18/19/21/22 de una ESP32 genérica **no** sirven en esta placa.
 
-Los pines viven solo en `firmware/include/pines.h`. Evitar GPIO 0, 2, 12 y 15 (pines de arranque) y 34–39 como salidas (son solo entrada).
+Los pines viven solo en `firmware/include/pines.h` (la asignación de la tabla es la de `ACCESO_ETH01`; la rama `#else` es para una ESP32 genérica). Evitar GPIO 0, 2, 12 y 15 (pines de arranque) y 34–39 como salidas (son solo entrada).
 
 ## Lector RS485 en la mesa de trabajo (2026-10-13)
 
@@ -60,6 +60,19 @@ Cableado:
 ### Alimentar y programar la placa con el módulo USB-serie
 
 Conexiones: TX del módulo a RXO de la placa, RX del módulo a TXO, GND con GND y 5 V con el pin 5V (o 3,3 V con 3V3, pero un módulo USB suele quedarse corto de corriente con el Ethernet). Para flashear se puentea IO0 a GND y se resetea (EN a GND un instante); **se quita el puente** después. Esta placa puede no tener LED de encendido: que no alumbre no indica falla. Se comprueba con un multímetro (3V3 contra GND) o con el arranque por el monitor serie a 115200.
+
+## Relé en la mesa de trabajo (2026-10-15)
+
+El relé actúa como un pulsador: sus contactos secos **COM** y **NO** se conectan en paralelo a la entrada de apertura del equipo de la puerta, y la placa solo los une durante el pulso. No transporta datos ni corta la alimentación del equipo.
+
+1. Fuente de 12 V (la del lector): (+) a DC+ y (−) a DC− del relé.
+2. Tierra común: el (−) de la fuente también va a GND de la placa. La placa se alimenta a 5 V, nunca con los 12 V.
+3. IN del relé a **IO4** de la placa (GPIO4, `PIN_CERRADURA`).
+4. Sin carga todavía, se prueba con el multímetro en continuidad entre COM y NO: en reposo no suena; con un QR válido suena y el relé hace clic durante `segundos_apertura`.
+5. Si no hay clic, se prueba la otra posición del jumper H/L; si hace falta, se cambia `CERRADURA_NIVEL_ACTIVO` en `pines.h`.
+6. Los bornes (DC+, DC−, IN y contactos) se identifican con la serigrafía o el multímetro, no por posición.
+
+**Pendiente:** el equipo de la puerta (tensión y tipo de su entrada de apertura) para cablear COM y NO.
 
 ## Seguridad física
 
