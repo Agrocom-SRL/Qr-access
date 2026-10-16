@@ -26,6 +26,7 @@ class PlantillaAdmin extends ConsumerWidget {
     this.accionCompacta,
     this.fab,
     this.rutaAtras,
+    this.alVolver,
     this.anchoMaximo,
     this.conRelleno = true,
     super.key,
@@ -50,6 +51,9 @@ class PlantillaAdmin extends ConsumerWidget {
   /// A dónde lleva "atrás" en una pantalla que no es un destino principal
   /// (un formulario, por ejemplo); por defecto, a Inicio.
   final String? rutaAtras;
+
+  /// Muestra una flecha para volver a la izquierda del título (formularios).
+  final VoidCallback? alVolver;
   final double? anchoMaximo;
 
   /// Relleno horizontal alrededor del contenido; `false` si el contenido lo
@@ -69,6 +73,7 @@ class PlantillaAdmin extends ConsumerWidget {
         : _Cabecera(
             titulo: titulo!,
             subtitulo: subtitulo,
+            alVolver: alVolver,
             accion: clase == ClasePantalla.compacta
                 ? (accionCompacta ?? accion)
                 : accion,
@@ -212,11 +217,13 @@ class _Cabecera extends StatelessWidget {
     required this.titulo,
     required this.subtitulo,
     required this.accion,
+    this.alVolver,
   });
 
   final String titulo;
   final String? subtitulo;
   final Widget? accion;
+  final VoidCallback? alVolver;
 
   @override
   Widget build(BuildContext context) {
@@ -225,6 +232,14 @@ class _Cabecera extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (alVolver != null) ...[
+          IconButton(
+            tooltip: context.l10n.comunAtras,
+            icon: const Icon(Icons.arrow_back),
+            onPressed: alVolver,
+          ),
+          SizedBox(width: tokens.espacio.s),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

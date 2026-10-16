@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/estructura_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/pestana_admin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogos_estructura.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -22,6 +23,7 @@ import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Gestión de los sitios y las puertas de la cuenta por su administrador
 /// (HU-07). Vincular la placa a una puerta sigue siendo del equipo AGROCOM.
@@ -40,56 +42,87 @@ class EstructuraPagina extends ConsumerWidget {
       icono: Icons.add_business_outlined,
       onPressed: puedeSitios ? () => _nuevoSitio(context, ref) : null,
     );
+    final cuerpo = estructura.when(
+      loading: () => const _SitiosSkeleton(),
+      // Sin conexión solo se muestra la ilustración (como en los listados).
+      error: (error, _) => error is ErrorApi && error.esSinConexion
+          ? EstadoVacio.sinConexion(
+              titulo: l10n.estructuraErrorCargar,
+              alReintentar: () => ref.invalidate(estructuraProvider),
+            )
+          : EstadoVacio.error(
+              titulo: l10n.estructuraErrorCargar,
+              alReintentar: () => ref.invalidate(estructuraProvider),
+            ),
+      data: (sitios) => sitios.isEmpty
+          ? EstadoVacio(
+              ilustracion: Multimedia.vacioPuertas,
+              titulo: l10n.estructuraSinSitios,
+              ayuda: l10n.estructuraSinSitiosAyuda,
+              textoAccion: puedeSitios ? l10n.estructuraSitioNuevo : null,
+              alAccionar: puedeSitios ? () => _nuevoSitio(context, ref) : null,
+            )
+          : ListView.separated(
+              padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
+              // En compacto, la banda de foto va primero (como en Puertas).
+              itemCount: sitios.length + (context.esCompacta ? 1 : 0),
+              separatorBuilder: (_, _) => SizedBox(height: tokens.espacio.l),
+              itemBuilder: (_, indice) {
+                if (!context.esCompacta) {
+                  return _TarjetaSitio(sitio: sitios[indice]);
+                }
+                return indice == 0
+                    ? const _BandaDeFoto()
+                    : _TarjetaSitio(sitio: sitios[indice - 1]);
+              },
+            ),
+    );
+    // En compacto, la misma estructura de "Emitir QR": barra superior con la
+    // flecha para volver a Administración › Puertas y sin navegación inferior.
+    if (context.esCompacta) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (salio, _) {
+          if (!salio) _volver(context, ref);
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: l10n.comunAtras,
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => _volver(context, ref),
+            ),
+            title: Text(l10n.estructuraTitulo),
+            actions: [
+              if (puedeSitios)
+                IconButton(
+                  tooltip: l10n.estructuraSitioNuevo,
+                  onPressed: () => _nuevoSitio(context, ref),
+                  icon: const Icon(Icons.add_business_outlined),
+                ),
+            ],
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
+              child: cuerpo,
+            ),
+          ),
+        ),
+      );
+    }
     return PlantillaAdmin(
-      destino: context.esCompacta ? DestinoNav.admin : DestinoNav.puertas,
-      rutaAtras: context.esCompacta ? Rutas.admin : Rutas.adminPuertas,
+      destino: DestinoNav.puertas,
+      rutaAtras: Rutas.adminPuertas,
       titulo: l10n.estructuraTitulo,
       accion: puedeSitios ? nuevoSitio : null,
-      accionCompacta: puedeSitios
-          ? IconButton(
-              tooltip: l10n.estructuraSitioNuevo,
-              onPressed: () => _nuevoSitio(context, ref),
-              icon: const Icon(Icons.add_business_outlined),
-            )
-          : null,
-      child: estructura.when(
-        loading: () => const _SitiosSkeleton(),
-        // Sin conexión solo se muestra la ilustración (como en los listados).
-        error: (error, _) => error is ErrorApi && error.esSinConexion
-            ? EstadoVacio.sinConexion(
-                titulo: l10n.estructuraErrorCargar,
-                alReintentar: () => ref.invalidate(estructuraProvider),
-              )
-            : EstadoVacio.error(
-                titulo: l10n.estructuraErrorCargar,
-                alReintentar: () => ref.invalidate(estructuraProvider),
-              ),
-        data: (sitios) => sitios.isEmpty
-            ? EstadoVacio(
-                ilustracion: Multimedia.vacioPuertas,
-                titulo: l10n.estructuraSinSitios,
-                ayuda: l10n.estructuraSinSitiosAyuda,
-                textoAccion: puedeSitios ? l10n.estructuraSitioNuevo : null,
-                alAccionar: puedeSitios
-                    ? () => _nuevoSitio(context, ref)
-                    : null,
-              )
-            : ListView.separated(
-                padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
-                // En compacto, la banda de foto va primero (como en Puertas).
-                itemCount: sitios.length + (context.esCompacta ? 1 : 0),
-                separatorBuilder: (_, _) => SizedBox(height: tokens.espacio.l),
-                itemBuilder: (_, indice) {
-                  if (!context.esCompacta) {
-                    return _TarjetaSitio(sitio: sitios[indice]);
-                  }
-                  return indice == 0
-                      ? const _BandaDeFoto()
-                      : _TarjetaSitio(sitio: sitios[indice - 1]);
-                },
-              ),
-      ),
+      child: cuerpo,
     );
+  }
+
+  void _volver(BuildContext context, WidgetRef ref) {
+    ref.read(pestanaAdminProvider.notifier).elegir(PestanaAdmin.puertas);
+    context.go(Rutas.admin);
   }
 }
 

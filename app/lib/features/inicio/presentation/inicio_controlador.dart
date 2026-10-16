@@ -20,6 +20,28 @@ final FutureProvider<Pagina<QrAcceso>> qrVigentesProvider =
           ),
     );
 
+/// Los últimos eventos que ve el rol activo (del guardia: los de sus puertas).
+final FutureProvider<List<EventoAcceso>> ultimosEventosProvider =
+    FutureProvider.autoDispose<List<EventoAcceso>>((ref) async {
+      final pagina = await ref
+          .watch(eventosRepositorioProvider)
+          .listar(
+            filtro: const FiltroEventos(),
+            pagina: 1,
+            porPagina: const Tamanos().filasDelTablero,
+          );
+      return pagina.datos;
+    });
+
+/// Los accesos de hoy que ve el rol activo (del guardia: los de sus puertas).
+final FutureProvider<ResumenEventos> resumenDeHoyProvider =
+    FutureProvider.autoDispose<ResumenEventos>((ref) {
+      final ahora = ref.read(relojProvider)();
+      return ref
+          .watch(eventosRepositorioProvider)
+          .resumir(FiltroEventos(desde: diaLocal(ahora).toUtc()));
+    });
+
 /// Lo que pinta el tablero del administrador (C04b/E04b).
 @immutable
 class Tablero {

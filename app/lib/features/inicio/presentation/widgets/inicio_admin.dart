@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
@@ -224,20 +225,14 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 ),
               )
             else ...[
-              indicadores[0],
-              SizedBox(height: tokens.espacio.l),
-              // Las dos tarjetas miden lo mismo aunque un rótulo ocupe dos
-              // líneas ("Puertas sin conexión").
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: indicadores[1]),
-                    SizedBox(width: tokens.espacio.l),
-                    Expanded(child: indicadores[2]),
-                  ],
-                ),
+              // Mismo card con foto de fondo que ve el guardia.
+              HeroAccesosDeHoy(
+                permitidos: datos?.resumenDeHoy.permitidos,
+                rechazados: datos?.resumenDeHoy.rechazados,
+                alTocar: () => context.go(Rutas.eventos),
               ),
+              SizedBox(height: tokens.espacio.l),
+              indicadores[2],
             ],
             SizedBox(height: tokens.espacio.xxl),
             if (expandida && datos != null && datos.ultimosEventos.isNotEmpty)

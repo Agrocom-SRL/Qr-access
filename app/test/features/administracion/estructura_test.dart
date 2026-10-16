@@ -74,7 +74,7 @@ void main() {
     expect(find.text(textos.estructuraPuertaSegundosValor(8)), findsOneWidget);
   });
 
-  testWidgets('crea un sitio desde el diálogo', (tester) async {
+  testWidgets('crea un sitio desde la hoja inferior', (tester) async {
     final repositorio = await _montar(tester);
     final textos = textosEn(tester);
 

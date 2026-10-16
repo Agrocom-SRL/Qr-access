@@ -22,6 +22,8 @@ class ColoresSemanticos {
     required this.advertenciaSuave,
     required this.informacion,
     required this.informacionSuave,
+    required this.acento,
+    required this.sobreAcento,
     required this.hero,
     required this.heroAcento,
     required this.sobreHero,
@@ -47,6 +49,8 @@ class ColoresSemanticos {
     advertenciaSuave: Primitivos.ambar50,
     informacion: Primitivos.azul700,
     informacionSuave: Primitivos.azul50,
+    acento: Primitivos.naranja600,
+    sobreAcento: Primitivos.neutro0,
     hero: Primitivos.verde500,
     heroAcento: Primitivos.verde600,
     sobreHero: Primitivos.neutro0,
@@ -85,6 +89,8 @@ class ColoresSemanticos {
     advertenciaSuave: Primitivos.ambarOscuroSuave,
     informacion: Primitivos.azul300,
     informacionSuave: Primitivos.azulOscuroSuave,
+    acento: Primitivos.naranja300,
+    sobreAcento: Primitivos.naranjaOscuro,
     hero: Primitivos.verde800,
     heroAcento: Primitivos.verde700,
     sobreHero: Primitivos.neutroOscuro400,
@@ -111,6 +117,11 @@ class ColoresSemanticos {
   final Color advertenciaSuave;
   final Color informacion;
   final Color informacionSuave;
+
+  /// Color de resalte para la acción principal flotante (emitir QR): se
+  /// distingue del verde de la marca para que se vea de antemano.
+  final Color acento;
+  final Color sobreAcento;
 
   /// Fondo del bloque de marca (bienvenida, tarjeta de cuenta, "Emitir QR").
   final Color hero;

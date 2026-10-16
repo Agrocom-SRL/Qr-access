@@ -1,13 +1,17 @@
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
+import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
@@ -31,15 +35,24 @@ class InicioUsuario extends ConsumerWidget {
     final l10n = context.l10n;
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
-    final vigentes = ref.watch(qrVigentesProvider);
+    // Sin permiso de ver QR (el guardia) ni siquiera se pide la lista.
+    final vigentes = sesion.tiene(Permisos.verQr)
+        ? ref.watch(qrVigentesProvider)
+        : null;
     final ahora = ref.read(relojProvider)();
     final puedeEmitir = sesion.tiene(Permisos.emitirQr);
-    final ultimo = vigentes.value?.datos.firstOrNull;
+    // El guardia tiene su QR propio, pero no comparte QR con otras personas.
+    final guardia = esGuardia(sesion);
+    final puedeCompartir = puedeEmitir && !guardia;
+    final veEventosAqui = guardia && sesion.tiene(Permisos.verEventos);
+    final eventos = veEventosAqui ? ref.watch(ultimosEventosProvider) : null;
+    final resumenDeHoy = guardia ? ref.watch(resumenDeHoyProvider) : null;
+    final ultimo = vigentes?.value?.datos.firstOrNull;
 
     final accesos = <_AccesoRapido>[
       // Siempre visible para quien emite: sin un QR previo queda apagado en
       // vez de desaparecer, para que los accesos no cambien de lugar.
-      if (puedeEmitir)
+      if (puedeCompartir)
         _AccesoRapido(
           icono: Icons.replay,
           etiqueta: l10n.inicioRepetirUltimo,
@@ -85,7 +98,13 @@ class InicioUsuario extends ConsumerWidget {
     ];
 
     return RefreshIndicator(
-      onRefresh: () => ref.refresh(qrVigentesProvider.future),
+      onRefresh: () {
+        ref
+          ..invalidate(ultimosEventosProvider)
+          ..invalidate(resumenDeHoyProvider);
+        if (vigentes == null) return Future.value();
+        return ref.refresh(qrVigentesProvider.future);
+      },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         // Con el botón flotante, el final del contenido no queda tapado.
@@ -100,7 +119,15 @@ class InicioUsuario extends ConsumerWidget {
           children: [
             EncabezadoInicio(sesion: sesion),
             SizedBox(height: tokens.espacio.xl),
-            if (puedeEmitir) ...[
+            if (guardia) ...[
+              // Mismo diseño que "Emitir QR", pero con lo que le toca vigilar.
+              HeroAccesosDeHoy(
+                permitidos: resumenDeHoy?.value?.permitidos,
+                rechazados: resumenDeHoy?.value?.rechazados,
+                alTocar: () => context.go(Rutas.eventos),
+              ),
+              SizedBox(height: tokens.espacio.xl),
+            ] else if (puedeEmitir) ...[
               _HeroEmitir(alEmitir: () => context.go(Rutas.qrNuevo)),
               SizedBox(height: tokens.espacio.xl),
             ],
@@ -112,7 +139,68 @@ class InicioUsuario extends ConsumerWidget {
               ),
               SizedBox(height: tokens.espacio.l),
             ],
-            if (sesion.tiene(Permisos.verQr)) ...[
+            if (eventos != null) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.inicioUltimosEventos,
+                      style: textos.titleLarge,
+                    ),
+                  ),
+                  AccesoBoton(
+                    texto: l10n.comunVerTodos,
+                    variante: VarianteBoton.texto,
+                    onPressed: () => context.go(Rutas.eventos),
+                  ),
+                ],
+              ),
+              SizedBox(height: tokens.espacio.s),
+              eventos.when(
+                loading: () => Column(
+                  children: [
+                    for (var i = 0; i < 2; i++)
+                      Padding(
+                        padding: EdgeInsets.only(bottom: tokens.espacio.m),
+                        child: AccesoTarjeta(
+                          child: AccesoSkeleton(alto: tokens.tamano.iconoCaja),
+                        ),
+                      ),
+                  ],
+                ),
+                error: (error, _) => error is ErrorApi && error.esSinConexion
+                    ? EstadoVacio.sinConexion(
+                        titulo: l10n.inicioErrorCargar,
+                        alReintentar: () =>
+                            ref.invalidate(ultimosEventosProvider),
+                      )
+                    : EstadoVacio.error(
+                        titulo: l10n.inicioErrorCargar,
+                        alReintentar: () =>
+                            ref.invalidate(ultimosEventosProvider),
+                      ),
+                data: (lista) => lista.isEmpty
+                    ? EstadoVacio(
+                        ilustracion: Multimedia.vacioEventos,
+                        titulo: l10n.eventosSinResultados,
+                        ayuda: l10n.eventosSinResultadosAyuda,
+                      )
+                    : AccesoTarjeta(
+                        relleno: EdgeInsets.symmetric(
+                          horizontal: tokens.espacio.l,
+                        ),
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < lista.length; i++) ...[
+                              FilaEvento(evento: lista[i]),
+                              if (i < lista.length - 1) const Divider(),
+                            ],
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+            if (vigentes != null) ...[
               Row(
                 children: [
                   Expanded(
