@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/plataforma/almacen_qr_contrato.dart';
 
-/// Implementación web: solo en memoria, como el refresco de la sesión. Al
-/// recargar la pestaña los QR emitidos dejan de poder mostrarse.
+/// Implementación web: solo en memoria (a diferencia del refresco de la
+/// sesión). Al recargar la pestaña los QR emitidos dejan de poder mostrarse.
 class AlmacenQrWeb implements AlmacenQr {
   static final Map<String, ({String texto, DateTime venceAt})> _entradas = {};
 
