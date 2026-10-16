@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/plataforma/almacen_cache_contrato.dart';
 
-/// Implementación web: solo en memoria (a diferencia del refresco de la sesión). Al
-/// recargar la pestaña la caché se pierde.
+/// Implementación web: solo en memoria (a diferencia del refresco de la
+/// sesión). Al recargar la pestaña la caché se pierde.
 class AlmacenCacheWeb implements AlmacenCache {
   static final Map<String, EntradaCache> _entradas = {};
 
