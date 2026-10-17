@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:flutter/foundation.dart';
 
 /// Plazos de vigencia que la persona puede elegir al emitir (handoff C05b):
@@ -87,14 +88,14 @@ class Vigencia {
     if (dias != null) return ahora.toUtc().add(Duration(days: dias));
     final minutos = minutosDelDia;
     if (opcion != OpcionVigencia.horaExacta || minutos == null) return null;
-    final local = ahora.toLocal();
-    return DateTime(
+    final local = horaBolivia(ahora);
+    return instanteDesdeBolivia(
       local.year,
       local.month,
       local.day,
       minutos ~/ 60,
       minutos % 60,
-    ).toUtc();
+    );
   }
 
   /// Una hora exacta que ya pasó no sirve: la API la rechazaría.
