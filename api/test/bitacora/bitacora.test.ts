@@ -167,8 +167,12 @@ describe('plataforma: bitácora y resumen (A10, A05d, A02)', () => {
     expect(editados.datos.length).toBeGreaterThan(0);
     expect(editados.datos.every((e) => e.accion === 'actualizado')).toBe(true);
 
-    const hoy = new Date().toISOString().slice(0, 10);
-    const futuro = new Date(Date.now() + 3 * DIA).toISOString().slice(0, 10);
+    // El filtro cuenta los días en la zona de La Paz (UTC-4): con toISOString() el test
+    // fallaba entre las 20:00 y las 24:00 locales, cuando en UTC ya es el día siguiente.
+    const diaEnLaPaz = (ms: number): string =>
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date(ms));
+    const hoy = diaEnLaPaz(Date.now());
+    const futuro = diaEnLaPaz(Date.now() + 3 * DIA);
     expect((await bitacora({ desde: hoy, hasta: hoy })).meta.total).toBeGreaterThan(0);
     expect((await bitacora({ desde: futuro })).meta.total).toBe(0);
 
