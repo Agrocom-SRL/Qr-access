@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/qr/imagen_qr.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
@@ -127,7 +128,7 @@ class MostrarQrPagina extends ConsumerWidget {
 
 /// "23:59" de la hora de vencimiento, para el diálogo de cierre.
 String formatearHoraDe(DateTime venceAt) {
-  final local = venceAt.toLocal();
+  final local = horaBolivia(venceAt);
   final h = local.hour.toString().padLeft(2, '0');
   final m = local.minute.toString().padLeft(2, '0');
   return '$h:$m';
