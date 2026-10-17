@@ -11,6 +11,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 --branch "${FLUTTER_VERSION}" https://github.com/flutter/flutter.git /opt/flutter
 ENV PATH="/opt/flutter/bin:${PATH}"
+# En un contenedor LXC sin privilegios (CT de producción) el uid/gid del tar de Flutter
+# no existe en el mapeo y el chown falla; no hace falta conservar el dueño.
+ENV TAR_OPTIONS="--no-same-owner"
 RUN flutter config --no-analytics --no-cli-animations \
  && flutter precache --web --no-android --no-ios
 
