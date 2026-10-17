@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,7 +36,7 @@ void main() {
     test('una hora exacta que ya pasó no vale', () {
       // Las 10:00 locales de hoy, con "ahora" a las 14:30 UTC (en cualquier
       // zona al oeste de UTC+4 ya pasó).
-      final local = ahora.toLocal();
+      final local = horaBolivia(ahora);
       final pasada = Vigencia(
         OpcionVigencia.horaExacta,
         minutosDelDia: (local.hour * 60 + local.minute) - 30,
@@ -121,7 +122,7 @@ void main() {
     });
 
     test('una hora exacta es la hora local de hoy, en UTC', () {
-      final local = ahora.toLocal();
+      final local = horaBolivia(ahora);
       final vence = Vigencia(
         OpcionVigencia.horaExacta,
         minutosDelDia: local.hour * 60 + local.minute + 90,

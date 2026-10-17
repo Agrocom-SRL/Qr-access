@@ -34,7 +34,7 @@ class PasoVigencia extends StatelessWidget {
   final DateTime ahora;
 
   Future<void> _elegirHora(BuildContext context) async {
-    final local = ahora.toLocal();
+    final local = horaBolivia(ahora);
     final inicial = vigencia.minutosDelDia;
     final hora = await showTimePicker(
       context: context,
