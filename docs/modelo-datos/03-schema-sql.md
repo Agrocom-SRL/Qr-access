@@ -614,3 +614,13 @@ ALTER TABLE usuarios DROP FOREIGN KEY fk_usuarios_rol_preferido, DROP COLUMN rol
 ```
 
 Migración de datos: `db/migrations/20261022100004_vincula_usuarios_existentes.sql` cuelga a los usuarios de cuenta que aún no tienen superior del primer Administrador de su cuenta.
+
+## cuentas: tope de Miembros por Titular
+
+Migración: `db/migrations/20261022100005_add_max_miembros_a_cuentas.sql`
+
+```sql
+ALTER TABLE cuentas
+  ADD COLUMN max_miembros_por_titular SMALLINT UNSIGNED NOT NULL DEFAULT 10 AFTER activo,
+  ADD CONSTRAINT ck_cuentas_max_miembros CHECK (max_miembros_por_titular >= 1);
+```
