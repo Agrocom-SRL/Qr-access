@@ -26,5 +26,6 @@ Una casa, departamento, pabellón o puesto dentro de una propiedad (`sitios`). T
 ## Reglas
 
 - Los Miembros no tienen columna de unidad: cuelgan de su Titular (`usuarios.superior_id`) y su unidad es la de él.
-- Dar de baja al Titular da de baja a la unidad y, en cascada con confirmación, a sus Miembros (ADR 0028 §7).
+- La unidad nace con su Titular, en la misma transacción (`POST /usuarios` con `unidad`), así que hoy ninguna unidad queda sin Titular. El nombre es único dentro de la propiedad entre las vigentes (409 `unidad.nombre_existente`).
+- Dar de baja al Titular da de baja a la unidad y, en cascada con confirmación (`DELETE /usuarios/:id?confirmar=true`), a sus Miembros (ADR 0028 §7).
 - Solo AGROCOM reasigna una unidad completa a otro Administrador (ADR 0028 §7).
