@@ -28,7 +28,7 @@ class EventoAcceso {
     required this.puertaNombre,
     required this.sitioNombre,
     this.qrEtiqueta,
-    this.emisorEtiqueta,
+    this.generadorEtiqueta,
   });
 
   final String id;
@@ -43,10 +43,10 @@ class EventoAcceso {
   final String puertaNombre;
   final String sitioNombre;
 
-  /// Etiqueta del QR leído y de quien lo emitió; `null` si no era un QR de
+  /// Etiqueta del QR leído y de quien lo generó; `null` si no era un QR de
   /// la cuenta.
   final String? qrEtiqueta;
-  final String? emisorEtiqueta;
+  final String? generadorEtiqueta;
 
   bool get esPermitido => resultado == ResultadoEvento.permitido;
 }

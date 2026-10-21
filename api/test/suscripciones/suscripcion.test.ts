@@ -274,30 +274,30 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
   });
 
   describe('suspender y reactivar', () => {
-    it('suspendida, la cuenta no emite QR; reactivada, vuelve a emitir', async () => {
+    it('suspendida, la cuenta no genera QR; reactivada, vuelve a generar', async () => {
       const sesion = await iniciarSesion(prueba.app, escenario.usuario.pin);
-      const emitir = () =>
+      const generar = () =>
         prueba.app.inject({
           method: 'POST',
           url: '/api/v1/qr-accesos',
           headers: conUsuario(sesion),
           payload: { puerta_ids: [escenario.puertaPrincipal.id] },
         });
-      expect((await emitir()).statusCode).toBe(201);
+      expect((await generar()).statusCode).toBe(201);
       const suspension = await prueba.app.inject({
         method: 'POST',
         url: url('/suscripcion/suspension'),
         headers,
       });
       expect(suspension.statusCode).toBe(204);
-      const rechazado = await emitir();
+      const rechazado = await generar();
       expect(rechazado.statusCode).toBe(403);
       expect(rechazado.json<Problema>().code).toBe('suscripcion.vencida');
       expect((await suscripcion()).suscripcion.estado).toBe('suspendida');
       expect((await suscripcion()).proximo_pago).toBeNull();
 
       await prueba.app.inject({ method: 'POST', url: url('/suscripcion/reactivacion'), headers });
-      expect((await emitir()).statusCode).toBe(201);
+      expect((await generar()).statusCode).toBe(201);
     });
 
     it('es idempotente', async () => {

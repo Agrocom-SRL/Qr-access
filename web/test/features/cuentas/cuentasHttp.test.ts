@@ -121,7 +121,7 @@ describe('cuentas por HTTP (contrato de la API)', () => {
           etiqueta: null,
           rol: 'Miembro',
           unidad: null,
-          qr_emitidos: 0,
+          qr_generados: 0,
           qr_usados: 0,
           max_qr_en_un_dia: 0,
           ultimo_qr_at: '2026-09-02T15:00:00.000Z',

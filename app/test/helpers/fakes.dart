@@ -20,7 +20,7 @@ import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
@@ -135,39 +135,39 @@ class PuertasRepositorioFalso implements PuertasRepositorio {
 
 class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
   new({
-    this.emitido,
+    this.generado,
     this.listado,
     this.resumen = const {},
-    this.errorEmitir,
+    this.errorGenerar,
     this.errorAnular,
     this.errorListar,
     this.respaldo,
   });
 
-  QrEmitido? emitido;
+  QrGenerado? generado;
 
   /// Lo que devuelve el respaldo sin internet del QR propio.
-  QrEmitido? respaldo;
+  QrGenerado? respaldo;
   Pagina<QrAcceso>? listado;
   Map<EstadoQr, int> resumen;
-  Exception? errorEmitir;
+  Exception? errorGenerar;
   Exception? errorAnular;
   Exception? errorListar;
 
-  final List<DatosEmision> emisiones = [];
+  final List<DatosGeneracion> generaciones = [];
   final List<DateTime> ahoras = [];
   final List<EstadoQr> estadosListados = [];
   final List<String> anulados = [];
 
   @override
-  Future<QrEmitido> emitir(
-    DatosEmision datos, {
+  Future<QrGenerado> generar(
+    DatosGeneracion datos, {
     required DateTime ahora,
   }) async {
-    emisiones.add(datos);
+    generaciones.add(datos);
     ahoras.add(ahora);
-    if (errorEmitir != null) throw errorEmitir!;
-    return emitido!;
+    if (errorGenerar != null) throw errorGenerar!;
+    return generado!;
   }
 
   @override
@@ -202,7 +202,7 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
   }
 
   @override
-  Future<QrEmitido?> ultimoPropioGuardado() async => respaldo;
+  Future<QrGenerado?> ultimoPropioGuardado() async => respaldo;
 }
 
 class EventosRepositorioFalso implements EventosRepositorio {
@@ -429,7 +429,7 @@ class CompartirFalso implements CompartirImagen {
   }
 }
 
-/// Almacén de QR emitidos en memoria, sin vencimiento automático.
+/// Almacén de QR generados en memoria, sin vencimiento automático.
 class AlmacenQrEnMemoria implements AlmacenQr {
   final Map<String, String> _textos = {};
 

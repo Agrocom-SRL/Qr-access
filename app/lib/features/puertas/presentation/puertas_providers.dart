@@ -5,7 +5,7 @@ import 'package:agrocom_acceso/features/puertas/data/puertas_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/domain/puerta.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Puertas de la cuenta, para elegir al emitir un QR (HU-11) y para el
+/// Puertas de la cuenta, para elegir al generar un QR (HU-11) y para el
 /// tablero y la administración (HU-09).
 ///
 /// Se descarta cuando nadie la mira y se vuelve a pedir cada 15 s mientras

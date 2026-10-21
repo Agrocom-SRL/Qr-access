@@ -254,7 +254,7 @@ class _ListaEventos extends ConsumerWidget {
         ColumnaListado(
           titulo: l10n.eventosColumnaQr,
           celda: (context, evento) => Text(
-            evento.qrEtiqueta == null && evento.emisorEtiqueta == null
+            evento.qrEtiqueta == null && evento.generadorEtiqueta == null
                 ? l10n.comunGuion
                 : textoDetalleEvento(
                     l10n,
@@ -266,7 +266,7 @@ class _ListaEventos extends ConsumerWidget {
                       puertaNombre: evento.puertaNombre,
                       sitioNombre: evento.sitioNombre,
                       qrEtiqueta: evento.qrEtiqueta,
-                      emisorEtiqueta: evento.emisorEtiqueta,
+                      generadorEtiqueta: evento.generadorEtiqueta,
                     ),
                   ),
             style: Theme.of(context).textTheme.bodyMedium

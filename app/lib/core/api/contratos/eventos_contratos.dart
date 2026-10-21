@@ -38,7 +38,7 @@ class EventoAccesoDto {
   final ReferenciaDto puerta;
   final ReferenciaDto sitio;
 
-  /// El QR leído y quién lo emitió; `null` si no era un QR de la cuenta.
+  /// El QR leído y quién lo generó; `null` si no era un QR de la cuenta.
   final QrDeEventoDto? qr;
 }
 
@@ -46,12 +46,12 @@ class QrDeEventoDto {
   new desde(Map<String, dynamic> json)
     : id = json['id'] as String,
       etiqueta = json['etiqueta'] as String?,
-      emisorEtiqueta =
-          (json['emisor'] as Map<String, dynamic>)['etiqueta'] as String?;
+      generadorEtiqueta =
+          (json['generador'] as Map<String, dynamic>)['etiqueta'] as String?;
 
   final String id;
   final String? etiqueta;
-  final String? emisorEtiqueta;
+  final String? generadorEtiqueta;
 }
 
 /// Respuesta de `GET /eventos-acceso/resumen`: indicadores del tablero.

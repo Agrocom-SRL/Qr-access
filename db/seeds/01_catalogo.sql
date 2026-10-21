@@ -12,7 +12,7 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('organizacion.sitio.administrar', 'cuenta'),
   ('organizacion.puerta.administrar', 'cuenta'),
   ('organizacion.guardia.asignar', 'cuenta'),
-  ('accesos.qr.emitir', 'cuenta'),
+  ('accesos.qr.generar', 'cuenta'),
   ('accesos.qr.ver', 'cuenta'),
   ('accesos.qr.ver_todos', 'cuenta'),
   ('accesos.qr.anular', 'cuenta'),
@@ -103,7 +103,7 @@ ON DUPLICATE KEY UPDATE activo = 1;
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r
   JOIN permisos AS p ON p.codigo IN (
-    'organizacion.puerta.ver', 'accesos.qr.emitir', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
+    'organizacion.puerta.ver', 'accesos.qr.generar', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
     'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar'
   )
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;

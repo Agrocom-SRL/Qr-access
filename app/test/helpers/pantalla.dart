@@ -60,9 +60,9 @@ Future<void> montarPantalla(
               Scaffold(body: Text('destino ${state.matchedLocation}')),
         ),
       GoRoute(
-        path: Rutas.qrEmitido,
+        path: Rutas.qrGenerado,
         builder: (context, state) =>
-            const Scaffold(body: Text('destino ${Rutas.qrEmitido}')),
+            const Scaffold(body: Text('destino ${Rutas.qrGenerado}')),
       ),
       GoRoute(
         path: Rutas.adminPinGenerado,

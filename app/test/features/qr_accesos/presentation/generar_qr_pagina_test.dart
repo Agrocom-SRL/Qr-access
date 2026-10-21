@@ -3,9 +3,9 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
-import 'package:agrocom_acceso/features/qr_accesos/presentation/emitir_qr_pagina.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/generar_qr_pagina.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/indicador_pasos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +15,7 @@ import '../../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
-final _emitido = QrEmitido(
+final _generado = QrGenerado(
   id: 'qr1',
   texto: 'AQ1.token',
   venceAt: DateTime.utc(2026, 10, 9, 23, 59),
@@ -44,10 +44,10 @@ Future<QrAccesosRepositorioFalso> _montar(
   List<Puerta> puertas = _puertas,
   bool expandida = false,
 }) async {
-  final repositorio = QrAccesosRepositorioFalso(emitido: _emitido);
+  final repositorio = QrAccesosRepositorioFalso(generado: _generado);
   await montarPantalla(
     tester,
-    pagina: const EmitirQrPagina(),
+    pagina: const GenerarQrPagina(),
     expandida: expandida,
     overrides: [
       qrAccesosRepositorioProvider.overrideWithValue(repositorio),
@@ -56,7 +56,7 @@ Future<QrAccesosRepositorioFalso> _montar(
       ),
       relojProvider.overrideWithValue(() => _ahora),
       sesionControladorProvider.overrideWith(
-        () => SesionFalsa(sesionCon(permisos: {Permisos.emitirQr})),
+        () => SesionFalsa(sesionCon(permisos: {Permisos.generarQr})),
       ),
     ],
   );
@@ -85,7 +85,7 @@ void main() {
 
   testWidgets('sin puertas, explica que hace falta pedirlas', (tester) async {
     await _montar(tester, puertas: const []);
-    expect(find.text(textosEn(tester).qrEmitirSinPuertas), findsOneWidget);
+    expect(find.text(textosEn(tester).qrGenerarSinPuertas), findsOneWidget);
   });
 
   testWidgets('Siguiente sin puertas marca el error y no avanza', (
@@ -97,9 +97,9 @@ void main() {
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
-    expect(find.text(textos.qrEmitirErrorSinPuertas), findsOneWidget);
-    expect(find.text(textos.qrEmitirPregunta), findsOneWidget);
-    expect(repositorio.emisiones, isEmpty);
+    expect(find.text(textos.qrGenerarErrorSinPuertas), findsOneWidget);
+    expect(find.text(textos.qrGenerarPregunta), findsOneWidget);
+    expect(repositorio.generaciones, isEmpty);
   });
 
   testWidgets('el modo Días ofrece 2, 3, 5 y 7 días y "todo el día"', (
@@ -124,17 +124,17 @@ void main() {
     await tester.pump();
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
-    await tester.tap(_boton(textos.qrEmitirBoton));
+    await tester.tap(_boton(textos.qrGenerarBoton));
     await tester.pump();
     await tester.pump();
 
     expect(
-      repositorio.emisiones.single.vigencia.opcion,
+      repositorio.generaciones.single.vigencia.opcion,
       OpcionVigencia.cincoDias,
     );
   });
 
-  testWidgets('los tres pasos: puerta, 1 h y etiqueta, y emite', (
+  testWidgets('los tres pasos: puerta, 1 h y etiqueta, y genera', (
     tester,
   ) async {
     final repositorio = await _montar(tester);
@@ -142,7 +142,10 @@ void main() {
 
     await tester.tap(find.text('Portón principal'));
     await tester.pump();
-    expect(find.text('1 ${textos.qrEmitirPuertasContadas(1)}'), findsOneWidget);
+    expect(
+      find.text('1 ${textos.qrGenerarPuertasContadas(1)}'),
+      findsOneWidget,
+    );
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
@@ -158,28 +161,31 @@ void main() {
     await tester.tap(_boton(textos.comunSiguiente));
     await tester.pump();
 
-    expect(find.text(textos.qrEmitirRevisa), findsOneWidget);
+    expect(find.text(textos.qrGenerarRevisa), findsOneWidget);
     expect(find.text('Proveedor de gas'), findsOneWidget);
-    await tester.tap(_boton(textos.qrEmitirBoton));
+    await tester.tap(_boton(textos.qrGenerarBoton));
     await tester.pump();
     await tester.pump();
 
-    final emision = repositorio.emisiones.single;
-    expect(emision.puertaIds, ['p1']);
-    expect(emision.vigencia.opcion, OpcionVigencia.unaHora);
-    expect(emision.etiqueta, 'Proveedor de gas');
-    // Tras emitir, la pantalla del QR recibe el token en `extra`.
-    expect(find.text('destino /qr/emitido'), findsOneWidget);
+    final generacion = repositorio.generaciones.single;
+    expect(generacion.puertaIds, ['p1']);
+    expect(generacion.vigencia.opcion, OpcionVigencia.unaHora);
+    expect(generacion.etiqueta, 'Proveedor de gas');
+    // Tras generar, la pantalla del QR recibe el token en `extra`.
+    expect(find.text('destino /qr/generado'), findsOneWidget);
   });
 
   testWidgets('"Todas" de un sitio marca sus puertas', (tester) async {
     await _montar(tester);
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.qrEmitirTodas).first);
+    await tester.tap(find.text(textos.qrGenerarTodas).first);
     await tester.pump();
 
-    expect(find.text('1 ${textos.qrEmitirPuertasContadas(1)}'), findsOneWidget);
+    expect(
+      find.text('1 ${textos.qrGenerarPuertasContadas(1)}'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('la etiqueta se corta en 40 caracteres y muestra el contador', (
@@ -205,6 +211,6 @@ void main() {
     final textos = textosEn(tester);
 
     expect(find.text(textos.qrResumenTitulo), findsOneWidget);
-    expect(find.text(textos.qrEmitirSeleccionarTodas), findsNWidgets(2));
+    expect(find.text(textos.qrGenerarSeleccionarTodas), findsNWidgets(2));
   });
 }

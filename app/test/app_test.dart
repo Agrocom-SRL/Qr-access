@@ -42,7 +42,7 @@ void main() {
         overrides: [
           sesionControladorProvider.overrideWith(
             () => SesionFalsa(
-              sesionCon(permisos: {Permisos.emitirQr, Permisos.verQr}),
+              sesionCon(permisos: {Permisos.generarQr, Permisos.verQr}),
             ),
           ),
           almacenPreferenciasProvider.overrideWithValue(

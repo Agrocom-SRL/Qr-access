@@ -6,18 +6,18 @@ abstract final class Rutas {
   static const ingreso = '/ingreso';
   static const inicio = '/inicio';
 
-  /// Listado de los QR emitidos por el usuario.
+  /// Listado de los QR generados por el usuario.
   static const qrMios = '/qr';
 
-  /// Emitir un QR nuevo.
+  /// Generar un QR nuevo.
   static const qrNuevo = '/qr/nuevo';
 
-  /// QR rápido: emite al instante el QR propio, sin formulario ni compartir.
+  /// QR rápido: genera al instante el QR propio, sin formulario ni compartir.
   static const qrRapido = '/qr/rapido';
 
-  /// El QR recién emitido, con su token. Solo llega con `extra`: no tiene
+  /// El QR recién generado, con su token. Solo llega con `extra`: no tiene
   /// URL que se pueda volver a abrir.
-  static const qrEmitido = '/qr/emitido';
+  static const qrGenerado = '/qr/generado';
 
   static const eventos = '/eventos';
   static const perfil = '/perfil';

@@ -2,7 +2,7 @@ import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Plantilla de QR emitido y PIN generado (handoff): sin navegación, cerrar
+/// Plantilla de QR generado y PIN generado (handoff): sin navegación, cerrar
 /// arriba a la izquierda, contenido con ancho de formulario y la acción
 /// principal fija abajo.
 class PlantillaPantallaCompleta extends StatelessWidget {

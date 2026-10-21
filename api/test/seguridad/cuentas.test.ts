@@ -95,7 +95,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       }>();
       expect(cuerpo.roles.map((r) => r.nombre)).toEqual(['Administrador']);
       expect(cuerpo.permisos).toContain('seguridad.usuario.crear');
-      expect(cuerpo.permisos).toContain('accesos.qr.emitir');
+      expect(cuerpo.permisos).toContain('accesos.qr.generar');
       expect(cuerpo.permisos.some((p) => p.startsWith('seguridad.cuenta'))).toBe(false);
       expect(cuerpo.suscripcion?.plan).toBe('200 usuarios');
     });

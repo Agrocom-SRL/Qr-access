@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Estado de la sesión que leen el router, los menús y los permisos.
-/// Inmutable: cada cambio emite un estado nuevo.
+/// Inmutable: cada cambio genera un estado nuevo.
 @immutable
 sealed class SesionEstado {
   const new();

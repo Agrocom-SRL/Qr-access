@@ -74,7 +74,7 @@ function Contenido({
         filas={ruidosos.map((u) => ({
           id: u.id,
           nombre: u.etiqueta,
-          detalle: t('usoDetalleRuidoso', { maximo: u.maxQrEnUnDia, total: u.qrEmitidos }),
+          detalle: t('usoDetalleRuidoso', { maximo: u.maxQrEnUnDia, total: u.qrGenerados }),
         }))}
       />
       <Grupo

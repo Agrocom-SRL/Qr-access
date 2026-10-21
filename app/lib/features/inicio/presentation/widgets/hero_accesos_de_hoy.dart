@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 /// Card "hero" con la foto de fondo del inicio: los accesos de hoy,
 /// permitidos y rechazados. Lo comparten el guardia y el administrador (el
-/// usuario común ve el de "Emitir QR", con el mismo diseño).
+/// usuario común ve el de "Generar QR", con el mismo diseño).
 class HeroAccesosDeHoy extends StatelessWidget {
   const new({
     required this.permitidos,

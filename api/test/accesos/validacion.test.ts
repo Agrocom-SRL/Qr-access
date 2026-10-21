@@ -193,7 +193,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
 
     it('un QR anulado desde la API deja de abrir', async () => {
       const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
-      const emitido = (
+      const generado = (
         await prueba.app.inject({
           method: 'POST',
           url: '/api/v1/qr-accesos',
@@ -203,15 +203,15 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       ).json<{ id: string; texto: string }>();
       await prueba.app.inject({
         method: 'POST',
-        url: `/api/v1/qr-accesos/${emitido.id}/anulacion`,
+        url: `/api/v1/qr-accesos/${generado.id}/anulacion`,
         headers: conUsuario(sesion),
       });
-      await rechazado(a.dispositivoPrincipal, emitido.texto, 'qr.anulado');
+      await rechazado(a.dispositivoPrincipal, generado.texto, 'qr.anulado');
     });
 
-    it('un QR emitido por la API abre de punta a punta', async () => {
+    it('un QR generado por la API abre de punta a punta', async () => {
       const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
-      const emitido = (
+      const generado = (
         await prueba.app.inject({
           method: 'POST',
           url: '/api/v1/qr-accesos',
@@ -219,7 +219,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
           payload: { puerta_ids: [a.puertaTrasera.id] },
         })
       ).json<{ texto: string }>();
-      const respuesta = await validar(a.dispositivoTrasero, emitido.texto);
+      const respuesta = await validar(a.dispositivoTrasero, generado.texto);
       expect(respuesta.json<Validacion>()).toMatchObject({ abrir: true, segundos: 5 });
     });
 
@@ -259,7 +259,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(filas[0]?.usado_at).toBeNull();
     });
 
-    it('con el emisor desactivado deja de abrir (RF-06): qr.anulado', async () => {
+    it('si quien lo generó se desactiva deja de abrir (RF-06): qr.anulado', async () => {
       const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'BA01', [a.rolMiembroId]);
       const qr = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
       await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [otro.id]);
@@ -427,12 +427,12 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         qr: {
           id: delUsuario.id,
           etiqueta: null,
-          emisor: { id: a.usuario.id, etiqueta: `Usuario ${a.usuario.pin}` },
+          generador: { id: a.usuario.id, etiqueta: `Usuario ${a.usuario.pin}` },
         },
       });
     });
 
-    it('un usuario ve solo los eventos de los QR que emitió', async () => {
+    it('un usuario ve solo los eventos de los QR que generó', async () => {
       const { delUsuario } = await generarEventos();
       const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
       const respuesta = await prueba.app.inject({

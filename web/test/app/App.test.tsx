@@ -633,7 +633,7 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
     expect(suspender).not.toHaveBeenCalled();
     const dialogo = await screen.findByRole('dialog');
-    expect(within(dialogo).getByText(/no emite QR/)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/no genera QR/)).toBeInTheDocument();
     await userEvent.click(within(dialogo).getByRole('button', { name: 'Suspender' }));
     await waitFor(() => {
       expect(suspender).toHaveBeenCalledWith('1');

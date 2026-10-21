@@ -164,20 +164,20 @@ void main() {
     expect(find.text(textosEn(tester).qrAnular), findsNothing);
   });
 
-  testWidgets('sin el permiso de emitir, no hay botón flotante', (
+  testWidgets('sin el permiso de generar, no hay botón flotante', (
     tester,
   ) async {
     await _montar(tester, listado: _pagina(const []));
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
-  testWidgets('con el permiso de emitir, el botón flotante lleva a emitir', (
+  testWidgets('con el permiso de generar, el botón flotante lleva a generar', (
     tester,
   ) async {
     await _montar(
       tester,
       listado: _pagina(const []),
-      permisos: {Permisos.verQr, Permisos.emitirQr},
+      permisos: {Permisos.verQr, Permisos.generarQr},
     );
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
@@ -213,7 +213,7 @@ void main() {
     expect(find.text('destino /inicio'), findsOneWidget);
   });
 
-  testWidgets('un QR vigente emitido en este dispositivo ofrece Ver QR', (
+  testWidgets('un QR vigente generado en este dispositivo ofrece Ver QR', (
     tester,
   ) async {
     final almacen = AlmacenQrEnMemoria();
@@ -230,10 +230,10 @@ void main() {
 
     await tester.tap(find.text(textos.qrVerQr));
     await tester.pumpAndSettle();
-    expect(find.text('destino /qr/emitido'), findsOneWidget);
+    expect(find.text('destino /qr/generado'), findsOneWidget);
   });
 
-  testWidgets('un QR vigente emitido en otro dispositivo lo avisa', (
+  testWidgets('un QR vigente generado en otro dispositivo lo avisa', (
     tester,
   ) async {
     await _montar(

@@ -37,7 +37,7 @@ api/
       seguridad/              cuentas, usuarios (PIN), roles, permisos, sesiones
       suscripciones/          planes, suscripciones y vigencia (ADR 0017); solo `contracts.ts`, sin rutas
       organizacion/           sitios, puertas
-      accesos/                QR (emitir, listar, anular), validación, eventos
+      accesos/                QR (generar, listar, anular), validación, eventos
       dispositivos/           autenticación, latido, configuración
   test/                       Vitest: helpers (reiniciarBase, crearEscenario, iniciarSesion…), un archivo por regla
   .dependency-cruiser.cjs     fronteras entre módulos
@@ -53,7 +53,7 @@ api/
 | `repository.ts` | SQL a mano sobre las tablas **de este módulo** (extiende `RepositorioDeCuenta`) | Las acciones del módulo |
 | `domain/` | Funciones puras (p. ej. `evaluarHorario`, `verificarFirmaQr`) — sin base ni red | El módulo; se prueban sin MySQL |
 | `contracts.ts` | **Superficie pública**: interfaces y DTOs que otros módulos pueden usar | Otros módulos |
-| `events.ts` | **Superficie pública**: eventos que el módulo emite (con ids, nunca filas) | Otros módulos |
+| `events.ts` | **Superficie pública**: eventos que el módulo genera (con ids, nunca filas) | Otros módulos |
 
 Agregar un módulo (ADR 0019) = su carpeta + **una línea** en `src/modulos.ts`. `app.ts` no se toca. La regla `solo-app-registra-rutas` de dependency-cruiser deja importar `routes.ts` solo a `app.ts` y `modulos.ts`.
 

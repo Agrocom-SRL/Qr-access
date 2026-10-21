@@ -8,12 +8,12 @@ import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
-import 'package:agrocom_acceso/features/qr_accesos/presentation/emitir_qr_controlador.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/estado_qr_vista.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/generar_qr_controlador.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/paso_puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/paso_vigencia.dart';
-import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/resumen_emision.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/resumen_generacion.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
@@ -26,19 +26,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Emitir un QR (HU-11, handoff C05a–c/E05): stepper de puertas, vigencia y
-/// confirmación. Al emitirlo, pasa a la pantalla que lo muestra.
-class EmitirQrPagina extends ConsumerStatefulWidget {
+/// Generar un QR (HU-11, handoff C05a–c/E05): stepper de puertas, vigencia y
+/// confirmación. Al generarlo, pasa a la pantalla que lo muestra.
+class GenerarQrPagina extends ConsumerStatefulWidget {
   const new({this.prellenado, super.key});
 
   /// "Repetir último": puertas y etiqueta del QR anterior.
-  final PrellenadoEmision? prellenado;
+  final PrellenadoGeneracion? prellenado;
 
   @override
-  ConsumerState<EmitirQrPagina> createState() => _EmitirQrPaginaEstado();
+  ConsumerState<GenerarQrPagina> createState() => _GenerarQrPaginaEstado();
 }
 
-class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
+class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
   late final TextEditingController _etiqueta;
 
   @override
@@ -50,7 +50,7 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
       unawaited(
         Future.microtask(
           () => ref
-              .read(emitirQrControladorProvider.notifier)
+              .read(generarQrControladorProvider.notifier)
               .prellenar(prellenado),
         ),
       );
@@ -63,11 +63,11 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
     super.dispose();
   }
 
-  Future<void> _emitir() async {
-    final qr = await ref.read(emitirQrControladorProvider.notifier).emitir();
+  Future<void> _generar() async {
+    final qr = await ref.read(generarQrControladorProvider.notifier).generar();
     if (qr == null || !mounted) return;
     unawaited(HapticFeedback.lightImpact());
-    context.go(Rutas.qrEmitido, extra: qr);
+    context.go(Rutas.qrGenerado, extra: qr);
   }
 
   void _cerrar() => context.go(Rutas.inicio);
@@ -76,22 +76,22 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final tokens = context.tokens;
-    final estado = ref.watch(emitirQrControladorProvider);
-    final controlador = ref.read(emitirQrControladorProvider.notifier);
+    final estado = ref.watch(generarQrControladorProvider);
+    final controlador = ref.read(generarQrControladorProvider.notifier);
     final puertas = ref.watch(puertasDisponiblesProvider);
     final ahora = ref.read(relojProvider)();
     final expandida = context.esExpandida;
     final errorDatos = estado.errorDatos;
     final errorApi = estado.errorApi;
     final pasos = [
-      l10n.qrEmitirPasoPuertas,
-      l10n.qrEmitirPasoVigencia,
-      l10n.qrEmitirPasoConfirmar,
+      l10n.qrGenerarPasoPuertas,
+      l10n.qrGenerarPasoVigencia,
+      l10n.qrGenerarPasoConfirmar,
     ];
-    final esUltimo = estado.paso == PasoEmision.confirmar;
+    final esUltimo = estado.paso == PasoGeneracion.confirmar;
 
     final contenidoDelPaso = switch (estado.paso) {
-      PasoEmision.puertas => puertas.when(
+      PasoGeneracion.puertas => puertas.when(
         loading: () => const ListadoPaginado<Puerta>(
           estado: ListadoCargando(),
           tarjeta: _nada,
@@ -103,7 +103,7 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
           sinRelleno: true,
         ),
         error: (error, _) => EstadoVacio(
-          titulo: l10n.qrEmitirErrorPuertas,
+          titulo: l10n.qrGenerarErrorPuertas,
           variante: error is ErrorApi && error.esSinConexion
               ? VarianteEstadoVacio.sinConexion
               : VarianteEstadoVacio.error,
@@ -112,8 +112,8 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
         data: (lista) => lista.isEmpty
             ? EstadoVacio(
                 icono: Icons.door_front_door_outlined,
-                titulo: l10n.qrEmitirSinPuertas,
-                ayuda: l10n.qrEmitirSinPuertasAyuda,
+                titulo: l10n.qrGenerarSinPuertas,
+                ayuda: l10n.qrGenerarSinPuertasAyuda,
               )
             : PasoPuertas(
                 puertas: lista,
@@ -122,29 +122,29 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
                 alAlternarTodas: controlador.alternarTodas,
               ),
       ),
-      PasoEmision.vigencia => PasoVigencia(
+      PasoGeneracion.vigencia => PasoVigencia(
         vigencia: estado.vigencia,
         alElegir: controlador.elegirVigencia,
         etiqueta: estado.etiqueta,
         controladorEtiqueta: _etiqueta,
         alCambiarEtiqueta: controlador.cambiarEtiqueta,
         textoError:
-            errorDatos == null || errorDatos == ErrorDatosEmision.sinPuertas
+            errorDatos == null || errorDatos == ErrorDatosGeneracion.sinPuertas
             ? null
-            : textoErrorDatosEmision(l10n, errorDatos),
+            : textoErrorDatosGeneracion(l10n, errorDatos),
         ahora: ahora,
       ),
-      PasoEmision.confirmar => Column(
+      PasoGeneracion.confirmar => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.qrEmitirRevisa,
+            l10n.qrGenerarRevisa,
             style: Theme.of(context).textTheme.bodyLarge
                 ?.copyWith(color: tokens.colores.textoSecundario),
           ),
           SizedBox(height: tokens.espacio.l),
           if (!expandida)
-            ResumenEmision(
+            ResumenGeneracion(
               puertas: puertas.value ?? const [],
               seleccionadas: estado.puertaIds,
               vigencia: estado.vigencia,
@@ -154,37 +154,39 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
           SizedBox(height: tokens.espacio.l),
           AccesoAviso(
             tono: TonoAviso.informacion,
-            texto: l10n.qrEmitirAvisoUnSoloUso,
+            texto: l10n.qrGenerarAvisoUnSoloUso,
           ),
         ],
       ),
     };
 
     final avisoDeError = <Widget>[
-      if (errorDatos == ErrorDatosEmision.sinPuertas &&
-          estado.paso == PasoEmision.puertas)
+      if (errorDatos == ErrorDatosGeneracion.sinPuertas &&
+          estado.paso == PasoGeneracion.puertas)
         AccesoAviso(
           tono: TonoAviso.peligro,
-          texto: textoErrorDatosEmision(l10n, errorDatos!),
+          texto: textoErrorDatosGeneracion(l10n, errorDatos!),
         ),
       if (errorApi != null)
         AccesoAviso(
           tono: TonoAviso.peligro,
-          texto: l10n.qrEmitirErrorEmitir(textoDeError(l10n, errorApi)),
+          texto: l10n.qrGenerarErrorGenerar(textoDeError(l10n, errorApi)),
         ),
     ];
 
     final botonPrincipal = AccesoBoton(
-      texto: esUltimo ? l10n.qrEmitirBoton : l10n.comunSiguiente,
-      textoCargando: l10n.qrEmitiendo,
+      texto: esUltimo ? l10n.qrGenerarBoton : l10n.comunSiguiente,
+      textoCargando: l10n.qrGenerando,
       cargando: estado.enviando,
       expandido: expandida,
-      onPressed: esUltimo ? _emitir : controlador.siguiente,
+      onPressed: esUltimo ? _generar : controlador.siguiente,
     );
     final botonAtras = AccesoBoton(
       texto: l10n.comunAtras,
       variante: VarianteBoton.texto,
-      onPressed: estado.paso == PasoEmision.puertas ? null : controlador.atras,
+      onPressed: estado.paso == PasoGeneracion.puertas
+          ? null
+          : controlador.atras,
     );
 
     final cuerpo = Column(
@@ -212,8 +214,8 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
 
     if (expandida) {
       return PlantillaAdmin(
-        destino: DestinoNav.emitirQr,
-        titulo: l10n.qrEmitirTitulo,
+        destino: DestinoNav.generarQr,
+        titulo: l10n.qrGenerarTitulo,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -221,7 +223,7 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
             SizedBox(width: tokens.espacio.xl),
             SizedBox(
               width: tokens.tamano.resumenLateral,
-              child: ResumenEmision(
+              child: ResumenGeneracion(
                 titulo: l10n.qrResumenTitulo,
                 puertas: puertas.value ?? const [],
                 seleccionadas: estado.puertaIds,
@@ -232,7 +234,7 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     botonPrincipal,
-                    if (estado.paso != PasoEmision.puertas) ...[
+                    if (estado.paso != PasoGeneracion.puertas) ...[
                       SizedBox(height: tokens.espacio.s),
                       botonAtras,
                     ],
@@ -251,7 +253,7 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
       canPop: false,
       onPopInvokedWithResult: (salio, _) {
         if (salio) return;
-        if (estado.paso == PasoEmision.puertas) {
+        if (estado.paso == PasoGeneracion.puertas) {
           _cerrar();
         } else {
           controlador.atras();
@@ -260,19 +262,19 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            tooltip: estado.paso == PasoEmision.puertas
+            tooltip: estado.paso == PasoGeneracion.puertas
                 ? l10n.comunCerrar
                 : l10n.comunAtras,
             icon: Icon(
-              estado.paso == PasoEmision.puertas
+              estado.paso == PasoGeneracion.puertas
                   ? Icons.close
                   : Icons.arrow_back,
             ),
-            onPressed: estado.paso == PasoEmision.puertas
+            onPressed: estado.paso == PasoGeneracion.puertas
                 ? _cerrar
                 : controlador.atras,
           ),
-          title: Text(l10n.qrEmitirTitulo),
+          title: Text(l10n.qrGenerarTitulo),
         ),
         body: SafeArea(
           child: Column(
@@ -289,14 +291,14 @@ class _EmitirQrPaginaEstado extends ConsumerState<EmitirQrPagina> {
                 ),
               ),
               BarraDeAcciones(
-                inicio: estado.paso == PasoEmision.puertas
+                inicio: estado.paso == PasoGeneracion.puertas
                     ? Text.rich(
                         TextSpan(
                           text: '$cantidad ',
                           style: Theme.of(context).textTheme.titleMedium,
                           children: [
                             TextSpan(
-                              text: l10n.qrEmitirPuertasContadas(cantidad),
+                              text: l10n.qrGenerarPuertasContadas(cantidad),
                               style: Theme.of(context).textTheme.bodyLarge
                                   ?.copyWith(
                                     color: tokens.colores.textoSecundario,

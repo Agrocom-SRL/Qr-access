@@ -8,7 +8,7 @@ import '../../helpers/fakes.dart';
 
 const Set<String> _usuario = {
   Permisos.verPuertas,
-  Permisos.emitirQr,
+  Permisos.generarQr,
   Permisos.verQr,
   Permisos.anularQr,
   Permisos.verEventos,
@@ -21,7 +21,7 @@ const Set<String> _guardia = {
 };
 const Set<String> _administrador = {
   Permisos.verPuertas,
-  Permisos.emitirQr,
+  Permisos.generarQr,
   Permisos.verQr,
   Permisos.anularQr,
   Permisos.verEventos,
@@ -86,12 +86,12 @@ void main() {
   });
 
   group('rail (medio y expandido)', () {
-    test('usuario suma Emitir QR', () {
+    test('usuario suma Generar QR', () {
       expect(
         destinosPara(sesionCon(permisos: _usuario), ClasePantalla.expandida),
         [
           DestinoNav.inicio,
-          DestinoNav.emitirQr,
+          DestinoNav.generarQr,
           DestinoNav.misQr,
           DestinoNav.eventos,
           DestinoNav.perfil,
@@ -108,7 +108,7 @@ void main() {
       ]);
     });
 
-    test('administrador: Inicio · Emitir QR · Eventos · Puertas · Usuarios '
+    test('administrador: Inicio · Generar QR · Eventos · Puertas · Usuarios '
         '· Perfil', () {
       expect(
         destinosPara(
@@ -117,7 +117,7 @@ void main() {
         ),
         [
           DestinoNav.inicio,
-          DestinoNav.emitirQr,
+          DestinoNav.generarQr,
           DestinoNav.eventos,
           DestinoNav.puertas,
           DestinoNav.usuarios,

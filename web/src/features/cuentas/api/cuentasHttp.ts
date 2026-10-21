@@ -269,7 +269,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           etiqueta: string | null;
           rol: string | null;
           unidad: string | null;
-          qr_emitidos: number;
+          qr_generados: number;
           qr_usados: number;
           max_qr_en_un_dia: number;
           ultimo_qr_at: string | null;
@@ -296,7 +296,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           etiqueta: u.etiqueta ?? '—',
           rol: u.rol,
           unidad: u.unidad,
-          qrEmitidos: u.qr_emitidos,
+          qrGenerados: u.qr_generados,
           qrUsados: u.qr_usados,
           maxQrEnUnDia: u.max_qr_en_un_dia,
           ultimoQrEn: u.ultimo_qr_at === null ? null : new Date(u.ultimo_qr_at),

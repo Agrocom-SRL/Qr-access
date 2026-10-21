@@ -6,7 +6,7 @@
 
 ## Contexto
 
-El cliente pide que cada usuario de una cuenta inicie sesión con un **PIN que genera AGROCOM**. Con la cuenta creada, se generan varios PIN de acceso, y cada uno entra a la app y emite QR para que los lea el lector de la puerta. Un PIN es corto y fácil de dictar, pero tiene poca entropía: sin protección, se puede adivinar probando. AGROCOM registra las cuentas y quiere que el PIN sea único por usuario y que el propio PIN identifique la cuenta, sin un campo aparte.
+El cliente pide que cada usuario de una cuenta inicie sesión con un **PIN que genera AGROCOM**. Con la cuenta creada, se generan varios PIN de acceso, y cada uno entra a la app y genera QR para que los lea el lector de la puerta. Un PIN es corto y fácil de dictar, pero tiene poca entropía: sin protección, se puede adivinar probando. AGROCOM registra las cuentas y quiere que el PIN sea único por usuario y que el propio PIN identifique la cuenta, sin un campo aparte.
 
 ## Decisión (propuesta)
 

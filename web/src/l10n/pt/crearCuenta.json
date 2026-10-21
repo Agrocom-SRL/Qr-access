@@ -82,6 +82,6 @@
   "pagoAhora": "Já pagou",
   "pagoDespuesTexto": "A conta é criada pendente de pagamento: o administrador recebe seu PIN, mas nada abre até que você registre o pagamento em Cobrança.",
   "creadaPendienteTexto": "{{cuenta}} foi criada e está pendente de pagamento.",
-  "creadaPendienteAviso": "Até o primeiro pagamento ser registrado, a conta não emite QR nem abre portas. Aparece em Cobrança como “A ativar”.",
+  "creadaPendienteAviso": "Até o primeiro pagamento ser registrado, a conta não gera QR nem abre portas. Aparece em Cobrança como “A ativar”.",
   "registrarPagoAhora": "Registrar o pagamento agora"
 }

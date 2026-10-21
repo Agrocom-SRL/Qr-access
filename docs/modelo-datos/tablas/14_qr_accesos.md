@@ -4,7 +4,7 @@
 
 ## Propósito
 
-QR de un solo uso emitido por un usuario de la cuenta (ADR 0008). Solo se guarda el hash de su token.
+QR de un solo uso generado por un usuario de la cuenta (ADR 0008). Solo se guarda el hash de su token.
 
 ## Columnas
 
@@ -12,7 +12,7 @@ QR de un solo uso emitido por un usuario de la cuenta (ADR 0008). Solo se guarda
 |---|---|---|---|
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
-| `emitido_por` | `BIGINT UNSIGNED` | no |  |
+| `generado_por` | `BIGINT UNSIGNED` | no |  |
 | `token_hash` | `CHAR(64)` | no | SHA-256 del token del QR (sensible) |
 | `etiqueta` | `VARCHAR(60)` | sí |  |
 | `vence_at` | `DATETIME(3)` | no | UTC |
@@ -25,14 +25,14 @@ QR de un solo uso emitido por un usuario de la cuenta (ADR 0008). Solo se guarda
 ## Índices y restricciones
 
 - `uq_qr_accesos_token`
-- `idx_qr_accesos_emisor`
+- `idx_qr_accesos_generador`
 - `idx_qr_accesos_vencimiento`
 
 El SQL completo está en `03-schema-sql.md`.
 
 ## Reglas
 
-- `token_hash` = SHA-256 del token de 128 bits; único. El token en claro solo existe en la respuesta de la emisión.
+- `token_hash` = SHA-256 del token de 128 bits; único. El token en claro solo existe en la respuesta de la generación.
 - Estado derivado, sin columna: `anulado_at` > `usado_at` > `vence_at` pasado > vigente.
 - Consumo atómico: `UPDATE … SET usado_at = ?, usado_dispositivo_id = ? WHERE id = ? AND usado_at IS NULL AND anulado_at IS NULL AND vence_at > ?` debe afectar una fila; si dos lectores compiten, uno solo abre.
 - `vence_at` es, por defecto, el fin del día local del sitio, sin pasar la vigencia máxima del plan.
@@ -46,5 +46,5 @@ El SQL completo está en `03-schema-sql.md`.
 
 ## QR propio ("Mi QR de acceso")
 
-- `es_propio` marca el QR que la app emite al abrir "Mi QR de acceso". No se lista ni se cuenta en "Mis QR" (se presenta como una entrada fija); sus usos siguen quedando en `eventos_acceso`.
-- `propio_activo` vale 1 mientras ese QR no se anule ni se use, y el `UNIQUE (emitido_por, propio_activo)` impide dos activos por usuario. Al emitir uno nuevo, la API anula los anteriores en la misma transacción: si alguien le sacó una foto al QR viejo, ya no abre.
+- `es_propio` marca el QR que la app genera al abrir "Mi QR de acceso". No se lista ni se cuenta en "Mis QR" (se presenta como una entrada fija); sus usos siguen quedando en `eventos_acceso`.
+- `propio_activo` vale 1 mientras ese QR no se anule ni se use, y el `UNIQUE (generado_por, propio_activo)` impide dos activos por usuario. Al generar uno nuevo, la API anula los anteriores en la misma transacción: si alguien le sacó una foto al QR viejo, ya no abre.

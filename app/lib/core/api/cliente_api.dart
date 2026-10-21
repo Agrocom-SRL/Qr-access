@@ -88,7 +88,7 @@ class ClienteApi {
 
   /// `venceAt` y `etiqueta` van solo si el usuario los eligió; sin ellos, la
   /// API calcula el fin del día local del sitio (ADR 0008).
-  Future<QrEmitidoDto> emitirQr({
+  Future<QrGeneradoDto> generarQr({
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
@@ -104,7 +104,7 @@ class ClienteApi {
           if (propio) 'propio': true,
         },
       );
-      return QrEmitidoDto.desde(r.data!);
+      return QrGeneradoDto.desde(r.data!);
     });
   }
 

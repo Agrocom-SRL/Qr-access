@@ -18,7 +18,7 @@ class DispositivoDePuerta {
   final DateTime? ultimoLatidoAt;
 }
 
-/// Puerta de una cuenta, como la necesita la app: para elegirla al emitir un
+/// Puerta de una cuenta, como la necesita la app: para elegirla al generar un
 /// QR (ADR 0008) y para supervisarla (Administración › Puertas).
 @immutable
 class Puerta {

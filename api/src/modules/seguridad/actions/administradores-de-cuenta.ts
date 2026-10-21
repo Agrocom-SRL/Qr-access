@@ -54,7 +54,7 @@ export async function listar(
 }
 
 /**
- * Regenera el PIN de un administrador de la cuenta. AGROCOM solo emite y restablece el PIN de los
+ * Regenera el PIN de un administrador de la cuenta. AGROCOM solo genera y restablece el PIN de los
  * administradores; ellos crean y regeneran los de sus usuarios (ADR 0023). Nadie conoce el PIN
  * anterior: el nuevo se muestra una sola vez y el anterior y sus sesiones dejan de servir.
  */

@@ -17,19 +17,19 @@ export const PORCENTAJE_CERCA_DEL_TOPE = 80;
 
 /** Lo que hizo un usuario con sus QR dentro de la ventana. */
 export interface ActividadDeQr {
-  readonly emitidos: number;
+  readonly generados: number;
   readonly usados: number;
   /** El mayor número de QR generados en un solo día de la ventana. */
   readonly maxEnUnDia: number;
   /** El último QR generado, de cualquier fecha; `null` si nunca generó uno. */
-  readonly ultimoEmitidoAt: Date | null;
+  readonly ultimoGeneradoAt: Date | null;
 }
 
 export const SIN_ACTIVIDAD: ActividadDeQr = {
-  emitidos: 0,
+  generados: 0,
   usados: 0,
   maxEnUnDia: 0,
-  ultimoEmitidoAt: null,
+  ultimoGeneradoAt: null,
 };
 
 export interface EvaluacionDeUsuario {
@@ -49,7 +49,7 @@ export function evaluarUsuario(
 ): EvaluacionDeUsuario {
   const antiguedadEnDias = (ahora.getTime() - creadoAt.getTime()) / 86_400_000;
   return {
-    inactivo: actividad.emitidos === 0 && antiguedadEnDias >= DIAS_SIN_USO_PARA_INACTIVO,
+    inactivo: actividad.generados === 0 && antiguedadEnDias >= DIAS_SIN_USO_PARA_INACTIVO,
     ruidoso: actividad.maxEnUnDia > QR_POR_DIA_PARA_RUIDOSO,
   };
 }

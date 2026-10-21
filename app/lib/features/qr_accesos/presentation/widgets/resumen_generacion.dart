@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 
 /// Resumen con `FilaClaveValor` (paso 3 en compacto; fijo a la derecha en
 /// expandido): puertas, sitio, vence, etiqueta y usos.
-class ResumenEmision extends StatelessWidget {
+class ResumenGeneracion extends StatelessWidget {
   const new({
     required this.puertas,
     required this.seleccionadas,
@@ -30,7 +30,7 @@ class ResumenEmision extends StatelessWidget {
   /// "Resumen" en el panel lateral; sin título en el paso 3.
   final String? titulo;
 
-  /// Botón del panel lateral (Siguiente / Emitir QR).
+  /// Botón del panel lateral (Siguiente / Generar QR).
   final Widget? pie;
 
   @override
@@ -82,7 +82,7 @@ class ResumenEmision extends StatelessWidget {
             valorMono: true,
           ),
           FilaClaveValor(
-            clave: l10n.qrEmitirEtiqueta,
+            clave: l10n.qrGenerarEtiqueta,
             valor: etiqueta.trim().isEmpty ? l10n.comunGuion : etiqueta.trim(),
           ),
           FilaClaveValor(

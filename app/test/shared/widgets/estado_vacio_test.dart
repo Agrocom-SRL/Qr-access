@@ -101,7 +101,7 @@ void main() {
           tester,
           const EstadoVacio(
             titulo: 'Sin QR',
-            ayuda: 'Emite uno para entrar',
+            ayuda: 'Genera uno para entrar',
             ilustracion: Multimedia.vacioQr,
           ),
           tema: tema,

@@ -10,9 +10,9 @@ abstract final class Permisos {
   /// Ver el estado de las puertas y sus lectores (pestaña Puertas).
   static const supervisarPuertas = 'organizacion.puerta.supervisar';
 
-  static const emitirQr = 'accesos.qr.emitir';
+  static const generarQr = 'accesos.qr.generar';
 
-  /// Listar los QR emitidos: los propios, o todos los de la cuenta con
+  /// Listar los QR generados: los propios, o todos los de la cuenta con
   /// `accesos.qr.ver_todos`.
   static const verQr = 'accesos.qr.ver';
 

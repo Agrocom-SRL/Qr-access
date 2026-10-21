@@ -25,7 +25,7 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'organizacion.sitio.administrar',
   'organizacion.puerta.administrar',
   'organizacion.guardia.asignar',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
   'accesos.qr.ver',
   'accesos.qr.ver_todos',
   'accesos.qr.anular',
@@ -43,7 +43,7 @@ export const PERMISOS_DE_ADMINISTRADOR = [
 /** Lo que tiene un Miembro (ADR 0028): usar la puerta con sus QR. */
 export const PERMISOS_DE_USUARIO = [
   'organizacion.puerta.ver',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
   'accesos.qr.ver',
   'accesos.qr.anular',
   'accesos.evento.ver',
@@ -217,21 +217,21 @@ export interface QrDePrueba {
   readonly texto: string;
 }
 
-/** Un QR escrito directo en la base, para armar estados (vencido, usado…) que la API no emite. */
+/** Un QR escrito directo en la base, para armar estados (vencido, usado…) que la API no genera. */
 export async function crearQr(
   pool: Pool,
   cuenta: Cuenta,
-  emisorId: string,
+  generadorId: string,
   puertaIds: readonly string[],
   opciones: { venceAt?: Date; usadoAt?: Date; anuladoAt?: Date } = {},
 ): Promise<QrDePrueba> {
   const token = generarTokenQr();
   const id = await insertar(
     pool,
-    'INSERT INTO qr_accesos (tenant_id, emitido_por, token_hash, vence_at, usado_at, anulado_at) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO qr_accesos (tenant_id, generado_por, token_hash, vence_at, usado_at, anulado_at) VALUES (?, ?, ?, ?, ?, ?)',
     [
       cuenta.id,
-      emisorId,
+      generadorId,
       hashDeToken(token),
       opciones.venceAt ?? new Date(Date.now() + 3_600_000),
       opciones.usadoAt ?? null,

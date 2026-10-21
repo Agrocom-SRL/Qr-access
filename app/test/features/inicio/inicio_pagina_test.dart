@@ -16,18 +16,18 @@ import '../../helpers/pantalla.dart';
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
 const Set<String> _usuario = {
-  Permisos.emitirQr,
+  Permisos.generarQr,
   Permisos.verQr,
   Permisos.verEventos,
 };
 const Set<String> _guardia = {
-  Permisos.emitirQr,
+  Permisos.generarQr,
   Permisos.verEventos,
   Permisos.verEventosAsignados,
   Permisos.supervisarPuertas,
 };
 const Set<String> _administrador = {
-  Permisos.emitirQr,
+  Permisos.generarQr,
   Permisos.verQr,
   Permisos.verEventos,
   Permisos.supervisarPuertas,
@@ -127,7 +127,7 @@ void main() {
       final textos = textosEn(tester);
 
       expect(find.text(textos.inicioSaludo('Ana')), findsOneWidget);
-      expect(find.text(textos.qrEmitirTitulo), findsWidgets);
+      expect(find.text(textos.qrGenerarTitulo), findsWidgets);
       expect(find.text(textos.inicioNuevoQr), findsOneWidget);
       expect(find.text(textos.inicioVigentesHoy), findsOneWidget);
     });
@@ -151,7 +151,7 @@ void main() {
       expect(find.text(textosEn(tester).inicioSinVigentes), findsOneWidget);
     });
 
-    testWidgets('Nuevo QR abre el formulario de emisión', (tester) async {
+    testWidgets('Nuevo QR abre el formulario de generación', (tester) async {
       await _montar(tester, permisos: _usuario);
       await tester.tap(find.text(textosEn(tester).inicioNuevoQr));
       await tester.pumpAndSettle();
@@ -170,7 +170,7 @@ void main() {
       );
       expect(
         tester.widget<FloatingActionButton>(fab).tooltip,
-        textosEn(tester).qrEmitirBoton,
+        textosEn(tester).qrGenerarBoton,
       );
       await tester.tap(fab);
       await tester.pumpAndSettle();
@@ -232,7 +232,7 @@ void main() {
       final fab = find.byType(FloatingActionButton);
       expect(
         tester.widget<FloatingActionButton>(fab).tooltip,
-        textos.qrEmitirBoton,
+        textos.qrGenerarBoton,
       );
       await tester.tap(fab);
       await tester.pumpAndSettle();

@@ -92,7 +92,7 @@
   "eliminarTexto": "Nobody in this account will be able to sign in again, neither to the app nor with their QR codes. Its data is kept for the audit log and accounting, and its code becomes free. This action can't be undone from the panel.",
   "eliminarConfirmar": "Type the code {{codigo}} to confirm",
   "registrarPago": "Record payment",
-  "pendienteAviso": "This account hasn't paid its first year yet: it issues no QR and opens no doors until the payment is recorded.",
+  "pendienteAviso": "This account hasn't paid its first year yet: it generates no QR and opens no doors until the payment is recorded.",
   "correo": "Email",
   "responsable": "Person responsible for the account",
   "pendienteTexto": "Pending its first payment: it starts operating once it is recorded.",

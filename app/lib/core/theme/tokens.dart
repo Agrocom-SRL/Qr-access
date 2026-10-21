@@ -118,12 +118,12 @@ class ColoresSemanticos {
   final Color informacion;
   final Color informacionSuave;
 
-  /// Color de resalte para la acción principal flotante (emitir QR): se
+  /// Color de resalte para la acción principal flotante (generar QR): se
   /// distingue del verde de la marca para que se vea de antemano.
   final Color acento;
   final Color sobreAcento;
 
-  /// Fondo del bloque de marca (bienvenida, tarjeta de cuenta, "Emitir QR").
+  /// Fondo del bloque de marca (bienvenida, tarjeta de cuenta, "Generar QR").
   final Color hero;
   final Color heroAcento;
   final Color sobreHero;

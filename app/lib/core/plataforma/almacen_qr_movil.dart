@@ -10,7 +10,7 @@ class AlmacenQrMovil implements AlmacenQr {
   new([FlutterSecureStorage? almacen])
     : _almacen = almacen ?? const FlutterSecureStorage();
 
-  static const _clave = 'qr.emitidos';
+  static const _clave = 'qr.generados';
   static const _clavePropio = 'qr.ultimo_propio';
 
   final FlutterSecureStorage _almacen;

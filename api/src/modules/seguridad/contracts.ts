@@ -12,7 +12,7 @@ export { crearAutenticadorDePlataforma, crearAutenticadorDeUsuario } from './aut
 export interface ServicioDeUsuarios {
   /** ¿El usuario de la cuenta del contexto existe y está activo? (RF-06: uno desactivado no abre puertas) */
   estaActivo(usuarioId: string): Promise<boolean>;
-  /** `usuarioId -> etiqueta` de los usuarios de la cuenta (para decir quién emitió un QR). */
+  /** `usuarioId -> etiqueta` de los usuarios de la cuenta (para decir quién generó un QR). */
   etiquetasDe(usuarioIds: readonly string[]): Promise<Map<string, string | null>>;
 }
 

@@ -163,7 +163,7 @@ export interface UsoDeUsuario {
   etiqueta: string;
   rol: string | null;
   unidad: string | null;
-  qrEmitidos: number;
+  qrGenerados: number;
   qrUsados: number;
   maxQrEnUnDia: number;
   /** El último QR que generó, de cualquier fecha; `null` si nunca generó uno. */

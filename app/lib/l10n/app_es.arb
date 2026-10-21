@@ -34,7 +34,7 @@
   },
   "comunCerrar": "Cerrar",
   "@comunCerrar": {
-    "description": "Ícono de cerrar una pantalla completa (QR emitido, PIN generado)"
+    "description": "Ícono de cerrar una pantalla completa (QR generado, PIN generado)"
   },
   "comunVolver": "Volver",
   "@comunVolver": {
@@ -212,7 +212,7 @@
   },
   "comunErrorSuscripcionVencida": "La suscripción de tu cuenta no está vigente. Avisa al administrador.",
   "@comunErrorSuscripcionVencida": {
-    "description": "code suscripcion.vencida (403) al emitir un QR o crear un usuario sin suscripción vigente (ADR 0017)"
+    "description": "code suscripcion.vencida (403) al generar un QR o crear un usuario sin suscripción vigente (ADR 0017)"
   },
   "comunErrorPuertaNoEncontrada": "Esa puerta ya no está disponible. Actualiza la lista e intenta de nuevo.",
   "@comunErrorPuertaNoEncontrada": {
@@ -232,7 +232,7 @@
   },
   "comunErrorQrPropioEnCurso": "Ya se está generando tu QR de acceso. Intenta de nuevo.",
   "@comunErrorQrPropioEnCurso": {
-    "description": "code qr.propio_en_curso (409): dos emisiones del QR propio a la vez"
+    "description": "code qr.propio_en_curso (409): dos generaciones del QR propio a la vez"
   },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
   "@comunErrorQrYaUsado": {
@@ -346,8 +346,8 @@
   "@navInicio": {
     "description": "Destino de navegación"
   },
-  "navEmitirQr": "Generar QR",
-  "@navEmitirQr": {
+  "navGenerarQr": "Generar QR",
+  "@navGenerarQr": {
     "description": "Destino de navegación (rail)"
   },
   "navMisQr": "Mis QR",
@@ -401,11 +401,11 @@
   },
   "inicioHeroAyudaFinDelDia": "Un solo uso. Vence al final del día.",
   "@inicioHeroAyudaFinDelDia": {
-    "description": "Texto del hero Emitir QR del inicio de usuario, con la vigencia por defecto"
+    "description": "Texto del hero Generar QR del inicio de usuario, con la vigencia por defecto"
   },
   "inicioNuevoQr": "Nuevo QR",
   "@inicioNuevoQr": {
-    "description": "Botón del hero Emitir QR"
+    "description": "Botón del hero Generar QR"
   },
   "inicioRepetirUltimo": "Repetir último",
   "@inicioRepetirUltimo": {
@@ -503,7 +503,7 @@
   },
   "qrEstadoAnulado": "Anulado",
   "@qrEstadoAnulado": {
-    "description": "Estado de un QR anulado por quien lo emitió o un administrador"
+    "description": "Estado de un QR anulado por quien lo generó o un administrador"
   },
   "qrFiltroVigentes": "Vigentes",
   "@qrFiltroVigentes": {
@@ -586,18 +586,18 @@
   },
   "inicioQrPropio": "QR propio",
   "@inicioQrPropio": {
-    "description": "Acceso rápido que emite el QR personal al instante"
+    "description": "Acceso rápido que genera el QR personal al instante"
   },
   "qrRapidoEtiqueta": "Entrada para {nombre}",
   "@qrRapidoEtiqueta": {
-    "description": "Etiqueta con la que se emite el QR rápido",
+    "description": "Etiqueta con la que se genera el QR rápido",
     "placeholders": {
       "nombre": { "type": "String" }
     }
   },
   "qrRapidoError": "No pudimos generar tu QR",
   "@qrRapidoError": {
-    "description": "Falla al emitir el QR rápido"
+    "description": "Falla al generar el QR rápido"
   },
   "qrVenceCorto": "vence {hora}",
   "@qrVenceCorto": {
@@ -608,11 +608,11 @@
       }
     }
   },
-  "qrEmitidoYVence": "{emitido} → vence {vence}",
-  "@qrEmitidoYVence": {
-    "description": "Horas de emisión y vencimiento en la tarjeta de Mis QR",
+  "qrGeneradoYVence": "{generado} → vence {vence}",
+  "@qrGeneradoYVence": {
+    "description": "Horas de generación y vencimiento en la tarjeta de Mis QR",
     "placeholders": {
-      "emitido": {
+      "generado": {
         "type": "String"
       },
       "vence": {
@@ -662,8 +662,8 @@
   "@qrColumnaPuertas": {
     "description": "Encabezado de la tabla de Mis QR"
   },
-  "qrColumnaEmitido": "Generado",
-  "@qrColumnaEmitido": {
+  "qrColumnaGenerado": "Generado",
+  "@qrColumnaGenerado": {
     "description": "Encabezado de la tabla de Mis QR"
   },
   "qrColumnaVence": "Vence",
@@ -672,7 +672,7 @@
   },
   "qrMisQrTitulo": "Mis QR",
   "@qrMisQrTitulo": {
-    "description": "Título del listado de QR emitidos"
+    "description": "Título del listado de QR generados"
   },
   "qrMisQrSinVigentes": "No tienes QR vigentes",
   "@qrMisQrSinVigentes": {
@@ -690,24 +690,24 @@
   "@qrMisQrErrorCargar": {
     "description": "Título del estado de error de Mis QR"
   },
-  "qrEmitirTitulo": "Generar QR",
-  "@qrEmitirTitulo": {
+  "qrGenerarTitulo": "Generar QR",
+  "@qrGenerarTitulo": {
     "description": "Título del stepper y del hero del inicio"
   },
-  "qrEmitirPasoPuertas": "Puertas",
-  "@qrEmitirPasoPuertas": {
+  "qrGenerarPasoPuertas": "Puertas",
+  "@qrGenerarPasoPuertas": {
     "description": "Paso 1 del stepper"
   },
-  "qrEmitirPasoVigencia": "Vigencia",
-  "@qrEmitirPasoVigencia": {
+  "qrGenerarPasoVigencia": "Vigencia",
+  "@qrGenerarPasoVigencia": {
     "description": "Paso 2 del stepper"
   },
-  "qrEmitirPasoConfirmar": "Confirmar",
-  "@qrEmitirPasoConfirmar": {
+  "qrGenerarPasoConfirmar": "Confirmar",
+  "@qrGenerarPasoConfirmar": {
     "description": "Paso 3 del stepper"
   },
-  "qrEmitirPregunta": "¿A qué puertas podrá entrar?",
-  "@qrEmitirPregunta": {
+  "qrGenerarPregunta": "¿A qué puertas podrá entrar?",
+  "@qrGenerarPregunta": {
     "description": "Pregunta del paso 1"
   },
   "qrEtiquetaYPuertas": "{etiqueta} · {puertas}",
@@ -718,16 +718,16 @@
       "puertas": {"type": "String"}
     }
   },
-  "qrEmitirTodas": "Todas",
-  "@qrEmitirTodas": {
+  "qrGenerarTodas": "Todas",
+  "@qrGenerarTodas": {
     "description": "Botón que marca todas las puertas de un sitio (compacto)"
   },
-  "qrEmitirSeleccionarTodas": "Seleccionar todas",
-  "@qrEmitirSeleccionarTodas": {
+  "qrGenerarSeleccionarTodas": "Seleccionar todas",
+  "@qrGenerarSeleccionarTodas": {
     "description": "Botón que marca todas las puertas de un sitio (expandido)"
   },
-  "qrEmitirPuertasContadas": "{n, plural, =1{puerta} other{puertas}}",
-  "@qrEmitirPuertasContadas": {
+  "qrGenerarPuertasContadas": "{n, plural, =1{puerta} other{puertas}}",
+  "@qrGenerarPuertasContadas": {
     "description": "Sustantivo tras la cantidad de puertas elegidas en la barra del paso 1",
     "placeholders": {
       "n": {
@@ -735,24 +735,24 @@
       }
     }
   },
-  "qrEmitirSinPuertas": "No tienes puertas asignadas",
-  "@qrEmitirSinPuertas": {
+  "qrGenerarSinPuertas": "No tienes puertas asignadas",
+  "@qrGenerarSinPuertas": {
     "description": "Estado vacío de la lista de puertas"
   },
-  "qrEmitirSinPuertasAyuda": "Pídeselas al administrador de tu cuenta.",
-  "@qrEmitirSinPuertasAyuda": {
+  "qrGenerarSinPuertasAyuda": "Pídeselas al administrador de tu cuenta.",
+  "@qrGenerarSinPuertasAyuda": {
     "description": "Ayuda del estado vacío de puertas"
   },
-  "qrEmitirErrorPuertas": "No pudimos cargar las puertas",
-  "@qrEmitirErrorPuertas": {
+  "qrGenerarErrorPuertas": "No pudimos cargar las puertas",
+  "@qrGenerarErrorPuertas": {
     "description": "Título del estado de error del paso 1"
   },
-  "qrEmitirErrorSinPuertas": "Elige al menos una puerta.",
-  "@qrEmitirErrorSinPuertas": {
+  "qrGenerarErrorSinPuertas": "Elige al menos una puerta.",
+  "@qrGenerarErrorSinPuertas": {
     "description": "Error de validación: el QR necesita una puerta"
   },
-  "qrEmitirErrorEtiquetaLarga": "Máximo {max} caracteres",
-  "@qrEmitirErrorEtiquetaLarga": {
+  "qrGenerarErrorEtiquetaLarga": "Máximo {max} caracteres",
+  "@qrGenerarErrorEtiquetaLarga": {
     "description": "Error de validación de la etiqueta",
     "placeholders": {
       "max": {
@@ -760,12 +760,12 @@
       }
     }
   },
-  "qrEmitirErrorVigenciaPasada": "Esa hora ya pasó. Elige una más tarde.",
-  "@qrEmitirErrorVigenciaPasada": {
+  "qrGenerarErrorVigenciaPasada": "Esa hora ya pasó. Elige una más tarde.",
+  "@qrGenerarErrorVigenciaPasada": {
     "description": "Error de validación: la hora exacta elegida ya pasó"
   },
-  "qrEmitirVigencia": "Vigencia",
-  "@qrEmitirVigencia": {
+  "qrGenerarVigencia": "Vigencia",
+  "@qrGenerarVigencia": {
     "description": "Título del paso 2"
   },
   "qrVigenciaFinDelDia": "Hasta el fin del día",
@@ -822,20 +822,20 @@
   "@qrFinDelDiaHora": {
     "description": "Hora con la que se muestra el fin del día"
   },
-  "qrEmitirEtiqueta": "Etiqueta",
-  "@qrEmitirEtiqueta": {
+  "qrGenerarEtiqueta": "Etiqueta",
+  "@qrGenerarEtiqueta": {
     "description": "Rótulo del campo de etiqueta (D-21)"
   },
-  "qrEmitirEtiquetaAyuda": "Te ayuda a reconocerlo en Mis QR y Eventos.",
-  "@qrEmitirEtiquetaAyuda": {
+  "qrGenerarEtiquetaAyuda": "Te ayuda a reconocerlo en Mis QR y Eventos.",
+  "@qrGenerarEtiquetaAyuda": {
     "description": "Ayuda del campo de etiqueta"
   },
-  "qrEmitirEtiquetaEjemplo": "Ej.: Proveedor de gas",
-  "@qrEmitirEtiquetaEjemplo": {
+  "qrGenerarEtiquetaEjemplo": "Ej.: Proveedor de gas",
+  "@qrGenerarEtiquetaEjemplo": {
     "description": "Placeholder del campo de etiqueta"
   },
-  "qrEmitirRevisa": "Revisa antes de generar.",
-  "@qrEmitirRevisa": {
+  "qrGenerarRevisa": "Revisa antes de generar.",
+  "@qrGenerarRevisa": {
     "description": "Texto del paso 3"
   },
   "qrResumenTitulo": "Resumen",
@@ -862,21 +862,21 @@
   "@qrResumenUnSoloUso": {
     "description": "Valor del resumen para los usos"
   },
-  "qrEmitirAvisoUnSoloUso": "Abre una sola vez cualquiera de las puertas elegidas.",
-  "@qrEmitirAvisoUnSoloUso": {
+  "qrGenerarAvisoUnSoloUso": "Abre una sola vez cualquiera de las puertas elegidas.",
+  "@qrGenerarAvisoUnSoloUso": {
     "description": "Aviso informativo del paso 3"
   },
-  "qrEmitirBoton": "Generar QR",
-  "@qrEmitirBoton": {
-    "description": "Botón principal de emitir y acción de los listados"
+  "qrGenerarBoton": "Generar QR",
+  "@qrGenerarBoton": {
+    "description": "Botón principal de generar y acción de los listados"
   },
-  "qrEmitiendo": "Generando",
-  "@qrEmitiendo": {
-    "description": "Botón Emitir QR mientras se envía"
+  "qrGenerando": "Generando",
+  "@qrGenerando": {
+    "description": "Botón Generar QR mientras se envía"
   },
-  "qrEmitirErrorEmitir": "No pudimos generar el QR. {detalle}",
-  "@qrEmitirErrorEmitir": {
-    "description": "Aviso de error al emitir, con el detalle traducido",
+  "qrGenerarErrorGenerar": "No pudimos generar el QR. {detalle}",
+  "@qrGenerarErrorGenerar": {
+    "description": "Aviso de error al generar, con el detalle traducido",
     "placeholders": {
       "detalle": {
         "type": "String"
@@ -885,7 +885,7 @@
   },
   "qrMostrarTitulo": "QR listo",
   "@qrMostrarTitulo": {
-    "description": "Título de la pantalla que muestra el QR recién emitido"
+    "description": "Título de la pantalla que muestra el QR recién generado"
   },
   "qrMostrarAviso": "Podrás volver a verlo en Mis QR, en este dispositivo, mientras siga vigente.",
   "@qrMostrarAviso": {
@@ -897,7 +897,7 @@
   },
   "qrSoloEnOtroDispositivo": "Solo se puede ver en el dispositivo donde lo generaste.",
   "@qrSoloEnOtroDispositivo": {
-    "description": "Aviso de un QR vigente cuyo código solo está en el dispositivo donde se emitió"
+    "description": "Aviso de un QR vigente cuyo código solo está en el dispositivo donde se generó"
   },
   "qrCompartir": "Compartir",
   "@qrCompartir": {
@@ -1012,14 +1012,14 @@
   "@eventosColumnaMotivo": {
     "description": "Encabezado de la tabla de eventos"
   },
-  "eventoQrDe": "{etiqueta} · QR de {emisor}",
+  "eventoQrDe": "{etiqueta} · QR de {generador}",
   "@eventoQrDe": {
-    "description": "Detalle de un evento permitido: etiqueta del QR y quién lo emitió",
+    "description": "Detalle de un evento permitido: etiqueta del QR y quién lo generó",
     "placeholders": {
       "etiqueta": {
         "type": "String"
       },
-      "emisor": {
+      "generador": {
         "type": "String"
       }
     }

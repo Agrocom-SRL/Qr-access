@@ -82,6 +82,6 @@
   "pagoAhora": "Already paid",
   "pagoDespuesTexto": "The account is created pending payment: the administrator gets their PIN, but nothing opens until you record the payment from Collections.",
   "creadaPendienteTexto": "{{cuenta}} was created and is pending payment.",
-  "creadaPendienteAviso": "Until the first payment is recorded, the account issues no QR and opens no doors. It shows up in Collections as “To activate”.",
+  "creadaPendienteAviso": "Until the first payment is recorded, the account generates no QR and opens no doors. It shows up in Collections as “To activate”.",
   "registrarPagoAhora": "Record the payment now"
 }

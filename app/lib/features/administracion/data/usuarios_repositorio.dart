@@ -104,7 +104,7 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
             etiqueta: u.etiqueta,
             rol: u.rol,
             unidad: u.unidad,
-            qrEmitidos: u.qrEmitidos,
+            qrGenerados: u.qrGenerados,
             qrUsados: u.qrUsados,
             maxQrEnUnDia: u.maxQrEnUnDia,
             ultimoQrAt: u.ultimoQrAt,

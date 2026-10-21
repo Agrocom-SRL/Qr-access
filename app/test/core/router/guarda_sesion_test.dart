@@ -57,7 +57,7 @@ void main() {
   });
 
   group('con sesión', () {
-    final sesion = sesionCon(permisos: {Permisos.emitirQr});
+    final sesion = sesionCon(permisos: {Permisos.generarQr});
 
     test('las pantallas de entrada llevan al tablero', () {
       for (final entrada in [Rutas.bienvenida, Rutas.ingreso, Rutas.arranque]) {
@@ -97,8 +97,8 @@ void main() {
     });
 
     test('el permiso es del rol activo, no de otro rol de la cuenta', () {
-      final sinEmitir = sesionCon();
-      expect(redireccionDeSesion(sinEmitir, Rutas.qrNuevo), Rutas.inicio);
+      final sinGenerar = sesionCon();
+      expect(redireccionDeSesion(sinGenerar, Rutas.qrNuevo), Rutas.inicio);
     });
 
     test('una pantalla sin permiso requerido se abre con cualquier sesión', () {

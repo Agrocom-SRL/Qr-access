@@ -92,7 +92,7 @@
   "eliminarTexto": "Ninguém desta conta poderá entrar novamente, nem no app nem com seus QR. Os dados são mantidos para o registro de atividades e a contabilidade, e o código fica livre. Esta ação não pode ser desfeita pelo painel.",
   "eliminarConfirmar": "Digite o código {{codigo}} para confirmar",
   "registrarPago": "Registrar pagamento",
-  "pendienteAviso": "Esta conta ainda não pagou o primeiro ano: não emite QR nem abre portas até o pagamento ser registrado.",
+  "pendienteAviso": "Esta conta ainda não pagou o primeiro ano: não gera QR nem abre portas até o pagamento ser registrado.",
   "correo": "E-mail",
   "responsable": "Pessoa responsável pela conta",
   "pendienteTexto": "Pendente do primeiro pagamento: começa a operar quando for registrado.",

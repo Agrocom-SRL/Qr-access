@@ -3,7 +3,7 @@ import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 
 /// Respuesta de `POST /qr-accesos` (201). `texto` solo llega aquí: la app
 /// no lo persiste (ADR 0008).
-class QrEmitidoDto {
+class QrGeneradoDto {
   const new({
     required this.id,
     required this.texto,

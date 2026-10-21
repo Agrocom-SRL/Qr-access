@@ -4,7 +4,7 @@ import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
@@ -14,8 +14,8 @@ import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 /// QR de acceso de la cuenta (ADR 0008). Los tests lo sustituyen por un fake
 /// con el mismo shape que el contrato de la API.
 abstract interface class QrAccesosRepositorio {
-  /// Emite un QR. El `texto` del token llega solo aquí.
-  Future<QrEmitido> emitir(DatosEmision datos, {required DateTime ahora});
+  /// Genera un QR. El `texto` del token llega solo aquí.
+  Future<QrGenerado> generar(DatosGeneracion datos, {required DateTime ahora});
 
   Future<Pagina<QrAcceso>> listar({
     required EstadoQr estado,
@@ -26,9 +26,9 @@ abstract interface class QrAccesosRepositorio {
   /// Cuántos QR hay en cada estado (las pastillas de Mis QR).
   Future<Map<EstadoQr, int>> resumir();
 
-  /// El último QR propio emitido con conexión, guardado en este dispositivo
+  /// El último QR propio generado con conexión, guardado en este dispositivo
   /// como respaldo sin internet; `null` si no hay o ya venció.
-  Future<QrEmitido?> ultimoPropioGuardado();
+  Future<QrGenerado?> ultimoPropioGuardado();
 
   /// Qué pasó con un QR: su estado y el último intento de lectura.
   Future<SeguimientoQr> seguir(String id);
@@ -44,11 +44,11 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
   final AlmacenQr _almacenQr;
 
   @override
-  Future<QrEmitido> emitir(
-    DatosEmision datos, {
+  Future<QrGenerado> generar(
+    DatosGeneracion datos, {
     required DateTime ahora,
   }) async {
-    final dto = await _api.emitirQr(
+    final dto = await _api.generarQr(
       puertaIds: datos.puertaIds,
       venceAt: datos.vigencia.venceAtPara(ahora),
       etiqueta: datos.etiqueta,
@@ -57,23 +57,23 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     // El texto solo existe ahora: se guarda en el dispositivo para poder
     // volver a mostrarlo desde Mis QR (ADR 0008, addendum).
     await _guardarSinFallar(dto.id, dto.texto, dto.venceAt);
-    final emitido = QrEmitido(
+    final generado = QrGenerado(
       id: dto.id,
       texto: dto.texto,
       venceAt: dto.venceAt,
       etiqueta: dto.etiqueta,
       puertas: dto.puertas.map(_aPuertaDeQr).toList(),
     );
-    if (datos.propio) await _guardarPropioSinFallar(emitido);
-    return emitido;
+    if (datos.propio) await _guardarPropioSinFallar(generado);
+    return generado;
   }
 
   @override
-  Future<QrEmitido?> ultimoPropioGuardado() async {
+  Future<QrGenerado?> ultimoPropioGuardado() async {
     try {
       final qr = await _almacenQr.leerUltimoPropio();
       if (qr == null) return null;
-      return QrEmitido(
+      return QrGenerado(
         id: qr.id,
         texto: qr.texto,
         venceAt: qr.venceAt,
@@ -138,9 +138,9 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     await _almacenQr.borrarUltimoPropio(id);
   }
 
-  /// Respaldo sin internet (ADR 0008): cada QR propio emitido con conexión
-  /// reemplaza al anterior. Si el almacén falla, el QR se emitió igual.
-  Future<void> _guardarPropioSinFallar(QrEmitido qr) async {
+  /// Respaldo sin internet (ADR 0008): cada QR propio generado con conexión
+  /// reemplaza al anterior. Si el almacén falla, el QR se generó igual.
+  Future<void> _guardarPropioSinFallar(QrGenerado qr) async {
     try {
       await _almacenQr.guardarUltimoPropio(
         QrPropioGuardado(
@@ -156,7 +156,7 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     }
   }
 
-  /// Guardar el texto es una comodidad: si el almacén falla, el QR se emitió
+  /// Guardar el texto es una comodidad: si el almacén falla, el QR se generó
   /// igual y se muestra y comparte como siempre.
   Future<void> _guardarSinFallar(
     String id,
@@ -192,8 +192,8 @@ final qrAccesosRepositorioProvider = Provider<QrAccesosRepositorio>(
   ),
 );
 
-/// El texto guardado en este dispositivo para un QR emitido, o `null` si se
-/// emitió en otro dispositivo, ya venció o el almacén no lo tiene.
+/// El texto guardado en este dispositivo para un QR generado, o `null` si se
+/// generó en otro dispositivo, ya venció o el almacén no lo tiene.
 final FutureProviderFamily<String?, String> textoQrGuardadoProvider =
     FutureProvider.autoDispose.family<String?, String>((ref, id) async {
       try {

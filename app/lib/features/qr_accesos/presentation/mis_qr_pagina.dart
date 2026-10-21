@@ -27,7 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Listado de los QR emitidos, por estado (HU-13, handoff C07/E07): filtrar,
+/// Listado de los QR generados, por estado (HU-13, handoff C07/E07): filtrar,
 /// ver y anular. Tarjetas en compacto, tabla en expandido.
 class MisQrPagina extends ConsumerWidget {
   const new({super.key});
@@ -39,11 +39,11 @@ class MisQrPagina extends ConsumerWidget {
     final sesion = ref.watch(sesionControladorProvider);
     final filtro = ref.watch(filtroQrProvider);
     final resumen = ref.watch(resumenQrProvider).value;
-    final puedeEmitir = sesion.tiene(Permisos.emitirQr);
+    final puedeGenerar = sesion.tiene(Permisos.generarQr);
     final expandida = context.esExpandida;
 
-    final botonEmitir = AccesoBoton(
-      texto: l10n.qrEmitirBoton,
+    final botonGenerar = AccesoBoton(
+      texto: l10n.qrGenerarBoton,
       icono: Icons.add,
       onPressed: () => context.go(Rutas.qrNuevo),
     );
@@ -60,12 +60,12 @@ class MisQrPagina extends ConsumerWidget {
     return PlantillaAdmin(
       destino: DestinoNav.misQr,
       titulo: expandida ? l10n.qrMisQrTitulo : null,
-      accion: puedeEmitir && expandida ? botonEmitir : null,
-      fab: puedeEmitir
+      accion: puedeGenerar && expandida ? botonGenerar : null,
+      fab: puedeGenerar
           ? FloatingActionButton.extended(
               onPressed: () => context.go(Rutas.qrNuevo),
               icon: const Icon(Icons.add),
-              label: Text(l10n.qrEmitirBoton),
+              label: Text(l10n.qrGenerarBoton),
             )
           : null,
       conRelleno: false,
@@ -127,7 +127,7 @@ class _ListaQr extends ConsumerWidget {
     final listado = ref.watch(listadoQrProvider(filtro));
     final anulando = ref.watch(anularQrControladorProvider);
     final ahora = ref.read(relojProvider)();
-    final puedeEmitir = sesion.tiene(Permisos.emitirQr);
+    final puedeGenerar = sesion.tiene(Permisos.generarQr);
     final puedeAnular = sesion.tiene(Permisos.anularQr);
 
     return ListadoPaginado<QrAcceso>(
@@ -143,9 +143,9 @@ class _ListaQr extends ConsumerWidget {
             ? l10n.qrMisQrSinVigentes
             : l10n.qrMisQrSinResultados,
         ayuda: l10n.qrMisQrSinResultadosAyuda,
-        textoAccion: puedeEmitir ? l10n.qrEmitirBoton : null,
+        textoAccion: puedeGenerar ? l10n.qrGenerarBoton : null,
         iconoAccion: Icons.add,
-        alAccionar: puedeEmitir ? () => context.go(Rutas.qrNuevo) : null,
+        alAccionar: puedeGenerar ? () => context.go(Rutas.qrNuevo) : null,
       ),
       tarjeta: (context, qr) => _TarjetaQrConVer(
         qr: qr,
@@ -170,7 +170,7 @@ class _ListaQr extends ConsumerWidget {
           ),
         ),
         ColumnaListado(
-          titulo: l10n.qrColumnaEmitido,
+          titulo: l10n.qrColumnaGenerado,
           celda: (context, qr) =>
               _Mono(textoHoraCorta(l10n, qr.creadoAt, ahora)),
         ),
@@ -248,7 +248,7 @@ class _Mono extends StatelessWidget {
 }
 
 /// Tarjeta de un QR con "Ver QR" si el texto está en este dispositivo, o el
-/// aviso de que se emitió en otro.
+/// aviso de que se generó en otro.
 class _TarjetaQrConVer extends ConsumerWidget {
   const new({
     required this.qr,
@@ -319,11 +319,11 @@ class _AccionesDeFila extends ConsumerWidget {
   }
 }
 
-/// Vuelve a mostrar un QR ya emitido con el texto guardado en el dispositivo.
+/// Vuelve a mostrar un QR ya generado con el texto guardado en el dispositivo.
 void abrirQrGuardado(BuildContext context, QrAcceso qr, String texto) {
   context.go(
-    Rutas.qrEmitido,
-    extra: QrEmitido(
+    Rutas.qrGenerado,
+    extra: QrGenerado(
       id: qr.id,
       texto: texto,
       venceAt: qr.venceAt,

@@ -1,24 +1,24 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   final ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
-  ErrorDatosEmision? errorDe({
+  ErrorDatosGeneracion? errorDe({
     Set<String> puertaIds = const {'p1'},
     String etiqueta = '',
     Vigencia vigencia = Vigencia.porDefecto,
-  }) => DatosEmision.errorDe(
+  }) => DatosGeneracion.errorDe(
     puertaIds: puertaIds,
     etiqueta: etiqueta,
     vigencia: vigencia,
     ahora: ahora,
   );
 
-  group('DatosEmision.errorDe', () {
-    test('sin puertas no hay QR que emitir', () {
-      expect(errorDe(puertaIds: {}), ErrorDatosEmision.sinPuertas);
+  group('DatosGeneracion.errorDe', () {
+    test('sin puertas no hay QR que generar', () {
+      expect(errorDe(puertaIds: {}), ErrorDatosGeneracion.sinPuertas);
     });
 
     test('una etiqueta de 40 caracteres es válida (handoff)', () {
@@ -26,7 +26,7 @@ void main() {
     });
 
     test('una etiqueta de 41 caracteres es demasiado larga', () {
-      expect(errorDe(etiqueta: 'a' * 41), ErrorDatosEmision.etiquetaLarga);
+      expect(errorDe(etiqueta: 'a' * 41), ErrorDatosGeneracion.etiquetaLarga);
     });
 
     test('los espacios del borde no cuentan para el largo', () {
@@ -41,13 +41,13 @@ void main() {
         OpcionVigencia.horaExacta,
         minutosDelDia: (local.hour * 60 + local.minute) - 30,
       );
-      expect(errorDe(vigencia: pasada), ErrorDatosEmision.vigenciaPasada);
+      expect(errorDe(vigencia: pasada), ErrorDatosGeneracion.vigenciaPasada);
     });
   });
 
-  group('DatosEmision', () {
+  group('DatosGeneracion', () {
     test('quita los espacios de la etiqueta', () {
-      final datos = DatosEmision(
+      final datos = DatosGeneracion(
         puertaIds: const {'p1'},
         vigencia: Vigencia.porDefecto,
         etiqueta: '  Proveedor de gas  ',
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('una etiqueta vacía se envía como ausente', () {
-      final datos = DatosEmision(
+      final datos = DatosGeneracion(
         puertaIds: const {'p1'},
         vigencia: Vigencia.porDefecto,
         etiqueta: '   ',
@@ -67,7 +67,7 @@ void main() {
     });
 
     test('conserva las puertas elegidas', () {
-      final datos = DatosEmision(
+      final datos = DatosGeneracion(
         puertaIds: const {'p1', 'p2'},
         vigencia: const Vigencia(OpcionVigencia.unaHora),
         etiqueta: '',
@@ -107,14 +107,14 @@ void main() {
       expect(OpcionVigencia.larga.map((o) => o.horas), [12, 16, 20, 24]);
     });
 
-    test('una hora después de la emisión, en UTC', () {
+    test('una hora después de la generación, en UTC', () {
       expect(
         const Vigencia(OpcionVigencia.unaHora).venceAtPara(ahora),
         DateTime.utc(2026, 10, 9, 15, 30),
       );
     });
 
-    test('cuatro horas después de la emisión, en UTC', () {
+    test('cuatro horas después de la generación, en UTC', () {
       expect(
         const Vigencia(OpcionVigencia.cuatroHoras).venceAtPara(ahora),
         DateTime.utc(2026, 10, 9, 18, 30),

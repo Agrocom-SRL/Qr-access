@@ -28,7 +28,7 @@ EventoAcceso _evento({
   puertaNombre: 'Portón principal',
   sitioNombre: 'Sede',
   qrEtiqueta: 'Proveedor de gas',
-  emisorEtiqueta: 'Jorge R.',
+  generadorEtiqueta: 'Jorge R.',
 );
 
 Future<EventosRepositorioFalso> _montar(

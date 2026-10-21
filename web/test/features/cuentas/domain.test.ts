@@ -214,7 +214,7 @@ describe('listas del uso de usuarios', () => {
     etiqueta: id,
     rol: 'Miembro',
     unidad: null,
-    qrEmitidos: 0,
+    qrGenerados: 0,
     qrUsados: 0,
     maxQrEnUnDia: 0,
     ultimoQrEn: null,

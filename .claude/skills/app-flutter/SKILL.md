@@ -44,7 +44,7 @@ app/lib/
     sesion/                     bienvenida, ingreso por PIN (casillas_pin.dart); un usuario tiene un solo rol (ADR 0028), ya no hay elegir rol
     inicio/                     inicio de usuario (hero, accesos rápidos, vigentes hoy) y tablero de administración
     puertas/                    solo datos (puertas con su lector y estado); barrel puertas.dart
-    qr_accesos/                 stepper de emisión, QR emitido (compartir PNG), Mis QR con anulación (ADR 0008)
+    qr_accesos/                 stepper de generación, QR generado (compartir PNG), Mis QR con anulación (ADR 0008)
     eventos/                    bitácora con filtros, grupos por día y tabla (ADR 0007)
     perfil/                     cuenta, plan, rol (solo lectura), tema, cerrar sesión
     administracion/             Puertas (estado del lector), Usuarios (alta por nivel con rol único y, para un Titular, su unidad; editar el nombre; baja en cascada con confirmación; generar PIN; cupo del plan para el Administrador), PIN generado
@@ -55,7 +55,7 @@ app/lib/
 Dentro de una feature:
 
 ```
-domain/        modelos y reglas puras (Pin, DatosEmision, EstadoQr); sin Flutter ni red
+domain/        modelos y reglas puras (Pin, DatosGeneracion, EstadoQr); sin Flutter ni red
 data/          repositorio abstracto + implementación con ClienteApi; convierte contratos a dominio
 presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), widgets/ propios
 ```
@@ -91,13 +91,13 @@ Pendiente: brillo de pantalla para el QR (CLAUDE.md, invariante 5) y la cookie H
 
 ## Reglas de pantalla (de ACRECIA, `guia-pantallas.md`)
 
-- Arquetipos: **Tablero** (`inicio`), **Listado** (`qr_accesos`, `eventos`, `administracion`), **Formulario** (`FormularioSecciones`), **Stepper** (emitir QR), **Pantalla completa** (QR emitido, PIN generado).
-- Tras guardar, el formulario se queda en edición (no vuelve al listado). Para emitir, la pantalla avanza a mostrar el QR.
+- Arquetipos: **Tablero** (`inicio`), **Listado** (`qr_accesos`, `eventos`, `administracion`), **Formulario** (`FormularioSecciones`), **Stepper** (generar QR), **Pantalla completa** (QR generado, PIN generado).
+- Tras guardar, el formulario se queda en edición (no vuelve al listado). Para generar, la pantalla avanza a mostrar el QR.
 - `activo` nunca va en un formulario: se activa/desactiva con una acción aparte.
 - Colores fijos de acción: Ver = info, Editar = advertencia, Eliminar = peligro; un cambio de estado lleva el tono del estado destino. Toda baja o cambio de estado confirma con `ConfirmarDialogo`.
 
 ## Tests
 
-- `test/features/<feature>/domain/*` y `test/core/*`: unitarios (Pin, DatosEmision, interceptor, controladores de sesión).
+- `test/features/<feature>/domain/*` y `test/core/*`: unitarios (Pin, DatosGeneracion, interceptor, controladores de sesión).
 - `presentation/*`: widget tests con `montarPantalla` (test/helpers/pantalla.dart; compacto por defecto, `expandida: true` para las tablas) y los fakes de `test/helpers/fakes.dart`. `textosEn(tester)` da los textos del ARB ya cargados.
 - `test/l10n/` (redacción neutra, textos literales) y `test/arquitectura/` (tokens, fronteras).
