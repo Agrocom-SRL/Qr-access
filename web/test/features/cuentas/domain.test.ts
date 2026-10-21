@@ -10,6 +10,10 @@ import {
 } from '@/features/cuentas/domain/alta';
 import {
   destinosDeReasignacion,
+  inactivosDe,
+  ruidososDe,
+  titularesCercaDelTope,
+  type EstadisticasDeUsuarios,
   sufijoDePinValido,
   topeDeMiembrosValido,
   usuariosDisponibles,
@@ -201,5 +205,43 @@ describe('destinos de una reasignación', () => {
 
   it('con un solo administrador no hay a quién mover', () => {
     expect(destinosDeReasignacion([rama('1')], '1')).toEqual([]);
+  });
+});
+
+describe('listas del uso de usuarios', () => {
+  const uso = (id: string, inactivo: boolean, ruidoso: boolean) => ({
+    id,
+    etiqueta: id,
+    rol: 'Miembro',
+    unidad: null,
+    qrEmitidos: 0,
+    qrUsados: 0,
+    maxQrEnUnDia: 0,
+    ultimoQrEn: null,
+    inactivo,
+    ruidoso,
+  });
+  const titular = (id: string, cercaDelTope: boolean) => ({
+    id,
+    etiqueta: id,
+    unidad: null,
+    miembros: 1,
+    tope: 10,
+    porcentaje: 10,
+    cercaDelTope,
+  });
+  const datos: EstadisticasDeUsuarios = {
+    ventanaDias: 30,
+    umbralInactivoDias: 30,
+    umbralRuidosoPorDia: 10,
+    usuarios: [uso('a', true, false), uso('b', false, true), uso('c', false, false)],
+    titulares: [titular('t1', true), titular('t2', false)],
+    ramas: [],
+  };
+
+  it('separan inactivos, ruidosos y Titulares cerca del tope sin recalcular nada', () => {
+    expect(inactivosDe(datos).map((u) => u.id)).toEqual(['a']);
+    expect(ruidososDe(datos).map((u) => u.id)).toEqual(['b']);
+    expect(titularesCercaDelTope(datos).map((t) => t.id)).toEqual(['t1']);
   });
 });

@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/nivel_usuario.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:flutter/foundation.dart';
@@ -42,6 +43,13 @@ final FutureProvider<Cupo> cupoProvider = FutureProvider.autoDispose<Cupo>(
   (ref) => ref.watch(usuariosRepositorioProvider).cupo(),
 );
 
+/// Inactivos, ruidosos y Titulares cerca del tope de la rama (ADR 0028 §4):
+/// solo se pide con `seguridad.estadistica.ver`.
+final FutureProvider<EstadisticasDeUsuarios> estadisticasProvider =
+    FutureProvider.autoDispose<EstadisticasDeUsuarios>(
+      (ref) => ref.watch(usuariosRepositorioProvider).estadisticas(),
+    );
+
 /// Acciones sobre un usuario del listado: generar PIN y eliminar. El estado
 /// es el id del usuario con una acción en curso.
 class AccionesUsuarioControlador extends Notifier<String?> {
@@ -70,15 +78,16 @@ class AccionesUsuarioControlador extends Notifier<String?> {
   /// Sin [confirmar], quien tiene a otros a su cargo responde
   /// `usuario.con_dependientes` con cuántos caerían; con él, la baja es en
   /// cascada y libera todos esos lugares del cupo (ADR 0028 §7).
-  Future<ErrorApi?> eliminar(Usuario usuario, {bool confirmar = false}) async {
-    state = usuario.id;
+  Future<ErrorApi?> eliminar(String usuarioId, {bool confirmar = false}) async {
+    state = usuarioId;
     try {
       await ref
           .read(usuariosRepositorioProvider)
-          .eliminar(usuario.id, confirmar: confirmar);
+          .eliminar(usuarioId, confirmar: confirmar);
       ref
         ..invalidate(usuariosProvider)
-        ..invalidate(cupoProvider);
+        ..invalidate(cupoProvider)
+        ..invalidate(estadisticasProvider);
       return null;
     } on ErrorApi catch (error) {
       return error;
@@ -267,7 +276,8 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
       }
       ref
         ..invalidate(usuariosProvider)
-        ..invalidate(cupoProvider);
+        ..invalidate(cupoProvider)
+        ..invalidate(estadisticasProvider);
       state = state.copiar();
       return pin;
     } on ErrorApi catch (error) {

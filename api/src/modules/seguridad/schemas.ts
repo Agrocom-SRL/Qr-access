@@ -543,3 +543,47 @@ export const cuerpoDeReasignacion = z.object({
   usuario_id: esquemaId,
   administrador_id: esquemaId,
 });
+
+const esquemaUsuarioConUso = z.object({
+  id: z.string(),
+  etiqueta: z.string().nullable(),
+  rol: z.string().nullable(),
+  unidad: z.string().nullable(),
+  qr_emitidos: z.number().int(),
+  qr_usados: z.number().int(),
+  max_qr_en_un_dia: z.number().int(),
+  ultimo_qr_at: esquemaFecha.nullable(),
+  inactivo: z.boolean(),
+  ruidoso: z.boolean(),
+});
+
+const esquemaTitularConMiembros = z.object({
+  id: z.string(),
+  etiqueta: z.string().nullable(),
+  unidad: z.string().nullable(),
+  miembros: z.number().int(),
+  tope: z.number().int(),
+  porcentaje: z.number().int(),
+  cerca_del_tope: z.boolean(),
+});
+
+/** Uso de los usuarios: informativo, con umbrales fijos (ADR 0028). */
+export const respuestaDeEstadisticasDeUsuarios = z.object({
+  ventana_dias: z.number().int(),
+  umbral_inactivo_dias: z.number().int(),
+  umbral_ruidoso_por_dia: z.number().int(),
+  resumen: z.object({
+    usuarios: z.number().int(),
+    inactivos: z.number().int(),
+    ruidosos: z.number().int(),
+    titulares_cerca_del_tope: z.number().int(),
+  }),
+  usuarios: z.array(esquemaUsuarioConUso),
+  titulares: z.array(esquemaTitularConMiembros),
+});
+
+export const respuestaDeEstadisticasDeCuenta = respuestaDeEstadisticasDeUsuarios.extend({
+  ramas: z.array(
+    z.object({ id: z.string(), etiqueta: z.string().nullable(), usuarios: z.number().int() }),
+  ),
+});

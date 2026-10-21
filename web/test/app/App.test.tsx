@@ -1058,8 +1058,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    // Como responsable, como administrador y en el árbol de la cuenta (ADR 0028)
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(3);
+    // Como responsable, como administrador, en el árbol de la cuenta y en el cupo por rama (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(4);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1367,7 +1367,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
     it('muestra cada administrador con sus Titulares (unidad y Miembros) y Guardias', async () => {
       await abrirCuenta(crearServiciosDePrueba());
       expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
-      expect(await screen.findByText('Jorge Rivero')).toBeInTheDocument();
+      expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.getByText('Titular · Casa 12 · 3 Miembros')).toBeInTheDocument();
       expect(screen.getByText('Portería norte')).toBeInTheDocument();
       expect(screen.getByText('Todavía no tiene Titulares ni Guardias.')).toBeInTheDocument();
@@ -1433,7 +1433,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
 
     it('sin el permiso de reasignar, el árbol se ve pero no se ofrece mover a nadie', async () => {
       await abrirCuenta(conPermisos(['seguridad.cuenta.ver', 'resumen.panel.ver']));
-      expect(await screen.findByText('Jorge Rivero')).toBeInTheDocument();
+      expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.queryByRole('button', { name: /^Reasignar a/ })).not.toBeInTheDocument();
     });
 
@@ -1493,5 +1493,81 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
       await userEvent.type(campo, '500');
       expect(guardar).toBeEnabled();
     });
+  });
+});
+
+describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
+  async function abrirCuenta(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+  }
+
+  it('explica los umbrales y que es solo informativo', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('Uso de los usuarios')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Inactivo: sin generar ningún QR en 30 días\. Ruidoso: más de 10 QR/),
+    ).toBeInTheDocument();
+  });
+
+  it('lista inactivos (con su último QR), ruidosos y Titulares cerca del tope', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('2 usuarios inactivos')).toBeInTheDocument();
+    expect(screen.getByText('Sin QR en 30 días · nunca generó uno')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sin QR en 30 días · el último fue el 02\/09\/2026/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('1 usuario ruidoso')).toBeInTheDocument();
+    expect(screen.getByText('Hasta 14 QR en un día · 40 en total')).toBeInTheDocument();
+    expect(screen.getByText('1 Titular cerca de su tope')).toBeInTheDocument();
+    expect(screen.getByText('Casa 12 · 9 de 10 Miembros')).toBeInTheDocument();
+    // Un Titular con holgura no aparece en esa lista
+    expect(screen.queryByText(/Casa 3 · 1 de 10/)).not.toBeInTheDocument();
+  });
+
+  it('muestra cuántos usuarios cuelgan de cada administrador', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('Usuarios por administrador')).toBeInTheDocument();
+    expect(screen.getByText('5 usuarios')).toBeInTheDocument();
+    expect(screen.getByText('0 usuarios')).toBeInTheDocument();
+  });
+
+  it('sin casos, cada grupo lo dice', async () => {
+    const vacio = {
+      ventanaDias: 30,
+      umbralInactivoDias: 30,
+      umbralRuidosoPorDia: 10,
+      usuarios: [],
+      titulares: [],
+      ramas: [],
+    };
+    await abrirCuenta(
+      crearServiciosDePrueba({
+        cuentas: { estadisticasDeUsuarios: () => Promise.resolve(vacio) },
+      }),
+    );
+    expect(await screen.findByText('Nadie está inactivo.')).toBeInTheDocument();
+    expect(screen.getByText('Nadie genera QR de más.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Ningún Titular está cerca de su tope de Miembros.'),
+    ).toBeInTheDocument();
+  });
+
+  it('si no carga, lo dice y deja reintentar', async () => {
+    const estadisticasDeUsuarios = vi
+      .fn()
+      .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
+      .mockResolvedValue({
+        ventanaDias: 30,
+        umbralInactivoDias: 30,
+        umbralRuidosoPorDia: 10,
+        usuarios: [],
+        titulares: [],
+        ramas: [],
+      });
+    await abrirCuenta(crearServiciosDePrueba({ cuentas: { estadisticasDeUsuarios } }));
+    expect(await screen.findByText('No pudimos cargar el uso de los usuarios')).toBeInTheDocument();
   });
 });

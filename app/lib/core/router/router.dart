@@ -132,6 +132,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: 'estadisticas',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              const EstadisticasUsuariosPagina(),
+              transicion: Transicion.flujo,
+            ),
+          ),
+          GoRoute(
             path: 'pin',
             redirect: (context, state) =>
                 state.extra is PinGenerado ? null : Rutas.adminUsuarios,

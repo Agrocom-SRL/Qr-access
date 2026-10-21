@@ -45,6 +45,8 @@ Reglas:
 
 ## 4. Estadísticas (las calcula la API; las ven web y app)
 
+> **Hecho (2026-10-22): estadísticas de uso (§4).** La API calcula inactivos (30 días sin generar QR; un usuario con menos de 30 días de antigüedad no cuenta), ruidosos (más de 10 QR en un día, cortando el día en la hora de La Paz) y Titulares cerca de su tope (80 %), todo informativo. La app lo muestra al Administrador (su rama, con baja directa) y el panel web a AGROCOM (toda la cuenta y los usuarios por Administrador). Quedan compartir el PIN y "Registrar pago" en cobranza.
+
 Audiencia: AGROCOM en el panel web (todas las cuentas) y el propietario en la app (su rama).
 
 1. Usuarios creados por cada dueño de casa.

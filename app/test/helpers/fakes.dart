@@ -11,6 +11,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/features/administracion/data/estructura_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
@@ -288,6 +289,13 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
     this.error,
     this.asignadas = const PuertasAsignadas(),
     this.dependientes = const {},
+    this.estadisticasActuales = const EstadisticasDeUsuarios(
+      ventanaDias: 30,
+      umbralInactivoDias: 30,
+      umbralRuidosoPorDia: 10,
+      usuarios: [],
+      titulares: [],
+    ),
     this.cupoActual = const Cupo(
       usados: 4,
       maximo: 10,
@@ -301,6 +309,7 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   /// responde 409 con esa cantidad, como la API.
   final Map<String, int> dependientes;
   final Cupo cupoActual;
+  final EstadisticasDeUsuarios estadisticasActuales;
   final List<String> eliminadosEnCascada = [];
   final List<Usuario> usuarios;
   final PuertasAsignadas asignadas;
@@ -362,6 +371,12 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
 
   @override
   Future<Cupo> cupo() async => cupoActual;
+
+  @override
+  Future<EstadisticasDeUsuarios> estadisticas() async {
+    if (error != null) throw error!;
+    return estadisticasActuales;
+  }
 
   @override
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {

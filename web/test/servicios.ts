@@ -9,7 +9,7 @@ import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisti
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
-import type { RamaDeAdministrador } from '@/features/cuentas/domain/cuenta';
+import type { EstadisticasDeUsuarios, RamaDeAdministrador } from '@/features/cuentas/domain/cuenta';
 import type { PlacasRepositorio, Placa } from '@/features/placas';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
@@ -176,6 +176,75 @@ export const JERARQUIA: readonly RamaDeAdministrador[] = [
   },
   { id: '12', etiqueta: 'Rosa Vaca', guardias: [], titulares: [] },
 ];
+
+/** El uso de los usuarios de la cuenta de ejemplo: un inactivo, un ruidoso y un Titular cerca del tope. */
+export const ESTADISTICAS_DE_USUARIOS: EstadisticasDeUsuarios = {
+  ventanaDias: 30,
+  umbralInactivoDias: 30,
+  umbralRuidosoPorDia: 10,
+  usuarios: [
+    {
+      id: '31',
+      etiqueta: 'Jorge Rivero',
+      rol: 'Titular',
+      unidad: 'Casa 12',
+      qrEmitidos: 40,
+      qrUsados: 2,
+      maxQrEnUnDia: 14,
+      ultimoQrEn: null,
+      inactivo: false,
+      ruidoso: true,
+    },
+    {
+      id: '41',
+      etiqueta: 'Marta Soliz',
+      rol: 'Miembro',
+      unidad: null,
+      qrEmitidos: 0,
+      qrUsados: 0,
+      maxQrEnUnDia: 0,
+      ultimoQrEn: null,
+      inactivo: true,
+      ruidoso: false,
+    },
+    {
+      id: '42',
+      etiqueta: 'Luis Peña',
+      rol: 'Guardia',
+      unidad: null,
+      qrEmitidos: 0,
+      qrUsados: 0,
+      maxQrEnUnDia: 0,
+      ultimoQrEn: new Date('2026-09-02T15:00:00Z'),
+      inactivo: true,
+      ruidoso: false,
+    },
+  ],
+  titulares: [
+    {
+      id: '31',
+      etiqueta: 'Jorge Rivero',
+      unidad: 'Casa 12',
+      miembros: 9,
+      tope: 10,
+      porcentaje: 90,
+      cercaDelTope: true,
+    },
+    {
+      id: '32',
+      etiqueta: 'Rosa Vaca',
+      unidad: 'Casa 3',
+      miembros: 1,
+      tope: 10,
+      porcentaje: 10,
+      cercaDelTope: false,
+    },
+  ],
+  ramas: [
+    { id: '11', etiqueta: 'Carla Méndez', usuarios: 5 },
+    { id: '12', etiqueta: 'Rosa Vaca', usuarios: 0 },
+  ],
+};
 
 export const PLACAS: Placa[] = [
   {
@@ -531,6 +600,7 @@ export function crearServiciosDePrueba(
     crearAdministrador: (_cuentaId, datos) =>
       Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGR9X8Z' }),
     jerarquia: () => Promise.resolve(JERARQUIA),
+    estadisticasDeUsuarios: () => Promise.resolve(ESTADISTICAS_DE_USUARIOS),
     reasignar: () => Promise.resolve(),
     cambiarCodigo: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),

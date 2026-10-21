@@ -246,6 +246,14 @@ class ClienteApi {
     });
   }
 
+  /// El uso de los usuarios de la rama de quien pregunta (ADR 0028 §4).
+  Future<EstadisticasDeUsuariosDto> estadisticasDeUsuarios() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/usuarios/estadisticas');
+      return EstadisticasDeUsuariosDto.desde(r.data!);
+    });
+  }
+
   Future<CupoDto> cupo() {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>('/cupo');

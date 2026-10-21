@@ -75,6 +75,15 @@ export function useCrearCuenta() {
   });
 }
 
+/** El uso de los usuarios de la cuenta (ADR 0028 §4): informativo, con umbrales fijos de la API. */
+export function useEstadisticasDeUsuarios(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  return useQuery({
+    queryKey: [...CLAVE_CUENTAS, 'estadisticas-de-usuarios', cuentaId],
+    queryFn: () => repositorio.estadisticasDeUsuarios(cuentaId),
+  });
+}
+
 /** El árbol de la cuenta (ADR 0028): Administradores con sus Guardias y Titulares. */
 export function useJerarquia(cuentaId: string) {
   const repositorio = useCuentasRepositorio();

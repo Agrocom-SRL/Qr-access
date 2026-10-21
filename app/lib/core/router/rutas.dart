@@ -31,6 +31,9 @@ abstract final class Rutas {
   static const adminUsuarios = '/admin/usuarios';
   static const adminUsuarioNuevo = '/admin/usuarios/nuevo';
 
+  /// Uso de los usuarios de la rama (inactivos, ruidosos y Titulares).
+  static const adminEstadisticas = '/admin/usuarios/estadisticas';
+
   /// Editar un usuario: `/admin/usuarios/:id`.
   static const adminUsuarioEditar = '/admin/usuarios/:id';
 

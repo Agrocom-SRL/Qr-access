@@ -55,6 +55,23 @@ function armarFiltro(filtro: FiltroDeQr): { donde?: string; params: unknown[] } 
   return { donde: condiciones.join(' AND '), params };
 }
 
+interface ConteoDeQrFila extends RowDataPacket {
+  emitido_por: string;
+  emitidos: number | string;
+  usados: number | string | null;
+}
+
+interface QrPorDiaFila extends RowDataPacket {
+  emitido_por: string;
+  dia: string;
+  total: number | string;
+}
+
+interface UltimoQrFila extends RowDataPacket {
+  emitido_por: string;
+  ultimo: Date;
+}
+
 /** Dueño de `qr_accesos`. */
 export class RepositorioDeQr extends RepositorioDeCuenta {
   constructor(pool: Pool) {
@@ -100,6 +117,66 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     });
     for (const activo of activos) await this.anular(tx, activo.id, usuarioId, ahora);
     return activos.length;
+  }
+
+  /**
+   * Cuántos QR generó cada usuario desde `desde` y cuántos de ellos ya se usaron (estadísticas de uso,
+   * ADR 0028). Cuenta también los QR propios. Un usuario sin QR no aparece.
+   */
+  async actividadDesde(
+    usuarioIds: readonly string[],
+    desde: Date,
+  ): Promise<Map<string, { emitidos: number; usados: number }>> {
+    const mapa = new Map<string, { emitidos: number; usados: number }>();
+    if (usuarioIds.length === 0) return mapa;
+    const filas = await this.seleccionar<ConteoDeQrFila>({
+      columnas: 't.emitido_por, COUNT(*) AS emitidos, SUM(t.usado_at IS NOT NULL) AS usados',
+      donde: 't.emitido_por IN (?) AND t.created_at >= ?',
+      params: [usuarioIds, desde],
+      agrupar: 't.emitido_por',
+    });
+    for (const fila of filas) {
+      mapa.set(fila.emitido_por, { emitidos: Number(fila.emitidos), usados: Number(fila.usados) });
+    }
+    return mapa;
+  }
+
+  /**
+   * El mayor número de QR que cada usuario generó en un solo día desde `desde`. El día se corta con
+   * `desfaseUtc` (`-04:00`: La Paz), una constante del código y nunca un valor del usuario.
+   */
+  async maxEnUnDiaDesde(
+    usuarioIds: readonly string[],
+    desde: Date,
+    desfaseUtc: string,
+  ): Promise<Map<string, number>> {
+    const mapa = new Map<string, number>();
+    if (usuarioIds.length === 0) return mapa;
+    if (!/^[+-]\d{2}:\d{2}$/.test(desfaseUtc)) throw new Error('Desfase horario inválido');
+    const filas = await this.seleccionar<QrPorDiaFila>({
+      columnas: `t.emitido_por, DATE_FORMAT(CONVERT_TZ(t.created_at, '+00:00', '${desfaseUtc}'), '%Y-%m-%d') AS dia, COUNT(*) AS total`,
+      donde: 't.emitido_por IN (?) AND t.created_at >= ?',
+      params: [usuarioIds, desde],
+      agrupar: 't.emitido_por, dia',
+    });
+    for (const fila of filas) {
+      mapa.set(fila.emitido_por, Math.max(mapa.get(fila.emitido_por) ?? 0, Number(fila.total)));
+    }
+    return mapa;
+  }
+
+  /** El último QR que generó cada usuario, de cualquier fecha. */
+  async ultimoEmitidoDe(usuarioIds: readonly string[]): Promise<Map<string, Date>> {
+    const mapa = new Map<string, Date>();
+    if (usuarioIds.length === 0) return mapa;
+    const filas = await this.seleccionar<UltimoQrFila>({
+      columnas: 't.emitido_por, MAX(t.created_at) AS ultimo',
+      donde: 't.emitido_por IN (?)',
+      params: [usuarioIds],
+      agrupar: 't.emitido_por',
+    });
+    for (const fila of filas) mapa.set(fila.emitido_por, fila.ultimo);
+    return mapa;
   }
 
   /** Busca SOLO dentro de la cuenta del contexto (ADR 0008 paso 2): un QR de otra cuenta es desconocido. */

@@ -1383,6 +1383,113 @@
       }
     }
   },
+  "estadisticasTitulo": "Uso de los usuarios",
+  "@estadisticasTitulo": {
+    "description": "Título de las estadísticas de uso"
+  },
+  "estadisticasResumen": "{inactivos} inactivos · {ruidosos} ruidosos · {titulares} Titulares cerca del tope",
+  "@estadisticasResumen": {
+    "description": "Resumen de las estadísticas en la tarjeta de Usuarios",
+    "placeholders": {
+      "inactivos": {
+        "type": "int"
+      },
+      "ruidosos": {
+        "type": "int"
+      },
+      "titulares": {
+        "type": "int"
+      }
+    }
+  },
+  "estadisticasAviso": "Es solo informativo. Inactivo: sin generar ningún QR en {dias} días. Ruidoso: más de {qr} QR generados en un mismo día. Tú decides a quién dar de baja.",
+  "@estadisticasAviso": {
+    "description": "Aviso de las estadísticas con los umbrales",
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      },
+      "qr": {
+        "type": "int"
+      }
+    }
+  },
+  "estadisticasInactivos": "Inactivos",
+  "@estadisticasInactivos": {
+    "description": "Pastilla de usuarios inactivos"
+  },
+  "estadisticasRuidosos": "Ruidosos",
+  "@estadisticasRuidosos": {
+    "description": "Pastilla de usuarios ruidosos"
+  },
+  "estadisticasTitulares": "Titulares",
+  "@estadisticasTitulares": {
+    "description": "Pastilla de Titulares cerca del tope"
+  },
+  "estadisticasSinInactivos": "Nadie está inactivo",
+  "@estadisticasSinInactivos": {
+    "description": "Vacío de inactivos"
+  },
+  "estadisticasSinRuidosos": "Nadie genera QR de más",
+  "@estadisticasSinRuidosos": {
+    "description": "Vacío de ruidosos"
+  },
+  "estadisticasSinTitulares": "Ningún Titular está cerca de su tope de Miembros",
+  "@estadisticasSinTitulares": {
+    "description": "Vacío de Titulares cerca del tope"
+  },
+  "estadisticasSinUnidad": "sin unidad",
+  "@estadisticasSinUnidad": {
+    "description": "Titular sin unidad"
+  },
+  "estadisticasTitularDetalle": "{unidad} · {miembros} de {tope} Miembros",
+  "@estadisticasTitularDetalle": {
+    "description": "Detalle de un Titular cerca del tope",
+    "placeholders": {
+      "unidad": {
+        "type": "String"
+      },
+      "miembros": {
+        "type": "int"
+      },
+      "tope": {
+        "type": "int"
+      }
+    }
+  },
+  "estadisticasDetalleRuidoso": "Hasta {maximo} QR en un día · {total} en total",
+  "@estadisticasDetalleRuidoso": {
+    "description": "Detalle de un usuario ruidoso",
+    "placeholders": {
+      "maximo": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "estadisticasDetalleNuncaGeneroQr": "Sin QR en {dias} días · nunca generó uno",
+  "@estadisticasDetalleNuncaGeneroQr": {
+    "description": "Detalle de un inactivo que nunca generó un QR",
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      }
+    }
+  },
+  "estadisticasDetalleInactivo": "Sin QR en {dias} días · el último fue el {fecha}",
+  "@estadisticasDetalleInactivo": {
+    "description": "Detalle de un inactivo con su último QR",
+    "placeholders": {
+      "dias": {
+        "type": "int"
+      },
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
   "usuariosNuevoAviso": "Al generar el PIN lo verás una sola vez. Entrégalo en persona o por un canal privado.",
   "@usuariosNuevoAviso": {
     "description": "Aviso del formulario de alta"

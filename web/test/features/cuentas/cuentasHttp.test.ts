@@ -110,6 +110,54 @@ describe('cuentas por HTTP (contrato de la API)', () => {
     ]);
   });
 
+  it('las estadísticas de usuarios se leen con sus umbrales y el cupo de cada rama', async () => {
+    const { solicitar, cliente } = clienteFalso({
+      ventana_dias: 30,
+      umbral_inactivo_dias: 30,
+      umbral_ruidoso_por_dia: 10,
+      usuarios: [
+        {
+          id: '41',
+          etiqueta: null,
+          rol: 'Miembro',
+          unidad: null,
+          qr_emitidos: 0,
+          qr_usados: 0,
+          max_qr_en_un_dia: 0,
+          ultimo_qr_at: '2026-09-02T15:00:00.000Z',
+          inactivo: true,
+          ruidoso: false,
+        },
+      ],
+      titulares: [
+        {
+          id: '31',
+          etiqueta: 'Jorge',
+          unidad: 'Casa 12',
+          miembros: 9,
+          tope: 10,
+          porcentaje: 90,
+          cerca_del_tope: true,
+        },
+      ],
+      ramas: [{ id: '11', etiqueta: 'Carla', usuarios: 5 }],
+    });
+    const e = await crearCuentasHttp(cliente).estadisticasDeUsuarios('1');
+    expect(solicitar).toHaveBeenCalledWith({
+      metodo: 'GET',
+      ruta: '/plataforma/cuentas/1/estadisticas-de-usuarios',
+    });
+    expect(e.umbralInactivoDias).toBe(30);
+    expect(e.umbralRuidosoPorDia).toBe(10);
+    expect(e.usuarios[0]).toMatchObject({
+      etiqueta: '—',
+      inactivo: true,
+      ultimoQrEn: new Date('2026-09-02T15:00:00.000Z'),
+    });
+    expect(e.titulares[0]).toMatchObject({ miembros: 9, tope: 10, cercaDelTope: true });
+    expect(e.ramas).toEqual([{ id: '11', etiqueta: 'Carla', usuarios: 5 }]);
+  });
+
   it('reasignar manda el usuario y el administrador de destino', async () => {
     const { solicitar, cliente } = clienteFalso();
     await crearCuentasHttp(cliente).reasignar('1', '31', '12');

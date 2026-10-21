@@ -5,6 +5,8 @@ library;
 export 'domain/usuario.dart' show PinGenerado;
 export 'presentation/administracion_pagina.dart'
     show AdministracionPagina, PuertasAdminPagina, UsuariosPagina;
+export 'presentation/estadisticas_usuarios_pagina.dart'
+    show EstadisticasUsuariosPagina;
 export 'presentation/estructura_pagina.dart' show EstructuraPagina;
 export 'presentation/pin_generado_pagina.dart' show PinGeneradoPagina;
 export 'presentation/usuario_formulario_pagina.dart'

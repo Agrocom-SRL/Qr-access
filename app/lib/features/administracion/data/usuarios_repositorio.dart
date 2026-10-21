@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/usuarios_contratos.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -26,6 +27,10 @@ abstract interface class UsuariosRepositorio {
 
   /// El uso del cupo de usuarios del plan (solo lo ve el Administrador).
   Future<Cupo> cupo();
+
+  /// Inactivos, ruidosos y Titulares cerca del tope en la rama de quien
+  /// pregunta (solo lo ve el Administrador).
+  Future<EstadisticasDeUsuarios> estadisticas();
 
   /// Regenera el PIN: el anterior deja de servir.
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo});
@@ -76,6 +81,43 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
   @override
   Future<void> eliminar(String id, {bool confirmar = false}) =>
       _api.eliminarUsuario(id, confirmar: confirmar);
+
+  @override
+  Future<EstadisticasDeUsuarios> estadisticas() async {
+    final dto = await _api.estadisticasDeUsuarios();
+    return EstadisticasDeUsuarios(
+      ventanaDias: dto.ventanaDias,
+      umbralInactivoDias: dto.umbralInactivoDias,
+      umbralRuidosoPorDia: dto.umbralRuidosoPorDia,
+      usuarios: [
+        for (final u in dto.usuarios)
+          UsoDeUsuario(
+            id: u.id,
+            etiqueta: u.etiqueta,
+            rol: u.rol,
+            unidad: u.unidad,
+            qrEmitidos: u.qrEmitidos,
+            qrUsados: u.qrUsados,
+            maxQrEnUnDia: u.maxQrEnUnDia,
+            ultimoQrAt: u.ultimoQrAt,
+            inactivo: u.inactivo,
+            ruidoso: u.ruidoso,
+          ),
+      ],
+      titulares: [
+        for (final t in dto.titulares)
+          TitularConMiembros(
+            id: t.id,
+            etiqueta: t.etiqueta,
+            unidad: t.unidad,
+            miembros: t.miembros,
+            tope: t.tope,
+            porcentaje: t.porcentaje,
+            cercaDelTope: t.cercaDelTope,
+          ),
+      ],
+    );
+  }
 
   @override
   Future<Cupo> cupo() async {

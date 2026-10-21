@@ -184,6 +184,16 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     return this.contar({ donde: 't.superior_id = ?', params: [id] });
   }
 
+  /** Toda la rama de `superiorId`, sin paginar: para las estadísticas de uso de quien la administra. */
+  todosDeRama(superiorId: string): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      donde: EN_LA_RAMA_DE,
+      params: [superiorId],
+      orden: 't.etiqueta, t.id',
+    });
+  }
+
   /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
   listarTodos(): Promise<UsuarioFila[]> {
     return this.seleccionar<UsuarioFila>({
