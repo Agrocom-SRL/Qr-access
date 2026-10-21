@@ -99,6 +99,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 - El cupo cuenta usuarios habilitados; una baja libera lugar.
 - Nombre de cuenta simple, NIT opcional, sin facturación.
 - **Quién crea a quién (2026-10-21):** el Administrador solo crea **Titulares** y **Guardias**; el Titular no elige tipo, todo lo que crea es **Miembro**. Se refleja en la app móvil (el selector de rol solo existe para el Administrador).
+- **Visibilidad transitiva (2026-10-21, cierra §10.2):** el Administrador ve a todos los de su rama, incluidos los Miembros y su actividad, además de Titulares y Guardias. El Titular ve a sus Miembros.
+- **Pantalla de estadísticas para el Administrador (2026-10-21):** una vista en la app con los datos de §4 (inactivos, ruidosos, titulares que abusan del cupo, cupo usado) para decidir a qué usuarios **bloquear o dar de baja**, con acción directa desde la lista. Se construye en el paso 5, después de la jerarquía. Falta definir "bloquear" (hoy solo existe el bloqueo automático del PIN por intentos fallidos): ¿suspensión temporal reversible que no libera cupo, distinta de la baja que sí lo libera?
 - **Un usuario, un rol (2026-10-21):** desaparece el cambio de rol en la app. El único caso de rol múltiple era Guardia/Titular y un guardia no es titular de nada, así que cada usuario tiene exactamente un rol. Esto enmienda la invariante 10 de CLAUDE.md ("múltiples roles, un rol activo por sesión") y el ADR 0004: el ADR nuevo debe reescribirla, y con ella la pantalla de elegir rol y el rol activo de la sesión.
 
 ## 10. Puntos a refinar (abiertos)
