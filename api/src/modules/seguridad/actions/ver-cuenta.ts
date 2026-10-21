@@ -16,7 +16,14 @@ import {
 } from '../repository.js';
 
 export interface DetalleDeCuenta {
-  cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
+  cuenta: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    activa: boolean;
+    cliente_desde: string;
+    max_miembros_por_titular: number;
+  };
   empresa: {
     nit: string | null;
     ciudad: string;
@@ -74,6 +81,7 @@ export async function ejecutar(
         nombre: cuenta.nombre,
         activa: cuenta.activo === 1,
         cliente_desde: cuenta.created_at.toISOString(),
+        max_miembros_por_titular: cuenta.max_miembros_por_titular,
       },
       empresa:
         empresa === null

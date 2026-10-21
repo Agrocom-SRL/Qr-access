@@ -184,6 +184,19 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     return this.contar({ donde: 't.superior_id = ?', params: [id] });
   }
 
+  /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
+  listarTodos(): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      orden: 't.etiqueta, t.id',
+    });
+  }
+
+  /** Cuelga a `id` de otro Administrador; sus Miembros y su unidad lo siguen por el árbol (ADR 0028 §7). */
+  cambiarSuperior(tx: Transaccion, id: string, superiorId: string): Promise<boolean> {
+    return this.actualizar(tx, id, { superior_id: superiorId });
+  }
+
   /** Cuántos usuarios tiene la cuenta: es lo que limita `max_usuarios` del plan (ADR 0017). */
   contarTodos(): Promise<number> {
     return this.contar({});
@@ -233,6 +246,15 @@ export class RepositorioDeRoles extends RepositorioDeCuenta {
   /** Alta de un rol de la cuenta del contexto (los tres roles base de una cuenta nueva). */
   crear(tx: Transaccion, rol: { nombre: string; protegido: boolean }): Promise<string> {
     return this.insertar(tx, { nombre: rol.nombre, protegido: rol.protegido ? 1 : 0, activo: 1 });
+  }
+
+  /** El rol activo de la cuenta con ese nombre (los roles base son únicos por nombre). */
+  buscarActivoPorNombre(nombre: string): Promise<RolFila | null> {
+    return this.seleccionarUna<RolFila>({
+      columnas: 't.id, t.nombre',
+      donde: 't.nombre = ? AND t.activo = 1',
+      params: [nombre],
+    });
   }
 
   listarActivos(): Promise<RolFila[]> {
@@ -825,8 +847,13 @@ export interface CuentaDePlataformaFila extends RowDataPacket {
   codigo: string;
   nombre: string;
   activo: number;
+  /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
+  max_miembros_por_titular: number;
   created_at: Date;
 }
+
+const COLUMNAS_DE_CUENTA_DE_PLATAFORMA =
+  't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular, t.created_at';
 
 export interface NuevaCuenta {
   readonly nombre: string;
@@ -838,7 +865,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo'],
+      columnas: ['nombre', 'codigo', 'activo', 'max_miembros_por_titular'],
       perfil: 'dominio',
       deCuenta: false,
     });
@@ -847,14 +874,14 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   /** Todas las cuentas vigentes (la plataforma maneja cientos, no millones: se pagina en memoria). */
   listarTodas(): Promise<CuentaDePlataformaFila[]> {
     return this.seleccionar<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       orden: 't.nombre, t.id',
     });
   }
 
   buscarPorId(id: string): Promise<CuentaDePlataformaFila | null> {
     return this.seleccionarUna<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       donde: 't.id = ?',
       params: [id],
     });
@@ -862,7 +889,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
 
   buscarPorCodigo(codigo: string): Promise<CuentaDePlataformaFila | null> {
     return this.seleccionarUna<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       donde: 't.codigo = ?',
       params: [codigo],
     });
@@ -891,6 +918,11 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   /** Corrige la razón social. */
   renombrar(tx: Transaccion, id: string, nombre: string): Promise<boolean> {
     return this.actualizar(tx, id, { nombre });
+  }
+
+  /** Cambia cuántos Miembros puede tener cada Titular de la cuenta (ADR 0028 §6). */
+  cambiarMaxMiembros(tx: Transaccion, id: string, maximo: number): Promise<boolean> {
+    return this.actualizar(tx, id, { max_miembros_por_titular: maximo });
   }
 
   /** Baja lógica de la cuenta: nadie de ella vuelve a ingresar y su código queda libre. */

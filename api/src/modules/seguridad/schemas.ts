@@ -32,6 +32,8 @@ export const respuestaDeSesionActual = z.object({
 
 /** Largo de `usuarios.etiqueta`. */
 export const MAX_ETIQUETA_DE_USUARIO = 80;
+/** Tope máximo que puede fijar AGROCOM para los Miembros de un Titular. */
+const MAX_MIEMBROS_POR_TITULAR = 500;
 /** Largo de `unidades.nombre`. */
 const MAX_NOMBRE_DE_UNIDAD = 80;
 
@@ -288,6 +290,8 @@ export const cuerpoDeEdicionDeCuenta = z.object({
   contacto_apellido: z.string().trim().min(1).max(120),
   contacto_telefono: esquemaTelefono,
   contacto_correo: esquemaCorreo,
+  /** Cuántos Miembros puede tener cada Titular (ADR 0028 §6); sin él, no cambia. */
+  max_miembros_por_titular: z.number().int().min(1).max(MAX_MIEMBROS_POR_TITULAR).optional(),
 });
 
 export const respuestaDeCuentaCreada = z.object({
@@ -312,6 +316,7 @@ export const respuestaDeDetalleDeCuenta = z.object({
     nombre: z.string(),
     activa: z.boolean(),
     cliente_desde: esquemaFecha,
+    max_miembros_por_titular: z.number().int(),
   }),
   empresa: z
     .object({
@@ -500,4 +505,41 @@ export const respuestaDeAdministradores = z.object({
       ultimo_ingreso_at: esquemaFecha.nullable(),
     }),
   ),
+});
+
+/** Alta de otro Administrador en una cuenta (solo AGROCOM, ADR 0028). */
+export const cuerpoDeNuevoAdministrador = z.object({
+  etiqueta: esquemaEtiqueta,
+  sufijo: esquemaSufijoDePin.optional(),
+});
+
+/** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
+export const respuestaDeAdministradorCreado = z.object({
+  id: z.string(),
+  etiqueta: z.string(),
+  pin: z.string(),
+});
+
+export const respuestaDeJerarquiaDeCuenta = z.object({
+  administradores: z.array(
+    z.object({
+      id: z.string(),
+      etiqueta: z.string().nullable(),
+      guardias: z.array(z.object({ id: z.string(), etiqueta: z.string().nullable() })),
+      titulares: z.array(
+        z.object({
+          id: z.string(),
+          etiqueta: z.string().nullable(),
+          unidad: z.string().nullable(),
+          miembros: z.number().int(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/** Mover un Guardia o un Titular (con su unidad y sus Miembros) a otro Administrador (ADR 0028 §7). */
+export const cuerpoDeReasignacion = z.object({
+  usuario_id: esquemaId,
+  administrador_id: esquemaId,
 });
