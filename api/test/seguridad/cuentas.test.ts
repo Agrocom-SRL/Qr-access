@@ -51,6 +51,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
     nit: '2876501019',
     ciudad: 'Ascensión de Guarayos',
     contacto_nombre: 'Rodrigo Añez',
+    contacto_apellido: 'Pérez',
     contacto_telefono: '7 712 4405',
     contacto_correo: 'rodrigo@guarayos.bo',
     plan_id: planIds[1],
@@ -281,7 +282,11 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       expect(respuesta.statusCode, respuesta.body).toBe(200);
       expect(respuesta.json()).toMatchObject({
         cuenta: { codigo: 'AGU', nombre: 'Agrícola Guarayos S.A.', activa: true },
-        empresa: { nit: '2876501019', ciudad: 'Ascensión de Guarayos', contacto: 'Rodrigo Añez' },
+        empresa: {
+          nit: '2876501019',
+          ciudad: 'Ascensión de Guarayos',
+          contacto: 'Rodrigo Añez Pérez',
+        },
         suscripcion: {
           plan: { nombre: '200 usuarios', cupo_usuarios: 200, precio_anual: 21600 },
           estado: 'activa',

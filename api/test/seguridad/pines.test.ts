@@ -47,6 +47,7 @@ describe('plataforma: código de la cuenta y PIN de los administradores (ADR 002
         nit: '1020304050',
         ciudad: 'Montero',
         contacto_nombre: 'Luis',
+        contacto_apellido: 'Pérez',
         contacto_telefono: '3 922 0011',
         plan_id: plan,
         inicio: '2026-10-12',

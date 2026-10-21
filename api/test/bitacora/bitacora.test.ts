@@ -64,6 +64,7 @@ describe('plataforma: bitácora y resumen (A10, A05d, A02)', () => {
       nit: '1020304050',
       ciudad: 'Montero',
       contacto_nombre: 'Luis Soria',
+      contacto_apellido: 'Pérez',
       contacto_telefono: '3 922 0011',
       plan_id: planes[100],
       inicio: '2026-10-12',

@@ -475,16 +475,17 @@ CREATE TABLE eventos_acceso (
 
 ## cuenta_datos_empresa
 
-Migración: `db/migrations/20261012100004_create_cuenta_datos_empresa.sql`
+Migraciones: `db/migrations/20261012100004_create_cuenta_datos_empresa.sql` y `db/migrations/20261021100001_ajusta_cuenta_datos_empresa.sql` (NIT y teléfono opcionales, apellido del contacto). Se muestra el esquema resultante.
 
 ```sql
 CREATE TABLE cuenta_datos_empresa (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
-  nit VARCHAR(20) NOT NULL,
+  nit VARCHAR(20) NULL,
   ciudad VARCHAR(80) NOT NULL,
   contacto_nombre VARCHAR(120) NOT NULL,
-  contacto_telefono VARCHAR(30) NOT NULL,
+  contacto_apellido VARCHAR(120) NOT NULL DEFAULT '',
+  contacto_telefono VARCHAR(30) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   deleted_at DATETIME(3) NULL,

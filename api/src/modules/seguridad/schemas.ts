@@ -154,10 +154,18 @@ export const cuerpoDeEdicionDePerfil = z.object({ nombre: esquemaNombreDePersona
 
 // --- Cuentas (administración por AGROCOM, web admin) ---
 
-const esquemaTelefono = z
-  .string()
-  .trim()
-  .regex(/^[0-9+() -]{6,30}$/);
+/** Un texto opcional con formato: vacío o ausente = sin dato (null); si viene, cumple el patrón. */
+function opcionalConFormato(patron: RegExp) {
+  return z
+    .string()
+    .trim()
+    .nullish()
+    .transform((valor) => (valor === undefined || valor === null || valor === '' ? null : valor))
+    .refine((valor) => valor === null || patron.test(valor));
+}
+
+const esquemaTelefono = opcionalConFormato(/^[0-9+() -]{6,30}$/);
+const esquemaNit = opcionalConFormato(/^[0-9A-Za-z.-]{4,20}$/);
 /** El correo de la persona responsable; vacío o ausente = sin correo. */
 const esquemaCorreo = z
   .union([z.literal(''), z.email().max(120)])
@@ -219,12 +227,10 @@ export const respuestaDeCodigoDeCuenta = z.object({
 export const cuerpoDeNuevaCuenta = z.object({
   razon_social: z.string().trim().min(1).max(150),
   codigo: z.string().min(1).max(10),
-  nit: z
-    .string()
-    .trim()
-    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  nit: esquemaNit,
   ciudad: z.string().trim().min(1).max(80),
   contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_apellido: z.string().trim().min(1).max(120),
   contacto_telefono: esquemaTelefono,
   contacto_correo: esquemaCorreo,
   plan_id: esquemaId,
@@ -256,12 +262,10 @@ export const cuerpoDeNuevaCuenta = z.object({
 /** Lo que se puede corregir de una cuenta ya creada; el código tiene su propia ruta (ADR 0023). */
 export const cuerpoDeEdicionDeCuenta = z.object({
   razon_social: z.string().trim().min(1).max(150),
-  nit: z
-    .string()
-    .trim()
-    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  nit: esquemaNit,
   ciudad: z.string().trim().min(1).max(80),
   contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_apellido: z.string().trim().min(1).max(120),
   contacto_telefono: esquemaTelefono,
   contacto_correo: esquemaCorreo,
 });
@@ -291,10 +295,12 @@ export const respuestaDeDetalleDeCuenta = z.object({
   }),
   empresa: z
     .object({
-      nit: z.string(),
+      nit: z.string().nullable(),
       ciudad: z.string(),
       contacto: z.string(),
-      telefono: z.string(),
+      contacto_nombre: z.string(),
+      contacto_apellido: z.string(),
+      telefono: z.string().nullable(),
       correo: z.string().nullable(),
     })
     .nullable(),

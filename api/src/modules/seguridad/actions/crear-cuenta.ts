@@ -24,10 +24,11 @@ import { conPinNuevo } from './pin-nuevo.js';
 export interface DatosDeNuevaCuenta {
   readonly razonSocial: string;
   readonly codigo: string;
-  readonly nit: string;
+  readonly nit: string | null;
   readonly ciudad: string;
   readonly contactoNombre: string;
-  readonly contactoTelefono: string;
+  readonly contactoApellido: string;
+  readonly contactoTelefono: string | null;
   readonly contactoCorreo: string | null;
   readonly planId: string;
   /** `aaaa-mm-dd`: el día de inicio, en la zona de la plataforma. */
@@ -90,6 +91,7 @@ export async function ejecutar(
         nit: datos.nit,
         ciudad: datos.ciudad,
         contactoNombre: datos.contactoNombre,
+        contactoApellido: datos.contactoApellido,
         contactoTelefono: datos.contactoTelefono,
         contactoCorreo: datos.contactoCorreo,
       });
