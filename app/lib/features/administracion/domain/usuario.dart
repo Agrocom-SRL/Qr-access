@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/features/administracion/domain/nivel_usuario.dart';
 import 'package:flutter/foundation.dart';
 
 /// Un rol de la cuenta, para asignarlo (HU-06).
@@ -9,7 +10,18 @@ class Rol {
   final String nombre;
 }
 
-/// Un usuario (PIN) de la cuenta, como lo administra el administrador. Nunca
+/// La unidad de un Titular (casa, departamento, pabellón…) dentro de una
+/// propiedad (ADR 0028).
+@immutable
+class UnidadUsuario {
+  const new({required this.id, required this.nombre, required this.sitioId});
+
+  final String id;
+  final String nombre;
+  final String sitioId;
+}
+
+/// Un usuario (PIN) de la cuenta, como lo administra quien lo creó. Nunca
 /// trae el PIN: ese se ve una sola vez al generarlo (ADR 0018 §3).
 @immutable
 class Usuario {
@@ -21,12 +33,16 @@ class Usuario {
     required this.pinGeneradoAt,
     required this.ultimoIngresoAt,
     required this.creadoAt,
+    this.unidad,
   });
 
   final String id;
   final String? etiqueta;
   final bool activo;
   final List<Rol> roles;
+
+  /// Solo un Titular tiene unidad.
+  final UnidadUsuario? unidad;
   final DateTime? pinGeneradoAt;
   final DateTime? ultimoIngresoAt;
   final DateTime creadoAt;
@@ -76,37 +92,84 @@ final _formatoSufijoDePin = RegExp(r'^[A-Za-z0-9]{4}$');
 bool sufijoDePinValido(String sufijo) => _formatoSufijoDePin.hasMatch(sufijo);
 
 /// Qué está mal en el formulario de usuario.
-enum ErrorDatosUsuario { sinEtiqueta, etiquetaLarga, sinRoles, sufijoInvalido }
+enum ErrorDatosUsuario {
+  sinEtiqueta,
+  etiquetaLarga,
+  sinRol,
+  sufijoInvalido,
+  sinPropiedad,
+  sinNombreDeUnidad,
+  nombreDeUnidadLargo,
+}
 
-/// Datos validados del formulario de usuario.
+/// La unidad que acompaña a un Titular nuevo: en qué propiedad está y cómo se
+/// llama.
+@immutable
+class DatosUnidad {
+  const new({required this.sitioId, required this.nombre});
+
+  /// Largo de `unidades.nombre` en la API.
+  static const largoMaximoNombre = 80;
+
+  final String sitioId;
+  final String nombre;
+}
+
+/// Datos validados del formulario de alta de un usuario. Un usuario tiene un
+/// solo rol (ADR 0028) y un Titular lleva además su unidad.
 @immutable
 class DatosUsuario {
-  new({required String etiqueta, required Set<String> rolIds, this.sufijoDePin})
-    : assert(
-        errorDe(etiqueta: etiqueta, rolIds: rolIds) == null,
-        'Los datos del usuario tienen que validarse antes',
-      ),
-      etiqueta = etiqueta.trim(),
-      rolIds = rolIds.toList();
+  new({
+    required String etiqueta,
+    required this.rolId,
+    this.unidad,
+    this.sufijoDePin,
+  }) : assert(
+         errorDe(etiqueta: etiqueta, rolId: rolId, nivel: null) == null,
+         'Los datos del usuario tienen que validarse antes',
+       ),
+       etiqueta = etiqueta.trim();
 
   /// Largo de `usuarios.etiqueta` en la API.
   static const largoMaximoEtiqueta = 80;
 
   final String etiqueta;
-  final List<String> rolIds;
+  final String rolId;
 
-  /// Los 4 caracteres del PIN si el administrador los eligió; `null` = al azar.
+  /// Solo para un Titular; `null` en los demás niveles.
+  final DatosUnidad? unidad;
+
+  /// Los 4 caracteres del PIN si quien lo crea los eligió; `null` = al azar.
   final String? sufijoDePin;
 
-  static ErrorDatosUsuario? errorDe({
-    required String etiqueta,
-    required Set<String> rolIds,
-  }) {
+  /// Solo el nombre: es lo único que se edita de un usuario ya creado.
+  static ErrorDatosUsuario? errorDeEtiqueta(String etiqueta) {
     if (etiqueta.trim().isEmpty) return ErrorDatosUsuario.sinEtiqueta;
     if (etiqueta.trim().length > largoMaximoEtiqueta) {
       return ErrorDatosUsuario.etiquetaLarga;
     }
-    if (rolIds.isEmpty) return ErrorDatosUsuario.sinRoles;
+    return null;
+  }
+
+  /// El primer error de los datos de un alta. `nivel` es el del rol elegido:
+  /// solo un Titular exige propiedad y nombre de unidad.
+  static ErrorDatosUsuario? errorDe({
+    required String etiqueta,
+    required String? rolId,
+    required NivelUsuario? nivel,
+    String? sitioId,
+    String unidad = '',
+  }) {
+    final deEtiqueta = errorDeEtiqueta(etiqueta);
+    if (deEtiqueta != null) return deEtiqueta;
+    if (rolId == null) return ErrorDatosUsuario.sinRol;
+    if (nivel == NivelUsuario.titular) {
+      if (sitioId == null) return ErrorDatosUsuario.sinPropiedad;
+      if (unidad.trim().isEmpty) return ErrorDatosUsuario.sinNombreDeUnidad;
+      if (unidad.trim().length > DatosUnidad.largoMaximoNombre) {
+        return ErrorDatosUsuario.nombreDeUnidadLargo;
+      }
+    }
     return null;
   }
 }

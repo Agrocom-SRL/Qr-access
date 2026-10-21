@@ -198,37 +198,58 @@ class ClienteApi {
   }
 
   /// El PIN del usuario nuevo llega solo acá (ADR 0018 §3).
+  ///
+  /// Un usuario tiene un solo rol (ADR 0028): `rol_ids` lleva exactamente uno.
+  /// Un Titular lleva además su `unidad`.
   Future<UsuarioCreadoDto> crearUsuario({
     required String etiqueta,
-    required List<String> rolIds,
+    required String rolId,
+    String? unidadSitioId,
+    String? unidadNombre,
     String? sufijo,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/usuarios',
-        data: {'etiqueta': etiqueta, 'rol_ids': rolIds, 'sufijo': ?sufijo},
+        data: {
+          'etiqueta': etiqueta,
+          'rol_ids': [rolId],
+          'sufijo': ?sufijo,
+          if (unidadSitioId != null && unidadNombre != null)
+            'unidad': {'sitio_id': unidadSitioId, 'nombre': unidadNombre},
+        },
       );
       return UsuarioCreadoDto.desde(r.data!);
     });
   }
 
-  Future<UsuarioAdminDto> editarUsuario(
-    String id, {
-    String? etiqueta,
-    List<String>? rolIds,
-  }) {
+  /// Solo el nombre se edita: el rol define el nivel y no cambia.
+  Future<UsuarioAdminDto> editarUsuario(String id, {required String etiqueta}) {
     return _ejecutar(() async {
       final r = await _dio.patch<Map<String, dynamic>>(
         '/usuarios/$id',
-        data: {'etiqueta': ?etiqueta, 'rol_ids': ?rolIds},
+        data: {'etiqueta': etiqueta},
       );
       return UsuarioAdminDto.desde(r.data!);
     });
   }
 
-  Future<void> eliminarUsuario(String id) {
+  /// Sin `confirmar`, un usuario con otros a su cargo responde 409
+  /// `usuario.con_dependientes` con cuántos caerían; con él, la baja es en
+  /// cascada (ADR 0028 §7).
+  Future<void> eliminarUsuario(String id, {bool confirmar = false}) {
     return _ejecutar(() async {
-      await _dio.delete<void>('/usuarios/$id');
+      await _dio.delete<void>(
+        '/usuarios/$id',
+        queryParameters: confirmar ? {'confirmar': true} : null,
+      );
+    });
+  }
+
+  Future<CupoDto> cupo() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/cupo');
+      return CupoDto.desde(r.data!);
     });
   }
 

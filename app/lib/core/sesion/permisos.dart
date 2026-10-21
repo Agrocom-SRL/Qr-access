@@ -39,4 +39,8 @@ abstract final class Permisos {
   static const crearUsuarios = 'seguridad.usuario.crear';
   static const editarUsuarios = 'seguridad.usuario.editar';
   static const eliminarUsuarios = 'seguridad.usuario.eliminar';
+
+  /// Ver cuánto del cupo de usuarios del plan usa la cuenta: solo el
+  /// Administrador (ADR 0028 §6).
+  static const verCupo = 'seguridad.cupo.ver';
 }
