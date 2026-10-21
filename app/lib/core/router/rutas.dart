@@ -4,7 +4,6 @@ abstract final class Rutas {
   static const arranque = '/arranque';
   static const bienvenida = '/bienvenida';
   static const ingreso = '/ingreso';
-  static const elegirRol = '/roles';
   static const inicio = '/inicio';
 
   /// Listado de los QR emitidos por el usuario.

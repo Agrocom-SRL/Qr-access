@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
@@ -10,6 +11,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/banner_cupo.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogo_regenerar_pin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
@@ -80,6 +82,8 @@ class VistaUsuarios extends ConsumerWidget {
             runSpacing: tokens.espacio.xs,
             children: [
               for (final rol in usuario.roles) ChipEtiqueta(texto: rol.nombre),
+              if (usuario.unidad != null)
+                ChipEtiqueta(texto: usuario.unidad!.nombre),
             ],
           ),
         ),
@@ -113,6 +117,8 @@ class VistaUsuarios extends ConsumerWidget {
             runSpacing: tokens.espacio.xs,
             children: [
               for (final rol in usuario.roles) ChipEtiqueta(texto: rol.nombre),
+              if (usuario.unidad != null)
+                ChipEtiqueta(texto: usuario.unidad!.nombre),
             ],
           ),
         ),
@@ -173,11 +179,21 @@ class VistaUsuarios extends ConsumerWidget {
         ),
       ],
     );
+    final verCupo = sesion.tiene(Permisos.verCupo);
     // En compacto, una banda de foto sobre el listado, como en Puertas; en
     // medio y expandido la tabla ya llena la pantalla.
-    if (context.clasePantalla != ClasePantalla.compacta) return listado;
+    if (context.clasePantalla != ClasePantalla.compacta) {
+      if (!verCupo) return listado;
+      return Column(
+        children: [
+          const BannerCupo(),
+          Expanded(child: listado),
+        ],
+      );
+    }
     return Column(
       children: [
+        if (verCupo) const BannerCupo(),
         Padding(
           padding: EdgeInsets.all(tokens.espacio.l),
           child: ClipRRect(
@@ -237,12 +253,33 @@ class VistaUsuarios extends ConsumerWidget {
       textoConfirmar: l10n.comunEliminar,
     );
     if (!confirmado || !context.mounted) return;
-    final error = await ref
-        .read(accionesUsuarioProvider.notifier)
-        .eliminar(usuario);
+    final acciones = ref.read(accionesUsuarioProvider.notifier);
+    var error = await acciones.eliminar(usuario);
+    // Un Titular con Miembros no se da de baja sin confirmar la cascada: la API
+    // dice cuántos caerían y se lo mostramos antes de seguir (ADR 0028 §7).
+    if (error?.code == 'usuario.con_dependientes' && context.mounted) {
+      final cantidad = _dependientesDe(error!);
+      final deAcuerdo = await ConfirmarDialogo.mostrar(
+        context,
+        titulo: l10n.usuariosEliminarTitulo(
+          usuario.etiqueta ?? l10n.qrSinEtiqueta,
+        ),
+        mensaje: l10n.usuariosEliminarCascadaMensaje(cantidad),
+        textoConfirmar: l10n.comunEliminar,
+      );
+      if (!deAcuerdo || !context.mounted) return;
+      error = await acciones.eliminar(usuario, confirmar: true);
+    }
     if (error != null && context.mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(textoDeError(l10n, error))));
     }
   }
 }
+
+/// Cuántos usuarios caerían, según el 409 de la API; 0 si no vino el dato.
+int _dependientesDe(ErrorApi error) => switch (error.detalles['dependientes']) {
+  final int cantidad => cantidad,
+  final num cantidad => cantidad.toInt(),
+  _ => 0,
+};

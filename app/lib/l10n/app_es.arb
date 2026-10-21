@@ -350,26 +350,6 @@
   "@sesionSaliendo": {
     "description": "Botón Cerrar sesión mientras se envía"
   },
-  "sesionElegirRolTitulo": "¿Con qué rol vas a trabajar?",
-  "@sesionElegirRolTitulo": {
-    "description": "Título de la pantalla que aparece cuando el usuario tiene varios roles"
-  },
-  "sesionElegirRolAyuda": "Puedes cambiarlo después desde Perfil.",
-  "@sesionElegirRolAyuda": {
-    "description": "Ayuda bajo el título de elegir rol (HU-05)"
-  },
-  "rolDescripcionAdministrador": "Puertas, usuarios y eventos",
-  "@rolDescripcionAdministrador": {
-    "description": "Descripción del rol Administrador en elegir rol"
-  },
-  "rolDescripcionGuardia": "Eventos y estado de puertas",
-  "@rolDescripcionGuardia": {
-    "description": "Descripción del rol Guardia en elegir rol"
-  },
-  "rolDescripcionUsuario": "Generar y compartir QR",
-  "@rolDescripcionUsuario": {
-    "description": "Descripción del rol Usuario en elegir rol"
-  },
   "navInicio": "Inicio",
   "@navInicio": {
     "description": "Destino de navegación"
@@ -1153,10 +1133,6 @@
   "@perfilRolActivo": {
     "description": "Clave de la fila del rol activo"
   },
-  "perfilCambiarRol": "Cambiar rol",
-  "@perfilCambiarRol": {
-    "description": "Botón que vuelve a elegir rol (HU-05)"
-  },
   "perfilSuscripcion": "Suscripción",
   "@perfilSuscripcion": {
     "description": "Clave de la fila de la suscripción"
@@ -1262,7 +1238,7 @@
   "@usuariosSeccionDatos": {
     "description": "Título de la primera sección del formulario"
   },
-  "usuariosSeccionRoles": "Roles",
+  "usuariosSeccionRoles": "Rol",
   "@usuariosSeccionRoles": {
     "description": "Título de la sección de roles del formulario"
   },
@@ -1291,9 +1267,121 @@
       }
     }
   },
-  "usuariosErrorSinRoles": "Elige al menos un rol.",
+  "usuariosErrorSinRoles": "Elige un rol.",
   "@usuariosErrorSinRoles": {
     "description": "Error de validación sin roles"
+  },
+  "usuariosRolDescripcionTitular": "Responde por una unidad y crea a sus Miembros",
+  "@usuariosRolDescripcionTitular": {
+    "description": "Descripción del rol Titular al elegirlo"
+  },
+  "usuariosRolDescripcionGuardia": "Vigila las puertas que le asignes",
+  "@usuariosRolDescripcionGuardia": {
+    "description": "Descripción del rol Guardia al elegirlo"
+  },
+  "usuariosRolDescripcionMiembro": "Usa las puertas con sus QR",
+  "@usuariosRolDescripcionMiembro": {
+    "description": "Descripción del rol Miembro al elegirlo"
+  },
+  "usuariosSeccionUnidad": "Unidad",
+  "@usuariosSeccionUnidad": {
+    "description": "Título de la sección de la unidad del Titular"
+  },
+  "usuariosCampoPropiedad": "Propiedad",
+  "@usuariosCampoPropiedad": {
+    "description": "Etiqueta del selector de propiedad"
+  },
+  "usuariosCampoPropiedadPlaceholder": "Elige la propiedad",
+  "@usuariosCampoPropiedadPlaceholder": {
+    "description": "Placeholder del selector de propiedad"
+  },
+  "usuariosCampoUnidad": "Nombre de la unidad",
+  "@usuariosCampoUnidad": {
+    "description": "Etiqueta del nombre de la unidad"
+  },
+  "usuariosCampoUnidadAyuda": "Cómo se llama la casa, el departamento o el puesto de este Titular.",
+  "@usuariosCampoUnidadAyuda": {
+    "description": "Ayuda del nombre de la unidad"
+  },
+  "usuariosCampoUnidadEjemplo": "Casa 12",
+  "@usuariosCampoUnidadEjemplo": {
+    "description": "Ejemplo del nombre de la unidad"
+  },
+  "usuariosErrorSinPropiedad": "Elige la propiedad.",
+  "@usuariosErrorSinPropiedad": {
+    "description": "Error de validación sin propiedad"
+  },
+  "usuariosErrorSinNombreUnidad": "Escribe el nombre de la unidad.",
+  "@usuariosErrorSinNombreUnidad": {
+    "description": "Error de validación sin nombre de unidad"
+  },
+  "usuariosErrorUnidadLarga": "El nombre de la unidad no puede pasar de {max} caracteres.",
+  "@usuariosErrorUnidadLarga": {
+    "description": "Error de validación del nombre de unidad largo",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "usuariosSinPropiedades": "Todavía no hay propiedades. Crea una en Administración › Propiedades y puertas antes de dar de alta a un Titular.",
+  "@usuariosSinPropiedades": {
+    "description": "Aviso cuando no hay propiedades para elegir"
+  },
+  "usuariosSinRolesParaCrear": "Con tu rol no puedes crear usuarios.",
+  "@usuariosSinRolesParaCrear": {
+    "description": "Aviso cuando el rol del actor no crea a nadie"
+  },
+  "usuariosEliminarCascadaMensaje": "{cantidad, plural, =1{También se dará de baja a 1 usuario a su cargo} other{También se dará de baja a {cantidad} usuarios a su cargo}}, junto con su unidad. Sus PIN dejarán de entrar y se liberarán sus lugares del cupo. No se puede deshacer.",
+  "@usuariosEliminarCascadaMensaje": {
+    "description": "Mensaje de la baja en cascada con la cantidad de usuarios que caen",
+    "placeholders": {
+      "cantidad": {
+        "type": "int"
+      }
+    }
+  },
+  "cupoTitulo": "Cupo de usuarios",
+  "@cupoTitulo": {
+    "description": "Título del cupo de usuarios del plan"
+  },
+  "cupoUsados": "{usados} de {maximo} usuarios",
+  "@cupoUsados": {
+    "description": "Uso del cupo con límite",
+    "placeholders": {
+      "usados": {
+        "type": "int"
+      },
+      "maximo": {
+        "type": "int"
+      }
+    }
+  },
+  "cupoSinLimite": "{usados} usuarios · sin límite",
+  "@cupoSinLimite": {
+    "description": "Uso del cupo sin límite",
+    "placeholders": {
+      "usados": {
+        "type": "int"
+      }
+    }
+  },
+  "cupoAvisoCerca": "Estás cerca del límite de tu plan.",
+  "@cupoAvisoCerca": {
+    "description": "Aviso al 80 % del cupo"
+  },
+  "cupoAvisoLimite": "Llegaste al límite de tu plan: no podrás crear más usuarios hasta dar de baja a alguno.",
+  "@cupoAvisoLimite": {
+    "description": "Aviso al 100 % del cupo"
+  },
+  "cupoMaximoMiembros": "Cada Titular puede tener hasta {maximo} Miembros.",
+  "@cupoMaximoMiembros": {
+    "description": "Tope de Miembros por Titular",
+    "placeholders": {
+      "maximo": {
+        "type": "int"
+      }
+    }
   },
   "usuariosNuevoAviso": "Al generar el PIN lo verás una sola vez. Entrégalo en persona o por un canal privado.",
   "@usuariosNuevoAviso": {
@@ -1407,7 +1495,7 @@
   "@usuariosColumnaEtiqueta": {
     "description": "Encabezado de la tabla de usuarios"
   },
-  "usuariosColumnaRoles": "Roles",
+  "usuariosColumnaRoles": "Rol",
   "@usuariosColumnaRoles": {
     "description": "Encabezado de la tabla de usuarios"
   },
@@ -1442,6 +1530,34 @@
   "comunErrorSitioNoEncontrado": "No encontramos esa propiedad.",
   "@comunErrorSitioNoEncontrado": {
     "description": "Error de sitio inexistente"
+  },
+  "comunErrorSesionSinRol": "Tu usuario no tiene un rol asignado. Habla con tu administrador.",
+  "@comunErrorSesionSinRol": {
+    "description": "Error sesion.sin_rol"
+  },
+  "comunErrorUnidadRequerida": "Indica la propiedad y el nombre de la unidad del Titular.",
+  "@comunErrorUnidadRequerida": {
+    "description": "Error unidad.requerida (422)"
+  },
+  "comunErrorUnidadNoCorresponde": "Solo el Titular lleva una unidad.",
+  "@comunErrorUnidadNoCorresponde": {
+    "description": "Error unidad.no_corresponde (422)"
+  },
+  "comunErrorUnidadNombreExistente": "Ya hay una unidad con ese nombre en esa propiedad.",
+  "@comunErrorUnidadNombreExistente": {
+    "description": "Error unidad.nombre_existente (409)"
+  },
+  "comunErrorUsuarioNivelNoPermitido": "Con tu rol no puedes crear ese tipo de usuario.",
+  "@comunErrorUsuarioNivelNoPermitido": {
+    "description": "Error usuario.nivel_no_permitido (403)"
+  },
+  "comunErrorUsuarioConDependientes": "Este usuario tiene otros a su cargo. Confirma para darlos de baja a todos.",
+  "@comunErrorUsuarioConDependientes": {
+    "description": "Error usuario.con_dependientes (409), si llega sin pasar por la confirmación"
+  },
+  "comunErrorPlanLimiteMiembros": "Ya llegaste al máximo de Miembros. Da de baja a alguno para agregar otro.",
+  "@comunErrorPlanLimiteMiembros": {
+    "description": "Error plan.limite_miembros_por_titular (422)"
   },
   "estructuraTitulo": "Propiedades y puertas",
   "@estructuraTitulo": {

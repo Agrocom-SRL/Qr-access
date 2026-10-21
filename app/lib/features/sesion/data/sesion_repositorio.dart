@@ -31,9 +31,6 @@ class SesionRepositorioApi implements SesionRepositorio {
         codigo: dto.cuenta.codigo,
         nombre: dto.cuenta.nombre,
       ),
-      roles: [
-        for (final rol in dto.roles) RolSesion(id: rol.id, nombre: rol.nombre),
-      ],
       rolActivoId: dto.rolActivoId,
     );
   }

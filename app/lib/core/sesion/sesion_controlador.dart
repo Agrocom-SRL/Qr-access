@@ -21,17 +21,10 @@ class SesionControlador extends Notifier<SesionEstado>
     implements ProveedorTokens {
   String? _acceso;
 
-  /// La sesión que estaba activa al pedir "Cambiar rol": a ella se vuelve si la
-  /// persona se arrepiente (atrás) o no hay internet para cambiar.
-  SesionAutenticada? _previaAlCambiarRol;
-
   ClienteApi get _api => ref.read(clienteApiProvider);
   AlmacenRefresco get _almacen => ref.read(almacenRefrescoProvider);
   AlmacenPreferencias get _preferencias =>
       ref.read(almacenPreferenciasProvider);
-
-  /// ¿Se puede volver a la sesión anterior desde la pantalla de elegir rol?
-  bool get puedeCancelarCambioDeRol => _previaAlCambiarRol != null;
 
   @override
   SesionEstado build() {
@@ -93,6 +86,10 @@ class SesionControlador extends Notifier<SesionEstado>
         } on ErrorApi catch (error) {
           if (error.esSinConexion) {
             await _entrarConSesionGuardada();
+          } else if (error.code == 'sesion.sin_rol') {
+            // Sin rol vigente no hay nada que restaurar: cada arranque
+            // repetiría lo mismo.
+            await _caducar();
           } else {
             state = const SinSesion();
           }
@@ -108,17 +105,13 @@ class SesionControlador extends Notifier<SesionEstado>
     state = guardada ?? const SinSesion();
   }
 
-  /// Adopta los tokens de un inicio de sesión exitoso. Sin rol activo, el
-  /// usuario debe elegir uno antes de entrar.
+  /// Adopta los tokens de un inicio de sesión exitoso. Un usuario sin rol
+  /// vigente no entra: no tendría permisos para nada (ADR 0028).
   Future<void> adoptarInicio(RespuestaInicio inicio) async {
     await _guardarTokens(inicio.acceso, inicio.refresco);
     if (inicio.rolActivoId == null) {
-      state = SesionEligiendoRol(
-        usuario: inicio.usuario,
-        cuenta: inicio.cuenta,
-        roles: inicio.roles,
-      );
-      return;
+      await _caducar();
+      throw const ErrorApi(code: 'sesion.sin_rol');
     }
     try {
       await _cargarSesionActual();
@@ -126,15 +119,6 @@ class SesionControlador extends Notifier<SesionEstado>
       await _caducar();
       rethrow;
     }
-  }
-
-  /// Cambia el rol activo (ADR 0004). Si falla (p. ej. sin internet), la
-  /// sesión queda como estaba y se sigue en la pantalla con el error.
-  Future<void> elegirRol(String rolId) async {
-    final nuevoAcceso = await _api.cambiarRolActivo(rolId);
-    _acceso = nuevoAcceso;
-    _previaAlCambiarRol = null;
-    await _cargarSesionActual();
   }
 
   /// Cierra la sesión en la API y la borra del dispositivo. Si la API no
@@ -151,29 +135,6 @@ class SesionControlador extends Notifier<SesionEstado>
     await _caducar();
   }
 
-  /// Vuelve a elegir rol sin cerrar la sesión (Perfil › "Cambiar rol"). El
-  /// rol activo queda como preferido hasta que se elija otro.
-  void pedirCambioDeRol() {
-    final actual = state;
-    if (actual is! SesionAutenticada || !actual.tieneVariosRoles) return;
-    _previaAlCambiarRol = actual;
-    state = SesionEligiendoRol(
-      usuario: actual.usuario,
-      cuenta: actual.cuenta,
-      roles: actual.roles,
-      rolPreferidoId: actual.rolActivo.id,
-    );
-  }
-
-  /// Deja "Cambiar rol" sin elegir y vuelve a la sesión que había (atrás): no
-  /// se cierra la sesión ni se pierde el rol.
-  void cancelarCambioDeRol() {
-    final previa = _previaAlCambiarRol;
-    if (previa == null || state is! SesionEligiendoRol) return;
-    _previaAlCambiarRol = null;
-    state = previa;
-  }
-
   /// Vuelve a pedir la sesión a la API (p. ej. tras un cambio de plan).
   Future<void> refrescarDatos() async {
     if (_acceso == null) return;
@@ -187,25 +148,14 @@ class SesionControlador extends Notifier<SesionEstado>
   Future<void> _cargarSesionActual() async {
     final actual = await _api.sesionActual();
     final rol = actual.rolActivo;
-    final roles = [
-      for (final r in actual.roles) RolSesion(id: r.id, nombre: r.nombre),
-    ];
-    if (rol == null) {
-      // Al reabrir con un refresco guardado de una sesión que no eligió rol.
-      state = SesionEligiendoRol(
-        usuario: _usuario(actual.usuario),
-        cuenta: _cuenta(actual.cuenta),
-        roles: roles,
-      );
-      return;
-    }
+    // Sin rol vigente (p. ej. se lo quitaron): ya no tiene permisos para nada.
+    if (rol == null) throw const ErrorApi(code: 'sesion.sin_rol');
     final suscripcion = actual.suscripcion;
     final autenticada = SesionAutenticada(
       usuario: _usuario(actual.usuario),
       cuenta: _cuenta(actual.cuenta),
       rolActivo: RolSesion(id: rol.id, nombre: rol.nombre),
       permisos: actual.permisos.toSet(),
-      roles: roles,
       suscripcion: suscripcion == null
           ? null
           : SuscripcionSesion(plan: suscripcion.plan, hasta: suscripcion.hasta),
@@ -236,7 +186,6 @@ class SesionControlador extends Notifier<SesionEstado>
   /// Olvida la sesión en memoria y en el almacén (cierre o refresco rechazado).
   Future<void> _caducar() async {
     _acceso = null;
-    _previaAlCambiarRol = null;
     await _almacen.borrar();
     await _preferencias.borrar(claveSesionGuardada);
     await _olvidarCache();

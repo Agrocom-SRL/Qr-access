@@ -6,12 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fakes.dart';
 
-const _eligiendo = SesionEligiendoRol(
-  usuario: usuarioDePrueba,
-  cuenta: cuentaDePrueba,
-  roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
-);
-
 void main() {
   group('splash animado', () {
     test('con la sesión resuelta, espera en el arranque hasta que termine', () {
@@ -62,36 +56,20 @@ void main() {
     });
   });
 
-  group('eligiendo rol', () {
-    test('va a elegir rol antes que a cualquier otra pantalla', () {
-      expect(redireccionDeSesion(_eligiendo, Rutas.ingreso), Rutas.elegirRol);
-      expect(redireccionDeSesion(_eligiendo, Rutas.qrMios), Rutas.elegirRol);
-    });
-
-    test('se queda en elegir rol', () {
-      expect(redireccionDeSesion(_eligiendo, Rutas.elegirRol), isNull);
-    });
-  });
-
   group('con sesión', () {
     final sesion = sesionCon(permisos: {Permisos.emitirQr});
 
     test('las pantallas de entrada llevan al tablero', () {
-      for (final entrada in [
-        Rutas.bienvenida,
-        Rutas.ingreso,
-        Rutas.elegirRol,
-        Rutas.arranque,
-      ]) {
+      for (final entrada in [Rutas.bienvenida, Rutas.ingreso, Rutas.arranque]) {
         expect(redireccionDeSesion(sesion, entrada), Rutas.inicio);
       }
     });
 
-    test('una ruta con permiso se abre si el rol activo lo tiene', () {
+    test('una ruta con permiso se abre si el rol lo tiene', () {
       expect(redireccionDeSesion(sesion, Rutas.qrNuevo), isNull);
     });
 
-    test('una ruta sin el permiso del rol activo vuelve al tablero', () {
+    test('una ruta sin el permiso del rol vuelve al tablero', () {
       expect(redireccionDeSesion(sesion, Rutas.eventos), Rutas.inicio);
       expect(redireccionDeSesion(sesion, Rutas.adminUsuarios), Rutas.inicio);
       expect(
