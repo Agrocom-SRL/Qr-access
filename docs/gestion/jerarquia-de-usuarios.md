@@ -59,6 +59,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 ## 5. Cambios en la app
 
+> **Hecho (2026-10-22): compartir el PIN (§5.2).** Botón Compartir junto a Copiar al crear o regenerar un PIN; usa la hoja del sistema, avisa que el PIN pasa por una app de terceros y registra cada envío en la bitácora. No se fuerza el cambio en el primer ingreso (decidido el 2026-10-21).
+
 1. **Crear usuario según el nivel** (§2): selector de rol solo para el propietario; ninguno para el dueño de casa.
 2. **Compartir el PIN** al crear un usuario o al regenerarlo, por redes/hoja de compartir del sistema, igual que se comparte un QR. Cuidar que el PIN se muestra una sola vez y que viaja por un canal de terceros: evaluar forzar el cambio en el primer ingreso (§10).
 3. **Texto "Emitir QR" → "Generar QR"** en toda la interfaz (ARB, es/en/pt).
