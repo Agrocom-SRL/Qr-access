@@ -9,7 +9,11 @@ import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { useEditarCuenta } from '../../application/useCuentas';
 import { CIUDADES, validarEmpresa, type DatosDeEmpresa } from '../../domain/alta';
-import type { DetalleDeCuenta } from '../../domain/cuenta';
+import {
+  MAX_MIEMBROS_POR_TITULAR,
+  topeDeMiembrosValido,
+  type DetalleDeCuenta,
+} from '../../domain/cuenta';
 import styles from './DialogoEditarCuenta.module.css';
 
 type Datos = Omit<DatosDeEmpresa, 'codigo'>;
@@ -42,6 +46,13 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
   const editar = useEditarCuenta(detalle.cuenta.id);
   const [datos, setDatos] = useState<Datos>(() => iniciales(detalle));
   const [tocados, setTocados] = useState<ReadonlySet<keyof Datos>>(new Set());
+  // El tope se escribe como texto para poder vaciarlo; se valida como número al guardar.
+  const [tope, setTope] = useState(String(detalle.cuenta.maxMiembrosPorTitular));
+  const topeNumerico = Number(tope);
+  const errorDeTope =
+    tope.trim() !== '' && topeDeMiembrosValido(topeNumerico)
+      ? undefined
+      : t('detalle:maxMiembrosInvalido', { max: MAX_MIEMBROS_POR_TITULAR });
 
   const errores = validarEmpresa({ ...datos, codigo: detalle.cuenta.codigo });
   const mensaje = (campo: keyof Datos): string | undefined => {
@@ -56,11 +67,12 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
   };
   const cerrar = () => {
     setDatos(iniciales(detalle));
+    setTope(String(detalle.cuenta.maxMiembrosPorTitular));
     setTocados(new Set());
     editar.reset();
     onCerrar();
   };
-  const valido = Object.keys(errores).length === 0;
+  const valido = Object.keys(errores).length === 0 && errorDeTope === undefined;
 
   return (
     <Dialogo
@@ -77,7 +89,10 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             cargando={editar.isPending}
             disabled={!valido}
             onClick={() => {
-              editar.mutate(datos, { onSuccess: cerrar });
+              editar.mutate(
+                { ...datos, maxMiembrosPorTitular: topeNumerico },
+                { onSuccess: cerrar },
+              );
             }}
           >
             {editar.isPending ? t('detalle:guardando') : t('detalle:guardarCambios')}
@@ -181,6 +196,17 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             }}
           />
         </div>
+        <AccesoCampoTexto
+          etiqueta={t('detalle:maxMiembros')}
+          ayuda={t('detalle:maxMiembrosAyuda')}
+          value={tope}
+          mono
+          inputMode="numeric"
+          error={errorDeTope}
+          onChange={(e) => {
+            setTope(e.target.value);
+          }}
+        />
       </div>
       {editar.isError ? (
         <Aviso tono="peligro">{traducirError(t, codigoDe(editar.error))}</Aviso>

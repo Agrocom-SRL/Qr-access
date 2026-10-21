@@ -46,5 +46,9 @@
   "plan_limite_dispositivos": "La cuenta alcanzó el cupo de lectores de su plan.",
   "placa_sin_solicitud": "La placa no tiene un vínculo pendiente o se agotó el tiempo. Vuelve a vincularla.",
   "dispositivo_anuncio_invalido": "La placa no fue reconocida.",
-  "dispositivo_anuncio_bloqueado": "Demasiados intentos, espera unos minutos."
+  "dispositivo_anuncio_bloqueado": "Demasiados intentos, espera unos minutos.",
+  "pin_sufijo_en_uso": "Esos 4 caracteres ya los usa otro PIN de la cuenta.",
+  "administrador_no_encontrado": "Ese administrador no existe en la cuenta.",
+  "reasignacion_nivel_invalido": "Solo se puede reasignar a un Guardia o a un Titular.",
+  "reasignacion_mismo_administrador": "Ya depende de ese administrador."
 }

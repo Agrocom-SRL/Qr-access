@@ -8,6 +8,13 @@
   box-shadow: var(--elevacion1);
 }
 
+.encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp16);
+}
+
 .titulo {
   font-size: var(--texto20);
   font-weight: var(--peso600);

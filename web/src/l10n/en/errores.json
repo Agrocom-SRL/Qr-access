@@ -46,5 +46,9 @@
   "plan_limite_dispositivos": "The account reached its plan's reader limit.",
   "placa_sin_solicitud": "The board has no pending link or time ran out. Link it again.",
   "dispositivo_anuncio_invalido": "The board was not recognized.",
-  "dispositivo_anuncio_bloqueado": "Too many attempts, wait a few minutes."
+  "dispositivo_anuncio_bloqueado": "Too many attempts, wait a few minutes.",
+  "pin_sufijo_en_uso": "Those 4 characters are already used by another PIN in the account.",
+  "administrador_no_encontrado": "That administrator does not exist in the account.",
+  "reasignacion_nivel_invalido": "Only a Guard or a Holder can be reassigned.",
+  "reasignacion_mismo_administrador": "They already report to that administrator."
 }

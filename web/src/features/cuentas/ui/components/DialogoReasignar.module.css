@@ -1,0 +1,4 @@
+.texto {
+  margin: 0 0 var(--esp16);
+  color: var(--textoSecundario);
+}

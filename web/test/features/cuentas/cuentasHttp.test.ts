@@ -39,6 +39,87 @@ describe('cuentas por HTTP (contrato de la API)', () => {
     });
   });
 
+  it('editar manda el tope de Miembros solo si se indica', async () => {
+    const { solicitar, cliente } = clienteFalso();
+    const base = {
+      razonSocial: 'Agroindustrial Norte',
+      nit: '',
+      ciudad: 'La Paz',
+      contactoNombre: 'Carla',
+      contactoApellido: 'Méndez',
+      contactoTelefono: '',
+      contactoCorreo: '',
+    };
+    await crearCuentasHttp(cliente).editar('1', { ...base, maxMiembrosPorTitular: 25 });
+    await crearCuentasHttp(cliente).editar('1', base);
+    const cuerpos = solicitar.mock.calls.map(
+      ([solicitud]) => (solicitud as { cuerpo: Record<string, unknown> }).cuerpo,
+    );
+    expect(cuerpos[0]).toMatchObject({ max_miembros_por_titular: 25 });
+    expect(cuerpos[1]).not.toHaveProperty('max_miembros_por_titular');
+  });
+
+  it('crearAdministrador manda el nombre limpio y el sufijo solo si se eligió', async () => {
+    const { solicitar, cliente } = clienteFalso({ id: '9', etiqueta: 'Rosa Vaca', pin: 'AGR1234' });
+    const creado = await crearCuentasHttp(cliente).crearAdministrador('1', {
+      etiqueta: ' Rosa Vaca ',
+    });
+    await crearCuentasHttp(cliente).crearAdministrador('1', { etiqueta: 'Rosa', sufijo: 'AB12' });
+    await crearCuentasHttp(cliente).crearAdministrador('1', { etiqueta: 'Rosa', sufijo: '' });
+    expect(creado).toEqual({ id: '9', etiqueta: 'Rosa Vaca', pin: 'AGR1234' });
+    expect(solicitar).toHaveBeenNthCalledWith(1, {
+      metodo: 'POST',
+      ruta: '/plataforma/cuentas/1/administradores',
+      cuerpo: { etiqueta: 'Rosa Vaca' },
+    });
+    expect(solicitar).toHaveBeenNthCalledWith(2, {
+      metodo: 'POST',
+      ruta: '/plataforma/cuentas/1/administradores',
+      cuerpo: { etiqueta: 'Rosa', sufijo: 'AB12' },
+    });
+    expect(solicitar).toHaveBeenNthCalledWith(3, {
+      metodo: 'POST',
+      ruta: '/plataforma/cuentas/1/administradores',
+      cuerpo: { etiqueta: 'Rosa' },
+    });
+  });
+
+  it('la jerarquía lee el árbol y pone un guion donde falta el nombre', async () => {
+    const { solicitar, cliente } = clienteFalso({
+      administradores: [
+        {
+          id: '11',
+          etiqueta: 'Carla',
+          guardias: [{ id: '21', etiqueta: null }],
+          titulares: [{ id: '31', etiqueta: 'Jorge', unidad: 'Casa 12', miembros: 3 }],
+        },
+      ],
+    });
+    const arbol = await crearCuentasHttp(cliente).jerarquia('1');
+    expect(solicitar).toHaveBeenCalledWith({
+      metodo: 'GET',
+      ruta: '/plataforma/cuentas/1/jerarquia',
+    });
+    expect(arbol).toEqual([
+      {
+        id: '11',
+        etiqueta: 'Carla',
+        guardias: [{ id: '21', etiqueta: '—' }],
+        titulares: [{ id: '31', etiqueta: 'Jorge', unidad: 'Casa 12', miembros: 3 }],
+      },
+    ]);
+  });
+
+  it('reasignar manda el usuario y el administrador de destino', async () => {
+    const { solicitar, cliente } = clienteFalso();
+    await crearCuentasHttp(cliente).reasignar('1', '31', '12');
+    expect(solicitar).toHaveBeenCalledWith({
+      metodo: 'POST',
+      ruta: '/plataforma/cuentas/1/reasignaciones',
+      cuerpo: { usuario_id: '31', administrador_id: '12' },
+    });
+  });
+
   it('crear sin NIT envía vacío y el administrador toma el nombre completo del responsable', async () => {
     const respuesta = {
       cuenta: { id: '77', codigo: 'AGU', nombre: 'Agrícola Guarayos' },
@@ -81,6 +162,7 @@ describe('cuentas por HTTP (contrato de la API)', () => {
         nombre: 'Agroindustrial Norte',
         activa: true,
         cliente_desde: '2024-11-05T12:00:00Z',
+        max_miembros_por_titular: 10,
       },
       empresa: {
         nit: null,

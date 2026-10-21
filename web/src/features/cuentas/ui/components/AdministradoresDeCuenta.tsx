@@ -13,12 +13,15 @@ import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { PinUnaVez } from '../../../../shared/ui/organisms/PinUnaVez';
 import { useAdministradores, useRegenerarPin } from '../../application/useCuentas';
 import type { AdministradorDeCuenta } from '../../api/CuentasRepositorio';
+import { DialogoAgregarAdministrador } from './DialogoAgregarAdministrador';
 import styles from './AdministradoresDeCuenta.module.css';
 
 interface PinMostrado {
   nombre: string;
   /** Vive solo en este estado y se descarta al cerrar: nunca en la caché ni en un log. */
   pin: string;
+  /** `true` si es un Administrador recién sumado; `false` si se regeneró el PIN de uno que ya estaba. */
+  esNuevo: boolean;
 }
 
 /**
@@ -28,16 +31,20 @@ interface PinMostrado {
 export function AdministradoresDeCuenta({
   cuentaId,
   puedeRegenerar,
+  puedeAgregar,
 }: {
   cuentaId: string;
   /** Permiso `seguridad.administrador.regenerar_pin`; la autoridad es la API. */
   puedeRegenerar: boolean;
+  /** Permiso `seguridad.administrador.crear`: sumar otro Administrador a la cuenta (ADR 0028). */
+  puedeAgregar: boolean;
 }) {
   const { t } = useTranslation(['detalle', 'comun']);
   const lista = useAdministradores(cuentaId);
   const regenerar = useRegenerarPin(cuentaId);
   const [aRegenerar, setARegenerar] = useState<AdministradorDeCuenta | null>(null);
   const [mostrado, setMostrado] = useState<PinMostrado | null>(null);
+  const [agregando, setAgregando] = useState(false);
 
   const confirmar = () => {
     if (!aRegenerar) return;
@@ -45,16 +52,29 @@ export function AdministradoresDeCuenta({
     regenerar.mutate(id, {
       onSuccess: (pin) => {
         setARegenerar(null);
-        setMostrado({ nombre: etiqueta, pin });
+        setMostrado({ nombre: etiqueta, pin, esNuevo: false });
       },
     });
   };
 
   return (
     <section className={styles.tarjeta} aria-labelledby="administradores-titulo">
-      <h2 id="administradores-titulo" className={styles.titulo}>
-        {t('detalle:administradoresTitulo')}
-      </h2>
+      <div className={styles.encabezado}>
+        <h2 id="administradores-titulo" className={styles.titulo}>
+          {t('detalle:administradoresTitulo')}
+        </h2>
+        {puedeAgregar ? (
+          <AccesoBoton
+            variante="tonal"
+            icono="person_add"
+            onClick={() => {
+              setAgregando(true);
+            }}
+          >
+            {t('detalle:agregarAdmin')}
+          </AccesoBoton>
+        ) : null}
+      </div>
       {lista.isError ? (
         <EstadoError
           titulo={t('detalle:errorAdministradores')}
@@ -117,7 +137,11 @@ export function AdministradoresDeCuenta({
       />
       <Dialogo
         abierto={mostrado !== null}
-        titulo={t('detalle:pinNuevoTitulo', { nombre: mostrado?.nombre ?? '' })}
+        titulo={
+          mostrado?.esNuevo === true
+            ? t('detalle:adminNuevoTitulo', { nombre: mostrado.nombre })
+            : t('detalle:pinNuevoTitulo', { nombre: mostrado?.nombre ?? '' })
+        }
         onCerrar={() => {
           setMostrado(null);
         }}
@@ -135,10 +159,20 @@ export function AdministradoresDeCuenta({
           <PinUnaVez
             titulo={t('detalle:pinNuevoDe', { nombre: mostrado.nombre })}
             pin={mostrado.pin}
-            aviso={t('detalle:pinNuevoAviso')}
+            aviso={mostrado.esNuevo ? t('detalle:adminNuevoAviso') : t('detalle:pinNuevoAviso')}
           />
         ) : null}
       </Dialogo>
+      <DialogoAgregarAdministrador
+        abierto={agregando}
+        cuentaId={cuentaId}
+        onCerrar={() => {
+          setAgregando(false);
+        }}
+        onCreado={(creado) => {
+          setMostrado({ nombre: creado.etiqueta, pin: creado.pin, esNuevo: true });
+        }}
+      />
     </section>
   );
 }

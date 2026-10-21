@@ -1,0 +1,61 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.titulo {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.ramas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.rama {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp8);
+}
+
+.administrador {
+  margin: 0;
+  font-size: var(--texto16);
+  font-weight: var(--peso600);
+}
+
+.nivel {
+  padding: 0 0 0 var(--esp16);
+  margin: 0;
+  list-style: none;
+  border-left: 2px solid var(--borde);
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: var(--esp16);
+  padding: var(--esp8) 0;
+}
+
+.datos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.suave {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
