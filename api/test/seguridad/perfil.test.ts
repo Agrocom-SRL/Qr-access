@@ -72,7 +72,7 @@ describe('PATCH /api/v1/perfil: cada persona edita su propio nombre', () => {
       'SELECT rol_id FROM usuario_roles WHERE usuario_id = ? AND deleted_at IS NULL',
       [a.usuario.id],
     );
-    expect(roles.map((fila) => String(fila.rol_id))).toEqual([a.rolUsuarioId]);
+    expect(roles.map((fila) => String(fila.rol_id))).toEqual([a.rolMiembroId]);
   });
 
   it('rechaza un nombre vacío o demasiado largo (400) y exige sesión (401)', async () => {

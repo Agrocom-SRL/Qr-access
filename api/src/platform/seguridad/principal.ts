@@ -4,9 +4,9 @@ export interface PrincipalUsuario {
   readonly usuarioId: string;
   readonly cuentaId: string;
   readonly sesionId: string;
-  /** `null` si el usuario tiene varios roles y todavía no eligió uno. */
+  /** El único rol del usuario (ADR 0028 §2); `null` si no tiene uno vigente. */
   readonly rolActivoId: string | null;
-  /** Permisos del rol activo, nunca la unión de sus roles (invariante 10). */
+  /** Permisos de su rol (invariante 10). */
   readonly permisos: ReadonlySet<string>;
 }
 

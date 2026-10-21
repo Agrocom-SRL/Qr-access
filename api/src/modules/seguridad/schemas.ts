@@ -21,10 +21,6 @@ export const cuerpoDeRefresco = z.object({ refresco: z.string().min(1).max(256) 
 
 export const respuestaDeRefresco = z.object({ acceso: z.string(), refresco: z.string() });
 
-export const cuerpoDeRolActivo = z.object({ rol_id: esquemaId });
-
-export const respuestaDeRolActivo = z.object({ acceso: z.string() });
-
 export const respuestaDeSesionActual = z.object({
   usuario: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
@@ -36,7 +32,6 @@ export const respuestaDeSesionActual = z.object({
 
 /** Largo de `usuarios.etiqueta`. */
 export const MAX_ETIQUETA_DE_USUARIO = 80;
-export const MAX_ROLES_POR_USUARIO = 20;
 
 export const esquemaUsuario = z.object({
   id: z.string(),
@@ -51,7 +46,8 @@ export const esquemaUsuario = z.object({
 export const respuestaListadoDeUsuarios = esquemaListado(esquemaUsuario);
 
 const esquemaEtiqueta = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO);
-const esquemaRolIds = z.array(esquemaId).min(1).max(MAX_ROLES_POR_USUARIO);
+/** Un usuario tiene un solo rol (ADR 0028 §2): la lista se conserva por compatibilidad, con exactamente uno. */
+const esquemaRolIds = z.array(esquemaId).length(1);
 
 /** Los 4 caracteres finales del PIN elegidos por el administrador: `A`–`Z` y `0`–`9`, sin distinguir mayúsculas. */
 const esquemaSufijoDePin = z
@@ -76,11 +72,8 @@ export const respuestaDeMiPerfil = z.object({ id: z.string(), etiqueta: z.string
 /** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
 export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() });
 
-export const cuerpoDeEdicionDeUsuario = z
-  .object({ etiqueta: esquemaEtiqueta.optional(), rol_ids: esquemaRolIds.optional() })
-  .refine((cuerpo) => cuerpo.etiqueta !== undefined || cuerpo.rol_ids !== undefined, {
-    message: 'sin_cambios',
-  });
+/** Solo el nombre se edita: el rol define el nivel en el árbol y no cambia (ADR 0028 §2). */
+export const cuerpoDeEdicionDeUsuario = z.object({ etiqueta: esquemaEtiqueta });
 
 export const parametrosDeUsuario = z.object({ id: esquemaId });
 

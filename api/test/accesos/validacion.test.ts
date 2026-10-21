@@ -260,7 +260,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
 
     it('con el emisor desactivado deja de abrir (RF-06): qr.anulado', async () => {
-      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'BA01', [a.rolUsuarioId]);
+      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'BA01', [a.rolMiembroId]);
       const qr = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
       await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [otro.id]);
       await rechazado(a.dispositivoPrincipal, qr.texto, 'qr.anulado');

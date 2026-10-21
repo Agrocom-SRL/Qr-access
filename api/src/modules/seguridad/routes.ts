@@ -2,7 +2,6 @@ import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { permiso, usuarioDe } from '../../plugins/permisos.js';
-import { ejecutar as cambiarRolActivo } from './actions/cambiar-rol-activo.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
 import { ejecutar as editarMiPerfil } from './actions/editar-mi-perfil.js';
@@ -21,13 +20,11 @@ import {
   cuerpoDeNuevoUsuario,
   cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
-  cuerpoDeRolActivo,
   esquemaUsuario,
   parametrosDeUsuario,
   respuestaDeIngreso,
   respuestaDePinGenerado,
   respuestaDeRefresco,
-  respuestaDeRolActivo,
   respuestaDeSesionActual,
   respuestaDeMiPerfil,
   respuestaDeUsuarioCreado,
@@ -78,18 +75,6 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       (request) => refrescarSesion(servicios, request.body.refresco),
     );
 
-    app.post(
-      '/sesiones/rol-activo',
-      {
-        schema: {
-          tags: ['seguridad'],
-          body: cuerpoDeRolActivo,
-          response: { 200: respuestaDeRolActivo },
-        },
-      },
-      (request) => cambiarRolActivo(servicios, usuarioDe(request), request.body.rol_id),
-    );
-
     app.get(
       '/sesiones/actual',
       { schema: { tags: ['seguridad'], response: { 200: respuestaDeSesionActual } } },
@@ -133,7 +118,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         },
         preHandler: permiso('seguridad.usuario.ver'),
       },
-      (request) => listarUsuarios(pool, request.query),
+      (request) => listarUsuarios(pool, usuarioDe(request), request.query),
     );
 
     app.post(
@@ -168,10 +153,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         preHandler: permiso('seguridad.usuario.editar'),
       },
       (request) =>
-        editarUsuario(pool, usuarioDe(request), request.params.id, {
-          ...(request.body.etiqueta === undefined ? {} : { etiqueta: request.body.etiqueta }),
-          ...(request.body.rol_ids === undefined ? {} : { rolIds: request.body.rol_ids }),
-        }),
+        editarUsuario(pool, usuarioDe(request), request.params.id, request.body.etiqueta),
     );
 
     app.delete(

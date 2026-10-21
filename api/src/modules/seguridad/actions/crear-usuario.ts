@@ -2,6 +2,7 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import { crearServicioDeSuscripciones } from '../../suscripciones/contracts.js';
+import { nivelDeRol, puedeCrear } from '../domain/jerarquia.js';
 import { presentarUsuarios, type UsuarioListado } from '../presentacion.js';
 import {
   RepositorioDeCuentas,
@@ -9,12 +10,14 @@ import {
   RepositorioDeUsuarios,
 } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
+import { nivelDelActor } from './nivel-del-actor.js';
 import { conPinNuevo } from './pin-nuevo.js';
 import { exigirRolesAsignables } from './roles-asignables.js';
 
 export interface DatosDeNuevoUsuario {
   /** A quién se le entrega el PIN (ADR 0018 §2). */
   readonly etiqueta: string;
+  /** Exactamente uno: el rol define el nivel del usuario en el árbol (ADR 0028 §2). */
   readonly rolIds: readonly string[];
   /** Los 4 caracteres del PIN si el administrador los eligió; si no, los sortea el servidor. */
   readonly sufijo?: string;
@@ -27,7 +30,9 @@ export interface UsuarioCreado extends UsuarioListado {
 
 /**
  * Crea un usuario de la cuenta con un PIN sorteado por el servidor (HU-06, ADR 0018 §5):
- * dentro del límite `max_usuarios` del plan y solo con roles que el actor pueda dar (D-19).
+ * dentro del límite `max_usuarios` del plan, con un rol que el actor pueda dar (D-19) y de un
+ * nivel que le toque crear (Administrador → Titular y Guardia; Titular → Miembro, ADR 0028 §3).
+ * El creado queda debajo del actor en el árbol.
  */
 export async function ejecutar(
   servicios: Pick<ServiciosDeSeguridad, 'pool' | 'config'>,
@@ -37,7 +42,12 @@ export async function ejecutar(
 ): Promise<UsuarioCreado> {
   const { pool } = servicios;
   const rolIds = [...new Set(datos.rolIds)];
-  await exigirRolesAsignables(pool, principal, rolIds);
+  const roles = await exigirRolesAsignables(pool, principal, rolIds);
+  const [rol] = roles;
+  const nivelCreado = rol === undefined ? null : nivelDeRol(rol.nombre);
+  if (!puedeCrear(await nivelDelActor(pool, principal), nivelCreado)) {
+    throw new ErrorDeDominio('usuario.nivel_no_permitido', 403);
+  }
 
   const suscripcion = await crearServicioDeSuscripciones(pool).obtenerVigente(ahora);
   if (suscripcion === null) throw new ErrorDeDominio('suscripcion.vencida', 403);
@@ -61,6 +71,7 @@ export async function ejecutar(
       async (sorteo) => {
         usuarioId = await usuarios.crear(tx, {
           etiqueta: datos.etiqueta,
+          superiorId: principal.usuarioId,
           pinIndice: sorteo.indice,
           pinHash: sorteo.hash,
           ahora,

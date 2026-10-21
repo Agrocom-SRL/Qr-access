@@ -84,3 +84,22 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
 DELETE rp FROM rol_permisos AS rp
   JOIN roles AS r ON r.id = rp.rol_id AND r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Guardia'
   JOIN permisos AS p ON p.id = rp.permiso_id AND p.codigo = 'accesos.evento.ver_todos';
+
+-- Roles por nivel (ADR 0028). Una cuenta anterior al árbol tiene "Usuario" en lugar de "Miembro" y no tiene
+-- "Titular": se renombra (UPDATE IGNORE no pisa una cuenta que ya tenga un "Miembro") y se crea el rol que falta.
+UPDATE IGNORE roles SET nombre = 'Miembro'
+  WHERE tenant_id IS NOT NULL AND protegido = 0 AND nombre = 'Usuario' AND deleted_at IS NULL;
+
+INSERT INTO roles (tenant_id, nombre, protegido, activo)
+  SELECT c.id, 'Titular', 0, 1 FROM cuentas AS c WHERE c.deleted_at IS NULL
+ON DUPLICATE KEY UPDATE activo = 1;
+
+-- El Titular tiene lo del Miembro y además crea y administra a sus Miembros. Solo se agregan permisos al rol
+-- base: un permiso que la cuenta le haya quitado a mano no se vuelve a poner si ya existía la fila borrada.
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r
+  JOIN permisos AS p ON p.codigo IN (
+    'organizacion.puerta.ver', 'accesos.qr.emitir', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
+    'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar'
+  )
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;

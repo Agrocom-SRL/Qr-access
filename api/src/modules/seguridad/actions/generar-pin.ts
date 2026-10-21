@@ -1,14 +1,14 @@
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
-import { RepositorioDeCuentas } from '../repository.js';
+import { RepositorioDeCuentas, RepositorioDeUsuarios } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
 import { regenerarPinDeUsuario, type PinGenerado } from './regenerar-pin.js';
 
 export type { PinGenerado } from './regenerar-pin.js';
 
 /**
- * Regenera el PIN de un usuario de la cuenta (HU-06): el administrador de la cuenta lo hace con
- * cualquiera de sus usuarios, sin conocer nunca el PIN anterior (ADR 0018 §2).
+ * Regenera el PIN de un usuario de la rama del actor (HU-06): solo el nivel superior lo hace, sin
+ * conocer nunca el PIN anterior (ADR 0018 §2, ADR 0028 §4). Uno de otra rama no existe: 404.
  */
 export async function ejecutar(
   servicios: Pick<ServiciosDeSeguridad, 'pool' | 'config'>,
@@ -21,5 +21,10 @@ export async function ejecutar(
     principal.cuentaId,
   );
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
+  const enLaRama = await new RepositorioDeUsuarios(servicios.pool).buscarEnRama(
+    principal.usuarioId,
+    usuarioId,
+  );
+  if (enLaRama === null) throw new ErrorDeDominio('usuario.no_encontrado', 404);
   return regenerarPinDeUsuario(servicios, cuenta, usuarioId, ahora, sufijoElegido);
 }

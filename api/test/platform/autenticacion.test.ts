@@ -34,7 +34,6 @@ describe('plugin de autenticación: se falla cerrado', () => {
     for (const esperada of [
       '/api/v1/sesiones',
       '/api/v1/sesiones/refresco',
-      '/api/v1/sesiones/rol-activo',
       '/api/v1/sesiones/actual',
       '/api/v1/puertas',
       '/api/v1/qr-accesos',

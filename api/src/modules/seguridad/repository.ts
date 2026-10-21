@@ -44,17 +44,35 @@ export interface UsuarioFila extends RowDataPacket {
   id: string;
   etiqueta: string | null;
   pin_hash: string | null;
-  rol_preferido_id: string | null;
+  /** El nivel de arriba en el árbol (ADR 0028); `null` en el Administrador. */
+  superior_id: string | null;
   activo: number;
   pin_generado_at: Date | null;
   created_at: Date;
 }
 
 const COLUMNAS_DE_USUARIO =
-  't.id, t.etiqueta, t.pin_hash, t.rol_preferido_id, t.activo, t.pin_generado_at, t.created_at';
+  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.activo, t.pin_generado_at, t.created_at';
+
+/**
+ * Filtro "está en la rama de X": todos los descendientes de X por `superior_id`, sin X. Es la segunda
+ * capa sobre el aislamiento por cuenta (ADR 0028 §4): se agrega SIEMPRE al `donde` de una consulta de
+ * `RepositorioDeUsuarios`, que ya filtra por la cuenta del contexto, así que un vínculo que cruzara
+ * cuentas nunca devolvería filas de otra. Lleva un `?`: el id de X.
+ */
+const EN_LA_RAMA_DE = `t.id IN (
+  WITH RECURSIVE rama (id) AS (
+    SELECT h.id FROM usuarios AS h WHERE h.superior_id = ? AND h.deleted_at IS NULL
+    UNION ALL
+    SELECT n.id FROM usuarios AS n JOIN rama ON n.superior_id = rama.id AND n.deleted_at IS NULL
+  )
+  SELECT id FROM rama
+)`;
 
 export interface NuevoUsuario {
   readonly etiqueta: string;
+  /** Quien lo crea y queda arriba de él en el árbol; `null` para el Administrador de una cuenta nueva. */
+  readonly superiorId: string | null;
   readonly pinIndice: string;
   readonly pinHash: string;
   readonly ahora: Date;
@@ -78,7 +96,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         'pin_generado_at',
         'username',
         'contrasena_hash',
-        'rol_preferido_id',
+        'superior_id',
         'activo',
       ],
       sensibles: ['pin_indice', 'pin_hash', 'contrasena_hash'],
@@ -103,10 +121,6 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  async recordarRolPreferido(tx: Transaccion, usuarioId: string, rolId: string): Promise<void> {
-    await this.actualizar(tx, usuarioId, { rol_preferido_id: rolId });
-  }
-
   /** Un usuario de la cuenta, esté activo o no (para administrarlo). Borrado = no existe. */
   buscarPorId(id: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
@@ -125,14 +139,34 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  /** Los usuarios de la cuenta (cada PIN es uno, ADR 0018 §2), los más nuevos primero. */
-  listar(limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
+  /** Un usuario de la rama de `superiorId` (ADR 0028 §4); uno de otra rama o el propio `superiorId` no existe. */
+  buscarEnRama(superiorId: string, id: string): Promise<UsuarioFila | null> {
+    return this.seleccionarUna<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      donde: `t.id = ? AND ${EN_LA_RAMA_DE}`,
+      params: [id, superiorId],
+    });
+  }
+
+  /** La rama de `superiorId` (cada PIN es un usuario, ADR 0018 §2), los más nuevos primero. */
+  listarDeRama(superiorId: string, limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
     return this.seleccionar<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
+      donde: EN_LA_RAMA_DE,
+      params: [superiorId],
       orden: 't.created_at DESC, t.id DESC',
       limite,
       desplazamiento,
     });
+  }
+
+  contarDeRama(superiorId: string): Promise<number> {
+    return this.contar({ donde: EN_LA_RAMA_DE, params: [superiorId] });
+  }
+
+  /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */
+  contarDirectos(id: string): Promise<number> {
+    return this.contar({ donde: 't.superior_id = ?', params: [id] });
   }
 
   /** Cuántos usuarios tiene la cuenta: es lo que limita `max_usuarios` del plan (ADR 0017). */
@@ -143,6 +177,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   crear(tx: Transaccion, usuario: NuevoUsuario): Promise<string> {
     return this.insertar(tx, {
       etiqueta: usuario.etiqueta,
+      superior_id: usuario.superiorId,
       pin_indice: usuario.pinIndice,
       pin_hash: usuario.pinHash,
       pin_generado_at: usuario.ahora,
@@ -234,11 +269,6 @@ interface RolDeUsuarioFila extends RowDataPacket {
   nombre: string;
 }
 
-export interface AsignacionFila extends RowDataPacket {
-  id: string;
-  rol_id: string;
-}
-
 /** Dueño de `usuario_roles` y quien lee `roles`, `rol_permisos` y `permisos` para los permisos efectivos. */
 export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
   constructor(pool: Pool) {
@@ -283,15 +313,6 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
     return mapa;
   }
 
-  /** Las filas de asignación vigentes de un usuario, para agregar o quitar roles. */
-  asignacionesDe(usuarioId: string): Promise<AsignacionFila[]> {
-    return this.seleccionar<AsignacionFila>({
-      columnas: 't.id, t.rol_id',
-      donde: 't.usuario_id = ?',
-      params: [usuarioId],
-    });
-  }
-
   asignar(tx: Transaccion, usuarioId: string, rolId: string): Promise<string> {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
   }
@@ -317,10 +338,6 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
         'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
       ].join(' '),
     });
-  }
-
-  quitar(tx: Transaccion, asignacionId: string): Promise<boolean> {
-    return this.borrar(tx, asignacionId);
   }
 
   /** Permisos de ámbito cuenta de UN rol (el activo), nunca la unión de los roles del usuario. */
@@ -421,15 +438,6 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
           params: [refreshActual, ahora],
         },
       },
-    );
-  }
-
-  cambiarRolActivo(tx: Transaccion, id: string, rolId: string): Promise<boolean> {
-    return this.actualizar(
-      tx,
-      id,
-      { rol_activo_id: rolId },
-      { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }
 

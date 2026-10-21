@@ -127,7 +127,6 @@ CREATE TABLE usuarios (
   username VARCHAR(60) NULL,
   contrasena_hash VARCHAR(255) NULL,
   contrasena_temporal TINYINT(1) NOT NULL DEFAULT 0,
-  rol_preferido_id BIGINT UNSIGNED NULL,
   activo TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
@@ -138,7 +137,6 @@ CREATE TABLE usuarios (
   tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_usuarios_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_usuarios_rol_preferido FOREIGN KEY (rol_preferido_id) REFERENCES roles (id),
   UNIQUE KEY uq_usuarios_pin (tenant_clave, pin_indice, vigente),
   UNIQUE KEY uq_usuarios_username (tenant_clave, username, vigente),
   CONSTRAINT ck_usuarios_credencial CHECK (
@@ -566,3 +564,53 @@ ALTER TABLE pagos
   ADD COLUMN comprobante_id BIGINT UNSIGNED NULL AFTER cuenta_destino,
   ADD CONSTRAINT fk_pagos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes (id);
 ```
+
+## unidades
+
+Migración: `db/migrations/20261022100001_create_unidades.sql`
+
+```sql
+CREATE TABLE unidades (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  sitio_id BIGINT UNSIGNED NOT NULL,
+  nombre VARCHAR(80) NOT NULL,
+  titular_id BIGINT UNSIGNED NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_unidades_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_unidades_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
+  CONSTRAINT fk_unidades_titular FOREIGN KEY (titular_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_unidades_nombre (sitio_id, nombre, vigente),
+  UNIQUE KEY uq_unidades_titular (titular_id, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## usuarios: superior en el árbol
+
+Migración: `db/migrations/20261022100002_alter_usuarios_superior.sql`
+
+```sql
+ALTER TABLE usuarios
+  ADD COLUMN superior_id BIGINT UNSIGNED NULL AFTER tenant_id,
+  ADD KEY idx_usuarios_superior (superior_id),
+  ADD CONSTRAINT fk_usuarios_superior FOREIGN KEY (superior_id) REFERENCES usuarios (id);
+```
+
+## usuarios y usuario_roles: un rol por usuario
+
+Migración: `db/migrations/20261022100003_un_rol_por_usuario.sql`
+
+```sql
+-- Antes (solo si ya hay datos): da de baja los roles de más y deja el de mayor nivel por usuario.
+ALTER TABLE usuario_roles ADD UNIQUE KEY uq_usuario_roles_usuario (usuario_id, vigente);
+ALTER TABLE usuarios DROP FOREIGN KEY fk_usuarios_rol_preferido, DROP COLUMN rol_preferido_id;
+```
+
+Migración de datos: `db/migrations/20261022100004_vincula_usuarios_existentes.sql` cuelga a los usuarios de cuenta que aún no tienen superior del primer Administrador de su cuenta.

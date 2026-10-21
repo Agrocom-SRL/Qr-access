@@ -21,7 +21,8 @@ import {
   generarSufijoDePin,
   normalizarPin,
 } from '../../src/modules/seguridad/domain/pin.js';
-import { decidirRolActivo } from '../../src/modules/seguridad/domain/rol-activo.js';
+import { nivelDeRol, puedeCrear } from '../../src/modules/seguridad/domain/jerarquia.js';
+import { rolUnico } from '../../src/modules/seguridad/domain/rol-unico.js';
 
 describe('PIN (ADR 0018)', () => {
   it('normaliza a mayúsculas y sin espacios', () => {
@@ -54,13 +55,39 @@ describe('PIN (ADR 0018)', () => {
   });
 });
 
-describe('rol activo', () => {
-  it('el único rol; el preferido si lo sigue teniendo; si no, ninguno', () => {
-    expect(decidirRolActivo(['5'], null)).toBe('5');
-    expect(decidirRolActivo(['5', '6'], '6')).toBe('6');
-    expect(decidirRolActivo(['5', '6'], '7')).toBeNull();
-    expect(decidirRolActivo(['5', '6'], null)).toBeNull();
-    expect(decidirRolActivo([], '6')).toBeNull();
+describe('un usuario, un rol (ADR 0028 §2)', () => {
+  it('el rol de la sesión es el único; con cero o con varios, ninguno (falla cerrado)', () => {
+    expect(rolUnico(['5'])).toBe('5');
+    expect(rolUnico([])).toBeNull();
+    expect(rolUnico(['5', '6'])).toBeNull();
+  });
+});
+
+describe('jerarquía de usuarios (ADR 0028 §3)', () => {
+  it('el nivel sale del nombre del rol base; otro nombre no tiene nivel', () => {
+    expect(nivelDeRol('Administrador')).toBe('administrador');
+    expect(nivelDeRol('Titular')).toBe('titular');
+    expect(nivelDeRol('Miembro')).toBe('miembro');
+    expect(nivelDeRol('Guardia')).toBe('guardia');
+    expect(nivelDeRol('Usuario')).toBeNull();
+    expect(nivelDeRol('administrador')).toBeNull();
+  });
+
+  it('cada nivel crea solo el de abajo', () => {
+    expect(puedeCrear('administrador', 'titular')).toBe(true);
+    expect(puedeCrear('administrador', 'guardia')).toBe(true);
+    expect(puedeCrear('titular', 'miembro')).toBe(true);
+    // Nunca un igual, un superior ni saltarse un nivel
+    expect(puedeCrear('administrador', 'administrador')).toBe(false);
+    expect(puedeCrear('administrador', 'miembro')).toBe(false);
+    expect(puedeCrear('titular', 'titular')).toBe(false);
+    expect(puedeCrear('titular', 'guardia')).toBe(false);
+    expect(puedeCrear('titular', 'administrador')).toBe(false);
+    // Los que no crean a nadie, y un nivel desconocido
+    expect(puedeCrear('miembro', 'miembro')).toBe(false);
+    expect(puedeCrear('guardia', 'miembro')).toBe(false);
+    expect(puedeCrear(null, 'miembro')).toBe(false);
+    expect(puedeCrear('administrador', null)).toBe(false);
   });
 });
 

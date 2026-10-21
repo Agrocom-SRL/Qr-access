@@ -14,7 +14,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 | Prefijo de versión | `/api/v1/…` |
 | Recursos en español, plural, kebab-case | `/api/v1/puertas`, `/api/v1/reglas-acceso` |
 | Anidar solo un nivel | `/api/v1/sitios/{sitioId}/puertas` |
-| Acciones no CRUD como subrecurso | `POST /api/v1/sesiones` (login), `POST /api/v1/sesiones/rol-activo`, `POST /api/v1/dispositivos/validaciones` |
+| Acciones no CRUD como subrecurso | `POST /api/v1/sesiones` (login), `POST /api/v1/dispositivos/validaciones` |
 | Salud | `GET /api/v1/salud` (sin auth) |
 | OpenAPI | `GET /api/v1/openapi.json`, UI en `/api/v1/docs` solo fuera de producción |
 
@@ -38,7 +38,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 |---|---|
 | 400 | JSON mal formado |
 | 401 | Sin token o token inválido/vencido |
-| 403 | Autenticado pero sin el permiso del rol activo |
+| 403 | Autenticado pero sin el permiso de su rol |
 | 404 | No existe **o es de otra cuenta** (nunca 403 para recursos de otra cuenta) |
 | 409 | Conflicto de unicidad o de estado |
 | 422 | Validación o regla de negocio (`code` dice cuál) |
@@ -52,7 +52,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 ## Endpoints de la app (V1)
 
 ```
-POST   /sesiones · /sesiones/refresco · /sesiones/rol-activo · GET/DELETE /sesiones/actual (trae permisos y suscripcion)
+POST   /sesiones · /sesiones/refresco · GET/DELETE /sesiones/actual (trae permisos y suscripcion)
 GET    /puertas                       (con dispositivo { id, nombre, en_linea, ultimo_latido_at } | null)
 POST   /qr-accesos · GET /qr-accesos?estado= · GET /qr-accesos/resumen · POST /qr-accesos/{id}/anulacion
 GET    /eventos-acceso?resultado=&puerta_id=&desde=&hasta= · GET /eventos-acceso/resumen

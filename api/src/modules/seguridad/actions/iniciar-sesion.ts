@@ -5,7 +5,7 @@ import { verificarContraRelleno, verificarHash } from '../../../platform/segurid
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
 import { calcularIndiceDePin, normalizarPin, secretoDePin } from '../domain/pin.js';
-import { decidirRolActivo } from '../domain/rol-activo.js';
+import { rolUnico } from '../domain/rol-unico.js';
 import {
   RepositorioDeCuentas,
   RepositorioDeRolesDeUsuario,
@@ -99,10 +99,7 @@ export async function ejecutar(
     servicios.limitadorPorIp.registrarExito(claves.ip);
 
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
-    const rolActivoId = decidirRolActivo(
-      roles.map((rol) => rol.id),
-      usuario.rol_preferido_id,
-    );
+    const rolActivoId = rolUnico(roles.map((rol) => rol.id));
     const refresco = generarTokenOpaco(32);
     const sesionId = await enTransaccion(servicios.pool, (tx) =>
       new RepositorioDeSesiones(servicios.pool).crear(tx, {

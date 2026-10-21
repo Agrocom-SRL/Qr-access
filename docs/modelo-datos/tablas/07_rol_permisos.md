@@ -21,7 +21,7 @@ El SQL completo está en `03-schema-sql.md`.
 
 ## Reglas
 
-- Los permisos efectivos de una sesión son los del rol activo, nunca la unión de los roles del usuario (invariante 10).
+- Los permisos efectivos de una sesión son los de su único rol (invariante 10, ADR 0028).
 
 ## Dudas
 

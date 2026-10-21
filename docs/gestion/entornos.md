@@ -54,9 +54,9 @@ Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_dem
 |---|---|
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
 | Super admin del panel web (solo desarrollo) | usuario `root`, contraseña `12345678` |
-| PIN del **administrador** (todos los permisos de cuenta; también tiene el rol Usuario, así que elige rol al entrar) | `DEMADM1` |
-| PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
-| PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
+| PIN del **Administrador** (todos los permisos de cuenta) | `DEMADM1` |
+| PIN del **Miembro** (emite y ve lo suyo; cuelga del Administrador) | `DEMUSR1` |
+| PIN del **Guardia** (un solo rol) | `DEMGRD1` |
 | Sitio | `Sede demo` (zona `America/La_Paz`) |
 | Puertas y dispositivos | Ninguno a propósito (ADR 0026): las puertas se crean desde la app y las placas se vinculan desde el panel, como en producción. El seed retira las puertas 9001 y 9002 de versiones anteriores. |
 

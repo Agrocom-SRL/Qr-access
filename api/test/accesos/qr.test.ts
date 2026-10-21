@@ -229,7 +229,7 @@ describe('QR de acceso: emitir, listar y anular', () => {
     it('exige el permiso accesos.qr.emitir en el rol activo', async () => {
       await prueba.pool.query(
         'DELETE rp FROM rol_permisos rp JOIN permisos p ON p.id = rp.permiso_id WHERE p.codigo = ? AND rp.rol_id = ?',
-        ['accesos.qr.emitir', a.rolUsuarioId],
+        ['accesos.qr.emitir', a.rolMiembroId],
       );
       const respuesta = await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] });
       expect(respuesta.statusCode).toBe(403);
@@ -418,7 +418,7 @@ describe('QR de acceso: emitir, listar y anular', () => {
       const delAdmin = await crearQr(prueba.pool, a.cuenta, a.administrador.id, [
         a.puertaPrincipal.id,
       ]);
-      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'OT01', [a.rolUsuarioId]);
+      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'OT01', [a.rolMiembroId]);
       const delOtro = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
 
       expect((await anular(sesionUsuarioA, delAdmin.id)).statusCode).toBe(404);

@@ -3,7 +3,7 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
-import { decidirRolActivo } from '../domain/rol-activo.js';
+import { rolUnico } from '../domain/rol-unico.js';
 import { sesionVigente, type SesionRefrescada } from '../domain/sesion.js';
 import {
   RepositorioDeCuentas,
@@ -48,11 +48,8 @@ export async function ejecutar(
     if (usuario === null || cuenta === null) throw invalido;
 
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
-    const idsDeRoles = roles.map((rol) => rol.id);
-    const rolActivoId =
-      sesion.rol_activo_id !== null && idsDeRoles.includes(sesion.rol_activo_id)
-        ? sesion.rol_activo_id
-        : decidirRolActivo(idsDeRoles, usuario.rol_preferido_id);
+    // Se relee el rol en cada refresco: si el usuario cambió de rol, la sesión sigue al rol vigente.
+    const rolActivoId = rolUnico(roles.map((rol) => rol.id));
 
     const refresco = generarTokenOpaco(32);
     const rotada = await enTransaccion(servicios.pool, (tx) =>
