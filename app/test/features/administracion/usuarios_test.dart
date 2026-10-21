@@ -243,7 +243,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(textos.usuariosPinGeneradoTitulo), findsOneWidget);
-      expect(find.text(textos.comunCopiar), findsOneWidget);
+      expect(find.text(textos.usuariosPinCompartir), findsOneWidget);
       expect(find.textContaining('7K2Q'), findsOneWidget);
     });
   });

@@ -4,8 +4,10 @@ import 'package:agrocom_acceso/core/plataforma/descargar_archivo.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
-/// Resultado de compartir, para que la pantalla sepa si la imagen salió.
-enum ResultadoCompartir { compartido, descargado, cancelado }
+/// Resultado de compartir, para que la pantalla sepa si salió lo que se pidió.
+/// `copiado` solo lo da el texto cuando el dispositivo no tiene menú de
+/// compartir (p. ej. un navegador sin Web Share): queda en el portapapeles.
+enum ResultadoCompartir { compartido, descargado, copiado, cancelado }
 
 /// Comparte una imagen con el menú del sistema (WhatsApp, correo…) (ADR 0008,
 /// D-18). Es la única forma en que el token de un QR sale de la app.

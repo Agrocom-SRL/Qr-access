@@ -193,9 +193,6 @@ class Duraciones {
   Duration get segundo => const Duration(seconds: 1);
   Curve get curva => Curves.easeOutCubic;
 
-  /// Segundos que "Copiado" reemplaza a "Copiar" tras copiar el PIN.
-  Duration get confirmacionCopiado => const Duration(seconds: 2);
-
   /// Tope del splash animado: lo que dura el Lottie de arranque.
   Duration get splash => const Duration(milliseconds: 800);
 
