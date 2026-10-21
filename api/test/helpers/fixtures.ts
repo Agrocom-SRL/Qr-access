@@ -26,6 +26,7 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'organizacion.puerta.administrar',
   'organizacion.guardia.asignar',
   'accesos.qr.generar',
+  'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.ver_todos',
   'accesos.qr.anular',
@@ -44,9 +45,19 @@ export const PERMISOS_DE_ADMINISTRADOR = [
 export const PERMISOS_DE_USUARIO = [
   'organizacion.puerta.ver',
   'accesos.qr.generar',
+  'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
   'accesos.evento.ver',
+];
+
+/** Lo que tiene un Guardia (ADR 0028 §5): su QR propio, no los de visitas. */
+export const PERMISOS_DE_GUARDIA = [
+  'organizacion.puerta.ver',
+  'organizacion.puerta.supervisar',
+  'accesos.qr.generar_propio',
+  'accesos.evento.ver',
+  'accesos.evento.ver_asignadas',
 ];
 
 /** Un Titular tiene lo del Miembro y además administra a sus Miembros. */

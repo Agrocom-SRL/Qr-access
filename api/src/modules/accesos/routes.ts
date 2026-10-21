@@ -58,7 +58,12 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           body: cuerpoDeGeneracion,
           response: { 201: respuestaDeGeneracion },
         },
-        preHandler: permiso('accesos.qr.generar'),
+        // El QR propio y el de visitas son permisos distintos: el Guardia solo tiene el primero (ADR 0028 §5).
+        // El cuerpo ya está validado cuando corre el `preHandler`.
+        preHandler: (request) =>
+          permiso(
+            request.body.propio === true ? 'accesos.qr.generar_propio' : 'accesos.qr.generar',
+          )(request),
       },
       async (request, reply) => {
         const qr = await generarQr(pool, usuarioDe(request), {
