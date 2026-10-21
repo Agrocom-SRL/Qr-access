@@ -1,6 +1,6 @@
 # ADR 0028 — Jerarquía de usuarios: árbol por cuenta, un usuario un rol y cupo por rama
 
-**Estado:** Propuesta (2026-10-21). Enmienda el ADR 0004 (§5 y §6), el ADR 0017 (§5) y la invariante 10 de `CLAUDE.md`. Quedan abiertos los puntos 7 a 9 y una pregunta sobre el cupo (ver "Pendiente"). Origen y conversación completa: `docs/gestion/jerarquia-de-usuarios.md`.
+**Estado:** Propuesta (2026-10-21). Enmienda el ADR 0004 (§5 y §6), el ADR 0017 (§5) y la invariante 10 de `CLAUDE.md`.  Todos los puntos abiertos quedaron cerrados el 2026-10-21 (ver "Decisiones finales"). Origen y conversación completa: `docs/gestion/jerarquia-de-usuarios.md`.
 
 ## Contexto
 
@@ -53,7 +53,7 @@ Administrador, Titular y Miembro **generan y comparten** QR y usan su QR propio.
 
 - Cuentan **todos los niveles** (Administrador, Titular, Guardia y Miembro) mientras estén habilitados; la baja (soft delete) libera el lugar. Los QR siguen ilimitados (ADR 0017).
 - **Tope de Miembros por Titular**, configurable por cuenta (por defecto 10). La API lo hace cumplir al crear (`plan.limite_miembros_por_titular`, RFC 9457) además del límite del plan.
-- El porcentaje de uso del cupo y los avisos al 80 % y al 100 % los ve **solo el Administrador** (y AGROCOM en el panel web).
+- El porcentaje de uso del cupo y los avisos al 80 % y al 100 % los ve **solo el Administrador** (y AGROCOM en el panel web). Cada Administrador ve el **total de la cuenta**, porque comparten el cupo, aunque solo gestione su rama.
 
 ### 7. Bajas y reasignación
 
@@ -65,7 +65,7 @@ Administrador, Titular y Miembro **generan y comparten** QR y usan su QR propio.
 ### 8. Modelo de datos y API
 
 - `usuarios.superior_id` (el nivel de arriba, distinto de `created_by`) y la tabla `unidades` (con tenant, un Titular activo por unidad: unicidad compatible con soft delete, ADR 0016). Los Miembros cuelgan de su unidad.
-- Roles base por cuenta: **Administrador**, **Titular**, **Miembro** y **Guardia**. Migración de los existentes: el rol *Administrador* se conserva; el rol *Usuario* pasa a *Miembro*; el *Guardia* se conserva. Los usuarios con más de un rol se resuelven antes de migrar (punto 9).
+- Roles base por cuenta: **Administrador**, **Titular**, **Miembro** y **Guardia**. Migración de los existentes: el rol *Administrador* se conserva; el rol *Usuario* pasa a *Miembro*; el *Guardia* se conserva. No hay migración de datos de producción: se reinicia la base (ver "Decisiones finales").
 - El JWT deja de llevar rol activo; lleva el rol único y el árbol se resuelve en el servidor. Las rutas de listado, actividad y regeneración de PIN filtran por rama en el repositorio, no en cada módulo.
 - Toda creación, baja, reasignación y regeneración de PIN va a la bitácora con quien actúa (invariante 9).
 - Estadísticas (inactivos, ruidosos, uso del cupo, Titulares que abusan del cupo) las calcula la API a partir de `qr_accesos` y `eventos_acceso`; la app y la web solo las muestran. Audiencia: el Administrador en la app (con la baja directa desde la lista) y AGROCOM en el panel web.
@@ -84,9 +84,11 @@ Administrador, Titular y Miembro **generan y comparten** QR y usan su QR propio.
 - Tests obligatorios: aislamiento por cuenta (cuenta A → recurso de B = 404) y **por rama** (Administrador 1 → Titular o Guardia del Administrador 2 = 404); cada rol solo crea lo que le toca; el Guardia no genera QR; el tope de Miembros y el cupo; la cascada de la baja y su confirmación; la reasignación solo por AGROCOM.
 - Orden de ramas: este ADR y la jerarquía en la API (`feature/jerarquia-usuarios`), luego la creación por nivel en la app y la web, y por último las estadísticas. Compartir el PIN es independiente.
 
-## Pendiente
+## Decisiones finales (2026-10-21)
 
-- **Punto 7 — umbrales de las estadísticas:** cuántos QR por día es "ruido" y cuántos días sin uso es "inactivo"; si solo informan. Se decide antes del paso 5.
-- **Punto 8 — compartir el PIN:** si se fuerza el cambio en el primer ingreso y si se registra el envío. Se decide antes del paso 4.
-- **Punto 9 — migración de datos de producción:** Administradores existentes, usuarios con varios roles y apellido vacío del responsable de las cuentas ya creadas. Se decide antes de las migraciones.
-- **Cupo:** qué porcentaje ve cada Administrador: el total de la cuenta, el de su rama o ambos (recomendado: ambos).
+- **Umbrales de las estadísticas:** fijos e informativos. Inactivo = 30 días sin usar QR; ruidoso = más de 10 QR por día. No disparan ninguna acción: el Administrador decide la baja.
+- **Compartir el PIN:** sin cambio forzado en el primer ingreso, pero cada envío queda en la bitácora (quién compartió el PIN de quién y cuándo).
+- **Guardia:** solo usa su QR propio; no genera ni comparte QR de visitas.
+- **Cupo:** cada Administrador ve el total de la cuenta y los avisos de 80 %/100 %.
+- **Dos funciones:** quien las necesite tiene dos usuarios con su PIN cada uno; ambos cuentan en el cupo.
+- **Datos de producción:** solo hay datos de la primera prueba. Se **reinicia la base** con respaldo previo (`docs/gestion/jerarquia-de-usuarios.md` §13), sin migrar usuarios con varios roles ni completar apellidos; se recrea el Administrador y las placas se vinculan de nuevo.
