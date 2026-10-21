@@ -916,4 +916,74 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       expect(deB).toMatchObject({ usados: 2, max_miembros_por_titular: 3 });
     });
   });
+
+  describe('POST /api/v1/usuarios/:id/pin/compartido (ADR 0028 §7)', () => {
+    const compartido = (sesion: Sesion, id: string) =>
+      prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/usuarios/${id}/pin/compartido`,
+        headers: conUsuario(sesion),
+      });
+    const eventos = async (usuarioId: string) => {
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT usuario_id, accion, antes, despues FROM bitacoras WHERE tabla = 'usuarios' AND registro_id = ? AND accion = 'actualizado' ORDER BY id",
+        [usuarioId],
+      );
+      return filas;
+    };
+
+    it('registra el envío en la bitácora con quién lo hizo, sin tocar el PIN', async () => {
+      const respuesta = await compartido(sesionAdminA, a.usuario.id);
+      expect(respuesta.statusCode, respuesta.body).toBe(204);
+
+      const filas = await eventos(a.usuario.id);
+      expect(filas).toHaveLength(1);
+      expect(String(filas[0]?.usuario_id)).toBe(a.administrador.id);
+      expect(JSON.stringify(filas[0]?.despues)).toContain('pin_compartido_at');
+      // Ni el PIN ni su hash: solo la fecha
+      expect(JSON.stringify(filas[0])).not.toContain('pin_hash');
+      expect(JSON.stringify(filas[0])).not.toContain(a.usuario.pin);
+      // El PIN sigue sirviendo: compartirlo no lo cambia ni obliga a cambiarlo
+      expect((await ingresar(a.usuario.pin)).statusCode).toBe(200);
+    });
+
+    it('cada envío queda registrado, también el repetido', async () => {
+      await compartido(sesionAdminA, a.usuario.id);
+      await compartido(sesionAdminA, a.usuario.id);
+      expect(await eventos(a.usuario.id)).toHaveLength(2);
+    });
+
+    it('el Titular lo registra para sus Miembros', async () => {
+      const { titular, miembro } = await armarRamas();
+      const sesionTitular = await iniciarSesion(prueba.app, titular.pin);
+      expect((await compartido(sesionTitular, miembro.id)).statusCode).toBe(204);
+      const filas = await eventos(miembro.id);
+      expect(String(filas[0]?.usuario_id)).toBe(titular.id);
+    });
+
+    it('ramas: no se registra para un igual, un superior, uno de otra rama ni el propio actor (404)', async () => {
+      const { titular, miembro2, admin2 } = await armarRamas();
+      const sesionTitular = await iniciarSesion(prueba.app, titular.pin);
+      expect((await compartido(sesionAdminA, miembro2.id)).statusCode).toBe(404);
+      expect((await compartido(sesionAdminA, admin2.id)).statusCode).toBe(404);
+      expect((await compartido(sesionAdminA, a.administrador.id)).statusCode).toBe(404);
+      expect((await compartido(sesionTitular, a.administrador.id)).statusCode).toBe(404);
+      expect(await eventos(miembro2.id)).toHaveLength(0);
+    });
+
+    it('aislamiento: un usuario de otra cuenta no existe (404) y nada se registra', async () => {
+      expect((await compartido(sesionAdminA, b.usuario.id)).statusCode).toBe(404);
+      expect(await eventos(b.usuario.id)).toHaveLength(0);
+    });
+
+    it('exige seguridad.usuario.editar y sesión', async () => {
+      const sesionMiembro = await iniciarSesion(prueba.app, a.usuario.pin);
+      expect((await compartido(sesionMiembro, a.usuario.id)).statusCode).toBe(403);
+      const sinSesion = await prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/usuarios/${a.usuario.id}/pin/compartido`,
+      });
+      expect(sinSesion.statusCode).toBe(401);
+    });
+  });
 });

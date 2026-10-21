@@ -68,7 +68,8 @@ class PinGenerado {
   /// (y el anterior dejó de funcionar).
   final bool esNuevo;
 
-  /// El usuario creado (para asignarle puertas a continuación).
+  /// El usuario del PIN: al crearlo, para asignarle puertas a continuación; en
+  /// ambos casos, para registrar que se compartió.
   final String? usuarioId;
 
   String get codigoDeCuenta => pin.substring(0, 3);

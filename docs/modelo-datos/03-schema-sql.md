@@ -624,3 +624,11 @@ ALTER TABLE cuentas
   ADD COLUMN max_miembros_por_titular SMALLINT UNSIGNED NOT NULL DEFAULT 10 AFTER activo,
   ADD CONSTRAINT ck_cuentas_max_miembros CHECK (max_miembros_por_titular >= 1);
 ```
+
+## usuarios: PIN compartido
+
+Migración: `db/migrations/20261022100006_add_pin_compartido_a_usuarios.sql`
+
+```sql
+ALTER TABLE usuarios ADD COLUMN pin_compartido_at DATETIME(3) NULL AFTER pin_generado_at;
+```

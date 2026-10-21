@@ -68,6 +68,7 @@
     "usuario_editado": "Edited user",
     "usuario_eliminado": "Deleted user",
     "usuario_pin_regenerado": "Reset user PIN",
+    "usuario_pin_compartido": "Shared a user’s PIN",
     "cuenta_codigo_cambiado": "Changed the account code",
     "sitio_creado": "Created property",
     "sitio_editado": "Edited property",

@@ -37,6 +37,7 @@ function describirValores(codigo: string, valores: ValoresDeEvento | null, t: TF
         ? t('bitacora:valor.desactivado')
         : t('bitacora:valor.activo');
     case 'usuario.pin_regenerado':
+    case 'usuario.pin_compartido':
       return t('bitacora:valor.pin');
     case 'usuario.creado':
       return texto(valores.etiqueta);

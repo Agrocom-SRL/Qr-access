@@ -1569,6 +1569,23 @@
   "@usuariosPinListo": {
     "description": "Botón que cierra la pantalla del PIN"
   },
+  "usuariosPinCompartir": "Compartir",
+  "@usuariosPinCompartir": {
+    "description": "Botón para compartir el PIN con el menú del sistema"
+  },
+  "usuariosPinMensajeCompartir": "Tu PIN de AGROCOM Acceso es {pin}. Ábrela e ingresa con él. No lo compartas con nadie más.",
+  "@usuariosPinMensajeCompartir": {
+    "description": "Texto que se envía al compartir el PIN",
+    "placeholders": {
+      "pin": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPinAvisoCompartir": "Al compartirlo, el PIN pasa por una aplicación de terceros. Compártelo solo con quien corresponde: queda registrado que lo compartiste.",
+  "@usuariosPinAvisoCompartir": {
+    "description": "Aviso sobre compartir el PIN por un canal de terceros"
+  },
   "usuariosEliminarTitulo": "¿Dar de baja a {nombre}?",
   "@usuariosEliminarTitulo": {
     "description": "Título de la confirmación de baja",
