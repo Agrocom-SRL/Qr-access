@@ -69,6 +69,13 @@ void main() {
       expect(redireccionDeSesion(sesion, Rutas.qrNuevo), isNull);
     });
 
+    test('el QR propio y el de visitas se protegen con permisos distintos', () {
+      final guardia = sesionCon(permisos: {Permisos.generarQrPropio});
+      expect(redireccionDeSesion(guardia, Rutas.qrRapido), isNull);
+      expect(redireccionDeSesion(guardia, Rutas.qrNuevo), Rutas.inicio);
+      expect(redireccionDeSesion(sesion, Rutas.qrRapido), Rutas.inicio);
+    });
+
     test('una ruta sin el permiso del rol vuelve al tablero', () {
       expect(redireccionDeSesion(sesion, Rutas.eventos), Rutas.inicio);
       expect(redireccionDeSesion(sesion, Rutas.adminUsuarios), Rutas.inicio);

@@ -56,7 +56,7 @@ Future<QrAccesosRepositorioFalso> _montar(
       ),
       relojProvider.overrideWithValue(() => _ahora),
       sesionControladorProvider.overrideWith(
-        () => SesionFalsa(sesionCon(permisos: {Permisos.generarQr})),
+        () => SesionFalsa(sesionCon(permisos: {Permisos.generarQrPropio})),
       ),
     ],
   );

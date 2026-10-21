@@ -10,7 +10,12 @@ abstract final class Permisos {
   /// Ver el estado de las puertas y sus lectores (pestaña Puertas).
   static const supervisarPuertas = 'organizacion.puerta.supervisar';
 
+  /// Generar QR de visitas para compartirlos. El Guardia no lo tiene (ADR 0028
+  /// §5): solo usa el suyo, con [generarQrPropio].
   static const generarQr = 'accesos.qr.generar';
+
+  /// Generar el QR propio ("Mi QR de acceso"), para usarlo en este dispositivo.
+  static const generarQrPropio = 'accesos.qr.generar_propio';
 
   /// Listar los QR generados: los propios, o todos los de la cuenta con
   /// `accesos.qr.ver_todos`.

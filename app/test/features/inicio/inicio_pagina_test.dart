@@ -17,17 +17,19 @@ final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
 const Set<String> _usuario = {
   Permisos.generarQr,
+  Permisos.generarQrPropio,
   Permisos.verQr,
   Permisos.verEventos,
 };
 const Set<String> _guardia = {
-  Permisos.generarQr,
+  Permisos.generarQrPropio,
   Permisos.verEventos,
   Permisos.verEventosAsignados,
   Permisos.supervisarPuertas,
 };
 const Set<String> _administrador = {
   Permisos.generarQr,
+  Permisos.generarQrPropio,
   Permisos.verQr,
   Permisos.verEventos,
   Permisos.supervisarPuertas,

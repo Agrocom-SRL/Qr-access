@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Acceso al QR propio de acceso desde la cabecera del inicio (todos los roles
-/// con permiso de generar QR, guardia incluido). Va en la cabecera y no en el
+/// con `generarQrPropio`, guardia incluido). Va en la cabecera y no en el
 /// botón flotante, que es para generar un QR nuevo. El ícono "persona con
 /// visto" (autorizado) distingue el QR propio de las entradas del día.
 class BotonQrPropio extends StatelessWidget {

@@ -25,10 +25,9 @@ class InicioPagina extends ConsumerWidget {
     final esAdmin = veTableroDeAdministracion(sesion);
     return PlantillaAdmin(
       destino: DestinoNav.inicio,
-      // El botón flotante, sin texto, genera un QR nuevo. El guardia no
-      // comparte QR con otras personas (ver esGuardia), así que no lo ve aunque
-      // tenga el permiso. Su QR propio está en la cabecera.
-      fab: !sesion.tiene(Permisos.generarQr) || esGuardia(sesion)
+      // El botón flotante, sin texto, genera un QR nuevo para compartir. El
+      // guardia no tiene ese permiso (solo el propio, que está en la cabecera).
+      fab: !sesion.tiene(Permisos.generarQr)
           ? null
           : FloatingActionButton(
               tooltip: context.l10n.qrGenerarBoton,
