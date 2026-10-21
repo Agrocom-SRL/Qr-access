@@ -21,6 +21,12 @@ const Set<String> _usuario = {
   Permisos.verQr,
   Permisos.verEventos,
 };
+const Set<String> _guardia = {
+  Permisos.emitirQr,
+  Permisos.verEventos,
+  Permisos.verEventosAsignados,
+  Permisos.supervisarPuertas,
+};
 const Set<String> _administrador = {
   Permisos.emitirQr,
   Permisos.verQr,
@@ -116,7 +122,7 @@ Future<SesionFalsa> _montar(
 
 void main() {
   group('inicio de usuario (C04a)', () {
-    testWidgets('saluda por el primer nombre y muestra el hero Emitir QR', (
+    testWidgets('saluda por el primer nombre y muestra el hero Generar QR', (
       tester,
     ) async {
       await _montar(tester, permisos: _usuario);
@@ -175,7 +181,7 @@ void main() {
       expect(find.text('destino /qr/nuevo'), findsOneWidget);
     });
 
-    testWidgets('el botón flotante, sin texto, abre el QR propio', (
+    testWidgets('el botón flotante, sin texto, genera un QR nuevo', (
       tester,
     ) async {
       await _montar(tester, permisos: _usuario);
@@ -185,7 +191,38 @@ void main() {
         find.descendant(of: fab, matching: find.byType(Text)),
         findsNothing,
       );
+      expect(
+        tester.widget<FloatingActionButton>(fab).tooltip,
+        textosEn(tester).qrEmitirBoton,
+      );
       await tester.tap(fab);
+      await tester.pumpAndSettle();
+      expect(find.text('destino /qr/nuevo'), findsOneWidget);
+    });
+
+    testWidgets('la cabecera lleva el QR propio y abre /qr/rapido', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario);
+      final qrPropio = find.byTooltip(textosEn(tester).inicioQrPropio);
+      expect(qrPropio, findsOneWidget);
+      expect(
+        find.descendant(of: qrPropio, matching: find.byIcon(Icons.how_to_reg)),
+        findsOneWidget,
+      );
+      await tester.tap(qrPropio);
+      await tester.pumpAndSettle();
+      expect(find.text('destino /qr/rapido'), findsOneWidget);
+    });
+
+    testWidgets('el guardia no ve el botón de generar, pero sí su QR propio', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _guardia);
+      expect(find.byType(FloatingActionButton), findsNothing);
+      final qrPropio = find.byTooltip(textosEn(tester).inicioQrPropio);
+      expect(qrPropio, findsOneWidget);
+      await tester.tap(qrPropio);
       await tester.pumpAndSettle();
       expect(find.text('destino /qr/rapido'), findsOneWidget);
     });
@@ -206,6 +243,23 @@ void main() {
       expect(find.text('1'), findsOneWidget);
       expect(find.text(textos.inicioUltimosEventos), findsOneWidget);
       expect(find.text(textos.eventoMotivoQrVencido), findsOneWidget);
+    });
+
+    testWidgets('la cabecera lleva el QR propio y el botón flotante genera', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _administrador);
+      final textos = textosEn(tester);
+
+      expect(find.byTooltip(textos.inicioQrPropio), findsOneWidget);
+      final fab = find.byType(FloatingActionButton);
+      expect(
+        tester.widget<FloatingActionButton>(fab).tooltip,
+        textos.qrEmitirBoton,
+      );
+      await tester.tap(fab);
+      await tester.pumpAndSettle();
+      expect(find.text('destino /qr/nuevo'), findsOneWidget);
     });
 
     testWidgets('no muestra el inicio de usuario', (tester) async {

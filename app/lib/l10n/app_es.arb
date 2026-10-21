@@ -366,7 +366,7 @@
   "@rolDescripcionGuardia": {
     "description": "Descripción del rol Guardia en elegir rol"
   },
-  "rolDescripcionUsuario": "Emitir y compartir QR",
+  "rolDescripcionUsuario": "Generar y compartir QR",
   "@rolDescripcionUsuario": {
     "description": "Descripción del rol Usuario en elegir rol"
   },
@@ -374,7 +374,7 @@
   "@navInicio": {
     "description": "Destino de navegación"
   },
-  "navEmitirQr": "Emitir QR",
+  "navEmitirQr": "Generar QR",
   "@navEmitirQr": {
     "description": "Destino de navegación (rail)"
   },
@@ -447,7 +447,7 @@
   "@inicioSinVigentes": {
     "description": "Estado vacío de Vigentes hoy"
   },
-  "inicioSinVigentesAyuda": "Emite uno y compártelo con quien va a entrar.",
+  "inicioSinVigentesAyuda": "Genera uno y compártelo con quien va a entrar.",
   "@inicioSinVigentesAyuda": {
     "description": "Ayuda del estado vacío de Vigentes hoy"
   },
@@ -690,7 +690,7 @@
   "@qrColumnaPuertas": {
     "description": "Encabezado de la tabla de Mis QR"
   },
-  "qrColumnaEmitido": "Emitido",
+  "qrColumnaEmitido": "Generado",
   "@qrColumnaEmitido": {
     "description": "Encabezado de la tabla de Mis QR"
   },
@@ -710,7 +710,7 @@
   "@qrMisQrSinResultados": {
     "description": "Estado vacío del listado para otro filtro"
   },
-  "qrMisQrSinResultadosAyuda": "Los QR que emitas aparecerán aquí.",
+  "qrMisQrSinResultadosAyuda": "Los QR que generes aparecerán aquí.",
   "@qrMisQrSinResultadosAyuda": {
     "description": "Ayuda del estado vacío del listado"
   },
@@ -718,7 +718,7 @@
   "@qrMisQrErrorCargar": {
     "description": "Título del estado de error de Mis QR"
   },
-  "qrEmitirTitulo": "Emitir QR",
+  "qrEmitirTitulo": "Generar QR",
   "@qrEmitirTitulo": {
     "description": "Título del stepper y del hero del inicio"
   },
@@ -862,7 +862,7 @@
   "@qrEmitirEtiquetaEjemplo": {
     "description": "Placeholder del campo de etiqueta"
   },
-  "qrEmitirRevisa": "Revisa antes de emitir.",
+  "qrEmitirRevisa": "Revisa antes de generar.",
   "@qrEmitirRevisa": {
     "description": "Texto del paso 3"
   },
@@ -874,7 +874,7 @@
   "@qrResumenPuertas": {
     "description": "Clave del resumen"
   },
-  "qrResumenSitio": "Sitio",
+  "qrResumenSitio": "Propiedad",
   "@qrResumenSitio": {
     "description": "Clave del resumen"
   },
@@ -894,15 +894,15 @@
   "@qrEmitirAvisoUnSoloUso": {
     "description": "Aviso informativo del paso 3"
   },
-  "qrEmitirBoton": "Emitir QR",
+  "qrEmitirBoton": "Generar QR",
   "@qrEmitirBoton": {
     "description": "Botón principal de emitir y acción de los listados"
   },
-  "qrEmitiendo": "Emitiendo",
+  "qrEmitiendo": "Generando",
   "@qrEmitiendo": {
     "description": "Botón Emitir QR mientras se envía"
   },
-  "qrEmitirErrorEmitir": "No pudimos emitir el QR. {detalle}",
+  "qrEmitirErrorEmitir": "No pudimos generar el QR. {detalle}",
   "@qrEmitirErrorEmitir": {
     "description": "Aviso de error al emitir, con el detalle traducido",
     "placeholders": {
@@ -923,7 +923,7 @@
   "@qrVerQr": {
     "description": "Botón de una tarjeta de Mis QR que abre el QR para mostrarlo"
   },
-  "qrSoloEnOtroDispositivo": "Solo se puede ver en el dispositivo donde lo emitiste.",
+  "qrSoloEnOtroDispositivo": "Solo se puede ver en el dispositivo donde lo generaste.",
   "@qrSoloEnOtroDispositivo": {
     "description": "Aviso de un QR vigente cuyo código solo está en el dispositivo donde se emitió"
   },
@@ -1024,7 +1024,7 @@
   "@eventosColumnaPuerta": {
     "description": "Encabezado de la tabla de eventos"
   },
-  "eventosColumnaSitio": "Sitio",
+  "eventosColumnaSitio": "Propiedad",
   "@eventosColumnaSitio": {
     "description": "Encabezado de la tabla de eventos y de puertas"
   },
@@ -1423,15 +1423,15 @@
   "@comunErrorPinSufijoEnUso": {
     "description": "Error al elegir un PIN que ya existe en la cuenta"
   },
-  "comunErrorSitioNombreExistente": "Ya hay un sitio con ese nombre.",
+  "comunErrorSitioNombreExistente": "Ya hay una propiedad con ese nombre.",
   "@comunErrorSitioNombreExistente": {
     "description": "Error al repetir el nombre de un sitio"
   },
-  "comunErrorPuertaNombreExistente": "Ya hay una puerta con ese nombre en el sitio.",
+  "comunErrorPuertaNombreExistente": "Ya hay una puerta con ese nombre en la propiedad.",
   "@comunErrorPuertaNombreExistente": {
     "description": "Error al repetir el nombre de una puerta"
   },
-  "comunErrorSitioConPuertas": "Quita primero las puertas del sitio.",
+  "comunErrorSitioConPuertas": "Quita primero las puertas de la propiedad.",
   "@comunErrorSitioConPuertas": {
     "description": "Error al eliminar un sitio con puertas"
   },
@@ -1439,39 +1439,39 @@
   "@comunErrorPuertaConDispositivo": {
     "description": "Error al eliminar una puerta con lector"
   },
-  "comunErrorSitioNoEncontrado": "No encontramos ese sitio.",
+  "comunErrorSitioNoEncontrado": "No encontramos esa propiedad.",
   "@comunErrorSitioNoEncontrado": {
     "description": "Error de sitio inexistente"
   },
-  "estructuraTitulo": "Sitios y puertas",
+  "estructuraTitulo": "Propiedades y puertas",
   "@estructuraTitulo": {
     "description": "Título de la pantalla de gestión de sitios y puertas"
   },
-  "estructuraGestionar": "Gestionar sitios y puertas",
+  "estructuraGestionar": "Gestionar propiedades y puertas",
   "@estructuraGestionar": {
     "description": "Botón que abre la gestión de sitios y puertas"
   },
-  "estructuraErrorCargar": "No pudimos cargar los sitios y puertas.",
+  "estructuraErrorCargar": "No pudimos cargar las propiedades y puertas.",
   "@estructuraErrorCargar": {
     "description": "Error al cargar la estructura"
   },
-  "estructuraSinSitios": "Aún no hay sitios",
+  "estructuraSinSitios": "Aún no hay propiedades",
   "@estructuraSinSitios": {
     "description": "Vacío de la gestión de sitios"
   },
-  "estructuraSinSitiosAyuda": "Crea el primero para registrar sus puertas.",
+  "estructuraSinSitiosAyuda": "Crea la primera para registrar sus puertas.",
   "@estructuraSinSitiosAyuda": {
     "description": "Ayuda del vacío de sitios"
   },
-  "estructuraSitioNuevo": "Nuevo sitio",
+  "estructuraSitioNuevo": "Nueva propiedad",
   "@estructuraSitioNuevo": {
     "description": "Acción y título del diálogo de alta de sitio"
   },
-  "estructuraSitioEditar": "Editar sitio",
+  "estructuraSitioEditar": "Editar propiedad",
   "@estructuraSitioEditar": {
     "description": "Título del diálogo de edición de sitio"
   },
-  "estructuraSitioNombre": "Nombre del sitio",
+  "estructuraSitioNombre": "Nombre de la propiedad",
   "@estructuraSitioNombre": {
     "description": "Campo nombre del sitio"
   },
@@ -1520,7 +1520,7 @@
   "@estructuraSinPuertas": {
     "description": "Sitio sin puertas"
   },
-  "estructuraEliminarSitioTitulo": "¿Eliminar el sitio {nombre}?",
+  "estructuraEliminarSitioTitulo": "¿Eliminar la propiedad {nombre}?",
   "@estructuraEliminarSitioTitulo": {
     "description": "Título de la confirmación de baja de un sitio",
     "placeholders": {
@@ -1529,7 +1529,7 @@
       }
     }
   },
-  "estructuraEliminarSitioMensaje": "Solo se puede eliminar un sitio que no tenga puertas.",
+  "estructuraEliminarSitioMensaje": "Solo se puede eliminar una propiedad que no tenga puertas.",
   "@estructuraEliminarSitioMensaje": {
     "description": "Mensaje de la baja de un sitio"
   },
@@ -1620,15 +1620,15 @@
       }
     }
   },
-  "seguimientoRechazoUsado": "Este QR ya se usó. Emite uno nuevo.",
+  "seguimientoRechazoUsado": "Este QR ya se usó. Genera uno nuevo.",
   "@seguimientoRechazoUsado": {
     "description": "Explicación del rechazo qr.usado"
   },
-  "seguimientoRechazoVencido": "Este QR venció. Emite uno nuevo.",
+  "seguimientoRechazoVencido": "Este QR venció. Genera uno nuevo.",
   "@seguimientoRechazoVencido": {
     "description": "Explicación del rechazo qr.vencido"
   },
-  "seguimientoRechazoAnulado": "Este QR fue anulado. Emite uno nuevo.",
+  "seguimientoRechazoAnulado": "Este QR fue anulado. Genera uno nuevo.",
   "@seguimientoRechazoAnulado": {
     "description": "Explicación del rechazo qr.anulado"
   },
