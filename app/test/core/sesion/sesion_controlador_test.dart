@@ -20,7 +20,7 @@ const Map<String, Object> _sesionActual = {
   'usuario': {'id': 'u1', 'etiqueta': 'Ana'},
   'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
   'rol_activo': {'id': 'r1', 'nombre': 'Miembro'},
-  'permisos': ['accesos.qr.emitir'],
+  'permisos': ['accesos.qr.generar'],
   'suscripcion': {'plan': 'Empresa', 'hasta': '2027-03-31T04:00:00.000Z'},
 };
 
@@ -147,7 +147,7 @@ void main() {
 
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
       expect(estado.tiene(Permisos.anularQr), isFalse);
       final autenticada = estado as SesionAutenticada;
       expect(autenticada.suscripcion?.plan, 'Empresa');
@@ -271,7 +271,7 @@ void main() {
 
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
     });
 
     test('si le quitaron el rol, no entra y olvida el refresco', () async {
@@ -291,7 +291,7 @@ void main() {
       usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
       cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Cuenta Demo'),
       rolActivo: RolSesion(id: 'r2', nombre: 'Guardia'),
-      permisos: {Permisos.emitirQr},
+      permisos: {Permisos.generarQr},
     );
 
     test('al abrir la app entra con la última sesión y su mismo rol', () async {
@@ -310,7 +310,7 @@ void main() {
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
       expect((estado as SesionAutenticada).rolActivo.nombre, 'Guardia');
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
       // El refresco se conserva para renovar cuando vuelva la red.
       expect(almacen.refresco, 'ref-1');
     });

@@ -5,7 +5,7 @@ import type { EstadoDeQr } from './domain/estado-qr.js';
 
 export interface QrFila extends RowDataPacket {
   id: string;
-  emitido_por: string;
+  generado_por: string;
   etiqueta: string | null;
   vence_at: Date;
   usado_at: Date | null;
@@ -14,10 +14,10 @@ export interface QrFila extends RowDataPacket {
 }
 
 const COLUMNAS_DE_QR =
-  't.id, t.emitido_por, t.etiqueta, t.vence_at, t.usado_at, t.anulado_at, t.created_at';
+  't.id, t.generado_por, t.etiqueta, t.vence_at, t.usado_at, t.anulado_at, t.created_at';
 
 export interface NuevoQr {
-  readonly emitidoPor: string;
+  readonly generadoPor: string;
   readonly tokenHash: string;
   readonly etiqueta: string | null;
   readonly venceAt: Date;
@@ -27,8 +27,8 @@ export interface NuevoQr {
 
 export interface FiltroDeQr {
   readonly estado: EstadoDeQr | null;
-  /** Solo los emitidos por este usuario; `null` = todos los de la cuenta. */
-  readonly emitidoPor: string | null;
+  /** Solo los generados por este usuario; `null` = todos los de la cuenta. */
+  readonly generadoPor: string | null;
   readonly ahora: Date;
 }
 
@@ -48,27 +48,27 @@ function armarFiltro(filtro: FiltroDeQr): { donde?: string; params: unknown[] } 
     condiciones.push(CONDICION_DE_ESTADO[filtro.estado]);
     if (filtro.estado === 'vencido' || filtro.estado === 'vigente') params.push(filtro.ahora);
   }
-  if (filtro.emitidoPor !== null) {
-    condiciones.push('t.emitido_por = ?');
-    params.push(filtro.emitidoPor);
+  if (filtro.generadoPor !== null) {
+    condiciones.push('t.generado_por = ?');
+    params.push(filtro.generadoPor);
   }
   return { donde: condiciones.join(' AND '), params };
 }
 
 interface ConteoDeQrFila extends RowDataPacket {
-  emitido_por: string;
-  emitidos: number | string;
+  generado_por: string;
+  generados: number | string;
   usados: number | string | null;
 }
 
 interface QrPorDiaFila extends RowDataPacket {
-  emitido_por: string;
+  generado_por: string;
   dia: string;
   total: number | string;
 }
 
 interface UltimoQrFila extends RowDataPacket {
-  emitido_por: string;
+  generado_por: string;
   ultimo: Date;
 }
 
@@ -78,7 +78,7 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     super(pool, {
       nombre: 'qr_accesos',
       columnas: [
-        'emitido_por',
+        'generado_por',
         'token_hash',
         'etiqueta',
         'es_propio',
@@ -96,7 +96,7 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
 
   crear(tx: Transaccion, qr: NuevoQr): Promise<string> {
     return this.insertar(tx, {
-      emitido_por: qr.emitidoPor,
+      generado_por: qr.generadoPor,
       token_hash: qr.tokenHash,
       etiqueta: qr.etiqueta,
       es_propio: qr.propio === true ? 1 : 0,
@@ -105,14 +105,14 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
   }
 
   /**
-   * Anula los QR propios todavía activos del usuario (aunque ya hayan vencido): al emitir uno
+   * Anula los QR propios todavía activos del usuario (aunque ya hayan vencido): al generar uno
    * nuevo, el anterior deja de servir. Si alguien le sacó una foto, esa foto ya no abre.
    */
   async anularPropiosActivos(tx: Transaccion, usuarioId: string, ahora: Date): Promise<number> {
     const activos = await this.seleccionar<QrFila>({
       columnas: COLUMNAS_DE_QR,
       donde:
-        't.emitido_por = ? AND t.es_propio = 1 AND t.anulado_at IS NULL AND t.usado_at IS NULL',
+        't.generado_por = ? AND t.es_propio = 1 AND t.anulado_at IS NULL AND t.usado_at IS NULL',
       params: [usuarioId],
     });
     for (const activo of activos) await this.anular(tx, activo.id, usuarioId, ahora);
@@ -126,17 +126,20 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
   async actividadDesde(
     usuarioIds: readonly string[],
     desde: Date,
-  ): Promise<Map<string, { emitidos: number; usados: number }>> {
-    const mapa = new Map<string, { emitidos: number; usados: number }>();
+  ): Promise<Map<string, { generados: number; usados: number }>> {
+    const mapa = new Map<string, { generados: number; usados: number }>();
     if (usuarioIds.length === 0) return mapa;
     const filas = await this.seleccionar<ConteoDeQrFila>({
-      columnas: 't.emitido_por, COUNT(*) AS emitidos, SUM(t.usado_at IS NOT NULL) AS usados',
-      donde: 't.emitido_por IN (?) AND t.created_at >= ?',
+      columnas: 't.generado_por, COUNT(*) AS generados, SUM(t.usado_at IS NOT NULL) AS usados',
+      donde: 't.generado_por IN (?) AND t.created_at >= ?',
       params: [usuarioIds, desde],
-      agrupar: 't.emitido_por',
+      agrupar: 't.generado_por',
     });
     for (const fila of filas) {
-      mapa.set(fila.emitido_por, { emitidos: Number(fila.emitidos), usados: Number(fila.usados) });
+      mapa.set(fila.generado_por, {
+        generados: Number(fila.generados),
+        usados: Number(fila.usados),
+      });
     }
     return mapa;
   }
@@ -154,28 +157,28 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     if (usuarioIds.length === 0) return mapa;
     if (!/^[+-]\d{2}:\d{2}$/.test(desfaseUtc)) throw new Error('Desfase horario inválido');
     const filas = await this.seleccionar<QrPorDiaFila>({
-      columnas: `t.emitido_por, DATE_FORMAT(CONVERT_TZ(t.created_at, '+00:00', '${desfaseUtc}'), '%Y-%m-%d') AS dia, COUNT(*) AS total`,
-      donde: 't.emitido_por IN (?) AND t.created_at >= ?',
+      columnas: `t.generado_por, DATE_FORMAT(CONVERT_TZ(t.created_at, '+00:00', '${desfaseUtc}'), '%Y-%m-%d') AS dia, COUNT(*) AS total`,
+      donde: 't.generado_por IN (?) AND t.created_at >= ?',
       params: [usuarioIds, desde],
-      agrupar: 't.emitido_por, dia',
+      agrupar: 't.generado_por, dia',
     });
     for (const fila of filas) {
-      mapa.set(fila.emitido_por, Math.max(mapa.get(fila.emitido_por) ?? 0, Number(fila.total)));
+      mapa.set(fila.generado_por, Math.max(mapa.get(fila.generado_por) ?? 0, Number(fila.total)));
     }
     return mapa;
   }
 
   /** El último QR que generó cada usuario, de cualquier fecha. */
-  async ultimoEmitidoDe(usuarioIds: readonly string[]): Promise<Map<string, Date>> {
+  async ultimoGeneradoDe(usuarioIds: readonly string[]): Promise<Map<string, Date>> {
     const mapa = new Map<string, Date>();
     if (usuarioIds.length === 0) return mapa;
     const filas = await this.seleccionar<UltimoQrFila>({
-      columnas: 't.emitido_por, MAX(t.created_at) AS ultimo',
-      donde: 't.emitido_por IN (?)',
+      columnas: 't.generado_por, MAX(t.created_at) AS ultimo',
+      donde: 't.generado_por IN (?)',
       params: [usuarioIds],
-      agrupar: 't.emitido_por',
+      agrupar: 't.generado_por',
     });
-    for (const fila of filas) mapa.set(fila.emitido_por, fila.ultimo);
+    for (const fila of filas) mapa.set(fila.generado_por, fila.ultimo);
     return mapa;
   }
 
@@ -215,12 +218,12 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
 
   /** Cuántos QR hay en cada estado (las pastillas de "Mis QR"). */
   async contarPorEstado(
-    emitidoPor: string | null,
+    generadoPor: string | null,
     ahora: Date,
   ): Promise<Record<EstadoDeQr, number>> {
     const conteos = { vigente: 0, usado: 0, vencido: 0, anulado: 0 };
     for (const estado of Object.keys(conteos) as EstadoDeQr[]) {
-      conteos[estado] = await this.contarFiltrados({ estado, emitidoPor, ahora });
+      conteos[estado] = await this.contarFiltrados({ estado, generadoPor, ahora });
     }
     return conteos;
   }
@@ -300,7 +303,7 @@ export interface EventoFila extends RowDataPacket {
   puerta_id: string;
   qr_acceso_id: string | null;
   qr_etiqueta: string | null;
-  qr_emitido_por: string | null;
+  qr_generado_por: string | null;
 }
 
 export interface IntentoFila extends RowDataPacket {
@@ -311,8 +314,8 @@ export interface IntentoFila extends RowDataPacket {
 }
 
 export interface FiltroDeEventos {
-  /** Solo los de QR emitidos por este usuario; `null` = todos los de la cuenta. */
-  readonly emitidoPor: string | null;
+  /** Solo los de QR generados por este usuario; `null` = todos los de la cuenta. */
+  readonly generadoPor: string | null;
   /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
   readonly puertaIds: readonly string[] | null;
   readonly resultado: 'permitido' | 'rechazado' | null;
@@ -332,9 +335,9 @@ export interface ResumenDeEventosFila extends RowDataPacket {
 function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
   const condiciones: string[] = [];
   const params: unknown[] = [];
-  if (filtro.emitidoPor !== null) {
-    condiciones.push('q.emitido_por = ?');
-    params.push(filtro.emitidoPor);
+  if (filtro.generadoPor !== null) {
+    condiciones.push('q.generado_por = ?');
+    params.push(filtro.generadoPor);
   }
   if (filtro.puertaIds !== null) {
     if (filtro.puertaIds.length === 0) {
@@ -416,7 +419,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<EventoFila>({
       columnas:
-        't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.emitido_por AS qr_emitido_por',
+        't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por',
       uniones: UNION_QR,
       ...(donde === undefined ? {} : { donde }),
       params,

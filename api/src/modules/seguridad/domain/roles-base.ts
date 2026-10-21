@@ -14,7 +14,7 @@ export interface RolBase {
 /** Lo que puede hacer quien solo usa la puerta con sus QR. */
 const PERMISOS_DE_MIEMBRO = [
   'organizacion.puerta.ver',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
   'accesos.qr.ver',
   'accesos.qr.anular',
   'accesos.evento.ver',
@@ -41,7 +41,7 @@ export const ROLES_BASE: readonly RolBase[] = [
     permisos: [
       'organizacion.puerta.ver',
       'organizacion.puerta.supervisar',
-      'accesos.qr.emitir',
+      'accesos.qr.generar',
       'accesos.evento.ver',
       'accesos.evento.ver_asignadas',
     ],

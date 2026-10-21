@@ -1,20 +1,20 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Pasos del stepper (handoff C05): puertas, vigencia y confirmar.
-enum PasoEmision { puertas, vigencia, confirmar }
+enum PasoGeneracion { puertas, vigencia, confirmar }
 
-/// Estado del formulario de emisión. Cada cambio reemplaza el estado entero,
+/// Estado del formulario de generación. Cada cambio reemplaza el estado entero,
 /// así que un error mostrado se borra al corregir el dato.
 @immutable
-class EmitirQrEstado {
+class GenerarQrEstado {
   const new({
-    this.paso = PasoEmision.puertas,
+    this.paso = PasoGeneracion.puertas,
     this.puertaIds = const {},
     this.vigencia = const Vigencia(OpcionVigencia.dosHoras),
     this.etiqueta = '',
@@ -23,27 +23,27 @@ class EmitirQrEstado {
     this.errorApi,
   });
 
-  final PasoEmision paso;
+  final PasoGeneracion paso;
   final Set<String> puertaIds;
   final Vigencia vigencia;
   final String etiqueta;
   final bool enviando;
 
   /// Error de los datos del formulario (sin puertas, etiqueta larga…).
-  final ErrorDatosEmision? errorDatos;
+  final ErrorDatosGeneracion? errorDatos;
 
-  /// Error devuelto por la API al emitir.
+  /// Error devuelto por la API al generar.
   final ErrorApi? errorApi;
 
-  EmitirQrEstado copiar({
-    PasoEmision? paso,
+  GenerarQrEstado copiar({
+    PasoGeneracion? paso,
     Set<String>? puertaIds,
     Vigencia? vigencia,
     String? etiqueta,
     bool enviando = false,
-    ErrorDatosEmision? errorDatos,
+    ErrorDatosGeneracion? errorDatos,
     ErrorApi? errorApi,
-  }) => EmitirQrEstado(
+  }) => GenerarQrEstado(
     paso: paso ?? this.paso,
     puertaIds: puertaIds ?? this.puertaIds,
     vigencia: vigencia ?? this.vigencia,
@@ -54,15 +54,15 @@ class EmitirQrEstado {
   );
 }
 
-/// Controlador de la pantalla de emitir QR (HU-11). Valida, emite y devuelve
+/// Controlador de la pantalla de generar QR (HU-11). Valida, genera y devuelve
 /// el QR a la pantalla, que lo muestra: el token no se guarda aquí.
-class EmitirQrControlador extends Notifier<EmitirQrEstado> {
+class GenerarQrControlador extends Notifier<GenerarQrEstado> {
   @override
-  EmitirQrEstado build() => const EmitirQrEstado();
+  GenerarQrEstado build() => const GenerarQrEstado();
 
   /// "Repetir último": arranca con las puertas y la etiqueta de ese QR.
-  void prellenar(PrellenadoEmision prellenado) {
-    state = EmitirQrEstado(
+  void prellenar(PrellenadoGeneracion prellenado) {
+    state = GenerarQrEstado(
       puertaIds: prellenado.puertaIds,
       etiqueta: prellenado.etiqueta ?? '',
     );
@@ -101,26 +101,28 @@ class EmitirQrControlador extends Notifier<EmitirQrEstado> {
       return;
     }
     final indice = state.paso.index;
-    if (indice < PasoEmision.values.length - 1) {
-      state = state.copiar(paso: PasoEmision.values[indice + 1]);
+    if (indice < PasoGeneracion.values.length - 1) {
+      state = state.copiar(paso: PasoGeneracion.values[indice + 1]);
     }
   }
 
   void atras() {
     final indice = state.paso.index;
-    if (indice > 0) state = state.copiar(paso: PasoEmision.values[indice - 1]);
+    if (indice > 0) {
+      state = state.copiar(paso: PasoGeneracion.values[indice - 1]);
+    }
   }
 
-  void irAlPaso(PasoEmision paso) {
+  void irAlPaso(PasoGeneracion paso) {
     if (paso.index <= state.paso.index) state = state.copiar(paso: paso);
   }
 
-  /// Emite el QR. Devuelve `null` si los datos no son válidos o la API falla;
+  /// Genera el QR. Devuelve `null` si los datos no son válidos o la API falla;
   /// en ese caso el error queda en el estado para mostrarlo.
-  Future<QrEmitido?> emitir() async {
+  Future<QrGenerado?> generar() async {
     if (state.enviando) return null;
     final ahora = ref.read(relojProvider)();
-    final errorDatos = DatosEmision.errorDe(
+    final errorDatos = DatosGeneracion.errorDe(
       puertaIds: state.puertaIds,
       etiqueta: state.etiqueta,
       vigencia: state.vigencia,
@@ -130,7 +132,7 @@ class EmitirQrControlador extends Notifier<EmitirQrEstado> {
       state = state.copiar(errorDatos: errorDatos);
       return null;
     }
-    final datos = DatosEmision(
+    final datos = DatosGeneracion(
       puertaIds: state.puertaIds,
       vigencia: state.vigencia,
       etiqueta: state.etiqueta,
@@ -140,7 +142,7 @@ class EmitirQrControlador extends Notifier<EmitirQrEstado> {
     try {
       final qr = await ref
           .read(qrAccesosRepositorioProvider)
-          .emitir(datos, ahora: ahora);
+          .generar(datos, ahora: ahora);
       state = state.copiar();
       return qr;
     } on ErrorApi catch (error) {
@@ -149,23 +151,23 @@ class EmitirQrControlador extends Notifier<EmitirQrEstado> {
     }
   }
 
-  ErrorDatosEmision? _errorDelPaso(PasoEmision paso) => switch (paso) {
-    PasoEmision.puertas =>
-      state.puertaIds.isEmpty ? ErrorDatosEmision.sinPuertas : null,
-    PasoEmision.vigencia => DatosEmision.errorDe(
+  ErrorDatosGeneracion? _errorDelPaso(PasoGeneracion paso) => switch (paso) {
+    PasoGeneracion.puertas =>
+      state.puertaIds.isEmpty ? ErrorDatosGeneracion.sinPuertas : null,
+    PasoGeneracion.vigencia => DatosGeneracion.errorDe(
       puertaIds: state.puertaIds,
       etiqueta: state.etiqueta,
       vigencia: state.vigencia,
       ahora: ref.read(relojProvider)(),
     ),
-    PasoEmision.confirmar => null,
+    PasoGeneracion.confirmar => null,
   };
 }
 
 /// Se descarta al salir: un formulario a medias no vuelve a la siguiente
-/// emisión.
-final NotifierProvider<EmitirQrControlador, EmitirQrEstado>
-emitirQrControladorProvider =
-    NotifierProvider.autoDispose<EmitirQrControlador, EmitirQrEstado>(
-      EmitirQrControlador.new,
+/// generación.
+final NotifierProvider<GenerarQrControlador, GenerarQrEstado>
+generarQrControladorProvider =
+    NotifierProvider.autoDispose<GenerarQrControlador, GenerarQrEstado>(
+      GenerarQrControlador.new,
     );

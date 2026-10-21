@@ -11,7 +11,7 @@ import {
 import { conUsuario, iniciarSesion, type Sesion } from '../helpers/http.js';
 import { fechaIsoUtc } from '../helpers/esperados.js';
 
-interface QrEmitido {
+interface QrGenerado {
   id: string;
   texto: string;
   vence_at: string;
@@ -30,7 +30,7 @@ interface QrListado {
   puertas: { id: string; nombre: string }[];
 }
 
-describe('QR de acceso: emitir, listar y anular', () => {
+describe('QR de acceso: generar, listar y anular', () => {
   let prueba: AppDePrueba;
   let a: Escenario;
   let b: Escenario;
@@ -53,7 +53,7 @@ describe('QR de acceso: emitir, listar y anular', () => {
     sesionAdminB = await iniciarSesion(prueba.app, b.administrador.pin);
   });
 
-  const emitir = (sesion: Sesion, payload: object) =>
+  const generar = (sesion: Sesion, payload: object) =>
     prueba.app.inject({
       method: 'POST',
       url: '/api/v1/qr-accesos',
@@ -74,13 +74,13 @@ describe('QR de acceso: emitir, listar y anular', () => {
     });
 
   describe('POST /api/v1/qr-accesos', () => {
-    it('emite un QR con el texto AQ1.<token> y guarda solo el hash', async () => {
-      const respuesta = await emitir(sesionUsuarioA, {
+    it('genera un QR con el texto AQ1.<token> y guarda solo el hash', async () => {
+      const respuesta = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id, a.puertaTrasera.id],
         etiqueta: '  Proveedor de gas ',
       });
       expect(respuesta.statusCode).toBe(201);
-      const qr = respuesta.json<QrEmitido>();
+      const qr = respuesta.json<QrGenerado>();
       expect(qr.texto).toMatch(/^AQ1\.[A-Za-z0-9_-]{22}$/);
       expect(qr.etiqueta).toBe('Proveedor de gas');
       expect(qr.puertas).toEqual([
@@ -97,7 +97,7 @@ describe('QR de acceso: emitir, listar y anular', () => {
       const token = qr.texto.slice(4);
       expect(JSON.stringify(filas)).not.toContain(token);
       expect(filas[0]?.token_hash).toMatch(/^[0-9a-f]{64}$/);
-      expect(String(filas[0]?.emitido_por)).toBe(a.usuario.id);
+      expect(String(filas[0]?.generado_por)).toBe(a.usuario.id);
       expect(String(filas[0]?.created_by)).toBe(a.usuario.id);
       const [bitacora] = await prueba.pool.query<RowDataPacket[]>(
         "SELECT * FROM bitacoras WHERE tabla = 'qr_accesos' AND registro_id = ?",
@@ -108,19 +108,19 @@ describe('QR de acceso: emitir, listar y anular', () => {
       expect(JSON.stringify(bitacora)).not.toContain(filas[0]?.token_hash);
     });
 
-    it('el texto solo aparece en la emisión: el listado nunca lo devuelve', async () => {
-      const emitido = (
-        await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
-      ).json<QrEmitido>();
+    it('el texto solo aparece en la generación: el listado nunca lo devuelve', async () => {
+      const generado = (
+        await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
+      ).json<QrGenerado>();
       const lista = await listar(sesionUsuarioA);
-      expect(lista.body).not.toContain(emitido.texto);
+      expect(lista.body).not.toContain(generado.texto);
       expect(lista.body).not.toContain('texto');
     });
 
     it('por defecto vence al fin del día local del sitio (America/La_Paz), sin pasar el plan', async () => {
       const qr = (
-        await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
-      ).json<QrEmitido>();
+        await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
+      ).json<QrGenerado>();
       const vence = new Date(qr.vence_at);
       // La Paz es UTC-4 todo el año: el día local termina a las 04:00 UTC
       expect(vence.getUTCHours()).toBe(4);
@@ -131,22 +131,22 @@ describe('QR de acceso: emitir, listar y anular', () => {
     it('el límite del plan recorta la vigencia máxima', async () => {
       await prueba.pool.query('UPDATE planes SET max_vigencia_qr_horas = 1');
       const qr = (
-        await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
-      ).json<QrEmitido>();
+        await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })
+      ).json<QrGenerado>();
       expect(new Date(qr.vence_at).getTime() - Date.now()).toBeLessThanOrEqual(3_600_000);
     });
 
     it('acepta una vigencia de varios días y rechaza la que pasa el techo de 7 días', async () => {
       const enTresDias = new Date(Date.now() + 72 * 3_600_000).toISOString();
-      const ok = await emitir(sesionUsuarioA, {
+      const ok = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id],
         vence_at: enTresDias,
       });
       expect(ok.statusCode).toBe(201);
-      expect(ok.json<QrEmitido>().vence_at).toBe(enTresDias);
+      expect(ok.json<QrGenerado>().vence_at).toBe(enTresDias);
 
       const enDiezDias = new Date(Date.now() + 240 * 3_600_000).toISOString();
-      const excedida = await emitir(sesionUsuarioA, {
+      const excedida = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id],
         vence_at: enDiezDias,
       });
@@ -156,23 +156,23 @@ describe('QR de acceso: emitir, listar y anular', () => {
 
     it('acepta una vigencia menor y rechaza una mayor al máximo o ya vencida', async () => {
       const enUnaHora = new Date(Date.now() + 3_600_000).toISOString();
-      const ok = await emitir(sesionUsuarioA, {
+      const ok = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id],
         vence_at: enUnaHora,
       });
       expect(ok.statusCode).toBe(201);
-      expect(ok.json<QrEmitido>().vence_at).toBe(enUnaHora);
+      expect(ok.json<QrGenerado>().vence_at).toBe(enUnaHora);
 
       await prueba.pool.query('UPDATE planes SET max_vigencia_qr_horas = 1');
       const enDosDias = new Date(Date.now() + 48 * 3_600_000).toISOString();
-      const excedida = await emitir(sesionUsuarioA, {
+      const excedida = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id],
         vence_at: enDosDias,
       });
       expect(excedida.statusCode).toBe(422);
       expect(excedida.json()).toMatchObject({ code: 'qr.vigencia_excedida' });
 
-      const pasada = await emitir(sesionUsuarioA, {
+      const pasada = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id],
         vence_at: new Date(Date.now() - 1000).toISOString(),
       });
@@ -180,8 +180,8 @@ describe('QR de acceso: emitir, listar y anular', () => {
       expect(pasada.json()).toMatchObject({ code: 'qr.vigencia_invalida' });
     });
 
-    it('aislamiento: una puerta de otra cuenta es un 404 y no emite nada', async () => {
-      const respuesta = await emitir(sesionUsuarioA, {
+    it('aislamiento: una puerta de otra cuenta es un 404 y no genera nada', async () => {
+      const respuesta = await generar(sesionUsuarioA, {
         puerta_ids: [a.puertaPrincipal.id, b.puertaPrincipal.id],
       });
       expect(respuesta.statusCode).toBe(404);
@@ -192,22 +192,22 @@ describe('QR de acceso: emitir, listar y anular', () => {
       expect(Number(filas[0]?.total)).toBe(0);
     });
 
-    it('con la suscripción vencida no emite (403 suscripcion.vencida)', async () => {
+    it('con la suscripción vencida no genera (403 suscripcion.vencida)', async () => {
       await prueba.pool.query(
         'UPDATE suscripciones SET hasta = NOW(3) - INTERVAL 1 DAY WHERE tenant_id = ?',
         [a.cuenta.id],
       );
-      const respuesta = await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] });
+      const respuesta = await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] });
       expect(respuesta.statusCode).toBe(403);
       expect(respuesta.json()).toMatchObject({ code: 'suscripcion.vencida' });
     });
 
-    it('una cuenta sin suscripción tampoco emite, aunque otra sí tenga', async () => {
+    it('una cuenta sin suscripción tampoco genera, aunque otra sí tenga', async () => {
       await prueba.pool.query('DELETE FROM suscripciones WHERE tenant_id = ?', [a.cuenta.id]);
       expect(
-        (await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })).statusCode,
+        (await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })).statusCode,
       ).toBe(403);
-      expect((await emitir(sesionAdminB, { puerta_ids: [b.puertaPrincipal.id] })).statusCode).toBe(
+      expect((await generar(sesionAdminB, { puerta_ids: [b.puertaPrincipal.id] })).statusCode).toBe(
         201,
       );
     });
@@ -220,18 +220,18 @@ describe('QR de acceso: emitir, listar y anular', () => {
         { puerta_ids: [a.puertaPrincipal.id], etiqueta: 'x'.repeat(61) },
         { puerta_ids: [a.puertaPrincipal.id], vence_at: 'mañana' },
       ]) {
-        const respuesta = await emitir(sesionUsuarioA, payload);
+        const respuesta = await generar(sesionUsuarioA, payload);
         expect(respuesta.statusCode, JSON.stringify(payload)).toBe(400);
         expect(respuesta.json()).toMatchObject({ code: 'validacion.invalida' });
       }
     });
 
-    it('exige el permiso accesos.qr.emitir en el rol activo', async () => {
+    it('exige el permiso accesos.qr.generar en el rol activo', async () => {
       await prueba.pool.query(
         'DELETE rp FROM rol_permisos rp JOIN permisos p ON p.id = rp.permiso_id WHERE p.codigo = ? AND rp.rol_id = ?',
-        ['accesos.qr.emitir', a.rolMiembroId],
+        ['accesos.qr.generar', a.rolMiembroId],
       );
-      const respuesta = await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] });
+      const respuesta = await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] });
       expect(respuesta.statusCode).toBe(403);
       expect(respuesta.json()).toMatchObject({ code: 'permiso.denegado' });
       expect(
@@ -323,15 +323,15 @@ describe('QR de acceso: emitir, listar y anular', () => {
     });
 
     it('trae sus campos del contrato y sus puertas', async () => {
-      const emitido = (
-        await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id], etiqueta: 'Visita' })
-      ).json<QrEmitido>();
+      const generado = (
+        await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id], etiqueta: 'Visita' })
+      ).json<QrGenerado>();
       const [qr] = (await listar(sesionUsuarioA)).json<{ datos: QrListado[] }>().datos;
       expect(qr).toEqual({
-        id: emitido.id,
+        id: generado.id,
         etiqueta: 'Visita',
         estado: 'vigente',
-        vence_at: emitido.vence_at,
+        vence_at: generado.vence_at,
         usado_at: null,
         anulado_at: null,
         created_at: fechaIsoUtc(),
@@ -357,7 +357,7 @@ describe('QR de acceso: emitir, listar y anular', () => {
       expect(lista.datos.map((qr) => qr.id)).not.toContain(deB.id);
     });
 
-    it('pagina por fecha de emisión, del más reciente al más antiguo', async () => {
+    it('pagina por fecha de generación, del más reciente al más antiguo', async () => {
       for (let i = 0; i < 3; i += 1)
         await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
       const pagina = (await listar(sesionUsuarioA, '?por_pagina=2&pagina=2')).json<{
@@ -436,10 +436,10 @@ describe('QR de acceso: emitir, listar y anular', () => {
       'UPDATE suscripciones SET hasta = NOW(3) - INTERVAL 1 DAY WHERE tenant_id = ?',
       [b.cuenta.id],
     );
-    expect((await emitir(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })).statusCode).toBe(
+    expect((await generar(sesionUsuarioA, { puerta_ids: [a.puertaPrincipal.id] })).statusCode).toBe(
       201,
     );
-    expect((await emitir(sesionAdminB, { puerta_ids: [b.puertaPrincipal.id] })).statusCode).toBe(
+    expect((await generar(sesionAdminB, { puerta_ids: [b.puertaPrincipal.id] })).statusCode).toBe(
       403,
     );
   });

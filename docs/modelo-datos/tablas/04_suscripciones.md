@@ -30,7 +30,7 @@ El SQL completo está en `03-schema-sql.md`.
 ## Reglas
 
 - Una sola suscripción `vigente` por cuenta (columna generada `estado_vigente`).
-- Está vigente si `estado = vigente` y `desde <= ahora < hasta`. Con ella vencida o ausente, la cuenta no emite QR (`suscripcion.vencida`) y sus puertas rechazan (RF-06).
+- Está vigente si `estado = vigente` y `desde <= ahora < hasta`. Con ella vencida o ausente, la cuenta no genera QR (`suscripcion.vencida`) y sus puertas rechazan (RF-06).
 - La consulta la expone `suscripciones/contracts.ts`; en V1 la registra AGROCOM a mano.
 
 ## Dudas

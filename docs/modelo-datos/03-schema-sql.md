@@ -391,7 +391,7 @@ Migraciones: `db/migrations/20261009100014_create_qr_accesos.sql` y `20261012100
 CREATE TABLE qr_accesos (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
-  emitido_por BIGINT UNSIGNED NOT NULL,
+  generado_por BIGINT UNSIGNED NOT NULL,
   token_hash CHAR(64) NOT NULL,
   etiqueta VARCHAR(60) NULL,
   es_propio TINYINT(1) NOT NULL DEFAULT 0,
@@ -408,12 +408,12 @@ CREATE TABLE qr_accesos (
   deleted_by BIGINT UNSIGNED NULL,
   propio_activo TINYINT GENERATED ALWAYS AS (IF(es_propio = 1 AND anulado_at IS NULL AND usado_at IS NULL AND deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_qr_accesos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_qr_accesos_emisor FOREIGN KEY (emitido_por) REFERENCES usuarios (id),
+  CONSTRAINT fk_qr_accesos_generador FOREIGN KEY (generado_por) REFERENCES usuarios (id),
   CONSTRAINT fk_qr_accesos_dispositivo FOREIGN KEY (usado_dispositivo_id) REFERENCES dispositivos (id),
   CONSTRAINT fk_qr_accesos_anulador FOREIGN KEY (anulado_por) REFERENCES usuarios (id),
   UNIQUE KEY uq_qr_accesos_token (token_hash),
-  UNIQUE KEY uq_qr_accesos_propio_activo (emitido_por, propio_activo),
-  KEY idx_qr_accesos_emisor (tenant_id, emitido_por, created_at),
+  UNIQUE KEY uq_qr_accesos_propio_activo (generado_por, propio_activo),
+  KEY idx_qr_accesos_generador (tenant_id, generado_por, created_at),
   KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
@@ -631,4 +631,16 @@ Migración: `db/migrations/20261022100006_add_pin_compartido_a_usuarios.sql`
 
 ```sql
 ALTER TABLE usuarios ADD COLUMN pin_compartido_at DATETIME(3) NULL AFTER pin_generado_at;
+```
+
+## qr_accesos: `generado_por`
+
+Migración: `db/migrations/20261022100007_renombra_emitir_a_generar.sql`. Un QR se genera, no se emite: `emitido_por` pasa a `generado_por` (con su índice `idx_qr_accesos_generador` y su clave foránea `fk_qr_accesos_generador`) y el permiso `accesos.qr.emitir` pasa a `accesos.qr.generar`. El `CREATE TABLE` de arriba muestra la tabla ya con el nombre nuevo; la migración original conserva el nombre con el que se creó.
+
+```sql
+ALTER TABLE qr_accesos DROP FOREIGN KEY fk_qr_accesos_emisor;
+ALTER TABLE qr_accesos RENAME COLUMN emitido_por TO generado_por;
+ALTER TABLE qr_accesos RENAME INDEX idx_qr_accesos_emisor TO idx_qr_accesos_generador;
+ALTER TABLE qr_accesos ADD CONSTRAINT fk_qr_accesos_generador FOREIGN KEY (generado_por) REFERENCES usuarios (id);
+UPDATE permisos SET codigo = 'accesos.qr.generar' WHERE codigo = 'accesos.qr.emitir';
 ```

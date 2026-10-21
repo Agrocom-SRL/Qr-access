@@ -159,13 +159,13 @@ describe('uso de los usuarios (ADR 0028 §4)', () => {
   });
 
   it('un solo QR en la ventana lo saca de inactivo', () => {
-    const uno = { ...SIN_ACTIVIDAD, emitidos: 1, maxEnUnDia: 1 };
+    const uno = { ...SIN_ACTIVIDAD, generados: 1, maxEnUnDia: 1 };
     expect(evaluarUsuario(uno, haceDias(400), ahora).inactivo).toBe(false);
   });
 
   it('ruidoso es estrictamente más que el umbral por día', () => {
     expect(QR_POR_DIA_PARA_RUIDOSO).toBe(10);
-    const con = (maxEnUnDia: number) => ({ ...SIN_ACTIVIDAD, emitidos: maxEnUnDia, maxEnUnDia });
+    const con = (maxEnUnDia: number) => ({ ...SIN_ACTIVIDAD, generados: maxEnUnDia, maxEnUnDia });
     expect(evaluarUsuario(con(10), haceDias(1), ahora).ruidoso).toBe(false);
     expect(evaluarUsuario(con(11), haceDias(1), ahora).ruidoso).toBe(true);
   });
@@ -320,7 +320,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
       anuladoAt: null,
       venceAt: new Date('2026-10-09T13:00:00Z'),
       puertaIds: ['1', '2'],
-      emisorActivo: true,
+      generadorActivo: true,
     },
     puertaDelDispositivoId: '2',
     ahora,
@@ -335,7 +335,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, anuladoAt: ahora } })).toBe(
       'qr.anulado',
     );
-    expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, emisorActivo: false } })).toBe(
+    expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, generadorActivo: false } })).toBe(
       'qr.anulado',
     );
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, venceAt: ahora } })).toBe(
@@ -349,7 +349,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
 
   it('respeta el orden del ADR: anulado antes que vencido, vencido antes que otra puerta, otra puerta antes que suscripción', () => {
     const todoMal: EntradaDeDecision = {
-      qr: { anuladoAt: ahora, venceAt: ahora, puertaIds: [], emisorActivo: true },
+      qr: { anuladoAt: ahora, venceAt: ahora, puertaIds: [], generadorActivo: true },
       puertaDelDispositivoId: '9',
       ahora,
       suscripcionVigente: false,

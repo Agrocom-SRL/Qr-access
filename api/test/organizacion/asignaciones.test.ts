@@ -13,7 +13,7 @@ import { conUsuario, iniciarSesion, type Sesion } from '../helpers/http.js';
 const PERMISOS_DE_GUARDIA = [
   'organizacion.puerta.ver',
   'organizacion.puerta.supervisar',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
   'accesos.evento.ver',
   'accesos.evento.ver_asignadas',
 ];

@@ -6,9 +6,9 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 /// no se muestra, y la ruta tampoco se abre por URL (ADR 0004).
 const permisoPorRuta = <String, String>{
   Rutas.qrMios: Permisos.verQr,
-  Rutas.qrNuevo: Permisos.emitirQr,
-  Rutas.qrEmitido: Permisos.emitirQr,
-  Rutas.qrRapido: Permisos.emitirQr,
+  Rutas.qrNuevo: Permisos.generarQr,
+  Rutas.qrGenerado: Permisos.generarQr,
+  Rutas.qrRapido: Permisos.generarQr,
   Rutas.eventos: Permisos.verEventos,
   Rutas.adminPuertas: Permisos.supervisarPuertas,
   Rutas.adminEstructura: Permisos.administrarPuertas,

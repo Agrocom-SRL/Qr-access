@@ -9,7 +9,7 @@ const esquemaPuertaCorta = z.object({ id: z.string(), nombre: z.string() });
 export const MAX_PUERTAS_POR_QR = 20;
 export const MAX_ETIQUETA = 60;
 
-export const cuerpoDeEmision = z.object({
+export const cuerpoDeGeneracion = z.object({
   puerta_ids: z.array(esquemaId).min(1).max(MAX_PUERTAS_POR_QR),
   vence_at: z.iso
     .datetime({ offset: true })
@@ -25,7 +25,7 @@ export const cuerpoDeEmision = z.object({
   propio: z.boolean().optional(),
 });
 
-export const respuestaDeEmision = z.object({
+export const respuestaDeGeneracion = z.object({
   id: z.string(),
   texto: z.string(),
   vence_at: esquemaFecha,
@@ -91,7 +91,7 @@ export const esquemaEvento = z.object({
     .object({
       id: z.string(),
       etiqueta: z.string().nullable(),
-      emisor: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
+      generador: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
     })
     .nullable(),
 });

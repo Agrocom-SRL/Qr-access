@@ -25,7 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// QR rápido: la propia persona emite al instante su QR y lo muestra en este
+/// QR rápido: la propia persona genera al instante su QR y lo muestra en este
 /// mismo dispositivo para acercarlo al lector de la puerta. Sin formulario y
 /// sin compartir (el QR es suyo); cerrar no pide confirmación, porque no hay
 /// nada que enviar. El token vive solo en esta pantalla (ADR 0008); sin
@@ -42,10 +42,10 @@ class _QrRapidoPaginaEstado extends ConsumerState<QrRapidoPagina> {
   void initState() {
     super.initState();
     // Después del primer frame: ahí ya hay contexto con los textos.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _emitir());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _generar());
   }
 
-  void _emitir() {
+  void _generar() {
     if (!mounted) return;
     final l10n = context.l10n;
     final sesion = ref.read(sesionControladorProvider);
@@ -55,7 +55,7 @@ class _QrRapidoPaginaEstado extends ConsumerState<QrRapidoPagina> {
     final etiqueta = nombre == null || nombre.isEmpty
         ? l10n.qrRapidoEtiquetaSinNombre
         : l10n.qrRapidoEtiqueta(nombre);
-    unawaited(ref.read(qrRapidoControladorProvider.notifier).emitir(etiqueta));
+    unawaited(ref.read(qrRapidoControladorProvider.notifier).generar(etiqueta));
   }
 
   @override
@@ -77,7 +77,10 @@ class _QrRapidoPaginaEstado extends ConsumerState<QrRapidoPagina> {
       ),
       child: switch (estado) {
         AsyncData(:final value) => _QrPropio(qr: value),
-        AsyncError(:final error) => _Fallo(error: error, alReintentar: _emitir),
+        AsyncError(:final error) => _Fallo(
+          error: error,
+          alReintentar: _generar,
+        ),
         _ => SizedBox(
           height: context.tokens.tamano.qrExpandido,
           child: const AccesoCargando(),
@@ -90,7 +93,7 @@ class _QrRapidoPaginaEstado extends ConsumerState<QrRapidoPagina> {
 class _QrPropio extends StatelessWidget {
   const new({required this.qr});
 
-  final QrEmitido qr;
+  final QrGenerado qr;
 
   @override
   Widget build(BuildContext context) =>
@@ -153,8 +156,8 @@ class _Fallo extends StatelessWidget {
     if (error is SinPuertasParaQrRapido) {
       return EstadoVacio(
         ilustracion: Multimedia.vacioPuertas,
-        titulo: l10n.qrEmitirSinPuertas,
-        ayuda: l10n.qrEmitirSinPuertasAyuda,
+        titulo: l10n.qrGenerarSinPuertas,
+        ayuda: l10n.qrGenerarSinPuertasAyuda,
       );
     }
     return EstadoVacio(

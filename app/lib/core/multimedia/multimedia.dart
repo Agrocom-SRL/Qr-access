@@ -16,7 +16,7 @@ abstract final class Multimedia {
   static const fondoSplashOscuro = 'assets/logo/fondo_splash_oscuro.png';
 
   static const lottieSplash = 'assets/lottie/splash_logo.json';
-  static const lottieQrEmitido = 'assets/lottie/qr_emitido.json';
+  static const lottieQrGenerado = 'assets/lottie/qr_generado.json';
 
   static const vacioQr = 'assets/ilustraciones/vacio_qr.svg';
   static const vacioEventos = 'assets/ilustraciones/vacio_eventos.svg';

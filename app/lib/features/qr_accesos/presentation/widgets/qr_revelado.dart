@@ -4,7 +4,7 @@ import 'package:agrocom_acceso/shared/widgets/organisms/visor_qr.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
-/// Revela el QR recién emitido: primero el Lottie `qr_emitido` una vez (1 s)
+/// Revela el QR recién generado: primero el Lottie `qr_generado` una vez (1 s)
 /// en el mismo espacio que ocupa el [VisorQr], y luego el QR con un
 /// `AnimatedSwitcher` de 300 ms. Con "reducir movimiento" muestra el QR de
 /// inmediato. El visor no lleva nada encima: el QR se lee limpio.
@@ -68,7 +68,7 @@ class _QrReveladoEstado extends State<QrRevelado>
               child: SizedBox.square(
                 dimension: lado,
                 child: Lottie.asset(
-                  Multimedia.lottieQrEmitido,
+                  Multimedia.lottieQrGenerado,
                   controller: _controlador,
                   fit: BoxFit.contain,
                   // Si el Lottie no carga, se pasa al QR sin esperar.

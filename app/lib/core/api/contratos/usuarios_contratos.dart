@@ -98,7 +98,7 @@ class UsoDeUsuarioDto {
       etiqueta = json['etiqueta'] as String?,
       rol = json['rol'] as String?,
       unidad = json['unidad'] as String?,
-      qrEmitidos = (json['qr_emitidos'] as num).toInt(),
+      qrGenerados = (json['qr_generados'] as num).toInt(),
       qrUsados = (json['qr_usados'] as num).toInt(),
       maxQrEnUnDia = (json['max_qr_en_un_dia'] as num).toInt(),
       ultimoQrAt = fechaDeApiOpcional(json['ultimo_qr_at']),
@@ -109,7 +109,7 @@ class UsoDeUsuarioDto {
   final String? etiqueta;
   final String? rol;
   final String? unidad;
-  final int qrEmitidos;
+  final int qrGenerados;
   final int qrUsados;
   final int maxQrEnUnDia;
   final DateTime? ultimoQrAt;

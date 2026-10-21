@@ -36,7 +36,7 @@ export interface UsuarioConUso {
   rol: string | null;
   /** La unidad, si es un Titular. */
   unidad: string | null;
-  qr_emitidos: number;
+  qr_generados: number;
   qr_usados: number;
   max_qr_en_un_dia: number;
   ultimo_qr_at: string | null;
@@ -91,7 +91,7 @@ async function armar(
   const [roles, unidades, actividad] = await Promise.all([
     new RepositorioDeRolesDeUsuario(pool).rolesDeVarios(ids),
     crearServicioDeOrganizacion(pool).unidadesDeTitulares(ids),
-    crearServicioDeActividadDeQr(pool).deEmisores(
+    crearServicioDeActividadDeQr(pool).deGeneradores(
       ids,
       sumarDias(ahora, -VENTANA_EN_DIAS),
       DESFASE_UTC,
@@ -121,10 +121,10 @@ async function armar(
         etiqueta: fila.etiqueta,
         rol: rol?.nombre ?? null,
         unidad: unidades.get(fila.id)?.nombre ?? null,
-        qr_emitidos: uso.emitidos,
+        qr_generados: uso.generados,
         qr_usados: uso.usados,
         max_qr_en_un_dia: uso.maxEnUnDia,
-        ultimo_qr_at: aIsoONulo(uso.ultimoEmitidoAt),
+        ultimo_qr_at: aIsoONulo(uso.ultimoGeneradoAt),
         inactivo,
         ruidoso,
       };

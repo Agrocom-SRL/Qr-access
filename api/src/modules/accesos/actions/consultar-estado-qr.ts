@@ -23,7 +23,7 @@ export interface EstadoDeQrConsultado {
 /**
  * Qué pasó con un QR: su estado y el último intento de lectura (HU de seguimiento del QR). La
  * app lo consulta mientras muestra el QR para saber si la puerta lo aceptó o por qué lo rechazó.
- * Solo lee `qr_accesos` y `eventos_acceso`; el emisor ve el suyo y quien tenga
+ * Solo lee `qr_accesos` y `eventos_acceso`; quien lo generó ve el suyo y quien tenga
  * `accesos.qr.ver_todos`, cualquiera de la cuenta. Uno ajeno o de otra cuenta no existe: 404.
  */
 export async function ejecutar(
@@ -33,7 +33,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
 ): Promise<EstadoDeQrConsultado> {
   const qr = await new RepositorioDeQr(pool).buscarPorId(qrId);
-  const esDeOtro = qr !== null && qr.emitido_por !== principal.usuarioId;
+  const esDeOtro = qr !== null && qr.generado_por !== principal.usuarioId;
   if (qr === null || (esDeOtro && !tienePermiso(principal, 'accesos.qr.ver_todos'))) {
     throw new ErrorDeDominio('qr.no_encontrado', 404);
   }

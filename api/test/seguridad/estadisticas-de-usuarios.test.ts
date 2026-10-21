@@ -21,7 +21,7 @@ interface UsuarioConUso {
   id: string;
   rol: string | null;
   unidad: string | null;
-  qr_emitidos: number;
+  qr_generados: number;
   qr_usados: number;
   max_qr_en_un_dia: number;
   ultimo_qr_at: string | null;
@@ -87,18 +87,18 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
     await prueba.cerrar();
   });
 
-  /** Inserta un QR con la fecha de creación que se quiera (la API siempre emite "ahora"). */
+  /** Inserta un QR con la fecha de creación que se quiera (la API siempre genera "ahora"). */
   async function qr(
     cuentaId: string,
-    emisorId: string,
+    generadorId: string,
     creadoAt: Date,
     usado = false,
   ): Promise<void> {
     await prueba.pool.query(
-      'INSERT INTO qr_accesos (tenant_id, emitido_por, token_hash, vence_at, usado_at, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO qr_accesos (tenant_id, generado_por, token_hash, vence_at, usado_at, created_at) VALUES (?, ?, ?, ?, ?, ?)',
       [
         cuentaId,
-        emisorId,
+        generadorId,
         randomBytes(32).toString('hex'),
         new Date(creadoAt.getTime() + DIA),
         usado ? new Date(creadoAt.getTime() + 60_000) : null,
@@ -184,15 +184,15 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
     it('un usuario recién creado sin QR todavía no es inactivo; uno viejo sin QR sí', async () => {
       await envejecer(ramas.miembroInactivo.id, 45);
       const e = await estadisticas(sesionAdminA);
-      expect(deUsuario(e, a.usuario.id)).toMatchObject({ inactivo: false, qr_emitidos: 0 });
+      expect(deUsuario(e, a.usuario.id)).toMatchObject({ inactivo: false, qr_generados: 0 });
       expect(deUsuario(e, ramas.miembroInactivo.id)).toMatchObject({
         inactivo: true,
-        qr_emitidos: 0,
+        qr_generados: 0,
         ultimo_qr_at: null,
       });
     });
 
-    it('generar un QR en la ventana saca de inactivo, y se cuentan emitidos y usados', async () => {
+    it('generar un QR en la ventana saca de inactivo, y se cuentan generados y usados', async () => {
       await envejecer(ramas.miembroActivo.id, 90);
       await qr(a.cuenta.id, ramas.miembroActivo.id, haceDias(3));
       await qr(a.cuenta.id, ramas.miembroActivo.id, haceDias(2), true);
@@ -200,7 +200,7 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
       expect(deUsuario(e, ramas.miembroActivo.id)).toMatchObject({
         inactivo: false,
         ruidoso: false,
-        qr_emitidos: 2,
+        qr_generados: 2,
         qr_usados: 1,
         max_qr_en_un_dia: 1,
       });
@@ -212,7 +212,7 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
       await qr(a.cuenta.id, ramas.guardia.id, antiguo);
       const e = await estadisticas(sesionAdminA);
       const guardia = deUsuario(e, ramas.guardia.id);
-      expect(guardia).toMatchObject({ inactivo: true, qr_emitidos: 0, rol: 'Guardia' });
+      expect(guardia).toMatchObject({ inactivo: true, qr_generados: 0, rol: 'Guardia' });
       expect(guardia?.ultimo_qr_at).toBe(antiguo.toISOString());
     });
 
@@ -233,7 +233,7 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
       const e = await estadisticas(sesionAdminA);
       expect(deUsuario(e, ramas.miembroActivo.id)).toMatchObject({
         ruidoso: false,
-        qr_emitidos: 12,
+        qr_generados: 12,
         max_qr_en_un_dia: 1,
       });
     });
@@ -247,7 +247,7 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
         await qr(a.cuenta.id, ramas.titular.id, haceDias(3, 4 + (i % 2)));
       const e = await estadisticas(sesionAdminA);
       expect(deUsuario(e, ramas.titular.id)).toMatchObject({
-        qr_emitidos: 11,
+        qr_generados: 11,
         max_qr_en_un_dia: 6,
         ruidoso: false,
       });
@@ -315,7 +315,7 @@ describe('estadísticas de uso de los usuarios (ADR 0028 §4)', () => {
       const sesionAdminB = await iniciarSesion(prueba.app, b.administrador.pin);
       const eB = await estadisticas(sesionAdminB);
       expect(eB.usuarios.map((u) => u.id)).toEqual([b.usuario.id]);
-      expect(deUsuario(eB, b.usuario.id)).toMatchObject({ qr_emitidos: 20, ruidoso: true });
+      expect(deUsuario(eB, b.usuario.id)).toMatchObject({ qr_generados: 20, ruidoso: true });
     });
 
     it('solo el Administrador la ve: un Titular o un Miembro reciben 403', async () => {

@@ -549,7 +549,7 @@ const esquemaUsuarioConUso = z.object({
   etiqueta: z.string().nullable(),
   rol: z.string().nullable(),
   unidad: z.string().nullable(),
-  qr_emitidos: z.number().int(),
+  qr_generados: z.number().int(),
   qr_usados: z.number().int(),
   max_qr_en_un_dia: z.number().int(),
   ultimo_qr_at: esquemaFecha.nullable(),

@@ -20,11 +20,11 @@ export interface EventoListado {
   motivo_code: string;
   puerta: { id: string; nombre: string; sitio: { id: string; nombre: string } };
   qr_id: string | null;
-  /** El QR leído, con quién lo emitió; `null` si el código no era un QR de la cuenta. */
+  /** El QR leído, con quién lo generó; `null` si el código no era un QR de la cuenta. */
   qr: {
     id: string;
     etiqueta: string | null;
-    emisor: { id: string; etiqueta: string | null };
+    generador: { id: string; etiqueta: string | null };
   } | null;
 }
 
@@ -38,7 +38,7 @@ export interface FiltrosDeEventos {
 /**
  * Lo que el usuario puede ver: todos los de la cuenta con `accesos.evento.ver_todos` (administrador),
  * los de las puertas que tiene asignadas con `accesos.evento.ver_asignadas` (guardia) o, si no, solo
- * los de los QR que emitió. Sin puertas asignadas, un guardia no ve ninguno.
+ * los de los QR que generó. Sin puertas asignadas, un guardia no ve ninguno.
  */
 export async function alcanceDe(
   pool: Pool,
@@ -51,7 +51,7 @@ export async function alcanceDe(
     ? await crearServicioDeOrganizacion(pool).puertasAsignadasA(principal.usuarioId)
     : null;
   return {
-    emitidoPor: verTodos || verAsignadas ? null : principal.usuarioId,
+    generadoPor: verTodos || verAsignadas ? null : principal.usuarioId,
     puertaIds: asignadas === null || asignadas.todas ? null : asignadas.puertaIds,
     resultado: filtros.resultado,
     puertaId: filtros.puertaId,
@@ -84,7 +84,7 @@ export async function ejecutar(
     ),
     crearServicioDeUsuarios(pool).etiquetasDe([
       ...new Set(
-        filas.flatMap((fila) => (fila.qr_emitido_por === null ? [] : [fila.qr_emitido_por])),
+        filas.flatMap((fila) => (fila.qr_generado_por === null ? [] : [fila.qr_generado_por])),
       ),
     ]),
   ]);
@@ -103,14 +103,14 @@ export async function ejecutar(
         },
         qr_id: fila.qr_acceso_id,
         qr:
-          fila.qr_acceso_id === null || fila.qr_emitido_por === null
+          fila.qr_acceso_id === null || fila.qr_generado_por === null
             ? null
             : {
                 id: fila.qr_acceso_id,
                 etiqueta: fila.qr_etiqueta,
-                emisor: {
-                  id: fila.qr_emitido_por,
-                  etiqueta: etiquetas.get(fila.qr_emitido_por) ?? null,
+                generador: {
+                  id: fila.qr_generado_por,
+                  etiqueta: etiquetas.get(fila.qr_generado_por) ?? null,
                 },
               },
       };

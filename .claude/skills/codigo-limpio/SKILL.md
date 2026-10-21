@@ -22,7 +22,7 @@ El objetivo es que cualquiera (persona o agente) entienda un archivo sin abrir o
 - Cortas: si no entra en una pantalla (~40 líneas), casi seguro mezcla niveles. Extrae el paso con un nombre que lo explique.
 - **Un nivel de abstracción por función**: `ejecutar()` de una acción lee como la historia (validar → buscar → decidir → guardar), no mezcla SQL con reglas.
 - **Retornos tempranos** en lugar de `if` anidados: primero los casos que rechazan, al final el camino feliz.
-- Hasta 3 parámetros; más, un objeto con nombre (`DatosEmision`, `struct Resultado`).
+- Hasta 3 parámetros; más, un objeto con nombre (`DatosGeneracion`, `struct Resultado`).
 - Sin efectos ocultos: una función que se llama `calcular…` no escribe en la base ni acciona un relé.
 
 ## SOLID, aterrizado en este repo

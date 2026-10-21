@@ -1,10 +1,10 @@
 # ADR 0020 — Vigencia ampliada de los QR (horas y días)
 
-**Estado:** Propuesta (2026-10-09) · Precisa el ADR 0008 §3 (emisión) y se apoya en el ADR 0017 (`max_vigencia_qr_horas`).
+**Estado:** Propuesta (2026-10-09) · Precisa el ADR 0008 §3 (generación) y se apoya en el ADR 0017 (`max_vigencia_qr_horas`).
 
 ## Contexto
 
-El ADR 0008 §3 dice que la API calcula `vence_at` "por defecto, el fin del día local del sitio, sin pasar nunca la vigencia máxima del plan". El código lo cumplía de más: tomaba el fin del día como **tope**, no solo como valor por defecto, así que una persona solo podía pedir una vigencia **menor** que el resto del día. Una vigencia de 12 h emitida por la tarde, o de varios días para una visita que llega la semana próxima, se rechazaba con `qr.vigencia_excedida`.
+El ADR 0008 §3 dice que la API calcula `vence_at` "por defecto, el fin del día local del sitio, sin pasar nunca la vigencia máxima del plan". El código lo cumplía de más: tomaba el fin del día como **tope**, no solo como valor por defecto, así que una persona solo podía pedir una vigencia **menor** que el resto del día. Una vigencia de 12 h generada por la tarde, o de varios días para una visita que llega la semana próxima, se rechazaba con `qr.vigencia_excedida`.
 
 La invariante 3 de `CLAUDE.md` no pedía eso: "vencimiento (por defecto, fin del día; nunca más que el máximo del plan)".
 
@@ -17,6 +17,6 @@ La invariante 3 de `CLAUDE.md` no pedía eso: "vencimiento (por defecto, fin del
 
 ## Consecuencias
 
-- Un QR emitido para varios días queda vigente más tiempo sin usarse: el riesgo de que alguien lo vea o lo copie es mayor. Se compensa con el uso único, la anulación desde Mis QR y el registro de todo intento (invariante 4).
+- Un QR generado para varios días queda vigente más tiempo sin usarse: el riesgo de que alguien lo vea o lo copie es mayor. Se compensa con el uso único, la anulación desde Mis QR y el registro de todo intento (invariante 4).
 - `vencimientoMaximo` (tope) y `vencimientoPorDefecto` (fin del día) quedan separados en `api/src/modules/accesos/domain/vencimiento.ts`.
 - Subir el techo de 7 días exige otro ADR.

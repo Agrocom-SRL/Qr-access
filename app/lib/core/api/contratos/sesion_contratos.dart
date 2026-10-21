@@ -68,7 +68,7 @@ class SesionActualDto {
   final RolDto? rolActivo;
   final List<String> permisos;
 
-  /// `null` sin suscripción vigente (la app lo avisa; la API no emite QR).
+  /// `null` sin suscripción vigente (la app lo avisa; la API no genera QR).
   final SuscripcionDto? suscripcion;
 }
 

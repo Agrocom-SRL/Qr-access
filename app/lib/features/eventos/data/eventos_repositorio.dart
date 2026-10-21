@@ -61,7 +61,7 @@ class EventosRepositorioApi implements EventosRepositorio {
     puertaNombre: dto.puerta.nombre,
     sitioNombre: dto.sitio.nombre,
     qrEtiqueta: dto.qr?.etiqueta,
-    emisorEtiqueta: dto.qr?.emisorEtiqueta,
+    generadorEtiqueta: dto.qr?.generadorEtiqueta,
   );
 }
 

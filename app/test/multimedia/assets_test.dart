@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// arranque y el tamaño de la app.
 void main() {
   test('cada Lottie pesa menos de 50 KB', () {
-    for (final ruta in [Multimedia.lottieSplash, Multimedia.lottieQrEmitido]) {
+    for (final ruta in [Multimedia.lottieSplash, Multimedia.lottieQrGenerado]) {
       expect(File(ruta).lengthSync(), lessThan(50 * 1024), reason: ruta);
     }
   });
@@ -35,7 +35,7 @@ void main() {
       Multimedia.fondoSplash,
       Multimedia.fondoSplashOscuro,
       Multimedia.lottieSplash,
-      Multimedia.lottieQrEmitido,
+      Multimedia.lottieQrGenerado,
       ...Multimedia.ilustraciones,
     ]) {
       expect(creditos, contains(ruta.split('/').last), reason: ruta);

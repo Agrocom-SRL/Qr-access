@@ -186,13 +186,13 @@ export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAcceso
 }
 
 /** Lo que un usuario hizo con sus QR en una ventana (estadísticas de uso, ADR 0028). */
-export interface ActividadDeEmisor {
-  readonly emitidos: number;
+export interface ActividadDeGenerador {
+  readonly generados: number;
   readonly usados: number;
   /** El mayor número de QR generados en un solo día de la ventana. */
   readonly maxEnUnDia: number;
   /** El último QR generado, de cualquier fecha; `null` si nunca generó uno. */
-  readonly ultimoEmitidoAt: Date | null;
+  readonly ultimoGeneradoAt: Date | null;
 }
 
 export interface ServicioDeActividadDeQr {
@@ -200,30 +200,30 @@ export interface ServicioDeActividadDeQr {
    * La actividad de esos usuarios de la cuenta del contexto desde `desde`. Un usuario que no generó
    * ningún QR figura con ceros, así que quien llama no tiene que distinguir "sin datos" de "sin uso".
    */
-  deEmisores(
+  deGeneradores(
     usuarioIds: readonly string[],
     desde: Date,
     desfaseUtc: string,
-  ): Promise<Map<string, ActividadDeEmisor>>;
+  ): Promise<Map<string, ActividadDeGenerador>>;
 }
 
 export function crearServicioDeActividadDeQr(pool: Pool): ServicioDeActividadDeQr {
   const repositorio = new RepositorioDeQr(pool);
   return {
-    async deEmisores(usuarioIds, desde, desfaseUtc) {
+    async deGeneradores(usuarioIds, desde, desfaseUtc) {
       const [conteos, maximos, ultimos] = await Promise.all([
         repositorio.actividadDesde(usuarioIds, desde),
         repositorio.maxEnUnDiaDesde(usuarioIds, desde, desfaseUtc),
-        repositorio.ultimoEmitidoDe(usuarioIds),
+        repositorio.ultimoGeneradoDe(usuarioIds),
       ]);
       return new Map(
         usuarioIds.map((id) => [
           id,
           {
-            emitidos: conteos.get(id)?.emitidos ?? 0,
+            generados: conteos.get(id)?.generados ?? 0,
             usados: conteos.get(id)?.usados ?? 0,
             maxEnUnDia: maximos.get(id) ?? 0,
-            ultimoEmitidoAt: ultimos.get(id) ?? null,
+            ultimoGeneradoAt: ultimos.get(id) ?? null,
           },
         ]),
       );

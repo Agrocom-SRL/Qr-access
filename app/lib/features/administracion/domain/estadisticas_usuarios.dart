@@ -8,7 +8,7 @@ class UsoDeUsuario {
     required this.etiqueta,
     required this.rol,
     required this.unidad,
-    required this.qrEmitidos,
+    required this.qrGenerados,
     required this.qrUsados,
     required this.maxQrEnUnDia,
     required this.ultimoQrAt,
@@ -22,7 +22,7 @@ class UsoDeUsuario {
 
   /// La unidad, si es un Titular.
   final String? unidad;
-  final int qrEmitidos;
+  final int qrGenerados;
   final int qrUsados;
   final int maxQrEnUnDia;
 

@@ -374,7 +374,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const rolTitular = await crearRol(prueba.pool, cuenta, 'Titular', [
         'seguridad.usuario.ver',
         'seguridad.usuario.crear',
-        'accesos.qr.emitir',
+        'accesos.qr.generar',
       ]);
       const rolMiembro = await crearRol(prueba.pool, cuenta, 'Miembro', PERMISOS_DE_USUARIO);
       const titular = await crearUsuarioConPin(prueba.pool, cuenta, 'TI01', [rolTitular]);

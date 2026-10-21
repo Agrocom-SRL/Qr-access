@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:flutter/foundation.dart';
 
-/// Plazos de vigencia que la persona puede elegir al emitir (handoff C05b):
+/// Plazos de vigencia que la persona puede elegir al generar (handoff C05b):
 /// por **horas** (cortas 1, 2, 4, 8; largas 12, 16, 20, 24; o una hora exacta
 /// del día) o por **días** (2, 3, 5, 7, o todo el día). Por defecto vence al
 /// fin del día.
@@ -27,10 +27,10 @@ enum OpcionVigencia {
 
   new({this.horas, this.dias});
 
-  /// Horas de vigencia desde la emisión; `null` si no es un plazo en horas.
+  /// Horas de vigencia desde la generación; `null` si no es un plazo en horas.
   final int? horas;
 
-  /// Días de vigencia desde la emisión; `null` si no es un plazo en días.
+  /// Días de vigencia desde la generación; `null` si no es un plazo en días.
   final int? dias;
 
   /// Plazos del bloque corto (hasta 8 h).
@@ -105,13 +105,13 @@ class Vigencia {
   }
 }
 
-/// Qué está mal en lo que la persona escribió para emitir un QR.
-enum ErrorDatosEmision { sinPuertas, etiquetaLarga, vigenciaPasada }
+/// Qué está mal en lo que la persona escribió para generar un QR.
+enum ErrorDatosGeneracion { sinPuertas, etiquetaLarga, vigenciaPasada }
 
-/// Datos validados para emitir un QR (HU-11). El constructor exige que
+/// Datos validados para generar un QR (HU-11). El constructor exige que
 /// `errorDe` sea `null`: una instancia siempre cumple las reglas.
 @immutable
-class DatosEmision {
+class DatosGeneracion {
   new({
     required Set<String> puertaIds,
     required this.vigencia,
@@ -126,7 +126,7 @@ class DatosEmision {
                ahora: ahora,
              ) ==
              null,
-         'Los datos de emisión tienen que validarse antes',
+         'Los datos de generación tienen que validarse antes',
        ),
        puertaIds = puertaIds.toList(),
        etiqueta = _etiquetaLimpia(etiqueta);
@@ -146,17 +146,17 @@ class DatosEmision {
 
   /// Devuelve el primer error de los datos, o `null` si son válidos. Sin
   /// puertas no hay QR; la etiqueta es una nota corta (D-21).
-  static ErrorDatosEmision? errorDe({
+  static ErrorDatosGeneracion? errorDe({
     required Set<String> puertaIds,
     required String etiqueta,
     required Vigencia vigencia,
     required DateTime ahora,
   }) {
-    if (puertaIds.isEmpty) return ErrorDatosEmision.sinPuertas;
+    if (puertaIds.isEmpty) return ErrorDatosGeneracion.sinPuertas;
     if (etiqueta.trim().length > largoMaximoEtiqueta) {
-      return ErrorDatosEmision.etiquetaLarga;
+      return ErrorDatosGeneracion.etiquetaLarga;
     }
-    if (!vigencia.esValidaEn(ahora)) return ErrorDatosEmision.vigenciaPasada;
+    if (!vigencia.esValidaEn(ahora)) return ErrorDatosGeneracion.vigenciaPasada;
     return null;
   }
 }
@@ -168,7 +168,7 @@ String? _etiquetaLimpia(String etiqueta) {
 
 /// Lo que "Repetir último" trae al formulario (handoff C04a).
 @immutable
-class PrellenadoEmision {
+class PrellenadoGeneracion {
   const new({required this.puertaIds, this.etiqueta});
 
   final Set<String> puertaIds;

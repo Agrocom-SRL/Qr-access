@@ -41,27 +41,27 @@ INSERT INTO roles (id, tenant_id, nombre, protegido, activo) VALUES
   (9004, 9001, 'Titular', 0, 1)
 ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), protegido = VALUES(protegido), activo = 1, deleted_at = NULL;
 
--- Administrador: todos los permisos de cuenta. Miembro: emite y ve lo suyo. Titular: lo del Miembro y administra a sus Miembros. Guardia: ve todos los
--- eventos de las puertas que se le asignan, y emite solo su QR propio de acceso.
+-- Administrador: todos los permisos de cuenta. Miembro: genera y ve lo suyo. Titular: lo del Miembro y administra a sus Miembros. Guardia: ve todos los
+-- eventos de las puertas que se le asignan, y genera solo su QR propio de acceso.
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT 9001, id FROM permisos WHERE ambito = 'cuenta';
 
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT 9002, id FROM permisos WHERE codigo IN (
-    'organizacion.puerta.ver', 'accesos.qr.emitir', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver'
+    'organizacion.puerta.ver', 'accesos.qr.generar', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver'
   );
 
 -- Por nombre y no por id: en una base anterior al árbol el catálogo ya creó el Titular con otro id.
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo IN (
-    'organizacion.puerta.ver', 'accesos.qr.emitir', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
+    'organizacion.puerta.ver', 'accesos.qr.generar', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
     'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar'
   )
   WHERE r.tenant_id = 9001 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
 
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT 9003, id FROM permisos WHERE codigo IN (
-    'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.qr.emitir', 'accesos.evento.ver', 'accesos.evento.ver_asignadas'
+    'organizacion.puerta.ver', 'organizacion.puerta.supervisar', 'accesos.qr.generar', 'accesos.evento.ver', 'accesos.evento.ver_asignadas'
   );
 
 -- PIN DEMADM1 (Administrador), DEMUSR1 (Miembro) y DEMGRD1 (Guardia). Un usuario, un rol (ADR 0028):

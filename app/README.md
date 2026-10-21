@@ -1,6 +1,6 @@
 # app/ — AGROCOM Acceso (Flutter)
 
-App de los usuarios de cada cuenta (Android, iOS y web): inicio de sesión con PIN, emisión y envío de QR, administración y eventos. Mapa y reglas: skill `app-flutter`, ADR 0012 y 0013.
+App de los usuarios de cada cuenta (Android, iOS y web): inicio de sesión con PIN, generación y envío de QR, administración y eventos. Mapa y reglas: skill `app-flutter`, ADR 0012 y 0013.
 
 ```
 flutter pub get                                   # también genera lib/l10n/gen desde app_es.arb

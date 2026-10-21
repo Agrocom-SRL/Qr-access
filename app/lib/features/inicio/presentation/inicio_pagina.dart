@@ -28,10 +28,10 @@ class InicioPagina extends ConsumerWidget {
       // El botón flotante, sin texto, genera un QR nuevo. El guardia no
       // comparte QR con otras personas (ver esGuardia), así que no lo ve aunque
       // tenga el permiso. Su QR propio está en la cabecera.
-      fab: !sesion.tiene(Permisos.emitirQr) || esGuardia(sesion)
+      fab: !sesion.tiene(Permisos.generarQr) || esGuardia(sesion)
           ? null
           : FloatingActionButton(
-              tooltip: context.l10n.qrEmitirBoton,
+              tooltip: context.l10n.qrGenerarBoton,
               onPressed: () => context.go(Rutas.qrNuevo),
               child: const Icon(Icons.qr_code_2),
             ),

@@ -86,7 +86,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
     }>();
 
   describe('cuenta nueva sin pago', () => {
-    it('nace pendiente de pago, aparece en cobranza "por activar" y no emite QR', async () => {
+    it('nace pendiente de pago, aparece en cobranza "por activar" y no genera QR', async () => {
       const respuesta = await crear(sinPago());
       expect(respuesta.statusCode, respuesta.body).toBe(201);
       const creada = respuesta.json<CuentaCreadaDto>();
@@ -108,13 +108,13 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
         payload: { nombre: 'Granja' },
       });
       expect(puertas.statusCode).toBe(201);
-      const emitir = await prueba.app.inject({
+      const generar = await prueba.app.inject({
         method: 'POST',
         url: '/api/v1/qr-accesos',
         headers: conUsuario(sesion),
         payload: { puerta_ids: ['1'] },
       });
-      expect([403, 404]).toContain(emitir.statusCode);
+      expect([403, 404]).toContain(generar.statusCode);
     });
 
     it('con el pago de alta se activa y el año corre desde la fecha del pago', async () => {

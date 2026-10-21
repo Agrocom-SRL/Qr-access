@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Nombre del archivo PNG que se comparte.
 const nombreArchivoQr = 'qr-acceso.png';
 
-/// Estado de la pantalla del QR emitido: si se está compartiendo y si la
+/// Estado de la pantalla del QR generado: si se está compartiendo y si la
 /// imagen ya salió (para no pedir confirmación al cerrar, S05).
 @immutable
 class MostrarQrEstado {
@@ -27,7 +27,7 @@ class MostrarQrEstado {
   final bool fallo;
 }
 
-/// Comparte la imagen del QR recién emitido (ADR 0008, D-18).
+/// Comparte la imagen del QR recién generado (ADR 0008, D-18).
 class MostrarQrControlador extends Notifier<MostrarQrEstado> {
   @override
   MostrarQrEstado build() => const MostrarQrEstado();
@@ -35,7 +35,7 @@ class MostrarQrControlador extends Notifier<MostrarQrEstado> {
   /// `tokens` da colores y familia de letra para que la imagen se vea como la
   /// pantalla. `textos` son los de la imagen y `mensaje` acompaña al archivo.
   Future<void> compartir({
-    required QrEmitido qr,
+    required QrGenerado qr,
     required TextosDeImagenQr textos,
     required String mensaje,
     required AccesoTokens tokens,

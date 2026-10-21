@@ -11,12 +11,12 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 | D-12 | ¿Una cuenta puede tener sitios en otra zona horaria? | Evaluación del vencimiento "fin del día" | `zona_horaria` por sitio, por defecto `America/La_Paz` | Abierta |
 | D-13 | ¿Dónde se despliega (servidor propio, VPS, nube)? ¿Quién gestiona el DNS de `agrocom.com.bo`? | Deploy, TLS y OTA | VPS con Docker Compose + Nginx + Let's Encrypt | Abierta |
 | D-14 | ¿Qué límites trae cada plan? (dispositivos, puertas, sitios, usuarios, vigencia máxima del QR) ¿Cuántos planes hay? | Tabla `planes` y validaciones de la API (ADR 0017) | Plan con `max_dispositivos`, `max_usuarios`, `max_vigencia_qr_horas`; los QR son ilimitados | Abierta |
-| D-15 | ¿Cómo se cobra la suscripción (manual por AGROCOM o pasarela de pago) y qué pasa al vencer? | Alcance V1 y comportamiento de una cuenta morosa | V1: AGROCOM registra el pago a mano; al vencer, la cuenta no emite QR nuevos y sus puertas rechazan con `suscripcion.vencida` | Abierta |
-| D-16 | "Tiempo de vida por día": ¿el QR vence a fin del día local del sitio, o 24 h después de emitido? ¿El usuario puede elegir una vigencia menor? | Cálculo de `vence_at` | Por defecto, fin del día local del sitio; el usuario puede acortarla, nunca pasar el máximo del plan | Abierta |
-| D-17 | ¿Un QR abre una sola puerta, varias o todas las de la cuenta? | Relación QR–puertas y anti-reuso | El usuario elige una o más puertas de su cuenta al emitirlo | Abierta |
+| D-15 | ¿Cómo se cobra la suscripción (manual por AGROCOM o pasarela de pago) y qué pasa al vencer? | Alcance V1 y comportamiento de una cuenta morosa | V1: AGROCOM registra el pago a mano; al vencer, la cuenta no genera QR nuevos y sus puertas rechazan con `suscripcion.vencida` | Abierta |
+| D-16 | "Tiempo de vida por día": ¿el QR vence a fin del día local del sitio, o 24 h después de generado? ¿El usuario puede elegir una vigencia menor? | Cálculo de `vence_at` | Por defecto, fin del día local del sitio; el usuario puede acortarla, nunca pasar el máximo del plan | Abierta |
+| D-17 | ¿Un QR abre una sola puerta, varias o todas las de la cuenta? | Relación QR–puertas y anti-reuso | El usuario elige una o más puertas de su cuenta al generarlo | Abierta |
 | D-18 | ¿Cómo le llega el QR a la persona que entra (imagen compartida por WhatsApp, enlace web, correo)? | Paquete de compartir en la app o página pública | V1: la app comparte la imagen del QR con el menú de compartir del teléfono | Abierta |
 | D-20 | ¿Hace falta un escáner de guardia en la app (puertas sin lector)? | Feature `escaner` y rol Guardia | Fuera de V1 | Abierta |
-| D-21 | ¿Se anota algo de la persona que entra (nombre, motivo) al emitir el QR? | Datos personales y lo que muestra el historial | Solo una etiqueta libre opcional ("Proveedor de gas"); no se registra a la persona | Abierta |
+| D-21 | ¿Se anota algo de la persona que entra (nombre, motivo) al generar el QR? | Datos personales y lo que muestra el historial | Solo una etiqueta libre opcional ("Proveedor de gas"); no se registra a la persona | Abierta |
 | D-24 | ¿El administrador de la cuenta también entra con PIN, o con usuario y contraseña? | Un solo mecanismo de login o dos | Todos los usuarios de cuenta con PIN; usuario y contraseña solo para el super admin | Abierta |
 
 ## Cerradas
@@ -32,6 +32,6 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 | D-04 | ¿Qué tipo de cerradura? | **Se acciona con un pulso.** La duración del pulso es un parámetro de la puerta; el detalle eléctrico se define cuando exista la infraestructura. | 2026-10-08, cliente |
 | D-05 | ¿Las puertas funcionan sin internet? | **No.** Sin red no se valida y no se abre (solo la salida física). Sin validación local en la placa. | 2026-10-08, cliente |
 | D-07 | ¿Se guarda la foto de la persona? | No aplica: la persona que entra no se registra (ver D-21). | 2026-10-08, consecuencia de D-01 |
-| D-09 | ¿Toda persona con acceso tiene usuario en la app? | No. La app la usan los usuarios de la cuenta (administran y emiten QR); quien entra solo recibe el QR y no queda registrado. | 2026-10-08, cliente |
+| D-09 | ¿Toda persona con acceso tiene usuario en la app? | No. La app la usan los usuarios de la cuenta (administran y generan QR); quien entra solo recibe el QR y no queda registrado. | 2026-10-08, cliente |
 | D-10 | ¿Antipassback? | No aplica: cada QR se consume en su primer uso. | 2026-10-08, consecuencia de D-01 |
-| D-11 | ¿Invitaciones en V1? | Sí, y son el flujo principal: el QR emitido por un usuario **es** la invitación. | 2026-10-08, cliente |
+| D-11 | ¿Invitaciones en V1? | Sí, y son el flujo principal: el QR generado por un usuario **es** la invitación. | 2026-10-08, cliente |

@@ -7,7 +7,7 @@ import { presentarQr, type QrListado } from '../presentacion.js';
 import { RepositorioDeQr, type QrFila } from '../repository.js';
 
 /**
- * Anula un QR antes de que se use (HU-13). Quien lo emitió puede anularlo; anular el de otro
+ * Anula un QR antes de que se use (HU-13). Quien lo generó puede anularlo; anular el de otro
  * exige `accesos.qr.anular_todos`. Uno ajeno o de otra cuenta no existe: 404. Anular dos veces
  * es inofensivo; anular uno ya usado es un conflicto (409).
  */
@@ -19,7 +19,7 @@ export async function ejecutar(
 ): Promise<QrListado> {
   const repositorio = new RepositorioDeQr(pool);
   const encontrado = await repositorio.buscarPorId(qrId);
-  const esDeOtro = encontrado !== null && encontrado.emitido_por !== principal.usuarioId;
+  const esDeOtro = encontrado !== null && encontrado.generado_por !== principal.usuarioId;
   if (encontrado === null || (esDeOtro && !tienePermiso(principal, 'accesos.qr.anular_todos'))) {
     throw new ErrorDeDominio('qr.no_encontrado', 404);
   }

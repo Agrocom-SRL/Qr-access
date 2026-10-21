@@ -59,7 +59,7 @@ export async function ejecutar(
             },
       usuarios_activos: usuarios.get(cuenta.id) ?? 0,
       vence_el: aIsoONulo(suscripcion?.hasta ?? null),
-      // Sin suscripción la cuenta no emite QR: se muestra como vencida.
+      // Sin suscripción la cuenta no genera QR: se muestra como vencida.
       estado: suscripcion?.estado ?? 'vencida',
     };
   });

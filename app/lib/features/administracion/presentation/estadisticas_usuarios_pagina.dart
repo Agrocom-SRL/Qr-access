@@ -216,7 +216,7 @@ class _EstadisticasUsuariosPaginaEstado
   String _detalle(UsoDeUsuario uso, EstadisticasDeUsuarios datos) {
     final l10n = context.l10n;
     if (uso.ruidoso) {
-      return l10n.estadisticasDetalleRuidoso(uso.maxQrEnUnDia, uso.qrEmitidos);
+      return l10n.estadisticasDetalleRuidoso(uso.maxQrEnUnDia, uso.qrGenerados);
     }
     final ultimo = uso.ultimoQrAt;
     return ultimo == null

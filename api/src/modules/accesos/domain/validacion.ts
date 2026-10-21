@@ -12,10 +12,10 @@ export const MOTIVO_PERMITIDO = 'acceso.permitido';
 export interface QrParaDecidir {
   readonly anuladoAt: Date | null;
   readonly venceAt: Date;
-  /** Puertas para las que se emitió. */
+  /** Puertas para las que se generó. */
   readonly puertaIds: readonly string[];
-  /** ¿Quien lo emitió sigue activo? Con el emisor desactivado, el QR deja de abrir (RF-06). */
-  readonly emisorActivo: boolean;
+  /** ¿Quien lo generó sigue activo? Si quien lo generó se desactiva, el QR deja de abrir (RF-06). */
+  readonly generadorActivo: boolean;
 }
 
 export interface EntradaDeDecision {
@@ -31,7 +31,7 @@ export interface EntradaDeDecision {
  */
 export function decidirAntesDeConsumir(entrada: EntradaDeDecision): MotivoDeRechazo | null {
   const { qr, puertaDelDispositivoId, ahora, suscripcionVigente } = entrada;
-  if (qr.anuladoAt !== null || !qr.emisorActivo) return 'qr.anulado';
+  if (qr.anuladoAt !== null || !qr.generadorActivo) return 'qr.anulado';
   if (qr.venceAt <= ahora) return 'qr.vencido';
   if (!qr.puertaIds.includes(puertaDelDispositivoId)) return 'qr.otra_puerta';
   if (!suscripcionVigente) return 'suscripcion.vencida';

@@ -32,7 +32,7 @@ class PasoPuertas extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          l10n.qrEmitirPregunta,
+          l10n.qrGenerarPregunta,
           style: textos.bodyLarge?.copyWith(
             color: tokens.colores.textoSecundario,
           ),
@@ -52,8 +52,8 @@ class PasoPuertas extends StatelessWidget {
               ),
               AccesoBoton(
                 texto: expandida
-                    ? l10n.qrEmitirSeleccionarTodas
-                    : l10n.qrEmitirTodas,
+                    ? l10n.qrGenerarSeleccionarTodas
+                    : l10n.qrGenerarTodas,
                 variante: VarianteBoton.texto,
                 onPressed: () => alAlternarTodas(delSitio.map((p) => p.id)),
               ),

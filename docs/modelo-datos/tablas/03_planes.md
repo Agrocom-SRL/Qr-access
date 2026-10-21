@@ -27,7 +27,7 @@ El SQL completo está en `03-schema-sql.md`.
 
 ## Reglas
 
-- Solo `max_vigencia_qr_horas` se aplica en el núcleo (recorta el vencimiento al emitir). Los límites de dispositivos y usuarios los hará cumplir el alta correspondiente (RF-10).
+- Solo `max_vigencia_qr_horas` se aplica en el núcleo (recorta el vencimiento al generar). Los límites de dispositivos y usuarios los hará cumplir el alta correspondiente (RF-10).
 
 ## Dudas
 

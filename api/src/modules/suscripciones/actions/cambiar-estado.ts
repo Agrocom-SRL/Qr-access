@@ -6,7 +6,7 @@ import { suscripcionActualODeLaCuenta } from './contexto-de-suscripcion.js';
 
 /**
  * Suspende (`suspendida`) o reactiva (`vigente`) la suscripción de la cuenta del contexto. Suspendida,
- * la cuenta no emite QR y sus puertas rechazan con `suscripcion.vencida` (RF-06). Es idempotente.
+ * la cuenta no genera QR y sus puertas rechazan con `suscripcion.vencida` (RF-06). Es idempotente.
  */
 export async function ejecutar(pool: Pool, nuevo: 'vigente' | 'suspendida'): Promise<void> {
   const suscripcion = await suscripcionActualODeLaCuenta(pool);
