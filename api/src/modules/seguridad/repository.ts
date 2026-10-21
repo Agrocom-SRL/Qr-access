@@ -877,19 +877,21 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
 }
 
 export interface DatosDeEmpresa {
-  readonly nit: string;
+  readonly nit: string | null;
   readonly ciudad: string;
   readonly contactoNombre: string;
-  readonly contactoTelefono: string;
+  readonly contactoApellido: string;
+  readonly contactoTelefono: string | null;
   readonly contactoCorreo: string | null;
 }
 
 export interface DatosDeEmpresaFila extends RowDataPacket {
   id: string;
-  nit: string;
+  nit: string | null;
   ciudad: string;
   contacto_nombre: string;
-  contacto_telefono: string;
+  contacto_apellido: string;
+  contacto_telefono: string | null;
   contacto_correo: string | null;
 }
 
@@ -898,7 +900,14 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuenta_datos_empresa',
-      columnas: ['nit', 'ciudad', 'contacto_nombre', 'contacto_telefono', 'contacto_correo'],
+      columnas: [
+        'nit',
+        'ciudad',
+        'contacto_nombre',
+        'contacto_apellido',
+        'contacto_telefono',
+        'contacto_correo',
+      ],
       perfil: 'dominio',
       deCuenta: true,
     });
@@ -906,7 +915,8 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
 
   buscar(): Promise<DatosDeEmpresaFila | null> {
     return this.seleccionarUna<DatosDeEmpresaFila>({
-      columnas: 't.id, t.nit, t.ciudad, t.contacto_nombre, t.contacto_telefono, t.contacto_correo',
+      columnas:
+        't.id, t.nit, t.ciudad, t.contacto_nombre, t.contacto_apellido, t.contacto_telefono, t.contacto_correo',
     });
   }
 
@@ -916,6 +926,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
       nit: datos.nit,
       ciudad: datos.ciudad,
       contacto_nombre: datos.contactoNombre,
+      contacto_apellido: datos.contactoApellido,
       contacto_telefono: datos.contactoTelefono,
       contacto_correo: datos.contactoCorreo,
     });
@@ -926,6 +937,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
       nit: datos.nit,
       ciudad: datos.ciudad,
       contacto_nombre: datos.contactoNombre,
+      contacto_apellido: datos.contactoApellido,
       contacto_telefono: datos.contactoTelefono,
       contacto_correo: datos.contactoCorreo,
     });

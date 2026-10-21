@@ -125,7 +125,8 @@ export function CobranzaPage() {
             void navegar(rutaDePago(f.cuenta.id));
           }}
         >
-          {f.pago === 'porActivar'
+          {/* Una cuenta pendiente de pago lleva "Registrar pago" en su fila, como cualquier otra cuenta. */}
+          {f.pago === 'porActivar' && f.estado !== 'pendientePago'
             ? t('cobranza:registrarPrimerPago')
             : t('cobranza:registrarPago')}
         </AccesoBoton>

@@ -37,7 +37,7 @@
   "filtroEtiqueta": "Filtrar por status",
   "usuariosDe": "{{count}} usuários",
   "sinPlan": "Sem plano",
-  "verPuertas": "Locais e portas de {{cuenta}}",
+  "verPuertas": "Propriedades e portas de {{cuenta}}",
   "editar": "Editar {{cuenta}}",
   "eliminar": "Excluir {{cuenta}}"
 }

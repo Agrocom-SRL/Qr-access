@@ -18,10 +18,12 @@ import {
 export interface DetalleDeCuenta {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
   empresa: {
-    nit: string;
+    nit: string | null;
     ciudad: string;
     contacto: string;
-    telefono: string;
+    contacto_nombre: string;
+    contacto_apellido: string;
+    telefono: string | null;
     correo: string | null;
   } | null;
   suscripcion: {
@@ -79,7 +81,9 @@ export async function ejecutar(
           : {
               nit: empresa.nit,
               ciudad: empresa.ciudad,
-              contacto: empresa.contacto_nombre,
+              contacto: `${empresa.contacto_nombre} ${empresa.contacto_apellido}`.trim(),
+              contacto_nombre: empresa.contacto_nombre,
+              contacto_apellido: empresa.contacto_apellido,
               telefono: empresa.contacto_telefono,
               correo: empresa.contacto_correo,
             },

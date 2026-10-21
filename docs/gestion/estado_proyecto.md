@@ -91,6 +91,8 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 
 ## Pendiente de decidir o confirmar
 
+- **Jerarquía de usuarios y ajustes tras el primer despliegue (2026-10-20):** propietario > dueño de casa > usuario de la casa, guardias por propietario, cupo, estadísticas, compartir PIN y cambios de textos y formularios. Propuesta sin implementar, con puntos abiertos y orden de ramas en `docs/gestion/jerarquia-de-usuarios.md`.
+
 - Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24).
 - Hex oficial del verde de marca (D-08).
 - Servidor de producción y DNS (D-13): de eso dependen el `docker-compose.prod.yml` con TLS y la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).

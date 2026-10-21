@@ -45,7 +45,7 @@ class PlantillaAdmin extends ConsumerWidget {
   /// En compacto, un ícono en vez del botón; sin él se usa [accion].
   final Widget? accionCompacta;
 
-  /// Botón flotante (compacto): "Emitir QR" en Mis QR.
+  /// Botón flotante (compacto): "Generar QR" en Mis QR.
   final Widget? fab;
 
   /// A dónde lleva "atrás" en una pantalla que no es un destino principal

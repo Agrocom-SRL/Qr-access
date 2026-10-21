@@ -155,7 +155,7 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                   etiqueta={t('crearCuenta:responsableNombre')}
                   value={datos.contactoNombre}
                   error={mensaje('contactoNombre')}
-                  autoComplete="name"
+                  autoComplete="given-name"
                   onBlur={() => {
                     tocar('contactoNombre');
                   }}
@@ -163,6 +163,20 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                     cambiar({ contactoNombre: e.target.value });
                   }}
                 />
+                <AccesoCampoTexto
+                  etiqueta={t('crearCuenta:responsableApellido')}
+                  value={datos.contactoApellido}
+                  error={mensaje('contactoApellido')}
+                  autoComplete="family-name"
+                  onBlur={() => {
+                    tocar('contactoApellido');
+                  }}
+                  onChange={(e) => {
+                    cambiar({ contactoApellido: e.target.value });
+                  }}
+                />
+              </div>
+              <div className={styles.fila}>
                 <AccesoCampoTexto
                   etiqueta={t('crearCuenta:telefono')}
                   value={datos.contactoTelefono}
@@ -177,21 +191,21 @@ export function PasoEmpresa({ datos, onCambio }: Props) {
                     cambiar({ contactoTelefono: e.target.value });
                   }}
                 />
+                <AccesoCampoTexto
+                  etiqueta={t('crearCuenta:correo')}
+                  value={datos.contactoCorreo}
+                  type="email"
+                  error={mensaje('contactoCorreo')}
+                  autoComplete="email"
+                  ayuda={t('crearCuenta:correoAyuda')}
+                  onBlur={() => {
+                    tocar('contactoCorreo');
+                  }}
+                  onChange={(e) => {
+                    cambiar({ contactoCorreo: e.target.value });
+                  }}
+                />
               </div>
-              <AccesoCampoTexto
-                etiqueta={t('crearCuenta:correo')}
-                value={datos.contactoCorreo}
-                type="email"
-                error={mensaje('contactoCorreo')}
-                autoComplete="email"
-                ayuda={t('crearCuenta:correoAyuda')}
-                onBlur={() => {
-                  tocar('contactoCorreo');
-                }}
-                onChange={(e) => {
-                  cambiar({ contactoCorreo: e.target.value });
-                }}
-              />
             </div>
           ),
         },

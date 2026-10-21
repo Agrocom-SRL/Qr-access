@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
@@ -110,14 +111,17 @@ class InicioUsuario extends ConsumerWidget {
         // Con el botón flotante, el final del contenido no queda tapado.
         padding: EdgeInsets.only(
           top: tokens.espacio.l,
-          bottom: puedeEmitir
+          bottom: puedeCompartir
               ? tokens.tamano.fab + tokens.espacio.xl
               : tokens.espacio.l,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            EncabezadoInicio(sesion: sesion),
+            EncabezadoInicio(
+              sesion: sesion,
+              accion: puedeEmitir ? const BotonQrPropio() : null,
+            ),
             SizedBox(height: tokens.espacio.xl),
             if (guardia) ...[
               // Mismo diseño que "Emitir QR", pero con lo que le toca vigilar.
@@ -127,7 +131,7 @@ class InicioUsuario extends ConsumerWidget {
                 alTocar: () => context.go(Rutas.eventos),
               ),
               SizedBox(height: tokens.espacio.xl),
-            ] else if (puedeEmitir) ...[
+            ] else if (puedeCompartir) ...[
               _HeroEmitir(alEmitir: () => context.go(Rutas.qrNuevo)),
               SizedBox(height: tokens.espacio.xl),
             ],

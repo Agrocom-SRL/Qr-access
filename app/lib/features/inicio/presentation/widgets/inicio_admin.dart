@@ -9,6 +9,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
@@ -169,21 +170,9 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                // Solo "Emitir QR": Mis QR es una pestaña y "Mi QR de acceso"
-                // es el botón flotante de la página.
-                accion: puedeEmitir
-                    ? IconButton.filled(
-                        tooltip: l10n.qrEmitirBoton,
-                        onPressed: () => context.go(Rutas.qrNuevo),
-                        // Relleno primario con ícono blanco (C04b); el
-                        // tema de IconButton pinta el ícono en texto.
-                        style: IconButton.styleFrom(
-                          backgroundColor: tokens.colores.primario,
-                          foregroundColor: tokens.colores.sobrePrimario,
-                        ),
-                        icon: const Icon(Icons.qr_code_2),
-                      )
-                    : null,
+                // Solo el QR propio: Mis QR es una pestaña y "Generar QR" es
+                // el botón flotante de la página.
+                accion: puedeEmitir ? const BotonQrPropio() : null,
               ),
               SizedBox(height: tokens.espacio.xl),
               Row(

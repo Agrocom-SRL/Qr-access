@@ -96,6 +96,7 @@ export const rutasDeCuentas =
           nit: cuerpo.nit,
           ciudad: cuerpo.ciudad,
           contactoNombre: cuerpo.contacto_nombre,
+          contactoApellido: cuerpo.contacto_apellido,
           contactoTelefono: cuerpo.contacto_telefono,
           contactoCorreo: cuerpo.contacto_correo,
           planId: cuerpo.plan_id,
@@ -150,6 +151,7 @@ export const rutasDeCuentas =
           nit: cuerpo.nit,
           ciudad: cuerpo.ciudad,
           contactoNombre: cuerpo.contacto_nombre,
+          contactoApellido: cuerpo.contacto_apellido,
           contactoTelefono: cuerpo.contacto_telefono,
           contactoCorreo: cuerpo.contacto_correo,
         });

@@ -14,6 +14,7 @@ import { useCodigoDisponible, useCrearCuenta } from '../../application/useCuenta
 import {
   BORRADOR_VACIO,
   hoyIso,
+  nombreCompletoDelResponsable,
   validarEmpresa,
   validarPagoDeAlta,
   validarVigencia,
@@ -151,7 +152,7 @@ export function CrearCuentaPage() {
       {idPaso === 'vigencia' ? (
         <PasoVigencia
           datos={borrador.vigencia}
-          nombreDelResponsable={borrador.empresa.contactoNombre}
+          nombreDelResponsable={nombreCompletoDelResponsable(borrador.empresa)}
           onCambio={(vigencia) => {
             setBorrador((actual) => ({ ...actual, vigencia }));
           }}

@@ -9,6 +9,7 @@ import {
 import { ESTADO_DESDE_DTO, ESTADO_HACIA_DTO, type EstadoDto } from '../../../shared/api/estados';
 import { subirComprobante } from '../../../shared/api/comprobantes';
 import { parsearMonto, requiereRespaldo } from '../../pagos';
+import { nombreCompletoDelResponsable } from '../domain/alta';
 import type { CuentasRepositorio } from './CuentasRepositorio';
 
 interface CuentaDto {
@@ -28,10 +29,12 @@ interface ListadoCuentasDto extends ListadoDto<CuentaDto> {
 interface DetalleDto {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
   empresa: {
-    nit: string;
+    nit: string | null;
     ciudad: string;
     contacto: string;
-    telefono: string;
+    contacto_nombre: string;
+    contacto_apellido: string;
+    telefono: string | null;
     correo: string | null;
   } | null;
   suscripcion: {
@@ -95,7 +98,18 @@ export function detalleDesdeDto(dto: DetalleDto): DetalleDeCuenta {
       activa: dto.cuenta.activa,
       clienteDesde: new Date(dto.cuenta.cliente_desde),
     },
-    empresa: dto.empresa,
+    empresa:
+      dto.empresa === null
+        ? null
+        : {
+            nit: dto.empresa.nit,
+            ciudad: dto.empresa.ciudad,
+            contacto: dto.empresa.contacto,
+            contactoNombre: dto.empresa.contacto_nombre,
+            contactoApellido: dto.empresa.contacto_apellido,
+            telefono: dto.empresa.telefono,
+            correo: dto.empresa.correo,
+          },
     suscripcion:
       dto.suscripcion === null
         ? null
@@ -190,14 +204,14 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           nit: empresa.nit.trim(),
           ciudad: empresa.ciudad,
           contacto_nombre: empresa.contactoNombre.trim(),
+          contacto_apellido: empresa.contactoApellido.trim(),
           contacto_telefono: empresa.contactoTelefono.trim(),
           contacto_correo: empresa.contactoCorreo.trim(),
           plan_id: borrador.planId,
           inicio: vigencia.inicio,
-          administrador_nombre: (vigencia.adminIgualAlResponsable
-            ? empresa.contactoNombre
-            : vigencia.administradorNombre
-          ).trim(),
+          administrador_nombre: vigencia.adminIgualAlResponsable
+            ? nombreCompletoDelResponsable(empresa)
+            : vigencia.administradorNombre.trim(),
           ...(borrador.pago.modo === 'ahora'
             ? {
                 pago: {
@@ -272,6 +286,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           nit: datos.nit.trim(),
           ciudad: datos.ciudad,
           contacto_nombre: datos.contactoNombre.trim(),
+          contacto_apellido: datos.contactoApellido.trim(),
           contacto_telefono: datos.contactoTelefono.trim(),
           contacto_correo: datos.contactoCorreo.trim(),
         },

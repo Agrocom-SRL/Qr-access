@@ -140,6 +140,8 @@ export const DETALLE = {
     nit: '1023456021',
     ciudad: 'Santa Cruz de la Sierra',
     contacto: 'Carla Méndez',
+    contactoNombre: 'Carla',
+    contactoApellido: 'Méndez',
     telefono: '3 342 1180',
     correo: 'carla@agroindustrialnorte.bo',
   },

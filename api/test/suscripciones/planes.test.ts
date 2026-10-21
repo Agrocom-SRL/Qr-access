@@ -330,6 +330,7 @@ describe('plataforma: gestión de planes (crear, editar, retirar)', () => {
           nit: '1234567',
           ciudad: 'Montero',
           contacto_nombre: 'X',
+          contacto_apellido: 'Pérez',
           contacto_telefono: '3 922 0011',
           plan_id: id,
           inicio: '2026-10-12',

@@ -1,6 +1,7 @@
 import {
   BORRADOR_VACIO,
   hoyIso,
+  nombreCompletoDelResponsable,
   normalizarCodigo,
   validarEmpresa,
   validarPagoDeAlta,
@@ -14,7 +15,8 @@ const completa = {
   nit: '2876501019',
   ciudad: 'Ascensión de Guarayos',
   codigo: 'AGU',
-  contactoNombre: 'Rodrigo Añez',
+  contactoNombre: 'Rodrigo',
+  contactoApellido: 'Añez',
   contactoTelefono: '7 712 4405',
   contactoCorreo: 'rodrigo@guarayos.bo',
 };
@@ -31,17 +33,27 @@ describe('validarEmpresa', () => {
     expect(validarEmpresa(completa)).toEqual({});
   });
 
-  it('marca lo requerido', () => {
+  it('marca lo requerido: nombre de la cuenta, código, ciudad y nombre y apellido del responsable', () => {
     const errores = validarEmpresa(BORRADOR_VACIO('2026-10-12').empresa);
     expect(Object.keys(errores).sort()).toEqual([
       'ciudad',
       'codigo',
-      'contactoCorreo',
+      'contactoApellido',
       'contactoNombre',
-      'contactoTelefono',
-      'nit',
       'razonSocial',
     ]);
+  });
+
+  it('el NIT, el teléfono y el correo son opcionales: vacíos no marcan error', () => {
+    expect(
+      validarEmpresa({ ...completa, nit: '', contactoTelefono: '', contactoCorreo: '' }),
+    ).toEqual({});
+  });
+
+  it('el apellido del responsable es obligatorio', () => {
+    expect(validarEmpresa({ ...completa, contactoApellido: ' ' }).contactoApellido).toBe(
+      'requerido',
+    );
   });
 
   it('valida formato de NIT, código y teléfono', () => {
@@ -133,10 +145,18 @@ describe('validarPagoDeAlta', () => {
 });
 
 describe('correo de la persona responsable', () => {
-  it('es obligatorio y tiene que parecer un correo', () => {
-    expect(validarEmpresa({ ...completa, contactoCorreo: '' }).contactoCorreo).toBe('requerido');
+  it('es opcional, pero si se escribe tiene que parecer un correo', () => {
+    expect(validarEmpresa({ ...completa, contactoCorreo: '' }).contactoCorreo).toBeUndefined();
     expect(validarEmpresa({ ...completa, contactoCorreo: 'sin-arroba' }).contactoCorreo).toBe(
       'formato',
     );
+  });
+});
+
+describe('nombreCompletoDelResponsable', () => {
+  it('une nombre y apellido, sin espacios sobrantes', () => {
+    expect(
+      nombreCompletoDelResponsable({ contactoNombre: ' Rodrigo ', contactoApellido: 'Añez' }),
+    ).toBe('Rodrigo Añez');
   });
 });
