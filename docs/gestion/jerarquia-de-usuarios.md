@@ -66,6 +66,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 ## 6. Cambios en el panel web
 
+> **Hecho en el panel web (2026-10-22):** varios Administradores por cuenta (§6.1), el árbol de la cuenta en la ficha (§6.4, sin estadísticas todavía), reasignar Guardias y unidades (ADR 0028 §7) y editar el tope de Miembros por Titular. Quedan las estadísticas de §4 y el rótulo de "Registrar pago" en cobranza.
+
 1. **Varios propietarios por cuenta.** Hoy se crea un administrador inicial; hay que poder agregar más desde la ficha de la cuenta.
 2. **Alta de cuenta:**
    - "Razón social" pasa a **Nombre de la cuenta** (no se factura; la cuenta es una habilitación de acceso).
