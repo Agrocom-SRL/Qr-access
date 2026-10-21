@@ -3,6 +3,7 @@ import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
+import { ejecutar as compartirPin } from './actions/compartir-pin.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
 import { ejecutar as editarMiPerfil } from './actions/editar-mi-perfil.js';
 import { ejecutar as editarUsuario } from './actions/editar-usuario.js';
@@ -221,6 +222,18 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           new Date(),
           request.body?.sufijo,
         ),
+    );
+    // Anota que el PIN se compartió por un canal de terceros: solo el nivel superior, y queda en la bitácora.
+    app.post(
+      '/usuarios/:id/pin/compartido',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        preHandler: permiso('seguridad.usuario.editar'),
+      },
+      async (request, reply) => {
+        await compartirPin(pool, usuarioDe(request), request.params.id);
+        return reply.status(204).send();
+      },
     );
     app.register(rutasDePlataforma(servicios));
     app.register(rutasDeCuentas(servicios));

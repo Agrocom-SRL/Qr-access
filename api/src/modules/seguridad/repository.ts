@@ -98,6 +98,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         'pin_indice',
         'pin_hash',
         'pin_generado_at',
+        'pin_compartido_at',
         'username',
         'contrasena_hash',
         'superior_id',
@@ -230,6 +231,14 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
       pin_hash: pin.pinHash,
       pin_generado_at: pin.ahora,
     });
+  }
+
+  /**
+   * Anota que el PIN de `id` se compartió por un canal de terceros (ADR 0028 §7). Es un cambio más de
+   * `usuarios`: la bitácora lo registra con quién lo hizo, cuándo y la fecha anterior; el PIN no.
+   */
+  marcarPinCompartido(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(tx, id, { pin_compartido_at: ahora });
   }
 
   cambiarEtiqueta(tx: Transaccion, id: string, etiqueta: string): Promise<boolean> {
