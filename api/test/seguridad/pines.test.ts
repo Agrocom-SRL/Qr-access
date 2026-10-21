@@ -94,7 +94,7 @@ describe('plataforma: código de la cuenta y PIN de los administradores (ADR 002
       });
       const rolId = roles
         .json<{ datos: { id: string; nombre: string }[] }>()
-        .datos.find((r) => r.nombre === 'Usuario')?.id;
+        .datos.find((r) => r.nombre === 'Titular')?.id;
       const usuario = await prueba.app.inject({
         method: 'POST',
         url: '/api/v1/usuarios',

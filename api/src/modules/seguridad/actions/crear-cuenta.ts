@@ -55,7 +55,7 @@ export interface CuentaCreada {
 
 /**
  * Alta de una cuenta cliente (HU-01), todo o nada en una transacción: la cuenta con su código
- * inmutable, los datos de la empresa, los tres roles base, su suscripción de 12 meses y el primer
+ * inmutable, los datos de la empresa, los cuatro roles base, su suscripción de 12 meses y el primer
  * administrador con un PIN sorteado por el servidor. Se firma con el usuario del super admin.
  * Sin `pago`, la suscripción queda pendiente de su primer pago: la cuenta existe, el administrador
  * tiene su PIN, pero nada abre hasta registrar el pago de alta (cobranza).
@@ -118,6 +118,7 @@ export async function ejecutar(
         async (sorteo) => {
           administradorId = await usuarios.crear(tx, {
             etiqueta: datos.administradorNombre,
+            superiorId: null,
             pinIndice: sorteo.indice,
             pinHash: sorteo.hash,
             ahora: new Date(),

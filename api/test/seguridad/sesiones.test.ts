@@ -62,7 +62,7 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
 
   it('el PIN de la cuenta A con el sufijo válido de la B se rechaza', async () => {
     const sufijoSoloDeB = 'BX99';
-    await crearUsuarioConPin(prueba.pool, b.cuenta, sufijoSoloDeB, [b.rolUsuarioId]);
+    await crearUsuarioConPin(prueba.pool, b.cuenta, sufijoSoloDeB, [b.rolMiembroId]);
 
     const cruzado = await ingresar(`AAA${sufijoSoloDeB}`);
     expect(cruzado.statusCode).toBe(401);
@@ -79,7 +79,7 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
   });
 
   it('cualquier fallo responde exactamente lo mismo: PIN erróneo, cuenta inexistente, formato ilegible, usuario inactivo', async () => {
-    await crearUsuarioConPin(prueba.pool, a.cuenta, 'INAC', [a.rolUsuarioId], { activo: false });
+    await crearUsuarioConPin(prueba.pool, a.cuenta, 'INAC', [a.rolMiembroId], { activo: false });
     const casos = [
       'AAAZ9Z9',
       'ZZZ1234',
@@ -134,111 +134,66 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
     expect(respuesta.json()).toMatchObject({ code: 'validacion.invalida' });
   });
 
-  describe('roles y rol activo', () => {
-    async function usuarioConDosRoles() {
-      const rolGuardia = await crearRol(prueba.pool, a.cuenta, 'Guardia', [
-        'accesos.evento.ver_todos',
-      ]);
-      const usuario = await crearUsuarioConPin(prueba.pool, a.cuenta, 'DOS2', [
-        a.rolUsuarioId,
-        rolGuardia,
-      ]);
-      return { usuario, rolGuardia };
-    }
-
-    it('con varios roles y ninguno preferido, entra sin rol activo y sin permisos', async () => {
-      const { usuario, rolGuardia } = await usuarioConDosRoles();
-      const sesion = await iniciarSesion(prueba.app, usuario.pin);
-      expect(sesion.rol_activo_id).toBeNull();
+  describe('un usuario, un rol (ADR 0028 §2)', () => {
+    it('el rol de la sesión es el único del usuario y sus permisos son los de ese rol', async () => {
+      const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
+      expect(sesion.rol_activo_id).toBe(a.rolMiembroId);
       const actual = await prueba.app.inject({
         method: 'GET',
         url: `${RUTA}/actual`,
         headers: conUsuario(sesion),
       });
       expect(actual.statusCode).toBe(200);
-      expect(actual.json()).toMatchObject({ rol_activo: null, permisos: [] });
-      // Al reabrir sin rol activo, la app ofrece elegir entre estos
-      const roles = actual.json<{ roles: { id: string }[] }>().roles.map((rol) => rol.id);
-      expect(roles.sort()).toEqual([a.rolUsuarioId, rolGuardia].sort());
-      const puertas = await prueba.app.inject({
-        method: 'GET',
-        url: '/api/v1/puertas',
-        headers: conUsuario(sesion),
+      expect(actual.json()).toMatchObject({
+        roles: [{ id: a.rolMiembroId, nombre: 'Miembro' }],
+        rol_activo: { id: a.rolMiembroId, nombre: 'Miembro' },
+        permisos: [...PERMISOS_DE_USUARIO].sort(),
       });
-      expect(puertas.statusCode).toBe(403);
-      expect(puertas.json()).toMatchObject({ code: 'permiso.denegado' });
     });
 
-    it('los permisos son los del rol activo, nunca la unión de sus roles', async () => {
-      const { usuario, rolGuardia } = await usuarioConDosRoles();
-      const sesion = await iniciarSesion(prueba.app, usuario.pin);
-
-      const comoGuardia = await prueba.app.inject({
-        method: 'POST',
-        url: `${RUTA}/rol-activo`,
-        headers: conUsuario(sesion),
-        payload: { rol_id: rolGuardia },
-      });
-      expect(comoGuardia.statusCode).toBe(200);
-      const tokenGuardia = { acceso: comoGuardia.json<{ acceso: string }>().acceso };
-      const actualGuardia = await prueba.app.inject({
-        method: 'GET',
-        url: `${RUTA}/actual`,
-        headers: conUsuario(tokenGuardia),
-      });
-      expect(actualGuardia.json()).toMatchObject({
-        rol_activo: { id: rolGuardia, nombre: 'Guardia' },
-        permisos: ['accesos.evento.ver_todos'],
-      });
-      // El permiso de emitir es del rol Usuario, que NO es el activo
-      const emitir = await prueba.app.inject({
-        method: 'POST',
-        url: '/api/v1/qr-accesos',
-        headers: conUsuario(tokenGuardia),
-        payload: { puerta_ids: [a.puertaPrincipal.id] },
-      });
-      expect(emitir.statusCode).toBe(403);
-
-      const comoUsuario = await prueba.app.inject({
-        method: 'POST',
-        url: `${RUTA}/rol-activo`,
-        headers: conUsuario(sesion),
-        payload: { rol_id: a.rolUsuarioId },
-      });
-      const actualUsuario = await prueba.app.inject({
-        method: 'GET',
-        url: `${RUTA}/actual`,
-        headers: conUsuario({ acceso: comoUsuario.json<{ acceso: string }>().acceso }),
-      });
-      expect(actualUsuario.json<{ permisos: string[] }>().permisos).toEqual(
-        [...PERMISOS_DE_USUARIO].sort(),
-      );
-    });
-
-    it('recuerda el último rol elegido para la próxima sesión', async () => {
-      const { usuario, rolGuardia } = await usuarioConDosRoles();
-      const primera = await iniciarSesion(prueba.app, usuario.pin);
-      await prueba.app.inject({
-        method: 'POST',
-        url: `${RUTA}/rol-activo`,
-        headers: conUsuario(primera),
-        payload: { rol_id: rolGuardia },
-      });
-      expect((await iniciarSesion(prueba.app, usuario.pin)).rol_activo_id).toBe(rolGuardia);
-    });
-
-    it('un rol que no es del usuario, o de otra cuenta, es un 404', async () => {
+    it('ya no se cambia de rol: la ruta del rol activo no existe', async () => {
       const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
-      for (const rolId of [a.rolAdministradorId, b.rolUsuarioId, '99999999']) {
-        const respuesta = await prueba.app.inject({
-          method: 'POST',
-          url: `${RUTA}/rol-activo`,
-          headers: conUsuario(sesion),
-          payload: { rol_id: rolId },
-        });
-        expect(respuesta.statusCode).toBe(404);
-        expect(respuesta.json()).toMatchObject({ code: 'rol.no_encontrado' });
-      }
+      const respuesta = await prueba.app.inject({
+        method: 'POST',
+        url: `${RUTA}/rol-activo`,
+        headers: conUsuario(sesion),
+        payload: { rol_id: a.rolAdministradorId },
+      });
+      expect(respuesta.statusCode).toBe(404);
+    });
+
+    it('la base impide que un usuario tenga dos roles vigentes', async () => {
+      const rolGuardia = await crearRol(prueba.pool, a.cuenta, 'Guardia', [
+        'accesos.evento.ver_todos',
+      ]);
+      await expect(
+        prueba.pool.query(
+          'INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id) VALUES (?, ?, ?)',
+          [a.cuenta.id, a.usuario.id, rolGuardia],
+        ),
+      ).rejects.toMatchObject({ code: 'ER_DUP_ENTRY' });
+    });
+
+    it('si el usuario cambia de rol, el refresco toma el rol vigente', async () => {
+      const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
+      await prueba.pool.query(
+        'UPDATE usuario_roles SET rol_id = ? WHERE usuario_id = ? AND deleted_at IS NULL',
+        [a.rolTitularId, a.usuario.id],
+      );
+      const refrescada = await prueba.app.inject({
+        method: 'POST',
+        url: `${RUTA}/refresco`,
+        payload: { refresco: sesion.refresco },
+      });
+      expect(refrescada.statusCode, refrescada.body).toBe(200);
+      const actual = await prueba.app.inject({
+        method: 'GET',
+        url: `${RUTA}/actual`,
+        headers: conUsuario({ acceso: refrescada.json<{ acceso: string }>().acceso }),
+      });
+      expect(actual.json()).toMatchObject({
+        rol_activo: { id: a.rolTitularId, nombre: 'Titular' },
+      });
     });
 
     it('un rol quitado deja de servir de inmediato, sin esperar a que venza el JWT', async () => {

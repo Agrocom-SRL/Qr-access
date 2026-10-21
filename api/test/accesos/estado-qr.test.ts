@@ -118,7 +118,7 @@ describe('GET /api/v1/qr-accesos/{id}/estado', () => {
   });
 
   it('un usuario no ve el de otro; un administrador (ver_todos) sí', async () => {
-    const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'OT01', [a.rolUsuarioId]);
+    const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'OT01', [a.rolMiembroId]);
     const delOtro = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
     expect((await estado(sesionUsuarioA, delOtro.id)).statusCode).toBe(404);
     expect((await estado(sesionAdminA, delOtro.id)).statusCode).toBe(200);
