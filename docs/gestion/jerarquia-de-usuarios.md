@@ -98,6 +98,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 - Todos generan y comparten QR menos el guardia.
 - El cupo cuenta usuarios habilitados; una baja libera lugar.
 - Nombre de cuenta simple, NIT opcional, sin facturación.
+- **Quién crea a quién (2026-10-21):** el Administrador solo crea **Titulares** y **Guardias**; el Titular no elige tipo, todo lo que crea es **Miembro**. Se refleja en la app móvil (el selector de rol solo existe para el Administrador).
+- **Un usuario, un rol (2026-10-21):** desaparece el cambio de rol en la app. El único caso de rol múltiple era Guardia/Titular y un guardia no es titular de nada, así que cada usuario tiene exactamente un rol. Esto enmienda la invariante 10 de CLAUDE.md ("múltiples roles, un rol activo por sesión") y el ADR 0004: el ADR nuevo debe reescribirla, y con ella la pantalla de elegir rol y el rol activo de la sesión.
 
 ## 10. Puntos a refinar (abiertos)
 
