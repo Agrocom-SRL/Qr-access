@@ -293,6 +293,9 @@ class Tamanos {
   double get bordeSeleccion => 2;
   double get bordeFino => 1;
   double get barraResultado => 4;
+
+  /// Alto de la barra de uso (p. ej. el cupo de usuarios).
+  double get barraUso => 8;
   double get puntoBadge => 6;
 
   /// Ancho mínimo de una tarjeta antes de pasar a otra columna.

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
@@ -9,6 +10,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/features/administracion/data/estructura_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
@@ -59,10 +61,11 @@ const rolDePrueba = RolSesion(id: 'r1', nombre: 'Administrador');
 SesionAutenticada sesionCon({
   Set<String> permisos = const {},
   SuscripcionSesion? suscripcion,
+  RolSesion rol = rolDePrueba,
 }) => SesionAutenticada(
   usuario: usuarioDePrueba,
   cuenta: cuentaDePrueba,
-  rolActivo: rolDePrueba,
+  rolActivo: rol,
   permisos: permisos,
   suscripcion: suscripcion,
 );
@@ -284,8 +287,21 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
     this.pinGenerado,
     this.error,
     this.asignadas = const PuertasAsignadas(),
+    this.dependientes = const {},
+    this.cupoActual = const Cupo(
+      usados: 4,
+      maximo: 10,
+      porcentaje: 40,
+      aviso: null,
+      maxMiembrosPorTitular: 10,
+    ),
   });
 
+  /// Cuántos usuarios cuelgan de cada usuario: sin `confirmar`, eliminarlo
+  /// responde 409 con esa cantidad, como la API.
+  final Map<String, int> dependientes;
+  final Cupo cupoActual;
+  final List<String> eliminadosEnCascada = [];
   final List<Usuario> usuarios;
   final PuertasAsignadas asignadas;
   final List<(String, PuertasAsignadas)> asignaciones = [];
@@ -294,7 +310,7 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   final PinGenerado? pinGenerado;
   final Exception? error;
   final List<DatosUsuario> creados = [];
-  final List<(String, DatosUsuario)> editados = [];
+  final List<(String, String)> editados = [];
   final List<String> eliminados = [];
   final List<String> pinesRegenerados = [];
 
@@ -323,17 +339,29 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   }
 
   @override
-  Future<Usuario> editar(String id, DatosUsuario datos) async {
+  Future<Usuario> editar(String id, {required String etiqueta}) async {
     if (error != null) throw error!;
-    editados.add((id, datos));
+    editados.add((id, etiqueta));
     return usuarios.firstWhere((u) => u.id == id);
   }
 
   @override
-  Future<void> eliminar(String id) async {
+  Future<void> eliminar(String id, {bool confirmar = false}) async {
     if (error != null) throw error!;
+    final cantidad = dependientes[id] ?? 0;
+    if (cantidad > 0 && !confirmar) {
+      throw ErrorApi(
+        code: 'usuario.con_dependientes',
+        status: 409,
+        detalles: {'dependientes': cantidad},
+      );
+    }
     eliminados.add(id);
+    if (confirmar) eliminadosEnCascada.add(id);
   }
+
+  @override
+  Future<Cupo> cupo() async => cupoActual;
 
   @override
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {
