@@ -12,16 +12,19 @@ import { ejecutar as iniciarSesion } from './actions/iniciar-sesion.js';
 import { ejecutar as listarRoles } from './actions/listar-roles.js';
 import { ejecutar as listarUsuarios } from './actions/listar-usuarios.js';
 import { ejecutar as refrescarSesion } from './actions/refrescar-sesion.js';
+import { ejecutar as verCupo } from './actions/ver-cupo.js';
 import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
   cuerpoDeMiPerfil,
   cuerpoDeNuevoUsuario,
+  consultaDeBaja,
   cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
   esquemaUsuario,
   parametrosDeUsuario,
+  respuestaDeCupo,
   respuestaDeIngreso,
   respuestaDePinGenerado,
   respuestaDeRefresco,
@@ -99,6 +102,16 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       return reply.status(204).send();
     });
 
+    // El porcentaje y los avisos del cupo los ve solo el Administrador (ADR 0028 §6).
+    app.get(
+      '/cupo',
+      {
+        schema: { tags: ['seguridad'], response: { 200: respuestaDeCupo } },
+        preHandler: permiso('seguridad.cupo.ver'),
+      },
+      (request) => verCupo(pool, usuarioDe(request)),
+    );
+
     app.get(
       '/roles',
       {
@@ -136,6 +149,14 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           etiqueta: request.body.etiqueta,
           rolIds: request.body.rol_ids,
           ...(request.body.sufijo === undefined ? {} : { sufijo: request.body.sufijo }),
+          ...(request.body.unidad === undefined
+            ? {}
+            : {
+                unidad: {
+                  sitioId: request.body.unidad.sitio_id,
+                  nombre: request.body.unidad.nombre,
+                },
+              }),
         });
         return reply.status(201).header('location', `/api/v1/usuarios/${usuario.id}`).send(usuario);
       },
@@ -159,11 +180,11 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
     app.delete(
       '/usuarios/:id',
       {
-        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, querystring: consultaDeBaja },
         preHandler: permiso('seguridad.usuario.eliminar'),
       },
       async (request, reply) => {
-        await eliminarUsuario(pool, usuarioDe(request), request.params.id);
+        await eliminarUsuario(pool, usuarioDe(request), request.params.id, request.query.confirmar);
         return reply.status(204).send();
       },
     );

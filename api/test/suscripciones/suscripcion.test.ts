@@ -261,7 +261,11 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
           method: 'POST',
           url: '/api/v1/usuarios',
           headers: conUsuario(sesion),
-          payload: { etiqueta: 'Nuevo', rol_ids: [escenario.rolTitularId] },
+          payload: {
+            etiqueta: 'Nuevo',
+            rol_ids: [escenario.rolTitularId],
+            unidad: { sitio_id: escenario.sitioId, nombre: 'Casa 1' },
+          },
         });
       expect((await crear()).json<Problema>().code).toBe('plan.limite_usuarios');
       await cambiar(planes[200]);

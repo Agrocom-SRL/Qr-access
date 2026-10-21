@@ -1,4 +1,6 @@
 import type { Pool } from 'mysql2/promise';
+import type { Transaccion } from '../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import type { Listado, Paginacion } from '../../platform/http/paginacion.js';
 import {
   ejecutar as listarPuertasDeLaCuenta,
@@ -6,7 +8,12 @@ import {
 } from './actions/listar-puertas.js';
 import * as asignaciones from './actions/asignar-puertas.js';
 import * as estructura from './actions/gestionar-estructura.js';
-import { RepositorioDePuertas, RepositorioDeSitios, type PuertaFila } from './repository.js';
+import {
+  RepositorioDePuertas,
+  RepositorioDeSitios,
+  RepositorioDeUnidades,
+  type PuertaFila,
+} from './repository.js';
 
 export type { PuertaListada } from './actions/listar-puertas.js';
 export type {
@@ -31,6 +38,13 @@ export interface PuertaDeCuenta {
   readonly activa: boolean;
 }
 
+/** La unidad de un Titular: lo que el resto de los módulos puede saber de ella. */
+export interface UnidadDeTitular {
+  readonly id: string;
+  readonly nombre: string;
+  readonly sitioId: string;
+}
+
 export interface ServicioDeOrganizacion {
   /** Puertas de la cuenta del contexto. Un id inexistente o de otra cuenta simplemente no vuelve. */
   buscarPuertas(ids: readonly string[]): Promise<PuertaDeCuenta[]>;
@@ -49,6 +63,24 @@ export interface ServicioDeOrganizacion {
   /** Puertas a las que está asignado el usuario (guardia) de la cuenta del contexto. */
   puertasAsignadasA(usuarioId: string): Promise<asignaciones.PuertasAsignadas>;
   asignarPuertas(usuarioId: string, puertas: asignaciones.PuertasAsignadas): Promise<void>;
+  /**
+   * Crea la unidad de un Titular, dentro de la transacción que lo da de alta (ADR 0028). El sitio
+   * debe existir en la cuenta del contexto (404) y el nombre no repetirse dentro de él (409).
+   */
+  crearUnidad(
+    tx: Transaccion,
+    datos: { sitioId: string; nombre: string; titularId: string },
+  ): Promise<{ id: string }>;
+  /** `titularId -> unidad` de la cuenta del contexto; un Titular sin unidad no aparece. */
+  unidadesDeTitulares(titularIds: readonly string[]): Promise<Map<string, UnidadDeTitular>>;
+  /** Da de baja las unidades de esos Titulares (soft delete), en la transacción de su baja. */
+  darDeBajaUnidadesDe(tx: Transaccion, titularIds: readonly string[]): Promise<void>;
+}
+
+function esDuplicado(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'ER_DUP_ENTRY'
+  );
 }
 
 function aPuerta(fila: PuertaFila): PuertaDeCuenta {
@@ -86,5 +118,26 @@ export function crearServicioDeOrganizacion(pool: Pool): ServicioDeOrganizacion 
     eliminarPuerta: (id) => estructura.eliminarPuerta(pool, id),
     puertasAsignadasA: (usuarioId) => asignaciones.ver(pool, usuarioId),
     asignarPuertas: (usuarioId, puertas) => asignaciones.reemplazar(pool, usuarioId, puertas),
+    async crearUnidad(tx, datos) {
+      const sitio = await new RepositorioDeSitios(pool).buscarPorId(datos.sitioId);
+      if (sitio?.activo !== 1) throw new ErrorDeDominio('sitio.no_encontrado', 404);
+      try {
+        return { id: await new RepositorioDeUnidades(pool).crear(tx, datos) };
+      } catch (error) {
+        if (esDuplicado(error)) throw new ErrorDeDominio('unidad.nombre_existente', 409);
+        throw error;
+      }
+    },
+    async unidadesDeTitulares(titularIds) {
+      const mapa = new Map<string, UnidadDeTitular>();
+      for (const fila of await new RepositorioDeUnidades(pool).deTitulares(titularIds)) {
+        if (fila.titular_id !== null) {
+          mapa.set(fila.titular_id, { id: fila.id, nombre: fila.nombre, sitioId: fila.sitio_id });
+        }
+      }
+      return mapa;
+    },
+    darDeBajaUnidadesDe: (tx, titularIds) =>
+      new RepositorioDeUnidades(pool).darDeBajaDeTitulares(tx, titularIds),
   };
 }

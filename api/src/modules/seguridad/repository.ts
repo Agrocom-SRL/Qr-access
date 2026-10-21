@@ -9,7 +9,11 @@ export interface CuentaFila extends RowDataPacket {
   codigo: string;
   nombre: string;
   activo: number;
+  /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
+  max_miembros_por_titular: number;
 }
+
+const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular';
 
 /** Dueño de `cuentas` (tabla de plataforma). */
 export class RepositorioDeCuentas extends RepositorioDePlataforma {
@@ -25,7 +29,7 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
   /** Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. */
   buscarActivaPorCodigo(codigo: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo',
+      columnas: COLUMNAS_DE_CUENTA,
       donde: 't.codigo = ? AND t.activo = 1',
       params: [codigo],
     });
@@ -33,7 +37,7 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
 
   buscarActivaPorId(id: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo',
+      columnas: COLUMNAS_DE_CUENTA,
       donde: 't.id = ? AND t.activo = 1',
       params: [id],
     });
@@ -162,6 +166,17 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
 
   contarDeRama(superiorId: string): Promise<number> {
     return this.contar({ donde: EN_LA_RAMA_DE, params: [superiorId] });
+  }
+
+  /** Los ids de toda la rama de `id` (sus descendientes, sin él): lo que cae con su baja en cascada. */
+  async idsDeRama(id: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
+      columnas: 't.id',
+      donde: EN_LA_RAMA_DE,
+      params: [id],
+      orden: 't.id',
+    });
+    return filas.map((fila) => fila.id);
   }
 
   /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */
