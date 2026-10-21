@@ -608,6 +608,9 @@ ALTER TABLE usuarios
 Migración: `db/migrations/20261022100003_un_rol_por_usuario.sql`
 
 ```sql
+-- Antes (solo si ya hay datos): da de baja los roles de más y deja el de mayor nivel por usuario.
 ALTER TABLE usuario_roles ADD UNIQUE KEY uq_usuario_roles_usuario (usuario_id, vigente);
 ALTER TABLE usuarios DROP FOREIGN KEY fk_usuarios_rol_preferido, DROP COLUMN rol_preferido_id;
 ```
+
+Migración de datos: `db/migrations/20261022100004_vincula_usuarios_existentes.sql` cuelga a los usuarios de cuenta que aún no tienen superior del primer Administrador de su cuenta.

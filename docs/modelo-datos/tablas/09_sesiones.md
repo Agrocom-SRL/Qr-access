@@ -4,7 +4,7 @@
 
 ## Propósito
 
-Una sesión de un usuario: su refresh token (hasheado), el rol activo y su vencimiento.
+Una sesión de un usuario: su refresh token (hasheado), su rol (el único del usuario, ADR 0028) y su vencimiento.
 
 ## Columnas
 

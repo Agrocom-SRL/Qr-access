@@ -19,7 +19,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 ## 3. Alcance V1
 
 - §4.1 Cuentas, planes y suscripciones.
-- §4.2 Acceso a la plataforma: login por PIN, roles y rol activo.
+- §4.2 Acceso a la plataforma: login por PIN y rol único por usuario.
 - §4.3 Sitios y puertas.
 - §4.4 Dispositivos: alta, credencial, latido y configuración.
 - §4.5 Emisión, envío y anulación de QR.
@@ -36,7 +36,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 
 ### 4.2 Acceso a la plataforma (ADR 0004)
 - HU-04: Como usuario, ingreso con el PIN que me entregaron (p. ej. `AGR7K2Q`: código de mi cuenta + 4 caracteres), en la app móvil o en la web (ADR 0018) [confirmar D-24].
-- HU-05: Como usuario con más de un rol, elijo el rol activo y lo cambio sin volver a ingresar.
+- HU-05: ~~Como usuario con más de un rol, elijo el rol activo y lo cambio sin volver a ingresar.~~ **Reemplazada por el ADR 0028:** cada usuario tiene un solo rol y no hay cambio de rol; quien necesite dos funciones tiene dos usuarios.
 - HU-06: Como super admin, o como administrador de la cuenta con el permiso `seguridad.usuario.crear`, genero PIN de acceso para la cuenta (cada PIN es un usuario con su etiqueta y sus roles), dentro del límite del plan; lo veo una sola vez, y lo regenero o lo doy de baja.
 
 ### 4.3 Sitios y puertas
