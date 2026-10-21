@@ -156,3 +156,57 @@ export function destinosDeReasignacion(
 ): readonly RamaDeAdministrador[] {
   return ramas.filter((rama) => rama.id !== administradorActualId);
 }
+
+/** Uso que un usuario hizo de sus QR en la ventana (ADR 0028 §4). Informativo. */
+export interface UsoDeUsuario {
+  id: string;
+  etiqueta: string;
+  rol: string | null;
+  unidad: string | null;
+  qrEmitidos: number;
+  qrUsados: number;
+  maxQrEnUnDia: number;
+  /** El último QR que generó, de cualquier fecha; `null` si nunca generó uno. */
+  ultimoQrEn: Date | null;
+  inactivo: boolean;
+  ruidoso: boolean;
+}
+
+export interface TitularConMiembros {
+  id: string;
+  etiqueta: string;
+  unidad: string | null;
+  miembros: number;
+  tope: number;
+  porcentaje: number;
+  cercaDelTope: boolean;
+}
+
+/**
+ * El uso de los usuarios de una cuenta tal como lo calcula la API: los umbrales son fijos (30 días
+ * sin QR; más de 10 QR en un día) y el panel no calcula nada, solo lo muestra.
+ */
+export interface EstadisticasDeUsuarios {
+  ventanaDias: number;
+  umbralInactivoDias: number;
+  umbralRuidosoPorDia: number;
+  usuarios: readonly UsoDeUsuario[];
+  titulares: readonly TitularConMiembros[];
+  /** Cuántos usuarios cuelgan de cada Administrador (el cupo de su rama). */
+  ramas: readonly { id: string; etiqueta: string; usuarios: number }[];
+}
+
+/** Los que no generaron ningún QR en la ventana: candidatos a baja. */
+export function inactivosDe(e: EstadisticasDeUsuarios): readonly UsoDeUsuario[] {
+  return e.usuarios.filter((u) => u.inactivo);
+}
+
+/** Los que generan QR a cada rato: candidatos a revisión. */
+export function ruidososDe(e: EstadisticasDeUsuarios): readonly UsoDeUsuario[] {
+  return e.usuarios.filter((u) => u.ruidoso);
+}
+
+/** Los Titulares que ya usan casi todo su tope de Miembros. */
+export function titularesCercaDelTope(e: EstadisticasDeUsuarios): readonly TitularConMiembros[] {
+  return e.titulares.filter((t) => t.cercaDelTope);
+}

@@ -259,6 +259,67 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
       });
     },
 
+    async estadisticasDeUsuarios(cuentaId) {
+      const dto = await cliente.solicitar<{
+        ventana_dias: number;
+        umbral_inactivo_dias: number;
+        umbral_ruidoso_por_dia: number;
+        usuarios: {
+          id: string;
+          etiqueta: string | null;
+          rol: string | null;
+          unidad: string | null;
+          qr_emitidos: number;
+          qr_usados: number;
+          max_qr_en_un_dia: number;
+          ultimo_qr_at: string | null;
+          inactivo: boolean;
+          ruidoso: boolean;
+        }[];
+        titulares: {
+          id: string;
+          etiqueta: string | null;
+          unidad: string | null;
+          miembros: number;
+          tope: number;
+          porcentaje: number;
+          cerca_del_tope: boolean;
+        }[];
+        ramas: { id: string; etiqueta: string | null; usuarios: number }[];
+      }>({ metodo: 'GET', ruta: `/plataforma/cuentas/${cuentaId}/estadisticas-de-usuarios` });
+      return {
+        ventanaDias: dto.ventana_dias,
+        umbralInactivoDias: dto.umbral_inactivo_dias,
+        umbralRuidosoPorDia: dto.umbral_ruidoso_por_dia,
+        usuarios: dto.usuarios.map((u) => ({
+          id: u.id,
+          etiqueta: u.etiqueta ?? '—',
+          rol: u.rol,
+          unidad: u.unidad,
+          qrEmitidos: u.qr_emitidos,
+          qrUsados: u.qr_usados,
+          maxQrEnUnDia: u.max_qr_en_un_dia,
+          ultimoQrEn: u.ultimo_qr_at === null ? null : new Date(u.ultimo_qr_at),
+          inactivo: u.inactivo,
+          ruidoso: u.ruidoso,
+        })),
+        titulares: dto.titulares.map((t) => ({
+          id: t.id,
+          etiqueta: t.etiqueta ?? '—',
+          unidad: t.unidad,
+          miembros: t.miembros,
+          tope: t.tope,
+          porcentaje: t.porcentaje,
+          cercaDelTope: t.cerca_del_tope,
+        })),
+        ramas: dto.ramas.map((r) => ({
+          id: r.id,
+          etiqueta: r.etiqueta ?? '—',
+          usuarios: r.usuarios,
+        })),
+      };
+    },
+
     async jerarquia(cuentaId) {
       const dto = await cliente.solicitar<{
         administradores: {

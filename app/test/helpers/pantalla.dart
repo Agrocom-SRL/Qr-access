@@ -51,6 +51,7 @@ Future<void> montarPantalla(
         Rutas.adminEstructura,
         Rutas.adminUsuarios,
         Rutas.adminUsuarioNuevo,
+        Rutas.adminEstadisticas,
         Rutas.adminUsuarioEditar,
       ])
         GoRoute(

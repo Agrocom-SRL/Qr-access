@@ -6,6 +6,7 @@ import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
 import { ejecutar as editarCuenta } from './actions/editar-cuenta.js';
 import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
+import { deCuenta as estadisticasDeCuenta } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
@@ -33,6 +34,7 @@ import {
   respuestaDeCuentas,
   respuestaDePinGenerado,
   respuestaDeDetalleDeCuenta,
+  respuestaDeEstadisticasDeCuenta,
 } from './schemas.js';
 import type { ServiciosDeSeguridad } from './servicios.js';
 
@@ -233,6 +235,21 @@ export const rutasDeCuentas =
         );
         return reply.status(201).send(creado);
       },
+    );
+
+    // El uso de los usuarios de la cuenta (inactivos, ruidosos, Titulares cerca del tope) y su cupo por rama.
+    app.get(
+      '/plataforma/cuentas/:id/estadisticas-de-usuarios',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeEstadisticasDeCuenta },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      (request) => estadisticasDeCuenta(pool, plataformaDe(request), request.params.id),
     );
 
     // El árbol de la cuenta: cada Administrador con sus Guardias y Titulares.

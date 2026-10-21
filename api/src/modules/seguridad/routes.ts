@@ -12,6 +12,7 @@ import { ejecutar as iniciarSesion } from './actions/iniciar-sesion.js';
 import { ejecutar as listarRoles } from './actions/listar-roles.js';
 import { ejecutar as listarUsuarios } from './actions/listar-usuarios.js';
 import { ejecutar as refrescarSesion } from './actions/refrescar-sesion.js';
+import { ejecutar as estadisticasDeUsuarios } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as verCupo } from './actions/ver-cupo.js';
 import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
@@ -25,6 +26,7 @@ import {
   esquemaUsuario,
   parametrosDeUsuario,
   respuestaDeCupo,
+  respuestaDeEstadisticasDeUsuarios,
   respuestaDeIngreso,
   respuestaDePinGenerado,
   respuestaDeRefresco,
@@ -110,6 +112,16 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         preHandler: permiso('seguridad.cupo.ver'),
       },
       (request) => verCupo(pool, usuarioDe(request)),
+    );
+
+    // El uso de la rama del actor: inactivos, ruidosos y Titulares cerca de su tope (ADR 0028 §4).
+    app.get(
+      '/usuarios/estadisticas',
+      {
+        schema: { tags: ['seguridad'], response: { 200: respuestaDeEstadisticasDeUsuarios } },
+        preHandler: permiso('seguridad.estadistica.ver'),
+      },
+      (request) => estadisticasDeUsuarios(pool, usuarioDe(request)),
     );
 
     app.get(

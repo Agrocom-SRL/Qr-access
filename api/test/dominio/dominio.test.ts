@@ -22,6 +22,14 @@ import {
   normalizarPin,
 } from '../../src/modules/seguridad/domain/pin.js';
 import {
+  QR_POR_DIA_PARA_RUIDOSO,
+  SIN_ACTIVIDAD,
+  estaCercaDelTope,
+  evaluarUsuario,
+  porcentajeDelTope,
+  usuariosPorRama,
+} from '../../src/modules/seguridad/domain/actividad-de-usuarios.js';
+import {
   armarJerarquia,
   nivelDeRol,
   puedeCrear,
@@ -137,6 +145,60 @@ describe('árbol de una cuenta para AGROCOM (ADR 0028)', () => {
       nodo('4', 'guardia', '99'),
     ]);
     expect(arbol).toEqual([{ id: '1', etiqueta: 'U1', guardias: [], titulares: [] }]);
+  });
+});
+
+describe('uso de los usuarios (ADR 0028 §4)', () => {
+  const ahora = new Date('2026-10-22T12:00:00Z');
+  const haceDias = (dias: number) => new Date(ahora.getTime() - dias * 86_400_000);
+
+  it('sin QR en la ventana es inactivo solo si ya tiene 30 días de antigüedad', () => {
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(29), ahora).inactivo).toBe(false);
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(30), ahora).inactivo).toBe(true);
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(400), ahora).inactivo).toBe(true);
+  });
+
+  it('un solo QR en la ventana lo saca de inactivo', () => {
+    const uno = { ...SIN_ACTIVIDAD, emitidos: 1, maxEnUnDia: 1 };
+    expect(evaluarUsuario(uno, haceDias(400), ahora).inactivo).toBe(false);
+  });
+
+  it('ruidoso es estrictamente más que el umbral por día', () => {
+    expect(QR_POR_DIA_PARA_RUIDOSO).toBe(10);
+    const con = (maxEnUnDia: number) => ({ ...SIN_ACTIVIDAD, emitidos: maxEnUnDia, maxEnUnDia });
+    expect(evaluarUsuario(con(10), haceDias(1), ahora).ruidoso).toBe(false);
+    expect(evaluarUsuario(con(11), haceDias(1), ahora).ruidoso).toBe(true);
+  });
+
+  it('el tope de Miembros: porcentaje hacia abajo y aviso desde el 80 %', () => {
+    expect(porcentajeDelTope(2, 10)).toBe(20);
+    expect(porcentajeDelTope(7, 9)).toBe(77);
+    expect(porcentajeDelTope(3, 0)).toBe(0);
+    expect(estaCercaDelTope(7, 10)).toBe(false);
+    expect(estaCercaDelTope(8, 10)).toBe(true);
+    expect(estaCercaDelTope(10, 10)).toBe(true);
+  });
+
+  it('cuenta a cualquier profundidad lo que cuelga de cada nodo', () => {
+    const cuentas = usuariosPorRama([
+      { id: '1', superiorId: null },
+      { id: '2', superiorId: '1' },
+      { id: '3', superiorId: '2' },
+      { id: '4', superiorId: '2' },
+      { id: '5', superiorId: '1' },
+      { id: '6', superiorId: null },
+    ]);
+    expect(cuentas.get('1')).toBe(4);
+    expect(cuentas.get('2')).toBe(2);
+    expect(cuentas.get('6')).toBe(0);
+  });
+
+  it('un ciclo no cuelga el recorrido', () => {
+    const cuentas = usuariosPorRama([
+      { id: '1', superiorId: '2' },
+      { id: '2', superiorId: '1' },
+    ]);
+    expect(cuentas.get('1')).toBe(1);
   });
 });
 

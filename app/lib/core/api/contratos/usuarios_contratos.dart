@@ -90,3 +90,70 @@ class CupoDto {
   final String? aviso;
   final int maxMiembrosPorTitular;
 }
+
+/// Un usuario con su uso de QR dentro de `GET /usuarios/estadisticas`.
+class UsoDeUsuarioDto {
+  new desde(Map<String, dynamic> json)
+    : id = json['id'] as String,
+      etiqueta = json['etiqueta'] as String?,
+      rol = json['rol'] as String?,
+      unidad = json['unidad'] as String?,
+      qrEmitidos = (json['qr_emitidos'] as num).toInt(),
+      qrUsados = (json['qr_usados'] as num).toInt(),
+      maxQrEnUnDia = (json['max_qr_en_un_dia'] as num).toInt(),
+      ultimoQrAt = fechaDeApiOpcional(json['ultimo_qr_at']),
+      inactivo = json['inactivo'] as bool,
+      ruidoso = json['ruidoso'] as bool;
+
+  final String id;
+  final String? etiqueta;
+  final String? rol;
+  final String? unidad;
+  final int qrEmitidos;
+  final int qrUsados;
+  final int maxQrEnUnDia;
+  final DateTime? ultimoQrAt;
+  final bool inactivo;
+  final bool ruidoso;
+}
+
+class TitularConMiembrosDto {
+  new desde(Map<String, dynamic> json)
+    : id = json['id'] as String,
+      etiqueta = json['etiqueta'] as String?,
+      unidad = json['unidad'] as String?,
+      miembros = (json['miembros'] as num).toInt(),
+      tope = (json['tope'] as num).toInt(),
+      porcentaje = (json['porcentaje'] as num).toInt(),
+      cercaDelTope = json['cerca_del_tope'] as bool;
+
+  final String id;
+  final String? etiqueta;
+  final String? unidad;
+  final int miembros;
+  final int tope;
+  final int porcentaje;
+  final bool cercaDelTope;
+}
+
+/// Respuesta de `GET /usuarios/estadisticas` (ADR 0028 §4).
+class EstadisticasDeUsuariosDto {
+  new desde(Map<String, dynamic> json)
+    : ventanaDias = (json['ventana_dias'] as num).toInt(),
+      umbralInactivoDias = (json['umbral_inactivo_dias'] as num).toInt(),
+      umbralRuidosoPorDia = (json['umbral_ruidoso_por_dia'] as num).toInt(),
+      usuarios = [
+        for (final u in json['usuarios'] as List<dynamic>)
+          UsoDeUsuarioDto.desde(u as Map<String, dynamic>),
+      ],
+      titulares = [
+        for (final t in json['titulares'] as List<dynamic>)
+          TitularConMiembrosDto.desde(t as Map<String, dynamic>),
+      ];
+
+  final int ventanaDias;
+  final int umbralInactivoDias;
+  final int umbralRuidosoPorDia;
+  final List<UsoDeUsuarioDto> usuarios;
+  final List<TitularConMiembrosDto> titulares;
+}

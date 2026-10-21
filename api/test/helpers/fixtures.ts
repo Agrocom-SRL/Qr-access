@@ -37,6 +37,7 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
   'seguridad.cupo.ver',
+  'seguridad.estadistica.ver',
 ];
 
 /** Lo que tiene un Miembro (ADR 0028): usar la puerta con sus QR. */

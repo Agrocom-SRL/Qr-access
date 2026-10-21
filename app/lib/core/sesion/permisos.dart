@@ -43,4 +43,8 @@ abstract final class Permisos {
   /// Ver cuánto del cupo de usuarios del plan usa la cuenta: solo el
   /// Administrador (ADR 0028 §6).
   static const verCupo = 'seguridad.cupo.ver';
+
+  /// Ver el uso de los usuarios de la rama (inactivos, ruidosos, Titulares
+  /// cerca del tope): solo el Administrador (ADR 0028 §4).
+  static const verEstadisticas = 'seguridad.estadistica.ver';
 }

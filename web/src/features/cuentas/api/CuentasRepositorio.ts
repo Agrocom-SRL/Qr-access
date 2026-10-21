@@ -7,6 +7,7 @@ import type {
   DatosDePuerta,
   DatosDeSitio,
   DetalleDeCuenta,
+  EstadisticasDeUsuarios,
   FiltrosDeCuentas,
   RamaDeAdministrador,
   SitioConPuertas,
@@ -58,6 +59,8 @@ export interface CuentasRepositorio {
     cuentaId: string,
     datos: { etiqueta: string; sufijo?: string },
   ) => Promise<AdministradorCreado>;
+  /** Inactivos, ruidosos y Titulares cerca del tope de la cuenta, con el cupo de cada rama. */
+  estadisticasDeUsuarios: (cuentaId: string) => Promise<EstadisticasDeUsuarios>;
   /** El árbol de la cuenta: cada Administrador con sus Guardias y Titulares. */
   jerarquia: (cuentaId: string) => Promise<readonly RamaDeAdministrador[]>;
   /** Mueve un Guardia o un Titular (con su unidad y sus Miembros) a otro Administrador. */

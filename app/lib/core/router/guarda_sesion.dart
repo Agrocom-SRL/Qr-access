@@ -14,6 +14,7 @@ const permisoPorRuta = <String, String>{
   Rutas.adminEstructura: Permisos.administrarPuertas,
   Rutas.adminUsuarios: Permisos.verUsuarios,
   Rutas.adminUsuarioNuevo: Permisos.crearUsuarios,
+  Rutas.adminEstadisticas: Permisos.verEstadisticas,
   Rutas.adminUsuarioEditar: Permisos.editarUsuarios,
   Rutas.adminPinGenerado: Permisos.editarUsuarios,
 };
