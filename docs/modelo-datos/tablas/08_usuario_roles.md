@@ -19,12 +19,14 @@ Qué roles tiene cada usuario. Lleva `tenant_id` para aislar por cuenta.
 ## Índices y restricciones
 
 - `uq_usuario_roles`
+- `uq_usuario_roles_usuario` (`usuario_id`, `vigente`)
 
 El SQL completo está en `03-schema-sql.md`.
 
 ## Reglas
 
 - Par (usuario, rol) único entre los vigentes.
+- **Un solo rol vigente por usuario** (`uq_usuario_roles_usuario`, ADR 0028 §2): quien necesite dos funciones tiene dos usuarios.
 
 ## Dudas
 
