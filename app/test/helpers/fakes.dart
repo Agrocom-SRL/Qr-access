@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
+import 'package:agrocom_acceso/core/plataforma/compartir_texto.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -310,6 +311,7 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   final Map<String, int> dependientes;
   final Cupo cupoActual;
   final EstadisticasDeUsuarios estadisticasActuales;
+  final List<String> pinesCompartidos = [];
   final List<String> eliminadosEnCascada = [];
   final List<Usuario> usuarios;
   final PuertasAsignadas asignadas;
@@ -367,6 +369,12 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
     }
     eliminados.add(id);
     if (confirmar) eliminadosEnCascada.add(id);
+  }
+
+  @override
+  Future<void> registrarPinCompartido(String usuarioId) async {
+    if (error != null) throw error!;
+    pinesCompartidos.add(usuarioId);
   }
 
   @override
@@ -447,5 +455,19 @@ class AlmacenQrEnMemoria implements AlmacenQr {
   @override
   Future<void> borrarUltimoPropio(String id) async {
     if (ultimoPropio?.id == id) ultimoPropio = null;
+  }
+}
+
+/// Registra el texto que se pidió compartir, sin abrir el menú del sistema.
+class CompartirTextoFalso implements CompartirTexto {
+  new([this.resultado = ResultadoCompartir.compartido]);
+
+  final ResultadoCompartir resultado;
+  final List<String> enviados = [];
+
+  @override
+  Future<ResultadoCompartir> compartir(String texto) async {
+    enviados.add(texto);
+    return resultado;
   }
 }

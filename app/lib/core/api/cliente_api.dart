@@ -246,6 +246,14 @@ class ClienteApi {
     });
   }
 
+  /// Anota que el PIN del usuario se compartió por un canal de terceros: queda
+  /// en la bitácora con quién lo hizo y cuándo (ADR 0028 §7).
+  Future<void> registrarPinCompartido(String usuarioId) {
+    return _ejecutar(() async {
+      await _dio.post<void>('/usuarios/$usuarioId/pin/compartido');
+    });
+  }
+
   /// El uso de los usuarios de la rama de quien pregunta (ADR 0028 §4).
   Future<EstadisticasDeUsuariosDto> estadisticasDeUsuarios() {
     return _ejecutar(() async {

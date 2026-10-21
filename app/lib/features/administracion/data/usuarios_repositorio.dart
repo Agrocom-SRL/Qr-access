@@ -25,6 +25,10 @@ abstract interface class UsuariosRepositorio {
   /// `usuario.con_dependientes`.
   Future<void> eliminar(String id, {bool confirmar = false});
 
+  /// Anota en la bitácora que el PIN del usuario se compartió por un canal de
+  /// terceros. No cambia el PIN ni obliga a cambiarlo (ADR 0028 §7).
+  Future<void> registrarPinCompartido(String usuarioId);
+
   /// El uso del cupo de usuarios del plan (solo lo ve el Administrador).
   Future<Cupo> cupo();
 
@@ -83,6 +87,10 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
       _api.eliminarUsuario(id, confirmar: confirmar);
 
   @override
+  Future<void> registrarPinCompartido(String usuarioId) =>
+      _api.registrarPinCompartido(usuarioId);
+
+  @override
   Future<EstadisticasDeUsuarios> estadisticas() async {
     final dto = await _api.estadisticasDeUsuarios();
     return EstadisticasDeUsuarios(
@@ -139,6 +147,7 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {
     final dto = await _api.generarPin(usuario.id, sufijo: sufijo);
     return PinGenerado(
+      usuarioId: usuario.id,
       pin: dto.pin,
       usuarioEtiqueta: usuario.etiqueta,
       roles: usuario.roles,
