@@ -48,14 +48,6 @@
   "@comunGuardando": {
     "description": "Botón de guardar mientras se envía"
   },
-  "comunCopiar": "Copiar",
-  "@comunCopiar": {
-    "description": "Copia el PIN al portapapeles"
-  },
-  "comunCopiado": "Copiado",
-  "@comunCopiado": {
-    "description": "Confirmación de que el PIN se copió, 2 s"
-  },
   "comunEditar": "Editar",
   "@comunEditar": {
     "description": "Acción de fila (tono advertencia)"
@@ -1572,6 +1564,10 @@
   "usuariosPinCompartir": "Compartir",
   "@usuariosPinCompartir": {
     "description": "Botón para compartir el PIN con el menú del sistema"
+  },
+  "usuariosPinCopiadoParaCompartir": "Tu dispositivo no puede compartir: copiamos el mensaje con el PIN para que lo pegues donde quieras.",
+  "@usuariosPinCopiadoParaCompartir": {
+    "description": "Aviso cuando el PIN se copió porque no hay menú de compartir"
   },
   "usuariosPinMensajeCompartir": "Tu PIN de AGROCOM Acceso es {pin}. Ábrela e ingresa con él. No lo compartas con nadie más.",
   "@usuariosPinMensajeCompartir": {

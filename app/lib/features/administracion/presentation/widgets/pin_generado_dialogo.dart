@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
@@ -13,7 +11,6 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -43,8 +40,8 @@ Future<void> mostrarPinGenerado(BuildContext context, PinGenerado pin) async {
   context.go(Rutas.adminPinGenerado, extra: pin);
 }
 
-/// El PIN en mono 32 con "Copiar" (que pasa a "Copiado" 2 s) y la advertencia
-/// de que solo se ve ahora.
+/// El PIN en mono 32 con "Compartir" (la hoja del sistema; sin ella, queda en
+/// el portapapeles) y la advertencia de que solo se ve ahora.
 class ContenidoPinGenerado extends ConsumerStatefulWidget {
   const new({required this.pin, this.enDialogo = false, super.key});
 
@@ -57,7 +54,6 @@ class ContenidoPinGenerado extends ConsumerStatefulWidget {
 }
 
 class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
-  var _copiado = false;
   var _compartiendo = false;
 
   /// Comparte el PIN con el menú del sistema y, si salió, deja registrado que
@@ -71,7 +67,15 @@ class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
           .read(compartirTextoProvider)
           .compartir(context.l10n.usuariosPinMensajeCompartir(widget.pin.pin));
       final usuarioId = widget.pin.usuarioId;
-      if (resultado == ResultadoCompartir.compartido && usuarioId != null) {
+      final salio =
+          resultado == ResultadoCompartir.compartido ||
+          resultado == ResultadoCompartir.copiado;
+      if (resultado == ResultadoCompartir.copiado && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.usuariosPinCopiadoParaCompartir)),
+        );
+      }
+      if (salio && usuarioId != null) {
         try {
           await ref
               .read(usuariosRepositorioProvider)
@@ -83,15 +87,6 @@ class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
     } finally {
       if (mounted) setState(() => _compartiendo = false);
     }
-  }
-
-  Future<void> _copiar() async {
-    await Clipboard.setData(ClipboardData(text: widget.pin.pin));
-    unawaited(HapticFeedback.lightImpact());
-    if (!mounted) return;
-    setState(() => _copiado = true);
-    await Future<void>.delayed(context.tokens.duracion.confirmacionCopiado);
-    if (mounted) setState(() => _copiado = false);
   }
 
   @override
@@ -125,24 +120,12 @@ class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
           .copyWith(letterSpacing: tokens.tipografia.espaciadoPin),
       semanticsLabel: l10n.usuariosPinSemantica(pin.pin),
     );
-    final botonCopiar = AccesoBoton(
-      texto: _copiado ? l10n.comunCopiado : l10n.comunCopiar,
-      icono: _copiado ? Icons.check : Icons.content_copy_outlined,
-      variante: VarianteBoton.tonal,
-      onPressed: _copiar,
-    );
     final botonCompartir = AccesoBoton(
       texto: l10n.usuariosPinCompartir,
       icono: Icons.ios_share,
       variante: VarianteBoton.tonal,
       cargando: _compartiendo,
       onPressed: _compartir,
-    );
-    final acciones = Wrap(
-      spacing: tokens.espacio.m,
-      runSpacing: tokens.espacio.m,
-      alignment: WrapAlignment.center,
-      children: [botonCopiar, botonCompartir],
     );
 
     return Column(
@@ -174,14 +157,14 @@ class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
                   children: [
                     Expanded(child: valor),
                     SizedBox(width: tokens.espacio.l),
-                    acciones,
+                    botonCompartir,
                   ],
                 )
               : Column(
                   children: [
                     Center(child: valor),
                     SizedBox(height: tokens.espacio.l),
-                    acciones,
+                    botonCompartir,
                   ],
                 ),
         ),

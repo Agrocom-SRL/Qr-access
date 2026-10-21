@@ -122,12 +122,35 @@ void main() {
     expect(repositorio.pinesCompartidos, isEmpty);
   });
 
-  testWidgets('Copiar sigue funcionando junto a Compartir', (tester) async {
+  testWidgets('Compartir es la única forma de sacar el PIN: no hay Copiar', (
+    tester,
+  ) async {
     await _montar(tester);
     final textos = textosEn(tester);
 
-    expect(find.text(textos.comunCopiar), findsOneWidget);
     expect(find.text(textos.usuariosPinCompartir), findsOneWidget);
-    expect(find.byType(FilledButton), findsWidgets);
+    expect(find.text('Copiar'), findsNothing);
+    expect(find.byIcon(Icons.content_copy_outlined), findsNothing);
   });
+
+  testWidgets(
+    'sin menú de compartir el PIN queda copiado, se avisa y se registra',
+    (tester) async {
+      final (:repositorio, :compartir) = await _montar(
+        tester,
+        resultado: ResultadoCompartir.copiado,
+      );
+
+      await tester.tap(find.text(textosEn(tester).usuariosPinCompartir));
+      await tester.pumpAndSettle();
+
+      expect(compartir.enviados, hasLength(1));
+      expect(
+        find.text(textosEn(tester).usuariosPinCopiadoParaCompartir),
+        findsOneWidget,
+      );
+      // Salió de la app por el portapapeles: también cuenta como compartido
+      expect(repositorio.pinesCompartidos, ['u2']);
+    },
+  );
 }
