@@ -4,7 +4,6 @@ import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
-import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
@@ -87,14 +86,6 @@ class InicioUsuario extends ConsumerWidget {
           icono: Icons.history,
           etiqueta: l10n.navEventos,
           alTocar: () => context.go(Rutas.eventos),
-        ),
-      if (sesion.tieneVariosRoles)
-        _AccesoRapido(
-          icono: Icons.swap_horiz,
-          etiqueta: l10n.perfilCambiarRol,
-          alTocar: ref
-              .read(sesionControladorProvider.notifier)
-              .pedirCambioDeRol,
         ),
     ];
 

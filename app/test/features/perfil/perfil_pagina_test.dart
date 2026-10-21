@@ -16,10 +16,9 @@ final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 Future<({SesionFalsa sesion, AlmacenPreferenciasFalso preferencias})> _montar(
   WidgetTester tester, {
   SuscripcionSesion? suscripcion,
-  List<RolSesion> roles = const [rolDePrueba],
   PerfilRepositorioFalso? perfil,
 }) async {
-  final sesion = SesionFalsa(sesionCon(roles: roles, suscripcion: suscripcion));
+  final sesion = SesionFalsa(sesionCon(suscripcion: suscripcion));
   final preferencias = AlmacenPreferenciasFalso();
   await montarPantalla(
     tester,
@@ -64,24 +63,12 @@ void main() {
     expect(find.text(textosEn(tester).perfilSinSuscripcion), findsNWidgets(2));
   });
 
-  testWidgets('con un solo rol no ofrece cambiar; con varios, sí', (
+  testWidgets('muestra el rol del usuario y no ofrece cambiarlo (ADR 0028)', (
     tester,
   ) async {
     await _montar(tester);
-    expect(find.text(textosEn(tester).perfilCambiarRol), findsNothing);
-  });
-
-  testWidgets('Cambiar rol pide volver a elegir', (tester) async {
-    final (:sesion, preferencias: _) = await _montar(
-      tester,
-      roles: const [
-        rolDePrueba,
-        RolSesion(id: 'r2', nombre: 'Usuario'),
-      ],
-    );
-    await tester.tap(find.text(textosEn(tester).perfilCambiarRol));
-    await tester.pump();
-    expect(sesion.cambiosDeRolPedidos, 1);
+    expect(find.text(textosEn(tester).perfilRolActivo), findsOneWidget);
+    expect(find.text(rolDePrueba.nombre), findsWidgets);
   });
 
   testWidgets('el interruptor de tema guarda la preferencia', (tester) async {

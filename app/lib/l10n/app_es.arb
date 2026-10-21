@@ -350,26 +350,6 @@
   "@sesionSaliendo": {
     "description": "Botón Cerrar sesión mientras se envía"
   },
-  "sesionElegirRolTitulo": "¿Con qué rol vas a trabajar?",
-  "@sesionElegirRolTitulo": {
-    "description": "Título de la pantalla que aparece cuando el usuario tiene varios roles"
-  },
-  "sesionElegirRolAyuda": "Puedes cambiarlo después desde Perfil.",
-  "@sesionElegirRolAyuda": {
-    "description": "Ayuda bajo el título de elegir rol (HU-05)"
-  },
-  "rolDescripcionAdministrador": "Puertas, usuarios y eventos",
-  "@rolDescripcionAdministrador": {
-    "description": "Descripción del rol Administrador en elegir rol"
-  },
-  "rolDescripcionGuardia": "Eventos y estado de puertas",
-  "@rolDescripcionGuardia": {
-    "description": "Descripción del rol Guardia en elegir rol"
-  },
-  "rolDescripcionUsuario": "Generar y compartir QR",
-  "@rolDescripcionUsuario": {
-    "description": "Descripción del rol Usuario en elegir rol"
-  },
   "navInicio": "Inicio",
   "@navInicio": {
     "description": "Destino de navegación"
@@ -1153,10 +1133,6 @@
   "@perfilRolActivo": {
     "description": "Clave de la fila del rol activo"
   },
-  "perfilCambiarRol": "Cambiar rol",
-  "@perfilCambiarRol": {
-    "description": "Botón que vuelve a elegir rol (HU-05)"
-  },
   "perfilSuscripcion": "Suscripción",
   "@perfilSuscripcion": {
     "description": "Clave de la fila de la suscripción"
@@ -1442,6 +1418,34 @@
   "comunErrorSitioNoEncontrado": "No encontramos esa propiedad.",
   "@comunErrorSitioNoEncontrado": {
     "description": "Error de sitio inexistente"
+  },
+  "comunErrorSesionSinRol": "Tu usuario no tiene un rol asignado. Habla con tu administrador.",
+  "@comunErrorSesionSinRol": {
+    "description": "Error sesion.sin_rol"
+  },
+  "comunErrorUnidadRequerida": "Indica la propiedad y el nombre de la unidad del Titular.",
+  "@comunErrorUnidadRequerida": {
+    "description": "Error unidad.requerida (422)"
+  },
+  "comunErrorUnidadNoCorresponde": "Solo el Titular lleva una unidad.",
+  "@comunErrorUnidadNoCorresponde": {
+    "description": "Error unidad.no_corresponde (422)"
+  },
+  "comunErrorUnidadNombreExistente": "Ya hay una unidad con ese nombre en esa propiedad.",
+  "@comunErrorUnidadNombreExistente": {
+    "description": "Error unidad.nombre_existente (409)"
+  },
+  "comunErrorUsuarioNivelNoPermitido": "Con tu rol no puedes crear ese tipo de usuario.",
+  "@comunErrorUsuarioNivelNoPermitido": {
+    "description": "Error usuario.nivel_no_permitido (403)"
+  },
+  "comunErrorUsuarioConDependientes": "Este usuario tiene otros a su cargo. Confirma para darlos de baja a todos.",
+  "@comunErrorUsuarioConDependientes": {
+    "description": "Error usuario.con_dependientes (409), si llega sin pasar por la confirmación"
+  },
+  "comunErrorPlanLimiteMiembros": "Ya llegaste al máximo de Miembros. Da de baja a alguno para agregar otro.",
+  "@comunErrorPlanLimiteMiembros": {
+    "description": "Error plan.limite_miembros_por_titular (422)"
   },
   "estructuraTitulo": "Propiedades y puertas",
   "@estructuraTitulo": {

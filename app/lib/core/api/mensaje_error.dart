@@ -33,6 +33,13 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'sitio.con_puertas' => l10n.comunErrorSitioConPuertas,
     'puerta.con_dispositivo' => l10n.comunErrorPuertaConDispositivo,
     'sitio.no_encontrado' => l10n.comunErrorSitioNoEncontrado,
+    'sesion.sin_rol' => l10n.comunErrorSesionSinRol,
+    'unidad.requerida' => l10n.comunErrorUnidadRequerida,
+    'unidad.no_corresponde' => l10n.comunErrorUnidadNoCorresponde,
+    'unidad.nombre_existente' => l10n.comunErrorUnidadNombreExistente,
+    'usuario.nivel_no_permitido' => l10n.comunErrorUsuarioNivelNoPermitido,
+    'usuario.con_dependientes' => l10n.comunErrorUsuarioConDependientes,
+    'plan.limite_miembros_por_titular' => l10n.comunErrorPlanLimiteMiembros,
     _ => l10n.comunErrorGenerico,
   };
 }

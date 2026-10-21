@@ -17,33 +17,14 @@ final class SinSesion extends SesionEstado {
   const new();
 }
 
-/// El PIN es válido pero el usuario tiene varios roles y no eligió uno
-/// (ADR 0004: un rol activo por sesión).
-final class SesionEligiendoRol extends SesionEstado {
-  const new({
-    required this.usuario,
-    required this.cuenta,
-    required this.roles,
-    this.rolPreferidoId,
-  });
-
-  final UsuarioSesion usuario;
-  final CuentaSesion cuenta;
-  final List<RolSesion> roles;
-
-  /// El último rol usado, para dejarlo preseleccionado (handoff C03).
-  final String? rolPreferidoId;
-}
-
-/// Sesión con rol activo. Los permisos son los del rol activo, nunca la unión
-/// de todos los roles (ADR 0004).
+/// Sesión con su rol. Cada usuario tiene uno solo (ADR 0028) y los permisos son
+/// los de ese rol.
 final class SesionAutenticada extends SesionEstado {
   const new({
     required this.usuario,
     required this.cuenta,
     required this.rolActivo,
     required this.permisos,
-    this.roles = const [],
     this.suscripcion,
   });
 
@@ -52,16 +33,11 @@ final class SesionAutenticada extends SesionEstado {
   final RolSesion rolActivo;
   final Set<String> permisos;
 
-  /// Todos los roles del usuario, para "Cambiar rol" desde Perfil.
-  final List<RolSesion> roles;
-
   /// Plan y vencimiento vigentes (HU-03); `null` sin suscripción vigente.
   final SuscripcionSesion? suscripcion;
-
-  bool get tieneVariosRoles => roles.length > 1;
 }
 
-/// Si la sesión tiene `permiso` con su rol activo. Sin sesión autenticada,
+/// Si la sesión tiene `permiso` con su rol. Sin sesión autenticada,
 /// nunca: lo que no se puede usar no se muestra (ADR 0004).
 extension PermisosDeSesion on SesionEstado {
   bool tiene(String permiso) => switch (this) {
@@ -116,7 +92,6 @@ class RespuestaInicio {
     required this.refresco,
     required this.usuario,
     required this.cuenta,
-    required this.roles,
     required this.rolActivoId,
   });
 
@@ -124,8 +99,7 @@ class RespuestaInicio {
   final String refresco;
   final UsuarioSesion usuario;
   final CuentaSesion cuenta;
-  final List<RolSesion> roles;
 
-  /// `null` cuando el usuario debe elegir rol.
+  /// `null` si el usuario no tiene un rol vigente: no puede entrar (ADR 0028).
   final String? rolActivoId;
 }

@@ -2,7 +2,7 @@ import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 
-/// Permiso que exige cada ruta protegida. Lo que el rol activo no puede usar
+/// Permiso que exige cada ruta protegida. Lo que el rol no puede usar
 /// no se muestra, y la ruta tampoco se abre por URL (ADR 0004).
 const permisoPorRuta = <String, String>{
   Rutas.qrMios: Permisos.verQr,
@@ -42,7 +42,6 @@ String? redireccionDeSesion(
   final destinoSinSesion = switch (sesion) {
     SesionArrancando() => Rutas.arranque,
     SinSesion() => null,
-    SesionEligiendoRol() => Rutas.elegirRol,
     SesionAutenticada() => null,
   };
   if (destinoSinSesion != null) {
@@ -54,12 +53,7 @@ String? redireccionDeSesion(
   }
 
   // Con sesión, las pantallas de entrada no tienen sentido: van al tablero.
-  const pantallasDeEntrada = {
-    Rutas.arranque,
-    Rutas.bienvenida,
-    Rutas.ingreso,
-    Rutas.elegirRol,
-  };
+  const pantallasDeEntrada = {Rutas.arranque, Rutas.bienvenida, Rutas.ingreso};
   if (pantallasDeEntrada.contains(ruta)) return Rutas.inicio;
 
   if (ruta == Rutas.admin) {

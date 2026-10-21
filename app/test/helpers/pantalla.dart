@@ -40,7 +40,6 @@ Future<void> montarPantalla(
         Rutas.arranque,
         Rutas.bienvenida,
         Rutas.ingreso,
-        Rutas.elegirRol,
         Rutas.inicio,
         Rutas.qrMios,
         Rutas.qrNuevo,
