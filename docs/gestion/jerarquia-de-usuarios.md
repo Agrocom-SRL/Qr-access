@@ -112,6 +112,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 > **Decidido (2026-10-21), punto 1:** los rótulos visibles son **Administrador** (antes *Propietario*), **Titular** (antes *Dueño de la casa*, uno por unidad), **Miembro** (antes *Usuario de la casa*, las hojas del árbol) y **Guardia**. "Sitio" pasa a **Propiedad**. Para casa/departamento, **Unidad** (confirmado). Solo cambian los textos: los códigos de rol, las tablas y las rutas no. En el resto de este documento, *Propietario*, *Dueño* y *Usuario de la casa* se leen con estos nombres.
 
+> **Decidido (2026-10-21), puntos 7 a 10 y cupo:** umbrales fijos e informativos (inactivo = 30 días sin usar QR; ruidoso = más de 10 QR por día); el PIN se comparte sin cambio forzado pero con registro en la bitácora; el Guardia solo usa su QR propio; cada Administrador ve el total del cupo de la cuenta; quien necesite dos funciones tiene dos usuarios; producción se reinicia (§13) en lugar de migrar datos. No queda ningún punto abierto: ver el ADR 0028.
+
 1. **Nombres de los roles** y del lugar físico. Para "sitio" se proponen *Propiedad*, *Recinto* o *Lugar*; para "casa/departamento", *Unidad* o *Vivienda*. Elegir uno que sirva para un condominio y para una feria.
 2. **¿El propietario ve también a los usuarios finales** (nietos del árbol) y su actividad, o solo dueños y guardias? Por "solo el nivel superior ve al inferior" se infiere que el dueño sí los ve; falta confirmar si el propietario los ve de forma transitiva.
 3. **Entre propietarios de una misma cuenta:** ¿ven a los dueños y guardias de los demás, o cada uno solo su rama? Hoy se escribió "los que él creó".
