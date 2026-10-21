@@ -35,7 +35,7 @@ function textoDeVencimiento(
 
 /** Pestaña "Resumen" de la ficha: plan y uso, datos de la empresa y tres indicadores (A05a). */
 export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
-  const { t } = useTranslation(['detalle', 'planes']);
+  const { t } = useTranslation(['detalle', 'planes', 'comun']);
   const { suscripcion, empresa, uso } = detalle;
   const { sesion } = useSesion();
   const puedeCambiarCodigo = tienePermiso(
@@ -167,7 +167,9 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
                   ) : null}
                 </span>
               </FilaClaveValor>
-              <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:nit')}>
+                {empresa.nit || t('comun:sinDato')}
+              </FilaClaveValor>
               <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
               <FilaClaveValor clave={t('detalle:clienteDesde')}>
                 {formatearFecha(detalle.cuenta.clienteDesde)}
@@ -187,8 +189,12 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
               <Avatar grande nombre={empresa.contacto} />
               <dl className={styles.contacto}>
                 <strong className={styles.nombrePersona}>{empresa.contacto}</strong>
-                <FilaClaveValor clave={t('detalle:telefono')}>{empresa.telefono}</FilaClaveValor>
-                <FilaClaveValor clave={t('detalle:correo')}>{empresa.correo ?? '—'}</FilaClaveValor>
+                <FilaClaveValor clave={t('detalle:telefono')}>
+                  {empresa.telefono || t('comun:sinDato')}
+                </FilaClaveValor>
+                <FilaClaveValor clave={t('detalle:correo')}>
+                  {empresa.correo || t('comun:sinDato')}
+                </FilaClaveValor>
               </dl>
             </div>
           ) : (

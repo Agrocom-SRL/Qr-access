@@ -26,7 +26,8 @@ function iniciales(detalle: DetalleDeCuenta): Datos {
     razonSocial: detalle.cuenta.nombre,
     nit: detalle.empresa?.nit ?? '',
     ciudad: detalle.empresa?.ciudad ?? '',
-    contactoNombre: detalle.empresa?.contacto ?? '',
+    contactoNombre: detalle.empresa?.contactoNombre ?? '',
+    contactoApellido: detalle.empresa?.contactoApellido ?? '',
     contactoTelefono: detalle.empresa?.telefono ?? '',
     contactoCorreo: detalle.empresa?.correo ?? '',
   };
@@ -126,18 +127,32 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
           />
         </div>
         <p className={styles.seccion}>{t('crearCuenta:responsableTitulo')}</p>
-        <AccesoCampoTexto
-          etiqueta={t('crearCuenta:responsableNombre')}
-          value={datos.contactoNombre}
-          error={mensaje('contactoNombre')}
-          autoComplete="name"
-          onBlur={() => {
-            tocar('contactoNombre');
-          }}
-          onChange={(e) => {
-            cambiar({ contactoNombre: e.target.value });
-          }}
-        />
+        <div className={styles.fila}>
+          <AccesoCampoTexto
+            etiqueta={t('crearCuenta:responsableNombre')}
+            value={datos.contactoNombre}
+            error={mensaje('contactoNombre')}
+            autoComplete="given-name"
+            onBlur={() => {
+              tocar('contactoNombre');
+            }}
+            onChange={(e) => {
+              cambiar({ contactoNombre: e.target.value });
+            }}
+          />
+          <AccesoCampoTexto
+            etiqueta={t('crearCuenta:responsableApellido')}
+            value={datos.contactoApellido}
+            error={mensaje('contactoApellido')}
+            autoComplete="family-name"
+            onBlur={() => {
+              tocar('contactoApellido');
+            }}
+            onChange={(e) => {
+              cambiar({ contactoApellido: e.target.value });
+            }}
+          />
+        </div>
         <div className={styles.fila}>
           <AccesoCampoTexto
             etiqueta={t('crearCuenta:telefono')}
@@ -157,6 +172,7 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             value={datos.contactoCorreo}
             type="email"
             error={mensaje('contactoCorreo')}
+            autoComplete="email"
             onBlur={() => {
               tocar('contactoCorreo');
             }}

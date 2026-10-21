@@ -13,6 +13,7 @@ import {
   venceUnAnioDespues,
   type BorradorDeCuenta,
   type DatosDePagoDeAlta,
+  nombreCompletoDelResponsable,
 } from '../../domain/alta';
 import styles from './PasoConfirmar.module.css';
 
@@ -54,12 +55,14 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
               <FilaClaveValor clave={t('razonSocial')}>{empresa.razonSocial}</FilaClaveValor>
               <FilaClaveValor clave={t('codigoNit')}>
                 <TextoMono fuerte>
-                  {empresa.codigo} · {empresa.nit}
+                  {empresa.codigo}
+                  {empresa.nit.trim() === '' ? '' : ` · ${empresa.nit.trim()}`}
                 </TextoMono>
               </FilaClaveValor>
               <FilaClaveValor clave={t('ciudad')}>{empresa.ciudad}</FilaClaveValor>
               <FilaClaveValor clave={t('responsableTitulo')}>
-                {empresa.contactoNombre} · {empresa.contactoCorreo}
+                {nombreCompletoDelResponsable(empresa)}
+                {empresa.contactoCorreo.trim() === '' ? '' : ` · ${empresa.contactoCorreo.trim()}`}
               </FilaClaveValor>
             </dl>
           ),
@@ -135,7 +138,7 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
             <dl>
               <FilaClaveValor clave={t('nombreAdministrador')}>
                 {vigencia.adminIgualAlResponsable
-                  ? empresa.contactoNombre
+                  ? nombreCompletoDelResponsable(empresa)
                   : vigencia.administradorNombre}
               </FilaClaveValor>
             </dl>

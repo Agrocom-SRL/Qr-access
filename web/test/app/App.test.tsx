@@ -1,7 +1,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { COBRANZA, ErrorApi, EVENTOS, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
+import {
+  COBRANZA,
+  DETALLE,
+  ErrorApi,
+  EVENTOS,
+  SUSCRIPCION,
+  crearServiciosDePrueba,
+} from '../servicios';
 import type { PlacasRepositorio } from '@/features/placas';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
@@ -276,7 +283,7 @@ describe('cuentas (A03)', () => {
     const tabla = await screen.findByRole('table', { name: 'Cuentas' });
     for (const nombre of [
       'Ver Agroindustrial Norte',
-      'Sitios y puertas de Agroindustrial Norte',
+      'Propiedades y puertas de Agroindustrial Norte',
       'Editar Agroindustrial Norte',
       'Eliminar Agroindustrial Norte',
     ]) {
@@ -354,15 +361,19 @@ describe('cuentas (A03)', () => {
 describe('crear cuenta (A04)', () => {
   async function llenarEmpresa(codigo = 'AGU') {
     await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta' }));
-    await userEvent.type(await screen.findByLabelText('Razón social'), 'Agrícola Guarayos S.A.');
-    await userEvent.type(screen.getByLabelText('NIT'), '2876501019');
+    await userEvent.type(
+      await screen.findByLabelText('Nombre de la cuenta'),
+      'Agrícola Guarayos S.A.',
+    );
+    await userEvent.type(screen.getByLabelText(/^NIT/), '2876501019');
     // La ciudad es una lista con búsqueda (react-select): se escribe y se elige.
     await userEvent.type(screen.getByLabelText('Ciudad'), 'Guarayos');
     await userEvent.click(await screen.findByText('Ascensión de Guarayos'));
     await userEvent.type(screen.getByLabelText(/Código de cuenta/), codigo);
-    await userEvent.type(screen.getByLabelText('Nombre completo'), 'Rodrigo Añez');
-    await userEvent.type(screen.getByLabelText('Teléfono'), '7 712 4405');
-    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'rodrigo@guarayos.bo');
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Rodrigo');
+    await userEvent.type(screen.getByLabelText('Apellido'), 'Añez');
+    await userEvent.type(screen.getByLabelText(/^Teléfono/), '7 712 4405');
+    await userEvent.type(screen.getByLabelText(/^Correo electrónico/), 'rodrigo@guarayos.bo');
   }
 
   async function empezar(servicios: Servicios) {
@@ -417,6 +428,7 @@ describe('crear cuenta (A04)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Revisa y confirma' })).toBeInTheDocument();
     expect(screen.getByText('AGU · 2876501019')).toBeInTheDocument();
+    expect(screen.getByText('Rodrigo Añez · rodrigo@guarayos.bo')).toBeInTheDocument();
     expect(screen.getByText('Bs 21.600')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 
@@ -478,8 +490,8 @@ describe('detalle de cuenta (A05)', () => {
     expect(screen.getByText('Puede crear 13 usuarios más')).toBeInTheDocument();
     expect(screen.getByText(/Vence el 05\/11\/2026, en 24 días/)).toBeInTheDocument();
     expect(screen.getAllByText('Carla Méndez').length).toBeGreaterThan(0);
-    // Sitios y puertas son dos indicadores arriba, con enlace a su pestaña.
-    expect(screen.getByRole('link', { name: /Sitios\s*2/ })).toHaveAttribute(
+    // Propiedades y puertas son dos indicadores arriba, con enlace a su pestaña.
+    expect(screen.getByRole('link', { name: /Propiedades\s*2/ })).toHaveAttribute(
       'href',
       '/cuentas/1?pestana=sitios',
     );
@@ -489,14 +501,41 @@ describe('detalle de cuenta (A05)', () => {
     ).toBeInTheDocument();
   });
 
-  it('la pestaña Sitios y puertas muestra el estado de cada lector', async () => {
+  it('editar la cuenta usa el nombre de la cuenta y separa el nombre del apellido del responsable', async () => {
     await abrirDetalle(crearServiciosDePrueba());
-    await userEvent.click(await screen.findByRole('tab', { name: 'Sitios y puertas' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByLabelText('Nombre de la cuenta')).toHaveValue(
+      'Agroindustrial Norte',
+    );
+    expect(within(dialogo).getByLabelText('Nombre')).toHaveValue('Carla');
+    expect(within(dialogo).getByLabelText('Apellido')).toHaveValue('Méndez');
+    expect(within(dialogo).getByLabelText(/^NIT/)).toHaveValue('1023456021');
+  });
+
+  it('sin NIT ni teléfono, la ficha muestra un guion en su lugar', async () => {
+    const sinDatos = {
+      ...DETALLE,
+      empresa: { ...DETALLE.empresa, nit: null, telefono: null },
+    };
+    await abrirDetalle(
+      crearServiciosDePrueba({ cuentas: { obtener: () => Promise.resolve(sinDatos) } }),
+    );
+    expect(
+      await screen.findByRole('heading', { name: /Agroindustrial Norte/ }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('—')).toHaveLength(2);
+    expect(screen.queryByText('1023456021')).not.toBeInTheDocument();
+  });
+
+  it('la pestaña Propiedades y puertas muestra el estado de cada lector', async () => {
+    await abrirDetalle(crearServiciosDePrueba());
+    await userEvent.click(await screen.findByRole('tab', { name: 'Propiedades y puertas' }));
     expect(await screen.findByText('Planta Warnes')).toBeInTheDocument();
     expect(screen.getByText('En línea')).toBeInTheDocument();
     expect(screen.getByText('Sin conexión')).toBeInTheDocument();
     expect(screen.getByText('5 segundos')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Nuevo sitio' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nueva propiedad' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Editar Portón vehicular' })).toBeInTheDocument();
   });
 
@@ -745,6 +784,30 @@ describe('cobranza (A08)', () => {
       within(tabla).getByRole('button', { name: 'Registrar pago de Semillas del Este' }),
     );
     expect(await screen.findByRole('heading', { name: 'Registra el pago' })).toBeInTheDocument();
+  });
+
+  it('en una cuenta pendiente de pago, Registrar pago abre el pago sin entrar a la ficha', async () => {
+    const pendiente = {
+      cuenta: { id: '9', codigo: 'NSA', nombre: 'Nueva Sabana' },
+      plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
+      monto: 12000,
+      venceEl: new Date('2026-10-18T12:00:00Z'),
+      diasRestantes: 0,
+      pago: 'porActivar' as const,
+      estado: 'pendientePago' as const,
+    };
+    const servicios = crearServiciosDePrueba({
+      pagos: { cobranza: () => Promise.resolve({ ...COBRANZA, filas: [pendiente] }) },
+    });
+    const obtenerCuenta = vi.fn(servicios.cuentas.obtener);
+    servicios.cuentas.obtener = obtenerCuenta;
+    await abrirCobranza(servicios);
+    const tabla = await screen.findByRole('table', { name: 'Cuentas por cobrar' });
+    const boton = within(tabla).getByRole('button', { name: 'Registrar pago de Nueva Sabana' });
+    expect(boton).toHaveTextContent('Registrar pago');
+    await userEvent.click(boton);
+    expect(await screen.findByRole('heading', { name: 'Registra el pago' })).toBeInTheDocument();
+    expect(obtenerCuenta).not.toHaveBeenCalled();
   });
 
   it('cambiar de ventana consulta la API con esa ventana', async () => {

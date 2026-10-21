@@ -1,13 +1,13 @@
 {
-  "nota": "Here you register the account's sites and doors. Then the ESP32 is linked to each door; the account administrator can rename or disable them from the app.",
-  "sitioNuevo": "New site",
-  "sitioEditar": "Edit site",
-  "sitioNombre": "Site name",
+  "nota": "Here you register the account's properties and doors. Then the ESP32 is linked to each door; the account administrator can rename or disable them from the app.",
+  "sitioNuevo": "New property",
+  "sitioEditar": "Edit property",
+  "sitioNombre": "Property name",
   "sitioNombreAyuda": "The place where the doors are: “Head office”, “North plant”…",
   "direccion": "Address · optional",
   "zona": "Time zone",
   "zonaAyuda": "Access schedules and the end of a QR's day are calculated with this zone.",
-  "sitioActivo": "Active site",
+  "sitioActivo": "Active property",
   "desactivado": "Deactivated",
   "desactivada": "Deactivated",
   "puertaAgregar": "Add door",
@@ -28,7 +28,7 @@
   "quitarSitio": "Delete {{sitio}}",
   "quitarPuerta": "Delete {{puerta}}",
   "quitarSitioTitulo": "Delete {{sitio}}?",
-  "quitarSitioTexto": "Only a site without doors can be deleted. It is kept in the audit log.",
+  "quitarSitioTexto": "Only a property without doors can be deleted. It is kept in the audit log.",
   "quitarPuertaTitulo": "Delete {{puerta}}?",
   "quitarPuertaTexto": "If it has a reader in service, it must be decommissioned first. QR codes that included it stop opening it.",
   "quitar": "Delete",
@@ -36,6 +36,6 @@
   "guardar": "Save",
   "guardando": "Saving",
   "requerido": "This field is required",
-  "sinPuertas": "This site has no doors yet.",
-  "vacioTexto": "Create the first site and then add its doors."
+  "sinPuertas": "This property has no doors yet.",
+  "vacioTexto": "Create the first property and then add its doors."
 }

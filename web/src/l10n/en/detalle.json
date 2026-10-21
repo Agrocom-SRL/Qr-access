@@ -2,14 +2,14 @@
   "tabs": {
     "resumen": "Summary",
     "suscripcion": "Subscription",
-    "sitios": "Sites and doors",
+    "sitios": "Properties and doors",
     "accesos": "Access",
     "bitacora": "Audit log"
   },
   "planActual": "Current plan",
   "usuariosActivos": "Active users",
   "venceEl": "Expires on {{fecha}}, in {{dias}} days. After that, access is rejected with “Subscription expired”.",
-  "sitiosSoloLectura": "The account manages its sites and doors from the app. Here they are read-only.",
+  "sitiosSoloLectura": "The account manages its properties and doors from the app. Here they are read-only.",
   "renovar": "Renew",
   "renovarPago": "Renew and record payment",
   "cambiarPlan": "Change plan",
@@ -17,7 +17,7 @@
   "renovacionesPagos": "Renewals and payments",
   "migas": "Accounts",
   "empresa": "Company",
-  "razonSocial": "Company name",
+  "razonSocial": "Account name",
   "nit": "Tax ID (NIT)",
   "ciudad": "City",
   "contacto": "Contact",
@@ -43,7 +43,7 @@
   "sinLector": "No reader",
   "sinSenal": "No signal",
   "sitiosVacio": {
-    "titulo": "No sites yet",
+    "titulo": "No properties yet",
     "texto": "The account creates them from the app."
   },
   "hace": "{{tiempo}} ago",
@@ -96,7 +96,7 @@
   "correo": "Email",
   "responsable": "Person responsible for the account",
   "pendienteTexto": "Pending its first payment: it starts operating once it is recorded.",
-  "sitios": "Sites",
+  "sitios": "Properties",
   "puertas": "Doors",
   "sinResponsable": "This account has no contact details."
 }

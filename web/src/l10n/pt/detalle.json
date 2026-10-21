@@ -2,14 +2,14 @@
   "tabs": {
     "resumen": "Resumo",
     "suscripcion": "Assinatura",
-    "sitios": "Locais e portas",
+    "sitios": "Propriedades e portas",
     "accesos": "Acessos",
     "bitacora": "Registro de atividades"
   },
   "planActual": "Plano atual",
   "usuariosActivos": "Usuários ativos",
   "venceEl": "Vence em {{fecha}}, em {{dias}} dias. Depois, os acessos são recusados com “Assinatura vencida”.",
-  "sitiosSoloLectura": "Os locais e as portas são administrados pela conta no app. Aqui só podem ser consultados.",
+  "sitiosSoloLectura": "As propriedades e as portas são administradas pela conta no app. Aqui só podem ser consultadas.",
   "renovar": "Renovar",
   "renovarPago": "Renovar e registrar pagamento",
   "cambiarPlan": "Alterar plano",
@@ -17,7 +17,7 @@
   "renovacionesPagos": "Renovações e pagamentos",
   "migas": "Contas",
   "empresa": "Empresa",
-  "razonSocial": "Razão social",
+  "razonSocial": "Nome da conta",
   "nit": "NIT",
   "ciudad": "Cidade",
   "contacto": "Contato",
@@ -43,8 +43,8 @@
   "sinLector": "Sem leitor",
   "sinSenal": "Sem sinal",
   "sitiosVacio": {
-    "titulo": "Ainda não há locais",
-    "texto": "A conta os cria pelo app."
+    "titulo": "Ainda não há propriedades",
+    "texto": "A conta as cria pelo app."
   },
   "hace": "há {{tiempo}}",
   "sinEmpresa": "Sem dados da empresa",
@@ -96,7 +96,7 @@
   "correo": "E-mail",
   "responsable": "Pessoa responsável pela conta",
   "pendienteTexto": "Pendente do primeiro pagamento: começa a operar quando for registrado.",
-  "sitios": "Locais",
+  "sitios": "Propriedades",
   "puertas": "Portas",
   "sinResponsable": "Esta conta não tem dados de contato."
 }

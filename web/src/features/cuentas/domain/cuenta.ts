@@ -43,11 +43,15 @@ export const ESTADOS_DEL_FILTRO: readonly FiltroEstado[] = [
 
 export interface DetalleDeCuenta {
   cuenta: { id: string; codigo: string; nombre: string; activa: boolean; clienteDesde: Date };
+  /** Datos de la empresa; `nit`, `telefono` y `correo` faltan en cuentas que no los cargaron. */
   empresa: {
-    nit: string;
+    nit: string | null;
     ciudad: string;
+    /** Nombre completo de la persona responsable, tal como lo muestra la ficha. */
     contacto: string;
-    telefono: string;
+    contactoNombre: string;
+    contactoApellido: string;
+    telefono: string | null;
     correo: string | null;
   } | null;
   suscripcion: {

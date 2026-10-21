@@ -9,6 +9,8 @@ export interface DatosDeEmpresa {
   codigo: string;
   /** La persona responsable de la cuenta: con quien AGROCOM trata el servicio y los pagos. */
   contactoNombre: string;
+  contactoApellido: string;
+  /** Opcionales: vacíos se guardan como `null` (la API los acepta vacíos). */
   contactoTelefono: string;
   contactoCorreo: string;
 }
@@ -43,6 +45,13 @@ const TELEFONO = /^[0-9+() -]{6,30}$/;
 const CODIGO = /^[A-Z]{3}$/;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Nombre completo de la persona responsable, para mostrarlo y para el administrador inicial. */
+export function nombreCompletoDelResponsable(
+  empresa: Pick<DatosDeEmpresa, 'contactoNombre' | 'contactoApellido'>,
+): string {
+  return `${empresa.contactoNombre.trim()} ${empresa.contactoApellido.trim()}`.trim();
+}
+
 /** `agr` → `AGR`; solo letras A–Z y a lo sumo 3. Lo que se guarda y se valida contra la API. */
 export function normalizarCodigo(entrada: string): string {
   return entrada
@@ -56,16 +65,19 @@ export function validarEmpresa(
 ): Partial<Record<keyof DatosDeEmpresa, ErrorDeCampo>> {
   const errores: Partial<Record<keyof DatosDeEmpresa, ErrorDeCampo>> = {};
   if (datos.razonSocial.trim() === '') errores.razonSocial = 'requerido';
-  if (datos.nit.trim() === '') errores.nit = 'requerido';
-  else if (!NIT.test(datos.nit.trim())) errores.nit = 'formato';
+  // El NIT es opcional (la cuenta puede no tener uno todavía): solo se revisa el formato si se escribe.
+  if (datos.nit.trim() !== '' && !NIT.test(datos.nit.trim())) errores.nit = 'formato';
   if (datos.ciudad === '') errores.ciudad = 'requerido';
   if (datos.codigo === '') errores.codigo = 'requerido';
   else if (!CODIGO.test(datos.codigo)) errores.codigo = 'formato';
   if (datos.contactoNombre.trim() === '') errores.contactoNombre = 'requerido';
-  if (datos.contactoTelefono.trim() === '') errores.contactoTelefono = 'requerido';
-  else if (!TELEFONO.test(datos.contactoTelefono.trim())) errores.contactoTelefono = 'formato';
-  if (datos.contactoCorreo.trim() === '') errores.contactoCorreo = 'requerido';
-  else if (!CORREO.test(datos.contactoCorreo.trim())) errores.contactoCorreo = 'formato';
+  if (datos.contactoApellido.trim() === '') errores.contactoApellido = 'requerido';
+  if (datos.contactoTelefono.trim() !== '' && !TELEFONO.test(datos.contactoTelefono.trim())) {
+    errores.contactoTelefono = 'formato';
+  }
+  if (datos.contactoCorreo.trim() !== '' && !CORREO.test(datos.contactoCorreo.trim())) {
+    errores.contactoCorreo = 'formato';
+  }
   return errores;
 }
 
@@ -131,6 +143,7 @@ export const BORRADOR_VACIO = (hoy: string): BorradorDeCuenta => ({
     ciudad: '',
     codigo: '',
     contactoNombre: '',
+    contactoApellido: '',
     contactoTelefono: '',
     contactoCorreo: '',
   },

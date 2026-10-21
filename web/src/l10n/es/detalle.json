@@ -2,14 +2,14 @@
   "tabs": {
     "resumen": "Resumen",
     "suscripcion": "Suscripción",
-    "sitios": "Sitios y puertas",
+    "sitios": "Propiedades y puertas",
     "accesos": "Accesos",
     "bitacora": "Bitácora"
   },
   "planActual": "Plan actual",
   "usuariosActivos": "Usuarios activos",
   "venceEl": "Vence el {{fecha}}, en {{dias}} días. Después, los accesos se rechazan con \"Suscripción vencida\".",
-  "sitiosSoloLectura": "Los sitios y puertas los administra la cuenta desde la app. Aquí solo se consultan.",
+  "sitiosSoloLectura": "Las propiedades y las puertas las administra la cuenta desde la app. Aquí solo se consultan.",
   "renovar": "Renovar",
   "renovarPago": "Renovar y registrar pago",
   "cambiarPlan": "Cambiar plan",
@@ -17,7 +17,7 @@
   "renovacionesPagos": "Renovaciones y pagos",
   "migas": "Cuentas",
   "empresa": "Empresa",
-  "razonSocial": "Razón social",
+  "razonSocial": "Nombre de la cuenta",
   "nit": "NIT",
   "ciudad": "Ciudad",
   "contacto": "Contacto",
@@ -43,8 +43,8 @@
   "sinLector": "Sin lector",
   "sinSenal": "Sin señal",
   "sitiosVacio": {
-    "titulo": "Todavía no hay sitios",
-    "texto": "La cuenta los crea desde la app."
+    "titulo": "Todavía no hay propiedades",
+    "texto": "La cuenta las crea desde la app."
   },
   "hace": "hace {{tiempo}}",
   "sinEmpresa": "Sin datos de empresa",
@@ -96,7 +96,7 @@
   "correo": "Correo",
   "responsable": "Persona responsable de la cuenta",
   "pendienteTexto": "Pendiente de su primer pago: empieza a operar cuando se registre.",
-  "sitios": "Sitios",
+  "sitios": "Propiedades",
   "puertas": "Puertas",
   "sinResponsable": "Esta cuenta no tiene datos de contacto."
 }
