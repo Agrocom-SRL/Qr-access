@@ -8,7 +8,13 @@ import {
   validarVigencia,
   venceUnAnioDespues,
 } from '@/features/cuentas/domain/alta';
-import { usuariosDisponibles } from '@/features/cuentas/domain/cuenta';
+import {
+  destinosDeReasignacion,
+  sufijoDePinValido,
+  topeDeMiembrosValido,
+  usuariosDisponibles,
+  type RamaDeAdministrador,
+} from '@/features/cuentas/domain/cuenta';
 
 const completa = {
   razonSocial: 'Agrícola Guarayos S.A.',
@@ -158,5 +164,42 @@ describe('nombreCompletoDelResponsable', () => {
     expect(
       nombreCompletoDelResponsable({ contactoNombre: ' Rodrigo ', contactoApellido: 'Añez' }),
     ).toBe('Rodrigo Añez');
+  });
+});
+
+describe('tope de Miembros por Titular (ADR 0028 §6)', () => {
+  it('es un entero de 1 a 500', () => {
+    for (const valido of [1, 10, 500]) expect(topeDeMiembrosValido(valido)).toBe(true);
+    for (const invalido of [0, -3, 501, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(topeDeMiembrosValido(invalido)).toBe(false);
+    }
+  });
+});
+
+describe('sufijo del PIN de un administrador nuevo', () => {
+  it('son 4 letras o números', () => {
+    for (const valido of ['AB12', 'ab12', '0000', 'ZZZZ'])
+      expect(sufijoDePinValido(valido)).toBe(true);
+    for (const invalido of ['', 'AB1', 'AB123', 'A-B1', 'AB 1', 'ÁB12']) {
+      expect(sufijoDePinValido(invalido)).toBe(false);
+    }
+  });
+});
+
+describe('destinos de una reasignación', () => {
+  const rama = (id: string): RamaDeAdministrador => ({
+    id,
+    etiqueta: `Admin ${id}`,
+    guardias: [],
+    titulares: [],
+  });
+
+  it('son todos los administradores menos el que ya lo tiene', () => {
+    const ramas = [rama('1'), rama('2'), rama('3')];
+    expect(destinosDeReasignacion(ramas, '2').map((r) => r.id)).toEqual(['1', '3']);
+  });
+
+  it('con un solo administrador no hay a quién mover', () => {
+    expect(destinosDeReasignacion([rama('1')], '1')).toEqual([]);
   });
 });

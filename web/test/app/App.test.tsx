@@ -9,6 +9,7 @@ import {
   SUSCRIPCION,
   crearServiciosDePrueba,
 } from '../servicios';
+import type { CuentasRepositorio } from '@/features/cuentas';
 import type { PlacasRepositorio } from '@/features/placas';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
@@ -1057,7 +1058,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(2);
+    // Como responsable, como administrador y en el árbol de la cuenta (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(3);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1253,5 +1255,243 @@ describe('placas (ADR 0026)', () => {
     await ingresar();
     await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
     expect(screen.queryByRole('link', { name: /Placas/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('estructura de la cuenta: administradores, reasignación y tope (ADR 0028)', () => {
+  async function abrirCuenta(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+  }
+
+  /** Quien entra solo con los permisos que se le den, para probar lo que no se ofrece. */
+  function conPermisos(permisos: string[], cuentas: Partial<CuentasRepositorio> = {}) {
+    return crearServiciosDePrueba({
+      cuentas,
+      seguridad: {
+        ingresar: () =>
+          Promise.resolve({
+            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
+            debeCambiarContrasena: false,
+            permisos,
+          }),
+      },
+    });
+  }
+
+  describe('agregar un administrador', () => {
+    it('pide el nombre, lo crea y muestra su PIN una sola vez', async () => {
+      const crearAdministrador = vi.fn((_cuenta: string, datos: { etiqueta: string }) =>
+        Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGR9X8Z' }),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      const agregar = within(dialogo).getByRole('button', { name: 'Agregar' });
+      expect(agregar).toBeDisabled();
+      await userEvent.type(
+        within(dialogo).getByLabelText('Nombre del administrador'),
+        ' Rosa Vaca ',
+      );
+      await userEvent.click(agregar);
+      await waitFor(() => {
+        expect(crearAdministrador).toHaveBeenCalledWith('1', { etiqueta: 'Rosa Vaca' });
+      });
+      expect(await screen.findByRole('img', { name: 'A G R 9 X 8 Z' })).toBeInTheDocument();
+      expect(screen.getByText('Administrador nuevo: Rosa Vaca')).toBeInTheDocument();
+      expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Ya lo copié' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('img', { name: 'A G R 9 X 8 Z' })).not.toBeInTheDocument();
+      });
+      expect(JSON.stringify(Object.entries(localStorage))).not.toContain('9X8Z');
+    });
+
+    it('con los 4 caracteres elegidos los manda en mayúsculas y valida su formato', async () => {
+      const crearAdministrador = vi.fn((_cuenta: string, datos: { etiqueta: string }) =>
+        Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGRAB12' }),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.type(within(dialogo).getByLabelText('Nombre del administrador'), 'Rosa Vaca');
+      const sufijo = within(dialogo).getByLabelText('Últimos 4 caracteres del PIN');
+      await userEvent.type(sufijo, 'a-');
+      expect(
+        within(dialogo).getByText('Son 4 caracteres entre letras y números.'),
+      ).toBeInTheDocument();
+      expect(within(dialogo).getByRole('button', { name: 'Agregar' })).toBeDisabled();
+      await userEvent.clear(sufijo);
+      await userEvent.type(sufijo, 'ab12');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Agregar' }));
+      await waitFor(() => {
+        expect(crearAdministrador).toHaveBeenCalledWith('1', {
+          etiqueta: 'Rosa Vaca',
+          sufijo: 'AB12',
+        });
+      });
+    });
+
+    it('un error de la API se traduce y el diálogo sigue abierto', async () => {
+      const crearAdministrador = vi.fn(() =>
+        Promise.reject(new ErrorApi(422, 'plan.limite_usuarios')),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.type(within(dialogo).getByLabelText('Nombre del administrador'), 'Rosa Vaca');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Agregar' }));
+      expect(
+        await within(dialogo).findByText('La cuenta alcanzó el cupo de usuarios de su plan.'),
+      ).toBeInTheDocument();
+    });
+
+    it('sin el permiso de crear administradores no se ofrece el botón', async () => {
+      await abrirCuenta(
+        conPermisos([
+          'seguridad.cuenta.ver',
+          'seguridad.administrador.regenerar_pin',
+          'resumen.panel.ver',
+        ]),
+      );
+      await screen.findByRole('heading', { name: 'Administradores' });
+      expect(
+        screen.queryByRole('button', { name: 'Agregar administrador' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('quién depende de quién', () => {
+    it('muestra cada administrador con sus Titulares (unidad y Miembros) y Guardias', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
+      expect(await screen.findByText('Jorge Rivero')).toBeInTheDocument();
+      expect(screen.getByText('Titular · Casa 12 · 3 Miembros')).toBeInTheDocument();
+      expect(screen.getByText('Portería norte')).toBeInTheDocument();
+      expect(screen.getByText('Todavía no tiene Titulares ni Guardias.')).toBeInTheDocument();
+    });
+
+    it('reasignar un Titular explica que lleva su unidad y sus Miembros, y lo manda a otro administrador', async () => {
+      const reasignar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Jorge Rivero a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      expect(within(dialogo).getByText(/con su unidad y sus 3 Miembros/)).toBeInTheDocument();
+      const reasignarBoton = within(dialogo).getByRole('button', { name: 'Reasignar' });
+      expect(reasignarBoton).toBeDisabled();
+      // El destino no incluye al administrador que ya lo tiene
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      expect(screen.queryByRole('option', { name: 'Carla Méndez' })).not.toBeInTheDocument();
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(reasignarBoton);
+      await waitFor(() => {
+        expect(reasignar).toHaveBeenCalledWith('1', '31', '12');
+      });
+    });
+
+    it('reasignar un Guardia manda al Guardia', async () => {
+      const reasignar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Portería norte a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Reasignar' }));
+      await waitFor(() => {
+        expect(reasignar).toHaveBeenCalledWith('1', '21', '12');
+      });
+    });
+
+    it('un error de la API al reasignar se traduce', async () => {
+      const reasignar = vi.fn(() =>
+        Promise.reject(new ErrorApi(422, 'reasignacion.mismo_administrador')),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Portería norte a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Reasignar' }));
+      expect(
+        await within(dialogo).findByText('Ya depende de ese administrador.'),
+      ).toBeInTheDocument();
+    });
+
+    it('sin el permiso de reasignar, el árbol se ve pero no se ofrece mover a nadie', async () => {
+      await abrirCuenta(conPermisos(['seguridad.cuenta.ver', 'resumen.panel.ver']));
+      expect(await screen.findByText('Jorge Rivero')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Reasignar a/ })).not.toBeInTheDocument();
+    });
+
+    it('si el árbol no carga, lo dice y deja reintentar', async () => {
+      const jerarquia = vi
+        .fn()
+        .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
+        .mockResolvedValue([]);
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { jerarquia } }));
+      expect(
+        await screen.findByText('No pudimos cargar la estructura de la cuenta'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('tope de Miembros por Titular', () => {
+    it('la ficha muestra el tope de la cuenta', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      const etiquetas = await screen.findAllByText('Máximo de Miembros por Titular');
+      // En la ficha, la etiqueta va con su valor (10 por defecto) en la misma fila
+      expect(etiquetas[0]?.closest('div')).toHaveTextContent('10');
+    });
+
+    it('el diálogo de edición parte del tope vigente y lo manda al guardar', async () => {
+      const editar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { editar } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+      const dialogo = await screen.findByRole('dialog');
+      const campo = within(dialogo).getByLabelText('Máximo de Miembros por Titular');
+      expect(campo).toHaveValue('10');
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '25');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }));
+      await waitFor(() => {
+        expect(editar).toHaveBeenCalledWith(
+          '1',
+          expect.objectContaining({ maxMiembrosPorTitular: 25 }),
+        );
+      });
+    });
+
+    it('rechaza vacío, cero, decimales y más de 500', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+      const dialogo = await screen.findByRole('dialog');
+      const campo = within(dialogo).getByLabelText('Máximo de Miembros por Titular');
+      const guardar = within(dialogo).getByRole('button', { name: 'Guardar cambios' });
+      for (const invalido of ['', '0', '2.5', '501']) {
+        await userEvent.clear(campo);
+        if (invalido !== '') await userEvent.type(campo, invalido);
+        expect(guardar).toBeDisabled();
+        expect(
+          within(dialogo).getByText('Escribe un número entero de 1 a 500.'),
+        ).toBeInTheDocument();
+      }
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '500');
+      expect(guardar).toBeEnabled();
+    });
   });
 });

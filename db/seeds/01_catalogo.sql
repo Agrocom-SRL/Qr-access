@@ -37,6 +37,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('organizacion.sitio.gestionar', 'plataforma'),
   ('organizacion.puerta.gestionar', 'plataforma'),
   ('seguridad.administrador.regenerar_pin', 'plataforma'),
+  ('seguridad.administrador.crear', 'plataforma'),
+  ('seguridad.administrador.reasignar', 'plataforma'),
   ('bitacora.registro.ver', 'plataforma'),
   ('resumen.panel.ver', 'plataforma'),
   ('suscripciones.suscripcion.ver', 'plataforma'),

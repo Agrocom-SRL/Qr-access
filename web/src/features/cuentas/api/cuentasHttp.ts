@@ -27,7 +27,14 @@ interface ListadoCuentasDto extends ListadoDto<CuentaDto> {
 }
 
 interface DetalleDto {
-  cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
+  cuenta: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    activa: boolean;
+    cliente_desde: string;
+    max_miembros_por_titular: number;
+  };
   empresa: {
     nit: string | null;
     ciudad: string;
@@ -97,6 +104,7 @@ export function detalleDesdeDto(dto: DetalleDto): DetalleDeCuenta {
       nombre: dto.cuenta.nombre,
       activa: dto.cuenta.activa,
       clienteDesde: new Date(dto.cuenta.cliente_desde),
+      maxMiembrosPorTitular: dto.cuenta.max_miembros_por_titular,
     },
     empresa:
       dto.empresa === null
@@ -238,6 +246,54 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
       };
     },
 
+    async crearAdministrador(cuentaId, datos) {
+      return cliente.solicitar<{ id: string; etiqueta: string; pin: string }>({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/administradores`,
+        cuerpo: {
+          etiqueta: datos.etiqueta.trim(),
+          ...(datos.sufijo === undefined || datos.sufijo === ''
+            ? {}
+            : { sufijo: datos.sufijo.trim() }),
+        },
+      });
+    },
+
+    async jerarquia(cuentaId) {
+      const dto = await cliente.solicitar<{
+        administradores: {
+          id: string;
+          etiqueta: string | null;
+          guardias: { id: string; etiqueta: string | null }[];
+          titulares: {
+            id: string;
+            etiqueta: string | null;
+            unidad: string | null;
+            miembros: number;
+          }[];
+        }[];
+      }>({ metodo: 'GET', ruta: `/plataforma/cuentas/${cuentaId}/jerarquia` });
+      return dto.administradores.map((admin) => ({
+        id: admin.id,
+        etiqueta: admin.etiqueta ?? '—',
+        guardias: admin.guardias.map((g) => ({ id: g.id, etiqueta: g.etiqueta ?? '—' })),
+        titulares: admin.titulares.map((t) => ({
+          id: t.id,
+          etiqueta: t.etiqueta ?? '—',
+          unidad: t.unidad,
+          miembros: t.miembros,
+        })),
+      }));
+    },
+
+    async reasignar(cuentaId, usuarioId, administradorId) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/reasignaciones`,
+        cuerpo: { usuario_id: usuarioId, administrador_id: administradorId },
+      });
+    },
+
     async administradores(cuentaId) {
       const dto = await cliente.solicitar<{
         datos: {
@@ -289,6 +345,9 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           contacto_apellido: datos.contactoApellido.trim(),
           contacto_telefono: datos.contactoTelefono.trim(),
           contacto_correo: datos.contactoCorreo.trim(),
+          ...(datos.maxMiembrosPorTitular === undefined
+            ? {}
+            : { max_miembros_por_titular: datos.maxMiembrosPorTitular }),
         },
       });
     },

@@ -8,6 +8,7 @@ import type {
   DatosDeSitio,
   DetalleDeCuenta,
   FiltrosDeCuentas,
+  RamaDeAdministrador,
   SitioConPuertas,
 } from '../domain/cuenta';
 
@@ -38,7 +39,29 @@ export interface AdministradorDeCuenta {
   ultimoIngresoEn: Date | null;
 }
 
+/** Un Administrador recién sumado: su PIN llega en claro una sola vez y no se guarda en ninguna caché. */
+export interface AdministradorCreado {
+  id: string;
+  etiqueta: string;
+  pin: string;
+}
+
+/** Lo que se puede cambiar al editar una cuenta (el código no, tiene su propio diálogo). */
+export type CorreccionDeCuenta = Omit<DatosDeEmpresa, 'codigo'> & {
+  /** Tope de Miembros por Titular (ADR 0028 §6); sin él, la cuenta conserva el que tiene. */
+  maxMiembrosPorTitular?: number;
+};
+
 export interface CuentasRepositorio {
+  /** Suma otro Administrador a la cuenta (solo AGROCOM, ADR 0028). */
+  crearAdministrador: (
+    cuentaId: string,
+    datos: { etiqueta: string; sufijo?: string },
+  ) => Promise<AdministradorCreado>;
+  /** El árbol de la cuenta: cada Administrador con sus Guardias y Titulares. */
+  jerarquia: (cuentaId: string) => Promise<readonly RamaDeAdministrador[]>;
+  /** Mueve un Guardia o un Titular (con su unidad y sus Miembros) a otro Administrador. */
+  reasignar: (cuentaId: string, usuarioId: string, administradorId: string) => Promise<void>;
   administradores: (cuentaId: string) => Promise<readonly AdministradorDeCuenta[]>;
   /** Sortea un PIN nuevo; llega en claro una sola vez y no se guarda en ninguna caché. */
   regenerarPin: (cuentaId: string, usuarioId: string) => Promise<string>;
@@ -49,7 +72,7 @@ export interface CuentasRepositorio {
   crear: (borrador: BorradorDeCuenta) => Promise<CuentaCreada>;
   obtener: (id: string) => Promise<DetalleDeCuenta>;
   /** Corrige la razón social y los datos de la empresa y su persona responsable (no el código). */
-  editar: (id: string, datos: Omit<DatosDeEmpresa, 'codigo'>) => Promise<void>;
+  editar: (id: string, datos: CorreccionDeCuenta) => Promise<void>;
   /** Da de baja la cuenta; hay que repetir su código para confirmar. */
   eliminar: (id: string, codigo: string) => Promise<void>;
   sitiosYPuertas: (id: string) => Promise<readonly SitioConPuertas[]>;

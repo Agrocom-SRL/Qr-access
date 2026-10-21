@@ -21,7 +21,12 @@ import {
   generarSufijoDePin,
   normalizarPin,
 } from '../../src/modules/seguridad/domain/pin.js';
-import { nivelDeRol, puedeCrear } from '../../src/modules/seguridad/domain/jerarquia.js';
+import {
+  armarJerarquia,
+  nivelDeRol,
+  puedeCrear,
+  type NodoDeUsuario,
+} from '../../src/modules/seguridad/domain/jerarquia.js';
 import { rolUnico } from '../../src/modules/seguridad/domain/rol-unico.js';
 
 describe('PIN (ADR 0018)', () => {
@@ -88,6 +93,50 @@ describe('jerarquía de usuarios (ADR 0028 §3)', () => {
     expect(puedeCrear('guardia', 'miembro')).toBe(false);
     expect(puedeCrear(null, 'miembro')).toBe(false);
     expect(puedeCrear('administrador', null)).toBe(false);
+  });
+});
+
+describe('árbol de una cuenta para AGROCOM (ADR 0028)', () => {
+  const nodo = (
+    id: string,
+    nivel: NodoDeUsuario['nivel'],
+    superiorId: string | null,
+  ): NodoDeUsuario => ({ id, etiqueta: `U${id}`, superiorId, nivel });
+
+  it('agrupa Guardias y Titulares bajo su Administrador y cuenta los Miembros de cada Titular', () => {
+    const arbol = armarJerarquia([
+      nodo('1', 'administrador', null),
+      nodo('2', 'administrador', null),
+      nodo('3', 'titular', '1'),
+      nodo('4', 'miembro', '3'),
+      nodo('5', 'miembro', '3'),
+      nodo('6', 'guardia', '1'),
+      nodo('7', 'titular', '2'),
+    ]);
+    expect(arbol).toEqual([
+      {
+        id: '1',
+        etiqueta: 'U1',
+        guardias: [{ id: '6', etiqueta: 'U6' }],
+        titulares: [{ id: '3', etiqueta: 'U3', miembros: 2 }],
+      },
+      {
+        id: '2',
+        etiqueta: 'U2',
+        guardias: [],
+        titulares: [{ id: '7', etiqueta: 'U7', miembros: 0 }],
+      },
+    ]);
+  });
+
+  it('lo que no cuelga de un Administrador (rol sin nivel, huérfano) no aparece', () => {
+    const arbol = armarJerarquia([
+      nodo('1', 'administrador', null),
+      nodo('2', null, '1'),
+      nodo('3', 'titular', null),
+      nodo('4', 'guardia', '99'),
+    ]);
+    expect(arbol).toEqual([{ id: '1', etiqueta: 'U1', guardias: [], titulares: [] }]);
   });
 });
 

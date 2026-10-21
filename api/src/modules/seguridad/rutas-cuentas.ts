@@ -14,9 +14,13 @@ import {
   consultaDeCobranza,
   cuerpoDeBajaDeCuenta,
   cuerpoDeCambioDeCodigo,
+  cuerpoDeNuevoAdministrador,
+  cuerpoDeReasignacion,
   cuerpoDeEdicionDeCuenta,
   parametrosDeAdministrador,
+  respuestaDeAdministradorCreado,
   respuestaDeAdministradores,
+  respuestaDeJerarquiaDeCuenta,
   respuestaDeCambioDeCodigo,
   consultaDeCodigoDeCuenta,
   consultaDeCuentas,
@@ -154,6 +158,7 @@ export const rutasDeCuentas =
           contactoApellido: cuerpo.contacto_apellido,
           contactoTelefono: cuerpo.contacto_telefono,
           contactoCorreo: cuerpo.contacto_correo,
+          maxMiembrosPorTitular: cuerpo.max_miembros_por_titular,
         });
         return reply.status(204).send();
       },
@@ -201,6 +206,65 @@ export const rutasDeCuentas =
       async (request) => ({
         datos: await administradores.listar(pool, plataformaDe(request), request.params.id),
       }),
+    );
+
+    // Solo AGROCOM suma Administradores a una cuenta (ADR 0028): el PIN se ve una sola vez.
+    app.post(
+      '/plataforma/cuentas/:id/administradores',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          body: cuerpoDeNuevoAdministrador,
+          response: { 201: respuestaDeAdministradorCreado },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.administrador.crear'),
+      },
+      async (request, reply) => {
+        const creado = await administradores.crear(
+          servicios,
+          plataformaDe(request),
+          request.params.id,
+          {
+            etiqueta: request.body.etiqueta,
+            ...(request.body.sufijo === undefined ? {} : { sufijo: request.body.sufijo }),
+          },
+        );
+        return reply.status(201).send(creado);
+      },
+    );
+
+    // El árbol de la cuenta: cada Administrador con sus Guardias y Titulares.
+    app.get(
+      '/plataforma/cuentas/:id/jerarquia',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeJerarquiaDeCuenta },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      (request) => administradores.verJerarquia(pool, plataformaDe(request), request.params.id),
+    );
+
+    // Mover un Guardia o una unidad completa (su Titular) a otro Administrador: solo AGROCOM.
+    app.post(
+      '/plataforma/cuentas/:id/reasignaciones',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeReasignacion },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.administrador.reasignar'),
+      },
+      async (request, reply) => {
+        await administradores.reasignar(pool, plataformaDe(request), request.params.id, {
+          usuarioId: request.body.usuario_id,
+          administradorId: request.body.administrador_id,
+        });
+        return reply.status(204).send();
+      },
     );
 
     // AGROCOM solo restablece el PIN de los administradores; ellos manejan el de sus usuarios.

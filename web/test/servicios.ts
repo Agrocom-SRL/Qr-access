@@ -9,6 +9,7 @@ import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisti
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
+import type { RamaDeAdministrador } from '@/features/cuentas/domain/cuenta';
 import type { PlacasRepositorio, Placa } from '@/features/placas';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
@@ -34,6 +35,8 @@ export const SUPER_ADMIN = {
     'organizacion.sitio.gestionar',
     'organizacion.puerta.gestionar',
     'seguridad.administrador.regenerar_pin',
+    'seguridad.administrador.crear',
+    'seguridad.administrador.reasignar',
     'suscripciones.suscripcion.ver',
     'suscripciones.suscripcion.editar',
     'suscripciones.pago.registrar',
@@ -135,6 +138,7 @@ export const DETALLE = {
     nombre: 'Agroindustrial Norte',
     activa: true,
     clienteDesde: new Date('2024-11-05T12:00:00Z'),
+    maxMiembrosPorTitular: 10,
   },
   empresa: {
     nit: '1023456021',
@@ -161,6 +165,17 @@ export const DETALLE = {
     administradores: 2,
   },
 };
+
+/** El árbol de la cuenta de ejemplo: dos Administradores, uno con un Titular y un Guardia. */
+export const JERARQUIA: readonly RamaDeAdministrador[] = [
+  {
+    id: '11',
+    etiqueta: 'Carla Méndez',
+    guardias: [{ id: '21', etiqueta: 'Portería norte' }],
+    titulares: [{ id: '31', etiqueta: 'Jorge Rivero', unidad: 'Casa 12', miembros: 3 }],
+  },
+  { id: '12', etiqueta: 'Rosa Vaca', guardias: [], titulares: [] },
+];
 
 export const PLACAS: Placa[] = [
   {
@@ -513,6 +528,10 @@ export function crearServiciosDePrueba(
         },
       ]),
     regenerarPin: () => Promise.resolve('AGR7K2Q'),
+    crearAdministrador: (_cuentaId, datos) =>
+      Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGR9X8Z' }),
+    jerarquia: () => Promise.resolve(JERARQUIA),
+    reasignar: () => Promise.resolve(),
     cambiarCodigo: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),
     editar: () => Promise.resolve(),

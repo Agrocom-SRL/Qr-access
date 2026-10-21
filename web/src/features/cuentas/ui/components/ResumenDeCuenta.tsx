@@ -14,6 +14,7 @@ import { tienePermiso, useSesion } from '../../../seguridad';
 import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
+import { JerarquiaDeCuenta } from './JerarquiaDeCuenta';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
 import styles from './ResumenDeCuenta.module.css';
 
@@ -46,6 +47,11 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
     sesion?.permisos ?? [],
     'seguridad.administrador.regenerar_pin',
   );
+  const puedeAgregarAdministrador = tienePermiso(
+    sesion?.permisos ?? [],
+    'seguridad.administrador.crear',
+  );
+  const puedeReasignar = tienePermiso(sesion?.permisos ?? [], 'seguridad.administrador.reasignar');
   const [cambiandoCodigo, setCambiandoCodigo] = useState(false);
   const cupo = suscripcion?.plan.cupoUsuarios ?? null;
   const disponibles = usuariosDisponibles(uso.usuariosActivos, cupo);
@@ -171,6 +177,9 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
                 {empresa.nit || t('comun:sinDato')}
               </FilaClaveValor>
               <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:maxMiembros')}>
+                {detalle.cuenta.maxMiembrosPorTitular}
+              </FilaClaveValor>
               <FilaClaveValor clave={t('detalle:clienteDesde')}>
                 {formatearFecha(detalle.cuenta.clienteDesde)}
               </FilaClaveValor>
@@ -204,7 +213,15 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
       </div>
 
       <div className={styles.administradores}>
-        <AdministradoresDeCuenta cuentaId={detalle.cuenta.id} puedeRegenerar={puedeRegenerar} />
+        <AdministradoresDeCuenta
+          cuentaId={detalle.cuenta.id}
+          puedeRegenerar={puedeRegenerar}
+          puedeAgregar={puedeAgregarAdministrador}
+        />
+      </div>
+
+      <div className={styles.administradores}>
+        <JerarquiaDeCuenta cuentaId={detalle.cuenta.id} puedeReasignar={puedeReasignar} />
       </div>
 
       <DialogoCambiarCodigo
