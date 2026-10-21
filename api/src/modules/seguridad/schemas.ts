@@ -32,12 +32,15 @@ export const respuestaDeSesionActual = z.object({
 
 /** Largo de `usuarios.etiqueta`. */
 export const MAX_ETIQUETA_DE_USUARIO = 80;
+/** Largo de `unidades.nombre`. */
+const MAX_NOMBRE_DE_UNIDAD = 80;
 
 export const esquemaUsuario = z.object({
   id: z.string(),
   etiqueta: z.string().nullable(),
   activo: z.boolean(),
   roles: z.array(esquemaRol),
+  unidad: z.object({ id: z.string(), nombre: z.string(), sitio_id: z.string() }).nullable(),
   pin_generado_at: esquemaFecha.nullable(),
   ultimo_ingreso_at: esquemaFecha.nullable(),
   created_at: esquemaFecha,
@@ -55,10 +58,18 @@ const esquemaSufijoDePin = z
   .regex(/^[A-Za-z0-9]{4}$/)
   .transform((sufijo) => sufijo.toUpperCase());
 
+/** La unidad de un Titular (ADR 0028): en qué propiedad está y cómo se llama ("Casa 12"). */
+const esquemaUnidadNueva = z.object({
+  sitio_id: esquemaId,
+  nombre: z.string().trim().min(1).max(MAX_NOMBRE_DE_UNIDAD),
+});
+
 export const cuerpoDeNuevoUsuario = z.object({
   etiqueta: esquemaEtiqueta,
   rol_ids: esquemaRolIds,
   sufijo: esquemaSufijoDePin.optional(),
+  /** Obligatoria al crear un Titular y prohibida para los demás niveles. */
+  unidad: esquemaUnidadNueva.optional(),
 });
 
 /** Regenerar el PIN: sin cuerpo (lo sortea el servidor) o con el sufijo elegido. */
@@ -76,6 +87,22 @@ export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() 
 export const cuerpoDeEdicionDeUsuario = z.object({ etiqueta: esquemaEtiqueta });
 
 export const parametrosDeUsuario = z.object({ id: esquemaId });
+
+/** `?confirmar=true`: acepta la baja en cascada de lo que cuelga del usuario (ADR 0028 §7). */
+export const consultaDeBaja = z.object({
+  confirmar: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((valor) => valor === 'true'),
+});
+
+export const respuestaDeCupo = z.object({
+  usados: z.number(),
+  maximo: z.number().nullable(),
+  porcentaje: z.number().nullable(),
+  aviso: z.enum(['cerca_del_limite', 'limite_alcanzado']).nullable(),
+  max_miembros_por_titular: z.number(),
+});
 
 export const respuestaDePinGenerado = z.object({ pin: z.string(), pin_generado_at: esquemaFecha });
 

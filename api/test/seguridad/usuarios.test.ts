@@ -8,6 +8,7 @@ import {
   crearCuenta,
   crearEscenario,
   crearRol,
+  crearSitio,
   crearSuscripcion,
   crearUsuarioConPin,
   PERMISOS_DE_ADMINISTRADOR,
@@ -23,6 +24,7 @@ interface UsuarioListado {
   etiqueta: string | null;
   activo: boolean;
   roles: { id: string; nombre: string }[];
+  unidad: { id: string; nombre: string; sitio_id: string } | null;
   pin_generado_at: string | null;
   ultimo_ingreso_at: string | null;
   created_at: string;
@@ -86,6 +88,9 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
     });
   const ingresar = (pin: string) =>
     prueba.app.inject({ method: 'POST', url: '/api/v1/sesiones', payload: { pin } });
+  let contadorDeUnidades = 0;
+  /** La unidad que acompaña a un Titular nuevo: un nombre distinto cada vez, en el sitio de A. */
+  const unidad = () => ({ sitio_id: a.sitioId, nombre: `Casa ${(contadorDeUnidades += 1)}` });
 
   /**
    * La cuenta A con dos ramas: la del administrador del escenario (un Titular con un Miembro, además
@@ -132,6 +137,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         etiqueta: `Usuario ${a.usuario.pin}`,
         activo: true,
         roles: [{ id: a.rolMiembroId, nombre: 'Miembro' }],
+        unidad: null,
         pin_generado_at: fechaIsoUtc(),
         ultimo_ingreso_at: null,
         created_at: fechaIsoUtc(),
@@ -192,6 +198,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const respuesta = await crear(sesionAdminA, {
         etiqueta: 'Casa 12',
         rol_ids: [a.rolTitularId],
+        unidad: unidad(),
         sufijo: 'c012',
       });
       expect(respuesta.statusCode, respuesta.body).toBe(201);
@@ -200,15 +207,18 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const repetido = await crear(sesionAdminA, {
         etiqueta: 'Otro',
         rol_ids: [a.rolTitularId],
+        unidad: unidad(),
         sufijo: 'C012',
       });
       expect(repetido.statusCode).toBe(409);
     });
 
     it('crea un Titular con un PIN de 7 caracteres que entra, lo muestra una sola vez y lo cuelga de quien lo creó', async () => {
+      const nueva = unidad();
       const respuesta = await crear(sesionAdminA, {
         etiqueta: '  Jorge Rivero ',
         rol_ids: [a.rolTitularId],
+        unidad: nueva,
       });
       expect(respuesta.statusCode, respuesta.body).toBe(201);
       const creado = respuesta.json<UsuarioListado & { pin: string }>();
@@ -217,6 +227,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         etiqueta: 'Jorge Rivero',
         activo: true,
         roles: [{ id: a.rolTitularId, nombre: 'Titular' }],
+        unidad: { id: cualquierTexto(), nombre: nueva.nombre, sitio_id: a.sitioId },
         pin_generado_at: fechaIsoUtc(),
         ultimo_ingreso_at: null,
         created_at: fechaIsoUtc(),
@@ -272,7 +283,8 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
 
       // El Administrador crea Titulares y Guardias, pero no Miembros ni otro Administrador
       expect(
-        (await crear(sesionAdminA, { etiqueta: 'T', rol_ids: [a.rolTitularId] })).statusCode,
+        (await crear(sesionAdminA, { etiqueta: 'T', rol_ids: [a.rolTitularId], unidad: unidad() }))
+          .statusCode,
       ).toBe(201);
       expect((await crear(sesionAdminA, { etiqueta: 'G', rol_ids: [rolGuardia] })).statusCode).toBe(
         201,
@@ -303,6 +315,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const titularDeTitular = await crear(sesionTitular, {
         etiqueta: 'Otro titular',
         rol_ids: [a.rolTitularId],
+        unidad: unidad(),
       });
       expect(titularDeTitular.statusCode).toBe(403);
       expect(titularDeTitular.json()).toMatchObject({ code: 'usuario.nivel_no_permitido' });
@@ -333,6 +346,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const respuesta = await crear(sesionAdminA, {
         etiqueta: 'Tercero',
         rol_ids: [a.rolTitularId],
+        unidad: unidad(),
       });
       expect(respuesta.statusCode).toBe(422);
       expect(respuesta.json()).toMatchObject({ code: 'plan.limite_usuarios', maximo: 2 });
@@ -344,7 +358,11 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         'vencida',
         a.cuenta.id,
       ]);
-      const respuesta = await crear(sesionAdminA, { etiqueta: 'Nuevo', rol_ids: [a.rolTitularId] });
+      const respuesta = await crear(sesionAdminA, {
+        etiqueta: 'Nuevo',
+        rol_ids: [a.rolTitularId],
+        unidad: unidad(),
+      });
       expect(respuesta.statusCode).toBe(403);
       expect(respuesta.json()).toMatchObject({ code: 'suscripcion.vencida' });
     });
@@ -376,7 +394,8 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
 
     it('valida el cuerpo (un solo rol) y exige seguridad.usuario.crear', async () => {
       expect(
-        (await crear(sesionAdminA, { etiqueta: '', rol_ids: [a.rolTitularId] })).statusCode,
+        (await crear(sesionAdminA, { etiqueta: '', rol_ids: [a.rolTitularId], unidad: unidad() }))
+          .statusCode,
       ).toBe(400);
       expect((await crear(sesionAdminA, { etiqueta: 'Sin rol', rol_ids: [] })).statusCode).toBe(
         400,
@@ -403,6 +422,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         const respuesta = await crear(sesionAdminA, {
           etiqueta: `U${i}`,
           rol_ids: [a.rolTitularId],
+          unidad: unidad(),
         });
         expect(respuesta.statusCode).toBe(201);
         pines.add(respuesta.json<{ pin: string }>().pin);
@@ -564,15 +584,84 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       expect(respuesta.json()).toMatchObject({ code: 'usuario.propio' });
     });
 
-    it('un usuario con otros debajo no se da de baja: no deja huérfanos', async () => {
+    it('un Titular con Miembros no se da de baja sin confirmar: el 409 dice cuántos caen', async () => {
       const { titular, miembro } = await armarRamas();
       const respuesta = await eliminar(sesionAdminA, titular.id);
       expect(respuesta.statusCode).toBe(409);
-      expect(respuesta.json()).toMatchObject({ code: 'usuario.con_dependientes' });
+      expect(respuesta.json()).toMatchObject({ code: 'usuario.con_dependientes', dependientes: 1 });
+      // Nada cambió
       expect((await ingresar(titular.pin)).statusCode).toBe(200);
-      // Primero el Miembro y después el Titular
-      expect((await eliminar(sesionAdminA, miembro.id)).statusCode).toBe(204);
-      expect((await eliminar(sesionAdminA, titular.id)).statusCode).toBe(204);
+      expect((await ingresar(miembro.pin)).statusCode).toBe(200);
+      expect(
+        await contarFilas(prueba.pool, 'usuarios', 'id = ? AND deleted_at IS NULL', [miembro.id]),
+      ).toBe(1);
+    });
+
+    it('con confirmación la baja es en cascada: cae el Titular, su unidad y sus Miembros, y se libera el cupo', async () => {
+      const { titular, miembro, miembro2 } = await armarRamas();
+      await prueba.pool.query(
+        'INSERT INTO unidades (tenant_id, sitio_id, nombre, titular_id) VALUES (?, ?, ?, ?)',
+        [a.cuenta.id, a.sitioId, 'Casa del titular', titular.id],
+      );
+      const sesionMiembro = await iniciarSesion(prueba.app, miembro.pin);
+      const cupoAntes = await contarFilas(
+        prueba.pool,
+        'usuarios',
+        'tenant_id = ? AND deleted_at IS NULL',
+        [a.cuenta.id],
+      );
+
+      const respuesta = await prueba.app.inject({
+        method: 'DELETE',
+        url: `/api/v1/usuarios/${titular.id}?confirmar=true`,
+        headers: conUsuario(sesionAdminA),
+      });
+      expect(respuesta.statusCode, respuesta.body).toBe(204);
+
+      // Caen el Titular y su Miembro: no entran más y sus sesiones mueren
+      expect((await ingresar(titular.pin)).statusCode).toBe(401);
+      expect((await ingresar(miembro.pin)).statusCode).toBe(401);
+      const conSesion = await prueba.app.inject({
+        method: 'GET',
+        url: '/api/v1/sesiones/actual',
+        headers: conUsuario(sesionMiembro),
+      });
+      expect(conSesion.statusCode).toBe(401);
+      // La unidad del Titular se da de baja con él
+      expect(
+        await contarFilas(prueba.pool, 'unidades', 'titular_id = ? AND deleted_at IS NOT NULL', [
+          titular.id,
+        ]),
+      ).toBe(1);
+      // Dos lugares liberados; la otra rama no se toca
+      expect(
+        await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ? AND deleted_at IS NULL', [
+          a.cuenta.id,
+        ]),
+      ).toBe(cupoAntes - 2);
+      expect((await ingresar(miembro2.pin)).statusCode).toBe(200);
+      // Cada baja queda en la bitácora
+      expect(
+        await contarFilas(
+          prueba.pool,
+          'bitacoras',
+          "tabla = 'usuarios' AND accion = 'eliminado' AND registro_id IN (?, ?)",
+          [titular.id, miembro.id],
+        ),
+      ).toBe(2);
+    });
+
+    it('un Titular con confirmación solo arrastra a su propia rama, no a la de otro Titular', async () => {
+      const { titular, titular2, miembro2 } = await armarRamas();
+      const sesionTitular = await iniciarSesion(prueba.app, titular.pin);
+      // El Titular no puede dar de baja a otro Titular, ni siquiera confirmando
+      const respuesta = await prueba.app.inject({
+        method: 'DELETE',
+        url: `/api/v1/usuarios/${titular2.id}?confirmar=true`,
+        headers: conUsuario(sesionTitular),
+      });
+      expect(respuesta.statusCode).toBe(404);
+      expect((await ingresar(miembro2.pin)).statusCode).toBe(200);
     });
 
     it('ramas: no da de baja a quien es de otra rama ni a un superior (404)', async () => {
@@ -600,16 +689,231 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
       const rolTitular = await crearRol(prueba.pool, cuenta, 'Titular', PERMISOS_DE_TITULAR);
       const admin = await crearUsuarioConPin(prueba.pool, cuenta, 'AD01', [rolAdmin]);
       await crearSuscripcion(prueba.pool, cuenta, { maxUsuarios: 2 });
+      const sitioId = await crearSitio(prueba.pool, cuenta, 'Sede');
+      const nuevoTitular = (etiqueta: string, nombre: string) => ({
+        etiqueta,
+        rol_ids: [rolTitular],
+        unidad: { sitio_id: sitioId, nombre },
+      });
       const sesion = await iniciarSesion(prueba.app, admin.pin);
-      const segundo = await crear(sesion, { etiqueta: 'Segundo', rol_ids: [rolTitular] });
+      const segundo = await crear(sesion, nuevoTitular('Segundo', 'Casa A'));
       expect(segundo.statusCode).toBe(201);
-      expect((await crear(sesion, { etiqueta: 'Tercero', rol_ids: [rolTitular] })).statusCode).toBe(
-        422,
-      );
+      expect((await crear(sesion, nuevoTitular('Tercero', 'Casa B'))).statusCode).toBe(422);
       expect((await eliminar(sesion, segundo.json<{ id: string }>().id)).statusCode).toBe(204);
-      expect((await crear(sesion, { etiqueta: 'Tercero', rol_ids: [rolTitular] })).statusCode).toBe(
+      expect((await crear(sesion, nuevoTitular('Tercero', 'Casa B'))).statusCode).toBe(201);
+    });
+  });
+
+  describe('unidades y tope de Miembros por Titular (ADR 0028)', () => {
+    it('un Titular exige su unidad y los demás niveles no la admiten', async () => {
+      const rolGuardia = await crearRol(prueba.pool, a.cuenta, 'Guardia', [
+        'organizacion.puerta.ver',
+      ]);
+      const antes = await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id]);
+
+      const sinUnidad = await crear(sesionAdminA, { etiqueta: 'T', rol_ids: [a.rolTitularId] });
+      expect(sinUnidad.statusCode).toBe(422);
+      expect(sinUnidad.json()).toMatchObject({ code: 'unidad.requerida' });
+      const guardiaConUnidad = await crear(sesionAdminA, {
+        etiqueta: 'G',
+        rol_ids: [rolGuardia],
+        unidad: unidad(),
+      });
+      expect(guardiaConUnidad.statusCode).toBe(422);
+      expect(guardiaConUnidad.json()).toMatchObject({ code: 'unidad.no_corresponde' });
+
+      expect(await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id])).toBe(
+        antes,
+      );
+      expect((await crear(sesionAdminA, { etiqueta: 'G', rol_ids: [rolGuardia] })).statusCode).toBe(
         201,
       );
+    });
+
+    it('la unidad nace con su Titular y queda ligada a él', async () => {
+      const nueva = unidad();
+      const respuesta = await crear(sesionAdminA, {
+        etiqueta: 'Titular',
+        rol_ids: [a.rolTitularId],
+        unidad: nueva,
+      });
+      expect(respuesta.statusCode, respuesta.body).toBe(201);
+      const creado = respuesta.json<{ id: string }>();
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT tenant_id, sitio_id, nombre, titular_id FROM unidades WHERE titular_id = ?',
+        [creado.id],
+      );
+      expect(filas).toHaveLength(1);
+      expect(filas[0]).toMatchObject({
+        tenant_id: a.cuenta.id,
+        sitio_id: a.sitioId,
+        nombre: nueva.nombre,
+      });
+      // El listado la muestra junto al Titular
+      const lista = (await listar(sesionAdminA)).json<{ datos: UsuarioListado[] }>().datos;
+      expect(lista.find((u) => u.id === creado.id)?.unidad).toMatchObject({ nombre: nueva.nombre });
+    });
+
+    it('un nombre repetido dentro de la propiedad es 409 y no deja un usuario a medias', async () => {
+      const primera = unidad();
+      expect(
+        (await crear(sesionAdminA, { etiqueta: 'Uno', rol_ids: [a.rolTitularId], unidad: primera }))
+          .statusCode,
+      ).toBe(201);
+      const antes = await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id]);
+
+      const repetida = await crear(sesionAdminA, {
+        etiqueta: 'Dos',
+        rol_ids: [a.rolTitularId],
+        unidad: primera,
+      });
+      expect(repetida.statusCode).toBe(409);
+      expect(repetida.json()).toMatchObject({ code: 'unidad.nombre_existente' });
+      expect(await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id])).toBe(
+        antes,
+      );
+
+      // El mismo nombre en otra propiedad sí sirve
+      const otroSitio = await crearSitio(prueba.pool, a.cuenta, 'Otro sitio');
+      expect(
+        (
+          await crear(sesionAdminA, {
+            etiqueta: 'Tres',
+            rol_ids: [a.rolTitularId],
+            unidad: { sitio_id: otroSitio, nombre: primera.nombre },
+          })
+        ).statusCode,
+      ).toBe(201);
+    });
+
+    it('aislamiento: una propiedad de otra cuenta no existe (404) y no se crea nada', async () => {
+      const antes = await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id]);
+      const respuesta = await crear(sesionAdminA, {
+        etiqueta: 'Intruso',
+        rol_ids: [a.rolTitularId],
+        unidad: { sitio_id: b.sitioId, nombre: 'Casa X' },
+      });
+      expect(respuesta.statusCode).toBe(404);
+      expect(respuesta.json()).toMatchObject({ code: 'sitio.no_encontrado' });
+      expect(await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ?', [a.cuenta.id])).toBe(
+        antes,
+      );
+      expect(await contarFilas(prueba.pool, 'unidades', 'tenant_id = ?', [b.cuenta.id])).toBe(0);
+    });
+
+    it('un Titular no pasa del tope de Miembros de la cuenta; otro Titular tiene su propio cupo', async () => {
+      await prueba.pool.query('UPDATE cuentas SET max_miembros_por_titular = 2 WHERE id = ?', [
+        a.cuenta.id,
+      ]);
+      const { titular, titular2 } = await armarRamas();
+      const sesionTitular = await iniciarSesion(prueba.app, titular.pin);
+      const sesionTitular2 = await iniciarSesion(prueba.app, titular2.pin);
+      const nuevoMiembro = (sesion: Sesion, etiqueta: string) =>
+        crear(sesion, { etiqueta, rol_ids: [a.rolMiembroId] });
+
+      // `armarRamas` ya dejó un Miembro debajo de cada Titular: entra uno más y no un tercero
+      expect((await nuevoMiembro(sesionTitular, 'Segundo')).statusCode).toBe(201);
+      const excedido = await nuevoMiembro(sesionTitular, 'Tercero');
+      expect(excedido.statusCode).toBe(422);
+      expect(excedido.json()).toMatchObject({
+        code: 'plan.limite_miembros_por_titular',
+        maximo: 2,
+      });
+      expect((await nuevoMiembro(sesionTitular2, 'Del otro')).statusCode).toBe(201);
+
+      // Dar de baja a uno libera el lugar
+      const hijos = (await listar(sesionTitular)).json<{ datos: UsuarioListado[] }>().datos;
+      expect((await eliminar(sesionTitular, hijos[0]?.id ?? '')).statusCode).toBe(204);
+      expect((await nuevoMiembro(sesionTitular, 'Tercero')).statusCode).toBe(201);
+    });
+
+    it('el tope por defecto de una cuenta es 10', async () => {
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT max_miembros_por_titular AS tope FROM cuentas WHERE id = ?',
+        [a.cuenta.id],
+      );
+      expect(Number(filas[0]?.tope)).toBe(10);
+    });
+  });
+
+  describe('GET /api/v1/cupo (ADR 0028 §6)', () => {
+    const cupo = (sesion: Sesion) =>
+      prueba.app.inject({ method: 'GET', url: '/api/v1/cupo', headers: conUsuario(sesion) });
+
+    it('muestra el uso del cupo de toda la cuenta y avisa al 80 % y al 100 %', async () => {
+      await armarRamas(); // 2 + 5 usuarios = 7 vigentes
+      const usados = await contarFilas(
+        prueba.pool,
+        'usuarios',
+        'tenant_id = ? AND deleted_at IS NULL',
+        [a.cuenta.id],
+      );
+      const fijarMaximo = (maximo: number | null) =>
+        prueba.pool.query('UPDATE planes SET max_usuarios = ?', [maximo]);
+
+      await fijarMaximo(14);
+      expect((await cupo(sesionAdminA)).json()).toEqual({
+        usados,
+        maximo: 14,
+        porcentaje: 50,
+        aviso: null,
+        max_miembros_por_titular: 10,
+      });
+      await fijarMaximo(9);
+      expect((await cupo(sesionAdminA)).json()).toMatchObject({ porcentaje: 77, aviso: null });
+      await fijarMaximo(8);
+      expect((await cupo(sesionAdminA)).json()).toMatchObject({
+        porcentaje: 87,
+        aviso: 'cerca_del_limite',
+      });
+      await fijarMaximo(usados);
+      expect((await cupo(sesionAdminA)).json()).toMatchObject({
+        porcentaje: 100,
+        aviso: 'limite_alcanzado',
+      });
+      await fijarMaximo(null);
+      expect((await cupo(sesionAdminA)).json()).toMatchObject({
+        maximo: null,
+        porcentaje: null,
+        aviso: null,
+      });
+    });
+
+    it('cada Administrador ve el total de la cuenta, no solo el de su rama', async () => {
+      const { admin2 } = await armarRamas();
+      const sesionAdmin2 = await iniciarSesion(prueba.app, admin2.pin);
+      const deUno = (await cupo(sesionAdminA)).json<{ usados: number }>().usados;
+      const deOtro = (await cupo(sesionAdmin2)).json<{ usados: number }>().usados;
+      expect(deOtro).toBe(deUno);
+      expect(deUno).toBe(
+        await contarFilas(prueba.pool, 'usuarios', 'tenant_id = ? AND deleted_at IS NULL', [
+          a.cuenta.id,
+        ]),
+      );
+    });
+
+    it('solo el Administrador lo ve: ni un Titular ni un Miembro', async () => {
+      const { titular } = await armarRamas();
+      const sesionTitular = await iniciarSesion(prueba.app, titular.pin);
+      const sesionMiembro = await iniciarSesion(prueba.app, a.usuario.pin);
+      expect((await cupo(sesionTitular)).statusCode).toBe(403);
+      expect((await cupo(sesionMiembro)).statusCode).toBe(403);
+    });
+
+    it('aislamiento: cada cuenta ve solo sus usuarios y su propio tope', async () => {
+      await prueba.pool.query('UPDATE cuentas SET max_miembros_por_titular = 3 WHERE id = ?', [
+        b.cuenta.id,
+      ]);
+      const deA = (await cupo(sesionAdminA)).json<{
+        usados: number;
+        max_miembros_por_titular: number;
+      }>();
+      const deB = (await cupo(sesionAdminB)).json<{
+        usados: number;
+        max_miembros_por_titular: number;
+      }>();
+      expect(deA).toMatchObject({ usados: 2, max_miembros_por_titular: 10 });
+      expect(deB).toMatchObject({ usados: 2, max_miembros_por_titular: 3 });
     });
   });
 });
