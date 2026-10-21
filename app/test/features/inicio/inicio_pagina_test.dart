@@ -1,7 +1,6 @@
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
-import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
@@ -67,9 +66,8 @@ Future<SesionFalsa> _montar(
   WidgetTester tester, {
   required Set<String> permisos,
   List<QrAcceso> vigentes = const [],
-  List<RolSesion> roles = const [rolDePrueba],
 }) async {
-  final sesion = SesionFalsa(sesionCon(permisos: permisos, roles: roles));
+  final sesion = SesionFalsa(sesionCon(permisos: permisos));
   await montarPantalla(
     tester,
     pagina: const InicioPagina(),
@@ -151,27 +149,6 @@ void main() {
     testWidgets('sin QR vigentes, lo dice con el estado vacío', (tester) async {
       await _montar(tester, permisos: _usuario);
       expect(find.text(textosEn(tester).inicioSinVigentes), findsOneWidget);
-    });
-
-    testWidgets('con un solo rol no ofrece cambiar de rol', (tester) async {
-      await _montar(tester, permisos: _usuario);
-      expect(find.text(textosEn(tester).perfilCambiarRol), findsNothing);
-    });
-
-    testWidgets('con varios roles, Cambiar rol vuelve a elegir', (
-      tester,
-    ) async {
-      final sesion = await _montar(
-        tester,
-        permisos: _usuario,
-        roles: const [
-          rolDePrueba,
-          RolSesion(id: 'r2', nombre: 'Guardia'),
-        ],
-      );
-      await tester.tap(find.text(textosEn(tester).perfilCambiarRol));
-      await tester.pump();
-      expect(sesion.cambiosDeRolPedidos, 1);
     });
 
     testWidgets('Nuevo QR abre el formulario de emisión', (tester) async {

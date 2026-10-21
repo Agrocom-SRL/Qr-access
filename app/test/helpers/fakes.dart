@@ -33,9 +33,7 @@ class SesionFalsa extends SesionControlador {
 
   final SesionEstado _estado;
   final List<RespuestaInicio> inicios = [];
-  final List<String> rolesElegidos = [];
   int cierres = 0;
-  int cambiosDeRolPedidos = 0;
 
   /// Error que lanza `adoptarInicio`, para probar los caminos de fallo.
   Exception? errorAlAdoptar;
@@ -50,16 +48,7 @@ class SesionFalsa extends SesionControlador {
   }
 
   @override
-  Future<void> elegirRol(String rolId) async => rolesElegidos.add(rolId);
-
-  @override
   Future<void> cerrar() async => cierres++;
-
-  @override
-  void pedirCambioDeRol() {
-    cambiosDeRolPedidos++;
-    super.pedirCambioDeRol();
-  }
 }
 
 const usuarioDePrueba = UsuarioSesion(id: 'u1', etiqueta: 'Ana Pérez');
@@ -69,14 +58,12 @@ const rolDePrueba = RolSesion(id: 'r1', nombre: 'Administrador');
 /// Sesión autenticada con los permisos dados, para las pantallas con sesión.
 SesionAutenticada sesionCon({
   Set<String> permisos = const {},
-  List<RolSesion> roles = const [rolDePrueba],
   SuscripcionSesion? suscripcion,
 }) => SesionAutenticada(
   usuario: usuarioDePrueba,
   cuenta: cuentaDePrueba,
   rolActivo: rolDePrueba,
   permisos: permisos,
-  roles: roles,
   suscripcion: suscripcion,
 );
 

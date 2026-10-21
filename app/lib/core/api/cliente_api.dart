@@ -60,17 +60,6 @@ class ClienteApi {
     });
   }
 
-  /// Devuelve el acceso nuevo del rol elegido.
-  Future<String> cambiarRolActivo(String rolId) {
-    return _ejecutar(() async {
-      final r = await _dio.post<Map<String, dynamic>>(
-        '/sesiones/rol-activo',
-        data: {'rol_id': rolId},
-      );
-      return r.data!['acceso'] as String;
-    });
-  }
-
   Future<SesionActualDto> sesionActual() {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>('/sesiones/actual');

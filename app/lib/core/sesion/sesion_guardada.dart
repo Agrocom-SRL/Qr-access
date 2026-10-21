@@ -7,7 +7,7 @@ const claveSesionGuardada = 'sesion_guardada';
 
 /// La última sesión conocida como texto, para reabrir la app sin internet con
 /// el mismo rol. Solo lleva lo que la pantalla ya muestra (usuario, cuenta,
-/// roles y permisos); lo sensible, el refresco, va aparte en `AlmacenRefresco`.
+/// rol y permisos); lo sensible, el refresco, va aparte en `AlmacenRefresco`.
 /// La autoridad de los permisos sigue siendo la API (ADR 0004).
 String codificarSesion(SesionAutenticada sesion) => jsonEncode({
   'usuario': {'id': sesion.usuario.id, 'etiqueta': sesion.usuario.etiqueta},
@@ -18,9 +18,6 @@ String codificarSesion(SesionAutenticada sesion) => jsonEncode({
   },
   'rol': {'id': sesion.rolActivo.id, 'nombre': sesion.rolActivo.nombre},
   'permisos': sesion.permisos.toList(),
-  'roles': [
-    for (final r in sesion.roles) {'id': r.id, 'nombre': r.nombre},
-  ],
   if (sesion.suscripcion != null)
     'suscripcion': {
       'plan': sesion.suscripcion!.plan,
@@ -52,13 +49,6 @@ SesionAutenticada? decodificarSesion(String texto) {
         nombre: rol['nombre'] as String,
       ),
       permisos: (json['permisos'] as List<dynamic>).cast<String>().toSet(),
-      roles: [
-        for (final r in json['roles'] as List<dynamic>)
-          RolSesion(
-            id: (r as Map<String, dynamic>)['id'] as String,
-            nombre: r['nombre'] as String,
-          ),
-      ],
       suscripcion: suscripcion == null
           ? null
           : SuscripcionSesion(

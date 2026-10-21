@@ -25,8 +25,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
 
-/// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol
-/// activo con "Cambiar rol", el tema y "Cerrar sesión".
+/// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol,
+/// el tema y "Cerrar sesión".
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -133,15 +133,6 @@ class PerfilPagina extends ConsumerWidget {
                     valor: sesion.rolActivo.nombre,
                     icono: Icons.badge_outlined,
                     invertida: true,
-                    accion: sesion.tieneVariosRoles
-                        ? AccesoBoton(
-                            texto: l10n.perfilCambiarRol,
-                            variante: VarianteBoton.tonal,
-                            onPressed: ref
-                                .read(sesionControladorProvider.notifier)
-                                .pedirCambioDeRol,
-                          )
-                        : null,
                   ),
                   FilaClaveValor(
                     clave: l10n.perfilSuscripcion,

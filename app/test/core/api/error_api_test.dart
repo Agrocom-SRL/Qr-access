@@ -62,6 +62,27 @@ void main() {
       );
     });
 
+    test(
+      'los códigos del árbol de usuarios (ADR 0028) tienen su texto',
+      () async {
+        final l10n = await textos;
+        final esperados = {
+          'sesion.sin_rol': l10n.comunErrorSesionSinRol,
+          'unidad.requerida': l10n.comunErrorUnidadRequerida,
+          'unidad.no_corresponde': l10n.comunErrorUnidadNoCorresponde,
+          'unidad.nombre_existente': l10n.comunErrorUnidadNombreExistente,
+          'usuario.nivel_no_permitido': l10n.comunErrorUsuarioNivelNoPermitido,
+          'usuario.con_dependientes': l10n.comunErrorUsuarioConDependientes,
+          'plan.limite_miembros_por_titular': l10n.comunErrorPlanLimiteMiembros,
+        };
+        for (final MapEntry(:key, :value) in esperados.entries) {
+          final texto = textoDeError(l10n, ErrorApi(code: key));
+          expect(texto, value, reason: key);
+          expect(texto, isNot(l10n.comunErrorGenerico), reason: key);
+        }
+      },
+    );
+
     test('traduce la falta de conexión', () async {
       final l10n = await textos;
       expect(
