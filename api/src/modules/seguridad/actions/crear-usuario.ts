@@ -1,6 +1,7 @@
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
+import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
 import { crearServicioDeSuscripciones } from '../../suscripciones/contracts.js';
 import { nivelDeRol, puedeCrear } from '../domain/jerarquia.js';
 import { presentarUsuarios, type UsuarioListado } from '../presentacion.js';
@@ -21,6 +22,8 @@ export interface DatosDeNuevoUsuario {
   readonly rolIds: readonly string[];
   /** Los 4 caracteres del PIN si el administrador los eligió; si no, los sortea el servidor. */
   readonly sufijo?: string;
+  /** Obligatoria para un Titular (su unidad nace con él) y prohibida para los demás. */
+  readonly unidad?: { readonly sitioId: string; readonly nombre: string };
 }
 
 export interface UsuarioCreado extends UsuarioListado {
@@ -32,7 +35,8 @@ export interface UsuarioCreado extends UsuarioListado {
  * Crea un usuario de la cuenta con un PIN sorteado por el servidor (HU-06, ADR 0018 §5):
  * dentro del límite `max_usuarios` del plan, con un rol que el actor pueda dar (D-19) y de un
  * nivel que le toque crear (Administrador → Titular y Guardia; Titular → Miembro, ADR 0028 §3).
- * El creado queda debajo del actor en el árbol.
+ * El creado queda debajo del actor en el árbol. Un Titular nace con su unidad; un Titular puede
+ * tener hasta `cuentas.max_miembros_por_titular` Miembros (ADR 0028 §6).
  */
 export async function ejecutar(
   servicios: Pick<ServiciosDeSeguridad, 'pool' | 'config'>,
@@ -48,6 +52,12 @@ export async function ejecutar(
   if (!puedeCrear(await nivelDelActor(pool, principal), nivelCreado)) {
     throw new ErrorDeDominio('usuario.nivel_no_permitido', 403);
   }
+  if (nivelCreado === 'titular' && datos.unidad === undefined) {
+    throw new ErrorDeDominio('unidad.requerida', 422);
+  }
+  if (nivelCreado !== 'titular' && datos.unidad !== undefined) {
+    throw new ErrorDeDominio('unidad.no_corresponde', 422);
+  }
 
   const suscripcion = await crearServicioDeSuscripciones(pool).obtenerVigente(ahora);
   if (suscripcion === null) throw new ErrorDeDominio('suscripcion.vencida', 403);
@@ -61,6 +71,14 @@ export async function ejecutar(
 
   const cuenta = await new RepositorioDeCuentas(pool).buscarActivaPorId(principal.cuentaId);
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
+  if (
+    nivelCreado === 'miembro' &&
+    (await usuarios.contarDirectos(principal.usuarioId)) >= cuenta.max_miembros_por_titular
+  ) {
+    throw new ErrorDeDominio('plan.limite_miembros_por_titular', 422, {
+      maximo: cuenta.max_miembros_por_titular,
+    });
+  }
 
   const { id, pin } = await enTransaccion(pool, async (tx) => {
     let usuarioId = '';
@@ -81,6 +99,13 @@ export async function ejecutar(
     );
     const asignaciones = new RepositorioDeRolesDeUsuario(pool);
     for (const rolId of rolIds) await asignaciones.asignar(tx, usuarioId, rolId);
+    if (datos.unidad !== undefined) {
+      await crearServicioDeOrganizacion(pool).crearUnidad(tx, {
+        sitioId: datos.unidad.sitioId,
+        nombre: datos.unidad.nombre,
+        titularId: usuarioId,
+      });
+    }
     return { id: usuarioId, pin: completo };
   });
 

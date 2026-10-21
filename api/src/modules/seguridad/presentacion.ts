@@ -1,5 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { aIsoONulo } from '../../platform/tiempo/fechas.js';
+import { crearServicioDeOrganizacion } from '../organizacion/contracts.js';
 import {
   RepositorioDeRolesDeUsuario,
   RepositorioDeSesiones,
@@ -11,6 +12,8 @@ export interface UsuarioListado {
   etiqueta: string | null;
   activo: boolean;
   roles: { id: string; nombre: string }[];
+  /** La unidad de un Titular (ADR 0028); `null` en el resto. */
+  unidad: { id: string; nombre: string; sitio_id: string } | null;
   pin_generado_at: string | null;
   ultimo_ingreso_at: string | null;
   created_at: string;
@@ -22,15 +25,22 @@ export async function presentarUsuarios(
   filas: readonly UsuarioFila[],
 ): Promise<UsuarioListado[]> {
   const ids = filas.map((fila) => fila.id);
-  const [roles, ingresos] = await Promise.all([
+  const [roles, ingresos, unidades] = await Promise.all([
     new RepositorioDeRolesDeUsuario(pool).rolesDeVarios(ids),
     new RepositorioDeSesiones(pool).ultimoIngresoDe(ids),
+    crearServicioDeOrganizacion(pool).unidadesDeTitulares(ids),
   ]);
   return filas.map((fila) => ({
     id: fila.id,
     etiqueta: fila.etiqueta,
     activo: fila.activo === 1,
     roles: (roles.get(fila.id) ?? []).map((rol) => ({ id: rol.id, nombre: rol.nombre })),
+    unidad: ((unidad) =>
+      unidad === undefined
+        ? null
+        : { id: unidad.id, nombre: unidad.nombre, sitio_id: unidad.sitioId })(
+      unidades.get(fila.id),
+    ),
     pin_generado_at: aIsoONulo(fila.pin_generado_at),
     ultimo_ingreso_at: aIsoONulo(ingresos.get(fila.id) ?? null),
     created_at: fila.created_at.toISOString(),
