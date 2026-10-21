@@ -14,7 +14,7 @@ Eso es exactamente un sistema **multitenant**: el *tenant* es la cuenta que paga
 2. **Planes** (`planes`, catálogo de plataforma): nombre y límites. Mínimo: `max_dispositivos`, `max_usuarios` y `max_vigencia_qr_horas` (D-14). Un límite `NULL` significa "sin límite". Los QR no tienen tope de cantidad.
 3. **Suscripciones** (`suscripciones`, con `tenant_id`): plan, `desde`, `hasta` y estado. Una cuenta tiene una sola suscripción vigente. En V1 la registra el super admin a mano; la pasarela de pago es una evolución (D-15).
 4. **La API hace cumplir los límites** en la acción que los consume: dar de alta un dispositivo, crear un usuario, emitir un QR. Si se pasa del límite, responde un error `plan.limite_dispositivos` (o el que corresponda), en formato RFC 9457. Con la suscripción vencida, la cuenta no emite QR y sus puertas rechazan con `suscripcion.vencida`, y el intento queda registrado (ADR 0008).
-5. **Usuarios que crean usuarios**: crear usuarios es un permiso (`seguridad.usuario.crear`), no un privilegio fijo del administrador. Nadie asigna un rol con permisos que él mismo no tenga (D-19).
+5. **Usuarios que crean usuarios**: crear usuarios es un permiso (`seguridad.usuario.crear`), no un privilegio fijo del administrador. Nadie asigna un rol con permisos que él mismo no tenga (D-19). *Enmendado por el ADR 0028: cada rol solo crea el nivel de abajo (Administrador → Titulares y Guardias; Titular → Miembros).*
 6. **Quien entra no es un usuario**: no tiene login ni registro. Solo existe el QR que se le envió (ADR 0008).
 
 ## Alternativas descartadas

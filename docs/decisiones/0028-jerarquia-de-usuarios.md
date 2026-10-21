@@ -1,6 +1,6 @@
 # ADR 0028 — Jerarquía de usuarios: árbol por cuenta, un usuario un rol y cupo por rama
 
-**Estado:** Propuesta (2026-10-21). Enmienda el ADR 0004 (§5 y §6), el ADR 0017 (§5) y la invariante 10 de `CLAUDE.md`.  Todos los puntos abiertos quedaron cerrados el 2026-10-21 (ver "Decisiones finales"). Origen y conversación completa: `docs/gestion/jerarquia-de-usuarios.md`.
+**Estado:** Aceptada (2026-10-21). Enmienda el ADR 0004 (§5 y §6), el ADR 0017 (§5) y la invariante 10 de `CLAUDE.md`.  Todos los puntos abiertos quedaron cerrados el 2026-10-21 (ver "Decisiones finales"). Origen y conversación completa: `docs/gestion/jerarquia-de-usuarios.md`.
 
 ## Contexto
 
