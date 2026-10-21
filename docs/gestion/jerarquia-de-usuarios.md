@@ -28,7 +28,7 @@ AGROCOM interactúa con los propietarios; los propietarios, con los dueños de c
 | Propietario | dueños de casa y guardias | los que creó (dueños y guardias) | los que creó | sí | sí |
 | Dueño de la casa | usuarios de la casa | los de su vivienda | los de su vivienda | sí | sí |
 | Usuario de la casa | nadie | solo a sí mismo | nadie | sí | sí |
-| Guardia | nadie | solo a sí mismo | nadie | **no** (no es nivel administrador de casa) | sí |
+| Guardia | nadie | solo a sí mismo | nadie | **no** (no es nivel administrador de casa; permiso `accesos.qr.generar_propio` sin `accesos.qr.generar`) | sí |
 
 Reglas:
 - **Solo el nivel superior** ve la actividad de un usuario o le regenera el PIN. Un igual o un inferior, no.

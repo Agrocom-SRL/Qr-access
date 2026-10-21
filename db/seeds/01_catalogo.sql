@@ -13,6 +13,7 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('organizacion.puerta.administrar', 'cuenta'),
   ('organizacion.guardia.asignar', 'cuenta'),
   ('accesos.qr.generar', 'cuenta'),
+  ('accesos.qr.generar_propio', 'cuenta'),
   ('accesos.qr.ver', 'cuenta'),
   ('accesos.qr.ver_todos', 'cuenta'),
   ('accesos.qr.anular', 'cuenta'),
@@ -107,3 +108,14 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
     'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar'
   )
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
+
+-- Guardia y QR (ADR 0028 §5): el Guardia solo genera su QR propio (`generar_propio`), no QR de visitas
+-- (`generar`). Los demás roles base ya tenían `generar` y reciben también `generar_propio`. Solo roles base
+-- (no protegidos, por nombre): el Administrador lo recibe arriba con el resto de los permisos de cuenta.
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo = 'accesos.qr.generar_propio'
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre IN ('Guardia', 'Titular', 'Miembro')
+    AND r.deleted_at IS NULL;
+DELETE rp FROM rol_permisos AS rp
+  JOIN roles AS r ON r.id = rp.rol_id AND r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Guardia'
+  JOIN permisos AS p ON p.id = rp.permiso_id AND p.codigo = 'accesos.qr.generar';

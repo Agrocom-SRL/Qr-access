@@ -49,6 +49,8 @@ Nadie asigna un rol con permisos que él mismo no tenga (ADR 0017 §5).
 
 Administrador, Titular y Miembro **generan y comparten** QR y usan su QR propio. El **Guardia** solo usa su QR propio: no genera ni comparte QR de visitas, y no ve estadísticas ni cupo.
 
+Son dos permisos distintos (2026-10-22): `accesos.qr.generar` (QR de visitas) y `accesos.qr.generar_propio` (el QR propio, `POST /qr-accesos` con `propio: true`). Administrador, Titular y Miembro tienen ambos; el Guardia solo el segundo. La API exige el que corresponde según `propio`, y la app oculta el botón flotante y "Generar QR" a quien no tiene `generar`. Sin migración: el seed `01_catalogo.sql` (idempotente) agrega el permiso, se lo da a los roles base existentes y le quita `generar` al Guardia.
+
 ### 6. Cupo
 
 - Cuentan **todos los niveles** (Administrador, Titular, Guardia y Miembro) mientras estén habilitados; la baja (soft delete) libera el lugar. Los QR siguen ilimitados (ADR 0017).
@@ -81,7 +83,7 @@ Administrador, Titular y Miembro **generan y comparten** QR y usan su QR propio.
 
 - Enmienda: ADR 0004 §5 y §6, ADR 0017 §5 y la invariante 10 de `CLAUDE.md`; hay que actualizarlas cuando este ADR pase a Aceptada.
 - **Revisión línea por línea** (no se delega): el filtro por rama, la regla "solo el nivel superior", la creación por nivel y el modelo de permisos.
-- Tests obligatorios: aislamiento por cuenta (cuenta A → recurso de B = 404) y **por rama** (Administrador 1 → Titular o Guardia del Administrador 2 = 404); cada rol solo crea lo que le toca; el Guardia no genera QR; el tope de Miembros y el cupo; la cascada de la baja y su confirmación; la reasignación solo por AGROCOM.
+- Tests obligatorios: aislamiento por cuenta (cuenta A → recurso de B = 404) y **por rama** (Administrador 1 → Titular o Guardia del Administrador 2 = 404); cada rol solo crea lo que le toca; el Guardia genera su QR propio pero no uno de visitas (403 `permiso.denegado`); el tope de Miembros y el cupo; la cascada de la baja y su confirmación; la reasignación solo por AGROCOM.
 - Orden de ramas: este ADR y la jerarquía en la API (`feature/jerarquia-usuarios`), luego la creación por nivel en la app y la web, y por último las estadísticas. Compartir el PIN es independiente.
 
 ## Decisiones finales (2026-10-21)

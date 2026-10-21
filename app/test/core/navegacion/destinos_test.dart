@@ -9,12 +9,14 @@ import '../../helpers/fakes.dart';
 const Set<String> _usuario = {
   Permisos.verPuertas,
   Permisos.generarQr,
+  Permisos.generarQrPropio,
   Permisos.verQr,
   Permisos.anularQr,
   Permisos.verEventos,
 };
 const Set<String> _guardia = {
   Permisos.verPuertas,
+  Permisos.generarQrPropio,
   Permisos.supervisarPuertas,
   Permisos.verEventos,
   Permisos.verTodosLosEventos,
@@ -22,6 +24,7 @@ const Set<String> _guardia = {
 const Set<String> _administrador = {
   Permisos.verPuertas,
   Permisos.generarQr,
+  Permisos.generarQrPropio,
   Permisos.verQr,
   Permisos.anularQr,
   Permisos.verEventos,

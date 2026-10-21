@@ -72,9 +72,9 @@ List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
   ];
 }
 
-/// El guardia ve los eventos de sus puertas asignadas y tiene su QR propio,
-/// pero no comparte QR con otras personas (eso es del usuario y del
-/// administrador). Se reconoce por lo que puede ver, no por el nombre del rol.
+/// El guardia ve los eventos de sus puertas asignadas y tiene su QR propio
+/// (`generarQrPropio`), pero no genera QR de visitas (`generarQr`, de los
+/// demás roles). Se reconoce por lo que puede ver, no por el nombre del rol.
 bool esGuardia(SesionEstado sesion) =>
     sesion.tiene(Permisos.verEventosAsignados) &&
     !sesion.tiene(Permisos.verTodosLosEventos);

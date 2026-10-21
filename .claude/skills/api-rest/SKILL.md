@@ -54,7 +54,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 ```
 POST   /sesiones · /sesiones/refresco · GET/DELETE /sesiones/actual (trae permisos y suscripcion)
 GET    /puertas                       (con dispositivo { id, nombre, en_linea, ultimo_latido_at } | null)
-POST   /qr-accesos · GET /qr-accesos?estado= · GET /qr-accesos/resumen · POST /qr-accesos/{id}/anulacion
+POST   /qr-accesos (permiso `accesos.qr.generar`; con `propio: true`, `accesos.qr.generar_propio`) · GET /qr-accesos?estado= · GET /qr-accesos/resumen · POST /qr-accesos/{id}/anulacion
 GET    /eventos-acceso?resultado=&puerta_id=&desde=&hasta= · GET /eventos-acceso/resumen
 GET    /roles · GET /usuarios · POST /usuarios (201 + pin) · PATCH /usuarios/{id} · DELETE /usuarios/{id} · POST /usuarios/{id}/pin
 ```

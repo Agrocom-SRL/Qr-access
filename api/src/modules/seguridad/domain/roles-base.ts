@@ -15,6 +15,7 @@ export interface RolBase {
 const PERMISOS_DE_MIEMBRO = [
   'organizacion.puerta.ver',
   'accesos.qr.generar',
+  'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
   'accesos.evento.ver',
@@ -41,7 +42,8 @@ export const ROLES_BASE: readonly RolBase[] = [
     permisos: [
       'organizacion.puerta.ver',
       'organizacion.puerta.supervisar',
-      'accesos.qr.generar',
+      // Solo su QR propio: el de visitas (`accesos.qr.generar`) no es de su nivel (ADR 0028 §5).
+      'accesos.qr.generar_propio',
       'accesos.evento.ver',
       'accesos.evento.ver_asignadas',
     ],

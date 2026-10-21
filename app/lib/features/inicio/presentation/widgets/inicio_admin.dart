@@ -60,6 +60,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     final datos = tablero.value;
     final expandida = context.esExpandida;
     final puedeGenerar = widget.sesion.tiene(Permisos.generarQr);
+    final puedeQrPropio = widget.sesion.tiene(Permisos.generarQrPropio);
     // El administrador no tiene "Mis QR" en la barra (se llena con Admin):
     // llega desde aquí a los QR que generó, para volver a compartirlos.
     final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
@@ -141,7 +142,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
-                  if (puedeGenerar)
+                  if (puedeQrPropio)
                     AccesoBoton(
                       texto: l10n.inicioQrPropio,
                       icono: Icons.person_pin_outlined,
@@ -172,7 +173,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 sesion: widget.sesion,
                 // Solo el QR propio: Mis QR es una pestaña y "Generar QR" es
                 // el botón flotante de la página.
-                accion: puedeGenerar ? const BotonQrPropio() : null,
+                accion: puedeQrPropio ? const BotonQrPropio() : null,
               ),
               SizedBox(height: tokens.espacio.xl),
               Row(

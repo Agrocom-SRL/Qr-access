@@ -41,9 +41,11 @@ class InicioUsuario extends ConsumerWidget {
         : null;
     final ahora = ref.read(relojProvider)();
     final puedeGenerar = sesion.tiene(Permisos.generarQr);
-    // El guardia tiene su QR propio, pero no comparte QR con otras personas.
+    final puedeQrPropio = sesion.tiene(Permisos.generarQrPropio);
+    // El guardia solo tiene su QR propio (no `generarQr`): ve el tablero de
+    // vigilancia en lugar del héroe de generar.
     final guardia = esGuardia(sesion);
-    final puedeCompartir = puedeGenerar && !guardia;
+    final puedeCompartir = puedeGenerar;
     final veEventosAqui = guardia && sesion.tiene(Permisos.verEventos);
     final eventos = veEventosAqui ? ref.watch(ultimosEventosProvider) : null;
     final resumenDeHoy = guardia ? ref.watch(resumenDeHoyProvider) : null;
@@ -68,7 +70,7 @@ class InicioUsuario extends ConsumerWidget {
         ),
       // Genera al instante el QR propio, sin formulario, para usarlo en este
       // mismo dispositivo.
-      if (puedeGenerar)
+      if (puedeQrPropio)
         _AccesoRapido(
           icono: Icons.person_pin_outlined,
           etiqueta: l10n.inicioQrPropio,
@@ -111,7 +113,7 @@ class InicioUsuario extends ConsumerWidget {
           children: [
             EncabezadoInicio(
               sesion: sesion,
-              accion: puedeGenerar ? const BotonQrPropio() : null,
+              accion: puedeQrPropio ? const BotonQrPropio() : null,
             ),
             SizedBox(height: tokens.espacio.xl),
             if (guardia) ...[

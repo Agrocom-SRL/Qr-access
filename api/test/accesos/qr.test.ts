@@ -5,7 +5,9 @@ import { reiniciarBase } from '../helpers/base.js';
 import {
   crearEscenario,
   crearQr,
+  crearRol,
   crearUsuarioConPin,
+  PERMISOS_DE_GUARDIA,
   type Escenario,
 } from '../helpers/fixtures.js';
 import { conUsuario, iniciarSesion, type Sesion } from '../helpers/http.js';
@@ -238,6 +240,49 @@ describe('QR de acceso: generar, listar y anular', () => {
         (await prueba.app.inject({ method: 'POST', url: '/api/v1/qr-accesos', payload: {} }))
           .statusCode,
       ).toBe(401);
+    });
+  });
+
+  describe('permiso del QR propio y del QR de visitas (ADR 0028 §5)', () => {
+    it('el Guardia genera su QR propio, pero no uno de visitas (403 con el permiso que falta)', async () => {
+      const rolGuardia = await crearRol(prueba.pool, a.cuenta, 'Guardia', PERMISOS_DE_GUARDIA);
+      const guardia = await crearUsuarioConPin(prueba.pool, a.cuenta, 'GU01', [rolGuardia]);
+      const sesionGuardia = await iniciarSesion(prueba.app, guardia.pin);
+      const puertas = [a.puertaPrincipal.id];
+
+      const propio = await generar(sesionGuardia, { puerta_ids: puertas, propio: true });
+      expect(propio.statusCode).toBe(201);
+
+      for (const cuerpo of [{ puerta_ids: puertas }, { puerta_ids: puertas, propio: false }]) {
+        const visita = await generar(sesionGuardia, cuerpo);
+        expect(visita.statusCode).toBe(403);
+        expect(visita.json()).toMatchObject({
+          code: 'permiso.denegado',
+          permiso: 'accesos.qr.generar',
+        });
+      }
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT es_propio FROM qr_accesos WHERE generado_por = ?',
+        [guardia.id],
+      );
+      expect(filas.map((fila) => Number(fila.es_propio))).toEqual([1]);
+    });
+
+    it('el Administrador y el Miembro generan ambos; sin generar_propio el propio es 403', async () => {
+      const puertas = [a.puertaPrincipal.id];
+      for (const sesion of [sesionAdminA, sesionUsuarioA]) {
+        expect((await generar(sesion, { puerta_ids: puertas })).statusCode).toBe(201);
+        expect((await generar(sesion, { puerta_ids: puertas, propio: true })).statusCode).toBe(201);
+      }
+      await prueba.pool.query(
+        'DELETE rp FROM rol_permisos rp JOIN permisos p ON p.id = rp.permiso_id WHERE p.codigo = ? AND rp.rol_id = ?',
+        ['accesos.qr.generar_propio', a.rolMiembroId],
+      );
+      const sinPropio = await generar(sesionUsuarioA, { puerta_ids: puertas, propio: true });
+      expect(sinPropio.statusCode).toBe(403);
+      expect(sinPropio.json()).toMatchObject({ permiso: 'accesos.qr.generar_propio' });
+      // El de visitas sigue disponible: son permisos independientes.
+      expect((await generar(sesionUsuarioA, { puerta_ids: puertas })).statusCode).toBe(201);
     });
   });
 
