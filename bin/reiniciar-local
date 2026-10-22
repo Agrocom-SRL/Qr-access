@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 # Deja la base de DESARROLLO como queda la de producción tras su reinicio (jerarquia-de-usuarios.md §13):
-# respaldo previo, base recreada, migraciones, catálogo de permisos y solo el super admin `root`.
-# Sin la cuenta demo `DEM`: para eso, `--con-demo`.
+# respaldo previo, base recreada, migraciones y los seeders de desarrollo (catálogo de permisos y
+# cuenta demo `DEM`, que trae también al super admin `root`). Con `--sin-demo` queda solo el catálogo
+# y un `root` temporal, como en producción.
 #
 # Solo toca `qr_access` del contenedor `db` local; nunca `qr_access_testing` ni volúmenes (-v).
-# Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--con-demo] [--si]
+# Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--sin-demo] [--si]
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-con_demo=0
+con_demo=1
 confirmado=0
 for arg in "$@"; do
   case "$arg" in
-    --con-demo) con_demo=1 ;;
+    --sin-demo) con_demo=0 ;;
     --si) confirmado=1 ;;
-    *) echo "Uso: bin/reiniciar-local [--con-demo] [--si]" >&2; exit 2 ;;
+    *) echo "Uso: bin/reiniciar-local [--sin-demo] [--si]" >&2; exit 2 ;;
   esac
 done
 
