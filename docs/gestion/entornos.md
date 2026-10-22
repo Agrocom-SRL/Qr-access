@@ -36,7 +36,7 @@
 
 ## Datos de desarrollo: el super admin `root`
 
-**Solo desarrollo. Nunca en producción.** La contraseña de `root` está publicada en el repositorio. No hay cuentas demo: las cuentas, los PIN y las claves de dispositivo se crean con la API (desde el panel) y se muestran una sola vez, como en producción.
+**Solo desarrollo. Nunca en producción.** La contraseña inicial de `root` está publicada en el repositorio. No hay cuentas demo: las cuentas, los PIN y las claves de dispositivo se crean con la API (desde el panel) y se muestran una sola vez, como en producción.
 
 Preparar o reiniciar la base de desarrollo:
 
@@ -49,7 +49,7 @@ bin/reiniciar-local                     # respaldo, base nueva, migraciones, cat
 
 | Qué | Valor |
 |---|---|
-| Super admin del panel web (solo desarrollo) | usuario `root`, contraseña `12345678` |
+| Super admin del panel web (solo desarrollo) | usuario `root`, contraseña temporal `0000`: el panel obliga a cambiarla en el primer ingreso |
 | Cuentas, usuarios, sitios y puertas | Ninguno: se crean desde el panel (cuenta y Administrador) y desde la app (puertas, Titulares, Guardias). |
 
 Probar de punta a punta: con `root` en el panel (`http://localhost:8080/ingreso`) se crea una cuenta con su Administrador y se anota su PIN. Con ese PIN en la app (`http://localhost:8080/app/`) se crea una puerta (Administración › Puertas), y con `root` se vincula una placa (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`).

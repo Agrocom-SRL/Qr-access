@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deja la base de DESARROLLO como queda la de producción tras su reinicio (jerarquia-de-usuarios.md §13):
 # respaldo previo, base recreada, migraciones, catálogo de permisos y solo el super admin de desarrollo
-# `root` (contraseña de desarrollo 12345678). Sin cuentas ni datos demo.
+# `root` (contraseña temporal 0000, que el panel obliga a cambiar). Sin cuentas ni datos demo.
 #
 # Solo toca `qr_access` del contenedor `db` local; nunca `qr_access_testing` ni volúmenes (-v).
 # Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--si]
@@ -42,12 +42,17 @@ echo "==> Migraciones y catálogo"
 docker compose --profile herramientas run --rm dbmate up
 mysql_root "$base" < db/seeds/01_catalogo.sql
 
-echo "==> Super admin root (contraseña de desarrollo 12345678)"
-# Super admin de desarrollo, sin contraseña temporal.
-mysql_root "$base" <<'SQL'
+echo "==> Super admin root (contraseña temporal 0000: el panel obliga a cambiarla al primer ingreso)"
+# argon2id con los mismos parámetros que bin/desplegar; contrasena_temporal = 1 como en producción.
+hash=$(docker compose run --rm --no-deps -e CLAVE=0000 api node -e "
+  import('argon2').then(async (a) => {
+    process.stdout.write(await a.hash(process.env.CLAVE, { type: a.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 }));
+  });
+")
+mysql_root "$base" <<SQL
 SET NAMES utf8mb4;
 INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo)
-  VALUES (NULL, 'Root', 'root', '$argon2id$v=19$m=19456,p=1,t=2$NRcwaBfCTiX8FgW0y18mfg$SUI+cnQZNQ/LmXeaS1puV66pCoHr1G0gVkWGoC6uS+4', 0, 1);
+  VALUES (NULL, 'Root', 'root', '$hash', 1, 1);
 INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id)
   SELECT NULL, u.id, r.id FROM usuarios u
     JOIN roles r ON r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL
