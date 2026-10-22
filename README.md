@@ -25,7 +25,7 @@ Para publicar una versión nueva: sube el número en esos cuatro archivos y en e
 cp .env.example .env
 docker compose up -d                                       # MySQL (:3307) + API (:3000)
 docker compose --profile herramientas run --rm dbmate up   # migraciones
-docker compose --profile panel --profile web up -d --build # + panel (:8081) y app web (:8081/app/, proxy de /api)
+docker compose --profile panel --profile web up -d --build # + panel (:8080) y app web (:8081 y :8080/app/)
 docker compose --profile herramientas run --rm firmware    # compila el firmware y corre sus tests
 ./bin/verify                                               # compuerta de calidad de todo el monorepo
 ```
