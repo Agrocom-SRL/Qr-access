@@ -109,22 +109,9 @@ export function PestanaSuscripcion({ cuenta }: Props) {
       secundaria: true,
       celda: (p) => (
         <span className={styles.suave}>
-          <TextoMono>{p.referencia}</TextoMono>
+          {p.referencia === '' ? '—' : <TextoMono>{p.referencia}</TextoMono>}
         </span>
       ),
-    },
-    {
-      id: 'banco',
-      encabezado: t('suscripcion:columna.banco'),
-      secundaria: true,
-      celda: (p) =>
-        p.banco === null ? (
-          <span className={styles.suave}>—</span>
-        ) : (
-          <span className={styles.suave}>
-            {p.banco} · <TextoMono>{p.cuentaDestino}</TextoMono>
-          </span>
-        ),
     },
     {
       id: 'comprobante',

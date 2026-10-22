@@ -257,7 +257,7 @@ export class RepositorioDeSuscripcionesDeTodas extends RepositorioDePlataforma {
 }
 
 export type TipoDePago = 'alta' | 'renovacion' | 'mejora_de_plan';
-export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
+export type MedioDePago = 'transferencia' | 'qr' | 'efectivo';
 
 export interface PagoFila extends RowDataPacket {
   id: string;
@@ -288,9 +288,6 @@ export interface NuevoPago {
   readonly fechaPago: string;
   readonly medio: MedioDePago;
   readonly referencia: string;
-  /** Banco y cuenta de AGROCOM donde llegó el dinero; ausentes en un pago en efectivo. */
-  readonly banco?: string | undefined;
-  readonly cuentaDestino?: string | undefined;
   readonly comprobanteId?: string | undefined;
   readonly periodoDesde: Date;
   readonly periodoHasta: Date;
@@ -313,8 +310,6 @@ export class RepositorioDePagos extends RepositorioDeCuenta {
         'fecha_pago',
         'medio',
         'referencia',
-        'banco',
-        'cuenta_destino',
         'comprobante_id',
         'periodo_desde',
         'periodo_hasta',
@@ -333,8 +328,6 @@ export class RepositorioDePagos extends RepositorioDeCuenta {
       fecha_pago: pago.fechaPago,
       medio: pago.medio,
       referencia: pago.referencia,
-      banco: pago.banco ?? null,
-      cuenta_destino: pago.cuentaDestino ?? null,
       comprobante_id: pago.comprobanteId ?? null,
       periodo_desde: pago.periodoDesde,
       periodo_hasta: pago.periodoHasta,

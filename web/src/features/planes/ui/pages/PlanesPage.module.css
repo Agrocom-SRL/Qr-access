@@ -1,8 +1,15 @@
 .rejilla {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--esp24);
   margin-top: var(--esp24);
+}
+
+/* Debajo de 1024 px, las que caben según el ancho mínimo de la tarjeta. */
+@media (width < 1024px) {
+  .rejilla {
+    grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  }
 }
 
 .pequeno {

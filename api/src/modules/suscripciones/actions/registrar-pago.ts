@@ -18,9 +18,7 @@ export interface DatosDePago {
   readonly fechaPago: string;
   readonly medio: MedioDePago;
   readonly referencia: string;
-  /** Banco y cuenta de AGROCOM donde llegó el dinero, y su comprobante (ADR 0024). */
-  readonly banco?: string | undefined;
-  readonly cuentaDestino?: string | undefined;
+  /** El comprobante del pago (ADR 0024). */
   readonly comprobanteId?: string | undefined;
 }
 
@@ -72,8 +70,6 @@ export async function ejecutar(pool: Pool, datos: DatosDePago): Promise<PagoRegi
       fechaPago: datos.fechaPago,
       medio: datos.medio,
       referencia: datos.referencia,
-      banco: datos.banco,
-      cuentaDestino: datos.cuentaDestino,
       comprobanteId: datos.comprobanteId,
       periodoDesde,
       periodoHasta: nuevoHasta,
@@ -106,8 +102,6 @@ async function registrarAlta(
       fechaPago: datos.fechaPago,
       medio: datos.medio,
       referencia: datos.referencia,
-      banco: datos.banco,
-      cuentaDestino: datos.cuentaDestino,
       comprobanteId: datos.comprobanteId,
       periodoDesde: desde,
       periodoHasta: hasta,

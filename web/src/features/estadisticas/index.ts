@@ -10,3 +10,4 @@ export { CobradoPorMes } from './ui/CobradoPorMes';
 export { CuentasPorEstado } from './ui/CuentasPorEstado';
 export { CuentasPorPlan } from './ui/CuentasPorPlan';
 export { GraficasDelResumen } from './ui/GraficasDelResumen';
+export { EstadisticasPage } from './ui/pages/EstadisticasPage';

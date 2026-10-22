@@ -339,8 +339,6 @@ export const SUSCRIPCION = {
       fechaPago: '2025-10-30',
       medio: 'transferencia' as const,
       referencia: 'TRF-884120',
-      banco: 'Banco Unión',
-      cuentaDestino: '10000123456',
       comprobanteId: '77',
       periodoDesde: new Date('2025-11-05T12:00:00Z'),
       periodoHasta: new Date('2026-11-05T12:00:00Z'),

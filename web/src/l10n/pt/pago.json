@@ -6,10 +6,10 @@
   "medio": "Forma de pagamento",
   "medios": {
     "transferencia": "Transferência",
-    "deposito": "Depósito",
+    "qr": "QR",
     "efectivo": "Dinheiro"
   },
-  "referencia": "Referência",
+  "referencia": "Referência (opcional)",
   "referenciaAyuda": "Número da transação ou do comprovante",
   "comprobante": "Comprovante",
   "nuevaVigencia": "Nova vigência",
@@ -37,16 +37,11 @@
   "subtituloAlta": "{{cuenta}} · primeiro pagamento do plano {{plan}}",
   "confirmarAltaTitulo": "Registrar o primeiro pagamento e ativar a conta?",
   "confirmarAltaTexto": "{{cuenta}} começa a operar hoje e fica vigente até {{fecha}}.",
-  "banco": "Banco onde foi recebido",
-  "bancoElegir": "Escolha o banco",
-  "cuentaDestino": "Conta de destino",
-  "cuentaDestinoAyuda": "Número da conta ou alias da AGROCOM",
   "comprobanteSubir": "Envie a foto ou o PDF do comprovante",
   "comprobanteAyuda": "JPG, PNG, WEBP ou PDF · até {{max}} MB",
   "comprobanteCambiar": "Trocar",
   "comprobanteQuitar": "Remover",
   "comprobanteVista": "Pré-visualização do comprovante",
   "archivoInvalido": "Envie uma imagem (JPG, PNG ou WEBP) ou um PDF",
-  "archivoGrande": "O arquivo tem mais de 5 MB",
-  "filaBanco": "Banco e conta"
+  "archivoGrande": "O arquivo tem mais de 5 MB"
 }

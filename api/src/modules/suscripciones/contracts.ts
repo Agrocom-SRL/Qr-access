@@ -129,10 +129,8 @@ export interface PagoDeAlta {
   readonly monto: number;
   /** `aaaa-mm-dd`. */
   readonly fechaPago: string;
-  readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+  readonly medio: 'transferencia' | 'qr' | 'efectivo';
   readonly referencia: string;
-  readonly banco?: string | undefined;
-  readonly cuentaDestino?: string | undefined;
   readonly comprobanteId?: string | undefined;
 }
 
@@ -144,7 +142,7 @@ export interface PagoRegistrado {
   readonly monto: number;
   /** `aaaa-mm-dd`. */
   readonly fechaPago: string;
-  readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+  readonly medio: 'transferencia' | 'qr' | 'efectivo';
   readonly referencia: string;
   readonly banco: string | null;
   readonly cuentaDestino: string | null;
@@ -201,8 +199,6 @@ export function crearServicioDeSuscripcionesDePlataforma(
           fechaPago: pago.fechaPago,
           medio: pago.medio,
           referencia: pago.referencia,
-          banco: pago.banco,
-          cuentaDestino: pago.cuentaDestino,
           comprobanteId: pago.comprobanteId,
           periodoDesde: suscripcion.desde,
           periodoHasta: suscripcion.hasta,

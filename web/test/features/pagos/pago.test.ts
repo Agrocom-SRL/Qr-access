@@ -23,8 +23,6 @@ describe('validarPago', () => {
     fechaPago: '2026-10-12',
     medio: 'transferencia' as const,
     referencia: 'TRF-1',
-    banco: 'Banco Unión',
-    cuentaDestino: '10000123456',
     comprobante: new File(['x'], 'comprobante.png', { type: 'image/png' }),
   };
 
@@ -36,7 +34,6 @@ describe('validarPago', () => {
     expect(validarPago({ ...valido, monto: '', fechaPago: '', referencia: ' ' })).toEqual({
       monto: 'requerido',
       fechaPago: 'requerido',
-      referencia: 'requerido',
     });
     expect(validarPago({ ...valido, monto: '1,5', fechaPago: '12/10/2026' })).toEqual({
       monto: 'formato',
@@ -44,14 +41,10 @@ describe('validarPago', () => {
     });
   });
 
-  it('una transferencia o un depósito piden banco, cuenta y comprobante; el efectivo no', () => {
-    const sinRespaldo = { ...valido, banco: '', cuentaDestino: ' ', comprobante: null };
-    expect(validarPago(sinRespaldo)).toEqual({
-      banco: 'requerido',
-      cuentaDestino: 'requerido',
-      comprobante: 'requerido',
-    });
-    expect(validarPago({ ...sinRespaldo, medio: 'deposito' })).toHaveProperty('comprobante');
+  it('una transferencia o un pago por QR piden comprobante; el efectivo no', () => {
+    const sinRespaldo = { ...valido, comprobante: null };
+    expect(validarPago(sinRespaldo)).toEqual({ comprobante: 'requerido' });
+    expect(validarPago({ ...sinRespaldo, medio: 'qr' })).toHaveProperty('comprobante');
     expect(validarPago({ ...sinRespaldo, medio: 'efectivo' })).toEqual({});
   });
 

@@ -67,18 +67,11 @@ export function PlanesPage() {
           {lista.map((plan) => (
             <TarjetaPlan
               key={plan.id}
+              nombre={plan.nombre}
               etiquetaCupo={t('planes:hasta')}
               cupo={t('planes:usuarios', { count: plan.cupoUsuarios ?? 0 })}
               pie={
                 <>
-                  <div>
-                    <p className={styles.pequeno}>{t('planes:cuentas')}</p>
-                    <TextoMono fuerte>{formatearNumero(plan.cuentas)}</TextoMono>
-                  </div>
-                  <div>
-                    <p className={styles.pequeno}>{t('planes:usuariosEnUso')}</p>
-                    <TextoMono fuerte>{formatearNumero(plan.usuariosEnUso)}</TextoMono>
-                  </div>
                   <div className={styles.esquina}>
                     {tienePermiso(permisos, 'suscripciones.plan.editar') ? (
                       <BotonIcono

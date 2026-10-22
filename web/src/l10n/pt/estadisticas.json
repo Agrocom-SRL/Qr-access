@@ -36,5 +36,11 @@
     "vencido": "Vencido sem pagar"
   },
   "cuentasDelTramo_one": "{{count}} conta",
-  "cuentasDelTramo_other": "{{count}} contas"
+  "cuentasDelTramo_other": "{{count}} contas",
+  "titulo": "Estatísticas",
+  "subtitulo": "Cobranças, acessos, cadastros e uso de cada plano da plataforma",
+  "usoTitulo": "Uso por plano",
+  "usoSubtitulo": "Quantas contas e usuários cada plano tem",
+  "usuariosEnUso": "Usuários em uso",
+  "precioAnual": "Preço anual"
 }

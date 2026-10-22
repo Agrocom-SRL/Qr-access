@@ -9,7 +9,6 @@ import {
 import { ESTADO_DESDE_DTO, ESTADO_HACIA_DTO, type EstadoDto } from '../../../shared/api/estados';
 import { subirComprobante } from '../../../shared/api/comprobantes';
 import { parsearMonto, requiereRespaldo } from '../../pagos';
-import { nombreCompletoDelResponsable } from '../domain/alta';
 import type { CuentasRepositorio } from './CuentasRepositorio';
 
 interface CuentaDto {
@@ -217,9 +216,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           contacto_correo: empresa.contactoCorreo.trim(),
           plan_id: borrador.planId,
           inicio: vigencia.inicio,
-          administrador_nombre: vigencia.adminIgualAlResponsable
-            ? nombreCompletoDelResponsable(empresa)
-            : vigencia.administradorNombre.trim(),
+          administrador_nombre: vigencia.administradorNombre.trim(),
           ...(borrador.pago.modo === 'ahora'
             ? {
                 pago: {
@@ -227,13 +224,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
                   fecha_pago: borrador.pago.fechaPago,
                   medio: borrador.pago.medio,
                   referencia: borrador.pago.referencia.trim(),
-                  ...(comprobanteId === undefined
-                    ? {}
-                    : {
-                        banco: borrador.pago.banco,
-                        cuenta_destino: borrador.pago.cuentaDestino.trim(),
-                        comprobante_id: comprobanteId,
-                      }),
+                  ...(comprobanteId === undefined ? {} : { comprobante_id: comprobanteId }),
                 },
               }
             : {}),

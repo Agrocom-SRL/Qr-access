@@ -31,12 +31,11 @@
     "medio": "Medio",
     "referencia": "Referencia",
     "registro": "Registró",
-    "banco": "Banco y cuenta",
     "comprobante": "Comprobante"
   },
   "medios": {
     "transferencia": "Transferencia",
-    "deposito": "Depósito",
+    "qr": "QR",
     "efectivo": "Efectivo"
   },
   "mejora": "Mejora de plan",

@@ -75,7 +75,6 @@
   "responsableApellido": "Last name",
   "correo": "Email · optional",
   "correoAyuda": "Expirations and charges will be notified here.",
-  "adminEsResponsable": "Same as the responsible person ({{nombre}})",
   "nombreAdministrador": "Administrator name",
   "pagoTitulo": "First-year payment",
   "pagoAyuda": "The account starts operating when its first payment is recorded.",

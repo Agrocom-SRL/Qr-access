@@ -4,7 +4,7 @@
 
 ## Propósito
 
-Los metadatos del archivo (foto o PDF) que respalda un pago por transferencia o depósito (ADR 0024). El contenido no está en la base: vive en el almacén de archivos (`ARCHIVOS_RUTA`, volumen `archivos`) y acá solo queda su ruta relativa.
+Los metadatos del archivo (foto o PDF) que respalda un pago por transferencia o QR (ADR 0024). El contenido no está en la base: vive en el almacén de archivos (`ARCHIVOS_RUTA`, volumen `archivos`) y acá solo queda su ruta relativa.
 
 ## Columnas
 

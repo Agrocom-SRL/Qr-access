@@ -36,5 +36,11 @@
     "vencido": "Overdue and unpaid"
   },
   "cuentasDelTramo_one": "{{count}} account",
-  "cuentasDelTramo_other": "{{count}} accounts"
+  "cuentasDelTramo_other": "{{count}} accounts",
+  "titulo": "Statistics",
+  "subtitulo": "Payments, access, sign-ups and usage of each platform plan",
+  "usoTitulo": "Usage by plan",
+  "usoSubtitulo": "How many accounts and users each plan has",
+  "usuariosEnUso": "Users in use",
+  "precioAnual": "Annual price"
 }

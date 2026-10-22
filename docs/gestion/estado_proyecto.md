@@ -80,6 +80,7 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 
 Lo que entró después de la versión anterior de este documento. Los números son PR de GitHub; las ramas sin número se citan por su nombre.
 
+- **Ajustes del panel (rama `feature/ajustes-panel-web`):** tarjetas de plan en tres columnas y con el nombre visible; el uso por plan sale de Planes y pasa a una página Estadísticas (con las gráficas que estaban en el Resumen); el administrador inicial parte con el nombre de la persona responsable, sin interruptor; el pago de alta y el registro de pago parten en efectivo, con referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR (migración `20261022100009`).
 - **Integración final (#34-#36):** cierre de las ramas de trabajo que quedaban fuera de `develop`.
 - **Ethernet y vinculación de placas (#37-#45):** la placa va por Ethernet, sin WiFi (ADR 0025). La vinculación automática con confirmación física (ADR 0026): la placa se anuncia sola y se confirma manteniendo 5 s el pulsador de salida. Lector RS485 con QR600. Tabla `asignaciones_puerta` (`20261015100001`).
 - **Modo sin conexión, perfil propio, sesión persistente y accesos en vivo (#47-#55):** modo sin conexión de la app (ADR 0027), perfil propio y sesión persistente en la app, y accesos en vivo.

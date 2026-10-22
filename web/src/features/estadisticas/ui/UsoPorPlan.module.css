@@ -1,0 +1,45 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.titulo {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.subtitulo {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto14);
+}
+
+.tabla th,
+.tabla td {
+  padding: var(--esp12) var(--esp8);
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+
+.tabla thead th {
+  color: var(--textoSecundario);
+  font-weight: var(--peso500);
+}
+
+.tabla tbody th {
+  font-weight: var(--peso500);
+}
+
+.tabla .numero {
+  text-align: right;
+}

@@ -17,7 +17,6 @@ import { useSuscripcionDeCuenta } from '../../../suscripciones';
 import { useRegistrarPago } from '../../application/usePagos';
 import {
   parsearMonto,
-  requiereRespaldo,
   validarPago,
   type FormularioDePago,
   type TipoDePago,
@@ -29,8 +28,6 @@ const TODOS_LOS_CAMPOS: ReadonlySet<keyof FormularioDePago> = new Set([
   'monto',
   'fechaPago',
   'referencia',
-  'banco',
-  'cuentaDestino',
   'comprobante',
 ]);
 
@@ -96,10 +93,8 @@ export function RegistrarPagoPage() {
   const datos: FormularioDePago = formulario ?? {
     monto: montoEscrito(sugerido),
     fechaPago: hoy(),
-    medio: 'transferencia',
+    medio: 'efectivo',
     referencia: '',
-    banco: '',
-    cuentaDestino: '',
     comprobante: null,
   };
   const errores = validarPago(datos);
@@ -253,14 +248,14 @@ export function RegistrarPagoPage() {
             <TextoMono fuerte>{formatearMonto(parsearMonto(datos.monto) ?? 0)}</TextoMono>
           </FilaClaveValor>
           <FilaClaveValor clave={t('pago:filaMedio')}>
-            {t(`pago:medios.${datos.medio}`)} ·{' '}
-            <TextoMono fuerte>{datos.referencia.trim()}</TextoMono>
+            {t(`pago:medios.${datos.medio}`)}
+            {datos.referencia.trim() === '' ? null : (
+              <>
+                {' · '}
+                <TextoMono fuerte>{datos.referencia.trim()}</TextoMono>
+              </>
+            )}
           </FilaClaveValor>
-          {requiereRespaldo(datos.medio) ? (
-            <FilaClaveValor clave={t('pago:filaBanco')}>
-              {datos.banco} · <TextoMono fuerte>{datos.cuentaDestino.trim()}</TextoMono>
-            </FilaClaveValor>
-          ) : null}
           <FilaClaveValor clave={t('pago:filaFecha')}>
             <TextoMono fuerte>{formatearFecha(`${datos.fechaPago}T12:00:00Z`)}</TextoMono>
           </FilaClaveValor>
