@@ -34,6 +34,15 @@ export async function cargarCatalogo(pool: Pool): Promise<void> {
   for (const sentencia of sentenciasDe(readFileSync(ruta, 'utf8'))) {
     await pool.query(sentencia);
   }
+  // El seed de producción trae un solo plan (1000 Bs); los tests de cambio de plan necesitan más de uno
+  // y los precios de ejemplo de siempre.
+  await pool.query("UPDATE planes SET precio_anual = 12000 WHERE nombre = '100 usuarios'");
+  await pool.query(
+    `INSERT INTO planes (nombre, max_dispositivos, max_usuarios, max_vigencia_qr_horas, precio_anual, activo) VALUES
+       ('200 usuarios', NULL, 200, NULL, 21600, 1),
+       ('350 usuarios', NULL, 350, NULL, 33600, 1)
+     ON DUPLICATE KEY UPDATE max_usuarios = VALUES(max_usuarios), activo = 1`,
+  );
 }
 
 /** Deja la base de tests sin datos (y con el catálogo de permisos). Solo corre sobre `*_testing`. */
