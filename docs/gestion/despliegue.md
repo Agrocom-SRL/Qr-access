@@ -4,9 +4,11 @@
 
 ```
 internet ─ NPMplus (CT 107, 192.168.100.249, TLS Let's Encrypt)
-              ├─ acceso.agrocom.com.bo ─▶ CT 120 :80    panel (React, super admin) ─ /api ─▶ api :3000 ─▶ db (MySQL 8.4)
-              └─ app de usuarios       ─▶ CT 120 :8081  app (Flutter web)          ─ /api ─▶ api
+              └─ acceso.agrocom.com.bo ─▶ CT 120 :80    panel (React, super admin) ─ /api ─▶ api :3000 ─▶ db (MySQL 8.4)
+                                                          └─ /app/ ─▶ app :8080 (Flutter web, también en :8081 privado) ─ /api ─▶ api
 ```
+
+Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y la app de usuarios vive en `https://acceso.agrocom.com.bo/app/` (se compila con `--base-href /app/`). El Nginx del panel reenvía `/app/` al contenedor `app`, así que NPMplus sigue con una sola regla hacia el puerto 80. Las dos comparten `/api` y no se pisan el almacenamiento del navegador (claves distintas).
 
 - **Red:** el CT 120 solo tiene IP privada (`192.168.100.236`, debe ser fija o reservada). Nada del CT se publica a internet sin pasar por NPMplus.
 - **Base de datos:** MySQL 8.4 en contenedor, volumen `datos-db`, sin puerto publicado. La MariaDB compartida del CT 108 **no sirve** (el esquema usa `utf8mb4_0900_ai_ci` y columnas generadas de MySQL 8).

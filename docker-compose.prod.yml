@@ -83,9 +83,9 @@ services:
     depends_on:
       - api
 
-  # App de usuarios (Flutter web) servida por Nginx, con /api hacia la API. Mientras las apps no estén
-  # en las tiendas, es la forma de usarla desde el navegador, en otro puerto del mismo dominio.
-  # NPMplus: <dirección pública de la app> -> http://192.168.100.236:8081
+  # App de usuarios (Flutter web) servida por Nginx bajo /app/, con /api hacia la API. Se usa desde
+  # el navegador en https://acceso.agrocom.com.bo/app/: el Nginx del panel reenvía /app/ aquí, así que
+  # NPMplus no necesita otra regla. El puerto 8081 queda solo para probarla directo en la red privada.
   app:
     build:
       context: ./app
