@@ -6,6 +6,18 @@
   margin-bottom: var(--esp24);
 }
 
+/* En pantallas angostas el buscador ocupa todo el ancho y el filtro queda debajo, con su propio desplazamiento. */
+@media (width < 640px) {
+  .barra {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .barra > :first-child {
+    width: 100%;
+  }
+}
+
 .suave {
   color: var(--textoSecundario);
 }
