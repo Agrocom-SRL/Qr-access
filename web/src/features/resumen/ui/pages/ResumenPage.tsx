@@ -21,7 +21,6 @@ import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
 import { describirEvento } from '../../../bitacora';
-import { GraficasDelResumen } from '../../../estadisticas';
 import { useResumen } from '../../application/useResumen';
 import { porcentajeDeUso } from '../../domain/resumen';
 import foto from '../../../../shared/ui/assets/fotos/portico_banner.webp';
@@ -138,8 +137,6 @@ export function ResumenPage() {
           ))}
         </div>
       )}
-
-      <GraficasDelResumen />
 
       <section className={styles.dispositivos} aria-labelledby="dispositivos">
         <header className={styles.cabecera}>

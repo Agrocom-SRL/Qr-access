@@ -20,6 +20,12 @@
   gap: var(--esp16);
 }
 
+.nombre {
+  color: var(--primario);
+  font-size: var(--texto14);
+  font-weight: var(--peso600);
+}
+
 .hasta {
   color: var(--textoSecundario);
   font-size: var(--texto14);

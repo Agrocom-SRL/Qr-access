@@ -42,6 +42,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     permiso: 'dispositivos.placa.ver',
   },
   {
+    clave: 'estadisticas',
+    ruta: RUTAS.estadisticas,
+    icono: 'bar_chart',
+    iconoActivo: 'bar_chart_fill',
+    permiso: 'resumen.panel.ver',
+  },
+  {
     clave: 'planes',
     ruta: RUTAS.planes,
     icono: 'sell',

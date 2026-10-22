@@ -251,13 +251,27 @@ describe('planes (A09)', () => {
     await userEvent.click(await screen.findByRole('link', { name: /Planes/ }));
   }
 
-  it('muestra los tres planes con su precio, cuentas y usuarios en uso', async () => {
+  it('muestra el nombre y el precio de cada plan, sin las cifras de uso', async () => {
     await irAPlanes(crearServiciosDePrueba());
-    expect(await screen.findByText('100 usuarios')).toBeInTheDocument();
+    // El nombre y el cupo coinciden en los planes de ejemplo: aparecen en cada tarjeta.
+    expect((await screen.findAllByText('100 usuarios')).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('21.600')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Guardar precios' })).not.toBeInTheDocument();
-    expect(screen.getByText('1.604')).toBeInTheDocument();
+    expect(screen.queryByText('Usuarios en uso')).toBeNull();
     expect(screen.getAllByText('QR ilimitados')).toHaveLength(3);
+  });
+});
+
+describe('estadísticas', () => {
+  it('tiene su entrada en el menú y muestra el uso de cada plan', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Estadísticas/ }));
+    expect(
+      await screen.findByRole('heading', { name: 'Estadísticas', level: 1 }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Uso por plan' })).toBeInTheDocument();
+    expect(screen.getByText('1.604')).toBeInTheDocument();
   });
 });
 
@@ -653,14 +667,13 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
     expect(screen.queryByText('Pendiente')).toBeNull();
   });
 
-  it('el historial muestra banco y cuenta, y abre el comprobante', async () => {
+  it('el historial abre el comprobante', async () => {
     const verComprobante = vi.fn(() => Promise.resolve(new Blob(['x'], { type: 'image/png' })));
     URL.createObjectURL = vi.fn(() => 'blob:prueba');
     URL.revokeObjectURL = vi.fn();
     const abrir = vi.spyOn(globalThis, 'open').mockReturnValue(null);
     await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { verComprobante } }));
-    expect(await screen.findByText(/Banco Unión/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Ver comprobante' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver comprobante' }));
     await waitFor(() => {
       expect(verComprobante).toHaveBeenCalledWith('77');
       expect(abrir).toHaveBeenCalledWith('blob:prueba', '_blank', 'noopener');
@@ -701,10 +714,12 @@ describe('registrar pago (A07)', () => {
     expect(screen.getByText('Agroindustrial Norte · plan 100 usuarios')).toBeInTheDocument();
   });
 
-  it('la referencia es obligatoria', async () => {
+  it('parte en efectivo y la referencia es opcional: con monto y fecha ya se puede registrar', async () => {
     await abrirPago(crearServiciosDePrueba());
     await screen.findByLabelText('Monto');
-    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeDisabled();
+    expect(screen.getByLabelText('Referencia (opcional)')).toHaveValue('');
+    expect(screen.queryByText('Comprobante')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeEnabled();
   });
 
   it('confirma antes de registrar y manda el pago a la API', async () => {
@@ -716,14 +731,11 @@ describe('registrar pago (A07)', () => {
       }),
     );
     await abrirPago(crearServiciosDePrueba({ pagos: { registrar } }));
-    await userEvent.type(await screen.findByLabelText('Referencia'), 'TRF-912204');
-    await userEvent.click(screen.getByRole('button', { name: 'Depósito' }));
-    // Un depósito exige banco, cuenta y el comprobante: sin ellos no se llega a confirmar.
+    await userEvent.type(await screen.findByLabelText('Referencia (opcional)'), 'TRF-912204');
+    await userEvent.click(screen.getByRole('button', { name: 'QR' }));
+    // Un pago por QR exige el comprobante: sin él no se llega a confirmar.
     await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    await userEvent.click(screen.getByLabelText('Banco donde se recibió'));
-    await userEvent.click(await screen.findByRole('option', { name: 'Banco Unión' }));
-    await userEvent.type(screen.getByLabelText('Cuenta de destino'), '10000123456');
     const comprobante = new File(['x'], 'boleta.png', { type: 'image/png' });
     await userEvent.upload(screen.getByLabelText('Comprobante'), comprobante);
     expect(await screen.findByText('boleta.png')).toBeInTheDocument();
@@ -739,10 +751,8 @@ describe('registrar pago (A07)', () => {
         'renovacion',
         expect.objectContaining({
           monto: 12000,
-          medio: 'deposito',
+          medio: 'qr',
           referencia: 'TRF-912204',
-          banco: 'Banco Unión',
-          cuentaDestino: '10000123456',
           comprobante,
         }),
       );
