@@ -48,6 +48,8 @@ docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=
 docker compose up -d api                # reinicia la API para que lea el .env
 ```
 
+Para dejar la base de desarrollo como queda la de producción tras su reinicio (sin la cuenta demo, solo el super admin `root`): `bin/reiniciar-local` (con `--con-demo` vuelve a cargar la cuenta `DEM`). Hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes.
+
 Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_demo.sql` solo funciona con la `PIN_PIMIENTA` de desarrollo de `.env.example` (el índice del PIN es un HMAC con esa pimienta). La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
 
 | Qué | Valor |
