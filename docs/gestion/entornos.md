@@ -4,7 +4,7 @@
 
 | Entorno | Dónde vive | Base de datos | Propósito |
 |---|---|---|---|
-| **local** | `docker compose up -d` (db + api); `--profile web` suma la app web en :8080 y `--profile panel`, el panel de administración (React) en :8081 | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
+| **local** | `docker compose up -d` (db + api); `--profile panel` suma el panel de administración (React) en :8080 y `--profile web`, la app web, que no tiene puerto propio y se abre en http://localhost:8080/app/ (como en producción; usa los dos perfiles juntos) | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
 | **tests local** | El mismo contenedor `db` | `qr_access_testing` (la fuerza el setup de Vitest) | `bin/verify`. Los tests la vacían: **nunca** apuntan a la de desarrollo |
 | **verificación** | Proyecto compose descartable `-p qr-access-verif` | Propia, efímera | Probar migraciones contra MySQL limpio (skill `verificacion`) |
 | **CI** | GitHub Actions (`ci.yml`) | Servicio `mysql:8.4` efímero | Lint, tipos, fronteras, tests y builds |

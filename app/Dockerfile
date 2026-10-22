@@ -3,6 +3,7 @@
 # App web de AGROCOM Acceso (ADR 0010). Contexto de build: app/
 # El build fija la misma versión de Flutter que el host (FLUTTER_VERSION, clonada
 # por tag) y usa la API en el mismo origen (Nginx hace proxy de /api): API_URL vacía.
+# Se sirve bajo /app/ (BASE_HREF), porque la raíz del dominio es del panel.
 
 FROM debian:bookworm-slim AS flutter
 ARG FLUTTER_VERSION=3.47.4
@@ -26,9 +27,13 @@ COPY assets ./assets
 COPY lib ./lib
 COPY web ./web
 ARG API_URL=
-RUN flutter build web --release --dart-define=API_URL=${API_URL}
+# La app vive bajo /app/ del mismo dominio que el panel (que ocupa la raíz): un solo
+# subdominio y un solo certificado. Debe empezar y terminar con barra.
+ARG BASE_HREF=/app/
+RUN flutter build web --release --base-href=${BASE_HREF} --dart-define=API_URL=${API_URL}
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine AS web
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/build/web /usr/share/nginx/html
+ARG BASE_HREF=/app/
+COPY --from=build /app/build/web /usr/share/nginx/html${BASE_HREF}
 EXPOSE 8080
