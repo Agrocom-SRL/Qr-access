@@ -1,6 +1,38 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-22 (rama `feature/diseno-jerarquia-y-cierre`, sin PR)
+**Última actualización:** 2026-10-22, al cierre de la sesión de ajustes del panel (#80, #81 y #82, integrados en `develop`)
+
+## Relevo de la sesión del 2026-10-22: ajustes del panel y cuentas de cobro
+
+Todo esto está integrado en `develop` por tres PR. La API local del puerto 3000 quedó **detenida a pedido de Miguel, hasta nuevo aviso**.
+
+### Hecho
+
+- **#80 — plan único y versión:** el seed de producción deja un solo plan, "100 usuarios" a 1000 Bs; la migración `20261022100008` lo aplica a bases ya sembradas (fija el precio y da de baja los planes de 200 y 350 usuarios **solo si ninguna suscripción los usa**). El helper de tests (`cargarCatalogo`) recrea los otros planes para los tests de cambio de plan. Incluye la versión 1.0.3 y las 13 actualizaciones de dependencias de `web` (se cerraron #77 y #73).
+- **#81 — ajustes del panel web:**
+  - Planes: tarjetas en tres columnas, con el nombre del plan visible; se quitaron "Cuentas" y "Usuarios en uso".
+  - Estadísticas: página nueva (`/estadisticas`, ítem en el menú, permiso `resumen.panel.ver`) con las gráficas que estaban en el Resumen y la tabla "Uso por plan".
+  - Alta de cuenta: el plan en tres columnas; se quitó el interruptor "es la misma persona responsable" (el administrador inicial parte con ese nombre y se edita); se quitó la sección "Administrador inicial" del resumen de confirmación.
+  - Pagos: efectivo por defecto, referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR. Migración `20261022100009` (los `deposito` existentes pasan a `transferencia`). La API ya no acepta `deposito` ni pide `banco` y `cuenta_destino`; las columnas quedan como históricas.
+- **#82 — cuentas de cobro (ADR 0029) y responsive:**
+  - Tabla `cuentas_de_cobro` (`20261022100010`), permisos `suscripciones.cobro.ver|crear|editar|eliminar` en el seed y `/plataforma/cuentas-de-cobro` (módulo `suscripciones`).
+  - Panel: página "Cuentas de cobro" (botón en Cobranza) para agregar, editar, activar o desactivar y eliminar cuentas bancarias y QR de AGROCOM. Se muestran al registrar el pago de **alta**, según el medio (transferencia o QR).
+  - Responsive: el filtro segmentado se desplaza en horizontal en vez de partir sus textos, el buscador de Cuentas ocupa todo el ancho en pantallas angostas y el encabezado apila la acción.
+
+### Pendiente para continuar
+
+1. **Ver los cambios en local (nada de esto se vio en un navegador).** Levantar Docker Desktop (se había apagado), reconstruir el panel con `docker compose --profile panel up -d --build panel` y encender la API (`docker compose up -d api`) **solo cuando Miguel lo indique**. Después recorrer: Estadísticas, Planes, alta de cuenta (los cuatro pasos), registrar pago por transferencia y QR, Cuentas de cobro, y el filtro de Cuentas en ancho angosto. La base local ya tiene las tres migraciones y los permisos nuevos.
+2. **Despliegue a producción.** `bin/desplegar` aplicará las migraciones `100008` a `100010` y sembrará los permisos. Antes, revisar si producción tiene suscripciones en los planes de 200 o 350: en ese caso se conservan y el catálogo queda con más de un plan. Tras el despliegue, cargar las cuentas bancarias y el QR reales en "Cuentas de cobro"; no hay datos de ejemplo.
+3. **Contrato incompatible dentro de `/api/v1`:** el medio `deposito` desapareció (pasó a `qr`) y la `referencia` dejó de ser obligatoria. Solo lo usa el panel de este repo, pero se suma a la contradicción con el ADR 0005 que ya figura abajo en "Pendiente de decidir o confirmar".
+4. **Decisiones de producto a confirmar con Miguel:**
+   - Las cuentas de cobro se muestran solo en el pago de alta, no en renovaciones ni mejoras de plan.
+   - El nombre del administrador inicial ya no aparece en el resumen de confirmación del alta.
+   - La página Estadísticas usa el permiso del Resumen; si se quiere uno propio, hay que agregarlo al seed.
+   - Las columnas históricas `banco` y `cuenta_destino` de `pagos` se pueden retirar con otra migración si no se van a usar.
+5. **Mostrar las cuentas de cobro a la empresa cliente** (por ejemplo, en su pantalla de suscripción): hoy solo las ve quien cobra. Está anotado en el ADR 0029.
+6. **Pruebas que faltan:** los tests de `web` cubren la página y el componente "dónde pagar", pero no el recorrido completo del pago de alta con QR. La bitácora del panel muestra los eventos `cuenta_de_cobro.*` con el texto genérico; falta revisar cómo se leen.
+7. **Responsive del resto del panel:** se arregló el filtro segmentado y el encabezado para todas las páginas, pero solo se revisó el diseño de Cuentas. Falta mirar Cobranza, Eventos y Placas.
+8. **Tareas anteriores que siguen abiertas:** ver "Lo que falta para un V1 usable" y "Pendiente de decidir o confirmar", más abajo. La app Flutter no se tocó en esta sesión.
 
 ## Qué ya existe
 
@@ -80,8 +112,8 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 
 Lo que entró después de la versión anterior de este documento. Los números son PR de GitHub; las ramas sin número se citan por su nombre.
 
-- **Cuentas de cobro (rama `feature/cuentas-de-cobro`, ADR 0029):** tabla `cuentas_de_cobro` (`20261022100010`) y `/plataforma/cuentas-de-cobro` con sus permisos `suscripciones.cobro.*`. Panel: página "Cuentas de cobro" (desde Cobranza) para cargar cuentas bancarias y QR de AGROCOM, que se muestran al registrar el pago de alta según el medio. Filtros del panel que se desplazan en pantallas angostas.
-- **Ajustes del panel (rama `feature/ajustes-panel-web`):** tarjetas de plan en tres columnas y con el nombre visible; el uso por plan sale de Planes y pasa a una página Estadísticas (con las gráficas que estaban en el Resumen); el administrador inicial parte con el nombre de la persona responsable, sin interruptor; el pago de alta y el registro de pago parten en efectivo, con referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR (migración `20261022100009`).
+- **Cuentas de cobro (#82, ADR 0029):** tabla `cuentas_de_cobro` (`20261022100010`) y `/plataforma/cuentas-de-cobro` con sus permisos `suscripciones.cobro.*`. Panel: página "Cuentas de cobro" (desde Cobranza) para cargar cuentas bancarias y QR de AGROCOM, que se muestran al registrar el pago de alta según el medio. Filtros del panel que se desplazan en pantallas angostas.
+- **Ajustes del panel (#81):** tarjetas de plan en tres columnas y con el nombre visible; el uso por plan sale de Planes y pasa a una página Estadísticas (con las gráficas que estaban en el Resumen); el administrador inicial parte con el nombre de la persona responsable, sin interruptor; el pago de alta y el registro de pago parten en efectivo, con referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR (migración `20261022100009`).
 - **Integración final (#34-#36):** cierre de las ramas de trabajo que quedaban fuera de `develop`.
 - **Ethernet y vinculación de placas (#37-#45):** la placa va por Ethernet, sin WiFi (ADR 0025). La vinculación automática con confirmación física (ADR 0026): la placa se anuncia sola y se confirma manteniendo 5 s el pulsador de salida. Lector RS485 con QR600. Tabla `asignaciones_puerta` (`20261015100001`).
 - **Modo sin conexión, perfil propio, sesión persistente y accesos en vivo (#47-#55):** modo sin conexión de la app (ADR 0027), perfil propio y sesión persistente en la app, y accesos en vivo.
@@ -117,7 +149,7 @@ Lo que entró después de la versión anterior de este documento. Los números s
 - **Jerarquía de usuarios (ADR 0028, 2026-10-20):** implementada en `develop` (#59-#68, #71 y #72). Quedan la revisión visual (pendiente real), el rótulo "Registrar pago" en cobranza (`docs/gestion/jerarquia-de-usuarios.md` §6.3) y los textos en/pt (#74, abierto). Las marcas por punto están en ese documento.
 - **Release con cambio incompatible (versión 1.0.3, decidida por Miguel; reinicio de la base de producción aprobado):** plan en `docs/gestion/release-jerarquia.md`. **No se publicó tag ni se desplegó.** Pendiente de Miguel: la versión, el reinicio de la base de producción (borra cuentas, bitácora y `eventos_acceso` de la primera prueba; el respaldo es la única copia) y el aviso a los clientes con la app instalada.
 - **Contradicción entre documentos:** ADR 0005 y la invariante 11 de `CLAUDE.md` prohíben un cambio incompatible dentro de la misma versión de la API; los cambios de #71 y #72 (nombres de permisos y campos en `/api/v1`) lo son para los clientes instalados. Decidir: excepción documentada en un ADR o `/api/v2`.
-- **Versiones desfasadas:** `api/package.json`, `web/package.json` y `app/pubspec.yaml` siguen en 1.0.0 (+7), y `firmware/include/version.h` en 1.0.0, aunque existen los tags `v1.0.1` y `v1.0.2`. ADR 0014 dice que el tag fija la versión. Confirmar qué contienen `v1.0.1` y `v1.0.2`.
+- **Versiones desfasadas:** `api/package.json`, `web/package.json` y `app/pubspec.yaml` siguen en 1.0.0 (+7), y `firmware/include/version.h` en 1.0.0 (el #80 los sube a 1.0.3, pendiente de confirmar con Miguel), aunque existen los tags `v1.0.1` y `v1.0.2`. ADR 0014 dice que el tag fija la versión. Confirmar qué contienen `v1.0.1` y `v1.0.2`.
 - Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24). D-19 está cerrada en código desde `feature/diseno-pantallas`; falta reflejarlo en ese documento.
 - Hex oficial del verde de marca (D-08).
 - Servidor de producción y DNS (D-13): **resuelto en parte.** Producción corre en `acceso.agrocom.com.bo` (CT 120, NPMplus, `docs/gestion/despliegue.md`). Falta confirmar la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
