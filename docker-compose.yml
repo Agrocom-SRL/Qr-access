@@ -89,6 +89,10 @@ services:
       context: ./app
     profiles: ["web"]
     restart: unless-stopped
+    # El panel reenvía /app/ al host `app` (como en producción): así también funciona por :8081/app/.
+    networks:
+      default:
+        aliases: [app]
     ports:
       - "${WEB_PORT:-8080}:8080"
     depends_on:
