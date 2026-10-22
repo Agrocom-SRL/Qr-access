@@ -85,13 +85,11 @@ services:
 
   # App de usuarios (Flutter web) servida por Nginx bajo /app/, con /api hacia la API. Se usa desde
   # el navegador en https://acceso.agrocom.com.bo/app/: el Nginx del panel reenvía /app/ aquí, así que
-  # NPMplus no necesita otra regla. El puerto 8081 queda solo para probarla directo en la red privada.
+  # NPMplus no necesita otra regla. No publica ningún puerto: solo el panel llega a ella, por la red de Docker.
   app:
     build:
       context: ./app
     restart: unless-stopped
-    ports:
-      - "8081:8080"
     depends_on:
       - api
 

@@ -5,7 +5,7 @@
 ```
 internet ─ NPMplus (CT 107, 192.168.100.249, TLS Let's Encrypt)
               └─ acceso.agrocom.com.bo ─▶ CT 120 :80    panel (React, super admin) ─ /api ─▶ api :3000 ─▶ db (MySQL 8.4)
-                                                          └─ /app/ ─▶ app :8080 (Flutter web, también en :8081 privado) ─ /api ─▶ api
+                                                          └─ /app/ ─▶ app (Flutter web, sin puerto publicado) ─ /api ─▶ api
 ```
 
 Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y la app de usuarios vive en `https://acceso.agrocom.com.bo/app/` (se compila con `--base-href /app/`). El Nginx del panel reenvía `/app/` al contenedor `app`, así que NPMplus sigue con una sola regla hacia el puerto 80. Las dos comparten `/api` y no se pisan el almacenamiento del navegador (claves distintas).
