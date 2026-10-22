@@ -67,7 +67,7 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 1. **Crear usuario según el nivel** (§2): selector de rol solo para el propietario; ninguno para el dueño de casa. **[Hecho: #64-#68.]**
 2. **Compartir el PIN** al crear un usuario o al regenerarlo, por redes/hoja de compartir del sistema, igual que se comparte un QR. Cuidar que el PIN se muestra una sola vez y que viaja por un canal de terceros: evaluar forzar el cambio en el primer ingreso (§10). **[Hecho: #68; sin cambio forzado, según §10.8.]**
-3. **Texto "Generar QR" → "Generar QR"** en toda la interfaz (ARB, es/en/pt). **[Hecho en español: #71. En/pt completos: #74, abierto.]**
+3. **Texto "Emitir QR" → "Generar QR"** en toda la interfaz (ARB, es/en/pt). **[Hecho en español: #71. En/pt completos: #74, abierto.]**
 4. **Pantalla de inicio:** el botón flotante pasa a **generar y compartir QR**; el **QR propio** se mueve a la cabecera con otro ícono (tipo "persona entrando"). **[Pendiente de confirmar: el código ya muestra el QR propio en la cabecera y el botón de generar; verificar en la revisión visual.]**
 5. **Estadísticas del propietario** (§4) con los datos de su rama. **[Hecho: #67 (app).]**
 6. Ocultar cualquier acción que el rol no tenga (el menú ya es por permiso). **[Hecho para el Guardia: #72. El menú ya filtra por permiso.]**
