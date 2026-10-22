@@ -37,7 +37,7 @@ Base **`#007A33`** (D-08: hex provisional). Rampa `verde50 #E8F5EE · 100 #C5E6D
 | `peligro` / `peligroSuave` | `#C62828` / `#FDECEC` | `#EF7A7A` / `#3A1C1C` | Rechazado, Sin conexión, Eliminar, cerrar sesión |
 | `advertencia` / `advertenciaSuave` | `#965A00` / `#FFF3E0` | `#F2B54A` / `#33270F` | Vencido, Editar, avisos "solo una vez", bloqueo del PIN |
 | `informacion` / `informacionSuave` | `#1565C0` / `#E8F1FB` | `#7EB6F2` / `#14263A` | Usado, Ver, aviso informativo |
-| `hero` / `heroAcento` / `sobreHero` | `#007A33` / `#006B2D` / `#FFFFFF` | `#00451C` / `#005824` / `#E6EAE7` | Bienvenida, tarjeta de cuenta, hero "Emitir QR", indicador de accesos de hoy |
+| `hero` / `heroAcento` / `sobreHero` | `#007A33` / `#006B2D` / `#FFFFFF` | `#00451C` / `#005824` / `#E6EAE7` | Bienvenida, tarjeta de cuenta, hero "Generar QR", indicador de accesos de hoy |
 | `elev1` / `elev3` | sombras del handoff | vacías | Tarjeta / diálogo (en oscuro la elevación es la superficie) |
 
 Alias de dominio: `accesoPermitido = primario`, `accesoDenegado = peligro`, `qrModulo = #000000`, `qrFondo = #FFFFFF`. `ColorScheme` de Material 3 se arma desde estos semánticos (no con `fromSeed`). Contraste AA de todos los pares texto/fondo: `test/core/theme/tema_test.dart`.
@@ -64,9 +64,9 @@ No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtr
 
 | Rol (por permisos) | Compacto | Rail |
 |---|---|---|
-| Usuario | Inicio · Mis QR · Eventos · Perfil | + Emitir QR |
+| Usuario | Inicio · Mis QR · Eventos · Perfil | + Generar QR |
 | Guardia (`puerta.supervisar`) | Inicio · Eventos · Puertas · Perfil | igual |
-| Administrador (`usuario.ver`) | Inicio · Eventos · Admin · Perfil | Inicio · Emitir QR · Eventos · Puertas · Usuarios · Perfil |
+| Administrador (`usuario.ver`) | Inicio · Mis QR · Admin · Perfil | Inicio · Generar QR · Eventos · Puertas · Usuarios · Perfil |
 
 ## 3. Catálogo de componentes (`lib/shared/widgets/`)
 

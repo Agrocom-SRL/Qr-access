@@ -3,6 +3,8 @@
 **Fecha:** 2026-10-20 · **Origen:** primera prueba en producción (`acceso.agrocom.com.bo`) con un administrador real.
 **Estado:** propuesta del cliente, **sin implementar**. Es una lista de trabajo para refinar: no sale a la primera, así que cada bloque trae sus puntos abiertos (§10) y un orden sugerido (§11). Cuando se cierre el modelo de permisos, pasa a un ADR nuevo que enmiende el 0004 y el 0017.
 
+> **Estado al 2026-10-22:** lo implementado está en `develop` (#59-#68, #71 y #72) y se marca con **[Hecho]** o **[Pendiente]** en cada punto de §5, §6, §7 y §11. El texto original se conserva. Lo que sigue pendiente de verificar está en `docs/gestion/release-jerarquia.md` y en `docs/gestion/estado_proyecto.md`.
+
 ## 1. Idea central
 
 Los accesos forman un **árbol**. Cada nivel crea al de abajo y solo el nivel superior ve su actividad y le cambia el PIN.
@@ -46,6 +48,8 @@ Reglas:
 ## 4. Estadísticas (las calcula la API; las ven web y app)
 
 > **Hecho (2026-10-22): estadísticas de uso (§4).** La API calcula inactivos (30 días sin generar QR; un usuario con menos de 30 días de antigüedad no cuenta), ruidosos (más de 10 QR en un día, cortando el día en la hora de La Paz) y Titulares cerca de su tope (80 %), todo informativo. La app lo muestra al Administrador (su rama, con baja directa) y el panel web a AGROCOM (toda la cuenta y los usuarios por Administrador). Quedan compartir el PIN y "Registrar pago" en cobranza.
+>
+> **Nota de coherencia (2026-10-22):** esta nota dice que quedan compartir el PIN, pero §5.2 lo marca como hecho (#68). La nota de §6 dice que quedan las estadísticas en el panel, pero esta nota dice que están hechas. Ambas quedan para confirmar en la revisión visual.
 
 Audiencia: AGROCOM en el panel web (todas las cuentas) y el propietario en la app (su rama).
 
@@ -63,34 +67,34 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 > **Hecho (2026-10-22): compartir el PIN (§5.2).** Botón Compartir junto a Copiar al crear o regenerar un PIN; usa la hoja del sistema, avisa que el PIN pasa por una app de terceros y registra cada envío en la bitácora. No se fuerza el cambio en el primer ingreso (decidido el 2026-10-21).
 
-1. **Crear usuario según el nivel** (§2): selector de rol solo para el propietario; ninguno para el dueño de casa.
-2. **Compartir el PIN** al crear un usuario o al regenerarlo, por redes/hoja de compartir del sistema, igual que se comparte un QR. Cuidar que el PIN se muestra una sola vez y que viaja por un canal de terceros: evaluar forzar el cambio en el primer ingreso (§10).
-3. **Texto "Generar QR" → "Generar QR"** en toda la interfaz (ARB, es/en/pt).
-4. **Pantalla de inicio:** el botón flotante pasa a **generar y compartir QR**; el **QR propio** se mueve a la cabecera con otro ícono (tipo "persona entrando").
-5. **Estadísticas del propietario** (§4) con los datos de su rama.
-6. Ocultar cualquier acción que el rol no tenga (el menú ya es por permiso).
+1. **Crear usuario según el nivel** (§2): selector de rol solo para el propietario; ninguno para el dueño de casa. **[Hecho: #64-#68.]**
+2. **Compartir el PIN** al crear un usuario o al regenerarlo, por redes/hoja de compartir del sistema, igual que se comparte un QR. Cuidar que el PIN se muestra una sola vez y que viaja por un canal de terceros: evaluar forzar el cambio en el primer ingreso (§10). **[Hecho: #68; sin cambio forzado, según §10.8.]**
+3. **Texto "Emitir QR" → "Generar QR"** en toda la interfaz (ARB, es/en/pt). **[Hecho en español: #71. En/pt completos: #74, abierto.]**
+4. **Pantalla de inicio:** el botón flotante pasa a **generar y compartir QR**; el **QR propio** se mueve a la cabecera con otro ícono (tipo "persona entrando"). **[Pendiente de confirmar: el código ya muestra el QR propio en la cabecera y el botón de generar; verificar en la revisión visual.]**
+5. **Estadísticas del propietario** (§4) con los datos de su rama. **[Hecho: #67 (app).]**
+6. Ocultar cualquier acción que el rol no tenga (el menú ya es por permiso). **[Hecho para el Guardia: #72. El menú ya filtra por permiso.]**
 
 ## 6. Cambios en el panel web
 
 > **Hecho en el panel web (2026-10-22):** varios Administradores por cuenta (§6.1), el árbol de la cuenta en la ficha (§6.4, sin estadísticas todavía), reasignar Guardias y unidades (ADR 0028 §7) y editar el tope de Miembros por Titular. Quedan las estadísticas de §4 y el rótulo de "Registrar pago" en cobranza.
 
-1. **Varios propietarios por cuenta.** Hoy se crea un administrador inicial; hay que poder agregar más desde la ficha de la cuenta.
-2. **Alta de cuenta:**
+1. **Varios propietarios por cuenta.** Hoy se crea un administrador inicial; hay que poder agregar más desde la ficha de la cuenta. **[Hecho: #64-#68.]**
+2. **Alta de cuenta:** **[Hecho según el historial (#57-#58, textos y formularios); confirmar en la revisión visual.]**
    - "Razón social" pasa a **Nombre de la cuenta** (no se factura; la cuenta es una habilitación de acceso).
    - **NIT opcional.**
    - La persona responsable se divide en **Nombre** y **Apellido** (obligatorios). **Teléfono y correo, opcionales.**
-3. **Cobranza (`/cobranza`):** en cada cuenta pendiente de pago, botón **Registrar pago** ahí mismo, sin entrar a la ficha.
-4. **Reflejar la política de usuarios:** la ficha de la cuenta muestra la jerarquía (propietarios → dueños → usuarios, guardias por propietario), el cupo habilitado/usado y las estadísticas de §4.
-5. **Texto "sitio":** no se entendió; el administrador necesitó una explicación. Aplica a condominios, pero también a pabellones de una feria, estancias, fincas, regimientos, colegios. Cambiar el rótulo visible por uno genérico (ver §10); el nombre de tabla `sitios` y las rutas no cambian, solo los textos de ARB y `web/src/l10n/`.
+3. **Cobranza (`/cobranza`):** en cada cuenta pendiente de pago, botón **Registrar pago** ahí mismo, sin entrar a la ficha. **[Pendiente.]**
+4. **Reflejar la política de usuarios:** la ficha de la cuenta muestra la jerarquía (propietarios → dueños → usuarios, guardias por propietario), el cupo habilitado/usado y las estadísticas de §4. **[Hecho en #64-#68: el árbol y el tope. Cupo y estadísticas en la ficha: ver la nota de §4.]**
+5. **Texto "sitio":** no se entendió; el administrador necesitó una explicación. Aplica a condominios, pero también a pabellones de una feria, estancias, fincas, regimientos, colegios. Cambiar el rótulo visible por uno genérico (ver §10); el nombre de tabla `sitios` y las rutas no cambian, solo los textos de ARB y `web/src/l10n/`. **[Sin confirmar en el código: ADR 0028 §1 fija el rótulo "Propiedad"; verificar en la revisión visual que no quede "sitio".]**
 
 ## 7. Cambios en el modelo y en la API (a diseñar)
 
-- **Vínculo superior → inferior** explícito en `usuarios` (por ejemplo `superior_id`), no solo `created_by`: el árbol tiene que sobrevivir a una reasignación.
-- **Vivienda** como entidad (casa/departamento) con **un solo dueño activo**: restricción de unicidad compatible con soft delete (ADR 0016). Los usuarios finales cuelgan de la vivienda.
-- **Roles y permisos nuevos** (propietario, dueño de casa, usuario de la casa, guardia) con alcance sobre la rama propia. El rol actual *Administrador* se migra a *Propietario*; revisar roles base que crea la API al dar de alta una cuenta y el seed.
-- **Visibilidad por rama:** los listados, la actividad y la regeneración de PIN filtran por el árbol del usuario dentro de la cuenta. Es una segunda capa sobre el aislamiento por cuenta; **no lo reemplaza** (invariante 1).
-- **Bitácora:** toda baja, regeneración de PIN y creación sigue en la bitácora con quien actúa (invariante 9). Registrar también cuándo se comparte un PIN.
-- Endpoints de estadísticas (§4) y de varios propietarios por cuenta, con su test de aislamiento (cuenta A → recurso de B = 404) y un test nuevo de **aislamiento por rama** (propietario 1 → dueño del propietario 2 = 404).
+- **Vínculo superior → inferior** explícito en `usuarios` (por ejemplo `superior_id`), no solo `created_by`: el árbol tiene que sobrevivir a una reasignación. **[Hecho: `superior_id` (migración `20261022100002`).]**
+- **Vivienda** como entidad (casa/departamento) con **un solo dueño activo**: restricción de unicidad compatible con soft delete (ADR 0016). Los usuarios finales cuelgan de la vivienda. **[Hecho como tabla `unidades` (`20261022100001`), con un Titular por unidad; verificar la restricción de unicidad en el esquema.]**
+- **Roles y permisos nuevos** (propietario, dueño de casa, usuario de la casa, guardia) con alcance sobre la rama propia. El rol actual *Administrador* se migra a *Propietario*; revisar roles base que crea la API al dar de alta una cuenta y el seed. **[Hecho: roles base Administrador, Titular, Miembro y Guardia; un rol por usuario (`20261022100003`).]**
+- **Visibilidad por rama:** los listados, la actividad y la regeneración de PIN filtran por el árbol del usuario dentro de la cuenta. Es una segunda capa sobre el aislamiento por cuenta; **no lo reemplaza** (invariante 1). **[Hecho en la API (#59-#61, #64-#68). Pendiente: el test de aislamiento por rama; no consta en el historial.]**
+- **Bitácora:** toda baja, regeneración de PIN y creación sigue en la bitácora con quien actúa (invariante 9). Registrar también cuándo se comparte un PIN. **[Hecho para compartir el PIN (#68). Revisar que la baja, la reasignación y la regeneración también queden.]**
+- Endpoints de estadísticas (§4) y de varios propietarios por cuenta, con su test de aislamiento (cuenta A → recurso de B = 404) y un test nuevo de **aislamiento por rama** (propietario 1 → dueño del propietario 2 = 404). **[Endpoints hechos (#64-#68). Tests de aislamiento por cuenta y por rama: no constan en el historial.]**
 
 ## 8. Invariantes y ADR que toca
 
@@ -135,11 +139,11 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 ## 11. Orden sugerido (una rama y un PR por paso)
 
-1. **`feature/ajustes-textos`:** solo textos y formularios sin tocar permisos: "Generar QR", nombre de cuenta, NIT opcional, nombre y apellido, responsable sin teléfono ni correo, rótulo de "sitio", QR propio en la cabecera y botón flotante (§5.3, §5.4, §6.2, §6.5) y **Registrar pago** en cobranza (§6.3).
-2. **`feature/jerarquia-usuarios`:** ADR nuevo + migraciones (vínculo superior, vivienda) + roles y permisos + visibilidad por rama en la API, con tests de aislamiento por cuenta y por rama. Cerrar antes los puntos 1 a 6 de §10.
-3. **`feature/crear-usuarios-por-nivel`:** selector de rol por nivel en la app, varios propietarios en la web, baja de usuarios y cupo.
-4. **`feature/compartir-pin`:** compartir el PIN en la app (§5.2).
-5. **`feature/estadisticas-usuarios`:** endpoints de §4 y su vista en app y web.
+1. **`feature/ajustes-textos`:** solo textos y formularios sin tocar permisos: "Generar QR", nombre de cuenta, NIT opcional, nombre y apellido, responsable sin teléfono ni correo, rótulo de "sitio", QR propio en la cabecera y botón flotante (§5.3, §5.4, §6.2, §6.5) y **Registrar pago** en cobranza (§6.3). **[Hecho en parte: textos y formularios (#57-#58) y #71. Pendiente: Registrar pago (§6.3) y los textos en/pt (#74, abierto).]**
+2. **`feature/jerarquia-usuarios`:** ADR nuevo + migraciones (vínculo superior, vivienda) + roles y permisos + visibilidad por rama en la API, con tests de aislamiento por cuenta y por rama. Cerrar antes los puntos 1 a 6 de §10. **[Hecho: #59-#61 (ADR 0028). Tests de rama: ver §7.]**
+3. **`feature/crear-usuarios-por-nivel`:** selector de rol por nivel en la app, varios propietarios en la web, baja de usuarios y cupo. **[Hecho: #64-#68.]**
+4. **`feature/compartir-pin`:** compartir el PIN en la app (§5.2). **[Hecho: #68 y #69.]**
+5. **`feature/estadisticas-usuarios`:** endpoints de §4 y su vista en app y web. **[Hecho: #67. Ver la nota de coherencia de §4.]**
 
 Cada paso pasa `bin/verify` entero antes de abrir el PR. El orden 2 → 3 → 5 es obligatorio; el 1 y el 4 son independientes.
 
@@ -150,3 +154,5 @@ Desarrollo y producción **no comparten secretos**: `PIN_PIMIENTA` (la de desarr
 ## 13. Reiniciar la base de producción (referencia)
 
 Con respaldo previo (`mysqldump`), detener `api`, recrear la base con `DROP DATABASE`/`CREATE DATABASE` dentro del contenedor `db` y correr `./bin/desplegar` (migra, siembra el catálogo y recrea `root`). Nunca `down -v` ni el seed `02_demo.sql` (es solo de desarrollo). Las placas vinculadas hay que vincularlas de nuevo.
+
+> **Referencia para el release:** el procedimiento completo, con el orden frente al despliegue automático, la vuelta atrás y la lista de decisiones, está en `docs/gestion/release-jerarquia.md`.
