@@ -23,6 +23,7 @@ export const TABLAS_RELEVANTES = [
   'suscripciones',
   'pagos',
   'planes',
+  'cuentas_de_cobro',
   'usuarios',
   'sitios',
   'puertas',
@@ -31,6 +32,7 @@ export const TABLAS_RELEVANTES = [
 
 const SINGULAR: Readonly<Record<string, string>> = {
   planes: 'plan',
+  cuentas_de_cobro: 'cuenta_de_cobro',
   sitios: 'sitio',
   puertas: 'puerta',
   dispositivos: 'dispositivo',
