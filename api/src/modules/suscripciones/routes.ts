@@ -194,8 +194,6 @@ export function rutas({ pool, config }: DependenciasDeModulo): FastifyPluginCall
             fechaPago: request.body.fecha_pago,
             medio: request.body.medio,
             referencia: request.body.referencia,
-            banco: request.body.banco,
-            cuentaDestino: request.body.cuenta_destino,
             comprobanteId: request.body.comprobante_id,
           }),
         );

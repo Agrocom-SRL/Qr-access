@@ -38,10 +38,8 @@ export interface DatosDeNuevaCuenta {
   readonly pago?: {
     readonly monto: number;
     readonly fechaPago: string;
-    readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+    readonly medio: 'transferencia' | 'qr' | 'efectivo';
     readonly referencia: string;
-    readonly banco?: string | undefined;
-    readonly cuentaDestino?: string | undefined;
     readonly comprobanteId?: string | undefined;
   };
 }

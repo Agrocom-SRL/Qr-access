@@ -263,19 +263,15 @@ export const cuerpoDeNuevaCuenta = z.object({
     .object({
       monto: z.number().positive().max(99_999_999),
       fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
-      referencia: z.string().trim().min(1).max(80),
-      // Una transferencia o un depósito exigen banco, cuenta y comprobante (ADR 0024).
-      banco: z.string().trim().min(1).max(60).optional(),
-      cuenta_destino: z.string().trim().min(1).max(60).optional(),
+      medio: z.enum(['transferencia', 'qr', 'efectivo']),
+      referencia: z.string().trim().max(80).default(''),
+      // Una transferencia o un pago por QR exigen comprobante (ADR 0024).
       comprobante_id: esquemaId.optional(),
     })
     .superRefine((pago, ctx) => {
       if (pago.medio === 'efectivo') return;
-      for (const campo of ['banco', 'cuenta_destino', 'comprobante_id'] as const) {
-        if (pago[campo] === undefined) {
-          ctx.addIssue({ code: 'custom', path: [campo], message: 'requerido' });
-        }
+      if (pago.comprobante_id === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['comprobante_id'], message: 'requerido' });
       }
     })
     .optional(),
@@ -440,7 +436,7 @@ export const respuestaDeSuscripcionDeCuenta = z.object({
       plan: z.string(),
       monto: z.number(),
       fecha_pago: z.string(),
-      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+      medio: z.enum(['transferencia', 'qr', 'efectivo']),
       referencia: z.string(),
       banco: z.string().nullable(),
       cuenta_destino: z.string().nullable(),

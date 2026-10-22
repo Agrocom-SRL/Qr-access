@@ -165,12 +165,17 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
         { monto: -5 },
         { monto: 10.123 },
         { medio: 'cheque' },
-        { referencia: ' ' },
+        { medio: 'deposito' },
         { fecha_pago: '12/10/2026' },
       ]) {
         expect((await pago(cambio)).statusCode).toBe(400);
       }
       expect(await contarFilas(prueba.pool, 'pagos')).toBe(0);
+    });
+
+    it('la referencia es opcional: sin ella el pago se registra con la referencia vacía', async () => {
+      const respuesta = await pago({ referencia: undefined });
+      expect(respuesta.statusCode, respuesta.body).toBe(201);
     });
 
     it('una suscripción suspendida no se renueva hasta reactivarla', async () => {

@@ -100,21 +100,26 @@ describe('plataforma: comprobantes de pago (ADR 0024)', () => {
         },
       });
 
-    it('una transferencia o un depósito sin banco, cuenta y comprobante no se registran', async () => {
-      for (const medio of ['transferencia', 'deposito']) {
+    it('una transferencia o un pago por QR sin comprobante no se registran', async () => {
+      for (const medio of ['transferencia', 'qr']) {
         const respuesta = await pagar({ medio });
         expect(respuesta.statusCode, respuesta.body).toBe(400);
       }
     });
 
-    it('un pago en efectivo no los necesita', async () => {
-      const respuesta = await pagar({ medio: 'efectivo' });
+    it('un pago en efectivo no lo necesita, ni tampoco la referencia', async () => {
+      const respuesta = await pagar({ medio: 'efectivo', referencia: undefined });
       expect(respuesta.statusCode, respuesta.body).toBe(201);
     });
 
-    it('guarda banco, cuenta y comprobante, y el historial los devuelve', async () => {
+    it('el medio depósito ya no existe', async () => {
+      const respuesta = await pagar({ medio: 'deposito' });
+      expect(respuesta.statusCode, respuesta.body).toBe(400);
+    });
+
+    it('guarda el comprobante y el historial lo devuelve', async () => {
       const respaldo = await respaldoDePago(prueba.app, headers);
-      const respuesta = await pagar({ medio: 'deposito', ...respaldo });
+      const respuesta = await pagar({ medio: 'qr', ...respaldo });
       expect(respuesta.statusCode, respuesta.body).toBe(201);
       const historial = (
         await prueba.app.inject({
@@ -123,7 +128,7 @@ describe('plataforma: comprobantes de pago (ADR 0024)', () => {
           headers,
         })
       ).json<{
-        pagos: { banco: string; cuenta_destino: string; comprobante_id: string }[];
+        pagos: { comprobante_id: string }[];
       }>().pagos;
       expect(historial[0]).toMatchObject(respaldo);
     });
@@ -131,8 +136,6 @@ describe('plataforma: comprobantes de pago (ADR 0024)', () => {
     it('un comprobante que no existe se rechaza', async () => {
       const respuesta = await pagar({
         medio: 'transferencia',
-        banco: 'Banco Unión',
-        cuenta_destino: '1',
         comprobante_id: '999999',
       });
       expect(respuesta.statusCode).toBe(422);

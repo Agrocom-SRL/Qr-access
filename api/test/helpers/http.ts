@@ -48,11 +48,11 @@ export async function iniciarSesionDePlataforma(
 /** Los primeros bytes de un PNG: alcanza para que el servidor lo reconozca por su contenido. */
 export const PNG_DE_PRUEBA = Buffer.from('89504e470d0a1a0a0000000d4948445200000001', 'hex');
 
-/** Sube un comprobante y devuelve lo que un pago por transferencia o depósito necesita (ADR 0024). */
+/** Sube un comprobante y devuelve lo que un pago por transferencia o QR necesita (ADR 0024). */
 export async function respaldoDePago(
   app: FastifyInstance,
   headers: { authorization: string },
-): Promise<{ banco: string; cuenta_destino: string; comprobante_id: string }> {
+): Promise<{ comprobante_id: string }> {
   const respuesta = await app.inject({
     method: 'POST',
     url: '/api/v1/plataforma/comprobantes',
@@ -60,9 +60,5 @@ export async function respaldoDePago(
     payload: PNG_DE_PRUEBA,
   });
   expect(respuesta.statusCode, respuesta.body).toBe(201);
-  return {
-    banco: 'Banco Unión',
-    cuenta_destino: '10000123456',
-    comprobante_id: respuesta.json<{ id: string }>().id,
-  };
+  return { comprobante_id: respuesta.json<{ id: string }>().id };
 }

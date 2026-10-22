@@ -28,7 +28,7 @@ export interface SuscripcionDeCuentaVista {
     plan: string;
     monto: number;
     fecha_pago: string;
-    medio: 'transferencia' | 'deposito' | 'efectivo';
+    medio: 'transferencia' | 'qr' | 'efectivo';
     referencia: string;
     banco: string | null;
     cuenta_destino: string | null;
