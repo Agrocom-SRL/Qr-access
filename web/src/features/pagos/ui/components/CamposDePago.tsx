@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
@@ -22,10 +23,20 @@ interface Props {
   onTocar: (campo: keyof FormularioDePago) => void;
   /** Texto bajo el monto (p. ej. "Precio vigente del plan"). */
   ayudaDelMonto?: string;
+  /** Contenido bajo el selector de medio (p. ej. las cuentas de AGROCOM donde pagar). */
+  bajoElMedio?: ReactNode;
 }
 
 /** Monto, fecha, medio, referencia (opcional) y comprobante de un pago manual: los mismos en el alta de una cuenta y en el registro de un pago. */
-export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayudaDelMonto }: Props) {
+export function CamposDePago({
+  datos,
+  errores,
+  tocados,
+  onCambio,
+  onTocar,
+  ayudaDelMonto,
+  bajoElMedio,
+}: Props) {
   const { t } = useTranslation('pago');
   const mensaje = (campo: keyof FormularioDePago): string | undefined => {
     const error = errores[campo];
@@ -73,6 +84,8 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
           opciones={MEDIOS.map((m) => ({ valor: m, etiqueta: t(`medios.${m}`) }))}
         />
       </div>
+
+      {bajoElMedio}
 
       <AccesoCampoTexto
         etiqueta={t('referencia')}

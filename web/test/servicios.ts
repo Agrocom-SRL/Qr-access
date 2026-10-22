@@ -11,9 +11,35 @@ import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
 import type { EstadisticasDeUsuarios, RamaDeAdministrador } from '@/features/cuentas/domain/cuenta';
 import type { PlacasRepositorio, Placa } from '@/features/placas';
+import type { CobroRepositorio, CuentaDeCobro } from '@/features/cobro';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
+
+export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
+  {
+    id: '1',
+    metodo: 'transferencia',
+    banco: 'Banco Unión',
+    titular: 'AGROCOM S.R.L.',
+    numeroCuenta: '10000123456',
+    tipoCuenta: 'corriente',
+    imagenId: null,
+    nota: null,
+    activo: true,
+  },
+  {
+    id: '2',
+    metodo: 'qr',
+    banco: 'Banco Mercantil Santa Cruz',
+    titular: null,
+    numeroCuenta: null,
+    tipoCuenta: null,
+    imagenId: '50',
+    nota: 'Vale para cualquier banco',
+    activo: true,
+  },
+];
 
 export const SUPER_ADMIN = {
   usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
@@ -41,6 +67,10 @@ export const SUPER_ADMIN = {
     'suscripciones.suscripcion.editar',
     'suscripciones.pago.registrar',
     'suscripciones.cobranza.ver',
+    'suscripciones.cobro.ver',
+    'suscripciones.cobro.crear',
+    'suscripciones.cobro.editar',
+    'suscripciones.cobro.eliminar',
     'bitacora.registro.ver',
     'resumen.panel.ver',
     'dispositivos.placa.ver',
@@ -482,6 +512,7 @@ export function crearServiciosDePrueba(
     seguridad?: Partial<SeguridadRepositorio>;
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
+    cobro?: Partial<CobroRepositorio>;
     placas?: Partial<PlacasRepositorio>;
     eventos?: Partial<EventosRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
@@ -535,6 +566,15 @@ export function crearServiciosDePrueba(
     reactivar: () => Promise.resolve(),
     renombrar: () => Promise.resolve(),
     ...parcial.equipo,
+  };
+  const cobro: CobroRepositorio = {
+    listar: () => Promise.resolve(CUENTAS_DE_COBRO),
+    crear: () => Promise.resolve(),
+    editar: () => Promise.resolve(),
+    cambiarActivo: () => Promise.resolve(),
+    eliminar: () => Promise.resolve(),
+    verImagen: () => Promise.resolve(new Blob(['x'], { type: 'image/png' })),
+    ...parcial.cobro,
   };
   const planes: PlanesRepositorio = {
     listar: () => Promise.resolve(PLANES),
@@ -658,6 +698,7 @@ export function crearServiciosDePrueba(
     seguridad,
     equipo,
     planes,
+    cobro,
     placas,
     cuentas,
     suscripciones,

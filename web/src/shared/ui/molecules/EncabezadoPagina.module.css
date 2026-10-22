@@ -16,6 +16,13 @@
   color: var(--textoSecundario);
 }
 
+@media (width < 640px) {
+  .encabezado {
+    flex-direction: column;
+    gap: var(--esp16);
+  }
+}
+
 .volver {
   margin: calc(-1 * var(--esp8)) 0 var(--esp4);
 }

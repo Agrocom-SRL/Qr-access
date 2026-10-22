@@ -430,3 +430,100 @@ export class RepositorioDeComprobantes extends RepositorioDePlataforma {
     });
   }
 }
+
+export interface CuentaDeCobroFila extends RowDataPacket {
+  id: string;
+  metodo: 'transferencia' | 'qr';
+  banco: string;
+  titular: string | null;
+  numero_cuenta: string | null;
+  tipo_cuenta: 'ahorro' | 'corriente' | null;
+  imagen_id: string | null;
+  nota: string | null;
+  activo: number;
+}
+
+export interface NuevaCuentaDeCobro {
+  readonly metodo: 'transferencia' | 'qr';
+  readonly banco: string;
+  readonly titular: string | null;
+  readonly numeroCuenta: string | null;
+  readonly tipoCuenta: 'ahorro' | 'corriente' | null;
+  readonly imagenId: string | null;
+  readonly nota: string | null;
+}
+
+const COLUMNAS_DE_COBRO =
+  't.id, t.metodo, t.banco, t.titular, t.numero_cuenta, t.tipo_cuenta, t.imagen_id, t.nota, t.activo';
+
+/** Dueño de `cuentas_de_cobro` (ADR 0029): donde AGROCOM recibe los pagos. De plataforma, sin cuenta. */
+export class RepositorioDeCuentasDeCobro extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'cuentas_de_cobro',
+      columnas: [
+        'metodo',
+        'banco',
+        'titular',
+        'numero_cuenta',
+        'tipo_cuenta',
+        'imagen_id',
+        'nota',
+        'activo',
+      ],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  /** Todas las vigentes (no borradas): primero las activas, y por método y banco. */
+  listar(): Promise<CuentaDeCobroFila[]> {
+    return this.seleccionar<CuentaDeCobroFila>({
+      columnas: COLUMNAS_DE_COBRO,
+      orden: 't.activo DESC, t.metodo, t.banco, t.id',
+    });
+  }
+
+  buscarPorId(id: string): Promise<CuentaDeCobroFila | null> {
+    return this.seleccionarUna<CuentaDeCobroFila>({
+      columnas: COLUMNAS_DE_COBRO,
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  /** Otra cuenta vigente del mismo banco y número: la combinación es única. */
+  buscarPorNumero(banco: string, numeroCuenta: string): Promise<CuentaDeCobroFila | null> {
+    return this.seleccionarUna<CuentaDeCobroFila>({
+      columnas: COLUMNAS_DE_COBRO,
+      donde: 't.banco = ? AND t.numero_cuenta = ?',
+      params: [banco, numeroCuenta],
+    });
+  }
+
+  crear(tx: Transaccion, cuenta: NuevaCuentaDeCobro): Promise<string> {
+    return this.insertar(tx, {
+      metodo: cuenta.metodo,
+      banco: cuenta.banco,
+      titular: cuenta.titular,
+      numero_cuenta: cuenta.numeroCuenta,
+      tipo_cuenta: cuenta.tipoCuenta,
+      imagen_id: cuenta.imagenId,
+      nota: cuenta.nota,
+      activo: 1,
+    });
+  }
+
+  editar(
+    tx: Transaccion,
+    id: string,
+    cambios: Readonly<Record<string, unknown>>,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, cambios);
+  }
+
+  /** Soft delete (invariante 8): los pagos ya registrados no dependen de estas filas. */
+  eliminar(tx: Transaccion, id: string): Promise<boolean> {
+    return this.borrar(tx, id);
+  }
+}

@@ -5,6 +5,7 @@ import es_auth from './es/auth.json';
 import es_bitacora from './es/bitacora.json';
 import es_cambiarPlan from './es/cambiarPlan.json';
 import es_cobranza from './es/cobranza.json';
+import es_cobro from './es/cobro.json';
 import es_comun from './es/comun.json';
 import es_crearCuenta from './es/crearCuenta.json';
 import es_cuentas from './es/cuentas.json';
@@ -27,6 +28,7 @@ import en_auth from './en/auth.json';
 import en_bitacora from './en/bitacora.json';
 import en_cambiarPlan from './en/cambiarPlan.json';
 import en_cobranza from './en/cobranza.json';
+import en_cobro from './en/cobro.json';
 import en_comun from './en/comun.json';
 import en_crearCuenta from './en/crearCuenta.json';
 import en_cuentas from './en/cuentas.json';
@@ -49,6 +51,7 @@ import pt_auth from './pt/auth.json';
 import pt_bitacora from './pt/bitacora.json';
 import pt_cambiarPlan from './pt/cambiarPlan.json';
 import pt_cobranza from './pt/cobranza.json';
+import pt_cobro from './pt/cobro.json';
 import pt_comun from './pt/comun.json';
 import pt_crearCuenta from './pt/crearCuenta.json';
 import pt_cuentas from './pt/cuentas.json';
@@ -84,6 +87,7 @@ export const recursos = {
     bitacora: es_bitacora,
     cambiarPlan: es_cambiarPlan,
     cobranza: es_cobranza,
+    cobro: es_cobro,
     comun: es_comun,
     crearCuenta: es_crearCuenta,
     cuentas: es_cuentas,
@@ -108,6 +112,7 @@ export const recursos = {
     bitacora: en_bitacora,
     cambiarPlan: en_cambiarPlan,
     cobranza: en_cobranza,
+    cobro: en_cobro,
     comun: en_comun,
     crearCuenta: en_crearCuenta,
     cuentas: en_cuentas,
@@ -132,6 +137,7 @@ export const recursos = {
     bitacora: pt_bitacora,
     cambiarPlan: pt_cambiarPlan,
     cobranza: pt_cobranza,
+    cobro: pt_cobro,
     comun: pt_comun,
     crearCuenta: pt_crearCuenta,
     cuentas: pt_cuentas,

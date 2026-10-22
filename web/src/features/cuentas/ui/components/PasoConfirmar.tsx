@@ -7,6 +7,7 @@ import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
 import { formatearNumero } from '../../../../l10n/formatos';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
+import { CuentasParaPagar } from '../../../cobro';
 import { CamposDePago, type FormularioDePago } from '../../../pagos';
 import {
   validarPagoDeAlta,
@@ -119,6 +120,9 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
                   datos={datosDePago}
                   errores={validarPagoDeAlta(pago)}
                   tocados={tocados}
+                  bajoElMedio={
+                    pago.medio === 'efectivo' ? undefined : <CuentasParaPagar metodo={pago.medio} />
+                  }
                   onCambio={(parcial) => {
                     onPago({ ...pago, ...parcial });
                   }}

@@ -112,3 +112,51 @@ export const parametrosDePlan = z.object({ id: esquemaId });
 
 export const respuestaDePlanCreado = z.object({ id: z.string() });
 export const respuestaDePlanRetirado = z.object({ resultado: z.enum(['retirado', 'eliminado']) });
+
+/** Las cuentas donde AGROCOM recibe pagos (ADR 0029). */
+const esquemaBanco = z.string().trim().min(1).max(60);
+const esquemaTipoDeCuenta = z.enum(['ahorro', 'corriente']);
+const textoOpcional = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((texto) => (texto === '' ? null : texto));
+
+export const esquemaCuentaDeCobro = z.object({
+  id: z.string(),
+  metodo: z.enum(['transferencia', 'qr']),
+  banco: z.string(),
+  titular: z.string().nullable(),
+  numero_cuenta: z.string().nullable(),
+  tipo_cuenta: esquemaTipoDeCuenta.nullable(),
+  imagen_id: z.string().nullable(),
+  nota: z.string().nullable(),
+  activo: z.boolean(),
+});
+
+export const respuestaDeCuentasDeCobro = z.object({ datos: z.array(esquemaCuentaDeCobro) });
+
+export const cuerpoDeCuentaDeCobroNueva = z.object({
+  metodo: z.enum(['transferencia', 'qr']),
+  banco: esquemaBanco,
+  titular: textoOpcional(120).optional(),
+  numero_cuenta: textoOpcional(40).optional(),
+  tipo_cuenta: esquemaTipoDeCuenta.optional(),
+  imagen_id: esquemaId.optional(),
+  nota: textoOpcional(200).optional(),
+});
+
+export const cuerpoDeEdicionDeCuentaDeCobro = z
+  .object({
+    banco: esquemaBanco.optional(),
+    titular: textoOpcional(120).optional(),
+    numero_cuenta: textoOpcional(40).optional(),
+    tipo_cuenta: esquemaTipoDeCuenta.nullable().optional(),
+    imagen_id: esquemaId.nullable().optional(),
+    nota: textoOpcional(200).optional(),
+    activo: z.boolean().optional(),
+  })
+  .refine((cuerpo) => Object.keys(cuerpo).length > 0);
+
+export const parametrosDeCuentaDeCobro = z.object({ id: esquemaId });

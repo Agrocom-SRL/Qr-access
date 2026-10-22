@@ -1,0 +1,15 @@
+.imagen {
+  display: block;
+  width: 100%;
+  max-width: var(--anchoTarjetaPlan);
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+}
+
+.error {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}

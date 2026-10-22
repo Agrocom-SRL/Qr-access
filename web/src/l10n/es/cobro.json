@@ -1,0 +1,56 @@
+{
+  "titulo": "Cuentas de cobro",
+  "subtitulo": "Dónde recibe AGROCOM los pagos: se muestran al registrar el pago de una cuenta",
+  "nueva": "Agregar cuenta",
+  "errorCarga": "No pudimos cargar las cuentas de cobro",
+  "vacio": {
+    "titulo": "Aún no hay cuentas de cobro",
+    "texto": "Agrega una cuenta bancaria o un QR para mostrarlos al activar una cuenta."
+  },
+  "metodo": "Método de cobro",
+  "metodos": {
+    "transferencia": "Cuenta bancaria",
+    "qr": "QR"
+  },
+  "inactiva": "Inactiva",
+  "activa": "Activa",
+  "banco": "Banco",
+  "titular": "Titular",
+  "titularAyuda": "Nombre de AGROCOM tal como figura en la cuenta",
+  "numeroCuenta": "Número de cuenta",
+  "tipoCuenta": "Tipo de cuenta",
+  "tipoSinEspecificar": "Sin especificar",
+  "tipos": {
+    "ahorro": "Caja de ahorro",
+    "corriente": "Cuenta corriente"
+  },
+  "nota": "Nota",
+  "notaAyuda": "Opcional. Por ejemplo, \"Vale para cualquier banco\".",
+  "imagen": "Imagen del QR",
+  "imagenSubir": "Sube la imagen del QR",
+  "imagenAyuda": "JPG, PNG o WEBP · hasta {{max}} MB",
+  "imagenCambiar": "Cambiar",
+  "imagenActual": "QR actual",
+  "imagenVista": "Vista previa del QR",
+  "imagenQr": "QR de cobro de {{banco}}",
+  "imagenError": "No pudimos cargar el QR",
+  "dialogoNueva": "Nueva cuenta de cobro",
+  "dialogoEditar": "Editar cuenta de cobro",
+  "guardar": "Guardar",
+  "guardando": "Guardando",
+  "editarCuenta": "Editar la cuenta de {{banco}}",
+  "eliminarCuenta": "Eliminar la cuenta de {{banco}}",
+  "eliminarTitulo": "¿Eliminar la cuenta de {{banco}}?",
+  "eliminarTexto": "Deja de mostrarse al cobrar. Los pagos ya registrados no cambian.",
+  "eliminar": "Eliminar",
+  "eliminando": "Eliminando",
+  "requerido": "Este campo es obligatorio",
+  "archivoInvalido": "Sube una imagen JPG, PNG o WEBP",
+  "archivoGrande": "El archivo pesa más de 5 MB",
+  "paraPagar": "Dónde paga la cuenta",
+  "paraPagarVacio": {
+    "transferencia": "No hay cuentas bancarias activas: agrégalas en Cuentas de cobro.",
+    "qr": "No hay un QR de cobro activo: agrégalo en Cuentas de cobro."
+  },
+  "gestionar": "Cuentas de cobro"
+}
