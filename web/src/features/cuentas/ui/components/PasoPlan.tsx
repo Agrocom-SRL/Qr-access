@@ -56,6 +56,7 @@ export function PasoPlan({ planId, onElegir }: Props) {
                 }}
               />
               <TarjetaPlan
+                nombre={plan.nombre}
                 etiquetaCupo={t('hasta')}
                 cupo={t('usuarios', { count: plan.cupoUsuarios ?? 0 })}
                 seleccionada={elegido}

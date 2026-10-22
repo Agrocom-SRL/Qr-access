@@ -130,20 +130,6 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
             </div>
           ),
         },
-        {
-          id: 'resumen-admin',
-          titulo: t('secciones.administrador'),
-          accion: editar(2),
-          contenido: (
-            <dl>
-              <FilaClaveValor clave={t('nombreAdministrador')}>
-                {vigencia.adminIgualAlResponsable
-                  ? nombreCompletoDelResponsable(empresa)
-                  : vigencia.administradorNombre}
-              </FilaClaveValor>
-            </dl>
-          ),
-        },
       ]}
     />
   );

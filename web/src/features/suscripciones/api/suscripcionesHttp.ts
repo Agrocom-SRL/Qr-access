@@ -35,8 +35,6 @@ interface SuscripcionDto {
     fecha_pago: string;
     medio: MedioDePago;
     referencia: string;
-    banco: string | null;
-    cuenta_destino: string | null;
     comprobante_id: string | null;
     periodo_desde: string;
     periodo_hasta: string;
@@ -69,8 +67,6 @@ export function suscripcionDesdeDto(dto: SuscripcionDto): SuscripcionDeCuenta {
       fechaPago: pago.fecha_pago,
       medio: pago.medio,
       referencia: pago.referencia,
-      banco: pago.banco,
-      cuentaDestino: pago.cuenta_destino,
       comprobanteId: pago.comprobante_id,
       periodoDesde: new Date(pago.periodo_desde),
       periodoHasta: new Date(pago.periodo_hasta),

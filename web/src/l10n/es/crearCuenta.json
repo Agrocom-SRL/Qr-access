@@ -75,7 +75,6 @@
   "responsableApellido": "Apellido",
   "correo": "Correo electrónico · opcional",
   "correoAyuda": "Aquí se avisarán los vencimientos y los cobros.",
-  "adminEsResponsable": "Es la misma persona responsable ({{nombre}})",
   "nombreAdministrador": "Nombre del administrador",
   "pagoTitulo": "Pago del primer año",
   "pagoAyuda": "La cuenta empieza a operar cuando se registra su primer pago.",

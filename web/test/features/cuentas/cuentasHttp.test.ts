@@ -188,7 +188,7 @@ describe('cuentas por HTTP (contrato de la API)', () => {
         contactoApellido: 'Añez',
       },
       planId: 'plan-1',
-      vigencia: { inicio: '2026-10-12', administradorNombre: '', adminIgualAlResponsable: true },
+      vigencia: { inicio: '2026-10-12', administradorNombre: 'Rodrigo Añez' },
     });
     expect(enviadas[0]).toMatchObject({
       metodo: 'POST',

@@ -31,12 +31,11 @@
     "medio": "Method",
     "referencia": "Reference",
     "registro": "Recorded by",
-    "banco": "Bank and account",
     "comprobante": "Receipt"
   },
   "medios": {
     "transferencia": "Bank transfer",
-    "deposito": "Deposit",
+    "qr": "QR",
     "efectivo": "Cash"
   },
   "mejora": "Plan upgrade",

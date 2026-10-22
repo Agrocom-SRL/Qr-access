@@ -5,9 +5,9 @@ import type { EstadoDeSuscripcion } from '../../../shared/api/estados';
 export type EstadoSuscripcion = EstadoDeSuscripcion;
 export type EstadoPago = 'pendiente' | 'sinPagar' | 'porActivar';
 export type TipoDePago = 'alta' | 'renovacion' | 'mejoraDePlan';
-export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
+export type MedioDePago = 'transferencia' | 'qr' | 'efectivo';
 
-export const MEDIOS_DE_PAGO: readonly MedioDePago[] = ['transferencia', 'deposito', 'efectivo'];
+export const MEDIOS_DE_PAGO: readonly MedioDePago[] = ['efectivo', 'transferencia', 'qr'];
 
 export interface PlanContratado {
   id: string;
@@ -25,9 +25,6 @@ export interface PagoDeCuenta {
   fechaPago: string;
   medio: MedioDePago;
   referencia: string;
-  /** Banco y cuenta de AGROCOM donde llegó el dinero; `null` en un pago en efectivo. */
-  banco: string | null;
-  cuentaDestino: string | null;
   /** El archivo del comprobante, que se baja con `verComprobante`. */
   comprobanteId: string | null;
   periodoDesde: Date;

@@ -18,9 +18,8 @@ export interface DatosDeEmpresa {
 export interface DatosDeVigencia {
   /** `aaaa-mm-dd`. */
   inicio: string;
+  /** Parte con el nombre de la persona responsable (se completa al avanzar) y se puede editar. */
   administradorNombre: string;
-  /** El administrador es la misma persona responsable: se usa su nombre. */
-  adminIgualAlResponsable: boolean;
 }
 
 /**
@@ -89,7 +88,7 @@ export function validarVigencia(
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.inicio) || Number.isNaN(Date.parse(datos.inicio))) {
     errores.inicio = 'formato';
   }
-  if (!datos.adminIgualAlResponsable && datos.administradorNombre.trim() === '') {
+  if (datos.administradorNombre.trim() === '') {
     errores.administradorNombre = 'requerido';
   }
   return errores;
@@ -148,15 +147,13 @@ export const BORRADOR_VACIO = (hoy: string): BorradorDeCuenta => ({
     contactoCorreo: '',
   },
   planId: null,
-  vigencia: { inicio: hoy, administradorNombre: '', adminIgualAlResponsable: false },
+  vigencia: { inicio: hoy, administradorNombre: '' },
   pago: {
     modo: 'despues',
     monto: '',
     fechaPago: hoy,
-    medio: 'transferencia',
+    medio: 'efectivo',
     referencia: '',
-    banco: '',
-    cuentaDestino: '',
     comprobante: null,
   },
 });

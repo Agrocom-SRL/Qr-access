@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatearFecha } from '../../../../l10n/formatos';
-import { AccesoInterruptor } from '../../../../shared/ui/atoms/AccesoInterruptor';
 import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
@@ -15,17 +14,16 @@ import styles from './PasoEmpresa.module.css';
 
 interface Props {
   datos: DatosDeVigencia;
-  /** El nombre de la persona responsable (paso anterior), para "es la misma persona". */
-  nombreDelResponsable: string;
   onCambio: (datos: DatosDeVigencia) => void;
 }
 
 /**
- * A04c: inicio de la suscripción (vence 12 meses después, calculado) y el administrador inicial.
+ * A04c: inicio de la suscripción (vence 12 meses después, calculado) y el administrador inicial (su nombre
+ * parte con el de la persona responsable y se puede editar).
  * TODO(docs): el diseño pide correo y teléfono opcionales del administrador; `usuarios` no tiene
  * dónde guardarlos, así que no se piden hasta que el modelo de datos los defina.
  */
-export function PasoVigencia({ datos, nombreDelResponsable, onCambio }: Props) {
+export function PasoVigencia({ datos, onCambio }: Props) {
   const [tocados, setTocados] = useState<ReadonlySet<keyof DatosDeVigencia>>(new Set());
   const tocar = (campo: keyof DatosDeVigencia) => {
     setTocados((actual) => new Set(actual).add(campo));
@@ -74,25 +72,9 @@ export function PasoVigencia({ datos, nombreDelResponsable, onCambio }: Props) {
           descripcion: t('adminInicialAyuda'),
           contenido: (
             <div className={styles.campos}>
-              <AccesoInterruptor
-                etiqueta={t('adminEsResponsable', { nombre: nombreDelResponsable })}
-                checked={datos.adminIgualAlResponsable}
-                onChange={(e) => {
-                  onCambio({
-                    ...datos,
-                    adminIgualAlResponsable: e.target.checked,
-                    administradorNombre: e.target.checked
-                      ? nombreDelResponsable
-                      : datos.administradorNombre,
-                  });
-                }}
-              />
               <AccesoCampoTexto
                 etiqueta={t('nombreAdministrador')}
-                value={
-                  datos.adminIgualAlResponsable ? nombreDelResponsable : datos.administradorNombre
-                }
-                disabled={datos.adminIgualAlResponsable}
+                value={datos.administradorNombre}
                 error={mensaje('administradorNombre')}
                 onBlur={() => {
                   tocar('administradorNombre');

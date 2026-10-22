@@ -80,13 +80,7 @@ export function crearPagosHttp(cliente: ClienteHttp): PagosRepositorio {
           fecha_pago: pago.fechaPago,
           medio: pago.medio,
           referencia: pago.referencia.trim(),
-          ...(comprobanteId === undefined
-            ? {}
-            : {
-                banco: pago.banco,
-                cuenta_destino: pago.cuentaDestino.trim(),
-                comprobante_id: comprobanteId,
-              }),
+          ...(comprobanteId === undefined ? {} : { comprobante_id: comprobanteId }),
         },
       });
       return {
