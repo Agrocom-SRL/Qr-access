@@ -62,12 +62,10 @@ INSERT INTO roles (tenant_id, nombre, protegido, activo) VALUES
   (NULL, 'Super admin', 1, 1)
 ON DUPLICATE KEY UPDATE protegido = VALUES(protegido), activo = 1;
 
--- Los tres planes anuales por cupo de usuarios (ADR 0022). Los precios son de ejemplo: se editan desde el panel
--- y este seed NO los pisa si ya existen (solo crea los planes que faltan).
+-- Un único plan anual de 100 usuarios a 1000 Bs (ADR 0022). Los demás planes y los precios se crean y se editan
+-- desde el panel; este seed NO pisa el precio si el plan ya existe (solo crea el que falta).
 INSERT INTO planes (nombre, max_dispositivos, max_usuarios, max_vigencia_qr_horas, precio_anual, activo) VALUES
-  ('100 usuarios', NULL, 100, NULL, 12000, 1),
-  ('200 usuarios', NULL, 200, NULL, 21600, 1),
-  ('350 usuarios', NULL, 350, NULL, 33600, 1)
+  ('100 usuarios', NULL, 100, NULL, 1000, 1)
 ON DUPLICATE KEY UPDATE max_usuarios = VALUES(max_usuarios), activo = 1;
 
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).
