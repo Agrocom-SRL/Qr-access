@@ -14,14 +14,25 @@ interface Props {
   aviso: string;
 }
 
-/** El PIN inicial en casillas 3 + 4 en mono 32/600, con "Copiar PIN" y el aviso de que no se repite (A04e). */
+/** El PIN inicial en casillas 3 + 4 en mono 32/600, con "Compartir PIN" y el aviso de que no se repite (A04e). */
 export function PinUnaVez({ titulo, pin, aviso }: Props) {
   const { t } = useTranslation('crearCuenta');
-  const [copiado, setCopiado] = useState(false);
+  const [resultado, setResultado] = useState<'compartido' | 'copiado' | null>(null);
   const caracteres = Array.from(pin);
-  const copiar = async () => {
+  // Hoja de compartir del sistema si el navegador la tiene (igual que la app);
+  // si no, se copia al portapapeles. Cancelar la hoja no marca nada.
+  const compartir = async () => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ text: pin });
+        setResultado('compartido');
+      } catch {
+        // El usuario cerró la hoja sin compartir.
+      }
+      return;
+    }
     await navigator.clipboard.writeText(pin);
-    setCopiado(true);
+    setResultado('copiado');
   };
   return (
     <div className={styles.contenedor}>
@@ -34,8 +45,8 @@ export function PinUnaVez({ titulo, pin, aviso }: Props) {
             </span>
           ))}
         </div>
-        <AccesoBoton variante="tonal" icono="content_copy" onClick={() => void copiar()}>
-          {copiado ? t('copiado') : t('copiarPin')}
+        <AccesoBoton variante="tonal" icono="share" onClick={() => void compartir()}>
+          {resultado ? t(resultado) : t('compartirPin')}
         </AccesoBoton>
       </div>
       <Aviso tono="advertencia" icono="visibility_lock">

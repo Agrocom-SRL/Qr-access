@@ -58,6 +58,31 @@ class _UsuarioFormularioPaginaEstado
 
   bool get _esNuevo => widget.usuarioId == null;
 
+  /// El Titular no elige rol (ADR 0028 §3): todo lo que crea es Miembro, así
+  /// que se deja puesto apenas llegan los roles y no se muestra selector.
+  void _fijarMiembroSiEsTitular() {
+    if (!(_esNuevo && _actorEsTitular)) return;
+    final miembro = ref
+        .watch(rolesProvider)
+        .value
+        ?.where((r) => nivelDeRol(r.nombre) == NivelUsuario.miembro)
+        .firstOrNull;
+    if (miembro == null) return;
+    if (ref.read(formularioUsuarioProvider).rol?.id == miembro.id) return;
+    // Fuera del build: no se puede cambiar un provider mientras se arma.
+    unawaited(
+      Future.microtask(
+        () => ref.read(formularioUsuarioProvider.notifier).elegirRol(miembro),
+      ),
+    );
+  }
+
+  bool get _actorEsTitular {
+    final sesion = ref.read(sesionControladorProvider);
+    return sesion is SesionAutenticada &&
+        nivelDeRol(sesion.rolActivo.nombre) == NivelUsuario.titular;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +163,7 @@ class _UsuarioFormularioPaginaEstado
 
   @override
   Widget build(BuildContext context) {
+    _fijarMiembroSiEsTitular();
     final l10n = context.l10n;
     final tokens = context.tokens;
     final estado = ref.watch(formularioUsuarioProvider);
@@ -212,22 +238,25 @@ class _UsuarioFormularioPaginaEstado
               ),
             ],
           ),
-          SeccionDeFormulario(
-            titulo: l10n.usuariosSeccionRoles,
-            campos: [
-              if (_esNuevo)
-                SelectorDeRol(conError: errorDatos == ErrorDatosUsuario.sinRol)
-              else
-                Wrap(
-                  spacing: tokens.espacio.s,
-                  runSpacing: tokens.espacio.xs,
-                  children: [
-                    for (final rol in _usuario?.roles ?? const <Rol>[])
-                      ChipEtiqueta(texto: rol.nombre),
-                  ],
-                ),
-            ],
-          ),
+          if (!(_esNuevo && _actorEsTitular))
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionRoles,
+              campos: [
+                if (_esNuevo)
+                  SelectorDeRol(
+                    conError: errorDatos == ErrorDatosUsuario.sinRol,
+                  )
+                else
+                  Wrap(
+                    spacing: tokens.espacio.s,
+                    runSpacing: tokens.espacio.xs,
+                    children: [
+                      for (final rol in _usuario?.roles ?? const <Rol>[])
+                        ChipEtiqueta(texto: rol.nombre),
+                    ],
+                  ),
+              ],
+            ),
           if (_esNuevo && estado.nivel == NivelUsuario.titular)
             SeccionDeFormulario(
               titulo: l10n.usuariosSeccionUnidad,

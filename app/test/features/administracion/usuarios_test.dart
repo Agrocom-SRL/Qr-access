@@ -282,17 +282,23 @@ void main() {
       expect(find.text('Administrador'), findsNothing);
     });
 
-    testWidgets('un Titular solo puede dar Miembro', (tester) async {
-      await _montar(
-        tester,
-        pagina: const UsuarioFormularioPagina(),
-        rol: const RolSesion(id: 'r2', nombre: 'Titular'),
-      );
+    testWidgets(
+      'un Titular no ve selector de rol: todo lo que crea es Miembro',
+      (tester) async {
+        await _montar(
+          tester,
+          pagina: const UsuarioFormularioPagina(),
+          rol: const RolSesion(id: 'r2', nombre: 'Titular'),
+        );
+        final textos = textosEn(tester);
 
-      expect(find.text('Miembro'), findsOneWidget);
-      expect(find.text('Titular'), findsNothing);
-      expect(find.text('Guardia'), findsNothing);
-    });
+        expect(find.text(textos.usuariosSeccionRoles), findsNothing);
+        expect(find.byType(RadioListTile<String>), findsNothing);
+        expect(find.text('Miembro'), findsNothing);
+        expect(find.text('Titular'), findsNothing);
+        expect(find.text('Guardia'), findsNothing);
+      },
+    );
 
     testWidgets('un Miembro o un Guardia no crean a nadie', (tester) async {
       await _montar(

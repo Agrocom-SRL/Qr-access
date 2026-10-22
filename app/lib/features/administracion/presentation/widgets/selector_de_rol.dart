@@ -12,7 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Los roles que quien está creando puede dar, para elegir uno (ADR 0028 §3):
-/// el Administrador crea Titulares y Guardias; el Titular, Miembros. Es
+/// el Administrador crea Titulares y Guardias; el Titular crea solo Miembros y
+/// no ve selector. Es
 /// presentación: la API vuelve a comprobarlo y responde 403 si no corresponde.
 class SelectorDeRol extends ConsumerWidget {
   const new({required this.conError, super.key});

@@ -23,6 +23,7 @@ import chevron_left from '@material-symbols/svg-400/outlined/chevron_left.svg?ra
 import chevron_right from '@material-symbols/svg-400/outlined/chevron_right.svg?raw';
 import check from '@material-symbols/svg-400/outlined/check.svg?raw';
 import content_copy from '@material-symbols/svg-400/outlined/content_copy.svg?raw';
+import share from '@material-symbols/svg-400/outlined/share.svg?raw';
 import close from '@material-symbols/svg-400/outlined/close.svg?raw';
 import arrow_back from '@material-symbols/svg-400/outlined/arrow_back.svg?raw';
 import arrow_forward from '@material-symbols/svg-400/outlined/arrow_forward.svg?raw';
@@ -92,6 +93,7 @@ const registro = {
   chevron_right,
   check,
   content_copy,
+  share,
   close,
   arrow_back,
   arrow_forward,

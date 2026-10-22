@@ -25,9 +25,9 @@
   "creada": "Account created",
   "creadaTexto": "{{cuenta}} can now sign in to the app.",
   "pinDe": "PIN for {{nombre}} · Administrator",
-  "copiarPin": "Copy PIN",
-  "pinUnaVez": "This PIN won't be shown again. Copy it and hand it to the administrator. If it's lost, you'll have to reset it.",
-  "irCuenta": "I've copied it, go to the account",
+  "compartirPin": "Share PIN",
+  "pinUnaVez": "This PIN won't be shown again. Share it and hand it to the administrator. If it's lost, you'll have to reset it.",
+  "irCuenta": "I've shared it, go to the account",
   "migas": {
     "cuentas": "Accounts",
     "crear": "Create account"
@@ -68,6 +68,7 @@
   },
   "cuentaCreadaTitulo": "Account created",
   "copiado": "PIN copied",
+  "compartido": "PIN shared",
   "responsableTitulo": "Person responsible for the account",
   "responsableAyuda": "The person at the company AGROCOM deals with about the account, subscription and payments. They don't have to use the app: the administrator created in step 3 does.",
   "responsableNombre": "First name",

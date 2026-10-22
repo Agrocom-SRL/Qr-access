@@ -25,9 +25,9 @@
   "creada": "Conta criada",
   "creadaTexto": "{{cuenta}} já pode entrar no app.",
   "pinDe": "PIN de {{nombre}} · Administrador",
-  "copiarPin": "Copiar PIN",
-  "pinUnaVez": "Este PIN não será mostrado novamente. Copie-o e entregue ao administrador. Se for perdido, será preciso redefini-lo.",
-  "irCuenta": "Já copiei, ir para a conta",
+  "compartirPin": "Compartilhar PIN",
+  "pinUnaVez": "Este PIN não será mostrado novamente. Compartilhe-o e entregue ao administrador. Se for perdido, será preciso redefini-lo.",
+  "irCuenta": "Já compartilhei, ir para a conta",
   "migas": {
     "cuentas": "Contas",
     "crear": "Criar conta"
@@ -68,6 +68,7 @@
   },
   "cuentaCreadaTitulo": "Conta criada",
   "copiado": "PIN copiado",
+  "compartido": "PIN compartilhado",
   "responsableTitulo": "Pessoa responsável pela conta",
   "responsableAyuda": "É a pessoa da empresa com quem a AGROCOM trata a conta, a assinatura e os pagamentos. Ela não precisa usar o app: quem o usa é o administrador criado no passo 3.",
   "responsableNombre": "Nome",

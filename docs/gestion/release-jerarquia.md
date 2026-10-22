@@ -39,20 +39,16 @@ Es un **cambio incompatible para los clientes instalados** (app Android y cualqu
 
 Tampoco pude verificar desde esta sesión si el firmware cambió después de `v1.0.2`. El historial indica cambios grandes de firmware en #37-#45 (Ethernet, vinculación, lector RS485), así que hay que suponer que sí.
 
-### Propuesta: **2.0.0** (todo el monorepo)
+### Decidido (2026-10-22, Miguel): solo sube el último índice
 
-Justificación con semver: el cambio rompe el contrato con los clientes instalados (nombres de permisos y de campos, sesiones invalidadas, un solo rol por usuario). Semver dice que un cambio incompatible sube el número mayor. Como ADR 0014 pide una versión única, la API, la web, la app y el firmware pasan todos a `2.0.0`.
-
-Alternativa descartada: `1.1.0`. Se justificaría solo si la app instalada fuera únicamente de prueba y no hubiera clientes externos. Como ya hay una primera prueba con un administrador real, no es el caso. **[Confirmar]** la versión.
-
-El número de build de la app sube de `+7` a `+8` (o al número que ya use la distribución). **[Confirmar]**.
+No se pasa a 2.0.0. La versión sigue la línea 1.0.x: como ya existen los tags `v1.0.1` y `v1.0.2`, el release es **1.0.3**, y el build de la app sube de `+7` a `+8` (o al que ya use la distribución). Los archivos siguen en `1.0.0` y se ponen en `1.0.3` al preparar el release.
 
 ### Archivos a cambiar (en un PR a `develop`, antes del tag)
 
-- `api/package.json`: `"version": "2.0.0"`, y el campo `version` de `api/package-lock.json`.
-- `web/package.json`: `"version": "2.0.0"`, y el de `web/package-lock.json`.
-- `app/pubspec.yaml`: `version: 2.0.0+8`.
-- `firmware/include/version.h`: `#define FIRMWARE_VERSION "2.0.0"` (la rama `ACCESO_DESARROLLO` queda como `2.0.0-dev`).
+- `api/package.json`: `"version": "1.0.3"`, y el campo `version` de `api/package-lock.json`.
+- `web/package.json`: `"version": "1.0.3"`, y el de `web/package-lock.json`.
+- `app/pubspec.yaml`: `version: 1.0.3+8`.
+- `firmware/include/version.h`: `#define FIRMWARE_VERSION "1.0.3"` (la rama `ACCESO_DESARROLLO` queda como `1.0.3-dev`).
 - **No** cambiar `api/src/plugins/openapi.ts` ni los nombres de rama.
 
 ## 3. Pasos del release
@@ -95,8 +91,8 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
 6. En el repo local: `git checkout develop && git pull` y confirmar que el commit de versión está.
 7. Crear el tag sobre `develop` y subirlo (ADR 0014):
    ```
-   git tag -a v2.0.0 -m "v2.0.0"
-   git push origin v2.0.0
+   git tag -a v1.0.3 -m "v1.0.3"
+   git push origin v1.0.3
    ```
 8. `release.yml`: vuelve a correr la CI sobre el commit, integra en `master` con `--no-ff` y publica el GitHub Release con notas automáticas. Verificar el release y que `master` contiene el commit.
 9. `deploy.yml` corre `./bin/desplegar` en el runner `acceso-prod`. Seguir el log: construye las imágenes, aplica todas las migraciones sobre la base vacía, siembra `01_catalogo.sql`, crea `root` con `contrasena_temporal = 1` y espera a `/api/v1/salud`.
@@ -126,7 +122,7 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
 
 ## 5. Decisiones para Miguel
 
-1. **Versión:** 2.0.0 (recomendada) o 1.1.0 (no recomendada; sección 2).
+1. **Versión:** 1.0.3 (decidido). Falta saber qué trajeron v1.0.1 y v1.0.2.
 2. **Contradicción con ADR 0005 y la invariante 11 de `CLAUDE.md`:** ambos prohíben un cambio incompatible dentro de la misma versión de la API. Los cambios de permisos y campos de #71 y #72 lo son. Opciones: (a) documentar la excepción en un ADR, porque los clientes instalados son pocos y la app web va con la API; (b) publicar `/api/v2`. Elegir una antes de publicar.
 3. **Reinicio de producción:** autorizar el `DROP DATABASE` con respaldo previo. **Conflicto a tener en cuenta:** la invariante 4 dice que `eventos_acceso` no se borra. El reinicio borra también la bitácora y los eventos de la primera prueba. Si se acepta, la excepción debe quedar en el PR (invariante 8) y en el ADR 0028.
 4. **Dónde se guarda el respaldo** y por cuánto tiempo.
@@ -149,7 +145,7 @@ Criterios para volver atrás: `bin/desplegar` no llega a `/api/v1/salud`; el Adm
    a. Detener `api`, `app` y `panel`.
    b. Recrear la base y cargar el respaldo.
    c. En el checkout del CT, `git checkout v1.0.2` y `./bin/desplegar`. Verificar antes que `schema_migrations` del respaldo coincide con las migraciones de `v1.0.2`; si no, desplegar la versión que sí coincida.
-   d. **No** hacer push a `master` mientras `master` apunte a `v2.0.0`: el push dispara `deploy.yml` otra vez.
+   d. **No** hacer push a `master` mientras `master` apunte a `v1.0.3`: el push dispara `deploy.yml` otra vez.
 3. **Problema de `master`:** revertir a mano requiere saltar la protección (la deploy key solo está en `release.yml`). Está sin decidir. La alternativa del flujo es corregir hacia adelante con `fix/*` y un tag `v2.0.1` (ADR 0014).
 4. **Datos:** la vuelta atrás con respaldo devuelve los datos del respaldo. Lo que se creó después del reinicio (cuenta nueva, usuarios, eventos) se pierde.
 5. **Clientes:** si la app v2 ya está instalada, también necesitará la API v2. Avisar antes de revertir.

@@ -1078,7 +1078,7 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
     });
     expect(await screen.findByRole('img', { name: 'A G R 7 K 2 Q' })).toBeInTheDocument();
     expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Ya lo copié' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ya lo compartí' }));
     await waitFor(() => {
       expect(screen.queryByRole('img', { name: 'A G R 7 K 2 Q' })).not.toBeInTheDocument();
     });
@@ -1302,7 +1302,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
       expect(await screen.findByRole('img', { name: 'A G R 9 X 8 Z' })).toBeInTheDocument();
       expect(screen.getByText('Administrador nuevo: Rosa Vaca')).toBeInTheDocument();
       expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
-      await userEvent.click(screen.getByRole('button', { name: 'Ya lo copié' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Ya lo compartí' }));
       await waitFor(() => {
         expect(screen.queryByRole('img', { name: 'A G R 9 X 8 Z' })).not.toBeInTheDocument();
       });
