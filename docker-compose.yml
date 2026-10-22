@@ -7,7 +7,7 @@
 #   docker compose --profile panel up -d --build         + panel de administración (React servido por Nginx)
 #   docker compose --profile herramientas run --rm firmware      compila el firmware y corre sus tests
 #
-#   API: http://localhost:3000/api/v1/salud   Web: http://localhost:8080   Panel: http://localhost:8081   MySQL: localhost:3307
+#   API: http://localhost:3000/api/v1/salud   Panel: http://localhost:8081   App web: http://localhost:8081/app/   MySQL: localhost:3307
 #
 # El volumen qr-access-db-data guarda los datos que cargas para revisar: no se baja con -v.
 # Para probar migraciones contra una base limpia: docker compose -p qr-access-verif ...
@@ -89,12 +89,11 @@ services:
       context: ./app
     profiles: ["web"]
     restart: unless-stopped
-    # El panel reenvía /app/ al host `app` (como en producción): así también funciona por :8081/app/.
+    # Sin puerto propio, igual que en producción: el panel reenvía /app/ al host `app`, así que la
+    # app web se abre por el puerto del panel (http://localhost:8081/app/). Necesita --profile panel.
     networks:
       default:
         aliases: [app]
-    ports:
-      - "${WEB_PORT:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy
