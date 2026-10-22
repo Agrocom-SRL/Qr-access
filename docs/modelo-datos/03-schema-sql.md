@@ -644,3 +644,35 @@ ALTER TABLE qr_accesos RENAME INDEX idx_qr_accesos_emisor TO idx_qr_accesos_gene
 ALTER TABLE qr_accesos ADD CONSTRAINT fk_qr_accesos_generador FOREIGN KEY (generado_por) REFERENCES usuarios (id);
 UPDATE permisos SET codigo = 'accesos.qr.generar' WHERE codigo = 'accesos.qr.emitir';
 ```
+
+
+## cuentas_de_cobro
+
+Migración: `db/migrations/20261022100010_create_cuentas_de_cobro.sql`. Dónde recibe AGROCOM los pagos (ADR 0029); es de plataforma, sin `tenant_id`.
+
+```sql
+CREATE TABLE cuentas_de_cobro (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  metodo VARCHAR(20) NOT NULL,
+  banco VARCHAR(60) NOT NULL,
+  titular VARCHAR(120) NULL,
+  numero_cuenta VARCHAR(40) NULL,
+  tipo_cuenta VARCHAR(20) NULL,
+  imagen_id BIGINT UNSIGNED NULL,
+  nota VARCHAR(200) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_cuentas_de_cobro_imagen FOREIGN KEY (imagen_id) REFERENCES comprobantes (id),
+  UNIQUE KEY uq_cuentas_de_cobro_numero (banco, numero_cuenta, vigente),
+  CONSTRAINT ck_cuentas_de_cobro_metodo CHECK (metodo IN ('transferencia', 'qr')),
+  CONSTRAINT ck_cuentas_de_cobro_tipo CHECK (tipo_cuenta IS NULL OR tipo_cuenta IN ('ahorro', 'corriente')),
+  CONSTRAINT ck_cuentas_de_cobro_transferencia CHECK (metodo <> 'transferencia' OR (titular IS NOT NULL AND numero_cuenta IS NOT NULL)),
+  CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```

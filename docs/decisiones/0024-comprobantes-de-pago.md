@@ -19,4 +19,4 @@ El pago manual de una cuenta (ADR 0022) se hace por transferencia, QR o efectivo
 ## Consecuencias
 
 - Hay un volumen más que respaldar.
-- Pendiente (`TODO(docs)`): un menú para registrar las cuentas bancarias y el QR de cobro de AGROCOM, que se mostrarían al activar una cuenta. Hoy no se piden ni se guardan.
+- Las cuentas bancarias y los QR de cobro de AGROCOM se cargan aparte y se muestran al activar una cuenta (ADR 0029).
