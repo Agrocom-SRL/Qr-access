@@ -1,6 +1,6 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-13 (rama `feature/lector-rs485`)
+**Última actualización:** 2026-10-22 (rama `feature/diseno-jerarquia-y-cierre`, sin PR)
 
 ## Qué ya existe
 
@@ -76,24 +76,47 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 - **Seed demo:** el administrador `DEMADM1` también tiene el rol Usuario (para ver la elección de rol); el plan se llama "Demo (desarrollo)". Volver a correr `db/seeds/02_demo.sql`.
 - **Pendiente:** revisar en el teléfono; decidir si la barra inferior pasa a `google_nav_bar` (cambiaría el aspecto respecto al handoff); `pinput` para las casillas del PIN y `skeletonizer` para la carga serían los siguientes paquetes razonables.
 
-## Lo que falta para un V1 usable
+## Integrado en `develop` desde el 2026-10-13 (estado al 2026-10-22)
 
-1. **Prueba de punta a punta:** API local con el seed `DEM`, la app y el firmware `esp32-dev` en la placa. Nunca se probaron las tres partes juntas.
-2. **Revisión línea por línea de lo crítico** (CLAUDE.md): aislamiento por cuenta, validación y consumo del QR, autenticación de dispositivos y firmware de la cerradura. El núcleo se integró sin ella.
-3. **Administración:** altas y gestión de cuentas, sitios, puertas y dispositivos. Usuarios y PIN ya están (rama `feature/diseno-pantallas`); el resto solo existe en el seed.
-4. **Límites del plan** para dispositivos y usuarios (RF-10).
-5. **Login del super admin** (usuario + contraseña) y **baja diaria de QR vencidos** (ADR 0008 §7).
-6. **Seguridad de la API:** rate limit en las validaciones por dispositivo, CORS, límite de intentos del login compartido entre instancias (hoy en memoria) y detección de reuso de un refresh robado.
-7. **Bitácora del bloqueo del login:** el ADR 0018 la pide, pero `bitacoras.accion` no tiene un valor para el bloqueo; hoy solo deja un `warn` en el log. Decidir si se agrega `bloqueado` al CHECK.
-8. **Test del OpenAPI** contra el contrato publicado.
-9. **App:** brillo de pantalla al mostrar el QR, compilación en iOS, revisión visual en dispositivo contra el handoff, y revisar que el token del QR viaje por `extra` de go_router (en web queda en el historial de la pestaña).
-10. **Firmware:** confirmar la polaridad del sensor reed con el sensor real (`SENSOR_PUERTA_NIVEL_ABIERTA`), la CA para producción y el portal AP de aprovisionamiento; OTA queda fuera de V1.
+Lo que entró después de la versión anterior de este documento. Los números son PR de GitHub; las ramas sin número se citan por su nombre.
+
+- **Integración final (#34-#36):** cierre de las ramas de trabajo que quedaban fuera de `develop`.
+- **Ethernet y vinculación de placas (#37-#45):** la placa va por Ethernet, sin WiFi (ADR 0025). La vinculación automática con confirmación física (ADR 0026): la placa se anuncia sola y se confirma manteniendo 5 s el pulsador de salida. Lector RS485 con QR600. Tabla `asignaciones_puerta` (`20261015100001`).
+- **Modo sin conexión, perfil propio, sesión persistente y accesos en vivo (#47-#55):** modo sin conexión de la app (ADR 0027), perfil propio y sesión persistente en la app, y accesos en vivo.
+- **Release v1.0.0 y despliegue en producción (#47-#55):** `acceso.agrocom.com.bo` en el CT 120 (`docs/gestion/despliegue.md`). La primera prueba con un administrador real fue el 2026-10-20. Tags publicados: `v0.5.0`, `v1.0.0`, `v1.0.1` y `v1.0.2`.
+- **Hora de Bolivia, textos y formularios (#57-#58):** la hora de la app y de la API sigue la zona de Bolivia; cambios de textos y formularios de la cuenta (nombre de la cuenta, NIT opcional, responsable con nombre y apellido; migración `20261021100001`).
+- **Jerarquía de usuarios, ADR 0028 (#59-#61):** árbol Administrador → Titular → Miembro, con Guardia bajo un Administrador; un rol por usuario; unidades y `superior_id`; visibilidad por rama. Migraciones `20261022100001` a `20261022100004`.
+- **Panel web (#64-#68):** varios Administradores por cuenta, árbol de la cuenta en la ficha, reasignar Guardias y unidades (solo AGROCOM, con bitácora) y tope de Miembros por Titular editable por cuenta.
+- **App (#64-#68):** usuarios por nivel (el selector de rol solo lo ve el Administrador), unidad del Titular, baja en cascada con confirmación y tarjeta de cupo.
+- **API (#64-#68):** jerarquía, cupo (cuentan todos los niveles; tope de Miembros por Titular), estadísticas de uso (inactivos, ruidosos y Titulares cerca del 80 % del cupo; informativas) y compartir el PIN con registro en la bitácora. Migración `20261022100005` (`max_miembros` por cuenta) y `20261022100006` (PIN compartido).
+- **Estadísticas de uso (#67)** en la app (Administrador, con baja directa) y en el panel web (AGROCOM).
+- **Compartir el PIN (#68):** botón Compartir junto a la creación o regeneración del PIN; cada envío queda en la bitácora.
+- **Sin botón Copiar del PIN (#69):** Compartir es la única salida.
+- **"Generar" en lugar de "emitir" (#71):** textos, nombres, base de datos y permiso. Migración `20261022100007` (`emitido_por` pasa a `generado_por`; `accesos.qr.emitir` pasa a `accesos.qr.generar`). Es un cambio incompatible para los clientes instalados.
+- **Permiso `accesos.qr.generar_propio` (#72):** el Guardia genera solo su QR propio; no genera ni comparte QR de visitas.
+- **Textos en inglés y portugués completos (#74, abierto):** sin integrar.
+- **Rama `feature/diseno-jerarquia-y-cierre` (2026-10-22, sin PR):** este documento, las marcas de avance en `docs/gestion/jerarquia-de-usuarios.md` y el plan del release en `docs/gestion/release-jerarquia.md`. No publica nada ni cambia versiones.
+
+## Lo que falta para un V1 usable (revisado 2026-10-22)
+
+1. **Prueba de punta a punta:** la API, la app y el panel están en producción desde el 2026-10-20 (primera prueba con un administrador real). **Sin confirmar:** la placa real con la vinculación automática (ADR 0026) contra la API de producción.
+2. **Revisión línea por línea de lo crítico** (CLAUDE.md y ADR 0028, Consecuencias): aislamiento por cuenta y por rama, validación y consumo del QR, autenticación de dispositivos, firmware de la cerradura y modelo de permisos. **Pendiente:** no consta como hecha.
+3. **Administración:** en el panel web, cuentas, sitios (ahora Propiedades), puertas y placas (desde la integración final, #34-#36). En la app, usuarios, unidades, baja en cascada y cupo (#64-#68). **Pendiente:** alta y edición de propiedades, puertas y dispositivos desde la app (HU-07, HU-08 y HU-10).
+4. **Límites del plan** (RF-10): **hecho para usuarios** (`max_usuarios` y tope de Miembros por Titular, #64-#68). **Pendiente para dispositivos.**
+5. **Login del super admin** (usuario + contraseña): **hecho** en el panel. **Pendiente:** baja diaria de QR vencidos (ADR 0008 §7).
+6. **Seguridad de la API:** rate limit en las validaciones por dispositivo, CORS, límite de intentos del login compartido entre instancias (hoy en memoria) y detección de reuso de un refresh robado. **Pendiente:** el historial #34-#74 no incluye estos puntos.
+7. **Bitácora del bloqueo del login:** pendiente. El ADR 0018 la pide, pero `bitacoras.accion` no tiene un valor para el bloqueo; hoy solo deja un `warn` en el log.
+8. **Test del OpenAPI** contra el contrato publicado: pendiente.
+9. **App:** brillo de pantalla al mostrar el QR, compilación en iOS, token del QR en `extra` de go_router (en web queda en el historial de la pestaña) y **revisión visual en un entorno levantado** contra el handoff y las capturas (pendiente real; ver "Pendiente de decidir").
+10. **Firmware:** confirmar la polaridad del sensor reed con el sensor real (`SENSOR_PUERTA_NIVEL_ABIERTA`) y la CA para producción (hoy ISRG Root X1). OTA queda fuera de V1. **Ya no aplica** el portal AP de aprovisionamiento: desde el ADR 0025 la placa va por Ethernet y se vincula sola (ADR 0026).
 
 ## Pendiente de decidir o confirmar
 
-- **Jerarquía de usuarios y ajustes tras el primer despliegue (2026-10-20):** propietario > dueño de casa > usuario de la casa, guardias por propietario, cupo, estadísticas, compartir PIN y cambios de textos y formularios. Propuesta sin implementar, con puntos abiertos y orden de ramas en `docs/gestion/jerarquia-de-usuarios.md`.
-
-- Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24).
+- **Jerarquía de usuarios (ADR 0028, 2026-10-20):** implementada en `develop` (#59-#68, #71 y #72). Quedan la revisión visual (pendiente real), el rótulo "Registrar pago" en cobranza (`docs/gestion/jerarquia-de-usuarios.md` §6.3) y los textos en/pt (#74, abierto). Las marcas por punto están en ese documento.
+- **Release con cambio incompatible (propuesta v2.0.0):** plan en `docs/gestion/release-jerarquia.md`. **No se publicó tag ni se desplegó.** Pendiente de Miguel: la versión, el reinicio de la base de producción (borra cuentas, bitácora y `eventos_acceso` de la primera prueba; el respaldo es la única copia) y el aviso a los clientes con la app instalada.
+- **Contradicción entre documentos:** ADR 0005 y la invariante 11 de `CLAUDE.md` prohíben un cambio incompatible dentro de la misma versión de la API; los cambios de #71 y #72 (nombres de permisos y campos en `/api/v1`) lo son para los clientes instalados. Decidir: excepción documentada en un ADR o `/api/v2`.
+- **Versiones desfasadas:** `api/package.json`, `web/package.json` y `app/pubspec.yaml` siguen en 1.0.0 (+7), y `firmware/include/version.h` en 1.0.0, aunque existen los tags `v1.0.1` y `v1.0.2`. ADR 0014 dice que el tag fija la versión. Confirmar qué contienen `v1.0.1` y `v1.0.2`.
+- Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24). D-19 está cerrada en código desde `feature/diseno-pantallas`; falta reflejarlo en ese documento.
 - Hex oficial del verde de marca (D-08).
-- Servidor de producción y DNS (D-13): de eso dependen el `docker-compose.prod.yml` con TLS y la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
-- Lector de la mesa: es RS485 (con Wiegand) detrás de un módulo TTL-RS485, cableado en `docs/hardware/README.md`. Falta confirmar su modelo, que lea QR, su velocidad y su formato de salida (rama `feature/lector-rs485`, sin PR). Detalle eléctrico de la cerradura: se confirma al comprar.
+- Servidor de producción y DNS (D-13): **resuelto en parte.** Producción corre en `acceso.agrocom.com.bo` (CT 120, NPMplus, `docs/gestion/despliegue.md`). Falta confirmar la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
+- Lector de la mesa: el lector RS485 con QR600 entró en #37-#45 según el historial; falta confirmar su formato de salida con el hardware real. Detalle eléctrico de la cerradura: se confirma al comprar.
