@@ -41,7 +41,7 @@ Tampoco pude verificar desde esta sesión si el firmware cambió después de `v1
 
 ### Decidido (2026-10-22, Miguel): solo sube el último índice
 
-No se pasa a 1.0.3. La versión sigue la línea 1.0.x: como ya existen los tags `v1.0.1` y `v1.0.2`, el release es **1.0.3**, y el build de la app sube de `+7` a `+8` (o al que ya use la distribución). Los archivos siguen en `1.0.0` y se ponen en `1.0.3` al preparar el release.
+No se pasa a 2.0.0. La versión sigue la línea 1.0.x: como ya existen los tags `v1.0.1` y `v1.0.2`, el release es **1.0.3**, y el build de la app sube de `+7` a `+8` (o al que ya use la distribución). Los archivos siguen en `1.0.0` y se ponen en `1.0.3` al preparar el release.
 
 ### Archivos a cambiar (en un PR a `develop`, antes del tag)
 
