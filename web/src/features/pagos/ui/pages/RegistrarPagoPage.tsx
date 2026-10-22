@@ -21,6 +21,7 @@ import {
   type FormularioDePago,
   type TipoDePago,
 } from '../../domain/pago';
+import { CuentasParaPagar } from '../../../cobro';
 import { CamposDePago } from '../components/CamposDePago';
 import styles from './RegistrarPagoPage.module.css';
 
@@ -169,6 +170,12 @@ export function RegistrarPagoPage() {
           onCambio={cambiar}
           onTocar={tocar}
           ayudaDelMonto={tipo === 'mejora_de_plan' ? undefined : t('pago:montoAyuda')}
+          bajoElMedio={
+            // Dónde pagar solo se muestra al activar la cuenta (ADR 0029).
+            tipo === 'alta' && datos.medio !== 'efectivo' ? (
+              <CuentasParaPagar metodo={datos.medio} />
+            ) : undefined
+          }
         />
 
         <div className={styles.vigencia}>

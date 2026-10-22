@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatearFecha, formatearMonto } from '../../../../l10n/formatos';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { descargarExcel } from '../../../../shared/lib/excel';
-import { rutaDePago } from '../../../../shared/lib/rutas';
+import { RUTAS, rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
@@ -14,6 +14,7 @@ import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
 import { TarjetaIndicador } from '../../../../shared/ui/organisms/TarjetaIndicador';
 import { CobradoPorMes, useEstadisticas } from '../../../estadisticas';
+import { tienePermiso, useSesion } from '../../../seguridad';
 import { useCobranza } from '../../application/usePagos';
 import { PorCobrar } from '../components/PorCobrar';
 import {
@@ -31,8 +32,10 @@ function ventanaDeLaUrl(valor: string | null): VentanaDeCobranza {
 
 /** A08: lo que hay por cobrar por ventana de vencimiento, con acceso directo a registrar el pago y exportar a Excel. */
 export function CobranzaPage() {
-  const { t } = useTranslation(['cobranza', 'comun', 'cuentas']);
+  const { t } = useTranslation(['cobranza', 'comun', 'cuentas', 'cobro']);
   const navegar = useNavigate();
+  const { sesion } = useSesion();
+  const permisos = sesion?.permisos ?? [];
   const [parametros, setParametros] = useSearchParams();
   const ventana = ventanaDeLaUrl(parametros.get('ventana'));
   const busqueda = parametros.get('q') ?? '';
@@ -160,14 +163,27 @@ export function CobranzaPage() {
         titulo={t('cobranza:titulo')}
         subtitulo={t('cobranza:subtitulo')}
         accion={
-          <AccesoBoton
-            variante="tonal"
-            icono="download"
-            disabled={!cobranza.data || cobranza.data.filas.length === 0}
-            onClick={exportar}
-          >
-            {t('cobranza:exportar')}
-          </AccesoBoton>
+          <div className={styles.acciones}>
+            {tienePermiso(permisos, 'suscripciones.cobro.ver') ? (
+              <AccesoBoton
+                variante="tonal"
+                icono="payments"
+                onClick={() => {
+                  void navegar(RUTAS.cuentasDeCobro);
+                }}
+              >
+                {t('cobro:gestionar')}
+              </AccesoBoton>
+            ) : null}
+            <AccesoBoton
+              variante="tonal"
+              icono="download"
+              disabled={!cobranza.data || cobranza.data.filas.length === 0}
+              onClick={exportar}
+            >
+              {t('cobranza:exportar')}
+            </AccesoBoton>
+          </div>
         }
       />
 

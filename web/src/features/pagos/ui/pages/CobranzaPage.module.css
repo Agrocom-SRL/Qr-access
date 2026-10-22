@@ -55,3 +55,9 @@
     grid-template-columns: 1fr;
   }
 }
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp12);
+}

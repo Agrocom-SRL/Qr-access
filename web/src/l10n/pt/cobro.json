@@ -1,0 +1,56 @@
+{
+  "titulo": "Contas de cobrança",
+  "subtitulo": "Onde a AGROCOM recebe os pagamentos: aparecem ao registrar o pagamento de uma conta",
+  "nueva": "Adicionar conta",
+  "errorCarga": "Não foi possível carregar as contas de cobrança",
+  "vacio": {
+    "titulo": "Ainda não há contas de cobrança",
+    "texto": "Adicione uma conta bancária ou um QR para mostrá-los ao ativar uma conta."
+  },
+  "metodo": "Método de cobrança",
+  "metodos": {
+    "transferencia": "Conta bancária",
+    "qr": "QR"
+  },
+  "inactiva": "Inativa",
+  "activa": "Ativa",
+  "banco": "Banco",
+  "titular": "Titular",
+  "titularAyuda": "Nome da AGROCOM como consta na conta",
+  "numeroCuenta": "Número da conta",
+  "tipoCuenta": "Tipo de conta",
+  "tipoSinEspecificar": "Não especificado",
+  "tipos": {
+    "ahorro": "Poupança",
+    "corriente": "Conta corrente"
+  },
+  "nota": "Observação",
+  "notaAyuda": "Opcional. Por exemplo, \"Vale para qualquer banco\".",
+  "imagen": "Imagem do QR",
+  "imagenSubir": "Envie a imagem do QR",
+  "imagenAyuda": "JPG, PNG ou WEBP · até {{max}} MB",
+  "imagenCambiar": "Alterar",
+  "imagenActual": "QR atual",
+  "imagenVista": "Pré-visualização do QR",
+  "imagenQr": "QR de cobrança de {{banco}}",
+  "imagenError": "Não foi possível carregar o QR",
+  "dialogoNueva": "Nova conta de cobrança",
+  "dialogoEditar": "Editar conta de cobrança",
+  "guardar": "Salvar",
+  "guardando": "Salvando",
+  "editarCuenta": "Editar a conta de {{banco}}",
+  "eliminarCuenta": "Excluir a conta de {{banco}}",
+  "eliminarTitulo": "Excluir a conta de {{banco}}?",
+  "eliminarTexto": "Deixa de ser mostrada ao cobrar. Os pagamentos já registrados não mudam.",
+  "eliminar": "Excluir",
+  "eliminando": "Excluindo",
+  "requerido": "Este campo é obrigatório",
+  "archivoInvalido": "Envie uma imagem JPG, PNG ou WEBP",
+  "archivoGrande": "O arquivo pesa mais de 5 MB",
+  "paraPagar": "Onde a conta paga",
+  "paraPagarVacio": {
+    "transferencia": "Não há contas bancárias ativas: adicione-as em Contas de cobrança.",
+    "qr": "Não há um QR de cobrança ativo: adicione-o em Contas de cobrança."
+  },
+  "gestionar": "Contas de cobrança"
+}

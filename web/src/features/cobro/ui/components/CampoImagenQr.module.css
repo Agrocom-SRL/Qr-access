@@ -1,0 +1,90 @@
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp8);
+}
+
+.etiqueta {
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+}
+
+/* El control real queda oculto: el botón y la zona lo abren con el teclado y el puntero. */
+.entrada {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.zona {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp4);
+  padding: var(--esp24);
+  background: var(--superficie);
+  color: var(--textoSecundario);
+  border: 2px dashed var(--borde);
+  border-radius: var(--radio14);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--dur120) var(--easeOutCubic),
+    color var(--dur120) var(--easeOutCubic);
+}
+
+.zona:hover,
+.zona:focus-visible {
+  color: var(--primario);
+  border-color: var(--primario);
+}
+
+.ayuda {
+  font-size: var(--texto12);
+}
+
+.elegido {
+  display: flex;
+  align-items: center;
+  gap: var(--esp16);
+  padding: var(--esp12) var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+}
+
+.vista {
+  flex: none;
+  width: var(--tam56);
+  height: var(--tam56);
+  border-radius: var(--radio10);
+  overflow: hidden;
+  object-fit: cover;
+}
+
+.datos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nombre {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  color: var(--peligro);
+  font-size: var(--texto14);
+  font-weight: var(--peso500);
+}
+
+@media (width < 1024px) {
+  .elegido {
+    flex-wrap: wrap;
+  }
+}

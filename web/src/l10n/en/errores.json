@@ -50,5 +50,10 @@
   "pin_sufijo_en_uso": "Those 4 characters are already used by another PIN in the account.",
   "administrador_no_encontrado": "That administrator does not exist in the account.",
   "reasignacion_nivel_invalido": "Only a Guard or a Holder can be reassigned.",
-  "reasignacion_mismo_administrador": "They already report to that administrator."
+  "reasignacion_mismo_administrador": "They already report to that administrator.",
+  "cuenta_de_cobro_no_encontrada": "We couldn't find that payment account.",
+  "cuenta_de_cobro_existente": "There is already an account with that bank and number.",
+  "cuenta_de_cobro_datos_incompletos": "Missing data: a bank account needs a holder and number, and a QR needs its image.",
+  "cuenta_de_cobro_imagen_invalida": "The QR must be an image, not a PDF.",
+  "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again."
 }

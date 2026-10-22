@@ -262,6 +262,84 @@ describe('planes (A09)', () => {
   });
 });
 
+describe('cuentas de cobro (ADR 0029)', () => {
+  async function irACuentasDeCobro(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cobranza/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cuentas de cobro' }));
+  }
+
+  it('desde Cobranza se llega a la lista de cuentas y QR de AGROCOM', async () => {
+    await irACuentasDeCobro(crearServiciosDePrueba());
+    expect(
+      await screen.findByRole('heading', { name: 'Cuentas de cobro', level: 1 }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('article', { name: 'Banco Unión' })).toBeInTheDocument();
+    expect(screen.getByText('10000123456')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Banco Mercantil Santa Cruz' })).toBeInTheDocument();
+  });
+
+  it('agrega una cuenta bancaria con su titular y su número', async () => {
+    const crear = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar cuenta' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    await userEvent.type(within(dialogo).getByLabelText('Banco'), 'Banco BISA');
+    await userEvent.type(within(dialogo).getByLabelText('Titular'), 'AGROCOM S.R.L.');
+    await userEvent.type(within(dialogo).getByLabelText('Número de cuenta'), '2000999');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metodo: 'transferencia',
+          banco: 'Banco BISA',
+          titular: 'AGROCOM S.R.L.',
+          numeroCuenta: '2000999',
+        }),
+      );
+    });
+  });
+
+  it('un QR pide su imagen antes de guardar', async () => {
+    const crear = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar cuenta' }));
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'QR' }));
+    await userEvent.type(within(dialogo).getByLabelText('Banco'), 'Banco Unión');
+    expect(within(dialogo).getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    const qr = new File(['x'], 'qr.png', { type: 'image/png' });
+    await userEvent.upload(within(dialogo).getByLabelText('Imagen del QR'), qr);
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledWith(
+        expect.objectContaining({ metodo: 'qr', banco: 'Banco Unión', imagen: qr }),
+      );
+    });
+  });
+
+  it('desactiva y elimina una cuenta', async () => {
+    const cambiarActivo = vi.fn(() => Promise.resolve());
+    const eliminar = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { cambiarActivo, eliminar } }));
+    const tarjeta = await screen.findByRole('article', { name: 'Banco Unión' });
+    await userEvent.click(within(tarjeta).getByRole('switch', { name: 'Activa' }));
+    await waitFor(() => {
+      expect(cambiarActivo).toHaveBeenCalledWith('1', false);
+    });
+    await userEvent.click(
+      within(tarjeta).getByRole('button', { name: 'Eliminar la cuenta de Banco Unión' }),
+    );
+    const confirmar = await screen.findByRole('dialog');
+    await userEvent.click(within(confirmar).getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => {
+      expect(eliminar).toHaveBeenCalledWith('1');
+    });
+  });
+});
+
 describe('estadísticas', () => {
   it('tiene su entrada en el menú y muestra el uso de cada plan', async () => {
     montar(crearServiciosDePrueba(), '/ingreso');

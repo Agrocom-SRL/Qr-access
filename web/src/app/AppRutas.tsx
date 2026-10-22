@@ -6,6 +6,7 @@ import {
   RUTAS_DE_CUENTAS,
 } from '../features/cuentas';
 import { BitacoraPage } from '../features/bitacora';
+import { CuentasDeCobroPage } from '../features/cobro';
 import { CobranzaPage, RegistrarPagoPage } from '../features/pagos';
 import { EventosPage } from '../features/eventos';
 import { EquipoPage } from '../features/equipo';
@@ -30,6 +31,7 @@ export function AppRutas() {
         <Route path={RUTAS_DE_CUENTAS.nueva} element={<CrearCuentaPage />} />
         <Route path={`${RUTAS.cuentas}/:id`} element={<DetalleCuentaPage />} />
         <Route path={RUTAS.cobranza} element={<CobranzaPage />} />
+        <Route path={RUTAS.cuentasDeCobro} element={<CuentasDeCobroPage />} />
         <Route path={`${RUTAS.cobranza}/:cuentaId/pago`} element={<RegistrarPagoPage />} />
         <Route path={RUTAS.accesos} element={<EventosPage />} />
         <Route path={RUTAS.placas} element={<PlacasPage />} />
