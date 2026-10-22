@@ -59,6 +59,8 @@ Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales 
 
 ## 5. Cambios en la app
 
+> **Hecho (2026-10-22): textos y cabecera (§5.3, §5.4).** "Generar QR" en toda la interfaz, QR propio en la cabecera del inicio y botón flotante de generar y compartir. Se completaron en `app_en.arb` y `app_pt.arb` las 41 claves que faltaban respecto de `app_es.arb`; la web ya tenía es/en/pt iguales.
+
 > **Hecho (2026-10-22): compartir el PIN (§5.2).** Botón Compartir junto a Copiar al crear o regenerar un PIN; usa la hoja del sistema, avisa que el PIN pasa por una app de terceros y registra cada envío en la bitácora. No se fuerza el cambio en el primer ingreso (decidido el 2026-10-21).
 
 1. **Crear usuario según el nivel** (§2): selector de rol solo para el propietario; ninguno para el dueño de casa.
