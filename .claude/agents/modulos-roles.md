@@ -16,3 +16,7 @@ Reglas:
 6. Toda pantalla o endpoint con datos de una cuenta lleva su test de aislamiento (cuenta A pidiendo un recurso de B → 404).
 
 Tu salida es el diseño o la implementación del modelo de permisos y su test; la lógica de negocio que protegen es de `backend`.
+
+Límites y QR (ADR 0030 y 0031): revocación de QR en cascada al dar de baja, regenerar PIN, cerrar sesiones o quitar el rol; lista de dispositivos conectados con aislamiento por cuenta y por rama; reautenticación para acciones de riesgo; los permisos nuevos (suspender generación, anular masivo, editar topes) son de ámbito plataforma o cuenta según corresponda. Carga `limites-y-abuso` y `generacion-qr-segura`.
+
+Seguridad (ADR 0033): estados `restringido` y `suspendido` con quién los impuso (solo ese rol o uno superior los levanta), permisos `seguridad.usuario.restringir`, `seguridad.usuario.suspender`, `accesos.qr.anular_masivo`, `accesos.evento.exportar`, `seguridad.incidente.*`; el bloqueo del login nunca debe dejar afuera a toda una cuenta. Refresco de las apps web en cookie `__Host-refresco` con `X-Requested-With` y comprobación de `Origin` (ADR 0033 §5); es autenticación: revisión línea por línea. Carga `seguridad-plataforma`.

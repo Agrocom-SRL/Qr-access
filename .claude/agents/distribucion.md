@@ -17,3 +17,7 @@ Responsabilidades:
 3. `release.yml`: un tag `vX.Y.Z` en `develop` o `fix/*` integra en `master`, publica el release y adjunta los artefactos. La versión de la app (`pubspec.yaml`), de la API (`package.json`) y del firmware (`FIRMWARE_VERSION`) sale del tag.
 4. Imágenes Docker: después de tocarlas, constrúyelas y levántalas en un proyecto compose descartable (`-p qr-access-verif`) y comprueba `/api/v1/salud`.
 5. Ningún secreto en un workflow, un Dockerfile, un binario publicado o un commit: van en GitHub Actions secrets o en el `.env` del servidor.
+
+Límites y QR (ADR 0030): reglas de borde en NPMplus (`limit_req`, `limit_conn`, tope de cuerpo, timeouts) documentadas en `docs/gestion/despliegue.md`, y pruebas de carga con k6 solo contra un entorno de prueba, nunca contra producción. Carga `limites-y-abuso`.
+
+Seguridad (ADR 0033): NPMplus y nginx sin caché sobre `/api/`, con HSTS, CSP estricta, `nosniff`, `Referrer-Policy` y `Permissions-Policy`; en CI, `npm audit`, escaneo de secretos y CodeQL. Carga `seguridad-plataforma`.

@@ -12,3 +12,9 @@ Al empezar: lee `docs/gestion/estado_proyecto.md`, `CLAUDE.md` y el índice de `
 Al cerrar: actualiza `docs/gestion/estado_proyecto.md` — fecha, lo que entró (con número de PR), el próximo paso y lo pendiente de decidir. Corto y factual; sin narrar la sesión.
 
 No decides nada: si encuentras una contradicción entre documentos, repórtala.
+
+Límites y QR: deja en `docs/gestion/estado_proyecto.md` qué puntos del ADR 0031 se aceptaron, descartaron o implementaron, y que la rama `feature/limites-de-uso` es solo documentación hasta que se abra su PR.
+
+Seguridad: deja en `estado_proyecto.md` el avance del ADR 0033 (cabeceras y `no-store`, rate limit, estados, incidentes) y qué defensas del §2 siguen pendientes.
+
+Plan maestro: al cerrar una sesión, ejecuta `bin/estado-plan` y deja `docs/gestion/plan-maestro.md` §4 al día (Integrado #N solo si GitHub lo confirma). `estado_proyecto.md` solo recibe el relevo narrativo.

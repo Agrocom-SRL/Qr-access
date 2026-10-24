@@ -1,5 +1,10 @@
 # Estado del proyecto — AGROCOM Acceso
 
+> **Limpieza de ramas y próxima versión (anotado el 2026-10-23, pendiente de ejecutar).** Antes de lanzar la siguiente versión hay que depurar las ramas, con `bin/estado-plan` como guía y la confirmación de Miguel:
+> - **Integradas** (su PR figura como MERGED): borrar las ramas locales marcadas `gone` y las remotas sobrantes (`feature/reiniciar-base-local`, `feature/version-1.0.3`). No se pierde trabajo: está en `develop`.
+> - **No integradas** (PR cerrado sin merge, como #46, #62, #63, #70, #73 y #77, o ramas locales con commits que no están en `develop`): revisar una por una; cada una se rescata en una rama nueva desde `develop` o se descarta de forma explícita. Nada se borra a ciegas.
+> - Después: podar este archivo (§4.5 del plan maestro) y lanzar la versión (ola W-REL: tag, versiones alineadas en api, web, app y firmware, despliegue con `bin/desplegar`).
+
 **Última actualización:** 2026-10-22, al cierre de la sesión de ajustes del panel (#80, #81 y #82, integrados en `develop`)
 
 ## Relevo de la sesión del 2026-10-22: ajustes del panel y cuentas de cobro
@@ -33,6 +38,22 @@ Todo esto está integrado en `develop` por tres PR. La API local del puerto 3000
 6. **Pruebas que faltan:** los tests de `web` cubren la página y el componente "dónde pagar", pero no el recorrido completo del pago de alta con QR. La bitácora del panel muestra los eventos `cuenta_de_cobro.*` con el texto genérico; falta revisar cómo se leen.
 7. **Responsive del resto del panel:** se arregló el filtro segmentado y el encabezado para todas las páginas, pero solo se revisó el diseño de Cuentas. Falta mirar Cobranza, Eventos y Placas.
 8. **Tareas anteriores que siguen abiertas:** ver "Lo que falta para un V1 usable" y "Pendiente de decidir o confirmar", más abajo. La app Flutter no se tocó en esta sesión.
+
+## Límites de uso y abuso (ADR 0030, 2026-10-23, rama `feature/limites-de-uso`, sin PR)
+
+Solo documentación; no hay código. Decidido con Miguel: la validación de QR en el lector **nunca** se limita, solo la generación; los QR dejan de ser ilimitados (enmienda al ADR 0017); tope diario **por usuario** y global (429 `qr.limite_diario`, sin bloqueo, con aviso al propietario y a AGROCOM); "ruidoso" pasa a 20 QR **no usados** por día; bolsa mensual por plan con un número fijo inicial y **sin corte por ahora** (se negocia con la cuenta). Pendiente de implementar: `@fastify/rate-limit` y reglas de borde en NPMplus, topes en `generar-qr`, tabla `notificaciones` (bandeja propia; push con FCM como paso posterior, §6 es propuesta), señales nuevas (uso masivo, flujo atípico de cuenta, altas en ráfaga, tasa de uso) y la vista de AGROCOM en el panel. Valores concretos por fijar al implementar.
+
+**Actualización del mismo día:** ADR 0031 (endurecimiento de la generación de QR) aceptado: revocación en cascada con los estados «restringido» (leve) y «suspendido» (crítico), comprobación del generador y sus superiores al validar, idempotencia con caché en la app y aviso de placa sin conexión. Descartados: captura de pantalla, ráfaga de tokens desconocidos, ventana de activación y franja horaria (la vida del QR es solo su vencimiento). Nuevo: estados de placa (sin conexión, desaparecida a las 24 h, en observación, lector sin respuesta) y confirmación de apertura con el sensor de puerta. Confirmado: la restricción (nivel leve, solo generación) no anula los QR ya generados; la suspensión (nivel crítico) sí, y arrastra a la rama o cuenta. Placas: caída sostenida a los 15 min (aviso) y desaparecida a las 2 h (revisión física), avisos agrupados por sitio. Aceptadas además la anulación masiva, el límite de puertas por QR, la versión del formato y el contador de rechazos; en futuro: puerta sensible, etiqueta obligatoria, reautenticación y aprobación. ADR 0032 (concurrencia, pools separados, ventana de repetición de 15 s y registro de lecturas repetidas) en propuesta; el renombrado del registro (`intentos_acceso` recomendado) se deja para el último PR.
+
+**Seguridad (ADR 0033, propuesta):** nombres de estado (activo, restringido, suspendido, eliminado), tabla de defensas con lo hecho y lo que falta (sin `Cache-Control: no-store` ni cabeceras de seguridad en la API, sin rate limit, sin CSP, sin CodeQL ni `npm audit` en CI), autoadministración por rol e incidentes de uso con reincidencia que propone, no aplica. Skill `seguridad-plataforma` y agente `auditor-seguridad` creados. Aceptado con Miguel: refresco de las apps web en cookie `HttpOnly` con protección CSRF (§5, ola W1b del plan maestro).
+
+## Preguntas pendientes de respuesta de Miguel (2026-10-23)
+
+Miguel pidió dejarlas aquí para contestarlas después. **No se ejecutó ninguna.**
+
+1. **Borrar las ramas viejas.** No se tocó ninguna. Se pueden borrar las ramas locales ya integradas (`bin/estado-plan` las lista; no pierden trabajo) y las dos remotas sobrantes (`feature/reiniciar-base-local`, `feature/version-1.0.3`). ¿Se hace?
+2. **Podar `estado_proyecto.md`.** Conserva secciones «pendiente de PR» de ramas ya integradas y dice que las versiones siguen en 1.0.0 cuando #80 las subió a 1.0.3. Anotado como tarea de higiene en `plan-maestro.md` §4.5, en un PR aparte.
+3. **Commits y PR de esta rama (`feature/limites-de-uso`).** Propuesta: tres commits (ADR más funcional; skills y agentes; plan maestro más `bin/estado-plan`) y PR contra `develop`. ¿Se hacen?
 
 ## Qué ya existe
 

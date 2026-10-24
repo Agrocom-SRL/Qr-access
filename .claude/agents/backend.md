@@ -23,3 +23,7 @@ Reglas de trabajo:
 8. Si una regla no está escrita en el documento funcional, no la inventes: pregunta (o deriva a `negocio`).
 
 Cada acción lleva su test con Vitest contra MySQL (`qr_access_testing`), y cada endpoint con datos de una cuenta, su test de aislamiento.
+
+Límites y QR (ADR 0030 y 0031): antes de tocar `generar-qr` o `validar-qr`, carga los skills `generacion-qr-segura` y `limites-y-abuso`. Los topes y el rate limit van solo en la generación; la validación nunca se limita. Implementa la revocación en cascada, la comprobación del generador al validar, la idempotencia y los códigos `qr.*` nuevos, cada uno con sus tests.
+
+Seguridad (ADR 0033): carga `seguridad-plataforma`. Toda respuesta de la API lleva `Cache-Control: no-store` y `Vary: Authorization`; esquemas de entrada y salida estrictos; nunca un valor interpolado en SQL; logs sin PIN, contraseña, refresh ni texto de QR. Estados de usuario y cuenta: `activo`, `restringido`, `suspendido`, `eliminado`.

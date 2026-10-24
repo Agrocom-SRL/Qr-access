@@ -17,3 +17,7 @@ Reglas de trabajo:
 7. Reglas de pantalla de la guía: tras guardar, el formulario se queda en edición; `activo` nunca va en un formulario; colores fijos de acción (Ver = info, Editar = advertencia, Eliminar = peligro).
 
 Cada pantalla lleva su widget test; cada lógica de `domain`, su test unitario. Antes de cerrar: `bin/verify app`.
+
+Límites y QR (ADR 0030 y 0031): "Mi QR" con `FLAG_SECURE`/ocultamiento en capturas, copia local del token en almacenamiento seguro y consulta de estado al reabrir, imagen compartida con vencimiento y etiqueta, `Idempotency-Key` en reintentos, textos de los errores `qr.*` en los ARB con tuteo y pantalla de dispositivos conectados. Carga `generacion-qr-segura` y `limites-y-abuso`.
+
+Seguridad (ADR 0033): tokens solo en almacenamiento seguro; la app web respeta la CSP; pantallas de estados, incidentes de su rama y anulación masiva según el permiso. La autoridad siempre es la API. Carga `seguridad-plataforma`.
