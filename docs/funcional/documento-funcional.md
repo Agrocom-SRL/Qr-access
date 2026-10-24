@@ -51,7 +51,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-11: Como usuario, genero un QR para una o más puertas de mi cuenta [confirmar D-17], con una etiqueta opcional [confirmar D-21]. Vence por defecto al final del día [confirmar D-16], sin pasar la vigencia máxima del plan.
 - HU-12: Como usuario, comparto la imagen del QR desde la app (WhatsApp, correo…) [confirmar D-18].
 - HU-13: Como usuario, veo los QR que generé y su estado (vigente, usado, vencido, anulado), y anulo uno vigente.
-- Los QR son ilimitados. Al final del día, los vencidos se dan de baja (soft delete), usados o no.
+- Los QR parecen ilimitados para el cliente, pero la generación se controla internamente con topes por usuario y una bolsa por plan (ADR 0030); validar un QR en la puerta nunca se limita. Al final del día, los vencidos se dan de baja (soft delete), usados o no.
 
 ### 4.6 Validación en la puerta
 - HU-14: Como dispositivo, envío el QR leído y doy el pulso solo si la API responde `abrir: true`.
