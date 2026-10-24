@@ -18,7 +18,8 @@ Fuentes de verdad:
 - **Decisiones técnicas:** `docs/decisiones/` (ADRs). Léelos antes de implementar algo que los toque.
 - **Diseño de la app:** `docs/diseno/handoff/README.md` (especificación, ids C01–E10b y capturas) y `docs/diseno/sistema-diseno.md`.
 - **Hardware:** `docs/hardware/README.md`.
-- **Estado del proyecto:** `docs/gestion/estado_proyecto.md`.
+- **Plan y estado de cada cambio:** `docs/gestion/plan-maestro.md` (registro de trabajo y prompt maestro; contrástalo con `bin/estado-plan`, que consulta GitHub). Manda sobre el estado.
+- **Relevo y hallazgos de sesión:** `docs/gestion/estado_proyecto.md`.
 
 ## Invariantes no negociables
 

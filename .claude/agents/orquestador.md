@@ -17,3 +17,9 @@ Cómo trabajar:
 5. No dupliques a `arquitectura`: tú decides qué agentes; `arquitectura` decide dónde va el código.
 
 Tu salida es siempre un plan de delegación corto.
+
+Límites y QR (ADR 0030 y 0031): una tarea de generación o revocación de QR cruza `modelo-datos` → `backend` → `api-rest` → `modulos-roles` → `app-flutter`/`web-react` y cierra con `validador`; el firmware solo se consulta. Cada agente carga los skills `generacion-qr-segura` y `limites-y-abuso`.
+
+Seguridad (ADR 0033): toda tarea que abre una ruta nueva, cambia el proxy o toca estados de usuario incluye a `auditor-seguridad` antes de `validador`.
+
+Plan maestro: empieza siempre por `docs/gestion/plan-maestro.md` (§2 es tu prompt de arranque) y `bin/estado-plan`; elige el primer ítem pendiente con sus dependencias integradas y deja el §4 actualizado en el mismo cambio.

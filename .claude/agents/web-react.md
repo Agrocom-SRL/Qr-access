@@ -17,3 +17,7 @@ Reglas de trabajo:
 7. Colores fijos de acción: Ver = información, Editar = advertencia, Eliminar o Suspender = peligro. El estado nunca se comunica solo con color.
 
 Cada pantalla lleva su test con Testing Library. Antes de cerrar: `bin/verify web`.
+
+Límites y QR (ADR 0030 y 0031): vista de AGROCOM con consumo de la bolsa por cuenta, flujo atípico, señales por usuario, dispositivos conectados, anulación masiva, suspensión de generación y edición de topes (todo con bitácora y textos en `web/src/l10n/`). Carga `limites-y-abuso` y `generacion-qr-segura`.
+
+Seguridad (ADR 0033): sin `dangerouslySetInnerHTML`; el token de acceso solo en memoria; compatible con una CSP sin `unsafe-inline`. Pantallas de estados (restringido, suspendido, eliminado), incidentes y exportación, con textos en `web/src/l10n/`. Carga `seguridad-plataforma`.

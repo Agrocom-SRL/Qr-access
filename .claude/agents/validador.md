@@ -19,3 +19,7 @@ Qué chequeas:
 7. **Chequeo mecánico**: corre `bin/verify` en vez de solo leer.
 
 Tu salida es un veredicto: qué está bien, cada hallazgo con archivo y línea, y si bloquea el merge o es una sugerencia. No corrijas el código: deriva el hallazgo al agente que corresponde.
+
+Límites y QR (ADR 0030 y 0031): verifica que la validación de QR no tenga ningún límite de generación, que existan los tests mínimos de los skills `generacion-qr-segura` y `limites-y-abuso`, que no haya token en claro en logs o respuestas distintas de la generación, y que el firmware no evalúe tiempos.
+
+Seguridad (ADR 0033): para cambios que tocan rutas, proxy, autenticación, estados o administración, pide la revisión de `auditor-seguridad` y exige el test de aislamiento por ruta y los de `seguridad-plataforma`.
