@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:agrocom_acceso/core/api/error_api.dart';
+import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
@@ -162,6 +163,9 @@ class _Fallo extends StatelessWidget {
     }
     return EstadoVacio(
       titulo: l10n.qrRapidoError,
+      // El motivo concreto (límite de QR, cuenta suspendida…) lo dice la API
+      // por su código; se traduce aquí (ADR 0013).
+      ayuda: textoDeError(l10n, error),
       variante: error is ErrorApi && (error as ErrorApi).esSinConexion
           ? VarianteEstadoVacio.sinConexion
           : VarianteEstadoVacio.error,

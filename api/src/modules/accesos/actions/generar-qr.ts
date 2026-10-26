@@ -1,5 +1,9 @@
 import type { Pool } from 'mysql2/promise';
-import { enTransaccionIdempotente, type Transaccion } from '../../../platform/db/transaccion.js';
+import {
+  enTransaccion,
+  enTransaccionIdempotente,
+  type Transaccion,
+} from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { aIso } from '../../../platform/tiempo/fechas.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
@@ -36,6 +40,8 @@ export interface DatosDeGeneracion {
    * ya no tiene su token, ADR 0030 §2.1.3). El anterior queda anulado y cuenta como reemplazo sin uso.
    */
   readonly reemplazar?: boolean;
+  /** Dónde dejar rastro de lo que no debe tumbar la respuesta (nunca lleva PIN, token ni texto de QR). */
+  readonly log?: { warn(objeto: object, mensaje: string): void };
 }
 
 export interface QrGenerado {
@@ -157,7 +163,7 @@ export async function ejecutar(
   const nombreDe = (puertaId: string): string => porId.get(puertaId)?.nombre ?? '';
 
   try {
-    return await enTransaccionIdempotente(pool, async (tx) => {
+    const generado = await enTransaccionIdempotente(pool, async (tx) => {
       // Primero se bloquea y se relee el estado (cuenta y cadena del generador): desde acá, nadie puede
       // restringirlo ni suspenderlo hasta que esta transacción termine. Es también lo que hace que dos
       // generaciones del mismo usuario se esperen entre sí y vean los conteos una de la otra.
@@ -174,7 +180,7 @@ export async function ejecutar(
       if (propio) {
         const anterior = await repositorio.buscarPropioSinUso(tx, principal.usuarioId);
         if (anterior !== null && anterior.vence_at > ahora) {
-          const actuales = (await puertasDeQr.puertasDe([anterior.id])).get(anterior.id) ?? [];
+          const actuales = (await puertasDeQr.puertasDe([anterior.id], tx)).get(anterior.id) ?? [];
           if (datos.reemplazar !== true && mismoConjunto(actuales, idsUnicos)) {
             return {
               id: anterior.id,
@@ -227,7 +233,6 @@ export async function ejecutar(
         propio,
       });
       await puertasDeQr.asociar(tx, qrId, idsUnicos);
-      await marcarBolsa(tx, repositorio, limitesDeUso, principal.usuarioId, topes, ahora);
 
       return {
         id: qrId,
@@ -238,16 +243,39 @@ export async function ejecutar(
         puertas: idsUnicos.map((puertaId) => ({ id: puertaId, nombre: nombreDe(puertaId) })),
       };
     });
+    // Fuera de la transacción: la bolsa nunca corta, así que su conteo no tiene por qué alargar el tiempo en
+    // que la cadena de superiores está bloqueada (ADR 0030 §2, «Serialización por rama»).
+    if (!generado.reutilizado) {
+      await marcarBolsaTrasElInsert(
+        pool,
+        limitesDeUso,
+        principal.usuarioId,
+        topes,
+        ahora,
+        datos.log,
+      );
+    }
+    return generado;
   } catch (error: unknown) {
     if (error instanceof RechazoPorTope) {
-      // La transacción ya se deshizo: el rastro del rechazo va en la suya (ADR 0030 §7).
-      await limitesDeUso.registrarRechazo({
-        usuarioId: principal.usuarioId,
-        tipo: error.tipo,
-        valor: error.actual,
-        tope: error.tope,
-        ahora,
-      });
+      // La transacción ya se deshizo: el rastro del rechazo va en la suya (ADR 0030 §7). Si registrarlo falla,
+      // el 429 al usuario sigue siendo la respuesta: un error de la bitácora no lo enmascara. El crecimiento de
+      // `eventos_de_limite` por estos rechazos lo acota el rate limit de la ruta (`generar_qr`, ADR 0030 §3.2).
+      try {
+        await limitesDeUso.registrarRechazo({
+          usuarioId: principal.usuarioId,
+          tipo: error.tipo,
+          valor: error.actual,
+          tope: error.tope,
+          ahora,
+        });
+      } catch (falla: unknown) {
+        // Solo el código del error de base: su mensaje podría traer un valor (ADR 0033 §2).
+        datos.log?.warn(
+          { evento: 'limite.rechazo_sin_registrar', tipo: error.tipo, codigo: codigoDe(falla) },
+          'no se pudo registrar el rechazo por tope',
+        );
+      }
     }
     // Dos generaciones propias simultáneas no deberían llegar acá (se esperan en el bloqueo del usuario);
     // si el UNIQUE igual choca, se avisa en vez de duplicar.
@@ -296,8 +324,37 @@ async function comprobarReemplazo(
   }
 }
 
+const codigoDe = (error: unknown): string | null =>
+  typeof (error as { code?: unknown } | null)?.code === 'string'
+    ? (error as { code: string }).code
+    : null;
+
 /**
- * La bolsa mensual de la cuenta (ADR 0030 §2) NO corta nada: con el QR ya insertado, si la cuenta llegó al
+ * Deja la marca de la bolsa en su propia transacción corta, ya con el QR confirmado. Un fallo acá no deshace
+ * ni tumba la generación (la bolsa no corta): se anota en el log y la próxima generación la marca.
+ */
+async function marcarBolsaTrasElInsert(
+  pool: Pool,
+  limites: ServicioDeLimites,
+  usuarioId: string,
+  topes: TopesDeGeneracion,
+  ahora: Date,
+  log: DatosDeGeneracion['log'],
+): Promise<void> {
+  try {
+    await enTransaccion(pool, (tx) =>
+      marcarBolsa(tx, new RepositorioDeQr(pool), limites, usuarioId, topes, ahora),
+    );
+  } catch (falla: unknown) {
+    log?.warn(
+      { evento: 'limite.bolsa_sin_marcar', codigo: codigoDe(falla) },
+      'no se pudo dejar la marca de la bolsa mensual',
+    );
+  }
+}
+
+/**
+ * La bolsa mensual de la cuenta (ADR 0030 §2) NO corta nada: con el QR ya confirmado, si la cuenta llegó al
  * porcentaje de aviso o se pasó, deja una marca que no se repite (el aviso al llegar, una vez al mes; el
  * exceso, una vez al día). De ahí lee la bandeja de avisos cuando exista.
  */

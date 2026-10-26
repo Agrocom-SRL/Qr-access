@@ -40,11 +40,15 @@ Future<QrAccesosRepositorioFalso> _montar(
   List<Puerta> puertas = _puertas,
   Exception? errorGenerar,
   QrGenerado? respaldo,
+  QrGenerado? reanudado,
+  Exception? errorReanudar,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(
     generado: _generado,
     errorGenerar: errorGenerar,
     respaldo: respaldo,
+    reanudado: reanudado,
+    errorReanudar: errorReanudar,
   );
   await montarPantalla(
     tester,
@@ -151,6 +155,58 @@ void main() {
     );
 
     expect(find.byType(VisorQr), findsNothing);
+  });
+
+  group('reabrir Mi QR', () {
+    testWidgets('con su QR vigente lo muestra y no genera ningún otro', (
+      tester,
+    ) async {
+      final repositorio = await _montar(tester, reanudado: _generado);
+
+      expect(repositorio.generaciones, isEmpty);
+      expect(repositorio.reanudaciones.single, ['p1', 'p2']);
+      expect(find.byType(VisorQr), findsOneWidget);
+    });
+
+    testWidgets('si el guardado ya no vale, genera uno nuevo', (tester) async {
+      final repositorio = await _montar(tester);
+
+      expect(repositorio.reanudaciones.single, ['p1', 'p2']);
+      expect(repositorio.generaciones, hasLength(1));
+      expect(find.byType(VisorQr), findsOneWidget);
+    });
+
+    testWidgets('sin red muestra el respaldo y no genera', (tester) async {
+      final repositorio = await _montar(
+        tester,
+        errorReanudar: const ErrorApi(code: ErrorApi.sinConexion),
+        respaldo: QrGenerado(
+          id: 'qr1',
+          texto: 'AQ1.respaldo',
+          venceAt: _generado.venceAt,
+          etiqueta: _generado.etiqueta,
+          puertas: _generado.puertas,
+          respaldo: true,
+        ),
+      );
+      final textos = textosEn(tester);
+
+      expect(repositorio.generaciones, isEmpty);
+      expect(find.text(textos.qrRapidoRespaldoAviso), findsOneWidget);
+    });
+
+    testWidgets('un límite de generación se explica con su texto', (
+      tester,
+    ) async {
+      await _montar(
+        tester,
+        errorGenerar: const ErrorApi(code: 'qr.limite_diario', status: 429),
+      );
+      final textos = textosEn(tester);
+
+      expect(find.byType(VisorQr), findsNothing);
+      expect(find.text(textos.comunErrorQrLimiteDiario), findsOneWidget);
+    });
   });
 
   group('seguimiento del QR', () {

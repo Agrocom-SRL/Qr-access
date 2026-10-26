@@ -352,16 +352,22 @@ export class RepositorioDePuertasDeQr extends RepositorioDeCuenta {
     }
   }
 
-  /** `qrId -> ids de puerta`, en el orden en que se asociaron. */
-  async puertasDe(qrIds: readonly string[]): Promise<Map<string, string[]>> {
+  /**
+   * `qrId -> ids de puerta`, en el orden en que se asociaron. Dentro de una transacción, pásale `tx`: sin ella
+   * toma otra conexión del pool y una petición retiene dos (se cuelga con el pool lleno).
+   */
+  async puertasDe(qrIds: readonly string[], tx?: Transaccion): Promise<Map<string, string[]>> {
     const mapa = new Map<string, string[]>();
     if (qrIds.length === 0) return mapa;
-    const filas = await this.seleccionar<PuertaDeQrFila>({
-      columnas: 't.qr_acceso_id, t.puerta_id',
-      donde: 't.qr_acceso_id IN (?)',
-      params: [qrIds],
-      orden: 't.id',
-    });
+    const filas = await this.seleccionar<PuertaDeQrFila>(
+      {
+        columnas: 't.qr_acceso_id, t.puerta_id',
+        donde: 't.qr_acceso_id IN (?)',
+        params: [qrIds],
+        orden: 't.id',
+      },
+      tx,
+    );
     for (const fila of filas) {
       mapa.set(fila.qr_acceso_id, [...(mapa.get(fila.qr_acceso_id) ?? []), fila.puerta_id]);
     }

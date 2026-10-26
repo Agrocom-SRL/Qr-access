@@ -39,6 +39,17 @@ El QR propio ("Mi QR de acceso") es de un solo uso y hoy cada generación anula 
 
 Esto no toca la puerta: un QR propio vigente y sin usar sigue abriendo igual (§1). La regla solo evita generar tokens inútiles.
 
+### 2.1.1. Cómo se implementa: serialización y casos límite (enmienda 2026-10-27)
+
+- **Serialización por rama.** Generar bloquea (`FOR UPDATE`) la fila del generador y las de todos sus superiores, siempre de abajo hacia arriba, y toma la cuenta en modo compartido. Dos generaciones del mismo usuario se esperan entre sí (así ven los conteos una de la otra); dos de ramas distintas solo coinciden en los superiores comunes, por lo que una cadena corta (un administrador con muchos hijos) se serializa en el administrador. Es el precio de que una suspensión concurrente no deje un QR vivo (ADR 0031 §1); la transacción es corta (unas pocas lecturas y dos inserts).
+- **La bolsa mensual no corre bajo esos bloqueos.** Como nunca corta, su conteo y la marca de aviso (80 %) o de exceso (100 %) se hacen en una transacción propia, ya con el QR confirmado; si esa marca falla, se anota en el log (sin datos sensibles) y la siguiente generación la deja. Dos generaciones casi simultáneas pueden ver el mismo conteo y marcar una vez de menos o de más en el límite exacto; la marca es idempotente por su clave única (`bolsa.aviso:<mes>`, `bolsa.superada:<día>`), así que no se duplica.
+- **Validar nunca espera a generar.** La validación lee el estado del generador sin bloquear (lectura consistente) y consume el QR con un `UPDATE` atómico; solo puede esperar, unos milisegundos, al `FOR UPDATE` que `buscarPropioSinUso` toma sobre el QR propio sin usar de ese mismo usuario mientras dura su transacción de generación.
+- **Reutilización.** Al reutilizar el QR propio vigente se ignoran `vence_at` y `etiqueta` del pedido: rige lo del QR existente, salvo que se pida `reemplazar`.
+- **Precedencia de valores.** Excepción de usuario > excepción de cuenta > valor del plan > valor general (la bolsa y las puertas por QR admiten el valor del plan). El plan manda sobre el valor general.
+- **Reemplazos sin uso.** El ciclo anular-generar queda acotado por el tope diario además de por el tope de reemplazos (§2.1.5): cada reemplazo es una generación.
+- **Soft delete.** Los conteos (diario, pendientes, bolsa) pasan por el repositorio de cuenta, que excluye lo borrado: si algún día se hiciera soft delete de un QR generado, dejaría de contar y el conteo bajaría (se podría volver a generar). Hoy ningún flujo borra QR (se anulan con `anulado_at`, que sí cuenta); si aparece uno, hay que decidir si el conteo debe incluir lo borrado.
+- **Configuración incompleta.** Si falta un tope general en `configuracion_limites`, generar falla cerrado con 503 `limite.configuracion_incompleta`, sin decir qué clave falta (ADR 0033).
+
 ### 2.2. QR propio usado con flujo dudoso
 
 Si el QR sí se usa pero el patrón es dudoso (uso masivo por día, uso en puertas distintas con una diferencia de tiempo físicamente imposible, o ciclos de generar-usar-generar de pocos minutos todo el día; ver §4), **no se corta nada**: el uso se acepta y se registra, y se notifica al **propietario de la cuenta y a los administradores de AGROCOM** (§5). La persona decide qué hacer.
@@ -57,16 +68,16 @@ En capas, de la más barata a la más fina:
 
 **Implementado (ola W3, API):** `@fastify/rate-limit` en `api/src/plugins/limites.ts`, registrado después de la autenticación. Cuenta por (clase de ruta, identidad): el dispositivo por su credencial, el usuario por su sesión y, sin sesión, la IP; una cabecera sin verificar nunca elige la clave. Ventana de un minuto; el contador está en memoria (una instancia, V1). Pasado el tope responde `429` `limite.excedido` con `Retry-After`. Valores por defecto (todos en variables `LIMITE_*_POR_MINUTO`, ver `.env.example`):
 
-| Clase | Rutas | Clave | Por defecto |
-|---|---|---|---|
-| `login` | `POST /sesiones`, `POST /plataforma/sesiones` | IP | 20 |
-| `refresco` | `POST /sesiones/refresco` | IP | 60 |
-| `anuncio` | `POST /dispositivos/anunciar` y `/confirmar` | IP | 20 |
-| `generar_qr` | `POST /qr-accesos` | usuario | 10 |
-| `escritura` | el resto de POST/PUT/PATCH/DELETE | usuario (o IP) | 60 |
-| `lectura` | GET | usuario (o IP) | 240 |
-| `validacion` | `POST /dispositivos/validaciones` | dispositivo | 600 |
-| `dispositivo` | latidos y configuración | dispositivo | 120 |
+| Clase         | Rutas                                         | Clave          | Por defecto |
+| ------------- | --------------------------------------------- | -------------- | ----------- |
+| `login`       | `POST /sesiones`, `POST /plataforma/sesiones` | IP             | 20          |
+| `refresco`    | `POST /sesiones/refresco`                     | IP             | 60          |
+| `anuncio`     | `POST /dispositivos/anunciar` y `/confirmar`  | IP             | 20          |
+| `generar_qr`  | `POST /qr-accesos`                            | usuario        | 10          |
+| `escritura`   | el resto de POST/PUT/PATCH/DELETE             | usuario (o IP) | 60          |
+| `lectura`     | GET                                           | usuario (o IP) | 240         |
+| `validacion`  | `POST /dispositivos/validaciones`             | dispositivo    | 600         |
+| `dispositivo` | latidos y configuración                       | dispositivo    | 120         |
 
 La validación nunca usa el límite de un usuario; su tope es anti-flood por credencial. Un `429` en ella llega antes de consumir el QR y el firmware lo trata como "sin respuesta" (no abre). Queda pendiente el limitador compartido para más de una instancia (punto 3).
 
@@ -76,17 +87,17 @@ La validación nunca usa el límite de un usuario; su tope es anti-flood por cre
 
 Las estadísticas siguen siendo **informativas**: no disparan una baja ni un corte; decide una persona. Se ajustan y se amplían:
 
-| Señal | Regla | Qué detecta |
-|---|---|---|
-| **Fantasma** | Sin QR generados en 30 días y con más de 30 días de antigüedad (sin cambio) | Cuentas llenas de usuarios que no usan el plan |
-| **Ruidoso** | Más de **20** QR generados **y no usados** en un mismo día (antes, 10 de cualquier tipo). Un QR usado no suma | Bots, errores o abuso de generación |
-| **Uso masivo** (nueva) | Más de N aperturas con QR propio de un mismo usuario en un día; N distinto por rol (para el Guardia, bajo) | El Guardia o usuario que hace de portero de todos |
-| **Uso imposible** (nueva) | Dos usos del mismo usuario en puertas distintas con una diferencia de tiempo que no alcanza para ir de una a otra | QR propio compartido con otra persona |
-| **Ciclo generar-usar** (nueva) | Un QR propio usado y otro generado a los pocos minutos, repetido durante el día | El portero que abre con su QR a cada persona |
-| **Flujo atípico de cuenta** (nueva) | Aperturas por día divididas entre usuarios activos, muy por encima de lo habitual para el plan | El plan barato usado como portería de muchos |
-| **Altas en ráfaga** (nueva) | Muchos usuarios creados en poco tiempo por un mismo Administrador o Titular, aunque no llegue al tope | Creación de usuarios "a diestra y siniestra" |
-| **Tasa de uso** (nueva) | Generados / usados por usuario, junto al volumen | Distinguir flujo real de abuso: muchos generados y pocos usados es sospechoso; muchos generados y muchos usados es una puerta con tráfico |
-| **Titular cerca del tope** | 80 % del tope de Miembros (sin cambio) | — |
+| Señal                               | Regla                                                                                                             | Qué detecta                                                                                                                               |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fantasma**                        | Sin QR generados en 30 días y con más de 30 días de antigüedad (sin cambio)                                       | Cuentas llenas de usuarios que no usan el plan                                                                                            |
+| **Ruidoso**                         | Más de **20** QR generados **y no usados** en un mismo día (antes, 10 de cualquier tipo). Un QR usado no suma     | Bots, errores o abuso de generación                                                                                                       |
+| **Uso masivo** (nueva)              | Más de N aperturas con QR propio de un mismo usuario en un día; N distinto por rol (para el Guardia, bajo)        | El Guardia o usuario que hace de portero de todos                                                                                         |
+| **Uso imposible** (nueva)           | Dos usos del mismo usuario en puertas distintas con una diferencia de tiempo que no alcanza para ir de una a otra | QR propio compartido con otra persona                                                                                                     |
+| **Ciclo generar-usar** (nueva)      | Un QR propio usado y otro generado a los pocos minutos, repetido durante el día                                   | El portero que abre con su QR a cada persona                                                                                              |
+| **Flujo atípico de cuenta** (nueva) | Aperturas por día divididas entre usuarios activos, muy por encima de lo habitual para el plan                    | El plan barato usado como portería de muchos                                                                                              |
+| **Altas en ráfaga** (nueva)         | Muchos usuarios creados en poco tiempo por un mismo Administrador o Titular, aunque no llegue al tope             | Creación de usuarios "a diestra y siniestra"                                                                                              |
+| **Tasa de uso** (nueva)             | Generados / usados por usuario, junto al volumen                                                                  | Distinguir flujo real de abuso: muchos generados y pocos usados es sospechoso; muchos generados y muchos usados es una puerta con tráfico |
+| **Titular cerca del tope**          | 80 % del tope de Miembros (sin cambio)                                                                            | —                                                                                                                                         |
 
 Los umbrales empiezan como constantes en el código (como hoy en `actividad-de-usuarios.ts`) y se pasan a configuración (§7) cuando haya datos.
 
@@ -98,16 +109,17 @@ Los umbrales empiezan como constantes en el código (como hoy en `actividad-de-u
 
 **Qué se vigila.** Cada señal por separado es informativa; lo que sube de gravedad es la **combinación**:
 
-| Señal | Qué dice | Gravedad por sí sola |
-|---|---|---|
-| Varias instalaciones activas de un mismo usuario | Un PIN compartido, o una persona con varios aparatos | Baja: se ve en su ficha, no se avisa |
-| Muchas instalaciones nuevas en poco tiempo, o muchas IP distintas a la vez | Un PIN filtrado o repartido | Media: se avisa |
-| **Uso imposible** (§4): QR de un mismo usuario usados en puertas distintas con un tiempo que no alcanza | Dos personas usando el mismo usuario a la vez | Alta: se avisa |
-| Varias instalaciones **y** uso masivo o ciclo generar-usar | Un PIN que opera como portería con varios aparatos | Alta: se avisa |
+| Señal                                                                                                   | Qué dice                                             | Gravedad por sí sola                 |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------ |
+| Varias instalaciones activas de un mismo usuario                                                        | Un PIN compartido, o una persona con varios aparatos | Baja: se ve en su ficha, no se avisa |
+| Muchas instalaciones nuevas en poco tiempo, o muchas IP distintas a la vez                              | Un PIN filtrado o repartido                          | Media: se avisa                      |
+| **Uso imposible** (§4): QR de un mismo usuario usados en puertas distintas con un tiempo que no alcanza | Dos personas usando el mismo usuario a la vez        | Alta: se avisa                       |
+| Varias instalaciones **y** uso masivo o ciclo generar-usar                                              | Un PIN que opera como portería con varios aparatos   | Alta: se avisa                       |
 
 La relación entre sesión y QR es lo que separa a quien usa dos aparatos de quien presta su usuario: los QR de uno aparecen siempre cerca (misma puerta o puertas de un mismo recorrido), los de dos personas aparecen lejos y a la vez.
 
 **Qué se le da a quien administra** (sin bloquear ningún ingreso por sí solo):
+
 - **Lista de dispositivos conectados** de cada usuario, con plataforma, última actividad y IP, visible para el propietario de la cuenta (la de su cuenta) y para AGROCOM (todas).
 - **Cerrar una sesión** concreta, o todas las de un usuario, y **regenerar su PIN** (ya existe). Es la respuesta al PIN filtrado: el usuario legítimo vuelve a entrar con el nuevo.
 - **Aviso al propietario y a AGROCOM** cuando se cumple una combinación de gravedad media o alta, con el mismo criterio del §5 (una vez por evento y día).

@@ -142,18 +142,25 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
     this.errorAnular,
     this.errorListar,
     this.respaldo,
+    this.reanudado,
+    this.errorReanudar,
   });
 
   QrGenerado? generado;
 
   /// Lo que devuelve el respaldo sin internet del QR propio.
   QrGenerado? respaldo;
+
+  /// Lo que devuelve `reanudarPropio`: el QR propio vigente, o `null`.
+  QrGenerado? reanudado;
+  Exception? errorReanudar;
   Pagina<QrAcceso>? listado;
   Map<EstadoQr, int> resumen;
   Exception? errorGenerar;
   Exception? errorAnular;
   Exception? errorListar;
 
+  final List<List<String>> reanudaciones = [];
   final List<DatosGeneracion> generaciones = [];
   final List<DateTime> ahoras = [];
   final List<EstadoQr> estadosListados = [];
@@ -203,6 +210,13 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
 
   @override
   Future<QrGenerado?> ultimoPropioGuardado() async => respaldo;
+
+  @override
+  Future<QrGenerado?> reanudarPropio(List<String> puertaIds) async {
+    reanudaciones.add(puertaIds);
+    if (errorReanudar != null) throw errorReanudar!;
+    return reanudado;
+  }
 }
 
 class EventosRepositorioFalso implements EventosRepositorio {

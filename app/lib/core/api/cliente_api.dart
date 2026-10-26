@@ -88,11 +88,14 @@ class ClienteApi {
 
   /// `venceAt` y `etiqueta` van solo si el usuario los eligió; sin ellos, la
   /// API calcula el fin del día local del sitio (ADR 0008).
+  /// [reemplazar] pide otro QR propio aunque el vigente siga sin usar (la app
+  /// perdió su token). Solo tiene efecto con [propio] (ADR 0030 §2.1.3).
   Future<QrGeneradoDto> generarQr({
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
     bool propio = false,
+    bool reemplazar = false,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
@@ -102,6 +105,7 @@ class ClienteApi {
           'vence_at': ?venceAt?.toUtc().toIso8601String(),
           'etiqueta': ?etiqueta,
           if (propio) 'propio': true,
+          if (reemplazar) 'reemplazar': true,
         },
       );
       return QrGeneradoDto.desde(r.data!);
