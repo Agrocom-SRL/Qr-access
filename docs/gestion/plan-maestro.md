@@ -71,7 +71,7 @@ CERRAR
 
 ## 4. Registro de trabajo
 
-### 4.1 Integrado (verificado con GitHub el 2026-10-23)
+### 4.1 Integrado (verificado con GitHub el 2026-10-26)
 
 | Bloque | ADR | PR | Estado |
 |---|---|---|---|
@@ -87,14 +87,16 @@ CERRAR
 | Panel: estadísticas, planes, alta de cuenta, pagos por QR | 0017, 0024 | #81 | Integrado |
 | Cuentas de cobro y responsive del filtro | 0029 | #82 | Integrado |
 | Relevo de la sesión del 22 de octubre | — | #83 | Integrado |
+| **W0** — Documentación de límites, abuso, seguridad y plan | 0030–0033 | #84 | Integrado |
+| `bin/reiniciar-local`, deploy manual fijado a master, versiones 1.0.4 y 1.0.5 | 0014 | #86, #90, #91, #94 | Integrado |
+| iOS, paquete unificado, privacidad y términos | — | #92 | Integrado |
+| MariaDB 10.11 y producción sobre la base compartida | 0034 | #93 | Integrado |
 
-Cerrados sin integrar (no cuentan): #46, #62, #63, #70, #73, #77. Último tag: **v1.0.2**; hay 21 commits en `develop` sin release y el código ya dice 1.0.3 (ver W-REL).
+Cerrados sin integrar (no cuentan): #46, #62, #63, #70, #73, #77. Último tag: **v1.0.5** (`c852c37`, igual a `develop`). Los PR de Dependabot #85, #87–#89 también están cerrados.
 
 ### 4.2 En curso
 
-| Ítem | ADR | Rama | Estado |
-|---|---|---|---|
-| **W0 — Documentación de límites, abuso, seguridad y plan** (ADR 0030–0033, enmiendas al 0017 y al funcional, skills `generacion-qr-segura`, `limites-y-abuso`, `seguridad-plataforma`, agente `auditor-seguridad`, este plan, `bin/estado-plan`) | 0030–0033 | `feature/limites-de-uso` | En rama (sin commit ni PR) |
+Ninguno. La siguiente ola es W1.
 
 ### 4.3 Olas pendientes (en orden; cada una = una rama y un PR)
 
@@ -115,7 +117,7 @@ Cerrados sin integrar (no cuentan): #46, #62, #63, #70, #73, #77. Último tag: *
 | **W12** | Señales nuevas de abuso y vista de AGROCOM en el panel (consumo de la bolsa, flujo atípico) | 0030 §4–5 | W5, W8, W11 | backend, web-react | Pendiente |
 | **W13** | Prueba de carga con k6 en un entorno de prueba y ajuste de umbrales | 0030 §3, 0032 | W3–W7 | distribucion, auditor-seguridad | Pendiente |
 | **W14** | Renombrar `eventos_acceso` (recomendado `intentos_acceso`), migración y PR propios, al final | 0032 §5 | W7, W10 | arquitectura, modelo-datos, backend | Pendiente (nombre sin decidir) |
-| **W-REL** | Release: tag, versiones alineadas en api, web, app y firmware (código ya en 1.0.3), despliegue con `bin/desplegar` | 0014 | lo que Miguel decida | distribucion | Pendiente (decisión de Miguel) |
+| **W-REL** | Release de cada ola: tag, versiones alineadas en api, web, app y firmware, despliegue con `bin/desplegar` | 0014 | lo que Miguel decida | distribucion | v1.0.5 publicado; los siguientes, por decisión de Miguel |
 
 Ideas aceptadas como futuro (no se implementan sin pedido del cliente): puerta sensible, etiqueta obligatoria por política, reautenticación, aprobación.
 
