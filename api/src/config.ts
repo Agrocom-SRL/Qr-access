@@ -104,6 +104,12 @@ const esquema = z.object({
   // Autenticaciones fallidas por IP y por minuto (ADR 0030 §3.2): pasado el tope, esa IP recibe
   // 429 sin que se verifique su credencial. Solo cuentan los fallos; un acierto no consume.
   LIMITE_FALLOS_AUTENTICACION_POR_MINUTO: entero(30, 5),
+
+  // Sesiones abiertas a la vez (ADR 0030 §4.1). Iniciar sesión nunca se bloquea: pasado el tope se cierra la
+  // más antigua. Por usuario (teléfono, tablet, navegador…) y por instalación (varios usuarios en un aparato).
+  // Valores de partida: se afinan con datos reales.
+  SESIONES_MAX_POR_USUARIO: entero(10),
+  SESIONES_MAX_POR_INSTALACION: entero(5),
 });
 
 export type Config = z.infer<typeof esquema>;

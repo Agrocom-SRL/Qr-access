@@ -36,6 +36,9 @@ export const ROLES_BASE: readonly RolBase[] = [
       // Restringe y suspende a sus Miembros, y solo a ellos (ADR 0033 §3, D-25).
       'seguridad.usuario.restringir',
       'seguridad.usuario.suspender',
+      // Ve y cierra las sesiones de sus Miembros (ADR 0030 §4.1), y solo las de ellos.
+      'seguridad.sesion.ver',
+      'seguridad.sesion.cerrar',
     ],
   },
   { nombre: 'Miembro', protegido: false, permisos: PERMISOS_DE_MIEMBRO },

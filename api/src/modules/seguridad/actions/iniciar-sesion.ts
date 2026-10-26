@@ -7,6 +7,8 @@ import { sumarDias } from '../../../platform/tiempo/fechas.js';
 import { estadoEfectivo, nodosDeEstado } from '../domain/estado.js';
 import { calcularIndiceDePin, normalizarPin, secretoDePin } from '../domain/pin.js';
 import { rolUnico } from '../domain/rol-unico.js';
+import { nombreDeDispositivoLimpio, type OrigenDeSesion } from '../domain/sesion.js';
+import { cerrarLasQueSobran } from '../apertura-de-sesion.js';
 import {
   RepositorioDeCuentas,
   RepositorioDeRolesDeUsuario,
@@ -15,7 +17,7 @@ import {
 } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
 
-export interface DatosDeIngreso {
+export interface DatosDeIngreso extends OrigenDeSesion {
   readonly pin: string;
   readonly ip: string;
   readonly agente: string | null;
@@ -121,16 +123,32 @@ export async function ejecutar(
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
     const rolActivoId = rolUnico(roles.map((rol) => rol.id));
     const refresco = generarTokenOpaco(32);
-    const sesionId = await enTransaccion(servicios.pool, (tx) =>
-      new RepositorioDeSesiones(servicios.pool).crear(tx, {
+    const instalacionId = datos.instalacionId ?? null;
+    const sesionId = await enTransaccion(servicios.pool, async (tx) => {
+      const sesiones = new RepositorioDeSesiones(servicios.pool);
+      await cerrarLasQueSobran(
+        sesiones,
+        tx,
+        { usuarioId: usuario.id, instalacionId },
+        {
+          maxPorUsuario: servicios.config.SESIONES_MAX_POR_USUARIO,
+          maxPorInstalacion: servicios.config.SESIONES_MAX_POR_INSTALACION,
+        },
+        ahora,
+      );
+      return sesiones.crear(tx, {
         usuarioId: usuario.id,
         rolActivoId,
         refreshHash: sha256Hex(refresco),
         agente: datos.agente,
         ip: datos.ip,
         expiraAt: sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
-      }),
-    );
+        instalacionId,
+        plataforma: datos.plataforma ?? null,
+        nombreDeDispositivo: nombreDeDispositivoLimpio(datos.dispositivo),
+        ahora,
+      });
+    });
     const acceso = await servicios.jwt.firmar({
       usuarioId: usuario.id,
       cuentaId: cuenta.id,

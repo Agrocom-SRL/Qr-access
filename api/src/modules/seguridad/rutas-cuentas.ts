@@ -1,6 +1,9 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import * as administradores from './actions/administradores-de-cuenta.js';
+import { ejecutar as cerrarSesionDeUsuarioDeCuenta } from './actions/cerrar-sesion-de-usuario-de-cuenta.js';
+import { ejecutar as cerrarSesionesDeUsuarioDeCuenta } from './actions/cerrar-sesiones-de-usuario-de-cuenta.js';
+import { ejecutar as listarSesionesDeUsuarioDeCuenta } from './actions/listar-sesiones-de-usuario-de-cuenta.js';
 import { ejecutar as cambiarCodigo } from './actions/cambiar-codigo-de-cuenta.js';
 import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
@@ -32,7 +35,10 @@ import {
   consultaDeCuentas,
   cuerpoDeNuevaCuenta,
   parametrosDeCuenta,
+  parametrosDeSesionDeUsuarioDeCuenta,
   parametrosDeUsuarioDeCuenta,
+  respuestaDeSesionesCerradas,
+  respuestaListadoDeSesiones,
   respuestaDeCobranza,
   respuestaDeCodigoDeCuenta,
   respuestaDeSuscripcionDeCuenta,
@@ -231,6 +237,62 @@ export const rutasDeCuentas =
           { cuentaId: id, usuarioId, motivo: request.body.motivo },
           'usuario reactivado por la plataforma',
         );
+        return reply.status(204).send();
+      },
+    );
+
+    // Dispositivos conectados de un usuario de la cuenta (ADR 0030 §4.1): AGROCOM los ve y los cierra.
+    app.get(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          response: { 200: respuestaListadoDeSesiones },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.ver'),
+      },
+      (request) =>
+        listarSesionesDeUsuarioDeCuenta(
+          pool,
+          plataformaDe(request),
+          request.params.id,
+          request.params.usuarioId,
+        ),
+    );
+
+    app.delete(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          response: { 200: respuestaDeSesionesCerradas },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.cerrar'),
+      },
+      async (request) => ({
+        cerradas: await cerrarSesionesDeUsuarioDeCuenta(
+          pool,
+          plataformaDe(request),
+          request.params.id,
+          request.params.usuarioId,
+        ),
+      }),
+    );
+
+    app.delete(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones/:sesionId',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeSesionDeUsuarioDeCuenta },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.cerrar'),
+      },
+      async (request, reply) => {
+        const { id, usuarioId, sesionId } = request.params;
+        await cerrarSesionDeUsuarioDeCuenta(pool, plataformaDe(request), id, usuarioId, sesionId);
         return reply.status(204).send();
       },
     );
