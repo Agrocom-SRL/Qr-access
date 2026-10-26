@@ -28,20 +28,47 @@ Cada capa pone lo suyo, y ninguna repite lo de otra. NPMplus termina TLS y reenv
 
 | Qué | Dónde | Valor |
 |---|---|---|
-| HSTS | NPMplus, pestaña SSL del host `acceso.agrocom.com.bo` | Activado con `max-age=31536000`. Subdominios: **no**, hasta confirmar que todos los de `agrocom.com.bo` sirven HTTPS (decisión pendiente). Preload: no. |
+| HSTS | NPMplus, pestaña SSL del host `acceso.agrocom.com.bo` | Activado con `max-age=31536000`. HSTS es **por host**: `/app/` vive en ese mismo host, así que queda cubierto y no hay que configurar nada aparte para la app (se comprueba en la lista de abajo). Subdominios: **no**, hasta confirmar que todos los de `agrocom.com.bo` sirven HTTPS (decisión pendiente). Preload: no. |
 | Caché del borde | NPMplus, el mismo host | «Cache Assets» (o la caché equivalente de NPMplus) **desactivado**, sin excepciones. Una ruta `/api/…/x.js` no puede quedar guardada si el borde cachea por extensión. |
 | `/api/` sin caché | API y Nginx del CT | La API responde `Cache-Control: no-store` y `Vary: Authorization`, también en los errores. El Nginx no tiene `proxy_cache`. NPMplus no debe ocultar ni reescribir `Cache-Control` (nada de `proxy_hide_header` ni `add_header` sobre `/api/`). |
-| CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` | Nginx del CT: `web/nginx/cabeceras-seguridad.conf` (panel) y `app/nginx/cabeceras-seguridad.conf` (app) | Por respuesta. NPMplus no las añade, para no duplicarlas. Si alguien añade cabeceras en la pestaña Advanced del host, que no repitan estas. |
+| CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` | Nginx del CT: `web/nginx/cabeceras-seguridad.conf` (panel) y `app/nginx/cabeceras-seguridad.conf` (app) | Por respuesta. NPMplus no las añade, para no duplicarlas. Si alguien añade cabeceras en la pestaña Advanced del host, que no repitan estas. El panel permite `img-src 'self' blob:` para la vista previa de QR y comprobantes (un blob local, no sale del origen). |
 | Caché del panel | Nginx del CT | Solo `/assets/` (nombres con hash): un año, `immutable`, y solo en respuestas 2xx. El resto, `no-cache`. |
+| Respuesta si la API no responde | Nginx del CT (`@api_caida` en `web/nginx.conf` y `app/nginx.conf`) | 503 con problema RFC 9457 (`servicio.no_disponible`), `no-store`, `Vary: Authorization`. Un 503 que emite la propia API pasa tal cual. |
 | Límites de borde (`limit_req`, `limit_conn`, tope de cuerpo, timeouts; ADR 0030 §3) | NPMplus | Pendiente (ola W3). Sus valores se documentarán aquí cuando se fijen. |
 
 **Comprobación tras desplegar** (con la versión que incluye W1):
 
 ```
-curl -sI https://acceso.agrocom.com.bo/api/v1/salud | grep -iE 'cache-control|strict-transport'   # no-store y HSTS
-curl -sI https://acceso.agrocom.com.bo/api/v1/no-existe.js                                       # sin caché del borde; nunca HTML del panel
-curl -sI https://acceso.agrocom.com.bo/assets/                                                   # sin X-Cache-Status ni Age de NPMplus
+# API: no-store y Vary: Authorization, y HSTS del host
+curl -sI https://acceso.agrocom.com.bo/api/v1/salud | grep -iE '^(cache-control|vary|strict-transport-security)'
+# Un archivo con hash de /assets/, tomado del propio índice (no hace falta escribir su nombre)
+RUTA=$(curl -s https://acceso.agrocom.com.bo/ | grep -o '/assets/[^"]*\.js' | head -1)
+curl -sI "https://acceso.agrocom.com.bo$RUTA" | grep -iE '^(cache-control|age|x-cache-status)'
+#   esperado: solo «cache-control: public, max-age=31536000, immutable»; sin «age» ni «x-cache-status» de NPMplus
+# La app comparte host: HSTS también en /app/
+curl -sI https://acceso.agrocom.com.bo/app/ | grep -i '^strict-transport-security'
+# Una ruta /api/… con extensión .js: sin caché del borde y nunca HTML del panel
+curl -sI https://acceso.agrocom.com.bo/api/v1/no-existe.js | grep -iE '^(cache-control|age|x-cache-status|content-type)'
 ```
+
+**NPMplus no añade cabeceras propias ni recorta `Vary`.** Se compara la lista de nombres de cabecera que llega por el borde con la que sale del CT (directo, por la red privada). Solo puede diferir `strict-transport-security`, que pone NPMplus a propósito; cualquier otra diferencia es una cabecera inyectada o recortada. `vary` debe contener `Authorization` en ambos lados.
+
+```
+nombres() { tr -d '\r' | cut -d: -f1 | tr 'A-Z' 'a-z' | sort; }
+diff <(curl -sI http://192.168.100.236/api/v1/salud | nombres) <(curl -sI https://acceso.agrocom.com.bo/api/v1/salud | nombres)
+curl -sI https://acceso.agrocom.com.bo/api/v1/salud | tr -d '\r' | grep -i '^vary'   # debe incluir Authorization
+```
+
+### Checklist de despliegue del borde
+
+Antes de dar por bueno un despliegue, en NPMplus y en el CT 120:
+
+- [ ] **HSTS** activado en el host `acceso.agrocom.com.bo` con `max-age=31536000`, sin subdominios y sin preload; `strict-transport-security` sale en `/`, en `/app/` y en `/api/`.
+- [ ] **«Cache Assets» desactivado** en el host `acceso.agrocom.com.bo` de NPMplus, sin excepciones.
+- [ ] **Sin `proxy_cache`** en el borde ni en el CT: `grep -n proxy_cache web/nginx.conf app/nginx.conf` no devuelve nada.
+- [ ] NPMplus no oculta, reescribe ni añade `Cache-Control` ni `Vary` sobre `/api/` (ni `proxy_hide_header`, ni `add_header` en la pestaña Advanced).
+- [ ] La comprobación de nombres de cabecera (arriba) no muestra cabeceras inyectadas por NPMplus.
+- [ ] `bin/verificar-nginx panel` y `bin/verificar-nginx app` pasan sobre el build que se despliega.
 
 ### Excepciones de la CSP de la app web
 
@@ -54,10 +81,11 @@ La CSP de la app (`app/nginx/cabeceras-seguridad.conf`) es estricta, pero Flutte
 | `https://www.gstatic.com/flutter-canvaskit/` en `script-src` y `connect-src` | El motor carga canvaskit de su CDN por omisión; `flutter build web` no tiene opción para servirlo desde el propio sitio. | Autohospedar canvaskit con un `web/flutter_bootstrap.js` propio (`canvasKitBaseUrl`) y quitar la excepción. |
 | `connect-src https://fonts.gstatic.com/s/` | Fuentes de respaldo del motor para glifos que no están en las fuentes incluidas. Sin ella esos glifos no se ven. | Aceptar, o incluir las fuentes que hagan falta en `assets/`. |
 | `style-src 'unsafe-inline'` | El motor inserta sus propios estilos. Sin ella el navegador los bloquea y lo reporta en consola (la pantalla de ingreso se ve igual). No es excepción de script. | Quitarla si el motor admite nonce o hash para sus estilos. |
+| `img-src 'self' data: blob:` | Sin justificar: ni `data:` ni `blob:` se probaron en la app; quedaron en la directiva. | Probar sin `data:` y sin `blob:` con Chrome headless y quitar lo que no haga falta. |
 
 ### Cómo se prueba
 
-`bin/verificar-nginx panel` y `bin/verificar-nginx app` sirven la configuración real con el build (con Docker, la imagen `nginxinc/nginx-unprivileged` de los Dockerfile; sin Docker, el nginx del host) y comprueban: sintaxis, cabeceras, caché solo en `/assets/` y en 2xx, 404 para archivos inexistentes, fallback SPA solo para rutas sin extensión, la ausencia de script o estilo en línea en el panel y el hash del splash. Corren en `bin/verify` y en la CI (`ci.yml`, jobs `web` y `app`).
+`bin/verificar-nginx panel` y `bin/verificar-nginx app` sirven la configuración real con el build (con Docker, la imagen `nginxinc/nginx-unprivileged` de los Dockerfile; sin Docker, el nginx del host) y comprueban: sintaxis, cabeceras, caché solo en `/assets/` y en 2xx, 404 para archivos inexistentes, fallback SPA solo para rutas sin extensión, la ausencia de script o estilo en línea en el panel, el `img-src 'self' blob:` del panel, la respuesta de la API caída (503 problema+json, `no-store`, una sola `Cache-Control`) y el hash del splash. Corren en `bin/verify` y en la CI (`ci.yml`, jobs `web` y `app`).
 
 ### Pendiente: `X-Forwarded-Proto`
 

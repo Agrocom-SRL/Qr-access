@@ -141,6 +141,18 @@ caso() {
     if "$@"; then ok "$nombre"; else mal "$nombre (código $estado)"; fi
 }
 
+# La API no escucha en la prueba (upstream cerrado): nginx debe responder un problema RFC 9457 sin caché,
+# con una sola Cache-Control (nginx no deduplica add_header y la de la API se oculta con proxy_hide_header).
+paso "$parte: API caída (upstream cerrado)"
+c_api_caida() {
+    pedir /api/v1/salud && [ "$estado" = 503 ] &&
+    tiene content-type "application/problem+json" &&
+    tiene vary "Authorization" && tiene cache-control "no-store" && cabeceras_seguridad &&
+    cuerpo_tiene '"code":"servicio.no_disponible"' &&
+    [ "$(tr -d '\r' < "$work/cab" | grep -ci '^cache-control:')" -eq 1 ]
+}
+caso "/api/ sin API responde 503 problema+json, no-store y una sola Cache-Control" c_api_caida
+
 if [ "$parte" = panel ]; then
     paso "panel: rutas, caché y cabeceras"
     c_raiz() { pedir / && [ "$estado" = 200 ] && cabeceras_seguridad && sin_csp_insegura && tiene cache-control "no-cache" && cuerpo_tiene 'id="raiz"'; }
@@ -158,6 +170,9 @@ if [ "$parte" = panel ]; then
     caso "archivo inexistente con extensión (/x.js) da 404, no el índice" c_estatico_inexistente
     caso "ruta de React Router (/ingreso) devuelve el índice" c_ruta_spa
     caso "/api/… con extensión .js va a la API, no al panel" c_api_no_es_panel
+    # img-src con blob: (vista previa de QR y comprobantes con URL.createObjectURL); exacto, sin data:
+    c_img_blob() { pedir / && [ "$estado" = 200 ] && tiene content-security-policy "img-src 'self' blob:;"; }
+    caso "CSP del panel permite img-src 'self' blob: (y no data:)" c_img_blob
 
     paso "panel: el build no necesita CSP con 'unsafe-inline'"
     c_sin_inline() {
@@ -178,6 +193,9 @@ if [ "$parte" = app ]; then
     caso "/app/ sirve la app con CSP y sin caché" c_app
     caso "/app/main.dart.js sirve el motor con cabeceras" c_app_js
     caso "/app/ archivo inexistente da 404, no el índice" c_app_inexistente
+    # Las extensiones que el panel ya trata como estáticas: sin esto, un .woff2 o .html que falta devolvería la app
+    c_app_fuentes_html() { pedir "/app/no-existe-$$.woff2" && [ "$estado" = 404 ] && ! cuerpo_tiene 'splash' && pedir "/app/no-existe-$$.html" && [ "$estado" = 404 ] && ! cuerpo_tiene 'splash'; }
+    caso "/app/ woff2 y html inexistentes dan 404, no el índice" c_app_fuentes_html
     caso "/app/ruta de go_router devuelve la app (fallback SPA)" c_app_spa
     caso "/ redirige a /app/" c_raiz_redirige
 
