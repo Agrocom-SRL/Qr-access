@@ -18,6 +18,12 @@ export const MOTIVO_PERMITIDO = 'acceso.permitido';
  */
 export const VENTANA_DE_REPETICION_MS = 15_000;
 
+/**
+ * Repeticiones permitidas por cada apertura original dentro de la ventana (ADR 0032 §3): una sola. Cubre
+ * la respuesta perdida; una segunda relectura ya no es una respuesta perdida sino alguien insistiendo.
+ */
+export const MAX_REPETICIONES_POR_ORIGINAL = 1;
+
 /** Ventana para enlazar un rechazo idéntico al primero y no llenar el registro de ruido (ADR 0032 §4.2). */
 export const VENTANA_DE_RECHAZO_REPETIDO_MS = 60_000;
 

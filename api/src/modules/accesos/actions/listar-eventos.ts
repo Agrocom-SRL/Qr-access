@@ -28,6 +28,10 @@ export interface EventoListado {
   } | null;
   /** Relecturas enlazadas a este intento dentro de la ventana (ADR 0032 §4); el listado no las repite. */
   repeticiones: number;
+  /** De ellas, las que volvieron a abrir la puerta por respuesta perdida (ADR 0032 §3). */
+  repeticiones_permitidas: number;
+  /** De ellas, las que se rechazaron de nuevo (ADR 0032 §4.2). */
+  repeticiones_rechazadas: number;
 }
 
 export interface FiltrosDeEventos {
@@ -105,7 +109,11 @@ export async function ejecutar(
           sitio: { id: puerta?.sitioId ?? '', nombre: puerta?.sitioNombre ?? '' },
         },
         qr_id: fila.qr_acceso_id,
-        repeticiones: repeticiones.get(fila.id) ?? 0,
+        repeticiones:
+          (repeticiones.get(fila.id)?.permitidas ?? 0) +
+          (repeticiones.get(fila.id)?.rechazadas ?? 0),
+        repeticiones_permitidas: repeticiones.get(fila.id)?.permitidas ?? 0,
+        repeticiones_rechazadas: repeticiones.get(fila.id)?.rechazadas ?? 0,
         qr:
           fila.qr_acceso_id === null || fila.qr_generado_por === null
             ? null

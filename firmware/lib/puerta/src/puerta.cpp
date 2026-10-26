@@ -50,8 +50,15 @@ Acciones Maquina::alResponder(uint32_t id, const Resultado& resultado, uint32_t 
   memset(qr_, 0, sizeof(qr_));
   // El antirrebote corre desde la respuesta, no desde la lectura.
   ultimoQrMs_ = ahoraMs;
-  ventanaQrMs_ = resultado.valida ? ANTIRREBOTE_MISMO_QR_MS : ANTIRREBOTE_TRAS_FALLO_MS;
-  if (resultado.valida && resultado.abrir && resultado.segundos > 0) {
+  const bool abre = resultado.valida && resultado.abrir && resultado.segundos > 0;
+  // Tras abrir se ignora el mismo texto toda la ventana de la API: releerlo dentro de ella no debe
+  // llegar al servidor, que lo tomaría por la respuesta perdida y repetiría la apertura (ADR 0032 §3).
+  if (abre) {
+    ventanaQrMs_ = IGNORAR_MISMO_QR_TRAS_ABRIR_MS;
+  } else {
+    ventanaQrMs_ = resultado.valida ? ANTIRREBOTE_MISMO_QR_MS : ANTIRREBOTE_TRAS_FALLO_MS;
+  }
+  if (abre) {
     const uint16_t segundos =
         resultado.segundos > maxAperturaS_ ? maxAperturaS_ : resultado.segundos;
     return abrir(static_cast<uint32_t>(segundos) * 1000U, ahoraMs, Indicacion::Permitido);

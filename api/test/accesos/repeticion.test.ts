@@ -1,5 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RepositorioDeEventos } from '../../src/modules/accesos/repository.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
 import {
@@ -98,27 +99,20 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
     expect(repetido).toMatchObject({ resultado: 'permitido', motivo_code: 'acceso.permitido' });
   });
 
-  it('las repeticiones apuntan siempre al original y la ventana no se encadena', async () => {
+  it('solo se permite UNA repetición por original: la segunda relectura recibe qr.usado', async () => {
     const qr = await qrDeLasDosPuertas();
     const primera = await validar(a.dispositivoPrincipal, qr.texto);
-    await validar(a.dispositivoPrincipal, qr.texto);
-    await validar(a.dispositivoPrincipal, qr.texto);
-    const filas = await eventos();
-    expect(filas.map((e) => e.repetido_de_id)).toEqual([
-      null,
-      primera.evento_id,
-      primera.evento_id,
-    ]);
-
-    // A los 16 s del ORIGINAL ya no abre, aunque la última repetición sea reciente.
-    await prueba.pool.query(
-      'UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL 16 SECOND WHERE id = ?',
-      [primera.evento_id],
-    );
+    expect((await validar(a.dispositivoPrincipal, qr.texto)).abrir).toBe(true);
     expect(await validar(a.dispositivoPrincipal, qr.texto)).toMatchObject({
       abrir: false,
       motivo_code: 'qr.usado',
     });
+    const filas = await eventos();
+    expect(filas.map((e) => [e.resultado, e.repetido_de_id])).toEqual([
+      ['permitido', null],
+      ['permitido', primera.evento_id],
+      ['rechazado', null],
+    ]);
   });
 
   it('pasada la ventana, el QR usado se rechaza con qr.usado', async () => {
@@ -215,23 +209,42 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
     expect(String(segundoB?.repetido_de_id)).toBe(String(primeroB?.id));
   });
 
-  it('relecturas concurrentes del mismo lector: un solo consumo y todas abren', async () => {
+  it('relecturas concurrentes del mismo lector: un solo consumo, a lo sumo una repetición abre y el resto qr.usado', async () => {
     const qr = await qrDeLasDosPuertas();
     const respuestas = await Promise.all(
       Array.from({ length: 6 }, () => validar(a.dispositivoPrincipal, qr.texto)),
     );
-    expect(respuestas.every((r) => r.abrir)).toBe(true);
     const filas = await eventos();
     expect(filas).toHaveLength(6);
-    const originales = filas.filter((e) => e.repetido_de_id === null);
-    // Un solo consumo => un solo original permitido; las demás quedan enlazadas a él.
+    const permitidas = filas.filter((e) => e.resultado === 'permitido');
+    const originales = permitidas.filter((e) => e.repetido_de_id === null);
+    const repetidas = permitidas.filter((e) => e.repetido_de_id !== null);
+    // Un solo consumo => un solo original; como máximo UNA repetición abre (ADR 0032 §3).
     expect(originales).toHaveLength(1);
+    expect(repetidas.length).toBeLessThanOrEqual(1);
+    expect(repetidas.every((e) => String(e.repetido_de_id) === String(originales[0]?.id))).toBe(
+      true,
+    );
+    expect(respuestas.filter((r) => r.abrir)).toHaveLength(1 + repetidas.length);
     expect(
-      filas
-        .filter((e) => e.repetido_de_id !== null)
-        .every((e) => String(e.repetido_de_id) === String(originales[0]?.id)),
+      respuestas.filter((r) => !r.abrir).every((r) => r.motivo_code === 'qr.usado'),
     ).toBe(true);
     expect(await usadoAt(qr.id)).toBeInstanceOf(Date);
+  });
+
+  it('si falla buscar el original de un rechazo, el rechazo se registra igual sin enlace', async () => {
+    const espia = vi
+      .spyOn(RepositorioDeEventos.prototype, 'buscarOriginal')
+      .mockRejectedValueOnce(new Error('fallo simulado'));
+    try {
+      const respuesta = await validar(a.dispositivoPrincipal, 'basura');
+      expect(respuesta).toMatchObject({ abrir: false, motivo_code: 'qr.formato_invalido' });
+    } finally {
+      espia.mockRestore();
+    }
+    const filas = await eventos();
+    expect(filas).toHaveLength(1);
+    expect(filas[0]).toMatchObject({ resultado: 'rechazado', repetido_de_id: null });
   });
 
   it('un rechazo idéntico (mismo lector, token y motivo) dentro de 60 s se inserta enlazado al primero', async () => {
@@ -264,13 +277,12 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
     expect((await eventos()).slice(0, antes.length)).toEqual(antes);
   });
 
-  it('el listado y el resumen muestran solo el original, con las repeticiones contadas (×N)', async () => {
+  it('el listado y el resumen muestran solo el original, con las repeticiones contadas y distinguidas', async () => {
     const qr = await qrDeLasDosPuertas();
-    await validar(a.dispositivoPrincipal, qr.texto);
-    await validar(a.dispositivoPrincipal, qr.texto);
-    await validar(a.dispositivoPrincipal, qr.texto);
-    await validar(a.dispositivoTrasero, qr.texto);
-    await validar(a.dispositivoTrasero, qr.texto);
+    await validar(a.dispositivoPrincipal, qr.texto); // permitido
+    await validar(a.dispositivoPrincipal, qr.texto); // repetición permitida
+    await validar(a.dispositivoTrasero, qr.texto); // qr.usado
+    await validar(a.dispositivoTrasero, qr.texto); // repetición rechazada
     const sesion = await iniciarSesion(prueba.app, a.administrador.pin);
     const listado = (
       await prueba.app.inject({
@@ -278,11 +290,28 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
         url: '/api/v1/eventos-acceso',
         headers: conUsuario(sesion),
       })
-    ).json<{ datos: { motivo_code: string; repeticiones: number }[]; meta: { total: number } }>();
+    ).json<{
+      datos: {
+        motivo_code: string;
+        repeticiones: number;
+        repeticiones_permitidas: number;
+        repeticiones_rechazadas: number;
+      }[];
+      meta: { total: number };
+    }>();
     expect(listado.meta.total).toBe(2);
-    expect(listado.datos.map((e) => [e.motivo_code, e.repeticiones]).sort()).toEqual([
-      ['acceso.permitido', 2],
-      ['qr.usado', 1],
+    expect(
+      listado.datos
+        .map((e) => [
+          e.motivo_code,
+          e.repeticiones,
+          e.repeticiones_permitidas,
+          e.repeticiones_rechazadas,
+        ])
+        .sort(),
+    ).toEqual([
+      ['acceso.permitido', 1, 1, 0],
+      ['qr.usado', 1, 0, 1],
     ]);
     const resumen = await prueba.app.inject({
       method: 'GET',
@@ -293,8 +322,10 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
       permitidos: 1,
       rechazados: 1,
       rechazados_por_motivo: [{ motivo_code: 'qr.usado', total: 1 }],
+      repeticiones_permitidas: 1,
+      repeticiones_rechazadas: 1,
     });
     // Ninguna fila desaparece (invariante 4).
-    expect(await eventos()).toHaveLength(5);
+    expect(await eventos()).toHaveLength(4);
   });
 });

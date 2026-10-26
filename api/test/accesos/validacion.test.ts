@@ -120,8 +120,8 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     ]);
     const resultados = respuestas.map((r) => r.json<Validacion>());
     expect(respuestas.every((r) => r.statusCode === 200)).toBe(true);
-    // Un solo consumo y un solo lector abre (con sus relecturas dentro de la ventana, ADR 0032 §3);
-    // el otro lector recibe qr.usado.
+    // Un solo consumo y un solo lector abre; ese lector tiene a lo sumo UNA repetición (ADR 0032 §3);
+    // el resto, incluido el otro lector, recibe qr.usado.
     const registrados = await eventos();
     expect(registrados).toHaveLength(6);
     const originales = registrados.filter(
@@ -129,10 +129,15 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     );
     expect(originales).toHaveLength(1);
     const lectorGanador = String(originales[0]?.dispositivo_id);
-    for (const [i, resultado] of resultados.entries()) {
-      const lector = i % 2 === 0 ? a.dispositivoPrincipal : a.dispositivoTrasero;
-      if (lector.id === lectorGanador) expect(resultado.abrir, `lectura ${i}`).toBe(true);
-      else expect(resultado).toMatchObject({ abrir: false, motivo_code: 'qr.usado' });
+    const repetidas = registrados.filter(
+      (e) => e.resultado === 'permitido' && e.repetido_de_id !== null,
+    );
+    expect(repetidas.length).toBeLessThanOrEqual(1);
+    for (const repetida of repetidas) expect(String(repetida.dispositivo_id)).toBe(lectorGanador);
+    const abrieron = resultados.filter((r) => r.abrir);
+    expect(abrieron).toHaveLength(1 + repetidas.length);
+    for (const resultado of resultados.filter((r) => !r.abrir)) {
+      expect(resultado).toMatchObject({ motivo_code: 'qr.usado' });
     }
     const [usos] = await prueba.pool.query<RowDataPacket[]>(
       'SELECT usado_at FROM qr_accesos WHERE id = ?',
@@ -433,6 +438,8 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         qr_id: null,
         qr: null,
         repeticiones: 0,
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect(cuerpo.datos.at(-1)).toMatchObject({
         resultado: 'permitido',
@@ -521,11 +528,15 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         permitidos: 2,
         rechazados: 1,
         rechazados_por_motivo: [{ motivo_code: 'qr.formato_invalido', total: 1 }],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(a.usuario.pin)).json()).toEqual({
         permitidos: 1,
         rechazados: 0,
         rechazados_por_motivo: [],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(b.administrador.pin)).json()).toMatchObject({
         permitidos: 0,

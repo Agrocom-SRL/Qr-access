@@ -20,6 +20,9 @@ export interface EventoDeAccesoDePlataforma {
   puerta: { id: string; nombre: string; sitio: string };
   dispositivo: string | null;
   qr_etiqueta: string | null;
+  /** Aperturas repetidas enlazadas a este intento (ADR 0032 §3). */
+  repeticiones_permitidas: number;
+  repeticiones_rechazadas: number;
 }
 
 /**
@@ -47,6 +50,8 @@ export async function ejecutar(
       puerta: evento.puerta,
       dispositivo: evento.dispositivo,
       qr_etiqueta: evento.qrEtiqueta,
+      repeticiones_permitidas: evento.repeticionesPermitidas,
+      repeticiones_rechazadas: evento.repeticionesRechazadas,
     })),
     paginacion,
     total,

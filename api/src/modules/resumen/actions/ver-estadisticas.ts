@@ -15,7 +15,14 @@ export interface Estadisticas {
   /** Cuántas cuentas y usuarios en uso tiene cada plan contratado. */
   cuentas_por_plan: { plan: string; cuentas: number; cupo_usuarios: number | null }[];
   /** Últimos 14 días (hoy incluido), con ceros donde no hubo intentos. */
-  accesos_por_dia: { dia: string; permitidos: number; rechazados: number }[];
+  accesos_por_dia: {
+    dia: string;
+    permitidos: number;
+    rechazados: number;
+    /** Aperturas repetidas por respuesta perdida (ADR 0032 §3); no suman a `permitidos`. */
+    repeticiones_permitidas: number;
+    repeticiones_rechazadas: number;
+  }[];
 }
 
 const MESES = 12;
@@ -112,6 +119,8 @@ export async function ejecutar(pool: Pool, ahora: Date = new Date()): Promise<Es
       dia,
       permitidos: accesosDe.get(dia)?.permitidos ?? 0,
       rechazados: accesosDe.get(dia)?.rechazados ?? 0,
+      repeticiones_permitidas: accesosDe.get(dia)?.repeticionesPermitidas ?? 0,
+      repeticiones_rechazadas: accesosDe.get(dia)?.repeticionesRechazadas ?? 0,
     })),
   };
 }

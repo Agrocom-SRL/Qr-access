@@ -174,6 +174,28 @@ void test_mismo_qr_inmediato_se_ignora_y_luego_se_acepta() {
   TEST_ASSERT_TRUE(m.alLeer(QR, 1100 + puerta::ANTIRREBOTE_MISMO_QR_MS).enviarValidacion);
 }
 
+void test_tras_abrir_el_mismo_qr_se_ignora_toda_la_ventana_de_la_api() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::permitido(3), 1100);
+  m.tick(1100 + 3000);  // el pulso terminó y la máquina está en reposo
+  TEST_ASSERT_FALSE(m.alLeer(QR, 5000).enviarValidacion);
+  TEST_ASSERT_FALSE(m.alLeer(QR, 1100 + puerta::IGNORAR_MISMO_QR_TRAS_ABRIR_MS - 1).enviarValidacion);
+  TEST_ASSERT_TRUE(m.alLeer(QR, 1100 + puerta::IGNORAR_MISMO_QR_TRAS_ABRIR_MS).enviarValidacion);
+}
+
+void test_tras_abrir_un_texto_distinto_corta_la_ignorada() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::permitido(3), 1100);
+  m.tick(1100 + 3000);
+  TEST_ASSERT_TRUE(m.alLeer("AQ1.otroqrotroqrotroqrot", 5000).enviarValidacion);
+}
+
+void test_tras_denegar_no_rige_la_ignorada_larga() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::denegado(Motivo::QrUsado), 1100);
+  TEST_ASSERT_TRUE(m.alLeer(QR, 1100 + puerta::ANTIRREBOTE_MISMO_QR_MS).enviarValidacion);
+}
+
 void test_el_antirrebote_corre_desde_la_respuesta_no_desde_la_lectura() {
   auto m = validando(1000);
   m.alResponder(m.idValidacion(), Resultado::denegado(Motivo::QrVencido), 2500);
@@ -263,6 +285,9 @@ int main() {
   RUN_TEST(test_el_pulso_termina_solo);
   RUN_TEST(test_lecturas_durante_validacion_o_apertura_se_ignoran);
   RUN_TEST(test_mismo_qr_inmediato_se_ignora_y_luego_se_acepta);
+  RUN_TEST(test_tras_abrir_el_mismo_qr_se_ignora_toda_la_ventana_de_la_api);
+  RUN_TEST(test_tras_abrir_un_texto_distinto_corta_la_ignorada);
+  RUN_TEST(test_tras_denegar_no_rige_la_ignorada_larga);
   RUN_TEST(test_el_antirrebote_corre_desde_la_respuesta_no_desde_la_lectura);
   RUN_TEST(test_otro_texto_no_lo_frena_el_antirrebote);
   RUN_TEST(test_sin_respuesta_el_reintento_sale_pronto_y_sigue_sin_abrir);

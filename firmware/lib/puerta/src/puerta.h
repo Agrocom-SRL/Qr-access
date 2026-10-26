@@ -19,6 +19,11 @@ constexpr uint32_t TIMEOUT_VALIDACION_MS = 3000;
 // lectura dos veces. No decide nada: solo evita enviar. La ventana de repetición de la API (15 s)
 // es independiente y cubre al lector que insiste tras perder una respuesta.
 constexpr uint32_t ANTIRREBOTE_MISMO_QR_MS = 3000;
+// Tras una respuesta válida con `abrir: true` se ignora el MISMO texto durante la ventana de repetición
+// de la API (15 s, ADR 0032 §3) o hasta leer un texto distinto. Así el firmware no reenvía lo que ya
+// abrió y la repetición del servidor solo cubre el caso en que la respuesta se perdió (ahí no hubo
+// respuesta válida y rige el antirrebote corto de abajo). No cambia la falla segura: solo evita enviar.
+constexpr uint32_t IGNORAR_MISMO_QR_TRAS_ABRIR_MS = 15000;
 // Si no hubo respuesta válida (sin red, timeout, respuesta inválida) la persona tiene que poder
 // reintentar pronto: la falla segura no cambia (esa lectura no abrió), solo se acorta la espera.
 constexpr uint32_t ANTIRREBOTE_TRAS_FALLO_MS = 1000;

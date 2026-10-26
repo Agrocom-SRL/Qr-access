@@ -406,9 +406,14 @@ export interface ResumenDeEventosFila extends RowDataPacket {
   total: string;
 }
 
-function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
+function armarFiltroDeEventos(
+  filtro: FiltroDeEventos,
+  repeticiones = false,
+): { donde?: string; params: unknown[] } {
   // Por omisión solo el primer intento; las repeticiones se cuentan aparte («×N», ADR 0032 §4.2).
-  const condiciones: string[] = ['t.repetido_de_id IS NULL'];
+  const condiciones: string[] = [
+    repeticiones ? 't.repetido_de_id IS NOT NULL' : 't.repetido_de_id IS NULL',
+  ];
   const params: unknown[] = [];
   if (filtro.generadoPor !== null) {
     condiciones.push('q.generado_por = ?');
@@ -520,16 +525,49 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
-  /** Cuántas repeticiones tiene cada intento original (ADR 0032 §4.2); los que no tienen, no aparecen. */
-  async contarRepeticiones(originalIds: readonly string[]): Promise<Map<string, number>> {
-    if (originalIds.length === 0) return new Map();
+  /**
+   * Cuántas repeticiones tiene cada intento original (ADR 0032 §4.2), separadas por resultado: las
+   * `permitidas` abrieron de nuevo la puerta (respuesta perdida) y no deben confundirse con las
+   * `rechazadas`. Los originales sin repeticiones no aparecen.
+   */
+  async contarRepeticiones(
+    originalIds: readonly string[],
+  ): Promise<Map<string, { permitidas: number; rechazadas: number }>> {
+    const mapa = new Map<string, { permitidas: number; rechazadas: number }>();
+    if (originalIds.length === 0) return mapa;
     const filas = await this.seleccionar<RowDataPacket>({
-      columnas: 't.repetido_de_id AS original_id, COUNT(*) AS total',
+      columnas: 't.repetido_de_id AS original_id, t.resultado, COUNT(*) AS total',
       donde: 't.repetido_de_id IN (?)',
       params: [originalIds],
-      agrupar: 't.repetido_de_id',
+      agrupar: 't.repetido_de_id, t.resultado',
     });
-    return new Map(filas.map((fila) => [String(fila.original_id), Number(fila.total)]));
+    for (const fila of filas) {
+      const id = String(fila.original_id);
+      const actual = mapa.get(id) ?? { permitidas: 0, rechazadas: 0 };
+      if (fila.resultado === 'permitido') actual.permitidas += Number(fila.total);
+      else actual.rechazadas += Number(fila.total);
+      mapa.set(id, actual);
+    }
+    return mapa;
+  }
+
+  /**
+   * Bloquea la fila del original hasta el fin de la transacción y cuenta las repeticiones PERMITIDAS que
+   * ya tiene. El bloqueo serializa las relecturas simultáneas: solo una ve cero y repite la apertura
+   * (ADR 0032 §3, una repetición por original).
+   */
+  async contarRepeticionesPermitidasBloqueando(
+    tx: Transaccion,
+    originalId: string,
+  ): Promise<number> {
+    await this.seleccionarUna<OriginalFila>(
+      { columnas: 't.id', donde: 't.id = ?', params: [originalId], bloquear: true },
+      tx,
+    );
+    return this.contar(
+      { donde: "t.repetido_de_id = ? AND t.resultado = 'permitido'", params: [originalId] },
+      tx,
+    );
   }
 
   listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {
@@ -561,7 +599,11 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     return this.contar({ uniones: UNION_QR, ...(donde === undefined ? {} : { donde }), params });
   }
 
-  /** Cuántos intentos hubo por resultado y motivo dentro del filtro (indicadores del tablero). */
+  /**
+   * Cuántos intentos hubo por resultado y motivo dentro del filtro (indicadores del tablero). Los
+   * originales cuentan una vez; las repeticiones se suman aparte (`repeticiones_*`): las permitidas
+   * son aperturas repetidas por respuesta perdida y no son invisibles.
+   */
   resumir(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<ResumenDeEventosFila>({
@@ -571,6 +613,21 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       params,
       agrupar: 't.resultado, t.motivo_code',
       orden: 't.resultado, t.motivo_code',
+    });
+  }
+
+  /**
+   * Cuántas repeticiones (filas con `repetido_de_id`) hubo por resultado dentro del filtro: las
+   * `permitido` son aperturas repetidas por respuesta perdida (ADR 0032 §3) y no deben quedar invisibles.
+   */
+  resumirRepeticiones(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
+    const { donde, params } = armarFiltroDeEventos(filtro, true);
+    return this.seleccionar<ResumenDeEventosFila>({
+      columnas: "t.resultado, '' AS motivo_code, COUNT(*) AS total",
+      uniones: UNION_QR,
+      ...(donde === undefined ? {} : { donde }),
+      params,
+      agrupar: 't.resultado',
     });
   }
 }

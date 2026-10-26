@@ -68,6 +68,8 @@ export const respuestaDeEstadisticas = z.object({
       dia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       permitidos: z.number().int(),
       rechazados: z.number().int(),
+      repeticiones_permitidas: z.number().int(),
+      repeticiones_rechazadas: z.number().int(),
     }),
   ),
 });
@@ -95,5 +97,7 @@ export const respuestaDeEventosDePlataforma = esquemaListado(
     puerta: z.object({ id: z.string(), nombre: z.string(), sitio: z.string() }),
     dispositivo: z.string().nullable(),
     qr_etiqueta: z.string().nullable(),
+    repeticiones_permitidas: z.number().int(),
+    repeticiones_rechazadas: z.number().int(),
   }),
 );

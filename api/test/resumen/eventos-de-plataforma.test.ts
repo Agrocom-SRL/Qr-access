@@ -1,3 +1,4 @@
+import type { RowDataPacket } from 'mysql2/promise';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
@@ -6,8 +7,11 @@ import { conUsuario, iniciarSesionDePlataforma } from '../helpers/http.js';
 
 interface Listado {
   datos: {
+    id: string;
     resultado: 'permitido' | 'rechazado';
     motivo_code: string;
+    repeticiones_permitidas: number;
+    repeticiones_rechazadas: number;
     cuenta: { codigo: string };
     puerta: { nombre: string };
   }[];
@@ -68,6 +72,24 @@ describe('plataforma: accesos de todas las cuentas', () => {
     const rechazados = await pedir('?resultado=rechazado');
     expect(rechazados.datos).toHaveLength(1);
     expect(rechazados.datos[0]?.motivo_code).toBe('qr_vencido');
+  });
+
+  it('el original expone sus repeticiones permitidas y rechazadas, y no las lista aparte', async () => {
+    const [filas] = await prueba.pool.query<RowDataPacket[]>(
+      'SELECT id FROM eventos_acceso WHERE tenant_id = ? AND resultado = ?',
+      [a.cuenta.id, 'permitido'],
+    );
+    const originalId = String(filas[0]?.id);
+    for (const resultado of ['permitido', 'rechazado', 'rechazado']) {
+      await prueba.pool.query(
+        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
+        [a.cuenta.id, a.puertaPrincipal.id, resultado, 'ok', originalId],
+      );
+    }
+    const listado = await pedir();
+    expect(listado.meta.total).toBe(3);
+    const evento = listado.datos.find((e) => e.id === originalId);
+    expect(evento).toMatchObject({ repeticiones_permitidas: 1, repeticiones_rechazadas: 2 });
   });
 
   it('exige una sesión de plataforma', async () => {

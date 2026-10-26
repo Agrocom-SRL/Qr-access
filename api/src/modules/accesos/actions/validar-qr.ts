@@ -10,6 +10,7 @@ import { extraerToken, hashDeToken } from '../domain/token-qr.js';
 import {
   decidirAntesDeConsumir,
   motivoTrasConsumoFallido,
+  MAX_REPETICIONES_POR_ORIGINAL,
   MOTIVO_PERMITIDO,
   VENTANA_DE_RECHAZO_REPETIDO_MS,
   VENTANA_DE_REPETICION_MS,
@@ -40,7 +41,9 @@ export interface LecturaDelDispositivo {
  * de 15 s de una lectura que ya fue `permitido`, responde de nuevo `abrir: true` SIN consumir otra
  * vez, con un evento enlazado por `repetido_de_id` al original. Solo pasa las mismas comprobaciones
  * que cualquier QR (anulado, vencido, generador, puerta, suscripción) y nunca se encadena: la ventana
- * cuenta desde el original. Un rechazo idéntico (mismo dispositivo, hash y motivo) dentro de 60 s
+ * cuenta desde el original. Se permite UNA sola repetición por original: la segunda relectura recibe
+ * `qr.usado` (la primera ya cubrió la respuesta perdida; el firmware ignora el mismo texto 15 s tras
+ * abrir). Un rechazo idéntico (mismo dispositivo, hash y motivo) dentro de 60 s
  * se inserta igual, pero enlazado al primero (§4.2): ningún intento desaparece (invariante 4).
  */
 export async function ejecutar(
@@ -62,13 +65,17 @@ export async function ejecutar(
     tokenHash: string,
     qrId: string | null,
   ): Promise<ResultadoDeValidacion> => {
-    const original = await eventos.buscarOriginal(
-      dispositivo.dispositivoId,
-      tokenHash,
-      'rechazado',
-      motivo,
-      new Date(ahora.getTime() - VENTANA_DE_RECHAZO_REPETIDO_MS),
-    );
+    // El enlace es solo para no llenar el listado de ruido: si buscar el original falla, el rechazo
+    // se registra igual SIN enlace (invariante 4: ningún intento se pierde por un fallo auxiliar).
+    const original = await eventos
+      .buscarOriginal(
+        dispositivo.dispositivoId,
+        tokenHash,
+        'rechazado',
+        motivo,
+        new Date(ahora.getTime() - VENTANA_DE_RECHAZO_REPETIDO_MS),
+      )
+      .catch(() => null);
     const eventoId = await enTransaccionIdempotente(pool, (tx) =>
       eventos.registrar(tx, {
         puertaId: dispositivo.puertaId,
@@ -127,10 +134,14 @@ export async function ejecutar(
       new Date(ahora.getTime() - VENTANA_DE_REPETICION_MS),
     );
     if (original === null) return null;
+    // UNA sola repetición por original (ADR 0032 §3): la cuenta se hace con la fila del original
+    // bloqueada, así dos relecturas simultáneas no pasan las dos. La segunda recibe `qr.usado`.
     const eventoId = await enTransaccionIdempotente(
       pool,
-      (tx) =>
-        eventos.registrar(tx, {
+      async (tx) => {
+        const previas = await eventos.contarRepeticionesPermitidasBloqueando(tx, original.id);
+        if (previas >= MAX_REPETICIONES_POR_ORIGINAL) return null;
+        return eventos.registrar(tx, {
           puertaId: dispositivo.puertaId,
           dispositivoId: dispositivo.dispositivoId,
           qrAccesoId: qr.id,
@@ -140,9 +151,11 @@ export async function ejecutar(
           ocurridoAt: ahora,
           leidoEnDispositivoAt: lectura.leidoEn,
           repetidoDeId: original.id,
-        }),
+        });
+      },
       { ...(señal === undefined ? {} : { señal }) },
     );
+    if (eventoId === null) return null;
     return {
       abrir: true,
       segundos: puerta.segundosApertura,

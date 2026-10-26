@@ -108,6 +108,8 @@ export const esquemaEvento = z.object({
     .nullable(),
   /** Relecturas del mismo lector dentro de la ventana, enlazadas a este intento («×N»; ADR 0032 §4). */
   repeticiones: z.number().int(),
+  repeticiones_permitidas: z.number().int(),
+  repeticiones_rechazadas: z.number().int(),
 });
 export const respuestaListadoDeEventos = esquemaListado(esquemaEvento);
 
@@ -115,6 +117,9 @@ export const respuestaDeResumenDeEventos = z.object({
   permitidos: z.number().int(),
   rechazados: z.number().int(),
   rechazados_por_motivo: z.array(z.object({ motivo_code: z.string(), total: z.number().int() })),
+  /** Aperturas repetidas por respuesta perdida (ADR 0032 §3): no suman a `permitidos`. */
+  repeticiones_permitidas: z.number().int(),
+  repeticiones_rechazadas: z.number().int(),
 });
 
 export const cuerpoDeValidacion = z.strictObject({
