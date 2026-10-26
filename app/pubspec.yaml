@@ -1,7 +1,7 @@
 name: agrocom_acceso
 description: "AGROCOM Acceso: QR de acceso a puertas"
 publish_to: 'none'
-version: 1.0.4+9
+version: 1.0.5+10
 
 environment:
   sdk: ^3.13.3
