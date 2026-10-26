@@ -20,6 +20,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      # Siempre master: en un workflow_dispatch el checkout tomaría la rama por defecto (develop).
       - uses: actions/checkout@v7
+        with:
+          ref: master
       - name: Desplegar
         run: ./bin/desplegar
