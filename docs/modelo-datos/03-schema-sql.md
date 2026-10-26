@@ -676,3 +676,51 @@ CREATE TABLE cuentas_de_cobro (
   CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+## cuentas: estado
+
+Migración: `db/migrations/20261026100001_alter_cuentas_estado.sql` (ADR 0033 §1). `estado` reemplaza a `activo`: `activo = 0` pasa a `suspendido`. El `CREATE TABLE` de arriba muestra la tabla original; este es el cambio.
+
+```sql
+ALTER TABLE cuentas
+  ADD COLUMN estado VARCHAR(20) NOT NULL DEFAULT 'activo' AFTER activo,
+  ADD COLUMN estado_impuesto_por BIGINT UNSIGNED NULL AFTER estado,
+  ADD COLUMN estado_desde DATETIME(3) NULL AFTER estado_impuesto_por,
+  ADD COLUMN estado_motivo VARCHAR(200) NULL AFTER estado_desde;
+-- UPDATE: activo = 0 -> 'suspendido' (estado_impuesto_por = updated_by, estado_desde = updated_at)
+ALTER TABLE cuentas
+  ADD CONSTRAINT fk_cuentas_estado_impuesto_por FOREIGN KEY (estado_impuesto_por) REFERENCES usuarios (id),
+  ADD KEY idx_cuentas_estado (estado),
+  ADD CONSTRAINT ck_cuentas_estado CHECK (estado IN ('activo', 'restringido', 'suspendido')),
+  ADD CONSTRAINT ck_cuentas_estado_datos CHECK (
+    (estado = 'activo' AND estado_impuesto_por IS NULL AND estado_desde IS NULL AND estado_motivo IS NULL)
+    OR (estado <> 'activo' AND estado_desde IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
+  ),
+  DROP COLUMN activo;
+```
+
+## usuarios: estado
+
+Migración: `db/migrations/20261026100002_alter_usuarios_estado.sql` (ADR 0033 §1). Igual que en `cuentas`; la cascada por rama no se escribe en las filas, se deriva de `superior_id` y `cuentas.estado`.
+
+```sql
+ALTER TABLE usuarios
+  ADD COLUMN estado VARCHAR(20) NOT NULL DEFAULT 'activo' AFTER activo,
+  ADD COLUMN estado_impuesto_por BIGINT UNSIGNED NULL AFTER estado,
+  ADD COLUMN estado_desde DATETIME(3) NULL AFTER estado_impuesto_por,
+  ADD COLUMN estado_motivo VARCHAR(200) NULL AFTER estado_desde;
+-- UPDATE: activo = 0 -> 'suspendido' (estado_impuesto_por = updated_by, estado_desde = updated_at)
+ALTER TABLE usuarios
+  ADD CONSTRAINT fk_usuarios_estado_impuesto_por FOREIGN KEY (estado_impuesto_por) REFERENCES usuarios (id),
+  ADD KEY idx_usuarios_tenant_estado (tenant_id, estado),
+  ADD CONSTRAINT ck_usuarios_estado CHECK (estado IN ('activo', 'restringido', 'suspendido')),
+  ADD CONSTRAINT ck_usuarios_estado_datos CHECK (
+    (estado = 'activo' AND estado_impuesto_por IS NULL AND estado_desde IS NULL AND estado_motivo IS NULL)
+    OR (estado <> 'activo' AND estado_desde IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
+  ),
+  DROP COLUMN activo;
+```
+
+## permisos: restringir y suspender
+
+Seed `db/seeds/01_catalogo.sql` (sin migración: el catálogo vive en el seed idempotente): `seguridad.usuario.restringir` y `seguridad.usuario.suspender`, ámbito `cuenta`, asignados al Administrador de cada cuenta (todos los de ámbito cuenta) y al rol base Titular.

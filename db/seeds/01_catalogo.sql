@@ -25,6 +25,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.crear', 'cuenta'),
   ('seguridad.usuario.editar', 'cuenta'),
   ('seguridad.usuario.eliminar', 'cuenta'),
+  ('seguridad.usuario.restringir', 'cuenta'),
+  ('seguridad.usuario.suspender', 'cuenta'),
   ('seguridad.cupo.ver', 'cuenta'),
   ('seguridad.estadistica.ver', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
@@ -101,13 +103,15 @@ INSERT INTO roles (tenant_id, nombre, protegido, activo)
   SELECT c.id, 'Titular', 0, 1 FROM cuentas AS c WHERE c.deleted_at IS NULL
 ON DUPLICATE KEY UPDATE activo = 1;
 
--- El Titular tiene lo del Miembro y además crea y administra a sus Miembros. Solo se agregan permisos al rol
--- base: un permiso que la cuenta le haya quitado a mano no se vuelve a poner si ya existía la fila borrada.
+-- El Titular tiene lo del Miembro y además crea, edita, restringe, suspende y elimina a sus Miembros
+-- (ADR 0033 §3). Solo se agregan permisos al rol base: un permiso que la cuenta le haya quitado a mano no se
+-- vuelve a poner si ya existía la fila borrada.
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r
   JOIN permisos AS p ON p.codigo IN (
     'organizacion.puerta.ver', 'accesos.qr.generar', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
-    'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar'
+    'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar',
+    'seguridad.usuario.restringir', 'seguridad.usuario.suspender'
   )
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
 
