@@ -19,9 +19,14 @@ export interface TopesDePool {
   readonly esperaMs: number;
   /** Tiempo máximo de una consulta (`max_statement_time` de MariaDB). */
   readonly consultaMs: number;
+  /**
+   * Se llama si no se pudo fijar `max_statement_time` en una conexión: esa conexión queda SIN
+   * tope de consulta, algo que no debe pasar en silencio. Recibe solo el código del error.
+   */
+  readonly alFallarElTope?: (codigo: string) => void;
 }
 
-const TOPES_POR_OMISION: TopesDePool = {
+const TOPES_POR_OMISION: Omit<TopesDePool, 'alFallarElTope'> = {
   conexiones: 10,
   cola: 0,
   esperaMs: 0,
@@ -48,7 +53,9 @@ export function crearPool(opciones: OpcionesBase, topes: Partial<TopesDePool> = 
     connectionLimit: efectivos.conexiones,
     queueLimit: efectivos.cola,
   });
-  if (efectivos.consultaMs > 0) limitarConsultas(pool, efectivos.consultaMs);
+  if (efectivos.consultaMs > 0) {
+    limitarConsultas(pool, efectivos.consultaMs, topes.alFallarElTope ?? avisarPorStderr);
+  }
   acotarEspera(pool, efectivos.esperaMs);
   return pool;
 }
@@ -57,10 +64,23 @@ export function crearPool(opciones: OpcionesBase, topes: Partial<TopesDePool> = 
  * `max_statement_time` en cada conexión nueva: la base corta toda sentencia que pase del
  * tope (MariaDB 10.11, ADR 0034). Se mide en segundos, con decimales.
  */
-function limitarConsultas(pool: Pool, consultaMs: number): void {
+function limitarConsultas(
+  pool: Pool,
+  consultaMs: number,
+  alFallar: (codigo: string) => void,
+): void {
   pool.pool.on('connection', (conexion) => {
-    conexion.query('SET SESSION max_statement_time = ?', [consultaMs / 1000], () => undefined);
+    conexion.query('SET SESSION max_statement_time = ?', [consultaMs / 1000], (error) => {
+      if (error !== null) alFallar(error.code);
+    });
   });
+}
+
+/** Sin logger a mano en el pool: una línea JSON a stderr, sin SQL ni mensaje de la base. */
+function avisarPorStderr(codigo: string): void {
+  process.stderr.write(
+    `${JSON.stringify({ level: 'error', msg: 'no se pudo fijar max_statement_time', codigo })}\n`,
+  );
 }
 
 /** mysql2 no pone `Error.code` al rechazo por `queueLimit`: se reconoce por su mensaje. */

@@ -176,10 +176,14 @@ export function rutas({
         handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
       (request) =>
-        validarQr(poolDispositivos, dispositivoDe(request), {
-          texto: request.body.token,
-          leidoEn: leerHoraDelDispositivo(request.body.leido_en),
-        }),
+        validarQr(
+          poolDispositivos,
+          dispositivoDe(request),
+          { texto: request.body.token, leidoEn: leerHoraDelDispositivo(request.body.leido_en) },
+          new Date(),
+          // Vence con el tiempo máximo de la petición: sin COMMIT si la placa ya no espera.
+          request.signal,
+        ),
     );
     listo();
   };

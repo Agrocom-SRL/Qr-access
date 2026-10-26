@@ -36,7 +36,7 @@ describe('cargarConfig', () => {
       DB_PORT: 3306,
       NODE_ENV: 'development',
       JWT_ACCESO_MINUTOS: 15,
-      TRUST_PROXY: false,
+      TRUST_PROXY: 1,
     });
   });
 
@@ -81,10 +81,88 @@ describe('cargarConfig', () => {
       );
     });
 
+    it('el presupuesto de UN intento (espera + consulta) cabe en la petición, también en la app', () => {
+      expect(() =>
+        cargarConfig({
+          ...base,
+          DB_ESPERA_MS_DISPOSITIVOS: '1200',
+          DB_CONSULTA_MS_DISPOSITIVOS: '1300',
+        }),
+      ).toThrow(/DB_ESPERA_MS_DISPOSITIVOS\+DB_CONSULTA_MS_DISPOSITIVOS/);
+      expect(() => cargarConfig({ ...base, DB_CONSULTA_MS_APP: '15000' })).toThrow(
+        /DB_CONSULTA_MS_APP/,
+      );
+      expect(() => cargarConfig({ ...base, DB_ESPERA_MS_APP: '15000' })).toThrow(
+        /DB_ESPERA_MS_APP/,
+      );
+      expect(() =>
+        cargarConfig({ ...base, DB_ESPERA_MS_APP: '8000', DB_CONSULTA_MS_APP: '8000' }),
+      ).toThrow(/DB_ESPERA_MS_APP\+DB_CONSULTA_MS_APP/);
+    });
+
+    it('impone mínimos razonables', () => {
+      expect(() => cargarConfig({ ...base, DB_POOL_DISPOSITIVOS: '1' })).toThrow(
+        /DB_POOL_DISPOSITIVOS/,
+      );
+      expect(() => cargarConfig({ ...base, DB_POOL_APP: '1' })).toThrow(/DB_POOL_APP/);
+      expect(() => cargarConfig({ ...base, PETICION_MS_DISPOSITIVOS: '400' })).toThrow(
+        /PETICION_MS_DISPOSITIVOS/,
+      );
+      expect(() => cargarConfig({ ...base, LIMITE_VALIDACION_POR_MINUTO: '59' })).toThrow(
+        /LIMITE_VALIDACION_POR_MINUTO/,
+      );
+      expect(() => cargarConfig({ ...base, LIMITE_FALLOS_AUTENTICACION_POR_MINUTO: '4' })).toThrow(
+        /LIMITE_FALLOS_AUTENTICACION_POR_MINUTO/,
+      );
+      expect(cargarConfig({ ...base, LIMITE_VALIDACION_POR_MINUTO: '60' })).toMatchObject({
+        LIMITE_VALIDACION_POR_MINUTO: 60,
+      });
+    });
+
     it('rechaza un límite que no es un entero positivo', () => {
       expect(() => cargarConfig({ ...base, LIMITE_LOGIN_POR_MINUTO: '0' })).toThrow(
         /LIMITE_LOGIN_POR_MINUTO/,
       );
+    });
+  });
+
+  describe('TRUST_PROXY: saltos o redes, nunca un booleano a secas', () => {
+    const base = {
+      DB_HOST: 'db',
+      DB_DATABASE: 'x',
+      DB_USERNAME: 'u',
+      DB_PASSWORD: '',
+      JWT_SECRETO: SECRETO,
+      PIN_PIMIENTA: SECRETO,
+    };
+    const proxy = (valor: string) => cargarConfig({ ...base, TRUST_PROXY: valor }).TRUST_PROXY;
+
+    it('por omisión confía en un salto', () => {
+      expect(cargarConfig(base).TRUST_PROXY).toBe(1);
+    });
+
+    it('acepta un número de saltos, 0/false (sin proxy) y listas de IP/CIDR', () => {
+      expect(proxy('2')).toBe(2);
+      expect(proxy('0')).toBe(false);
+      expect(proxy('false')).toBe(false);
+      expect(proxy('10.0.0.0/8, 192.168.100.249')).toEqual(['10.0.0.0/8', '192.168.100.249']);
+      expect(proxy('::1,uniquelocal')).toEqual(['::1', 'uniquelocal']);
+    });
+
+    it('rechaza `true`, demasiados saltos y redes mal formadas', () => {
+      for (const invalido of [
+        'true',
+        '6',
+        '-1',
+        '1.5',
+        'si',
+        '10.0.0.0/33',
+        '999.1.1.1',
+        '1.1.1.1/',
+        ',',
+      ]) {
+        expect(() => proxy(invalido), invalido).toThrow(/TRUST_PROXY/);
+      }
     });
   });
 });

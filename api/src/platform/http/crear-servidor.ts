@@ -82,6 +82,11 @@ export function serializarError(error: unknown): {
   return { type: error.name, message: error.message, stack: error.stack ?? '' };
 }
 
+/** Confía en los `saltos` proxies más cercanos al socket (la semántica de un número en `proxy-addr`). */
+function saltosDeConfianza(saltos: number): (direccion: string, salto: number) => boolean {
+  return (_direccion, salto) => salto < saltos;
+}
+
 /**
  * Instancia de Fastify con lo que toda ruta necesita: logger sin credenciales, límite de
  * body, validación y serialización por zod, y errores RFC 9457. No registra rutas.
@@ -107,8 +112,12 @@ export function crearServidor(config: Config, logDestino?: Writable): FastifyIns
       aplicarCabecerasDeSeguridad(reply);
       void enviarProblema(reply, 400, 'solicitud.invalida');
     },
-    // Detrás de Nginx la IP del cliente viene en X-Forwarded-For (la usa el límite de intentos).
-    trustProxy: config.TRUST_PROXY,
+    // La IP del cliente sale de X-Forwarded-For solo hasta los saltos o redes de confianza (nunca
+    // `true`, ver `TRUST_PROXY` en config.ts): la usan el rate limit y el límite de intentos.
+    trustProxy:
+      typeof config.TRUST_PROXY === 'number'
+        ? saltosDeConfianza(config.TRUST_PROXY)
+        : config.TRUST_PROXY,
   }).withTypeProvider<ZodTypeProvider>();
 
   app.setValidatorCompiler(validatorCompiler);

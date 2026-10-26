@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
 import { ErrorDeDominio } from './error-de-dominio.js';
-import { esServicioNoDisponible } from './servicio-no-disponible.js';
+import { esServicioNoDisponible, PoolSaturado } from './servicio-no-disponible.js';
 
 const BASE_TIPO = 'https://acceso.agrocom.com.bo/errores/';
 
@@ -50,7 +50,20 @@ export function registrarErrores(app: FastifyInstance, reintentoSegundos = 2): v
     }
     if (esServicioNoDisponible(error)) {
       // Sin el SQL ni sus valores: el serializador del log los omite (ADR 0033 §2).
-      request.log.warn({ err: error }, 'servicio no disponible');
+      // De una petición del dispositivo se anotan su id y su puerta (no son secretos): la
+      // validación que no llegó a `eventos_acceso` queda al menos en el log (ADR 0032 §2).
+      const principal = request.principal;
+      request.log.warn(
+        {
+          err: error,
+          ruta: request.routeOptions.url,
+          ...(error instanceof PoolSaturado ? { motivo: error.motivo } : {}),
+          ...(principal?.tipo === 'dispositivo'
+            ? { dispositivoId: principal.dispositivoId, puertaId: principal.puertaId }
+            : {}),
+        },
+        'servicio no disponible',
+      );
       indicarReintento(reply, reintentoSegundos);
       return enviarProblema(reply, 503, 'servicio.no_disponible', {
         reintentar_en_segundos: reintentoSegundos,

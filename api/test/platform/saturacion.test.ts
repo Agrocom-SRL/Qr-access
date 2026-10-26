@@ -5,7 +5,10 @@ import { cargarConfig } from '../../src/config.js';
 import { ContextoCuenta } from '../../src/platform/contexto/contexto-cuenta.js';
 import { crearPool } from '../../src/platform/db/pool.js';
 import { enTransaccionIdempotente } from '../../src/platform/db/transaccion.js';
-import { PoolSaturado } from '../../src/platform/errores/servicio-no-disponible.js';
+import {
+  PoolSaturado,
+  PresupuestoAgotado,
+} from '../../src/platform/errores/servicio-no-disponible.js';
 import type { PrincipalDispositivo } from '../../src/platform/seguridad/principal.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
@@ -151,6 +154,125 @@ function conDeadlocks(pool: Pool, prefijo: string, veces: number): Pool {
   });
 }
 
+/** Un pool que, antes de ejecutar una sentencia que empiece con `prefijo`, espera `antes()`. */
+function conAccionAntesDe(pool: Pool, prefijo: string, antes: () => Promise<void>): Pool {
+  return new Proxy(pool, {
+    get(objetivo, propiedad) {
+      if (propiedad === 'getConnection') {
+        return async () => {
+          const conexion = await objetivo.getConnection();
+          const original = conexion.query.bind(conexion) as (...a: unknown[]) => Promise<unknown>;
+          conexion.query = (async (sql: unknown, ...resto: unknown[]) => {
+            if (typeof sql === 'string' && sql.startsWith(prefijo)) await antes();
+            return original(sql, ...resto);
+          }) as typeof conexion.query;
+          return conexion;
+        };
+      }
+      const valor: unknown = Reflect.get(objetivo, propiedad);
+      return typeof valor === 'function' ? (valor as () => unknown).bind(objetivo) : valor;
+    },
+  });
+}
+
+describe('presupuesto de la petición en la transacción (ADR 0032 §2)', () => {
+  const pools: Pool[] = [];
+  afterEach(async () => {
+    await Promise.all(pools.splice(0).map((pool) => pool.end()));
+  });
+  function nuevo(): Pool {
+    const config = cargarConfig();
+    const pool = crearPool({
+      host: config.DB_HOST,
+      port: config.DB_PORT,
+      database: config.DB_DATABASE,
+      user: config.DB_USERNAME,
+      password: config.DB_PASSWORD,
+    });
+    pools.push(pool);
+    return pool;
+  }
+
+  it('con la señal ya vencida no empieza la transacción', async () => {
+    const pool = nuevo();
+    const control = new AbortController();
+    control.abort();
+    let ejecutada = false;
+    await expect(
+      enTransaccionIdempotente(
+        pool,
+        () => {
+          ejecutada = true;
+          return Promise.resolve(1);
+        },
+        { señal: control.signal },
+      ),
+    ).rejects.toBeInstanceOf(PresupuestoAgotado);
+    expect(ejecutada).toBe(false);
+  });
+
+  it('si vence durante la transacción no hace COMMIT: se deshace', async () => {
+    const pool = nuevo();
+    const control = new AbortController();
+    const conexion = await pool.getConnection();
+    try {
+      await conexion.query('CREATE TEMPORARY TABLE prueba_presupuesto_tx (n INT) ENGINE=InnoDB');
+      const unica = {
+        getConnection: () => Promise.resolve(conexion),
+      } as unknown as Pool;
+      // `release` no debe cerrar la conexión que sigue en uso por la prueba.
+      const liberar = conexion.release.bind(conexion);
+      conexion.release = () => undefined;
+      await expect(
+        enTransaccionIdempotente(
+          unica,
+          async (tx) => {
+            await tx.query('INSERT INTO prueba_presupuesto_tx (n) VALUES (1)');
+            control.abort();
+            return 'listo';
+          },
+          { señal: control.signal },
+        ),
+      ).rejects.toBeInstanceOf(PresupuestoAgotado);
+      const [filas] = await conexion.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS total FROM prueba_presupuesto_tx',
+      );
+      expect(Number(filas[0]?.total)).toBe(0);
+      liberar();
+    } finally {
+      conexion.release();
+    }
+  });
+
+  it('con la señal vencida no reintenta tras un deadlock', async () => {
+    const pool = nuevo();
+    const control = new AbortController();
+    let intentos = 0;
+    await expect(
+      enTransaccionIdempotente(
+        pool,
+        () => {
+          intentos += 1;
+          control.abort();
+          return Promise.reject(errorDeBloqueo());
+        },
+        { señal: control.signal },
+      ),
+    ).rejects.toMatchObject({ code: 'ER_LOCK_DEADLOCK' });
+    expect(intentos).toBe(1);
+  });
+});
+
+/** Retiene `n` conexiones: con el mínimo de 2 por pool, saturar uno exige tomarlas todas. */
+async function retener(pool: Pool, n = 2): Promise<{ liberar(): void }> {
+  const tomadas = await Promise.all(Array.from({ length: n }, () => pool.getConnection()));
+  return {
+    liberar: () => {
+      for (const conexion of tomadas) conexion.release();
+    },
+  };
+}
+
 describe('la API ante la saturación', () => {
   let prueba: AppDePrueba | null = null;
   let a: Escenario;
@@ -194,12 +316,12 @@ describe('la API ante la saturación', () => {
 
   it('pool de la app agotado: 503 servicio.no_disponible con Retry-After configurable', async () => {
     const p = await abrir({
-      DB_POOL_APP: '1',
+      DB_POOL_APP: '2',
       DB_ESPERA_MS_APP: '100',
       REINTENTO_503_SEGUNDOS: '7',
     });
     registrarSondeo(p);
-    const retenida = await p.pool.getConnection();
+    const retenida = await retener(p.pool);
     try {
       const respuesta = await sondear(p);
       expect(respuesta.statusCode).toBe(503);
@@ -212,15 +334,15 @@ describe('la API ante la saturación', () => {
       expect(respuesta.headers['content-type']).toContain('application/problem+json');
       expect(respuesta.headers['cache-control']).toBe('no-store');
     } finally {
-      retenida.release();
+      retenida.liberar();
     }
     expect((await sondear(p)).statusCode).toBe(200);
   });
 
   it('cola de la app llena: la petición de más recibe 503 sin acumularse', async () => {
-    const p = await abrir({ DB_POOL_APP: '1', DB_COLA_APP: '1', DB_ESPERA_MS_APP: '300' });
+    const p = await abrir({ DB_POOL_APP: '2', DB_COLA_APP: '1', DB_ESPERA_MS_APP: '300' });
     registrarSondeo(p);
-    const retenida = await p.pool.getConnection();
+    const retenida = await retener(p.pool);
     try {
       const inicio = Date.now();
       const respuestas = await Promise.all([sondear(p), sondear(p), sondear(p)]);
@@ -231,14 +353,14 @@ describe('la API ante la saturación', () => {
       }
       expect(Date.now() - inicio).toBeLessThan(2000);
     } finally {
-      retenida.release();
+      retenida.liberar();
     }
   });
 
   it('con el pool de la app saturado, la puerta sigue validando por su pool reservado', async () => {
-    const p = await abrir({ DB_POOL_APP: '1', DB_ESPERA_MS_APP: '100' });
+    const p = await abrir({ DB_POOL_APP: '2', DB_ESPERA_MS_APP: '100' });
     registrarSondeo(p);
-    const retenida = await p.pool.getConnection();
+    const retenida = await retener(p.pool);
     try {
       expect((await sondear(p)).statusCode).toBe(503);
       const qr = await crearQr(p.poolDispositivos, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
@@ -246,18 +368,18 @@ describe('la API ante la saturación', () => {
       expect(respuesta.statusCode).toBe(200);
       expect(respuesta.json()).toMatchObject({ abrir: true });
     } finally {
-      retenida.release();
+      retenida.liberar();
     }
   });
 
   it('con el pool del dispositivo saturado responde 503 y la puerta no abre; al liberarse, abre', async () => {
     const p = await abrir({
-      DB_POOL_DISPOSITIVOS: '1',
+      DB_POOL_DISPOSITIVOS: '2',
       DB_COLA_DISPOSITIVOS: '1',
       DB_ESPERA_MS_DISPOSITIVOS: '150',
     });
     const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
-    const retenida = await p.poolDispositivos.getConnection();
+    const retenida = await retener(p.poolDispositivos);
     try {
       const respuesta = await validar(p, qr.texto);
       expect(respuesta.statusCode).toBe(503);
@@ -267,7 +389,7 @@ describe('la API ante la saturación', () => {
       // Falla segura: nada se consumió.
       expect(await usadoAt(p, qr.id)).toBeNull();
     } finally {
-      retenida.release();
+      retenida.liberar();
     }
     const reintento = await validar(p, qr.texto);
     expect(reintento.statusCode).toBe(200);
@@ -275,12 +397,16 @@ describe('la API ante la saturación', () => {
   });
 
   it('una petición que pasa el tiempo máximo responde 503 (global y por ruta)', async () => {
-    const p = await abrir({ PETICION_MS_APP: '100' });
+    const p = await abrir({
+      PETICION_MS_APP: '500',
+      DB_ESPERA_MS_APP: '100',
+      DB_CONSULTA_MS_APP: '200',
+    });
     p.app.get(
       '/api/v1/prueba/lenta',
       { config: { acceso: 'publica', limite: 'ninguno' } },
       async () => {
-        await espera(600);
+        await espera(900);
         return { ok: true };
       },
     );
@@ -288,7 +414,7 @@ describe('la API ante la saturación', () => {
       '/api/v1/prueba/lenta-con-tope-propio',
       { config: { acceso: 'publica', limite: 'ninguno' }, handlerTimeout: 5000 },
       async () => {
-        await espera(250);
+        await espera(700);
         return { ok: true };
       },
     );
@@ -389,6 +515,76 @@ describe('la API ante la saturación', () => {
       );
       expect(resultado).toMatchObject({ abrir: false, motivo_code: 'qr.formato_invalido' });
       expect(await contarEventos(p)).toBe(1);
+    });
+  });
+
+  describe('validar-qr con la petición vencida', () => {
+    it('si vence antes del COMMIT del consumo, no consume, no abre y no deja un permitido', async () => {
+      const p = await abrir({});
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      const control = new AbortController();
+      const pool = conAccionAntesDe(p.poolDispositivos, 'UPDATE qr_accesos', () => {
+        control.abort();
+        return Promise.resolve();
+      });
+      const dispositivo: PrincipalDispositivo = {
+        tipo: 'dispositivo',
+        dispositivoId: a.dispositivoPrincipal.id,
+        cuentaId: a.cuenta.id,
+        puertaId: a.puertaPrincipal.id,
+      };
+      await expect(
+        ContextoCuenta.ejecutar(
+          {
+            cuentaId: a.cuenta.id,
+            usuarioId: null,
+            rolActivoId: null,
+            dispositivoId: a.dispositivoPrincipal.id,
+            origen: 'dispositivo',
+          },
+          () =>
+            validarQr(
+              pool,
+              dispositivo,
+              { texto: qr.texto, leidoEn: null },
+              new Date(),
+              control.signal,
+            ),
+        ),
+      ).rejects.toBeInstanceOf(PresupuestoAgotado);
+      expect(await usadoAt(p, qr.id)).toBeNull();
+      const [filas] = await p.pool.query<RowDataPacket[]>(
+        "SELECT COUNT(*) AS total FROM eventos_acceso WHERE resultado = 'permitido'",
+      );
+      expect(Number(filas[0]?.total)).toBe(0);
+    });
+
+    it('por HTTP: una petición que pasa su tiempo máximo responde 503 y el QR queda sin consumir', async () => {
+      const p = await abrir({
+        PETICION_MS_DISPOSITIVOS: '500',
+        DB_ESPERA_MS_DISPOSITIVOS: '100',
+        DB_CONSULTA_MS_DISPOSITIVOS: '300',
+      });
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      // La base "tarda" justo antes de consumir: la petición vence con la transacción abierta.
+      const original = p.poolDispositivos.getConnection.bind(p.poolDispositivos);
+      p.poolDispositivos.getConnection = async () => {
+        const conexion = await original();
+        const query = conexion.query.bind(conexion) as (...a: unknown[]) => Promise<unknown>;
+        conexion.query = (async (sql: unknown, ...resto: unknown[]) => {
+          if (typeof sql === 'string' && sql.startsWith('UPDATE qr_accesos')) await espera(700);
+          return query(sql, ...resto);
+        }) as typeof conexion.query;
+        return conexion;
+      };
+
+      const respuesta = await validar(p, qr.texto);
+      expect(respuesta.statusCode).toBe(503);
+      expect(respuesta.json()).toMatchObject({ code: 'servicio.no_disponible' });
+      expect(respuesta.json()).not.toHaveProperty('abrir');
+      // Deja correr la transacción abandonada: debe terminar en ROLLBACK, no en COMMIT.
+      await espera(900);
+      expect(await usadoAt(p, qr.id)).toBeNull();
     });
   });
 });
