@@ -57,7 +57,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           body: cuerpoDeIngreso,
           response: { 200: respuestaDeIngreso },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'login' },
       },
       (request) =>
         iniciarSesion(servicios, {
@@ -76,7 +76,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           body: cuerpoDeRefresco,
           response: { 200: respuestaDeRefresco },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'refresco' },
       },
       (request) => refrescarSesion(servicios, request.body.refresco),
     );

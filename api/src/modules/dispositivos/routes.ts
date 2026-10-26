@@ -17,7 +17,11 @@ import { ejecutar as anunciarPlaca } from './actions/anunciar-placa.js';
 import { ejecutar as confirmarPlaca } from './actions/confirmar-placa.js';
 import { ejecutar as depurarPlacas } from './actions/depurar-placas.js';
 
-export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod {
+export function rutas({
+  pool,
+  poolDispositivos,
+  config,
+}: DependenciasDeModulo): FastifyPluginCallbackZod {
   // En memoria: vale para una sola instancia de la API (V1), igual que el límite del login.
   const limitadores = {
     porIp: new LimitadorDeIntentos({
@@ -58,7 +62,8 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           body: cuerpoDeAnuncio,
           response: { 200: respuestaDeAnuncio },
         },
-        config: { acceso: 'publica' },
+        // Sin credencial: usa el pool de la app, para que un flood anónimo no toque el de las puertas.
+        config: { acceso: 'publica', limite: 'anuncio' },
       },
       (request) => {
         depurarSiToca(request.log);
@@ -80,7 +85,7 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           body: cuerpoDeConfirmacion,
           response: { 200: respuestaDeConfirmacion },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'anuncio' },
       },
       (request) =>
         confirmarPlaca(pool, limitadores, {
@@ -95,9 +100,10 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       {
         schema: { tags: ['dispositivos'], body: cuerpoDeLatido },
         config: { acceso: 'dispositivo' },
+        handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
       async (request, reply) => {
-        await registrarLatido(pool, dispositivoDe(request), {
+        await registrarLatido(poolDispositivos, dispositivoDe(request), {
           firmware: request.body.firmware,
           rssi: request.body.rssi,
           puertaAbierta: request.body.puerta_abierta,
@@ -111,8 +117,9 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       {
         schema: { tags: ['dispositivos'], response: { 200: respuestaDeConfiguracion } },
         config: { acceso: 'dispositivo' },
+        handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
-      (request) => obtenerConfiguracion(pool, dispositivoDe(request)),
+      (request) => obtenerConfiguracion(poolDispositivos, dispositivoDe(request)),
     );
     listo();
   };

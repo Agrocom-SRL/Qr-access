@@ -99,6 +99,8 @@ export function crearServidor(config: Config, logDestino?: Writable): FastifyIns
             ...(logDestino === undefined ? {} : { stream: logDestino }),
           },
     bodyLimit: LIMITE_BODY_BYTES,
+    // Tope de una petición completa (ADR 0030 §3.4); las rutas del dispositivo fijan uno menor.
+    handlerTimeout: config.PETICION_MS_APP,
     // Una URL mal formada se rechaza antes de enrutar: no pasa por los hooks, así que las
     // cabeceras de seguridad y el formato RFC 9457 se aplican acá (ADR 0033 §2).
     frameworkErrors: (_error, _request, reply) => {
@@ -112,6 +114,6 @@ export function crearServidor(config: Config, logDestino?: Writable): FastifyIns
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registrarCabecerasDeSeguridad(app);
-  registrarErrores(app);
+  registrarErrores(app, config.REINTENTO_503_SEGUNDOS);
   return app;
 }

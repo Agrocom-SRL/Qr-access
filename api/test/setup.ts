@@ -23,3 +23,17 @@ process.env.JWT_SECRETO = 'secreto-de-pruebas-jwt-0123456789abcdef0123456789abcd
 process.env.PIN_PIMIENTA = 'cGltaWVudGEtZGUtcHJ1ZWJhcy0wMTIzNDU2Nzg5YWJjZGVm';
 // Los comprobantes de los tests van a una carpeta temporal, nunca al almacén de desarrollo.
 process.env.ARCHIVOS_RUTA = join(tmpdir(), 'agrocom-acceso-tests-archivos');
+// Los tests hacen cientos de peticiones desde una misma IP y un mismo usuario: los límites de uso
+// quedan fuera del camino, salvo los tests de `limites-http`, que fijan los suyos.
+for (const variable of [
+  'LIMITE_LOGIN_POR_MINUTO',
+  'LIMITE_REFRESCO_POR_MINUTO',
+  'LIMITE_ANUNCIO_POR_MINUTO',
+  'LIMITE_GENERAR_QR_POR_MINUTO',
+  'LIMITE_ESCRITURA_POR_MINUTO',
+  'LIMITE_LECTURA_POR_MINUTO',
+  'LIMITE_VALIDACION_POR_MINUTO',
+  'LIMITE_DISPOSITIVO_POR_MINUTO',
+]) {
+  process.env[variable] = '1000000';
+}

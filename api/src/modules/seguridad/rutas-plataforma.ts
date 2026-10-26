@@ -47,7 +47,7 @@ export const rutasDePlataforma =
           body: cuerpoDeIngresoDePlataforma,
           response: { 200: respuestaDeIngresoDePlataforma },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'login' },
       },
       (request) =>
         iniciarSesion(servicios, {

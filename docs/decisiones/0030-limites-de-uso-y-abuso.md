@@ -53,6 +53,21 @@ En capas, de la más barata a la más fina:
 4. **Pool de MySQL y timeouts:** el pool de 10 conexiones se revisa junto con un tiempo máximo por consulta y por petición, para que unos pocos clientes lentos no lo agoten.
 5. **Pruebas de carga** (por ejemplo `k6`) contra un entorno de prueba antes de abrir la app al público; nunca contra producción.
 
+**Implementado (ola W3, API):** `@fastify/rate-limit` en `api/src/plugins/limites.ts`, registrado después de la autenticación. Cuenta por (clase de ruta, identidad): el dispositivo por su credencial, el usuario por su sesión y, sin sesión, la IP; una cabecera sin verificar nunca elige la clave. Ventana de un minuto; el contador está en memoria (una instancia, V1). Pasado el tope responde `429` `limite.excedido` con `Retry-After`. Valores por defecto (todos en variables `LIMITE_*_POR_MINUTO`, ver `.env.example`):
+
+| Clase | Rutas | Clave | Por defecto |
+|---|---|---|---|
+| `login` | `POST /sesiones`, `POST /plataforma/sesiones` | IP | 20 |
+| `refresco` | `POST /sesiones/refresco` | IP | 60 |
+| `anuncio` | `POST /dispositivos/anunciar` y `/confirmar` | IP | 20 |
+| `generar_qr` | `POST /qr-accesos` | usuario | 10 |
+| `escritura` | el resto de POST/PUT/PATCH/DELETE | usuario (o IP) | 60 |
+| `lectura` | GET | usuario (o IP) | 240 |
+| `validacion` | `POST /dispositivos/validaciones` | dispositivo | 600 |
+| `dispositivo` | latidos y configuración | dispositivo | 120 |
+
+La validación nunca usa el límite de un usuario; su tope es anti-flood por credencial. Un `429` en ella llega antes de consumir el QR y el firmware lo trata como "sin respuesta" (no abre). Queda pendiente el limitador compartido para más de una instancia (punto 3) y el rate limit de intentos fallidos de autenticación antes de la identificación (lo cubre el borde, punto 1).
+
 ### 4. Estadísticas: qué se considera sospechoso
 
 Las estadísticas siguen siendo **informativas**: no disparan una baja ni un corte; decide una persona. Se ajustan y se amplían:

@@ -7,11 +7,14 @@ import { PREFIJO_API } from './platform/http/constantes.js';
 import { crearServidor } from './platform/http/crear-servidor.js';
 import { rutasSalud } from './platform/salud/routes.js';
 import { registrarAutenticacion } from './plugins/autenticacion.js';
+import { registrarLimites } from './plugins/limites.js';
 import { registrarOpenapi } from './plugins/openapi.js';
 
 export interface DependenciasApp {
   readonly config: Config;
   readonly pool: Pool;
+  /** Pool reservado a las rutas del dispositivo (ADR 0032 §1). */
+  readonly poolDispositivos: Pool;
   /** Solo para tests: adónde escribe el log (en test queda apagado si falta). */
   readonly logDestino?: Writable;
 }
@@ -24,13 +27,16 @@ export interface DependenciasApp {
 export async function construirApp({
   config,
   pool,
+  poolDispositivos,
   logDestino,
 }: DependenciasApp): Promise<FastifyInstance> {
-  const dependencias = { config, pool };
+  const dependencias = { config, pool, poolDispositivos };
   const app = crearServidor(config, logDestino);
 
   await registrarOpenapi(app);
   registrarAutenticacion(app, crearAutenticadores(dependencias));
+  // Después de autenticar: el límite cuenta por usuario o dispositivo, no por lo que dice una cabecera.
+  await registrarLimites(app, config);
 
   await app.register(
     async (v1) => {

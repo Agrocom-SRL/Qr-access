@@ -48,7 +48,11 @@ function leerHoraDelDispositivo(texto: string | undefined): Date | null {
   return Number.isNaN(fecha.getTime()) || anio < 2020 || anio > 2100 ? null : fecha;
 }
 
-export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod {
+export function rutas({
+  pool,
+  poolDispositivos,
+  config,
+}: DependenciasDeModulo): FastifyPluginCallbackZod {
   return (app, _opciones, listo) => {
     app.post(
       '/qr-accesos',
@@ -58,6 +62,8 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           body: cuerpoDeGeneracion,
           response: { 201: respuestaDeGeneracion },
         },
+        // Ráfagas cortas por minuto, además de los topes diarios de la acción (ADR 0030 §3.2).
+        config: { limite: 'generar_qr' },
         // El QR propio y el de visitas son permisos distintos: el Guardia solo tiene el primero (ADR 0028 §5).
         // El cuerpo ya está validado cuando corre el `preHandler`.
         preHandler: (request) =>
@@ -164,10 +170,13 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           body: cuerpoDeValidacion,
           response: { 200: respuestaDeValidacion },
         },
-        config: { acceso: 'dispositivo' },
+        // Pool reservado y tope de petición menor a la espera del firmware (ADR 0032 §1). El
+        // límite es por credencial de dispositivo y holgado: nunca por usuario (ADR 0030 §1).
+        config: { acceso: 'dispositivo', limite: 'validacion' },
+        handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
       (request) =>
-        validarQr(pool, dispositivoDe(request), {
+        validarQr(poolDispositivos, dispositivoDe(request), {
           texto: request.body.token,
           leidoEn: leerHoraDelDispositivo(request.body.leido_en),
         }),

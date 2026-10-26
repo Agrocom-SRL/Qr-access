@@ -1,5 +1,5 @@
 import type { Pool } from 'mysql2/promise';
-import { enTransaccion } from '../../../platform/db/transaccion.js';
+import { enTransaccionIdempotente } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalDispositivo } from '../../../platform/seguridad/principal.js';
 import { sha256Hex } from '../../../platform/seguridad/tokens.js';
@@ -30,6 +30,8 @@ export interface LecturaDelDispositivo {
  * Validación de un QR en la puerta (ADR 0008 §4). Responde SIEMPRE con un resultado, nunca con
  * un error HTTP de negocio, y deja SIEMPRE un `eventos_acceso` (invariante 4). Solo abre con
  * `abrir: true` cuando el consumo atómico del paso 7 tuvo éxito; ante cualquier duda, rechaza.
+ * Las dos transacciones (rechazo y consumo) son idempotentes: ante un deadlock se repiten una
+ * vez (ADR 0032 §2); si vuelve a fallar, el error sale como 503 y la puerta no abre.
  */
 export async function ejecutar(
   pool: Pool,
@@ -49,7 +51,7 @@ export async function ejecutar(
     tokenHash: string,
     qrId: string | null,
   ): Promise<ResultadoDeValidacion> => {
-    const eventoId = await enTransaccion(pool, (tx) =>
+    const eventoId = await enTransaccionIdempotente(pool, (tx) =>
       eventos.registrar(tx, {
         puertaId: dispositivo.puertaId,
         dispositivoId: dispositivo.dispositivoId,
@@ -95,7 +97,7 @@ export async function ejecutar(
 
   // 7. Consumo atómico + evento "permitido" en la MISMA transacción: si el evento no queda,
   // el consumo se deshace y la puerta no abre.
-  const eventoId = await enTransaccion(pool, async (tx) => {
+  const eventoId = await enTransaccionIdempotente(pool, async (tx) => {
     const consumido = await qrs.consumir(tx, qr.id, dispositivo.dispositivoId, ahora);
     if (!consumido) return null;
     return eventos.registrar(tx, {

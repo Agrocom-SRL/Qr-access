@@ -1,18 +1,16 @@
 import { construirApp } from './app.js';
 import { cargarConfig } from './config.js';
-import { crearPool } from './platform/db/pool.js';
+import { crearPools } from './platform/db/pools.js';
 
 const config = cargarConfig();
-const pool = crearPool({
-  host: config.DB_HOST,
-  port: config.DB_PORT,
-  database: config.DB_DATABASE,
-  user: config.DB_USERNAME,
-  password: config.DB_PASSWORD,
+const pools = crearPools(config);
+const app = await construirApp({
+  config,
+  pool: pools.app,
+  poolDispositivos: pools.dispositivos,
 });
-const app = await construirApp({ config, pool });
 app.addHook('onClose', async () => {
-  await pool.end();
+  await Promise.all([pools.app.end(), pools.dispositivos.end()]);
 });
 
 for (const senal of ['SIGINT', 'SIGTERM'] as const) {

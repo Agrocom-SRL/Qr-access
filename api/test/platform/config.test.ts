@@ -48,4 +48,43 @@ describe('cargarConfig', () => {
     );
     expect(() => cargarConfig({ ...base, JWT_SECRETO: SECRETO })).toThrow(/PIN_PIMIENTA/);
   });
+
+  describe('límites, pools y tiempos (ADR 0030 §3, ADR 0032 §1)', () => {
+    const base = {
+      DB_HOST: 'db',
+      DB_DATABASE: 'x',
+      DB_USERNAME: 'u',
+      DB_PASSWORD: '',
+      JWT_SECRETO: SECRETO,
+      PIN_PIMIENTA: SECRETO,
+    };
+
+    it('trae los valores por defecto de los ADR', () => {
+      expect(cargarConfig(base)).toMatchObject({
+        DB_POOL_DISPOSITIVOS: 4,
+        DB_POOL_APP: 6,
+        DB_CONSULTA_MS_DISPOSITIVOS: 1500,
+        PETICION_MS_DISPOSITIVOS: 2500,
+        LIMITE_GENERAR_QR_POR_MINUTO: 10,
+      });
+    });
+
+    it('exige consulta < petición < espera del firmware (3 s) y no arranca si se rompe', () => {
+      expect(() => cargarConfig({ ...base, PETICION_MS_DISPOSITIVOS: '3000' })).toThrow(
+        /PETICION_MS_DISPOSITIVOS/,
+      );
+      expect(() => cargarConfig({ ...base, DB_CONSULTA_MS_DISPOSITIVOS: '2500' })).toThrow(
+        /DB_CONSULTA_MS_DISPOSITIVOS/,
+      );
+      expect(() => cargarConfig({ ...base, DB_ESPERA_MS_DISPOSITIVOS: '2600' })).toThrow(
+        /DB_ESPERA_MS_DISPOSITIVOS/,
+      );
+    });
+
+    it('rechaza un límite que no es un entero positivo', () => {
+      expect(() => cargarConfig({ ...base, LIMITE_LOGIN_POR_MINUTO: '0' })).toThrow(
+        /LIMITE_LOGIN_POR_MINUTO/,
+      );
+    });
+  });
 });
