@@ -6,7 +6,7 @@ Control de acceso a puertas eléctricas con QR — `acceso.agrocom.com.bo`. Plat
 api/        Node.js 22 + TypeScript + Fastify, SQL a mano con mysql2 (sin ORM)
 app/        Flutter (Android, iOS y web): login por PIN, generación de QR, administración
 firmware/   ESP32 (framework Arduino, PlatformIO): lector QR + pulso de cerradura por Ethernet
-db/         Migraciones SQL (dbmate) sobre MySQL 8
+db/         Migraciones SQL (dbmate) sobre MariaDB 11.8
 docs/       Funcional, modelo de datos, ADRs, diseño, hardware y gestión
 ```
 
@@ -23,7 +23,7 @@ Para publicar una versión nueva: sube el número en esos cuatro archivos y en e
 
 ```
 cp .env.example .env
-docker compose up -d                                       # MySQL (:3307) + API (:3000)
+docker compose up -d                                       # MariaDB (:3307) + API (:3000)
 docker compose --profile herramientas run --rm dbmate up   # migraciones
 docker compose --profile panel --profile web up -d --build # + panel (:8080) y app web (:8080/app/)
 docker compose --profile herramientas run --rm firmware    # compila el firmware y corre sus tests
