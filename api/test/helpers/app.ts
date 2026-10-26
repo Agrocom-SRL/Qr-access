@@ -1,3 +1,4 @@
+import type { Writable } from 'node:stream';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'mysql2/promise';
 import { construirApp } from '../../src/app.js';
@@ -11,7 +12,7 @@ export interface AppDePrueba {
 }
 
 /** La API completa sobre `qr_access_testing`, sin escuchar puerto (usa `app.inject()`). */
-export async function crearAppDePrueba(): Promise<AppDePrueba> {
+export async function crearAppDePrueba(logDestino?: Writable): Promise<AppDePrueba> {
   const config = cargarConfig();
   const pool = crearPool({
     host: config.DB_HOST,
@@ -20,7 +21,11 @@ export async function crearAppDePrueba(): Promise<AppDePrueba> {
     user: config.DB_USERNAME,
     password: config.DB_PASSWORD,
   });
-  const app = await construirApp({ config, pool });
+  const app = await construirApp({
+    config,
+    pool,
+    ...(logDestino === undefined ? {} : { logDestino }),
+  });
   return {
     app,
     pool,

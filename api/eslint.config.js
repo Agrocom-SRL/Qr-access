@@ -11,12 +11,29 @@ export default tseslint.config(
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     rules: {
-      // SQL a mano (ADR 0002): un template literal con valores dentro de un SQL es una inyección.
+      // SQL a mano (ADR 0002, ADR 0033 §2): un template literal con valores o una concatenación
+      // dentro de un SQL es una inyección. Los valores van como `?`; un identificador dinámico
+      // sale de una lista blanca, nunca de una plantilla.
       'no-restricted-syntax': [
         'error',
         {
           selector:
             'CallExpression[callee.property.name=/^(query|execute|consultar|ejecutar)$/] > TemplateLiteral[expressions.length>0]',
+          message: 'SQL con valores interpolados: usa placeholders `?` (ADR 0002).',
+        },
+        {
+          selector:
+            'CallExpression[callee.name=/^(query|execute|consultar)$/] > TemplateLiteral[expressions.length>0]',
+          message: 'SQL con valores interpolados: usa placeholders `?` (ADR 0002).',
+        },
+        {
+          selector:
+            'CallExpression[callee.property.name=/^(query|execute|consultar)$/] > BinaryExpression[operator="+"] :matches(Identifier, MemberExpression, CallExpression)',
+          message: 'SQL concatenado con un valor: usa placeholders `?` (ADR 0002).',
+        },
+        {
+          selector:
+            'VariableDeclarator[id.name=/^(sql|consulta|query)$/i] > TemplateLiteral[expressions.length>0]',
           message: 'SQL con valores interpolados: usa placeholders `?` (ADR 0002).',
         },
       ],

@@ -1,3 +1,4 @@
+import type { Writable } from 'node:stream';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'mysql2/promise';
 import type { Config } from './config.js';
@@ -11,6 +12,8 @@ import { registrarOpenapi } from './plugins/openapi.js';
 export interface DependenciasApp {
   readonly config: Config;
   readonly pool: Pool;
+  /** Solo para tests: adónde escribe el log (en test queda apagado si falta). */
+  readonly logDestino?: Writable;
 }
 
 /**
@@ -18,9 +21,13 @@ export interface DependenciasApp {
  * en este orden (ADR 0019): servidor, plugins, plataforma y módulos. Acá no hay opciones ni
  * rutas propias.
  */
-export async function construirApp({ config, pool }: DependenciasApp): Promise<FastifyInstance> {
+export async function construirApp({
+  config,
+  pool,
+  logDestino,
+}: DependenciasApp): Promise<FastifyInstance> {
   const dependencias = { config, pool };
-  const app = crearServidor(config);
+  const app = crearServidor(config, logDestino);
 
   await registrarOpenapi(app);
   registrarAutenticacion(app, crearAutenticadores(dependencias));

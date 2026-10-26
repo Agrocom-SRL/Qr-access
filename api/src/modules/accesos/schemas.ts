@@ -9,7 +9,7 @@ const esquemaPuertaCorta = z.object({ id: z.string(), nombre: z.string() });
 export const MAX_PUERTAS_POR_QR = 20;
 export const MAX_ETIQUETA = 60;
 
-export const cuerpoDeGeneracion = z.object({
+export const cuerpoDeGeneracion = z.strictObject({
   puerta_ids: z.array(esquemaId).min(1).max(MAX_PUERTAS_POR_QR),
   vence_at: z.iso
     .datetime({ offset: true })
@@ -103,7 +103,7 @@ export const respuestaDeResumenDeEventos = z.object({
   rechazados_por_motivo: z.array(z.object({ motivo_code: z.string(), total: z.number().int() })),
 });
 
-export const cuerpoDeValidacion = z.object({
+export const cuerpoDeValidacion = z.strictObject({
   token: z.string().max(512),
   leido_en: z.string().max(40).optional(),
 });

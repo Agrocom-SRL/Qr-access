@@ -20,9 +20,9 @@ const esquemaPrecio = z
   .max(99_999_999)
   .refine((n) => Math.round(n * 100) / 100 === n);
 
-export const cuerpoDePrecios = z.object({
+export const cuerpoDePrecios = z.strictObject({
   precios: z
-    .array(z.object({ plan_id: esquemaId, precio_anual: esquemaPrecio }))
+    .array(z.strictObject({ plan_id: esquemaId, precio_anual: esquemaPrecio }))
     .min(1)
     .max(20),
 });
@@ -30,7 +30,7 @@ export const cuerpoDePrecios = z.object({
 export const parametrosDeCuenta = z.object({ id: esquemaId });
 export const parametrosDeComprobante = z.object({ id: esquemaId });
 
-export const cuerpoDeCambioDePlan = z.object({ plan_id: esquemaId });
+export const cuerpoDeCambioDePlan = z.strictObject({ plan_id: esquemaId });
 
 export const respuestaDeCambioDePlan = z.object({
   plan: z.object({
@@ -62,7 +62,7 @@ export function exigirRespaldoDelPago(
 }
 
 export const cuerpoDePago = z
-  .object({
+  .strictObject({
     tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
     monto: z
       .number()
@@ -94,14 +94,14 @@ export const respuestaDePago = z.object({
 const esquemaNombreDePlan = z.string().trim().min(1).max(80);
 const esquemaCupo = z.number().int().min(1).max(100_000);
 
-export const cuerpoDePlanNuevo = z.object({
+export const cuerpoDePlanNuevo = z.strictObject({
   nombre: esquemaNombreDePlan,
   cupo_usuarios: esquemaCupo,
   precio_anual: esquemaPrecio,
 });
 
 export const cuerpoDeEdicionDePlan = z
-  .object({
+  .strictObject({
     nombre: esquemaNombreDePlan.optional(),
     cupo_usuarios: esquemaCupo.optional(),
     precio_anual: esquemaPrecio.optional(),
@@ -137,7 +137,7 @@ export const esquemaCuentaDeCobro = z.object({
 
 export const respuestaDeCuentasDeCobro = z.object({ datos: z.array(esquemaCuentaDeCobro) });
 
-export const cuerpoDeCuentaDeCobroNueva = z.object({
+export const cuerpoDeCuentaDeCobroNueva = z.strictObject({
   metodo: z.enum(['transferencia', 'qr']),
   banco: esquemaBanco,
   titular: textoOpcional(120).optional(),
@@ -148,7 +148,7 @@ export const cuerpoDeCuentaDeCobroNueva = z.object({
 });
 
 export const cuerpoDeEdicionDeCuentaDeCobro = z
-  .object({
+  .strictObject({
     banco: esquemaBanco.optional(),
     titular: textoOpcional(120).optional(),
     numero_cuenta: textoOpcional(40).optional(),

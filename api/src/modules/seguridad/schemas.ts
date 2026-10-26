@@ -6,7 +6,7 @@ const esquemaFecha = z.string();
 
 const esquemaRol = z.object({ id: z.string(), nombre: z.string() });
 
-export const cuerpoDeIngreso = z.object({ pin: z.string().min(1).max(32) });
+export const cuerpoDeIngreso = z.strictObject({ pin: z.string().min(1).max(32) });
 
 export const respuestaDeIngreso = z.object({
   acceso: z.string(),
@@ -17,7 +17,7 @@ export const respuestaDeIngreso = z.object({
   rol_activo_id: z.string().nullable(),
 });
 
-export const cuerpoDeRefresco = z.object({ refresco: z.string().min(1).max(256) });
+export const cuerpoDeRefresco = z.strictObject({ refresco: z.string().min(1).max(256) });
 
 export const respuestaDeRefresco = z.object({ acceso: z.string(), refresco: z.string() });
 
@@ -61,12 +61,12 @@ const esquemaSufijoDePin = z
   .transform((sufijo) => sufijo.toUpperCase());
 
 /** La unidad de un Titular (ADR 0028): en qué propiedad está y cómo se llama ("Casa 12"). */
-const esquemaUnidadNueva = z.object({
+const esquemaUnidadNueva = z.strictObject({
   sitio_id: esquemaId,
   nombre: z.string().trim().min(1).max(MAX_NOMBRE_DE_UNIDAD),
 });
 
-export const cuerpoDeNuevoUsuario = z.object({
+export const cuerpoDeNuevoUsuario = z.strictObject({
   etiqueta: esquemaEtiqueta,
   rol_ids: esquemaRolIds,
   sufijo: esquemaSufijoDePin.optional(),
@@ -75,9 +75,13 @@ export const cuerpoDeNuevoUsuario = z.object({
 });
 
 /** Regenerar el PIN: sin cuerpo (lo sortea el servidor) o con el sufijo elegido. */
-export const cuerpoDeRegeneracionDePin = z.object({ sufijo: esquemaSufijoDePin.optional() });
+export const cuerpoDeRegeneracionDePin = z.strictObject({ sufijo: esquemaSufijoDePin.optional() });
 
-/** Lo que una persona edita de sí misma: su nombre. */
+/**
+ * Lo que una persona edita de sí misma: su nombre. No es estricto a propósito: los tests de
+ * perfil mandan `id` de otro usuario y exigen que se ignore (mass assignment); pasarlo a 400
+ * cambia el contrato (ADR 0005) y queda para una decisión aparte.
+ */
 export const cuerpoDeMiPerfil = z.object({ etiqueta: esquemaEtiqueta });
 
 export const respuestaDeMiPerfil = z.object({ id: z.string(), etiqueta: z.string() });
@@ -85,7 +89,7 @@ export const respuestaDeMiPerfil = z.object({ id: z.string(), etiqueta: z.string
 /** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
 export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() });
 
-/** Solo el nombre se edita: el rol define el nivel en el árbol y no cambia (ADR 0028 §2). */
+/** Solo el nombre se edita (no estricto: un `rol_ids` de más se ignora, ver `cuerpoDeMiPerfil`): el rol define el nivel en el árbol y no cambia (ADR 0028 §2). */
 export const cuerpoDeEdicionDeUsuario = z.object({ etiqueta: esquemaEtiqueta });
 
 export const parametrosDeUsuario = z.object({ id: esquemaId });
@@ -112,7 +116,7 @@ export const respuestaListadoDeRoles = z.object({ datos: z.array(esquemaRol) });
 
 // --- Equipo AGROCOM (super admin, web admin) ---
 
-export const cuerpoDeIngresoDePlataforma = z.object({
+export const cuerpoDeIngresoDePlataforma = z.strictObject({
   usuario: z.string().min(1).max(60),
   contrasena: z.string().min(1).max(128),
 });
@@ -135,7 +139,7 @@ export const respuestaDePerfilDePlataforma = z.object({
   permisos: z.array(z.string()),
 });
 
-export const cuerpoDeCambioDeContrasena = z.object({
+export const cuerpoDeCambioDeContrasena = z.strictObject({
   actual: z.string().min(1).max(128),
   nueva: z.string().min(1).max(128),
 });
@@ -156,7 +160,7 @@ export const respuestaDelEquipo = esquemaListado(esquemaMiembroDelEquipo).extend
 
 export const respuestaDeMiembroCreado = esquemaMiembroDelEquipo;
 
-export const cuerpoDeNuevoMiembro = z.object({
+export const cuerpoDeNuevoMiembro = z.strictObject({
   nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
   usuario: z.string().min(1).max(60),
   contrasena_temporal: z.string().min(1).max(128),
@@ -169,10 +173,10 @@ const esquemaNombreDePersona = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUA
 
 /** Cambiar el nombre, reactivar (`activo: true`) o desactivar (`activo: false`); al menos una cosa. */
 export const cuerpoDeEdicionDeMiembro = z
-  .object({ nombre: esquemaNombreDePersona.optional(), activo: z.boolean().optional() })
+  .strictObject({ nombre: esquemaNombreDePersona.optional(), activo: z.boolean().optional() })
   .refine((cuerpo) => cuerpo.nombre !== undefined || cuerpo.activo !== undefined);
 
-export const cuerpoDeEdicionDePerfil = z.object({ nombre: esquemaNombreDePersona });
+export const cuerpoDeEdicionDePerfil = z.strictObject({ nombre: esquemaNombreDePersona });
 
 // --- Cuentas (administración por AGROCOM, web admin) ---
 
@@ -246,7 +250,7 @@ export const respuestaDeCodigoDeCuenta = z.object({
   sugerencias: z.array(z.string()),
 });
 
-export const cuerpoDeNuevaCuenta = z.object({
+export const cuerpoDeNuevaCuenta = z.strictObject({
   razon_social: z.string().trim().min(1).max(150),
   codigo: z.string().min(1).max(10),
   nit: esquemaNit,
@@ -260,7 +264,7 @@ export const cuerpoDeNuevaCuenta = z.object({
   administrador_nombre: z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO),
   /** El primer pago, si ya se cobró: la cuenta nace activa. Sin él, nace pendiente de pago. */
   pago: z
-    .object({
+    .strictObject({
       monto: z.number().positive().max(99_999_999),
       fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       medio: z.enum(['transferencia', 'qr', 'efectivo']),
@@ -278,7 +282,7 @@ export const cuerpoDeNuevaCuenta = z.object({
 });
 
 /** Lo que se puede corregir de una cuenta ya creada; el código tiene su propia ruta (ADR 0023). */
-export const cuerpoDeEdicionDeCuenta = z.object({
+export const cuerpoDeEdicionDeCuenta = z.strictObject({
   razon_social: z.string().trim().min(1).max(150),
   nit: esquemaNit,
   ciudad: z.string().trim().min(1).max(80),
@@ -303,7 +307,7 @@ export const respuestaDeCuentaCreada = z.object({
 export const parametrosDeCuenta = z.object({ id: esquemaId });
 
 /** Para borrar una cuenta hay que repetir su código: así no se borra otra por error. */
-export const cuerpoDeBajaDeCuenta = z.object({ codigo: z.string().trim().min(1).max(10) });
+export const cuerpoDeBajaDeCuenta = z.strictObject({ codigo: z.string().trim().min(1).max(10) });
 
 export const respuestaDeDetalleDeCuenta = z.object({
   cuenta: z.object({
@@ -385,25 +389,25 @@ const esquemaDireccion = z
   .max(255)
   .transform((texto) => (texto === '' ? null : texto));
 
-export const cuerpoDeNuevoSitio = z.object({
+export const cuerpoDeNuevoSitio = z.strictObject({
   nombre: esquemaNombreDeSitio,
   direccion: esquemaDireccion.nullish().transform((d) => d ?? null),
   zona_horaria: z.string().trim().min(1).max(64).default('America/La_Paz'),
 });
 
-export const cuerpoDeEdicionDeSitio = z.object({
+export const cuerpoDeEdicionDeSitio = z.strictObject({
   nombre: esquemaNombreDeSitio.optional(),
   direccion: esquemaDireccion.nullable().optional(),
   zona_horaria: z.string().trim().min(1).max(64).optional(),
   activo: z.boolean().optional(),
 });
 
-export const cuerpoDeNuevaPuerta = z.object({
+export const cuerpoDeNuevaPuerta = z.strictObject({
   nombre: z.string().trim().min(1).max(120),
   segundos_apertura: z.number().int().min(1).max(30).default(5),
 });
 
-export const cuerpoDeEdicionDePuerta = z.object({
+export const cuerpoDeEdicionDePuerta = z.strictObject({
   nombre: z.string().trim().min(1).max(120).optional(),
   segundos_apertura: z.number().int().min(1).max(30).optional(),
   activa: z.boolean().optional(),
@@ -487,7 +491,7 @@ export const respuestaDeCobranza = z.object({
   ),
 });
 
-export const cuerpoDeCambioDeCodigo = z.object({ codigo: z.string().min(1).max(10) });
+export const cuerpoDeCambioDeCodigo = z.strictObject({ codigo: z.string().min(1).max(10) });
 export const respuestaDeCambioDeCodigo = z.object({ codigo: z.string() });
 
 export const parametrosDeAdministrador = z.object({ id: esquemaId, usuarioId: esquemaId });
@@ -504,7 +508,7 @@ export const respuestaDeAdministradores = z.object({
 });
 
 /** Alta de otro Administrador en una cuenta (solo AGROCOM, ADR 0028). */
-export const cuerpoDeNuevoAdministrador = z.object({
+export const cuerpoDeNuevoAdministrador = z.strictObject({
   etiqueta: esquemaEtiqueta,
   sufijo: esquemaSufijoDePin.optional(),
 });
@@ -535,7 +539,7 @@ export const respuestaDeJerarquiaDeCuenta = z.object({
 });
 
 /** Mover un Guardia o un Titular (con su unidad y sus Miembros) a otro Administrador (ADR 0028 §7). */
-export const cuerpoDeReasignacion = z.object({
+export const cuerpoDeReasignacion = z.strictObject({
   usuario_id: esquemaId,
   administrador_id: esquemaId,
 });

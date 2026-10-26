@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
 
-export const cuerpoDeLatido = z.object({
+export const cuerpoDeLatido = z.strictObject({
   firmware: z.string().min(1).max(20),
   rssi: z.number().int().min(-200).max(100),
   puerta_abierta: z.boolean(),
@@ -14,7 +14,7 @@ export const respuestaDeConfiguracion = z.object({
 });
 
 /** El anuncio de una placa sin vínculo (ADR 0026 §2). La clave la sortea la placa. */
-export const cuerpoDeAnuncio = z.object({
+export const cuerpoDeAnuncio = z.strictObject({
   mac: z.string().min(11).max(17),
   clave: z.string().regex(/^[A-Za-z0-9_-]{32,128}$/),
   firmware: z.string().min(1).max(20),
@@ -27,7 +27,7 @@ export const respuestaDeAnuncio = z.discriminatedUnion('estado', [
 ]);
 
 /** La placa avisa que alguien mantuvo pulsado su botón (ADR 0026 §4). */
-export const cuerpoDeConfirmacion = z.object({
+export const cuerpoDeConfirmacion = z.strictObject({
   mac: z.string().min(11).max(17),
   clave: z.string().regex(/^[A-Za-z0-9_-]{32,128}$/),
 });
@@ -39,7 +39,7 @@ export const respuestaDeConfirmacion = z.object({
 
 export const parametrosDePlaca = z.object({ id: z.string().regex(/^\d+$/) });
 
-export const cuerpoDeVinculo = z.object({
+export const cuerpoDeVinculo = z.strictObject({
   cuenta_id: z.string().regex(/^\d+$/),
   puerta_id: z.string().regex(/^\d+$/),
   nombre: z.string().trim().min(1).max(100),
