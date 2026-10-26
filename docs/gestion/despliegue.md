@@ -22,6 +22,12 @@ Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y
 3. El push a `master` dispara `deploy.yml` en el runner del CT, que corre `bin/desplegar`.
 4. `bin/desplegar` es idempotente: migra, siembra el catálogo, crea `root` solo si no existe y espera a `/api/v1/salud`.
 
+## Hallazgos de seguridad
+
+Un secreto filtrado, una dependencia con aviso alto o un hallazgo de CodeQL tienen su procedimiento
+en `docs/gestion/seguridad-ci.md`. Un secreto real se rota en su origen antes que nada: el
+`PIN_PIMIENTA` no se cambia sin un plan de migración de PIN (ADR 0018).
+
 ## Primer arranque
 
 El `.env` se crea una vez en el CT (secretos aleatorios, `ADMIN_INICIAL_CLAVE` solo para el primer ingreso):

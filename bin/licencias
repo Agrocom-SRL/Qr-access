@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+#
+# Revisión de licencias de las dependencias de PRODUCCIÓN de api y web (ADR 0033 §2).
+#
+#   bin/licencias            api y web
+#   bin/licencias web        solo esa parte
+#
+# No corre en CI: es una revisión a mano, al agregar una dependencia y antes de un release
+# mayor. Instala en una copia temporal con --omit=dev y --ignore-scripts: no toca el
+# node_modules del repo ni ejecuta scripts de instalación de terceros.
+# Sale con 1 si hay licencias no permitidas o sin declarar: esas se revisan a mano
+# (leer el LICENSE del paquete) antes de aceptarlas.
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+partes=("$@")
+[ ${#partes[@]} -eq 0 ] && partes=(api web)
+
+tmp=$(mktemp -d) || exit 1
+trap 'rm -rf "$tmp"' EXIT
+
+fallos=0
+for parte in "${partes[@]}"; do
+    case "$parte" in
+        api | web) ;;
+        *) echo "parte desconocida: $parte (api | web)" >&2; exit 2 ;;
+    esac
+    echo "── licencias de $parte (producción) ──"
+    mkdir -p "$tmp/$parte"
+    cp "$parte/package.json" "$parte/package-lock.json" "$tmp/$parte/" || { fallos=$((fallos + 1)); continue; }
+    # Los avisos de npm (engines, deprecated) van al log: solo se muestran si la instalación falla.
+    if ! (cd "$tmp/$parte" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null 2>"$tmp/$parte.log"); then
+        echo "npm ci falló para $parte:" >&2
+        tail -n 20 "$tmp/$parte.log" >&2
+        fallos=$((fallos + 1))
+        continue
+    fi
+    python3 -I - "$tmp/$parte" <<'PY' || fallos=$((fallos + 1))
+import collections
+import json
+import os
+import sys
+
+raiz = sys.argv[1]
+# Licencias permisivas aceptadas sin revisión manual. Cualquier otra se revisa a mano.
+ACEPTADAS = {
+    "MIT", "MIT/X11", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0",
+    "0BSD", "Unlicense", "CC0-1.0", "BlueOak-1.0.0", "Zlib", "Python-2.0",
+}
+
+
+def permitida(expresion):
+    # Una expresión SPDX con OR se acepta si una alternativa es permitida (se elige esa);
+    # con AND, si lo son todas.
+    expresion = expresion.strip().strip("()").strip()
+    if " OR " in expresion:
+        return any(permitida(p) for p in expresion.split(" OR "))
+    if " AND " in expresion:
+        return all(permitida(p) for p in expresion.split(" AND "))
+    return expresion in ACEPTADAS
+
+
+# npm solo registra en node_modules/.package-lock.json lo realmente instalado.
+with open(os.path.join(raiz, "node_modules", ".package-lock.json"), encoding="utf-8") as f:
+    instalados = json.load(f)["packages"]
+
+por_licencia = collections.defaultdict(list)
+for clave in instalados:
+    if not clave.startswith("node_modules/"):
+        continue
+    try:
+        with open(os.path.join(raiz, clave, "package.json"), encoding="utf-8") as f:
+            pkg = json.load(f)
+    except OSError:
+        por_licencia["(sin package.json)"].append(clave)
+        continue
+    lic = pkg.get("license")
+    if isinstance(lic, dict):
+        lic = lic.get("type")
+    if not lic and isinstance(pkg.get("licenses"), list) and pkg["licenses"]:
+        lic = pkg["licenses"][0].get("type")
+    por_licencia[str(lic) if lic else "(sin campo license)"].append(f'{pkg.get("name")}@{pkg.get("version")}')
+
+total = sum(len(v) for v in por_licencia.values())
+revisar = {lic: sorted(v) for lic, v in por_licencia.items() if not permitida(lic)}
+print(f"paquetes instalados: {total}")
+for lic in sorted(por_licencia, key=lambda k: (-len(por_licencia[k]), k)):
+    marca = "  <- REVISAR A MANO" if lic in revisar else ""
+    print(f"{len(por_licencia[lic]):5d}  {lic}{marca}")
+for lic, lista in revisar.items():
+    print(f"\n{lic}: " + ", ".join(lista))
+sys.exit(1 if revisar else 0)
+PY
+done
+
+if [ "$fallos" -gt 0 ]; then
+    echo "Hay licencias por revisar (o un error de instalación)." >&2
+    exit 1
+fi
+echo "Todas las licencias de producción están en la lista permitida."
