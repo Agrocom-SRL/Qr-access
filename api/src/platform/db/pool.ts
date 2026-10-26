@@ -15,7 +15,7 @@ export interface OpcionesBase {
 export function crearPool(opciones: OpcionesBase): Pool {
   return mysql.createPool({
     ...opciones,
-    charset: 'utf8mb4_0900_ai_ci',
+    charset: 'utf8mb4_unicode_ci',
     timezone: 'Z',
     supportBigNumbers: true,
     bigNumberStrings: true,

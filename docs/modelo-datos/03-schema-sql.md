@@ -33,7 +33,7 @@ CREATE TABLE cuentas (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_cuentas_codigo (codigo, vigente),
   CONSTRAINT ck_cuentas_codigo CHECK (REGEXP_LIKE(codigo, '^[A-Z]{3}$', 'c'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## roles
@@ -57,7 +57,7 @@ CREATE TABLE roles (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_roles_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   UNIQUE KEY uq_roles_nombre (tenant_clave, nombre, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## planes
@@ -81,7 +81,7 @@ CREATE TABLE planes (
   deleted_by BIGINT UNSIGNED NULL,
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_planes_nombre (nombre, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## suscripciones
@@ -109,7 +109,7 @@ CREATE TABLE suscripciones (
   UNIQUE KEY uq_suscripciones_vigente (tenant_id, estado_vigente),
   CONSTRAINT ck_suscripciones_estado CHECK (estado IN ('vigente', 'suspendida', 'vencida')),
   CONSTRAINT ck_suscripciones_ventana CHECK (desde < hasta)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## usuarios
@@ -143,7 +143,7 @@ CREATE TABLE usuarios (
     (tenant_id IS NOT NULL AND pin_indice IS NOT NULL AND pin_hash IS NOT NULL)
     OR (tenant_id IS NULL AND username IS NOT NULL AND contrasena_hash IS NOT NULL)
   )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## permisos
@@ -158,7 +158,7 @@ CREATE TABLE permisos (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_permisos_codigo (codigo),
   CONSTRAINT ck_permisos_ambito CHECK (ambito IN ('plataforma', 'cuenta'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## rol_permisos
@@ -174,7 +174,7 @@ CREATE TABLE rol_permisos (
   PRIMARY KEY (rol_id, permiso_id),
   CONSTRAINT fk_rol_permisos_rol FOREIGN KEY (rol_id) REFERENCES roles (id),
   CONSTRAINT fk_rol_permisos_permiso FOREIGN KEY (permiso_id) REFERENCES permisos (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## usuario_roles
@@ -198,7 +198,7 @@ CREATE TABLE usuario_roles (
   CONSTRAINT fk_usuario_roles_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_usuario_roles_rol FOREIGN KEY (rol_id) REFERENCES roles (id),
   UNIQUE KEY uq_usuario_roles (usuario_id, rol_id, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## sesiones
@@ -223,7 +223,7 @@ CREATE TABLE sesiones (
   CONSTRAINT fk_sesiones_rol_activo FOREIGN KEY (rol_activo_id) REFERENCES roles (id),
   UNIQUE KEY uq_sesiones_refresh (refresh_hash),
   KEY idx_sesiones_usuario (usuario_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## bitacoras
@@ -247,7 +247,7 @@ CREATE TABLE bitacoras (
   KEY idx_bitacoras_tenant (tenant_id, ocurrido_at),
   CONSTRAINT ck_bitacoras_accion CHECK (accion IN ('creado', 'actualizado', 'eliminado', 'restaurado')),
   CONSTRAINT ck_bitacoras_origen CHECK (origen IN ('api', 'dispositivo', 'sistema'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## sitios
@@ -272,7 +272,7 @@ CREATE TABLE sitios (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_sitios_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   UNIQUE KEY uq_sitios_nombre (tenant_clave, nombre, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## puertas
@@ -298,7 +298,7 @@ CREATE TABLE puertas (
   CONSTRAINT fk_puertas_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
   UNIQUE KEY uq_puertas_nombre (sitio_id, nombre, vigente),
   CONSTRAINT ck_puertas_segundos CHECK (segundos_apertura BETWEEN 1 AND 30)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## placas
@@ -326,7 +326,7 @@ CREATE TABLE placas (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_placas_mac (mac, vigente),
   CONSTRAINT ck_placas_mac CHECK (mac REGEXP '^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## placas_anuncios
@@ -346,7 +346,7 @@ CREATE TABLE placas_anuncios (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_placas_anuncios_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
   UNIQUE KEY uq_placas_anuncios_clave (placa_id, clave_huella)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## dispositivos
@@ -380,7 +380,7 @@ CREATE TABLE dispositivos (
   CONSTRAINT fk_dispositivos_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
   UNIQUE KEY uq_dispositivos_puerta (puerta_id, en_servicio),
   UNIQUE KEY uq_dispositivos_placa (placa_id, en_servicio)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## qr_accesos
@@ -415,7 +415,7 @@ CREATE TABLE qr_accesos (
   UNIQUE KEY uq_qr_accesos_propio_activo (generado_por, propio_activo),
   KEY idx_qr_accesos_generador (tenant_id, generado_por, created_at),
   KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## qr_acceso_puertas
@@ -439,7 +439,7 @@ CREATE TABLE qr_acceso_puertas (
   CONSTRAINT fk_qr_acceso_puertas_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT fk_qr_acceso_puertas_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
   UNIQUE KEY uq_qr_acceso_puertas (qr_acceso_id, puerta_id, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## eventos_acceso
@@ -468,7 +468,7 @@ CREATE TABLE eventos_acceso (
   CONSTRAINT fk_eventos_acceso_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT ck_eventos_acceso_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada')),
   CONSTRAINT ck_eventos_acceso_resultado CHECK (resultado IN ('permitido', 'rechazado'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## cuenta_datos_empresa
@@ -494,7 +494,7 @@ CREATE TABLE cuenta_datos_empresa (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_cuenta_datos_empresa_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   UNIQUE KEY uq_cuenta_datos_empresa_cuenta (tenant_clave, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## pagos
@@ -529,7 +529,7 @@ CREATE TABLE pagos (
   CONSTRAINT ck_pagos_medio CHECK (medio IN ('transferencia', 'qr', 'efectivo')),
   CONSTRAINT ck_pagos_monto CHECK (monto > 0),
   CONSTRAINT ck_pagos_periodo CHECK (periodo_desde < periodo_hasta)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## comprobantes
@@ -550,7 +550,7 @@ CREATE TABLE comprobantes (
   deleted_by BIGINT UNSIGNED NULL,
   UNIQUE KEY uq_comprobantes_ruta (ruta),
   CONSTRAINT ck_comprobantes_tipo CHECK (tipo_mime IN ('image/jpeg', 'image/png', 'image/webp', 'application/pdf'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## pagos: banco, cuenta de destino y comprobante
@@ -589,7 +589,7 @@ CREATE TABLE unidades (
   CONSTRAINT fk_unidades_titular FOREIGN KEY (titular_id) REFERENCES usuarios (id),
   UNIQUE KEY uq_unidades_nombre (sitio_id, nombre, vigente),
   UNIQUE KEY uq_unidades_titular (titular_id, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## usuarios: superior en el árbol
@@ -674,5 +674,5 @@ CREATE TABLE cuentas_de_cobro (
   CONSTRAINT ck_cuentas_de_cobro_tipo CHECK (tipo_cuenta IS NULL OR tipo_cuenta IN ('ahorro', 'corriente')),
   CONSTRAINT ck_cuentas_de_cobro_transferencia CHECK (metodo <> 'transferencia' OR (titular IS NOT NULL AND numero_cuenta IS NOT NULL)),
   CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```

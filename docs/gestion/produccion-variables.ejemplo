@@ -1,10 +1,12 @@
 # Plantilla del /opt/acceso/.env del CT 120. El real nunca se versiona (invariante 6).
 # Los secretos se generan en el servidor (ver docs/gestion/despliegue.md), no se escriben a mano.
 
+# MariaDB 10.11 compartida (otro servidor): se llega por IP desde el CT 120. La base y el usuario los crea el administrador del servidor.
+DB_HOST=                   # IP de la red privada del servidor de base de datos
+DB_PORT=3306
 MYSQL_DATABASE=acceso
 MYSQL_USER=acceso
 MYSQL_PASSWORD=            # openssl rand -hex 24
-MYSQL_ROOT_PASSWORD=       # openssl rand -hex 24
 
 JWT_SECRETO=               # openssl rand -hex 32 (mínimo 32 caracteres)
 PIN_PIMIENTA=              # openssl rand -base64 32; cambiarla invalida todos los PIN

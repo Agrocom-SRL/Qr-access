@@ -26,7 +26,7 @@ CREATE TABLE usuarios (
     (tenant_id IS NOT NULL AND pin_indice IS NOT NULL AND pin_hash IS NOT NULL)
     OR (tenant_id IS NULL AND username IS NOT NULL AND contrasena_hash IS NOT NULL)
   )
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE usuarios;

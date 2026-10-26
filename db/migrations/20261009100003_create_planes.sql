@@ -14,7 +14,7 @@ CREATE TABLE planes (
   deleted_by BIGINT UNSIGNED NULL,
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_planes_nombre (nombre, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE planes;

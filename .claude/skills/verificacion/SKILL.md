@@ -25,7 +25,7 @@ Una parte que todavía no existe se saltea con un aviso. CI corre lo mismo, un j
 | api | Formato | Prettier (`format:check`) | `npm --prefix api run format` |
 | api | Tipos | `tsc --noEmit` (`strict: true`) | Tipando de verdad, sin `any` ni `as unknown as` |
 | api | Fronteras | dependency-cruiser (`.dependency-cruiser.cjs`) | Moviendo el import a `contracts.ts`/`events.ts` del módulo dueño |
-| api | Tests | Vitest contra **MySQL** (`qr_access_testing`) | Ver abajo |
+| api | Tests | Vitest contra **MariaDB** (`qr_access_testing`) | Ver abajo |
 | app | Formato | `dart format --set-exit-if-changed` | `dart format lib test` |
 | app | Análisis | `flutter analyze --fatal-infos` (`very_good_analysis`) | Corrigiendo; sin `// ignore:` sin motivo |
 | app | Tests | `flutter test` (unitarios, widgets, l10n, arquitectura) | |
@@ -39,7 +39,7 @@ El setup de Vitest fuerza `DB_DATABASE=qr_access_testing` y **aborta si la base 
 
 Si falta la base de tests en un volumen existente: ver `docs/gestion/entornos.md`.
 
-## Migraciones nuevas: MySQL limpio, migrar, sembrar dos veces y revertir
+## Migraciones nuevas: MariaDB limpia, migrar, sembrar dos veces y revertir
 
 Los tests migran desde cero, pero no prueban la siembra repetida ni el rollback con datos. Para eso, un proyecto compose descartable con otros puertos (override en el scratchpad):
 
@@ -59,7 +59,7 @@ docker compose -p qr-access-verif down -v        # permitido: es descartable
 
 ## Los datos de la base de desarrollo no se borran
 
-Lo que se cargue en el MySQL del compose de desarrollo para probar algo **se deja ahí**: el usuario lo revisa después. Nada de `dbmate drop`/`rollback`, `DROP`, `TRUNCATE`, `docker compose down -v` ni `docker volume rm` sobre esa base (el guardarraíl los deniega).
+Lo que se cargue en la MariaDB del compose de desarrollo para probar algo **se deja ahí**: el usuario lo revisa después. Nada de `dbmate drop`/`rollback`, `DROP`, `TRUNCATE`, `docker compose down -v` ni `docker volume rm` sobre esa base (el guardarraíl los deniega).
 
 ## Lo que no se hace para que la cascada pase
 

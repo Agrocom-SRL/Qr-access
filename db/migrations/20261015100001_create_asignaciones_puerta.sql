@@ -18,7 +18,7 @@ CREATE TABLE asignaciones_puerta (
   CONSTRAINT fk_asignaciones_puerta_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_asignaciones_puerta_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
   UNIQUE KEY uq_asignaciones_puerta (usuario_id, puerta_clave, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE asignaciones_puerta;

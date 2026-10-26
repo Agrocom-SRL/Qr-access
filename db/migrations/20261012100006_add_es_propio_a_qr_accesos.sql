@@ -11,6 +11,9 @@ ALTER TABLE qr_accesos
   ADD UNIQUE KEY uq_qr_accesos_propio_activo (emitido_por, propio_activo);
 
 -- migrate:down
+-- MariaDB sostiene la clave foránea de `emitido_por` con el UNIQUE que se va a borrar (descarta el
+-- índice automático al crearlo): se restituye ese índice antes, con el nombre que tenía.
+ALTER TABLE qr_accesos ADD INDEX fk_qr_accesos_emisor (emitido_por);
 ALTER TABLE qr_accesos
   DROP INDEX uq_qr_accesos_propio_activo,
   DROP COLUMN propio_activo,

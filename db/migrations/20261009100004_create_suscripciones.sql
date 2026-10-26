@@ -19,7 +19,7 @@ CREATE TABLE suscripciones (
   UNIQUE KEY uq_suscripciones_vigente (tenant_id, estado_vigente),
   CONSTRAINT ck_suscripciones_estado CHECK (estado IN ('vigente', 'suspendida', 'vencida')),
   CONSTRAINT ck_suscripciones_ventana CHECK (desde < hasta)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE suscripciones;

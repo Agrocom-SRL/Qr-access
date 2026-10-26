@@ -15,7 +15,7 @@ CREATE TABLE comprobantes (
   deleted_by BIGINT UNSIGNED NULL,
   UNIQUE KEY uq_comprobantes_ruta (ruta),
   CONSTRAINT ck_comprobantes_tipo CHECK (tipo_mime IN ('image/jpeg', 'image/png', 'image/webp', 'application/pdf'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE comprobantes;
