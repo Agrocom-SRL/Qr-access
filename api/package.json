@@ -1,6 +1,6 @@
 {
   "name": "agrocom-acceso-api",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "description": "API REST de AGROCOM Acceso",
   "type": "module",
