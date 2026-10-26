@@ -4,14 +4,14 @@
 
 ```
 internet ─ NPMplus (CT 107, 192.168.100.249, TLS Let's Encrypt)
-              └─ acceso.agrocom.com.bo ─▶ CT 120 :80    panel (React, super admin) ─ /api ─▶ api :3000 ─▶ db (MySQL 8.4)
+              └─ acceso.agrocom.com.bo ─▶ CT 120 :80    panel (React, super admin) ─ /api ─▶ api :3000 ─▶ MariaDB 10.11 compartida (por IP)
                                                           └─ /app/ ─▶ app (Flutter web, sin puerto publicado) ─ /api ─▶ api
 ```
 
 Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y la app de usuarios vive en `https://acceso.agrocom.com.bo/app/` (se compila con `--base-href /app/`). El Nginx del panel reenvía `/app/` al contenedor `app`, así que NPMplus sigue con una sola regla hacia el puerto 80. Las dos comparten `/api` y no se pisan el almacenamiento del navegador (claves distintas).
 
 - **Red:** el CT 120 solo tiene IP privada (`192.168.100.236`, debe ser fija o reservada). Nada del CT se publica a internet sin pasar por NPMplus.
-- **Base de datos:** MySQL 8.4 en contenedor, volumen `datos-db`, sin puerto publicado. La MariaDB compartida del CT 108 **no sirve** (el esquema usa `utf8mb4_0900_ai_ci` y columnas generadas de MySQL 8).
+- **Base de datos:** la MariaDB 10.11 compartida (otro servidor, alcanzada por IP desde el CT 120; ADR 0034). No hay contenedor de base en este compose. Base `acceso` y usuario `acceso` propios, sin `root`; `DB_HOST` y `DB_PORT` van en `/opt/acceso/.env`.
 - **Secretos:** `/opt/acceso/.env` en el CT (plantilla: `docs/gestion/produccion-variables.ejemplo`). Nunca en el repo.
 - **Runner:** servicio `actions.runner.Agrocom-SRL-Qr-access.acceso-120` (usuario `runner`, etiqueta `acceso-prod`).
 
@@ -29,10 +29,11 @@ El `.env` se crea una vez en el CT (secretos aleatorios, `ADMIN_INICIAL_CLAVE` s
 ```
 install -d -o runner -g runner -m 750 /opt/acceso
 cat > /opt/acceso/.env <<EOF
+DB_HOST=<IP de la MariaDB compartida>
+DB_PORT=3306
 MYSQL_DATABASE=acceso
 MYSQL_USER=acceso
-MYSQL_PASSWORD=$(openssl rand -hex 24)
-MYSQL_ROOT_PASSWORD=$(openssl rand -hex 24)
+MYSQL_PASSWORD=<la clave del usuario `acceso` en el servidor de base de datos>
 JWT_SECRETO=$(openssl rand -hex 32)
 PIN_PIMIENTA=$(openssl rand -base64 32)
 ADMIN_INICIAL_CLAVE=<contraseña temporal>
@@ -54,4 +55,20 @@ Escucha en `:8082` de la red privada. Para abrirlo por web, un sitio en NPMplus 
 
 ## Respaldo
 
-La base vive en el volumen `datos-db`. Respaldo mínimo: `docker compose -p acceso exec -T db sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction acceso' | gzip > acceso-$(date +%F).sql.gz`, más el snapshot del CT en Proxmox. Nunca `docker compose down -v` ni `docker volume rm` sobre `acceso_datos-db`.
+La base vive en el servidor de base de datos compartido, no en el CT 120. Respaldo mínimo, desde el CT: `docker run --rm --env-file /opt/acceso/.env mariadb:10.11 sh -c 'mariadb-dump -h"$DB_HOST" -P"$DB_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --single-transaction "$MYSQL_DATABASE"' | gzip > acceso-$(date +%F).sql.gz`, más el respaldo propio de ese servidor. Nunca `DROP DATABASE` sobre `acceso`.
+
+## Conectar la base compartida (una sola vez)
+
+1. Desde phpMyAdmin del servidor (como administrador), crea la base y un usuario solo para esta aplicación, limitado a la IP del CT 120:
+   ```
+   CREATE DATABASE acceso CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'acceso'@'<IP del CT 120>' IDENTIFIED BY '<clave>';
+   GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES ON acceso.* TO 'acceso'@'<IP del CT 120>';
+   ```
+2. Pon `DB_HOST`, `DB_PORT`, `MYSQL_DATABASE`, `MYSQL_USER` y `MYSQL_PASSWORD` en `/opt/acceso/.env`.
+3. Comprueba la conexión desde el CT: `docker run --rm mariadb:10.11 mariadb -h <DB_HOST> -u acceso -p -e 'SELECT @@version'`.
+4. Despliega (tag). `bin/desplegar` migra con dbmate, siembra el catálogo y crea `root` si falta.
+
+El servidor ya escucha en `0.0.0.0`; el puerto 3306 solo debe estar abierto para la IP del CT 120.
+
+Si había datos en la base MySQL vieja del contenedor `acceso_datos-db`, se vuelcan con `mysqldump --no-create-info --complete-insert` y se restauran sobre la base ya migrada antes de abrir al público; ese volumen no se borra hasta confirmar el uso estable.

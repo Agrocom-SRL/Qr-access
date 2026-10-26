@@ -31,7 +31,7 @@ CREATE TABLE placas_anuncios (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_placas_anuncios_placa FOREIGN KEY (placa_id) REFERENCES placas (id),
   UNIQUE KEY uq_placas_anuncios_clave (placa_id, clave_huella)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE placas_anuncios;

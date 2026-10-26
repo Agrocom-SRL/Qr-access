@@ -29,7 +29,7 @@ deleted_by  BIGINT UNSIGNED NULL,
 tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
 vigente      TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
 CONSTRAINT fk_<tabla>_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 - Toda entidad propia tiene además `activo TINYINT(1) NOT NULL DEFAULT 1` (desactivar no es borrar).

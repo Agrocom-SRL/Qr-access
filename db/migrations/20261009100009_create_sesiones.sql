@@ -16,7 +16,7 @@ CREATE TABLE sesiones (
   CONSTRAINT fk_sesiones_rol_activo FOREIGN KEY (rol_activo_id) REFERENCES roles (id),
   UNIQUE KEY uq_sesiones_refresh (refresh_hash),
   KEY idx_sesiones_usuario (usuario_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE sesiones;

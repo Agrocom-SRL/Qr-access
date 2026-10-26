@@ -12,8 +12,8 @@ CREATE TABLE cuentas (
   deleted_by BIGINT UNSIGNED NULL,
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_cuentas_codigo (codigo, vigente),
-  CONSTRAINT ck_cuentas_codigo CHECK (REGEXP_LIKE(codigo, '^[A-Z]{3}$', 'c'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT ck_cuentas_codigo CHECK (BINARY codigo REGEXP '^[A-Z]{3}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE cuentas;

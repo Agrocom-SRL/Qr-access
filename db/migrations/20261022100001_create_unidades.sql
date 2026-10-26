@@ -21,7 +21,7 @@ CREATE TABLE unidades (
   CONSTRAINT fk_unidades_titular FOREIGN KEY (titular_id) REFERENCES usuarios (id),
   UNIQUE KEY uq_unidades_nombre (sitio_id, nombre, vigente),
   UNIQUE KEY uq_unidades_titular (titular_id, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE unidades;

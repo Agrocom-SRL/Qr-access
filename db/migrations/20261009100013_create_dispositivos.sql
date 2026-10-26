@@ -22,7 +22,7 @@ CREATE TABLE dispositivos (
   CONSTRAINT fk_dispositivos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   CONSTRAINT fk_dispositivos_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
   UNIQUE KEY uq_dispositivos_puerta (puerta_id, en_servicio)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE dispositivos;

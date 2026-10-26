@@ -8,7 +8,7 @@ Este repo es **AGROCOM Acceso** (`acceso.agrocom.com.bo`): plataforma multitenan
 | `app/` | App de usuarios, administradores y guardias | Flutter (Android, iOS y web) |
 | `firmware/` | Controlador de la puerta | ESP32 con framework Arduino, compilado con PlatformIO |
 | `web/` | Panel web del equipo AGROCOM (cuentas, planes, suscripciones y cobranza) | React + TypeScript + Vite, tokens CSS (ADR 0021) |
-| `db/` | Esquema MySQL 8 | Migraciones `.sql` con dbmate (ADR 0011) |
+| `db/` | Esquema MariaDB 10.11 (ADR 0034) | Migraciones `.sql` con dbmate (ADR 0011) |
 
 El desarrollo lo hace un equipo chico con agentes de IA como implementadores principales; estas invariantes existen para que la coherencia no dependa de la memoria de nadie. El kit de procesos (gitflow, CI/CD, agentes, skills, hooks, ADRs) viene del proyecto ACRECIA, adaptado.
 
@@ -55,9 +55,9 @@ Fuentes de verdad:
 ## Testing
 
 - `bin/verify` es la compuerta: ejecuta lo que exista de cada parte (`api`: ESLint + Prettier + `tsc --noEmit` + dependency-cruiser + Vitest; `app`: `dart format` + `flutter analyze` + `flutter test` + `flutter build web`; `firmware`: `pio run` + `pio test -e native`; `web`: ESLint + Prettier + `tsc --noEmit` + Vitest + `vite build`). Un cambio está terminado cuando pasa entero.
-- Los tests de la API corren contra **MySQL 8** real, base `qr_access_testing` del contenedor `db`; **nunca** SQLite ni la base de desarrollo.
+- Los tests de la API corren contra **MariaDB 10.11** real, base `qr_access_testing` del contenedor `db`; **nunca** SQLite ni la base de desarrollo.
 - Prioridad de cobertura: aislamiento entre cuentas (1), falla segura de la puerta (2), un solo uso y vencimiento del QR (3), registro de todo intento (4), autenticación de dispositivos y bloqueo de PIN (5), límites del plan (6).
-- Una migración nueva se verifica además contra un MySQL descartable (migrar, sembrar dos veces, revertir; skill `modelo-datos`). Nunca `dbmate drop`, `DROP DATABASE`, `docker compose down -v` ni `docker volume rm` sobre la base de desarrollo.
+- Una migración nueva se verifica además contra una MariaDB descartable (migrar, sembrar dos veces, revertir; skill `modelo-datos`). Nunca `dbmate drop`, `DROP DATABASE`, `docker compose down -v` ni `docker volume rm` sobre la base de desarrollo.
 
 ## Qué no delegar sin revisión línea por línea
 

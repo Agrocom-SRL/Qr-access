@@ -16,8 +16,8 @@ Se pidió backend en Node con contenedores y MySQL como primera versión. El dom
 | Validación y contrato | zod + `fastify-type-provider-zod` → OpenAPI con `@fastify/swagger` |
 | Acceso a datos | **`mysql2/promise` con SQL escrito a mano**, siempre parametrizado, dentro de repositorios |
 | Migraciones | dbmate con archivos `.sql` (ADR 0011) |
-| Base de datos | MySQL 8.4 LTS |
-| Tests | Vitest contra MySQL real |
+| Base de datos | ~~MySQL 8.4 LTS~~ MariaDB 10.11 LTS (ADR 0034) |
+| Tests | Vitest contra MariaDB real (ADR 0034) |
 | Calidad | ESLint (typescript-eslint), Prettier, dependency-cruiser |
 | Hash / cripto | argon2 (contraseñas y claves de dispositivo), `node:crypto` (HMAC, AES-256-GCM) |
 

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "bo.com.agrocom.agrocom_acceso"
+    namespace = "bo.com.agrocom.acceso"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "bo.com.agrocom.agrocom_acceso"
+        applicationId = "bo.com.agrocom.acceso"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

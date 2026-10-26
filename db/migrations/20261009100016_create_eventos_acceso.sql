@@ -20,7 +20,7 @@ CREATE TABLE eventos_acceso (
   CONSTRAINT fk_eventos_acceso_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT ck_eventos_acceso_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada')),
   CONSTRAINT ck_eventos_acceso_resultado CHECK (resultado IN ('permitido', 'rechazado'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE eventos_acceso;

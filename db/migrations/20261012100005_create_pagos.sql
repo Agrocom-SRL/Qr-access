@@ -26,7 +26,7 @@ CREATE TABLE pagos (
   CONSTRAINT ck_pagos_medio CHECK (medio IN ('transferencia', 'deposito', 'efectivo')),
   CONSTRAINT ck_pagos_monto CHECK (monto > 0),
   CONSTRAINT ck_pagos_periodo CHECK (periodo_desde < periodo_hasta)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE pagos;

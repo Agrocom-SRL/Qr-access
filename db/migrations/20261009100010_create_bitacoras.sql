@@ -15,7 +15,7 @@ CREATE TABLE bitacoras (
   KEY idx_bitacoras_tenant (tenant_id, ocurrido_at),
   CONSTRAINT ck_bitacoras_accion CHECK (accion IN ('creado', 'actualizado', 'eliminado', 'restaurado')),
   CONSTRAINT ck_bitacoras_origen CHECK (origen IN ('api', 'dispositivo', 'sistema'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE bitacoras;

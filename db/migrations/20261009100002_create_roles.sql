@@ -15,7 +15,7 @@ CREATE TABLE roles (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_roles_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   UNIQUE KEY uq_roles_nombre (tenant_clave, nombre, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE roles;

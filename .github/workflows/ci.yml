@@ -57,19 +57,19 @@ jobs:
     needs: detectar
     if: needs.detectar.outputs.api == 'true'
     runs-on: ubuntu-24.04
-    # MySQL 8, el mismo motor que producción: los tests nunca usan SQLite.
+    # MariaDB 10.11, el mismo motor que producción: los tests nunca usan SQLite.
     services:
-      mysql:
-        image: mysql:8.4
+      mariadb:
+        image: mariadb:10.11
         env:
-          MYSQL_DATABASE: qr_access_testing
-          MYSQL_USER: qr_access
-          MYSQL_PASSWORD: qr_access
-          MYSQL_ROOT_PASSWORD: root
+          MARIADB_DATABASE: qr_access_testing
+          MARIADB_USER: qr_access
+          MARIADB_PASSWORD: qr_access
+          MARIADB_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: >-
-          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -110,7 +110,7 @@ jobs:
           curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v2.28.0/dbmate-linux-amd64
           chmod +x /usr/local/bin/dbmate
           dbmate --migrations-dir db/migrations --no-dump-schema up
-      - name: Tests (Vitest sobre MySQL)
+      - name: Tests (Vitest sobre MariaDB)
         run: npm test
 
   app:
