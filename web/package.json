@@ -1,6 +1,6 @@
 {
   "name": "agrocom-acceso-web",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Panel web de administración de la plataforma AGROCOM Acceso",
   "type": "module",
