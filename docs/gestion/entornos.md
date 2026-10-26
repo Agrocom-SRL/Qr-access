@@ -34,37 +34,25 @@
 - **firmware**: la placa lleva en NVS la URL de la API y su código de vinculación; AGROCOM la asigna a una puerta desde el panel (ADR 0025). `secretos.h` (URL, id y clave) solo para desarrollo en la mesa. Sin WiFi: Ethernet.
 - **CI**: variables del job; firmas y claves de OTA en GitHub Actions secrets.
 
-## Datos de desarrollo: la cuenta demo `DEM`
+## Datos de desarrollo: el super admin `root`
 
-**Solo desarrollo. Nunca en producción.** Estos PIN y estas claves están publicados en el repositorio: cualquiera puede entrar con ellos. En producción, las cuentas, los PIN y las claves de dispositivo se generan con la API y se muestran una sola vez.
+**Solo desarrollo. Nunca en producción.** La contraseña inicial de `root` está publicada en el repositorio. No hay cuentas demo: las cuentas, los PIN y las claves de dispositivo se crean con la API (desde el panel) y se muestran una sola vez, como en producción.
 
-Preparar la base de desarrollo (los datos que cargues se quedan: no se borran, ver skill `verificacion`):
+Preparar o reiniciar la base de desarrollo:
 
 ```
 cp .env.example .env                    # trae JWT_SECRETO y PIN_PIMIENTA de desarrollo; si ya tenías un .env, copia esas variables
-docker compose --profile herramientas run --rm dbmate up
-docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=utf8mb4 qr_access < db/seeds/01_catalogo.sql
-docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=utf8mb4 qr_access < db/seeds/02_demo.sql
-docker compose up -d api                # reinicia la API para que lea el .env
+bin/reiniciar-local                     # respaldo, base nueva, migraciones, catálogo y el super admin root
 ```
 
-Para dejar la base de desarrollo como queda la de producción tras su reinicio (sin la cuenta demo, solo el super admin `root`): `bin/reiniciar-local` (con `--con-demo` vuelve a cargar la cuenta `DEM`). Hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes.
-
-Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_demo.sql` solo funciona con la `PIN_PIMIENTA` de desarrollo de `.env.example` (el índice del PIN es un HMAC con esa pimienta). La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
+`bin/reiniciar-local` hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes. La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
 
 | Qué | Valor |
 |---|---|
-| Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
-| Super admin del panel web (solo desarrollo) | usuario `root`, contraseña `12345678` |
-| PIN del **Administrador** (todos los permisos de cuenta) | `DEMADM1` |
-| PIN del **Miembro** (genera y ve lo suyo; cuelga del Administrador) | `DEMUSR1` |
-| PIN del **Guardia** (un solo rol) | `DEMGRD1` |
-| Sitio | `Sede demo` (zona `America/La_Paz`) |
-| Puertas y dispositivos | Ninguno a propósito (ADR 0026): las puertas se crean desde la app y las placas se vinculan desde el panel, como en producción. El seed retira las puertas 9001 y 9002 de versiones anteriores. |
+| Super admin del panel web (solo desarrollo) | usuario `root`, contraseña temporal `0000`: el panel obliga a cambiarla en el primer ingreso |
+| Cuentas, usuarios, sitios y puertas | Ninguno: se crean desde el panel (cuenta y Administrador) y desde la app (puertas, Titulares, Guardias). |
 
-El PIN se escribe sin importar mayúsculas (`demadm1` entra igual).
-
-Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `root` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se genera un QR para esa puerta y se lee con el lector.
+Probar de punta a punta: con `root` en el panel (`http://localhost:8080/ingreso`) se crea una cuenta con su Administrador y se anota su PIN. Con ese PIN en la app (`http://localhost:8080/app/`) se crea una puerta (Administración › Puertas), y con `root` se vincula una placa (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`).
 
 Para el firmware en la mesa: compilar con `pio run -e esp32-dev -t upload` y, por serie, `set api_url http://<IP del Mac>:3000` y `reiniciar` (la compilación de desarrollo admite HTTP plano; la de producción trae la URL real de fábrica). Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
 

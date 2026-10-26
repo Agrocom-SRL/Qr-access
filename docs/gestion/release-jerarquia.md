@@ -62,7 +62,7 @@ Los pasos siguen `CONTRIBUTING.md`, `docs/gestion/despliegue.md` y `.github/work
 3. Crear la rama de la versión desde `develop` actualizado. Nombre sugerido: `feature/version-jerarquia` (la regla de `CONTRIBUTING.md` pide 2 o 3 palabras de la función). Cambiar los archivos de la sección 2.
 4. `./bin/verify` completo (API, app, firmware y web) en verde. Abrir PR contra `develop`; el auto-merge lo integra cuando `ci` queda verde.
 5. Revisión línea por línea del filtro por rama y del modelo de permisos (ADR 0028 "Consecuencias"; CLAUDE.md, "no delegar"). No consta como hecha.
-6. Revisión visual en un entorno levantado (punto pendiente real del cierre), con `db/seeds/02_demo.sql` en desarrollo. Incluye comprobar que el Guardia no ve "Generar QR" de visitas.
+6. Revisión visual en un entorno levantado (punto pendiente real del cierre), con la base de desarrollo reiniciada (`bin/reiniciar-local`) y una cuenta creada desde el panel. Incluye comprobar que el Guardia no ve "Generar QR" de visitas.
 7. Confirmar que `develop` queda con `ci` verde después del merge del PR de versión.
 
 ### Fase B. Respaldo y reinicio de la base de producción (antes del tag)
@@ -96,7 +96,7 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
    ```
 8. `release.yml`: vuelve a correr la CI sobre el commit, integra en `master` con `--no-ff` y publica el GitHub Release con notas automáticas. Verificar el release y que `master` contiene el commit.
 9. `deploy.yml` corre `./bin/desplegar` en el runner `acceso-prod`. Seguir el log: construye las imágenes, aplica todas las migraciones sobre la base vacía, siembra `01_catalogo.sql`, crea `root` con `contrasena_temporal = 1` y espera a `/api/v1/salud`.
-   - **Seeds:** solo `01_catalogo.sql` (lo corre el script). **No** `02_demo.sql`, que es solo de desarrollo.
+   - **Seeds:** solo `01_catalogo.sql` (lo corre el script). El seed de la cuenta demo ya no existe.
    - **[Confirmar]** que `01_catalogo.sql` no crea cuentas ni roles de cuenta: en ADR 0028 los roles base (Administrador, Titular, Miembro y Guardia) los crea la API al dar de alta una cuenta.
 
 ### Fase D. Recrear los datos de la cuenta (después del despliegue)
