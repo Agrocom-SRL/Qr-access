@@ -21,6 +21,12 @@ Por qué estos nombres: *restringido* dice qué pasa (se limita una función) si
 
 **Quién puede cambiar un estado:** cada nivel actúa sobre su rama (ADR 0028) y AGROCOM sobre todo. Un estado impuesto por un superior **no lo levanta quien está debajo**: se guarda quién lo impuso y desde cuándo, y solo ese rol o uno superior lo revierte. Todo cambio de estado va a la bitácora con motivo obligatorio (texto libre corto) y origen (`persona`, `sistema`).
 
+Precisiones de implementación (W4):
+
+- **Agravar lo impuesto desde arriba queda prohibido.** Quien está debajo no puede pasar a un estado más grave un usuario que ya tiene un estado impuesto por un superior (p. ej. suspender a quien el Administrador restringió): responde 403 `estado.impuesto_por_superior`. Es una decisión conservadora, no un requisito funcional; se puede aflojar sin romper el contrato.
+- **Bajar la gravedad exige el permiso del estado que se levanta**, no el del destino: pasar de suspendido a restringido pide `seguridad.usuario.suspender`.
+- **Salida de los estados sin dueño.** Lo migrado (sin autor), lo impuesto por AGROCOM o por quien ya no está sobre el usuario lo levanta AGROCOM con `POST /plataforma/cuentas/:id/usuarios/:usuarioId/reactivacion` (permiso `seguridad.cuenta.editar`, motivo obligatorio). Al reasignar una rama a otro Administrador, los estados que había impuesto el Administrador anterior pasan al nuevo; los impuestos dentro de lo movido o sin autor no cambian.
+
 ### 2. Defensas de seguridad: estado real y lo que falta
 
 Verificado en el código (2026-10-23).

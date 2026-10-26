@@ -4,7 +4,7 @@ import { enTransaccion } from '../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma, PrincipalUsuario } from '../../platform/seguridad/principal.js';
 import { crearServicioDeAnulacionDeQr } from '../accesos/contracts.js';
-import { puedeCambiarEstado, type Estado } from './domain/estado.js';
+import { esAlivio, puedeCambiarEstado, type Estado } from './domain/estado.js';
 import {
   RepositorioDeCuentasDePlataforma,
   RepositorioDeSesiones,
@@ -40,6 +40,8 @@ function cambioDe(destino: DestinoDeEstado, impuestoPor: string, ahora: Date): C
 /**
  * Restringe, suspende o reactiva a un usuario de la rama del actor.
  *
+ * - Si baja la gravedad (suspendido a restringido o a activo) exige el permiso del estado que levanta, no
+ *   el del destino.
  * - Solo se llega a la propia rama (ADR 0028 §4): un par, un superior, otra rama o otra cuenta no existen
  *   (404), así que un Titular nunca toca a otro Titular ni a su Administrador.
  * - El estado propio de quien ya tiene uno solo lo cambia quien lo impuso o un superior suyo
@@ -64,8 +66,9 @@ export async function cambiarEstadoDeUsuario(
   if (objetivo === null) throw new ErrorDeDominio('usuario.no_encontrado', 404);
   if (objetivo.estado === destino.estado) return;
 
-  if (destino.estado === 'activo') {
-    // Levantar una restricción o una suspensión exige el permiso de ese estado.
+  if (esAlivio(objetivo.estado, destino.estado)) {
+    // Bajar la gravedad es levantar el estado que tiene: exige el permiso de ESE estado, también al pasar
+    // de suspendido a restringido (un rol que solo restringe no levanta una suspensión).
     const permiso = PERMISO_PARA_LEVANTAR[objetivo.estado as Exclude<Estado, 'activo'>];
     if (!principal.permisos.has(permiso)) {
       throw new ErrorDeDominio('permiso.denegado', 403, { permiso });
@@ -87,7 +90,10 @@ export async function cambiarEstadoDeUsuario(
     if (!cambiado) throw new ErrorDeDominio('estado.cambio_concurrente', 409);
 
     if (destino.estado === 'suspendido') {
-      // Él y toda su rama (los que ya estaban suspendidos también: no cuesta y no deja rastros vivos).
+      // Él y toda su rama (los que ya estaban suspendidos también: no cuesta y no deja rastros vivos). La
+      // rama se relee DENTRO de la transacción (no se reusa la de antes): quien se sumó entre la primera
+      // lectura y este punto también queda cerrado. Un QR que alguien de la rama genere justo después queda
+      // sin efecto igual: `validar-qr` comprueba el estado del generador al abrir (ADR 0031 §2).
       const afectados = [usuarioId, ...(await usuarios.idsDeRama(usuarioId, tx))];
       for (const id of afectados) await sesiones.revocarTodasDe(tx, id, ahora);
       await crearServicioDeAnulacionDeQr(pool).anularVigentes(
@@ -131,7 +137,9 @@ export async function cambiarEstadoDeCuenta(
       if (!cambiado) throw new ErrorDeDominio('estado.cambio_concurrente', 409);
 
       if (destino.estado === 'suspendido') {
-        const usuarios = await new RepositorioDeUsuarios(pool).listarTodos();
+        // Con `tx`: ve a los usuarios creados hasta este instante y los bloquea con la misma vista de la
+        // transacción que cambió el estado, no con una lectura aparte del pool.
+        const usuarios = await new RepositorioDeUsuarios(pool).listarTodos(tx);
         const sesiones = new RepositorioDeSesiones(pool);
         for (const usuario of usuarios) await sesiones.revocarTodasDe(tx, usuario.id, ahora);
         await crearServicioDeAnulacionDeQr(pool).anularVigentes(

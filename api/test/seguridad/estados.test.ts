@@ -5,6 +5,7 @@ import { reiniciarBase } from '../helpers/base.js';
 import {
   crearEscenario,
   crearQr,
+  crearRol,
   crearSuperAdmin,
   crearUsuarioConPin,
   type Escenario,
@@ -300,6 +301,42 @@ describe('estados de usuario y cuenta: restringido, suspendido y reactivar (ADR 
       const respuesta = await cambiar(sinPermiso, ramas.miembro.id, 'reactivacion');
       expect(respuesta.statusCode).toBe(403);
       expect(respuesta.json<Problema>().code).toBe('permiso.denegado');
+    });
+
+    it('bajar de suspendido a restringido exige el permiso de suspender, no solo el de restringir', async () => {
+      // Un rol personalizado que solo restringe, con un subordinado suyo suspendido por él mismo.
+      const rolSoloRestringe = await crearRol(prueba.pool, a.cuenta, 'Restringidor', [
+        'seguridad.usuario.ver',
+        'seguridad.usuario.restringir',
+      ]);
+      const restringidor = await crearUsuarioConPin(
+        prueba.pool,
+        a.cuenta,
+        'RE01',
+        [rolSoloRestringe],
+        { superiorId: a.administrador.id },
+      );
+      const subordinado = await crearUsuarioConPin(
+        prueba.pool,
+        a.cuenta,
+        'SU01',
+        [a.rolMiembroId],
+        { superiorId: restringidor.id },
+      );
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba', estado_impuesto_por = ? WHERE id = ?",
+        [restringidor.id, subordinado.id],
+      );
+      const sesion = await iniciarSesion(prueba.app, restringidor.pin);
+
+      const respuesta = await cambiar(sesion, subordinado.id, 'restriccion');
+      expect(respuesta.statusCode).toBe(403);
+      expect(respuesta.json<Problema>().code).toBe('permiso.denegado');
+      expect((await filaDe('usuarios', subordinado.id))?.estado).toBe('suspendido');
+
+      // Quien tiene ambos permisos (su superior) sí lo baja a restringido.
+      expect((await cambiar(admin, subordinado.id, 'restriccion')).statusCode).toBe(204);
+      expect((await filaDe('usuarios', subordinado.id))?.estado).toBe('restringido');
     });
 
     it('repetir el mismo estado no cambia nada: ni quién lo impuso ni la bitácora', async () => {
@@ -710,9 +747,16 @@ describe('estados de usuario y cuenta: restringido, suspendido y reactivar (ADR 
 
     it('motivo obligatorio, cuenta inexistente 404 y sin permiso 403', async () => {
       expect((await cuentaCambia(a.cuenta.id, 'suspension', {})).statusCode).toBe(400);
-      const inexistente = await cuentaCambia('999999', 'suspension');
-      expect(inexistente.statusCode).toBe(404);
-      expect(inexistente.json<Problema>().code).toBe('cuenta.no_encontrada');
+      for (const accion of ['restriccion', 'suspension', 'reactivacion'] as const) {
+        const inexistente = await cuentaCambia('999999', accion);
+        expect(inexistente.statusCode, accion).toBe(404);
+        expect(inexistente.json<Problema>().code).toBe('cuenta.no_encontrada');
+      }
+      // Una cuenta eliminada tampoco existe.
+      await prueba.pool.query('UPDATE cuentas SET deleted_at = NOW(3) WHERE id = ?', [b.cuenta.id]);
+      for (const accion of ['restriccion', 'suspension', 'reactivacion'] as const) {
+        expect((await cuentaCambia(b.cuenta.id, accion)).statusCode, accion).toBe(404);
+      }
 
       const sinPermiso = await prueba.app.inject({
         method: 'POST',
@@ -749,6 +793,183 @@ describe('estados de usuario y cuenta: restringido, suspendido y reactivar (ADR 
       );
       expect(estados.get('AAA')).toBe('restringido');
       expect(estados.get('BBB')).toBe('activo');
+    });
+  });
+
+  describe('usuarios de una cuenta: reactivar desde AGROCOM (seguridad.cuenta.editar)', () => {
+    let plataforma: { acceso: string };
+    const reactivar = (
+      cuentaId: string,
+      usuarioId: string,
+      cuerpo: object | null = { motivo: MOTIVO },
+    ) =>
+      prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/plataforma/cuentas/${cuentaId}/usuarios/${usuarioId}/reactivacion`,
+        headers: conUsuario(plataforma),
+        ...(cuerpo === null ? {} : { payload: cuerpo }),
+      });
+    const suspenderSinAutor = (usuarioId: string) =>
+      prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'migracion', estado_impuesto_por = NULL WHERE id = ?",
+        [usuarioId],
+      );
+
+    beforeEach(async () => {
+      await superAdmin();
+      plataforma = await iniciarSesionDePlataforma(prueba.app, 'lucia.paz', CONTRASENA);
+    });
+
+    it('levanta una suspensión sin autor que nadie de la cuenta puede levantar, y queda en la bitácora', async () => {
+      await suspenderSinAutor(ramas.titular2.id);
+      expect((await cambiar(admin, ramas.titular2.id, 'reactivacion')).statusCode).toBe(403);
+      const [antes] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS n FROM bitacoras',
+      );
+
+      const respuesta = await reactivar(a.cuenta.id, ramas.titular2.id);
+      expect(respuesta.statusCode, respuesta.body).toBe(204);
+
+      expect(await filaDe('usuarios', ramas.titular2.id)).toMatchObject({
+        estado: 'activo',
+        estado_impuesto_por: null,
+        estado_desde: null,
+        estado_motivo: null,
+      });
+      const [despues] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT COUNT(*) AS n FROM bitacoras WHERE tabla = 'usuarios' AND registro_id = ? AND accion = 'actualizado'",
+        [ramas.titular2.id],
+      );
+      expect(Number(despues[0]?.n)).toBeGreaterThan(0);
+      expect(
+        Number(
+          (await prueba.pool.query<RowDataPacket[]>('SELECT COUNT(*) AS n FROM bitacoras'))[0][0]
+            ?.n,
+        ),
+      ).toBeGreaterThan(Number(antes[0]?.n));
+      // Y puede volver a ingresar.
+      expect((await ingresar(ramas.titular2.pin)).statusCode).toBe(200);
+    });
+
+    it('levanta también lo impuesto por un Administrador y una restricción', async () => {
+      await cambiar(admin, ramas.titular.id, 'suspension');
+      await cambiar(admin, ramas.titular2.id, 'restriccion');
+      expect((await reactivar(a.cuenta.id, ramas.titular.id)).statusCode).toBe(204);
+      expect((await reactivar(a.cuenta.id, ramas.titular2.id)).statusCode).toBe(204);
+      expect((await filaDe('usuarios', ramas.titular.id))?.estado).toBe('activo');
+      expect((await filaDe('usuarios', ramas.titular2.id))?.estado).toBe('activo');
+    });
+
+    it('un usuario de otra cuenta, inexistente o eliminado es 404, y nada cambia (aislamiento)', async () => {
+      await suspenderSinAutor(ramasB.titular.id);
+      // Un usuario de B por la cuenta A, y a la inversa.
+      for (const [cuentaId, usuarioId] of [
+        [a.cuenta.id, ramasB.titular.id],
+        [b.cuenta.id, ramas.titular.id],
+        [a.cuenta.id, '999999'],
+      ] as const) {
+        const respuesta = await reactivar(cuentaId, usuarioId);
+        expect(respuesta.statusCode, `${cuentaId}/${usuarioId}`).toBe(404);
+        expect(respuesta.json<Problema>().code).toBe('usuario.no_encontrado');
+      }
+      expect((await filaDe('usuarios', ramasB.titular.id))?.estado).toBe('suspendido');
+      const sinCuenta = await reactivar('999999', ramas.titular.id);
+      expect(sinCuenta.statusCode).toBe(404);
+      expect(sinCuenta.json<Problema>().code).toBe('cuenta.no_encontrada');
+      await prueba.pool.query('UPDATE usuarios SET deleted_at = NOW(3) WHERE id = ?', [
+        ramas.titular.id,
+      ]);
+      expect((await reactivar(a.cuenta.id, ramas.titular.id)).statusCode).toBe(404);
+    });
+
+    it('un usuario de la plataforma no es de ninguna cuenta: 404', async () => {
+      const [fila] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT id FROM usuarios WHERE username = 'lucia.paz'",
+      );
+      expect((await reactivar(a.cuenta.id, String(fila[0]?.id))).statusCode).toBe(404);
+    });
+
+    it('motivo obligatorio (400), un JWT de cuenta no sirve (401) y activo es inofensivo', async () => {
+      await suspenderSinAutor(ramas.titular2.id);
+      for (const cuerpo of [null, {}, { motivo: '  ' }, { motivo: MOTIVO, otro: 1 }]) {
+        expect((await reactivar(a.cuenta.id, ramas.titular2.id, cuerpo)).statusCode).toBe(400);
+      }
+      const deCuenta = await prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/plataforma/cuentas/${a.cuenta.id}/usuarios/${ramas.titular2.id}/reactivacion`,
+        headers: conUsuario(admin),
+        payload: { motivo: MOTIVO },
+      });
+      expect(deCuenta.statusCode).toBe(401);
+      expect((await filaDe('usuarios', ramas.titular2.id))?.estado).toBe('suspendido');
+      // Quien ya está activo: 204 sin tocar la bitácora.
+      const [antes] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS n FROM bitacoras',
+      );
+      expect((await reactivar(a.cuenta.id, ramas.titular.id)).statusCode).toBe(204);
+      const [despues] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS n FROM bitacoras',
+      );
+      expect(despues[0]?.n).toBe(antes[0]?.n);
+    });
+  });
+
+  describe('reasignar mueve los estados impuestos por el Administrador anterior al nuevo', () => {
+    let plataforma: { acceso: string };
+    beforeEach(async () => {
+      await superAdmin();
+      plataforma = await iniciarSesionDePlataforma(prueba.app, 'lucia.paz', CONTRASENA);
+    });
+
+    it('un suspendido movido lo levanta el Administrador nuevo; lo impuesto dentro de lo movido o sin autor no cambia', async () => {
+      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'AD02', [a.rolAdministradorId]);
+      // Impuesto por el propio Titular movido (dentro de lo movido); él inicia sesión antes de su baja.
+      const sesionTitular2 = await iniciarSesion(prueba.app, ramas.titular2.pin);
+      await cambiar(sesionTitular2, ramas.miembro2.id, 'restriccion');
+      // Impuesto por el Administrador anterior (fuera de lo movido).
+      await cambiar(admin, ramas.titular2.id, 'suspension');
+
+      const respuesta = await prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/plataforma/cuentas/${a.cuenta.id}/reasignaciones`,
+        headers: conUsuario(plataforma),
+        payload: { usuario_id: ramas.titular2.id, administrador_id: otro.id },
+      });
+      expect(respuesta.statusCode, respuesta.body).toBe(204);
+
+      expect(await filaDe('usuarios', ramas.titular2.id)).toMatchObject({
+        estado: 'suspendido',
+        estado_impuesto_por: otro.id,
+        estado_motivo: MOTIVO,
+      });
+      expect((await filaDe('usuarios', ramas.miembro2.id))?.estado_impuesto_por).toBe(
+        ramas.titular2.id,
+      );
+      // El anterior ya no manda sobre él; el nuevo sí.
+      expect((await cambiar(admin, ramas.titular2.id, 'reactivacion')).statusCode).toBe(404);
+      const sesionOtro = await iniciarSesion(prueba.app, otro.pin);
+      expect((await cambiar(sesionOtro, ramas.titular2.id, 'reactivacion')).statusCode).toBe(204);
+      // La bitácora registró el traspaso.
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT COUNT(*) AS n FROM bitacoras WHERE tabla = 'usuarios' AND registro_id = ? AND accion = 'actualizado'",
+        [ramas.titular2.id],
+      );
+      expect(Number(filas[0]?.n)).toBeGreaterThanOrEqual(3);
+    });
+
+    it('un suspendido sin autor (migrado) sigue sin autor al moverlo: solo AGROCOM lo levanta', async () => {
+      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'AD02', [a.rolAdministradorId]);
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'migracion', estado_impuesto_por = NULL WHERE id = ?",
+        [ramas.titular2.id],
+      );
+      await prueba.app.inject({
+        method: 'POST',
+        url: `/api/v1/plataforma/cuentas/${a.cuenta.id}/reasignaciones`,
+        headers: conUsuario(plataforma),
+        payload: { usuario_id: ramas.titular2.id, administrador_id: otro.id },
+      });
+      expect((await filaDe('usuarios', ramas.titular2.id))?.estado_impuesto_por).toBeNull();
     });
   });
 

@@ -25,7 +25,7 @@ La empresa cliente: el tenant. Cada cuenta tiene su propio administrador, usuari
 - `uq_cuentas_codigo`
 - `ck_cuentas_codigo`
 - `ck_cuentas_max_miembros` (`max_miembros_por_titular >= 1`)
-- `ck_cuentas_estado` (valores) y `ck_cuentas_estado_datos` (`activo` sin impuesto_por/desde/motivo; los demás con `estado_desde` y motivo no vacío)
+- `ck_cuentas_estado` (valores) y `ck_cuentas_estado_datos` (`activo` sin impuesto_por/desde/motivo; los demás con `estado_desde` y motivo presente y no vacío: un motivo NULL se rechaza)
 - `idx_cuentas_estado` (`estado`) y `fk_cuentas_estado_impuesto_por`
 
 El SQL completo está en `03-schema-sql.md`.

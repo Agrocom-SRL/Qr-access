@@ -49,15 +49,23 @@ export interface NodoDeEstado {
 
 const ELIMINADO: EstadoEfectivo = { estado: 'eliminado', origen: null };
 
+/** Los datos vienen de la base como texto: un valor fuera del catálogo no se debe tomar por «activo». */
+function esEstadoConocido(valor: string): valor is Estado {
+  return Object.hasOwn(GRAVEDAD, valor);
+}
+
 /**
  * El estado efectivo de `usuarioId`. `nodos` trae al menos al usuario y todos sus superiores (los
- * usuarios borrados no figuran); si falta alguno de la cadena, el usuario cuenta como eliminado.
+ * usuarios borrados no figuran); si falta alguno de la cadena, el usuario cuenta como eliminado. Falla
+ * cerrado también ante un estado desconocido, del nodo o de la cuenta: cuenta como eliminado, nunca como
+ * activo (una gravedad `undefined` perdería todas las comparaciones y dejaría pasar).
  */
 export function estadoEfectivo(
   usuarioId: string,
   nodos: ReadonlyMap<string, NodoDeEstado>,
   estadoDeLaCuenta: Estado,
 ): EstadoEfectivo {
+  if (!esEstadoConocido(estadoDeLaCuenta)) return ELIMINADO;
   let peor: Estado = 'activo';
   let origen: OrigenDeEstado | null = null;
   const visitados = new Set<string>();
@@ -67,7 +75,7 @@ export function estadoEfectivo(
     if (visitados.has(actual)) return ELIMINADO;
     visitados.add(actual);
     const nodo = nodos.get(actual);
-    if (nodo === undefined) return ELIMINADO;
+    if (nodo === undefined || !esEstadoConocido(nodo.estado)) return ELIMINADO;
     if (GRAVEDAD[nodo.estado] > GRAVEDAD[peor]) {
       peor = nodo.estado;
       origen = actual === usuarioId ? 'usuario' : 'superior';

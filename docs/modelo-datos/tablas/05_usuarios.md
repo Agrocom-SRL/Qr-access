@@ -33,7 +33,7 @@ Quien entra a la app. Un usuario de cuenta es un PIN con su etiqueta (ADR 0018);
 - `uq_usuarios_username`
 - `ck_usuarios_credencial`
 - `idx_usuarios_superior` (`superior_id`)
-- `ck_usuarios_estado` (valores) y `ck_usuarios_estado_datos` (`activo` sin impuesto_por/desde/motivo; los demás con `estado_desde` y motivo no vacío)
+- `ck_usuarios_estado` (valores) y `ck_usuarios_estado_datos` (`activo` sin impuesto_por/desde/motivo; los demás con `estado_desde` y motivo presente y no vacío: un motivo NULL se rechaza)
 - `idx_usuarios_tenant_estado` (`tenant_id`, `estado`) y `fk_usuarios_estado_impuesto_por`
 
 El SQL completo está en `03-schema-sql.md`.

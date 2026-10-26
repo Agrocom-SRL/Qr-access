@@ -342,6 +342,9 @@ export const respuestaDeCuentaCreada = z.object({
 
 export const parametrosDeCuenta = z.object({ id: esquemaId });
 
+/** Un usuario de una cuenta vista por AGROCOM: `id` es la cuenta y `usuarioId`, el usuario. */
+export const parametrosDeUsuarioDeCuenta = z.object({ id: esquemaId, usuarioId: esquemaId });
+
 /** Para borrar una cuenta hay que repetir su código: así no se borra otra por error. */
 export const cuerpoDeBajaDeCuenta = z.strictObject({ codigo: z.string().trim().min(1).max(10) });
 

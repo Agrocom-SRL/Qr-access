@@ -141,7 +141,7 @@ const X_Y_SUS_SUPERIORES = `t.id IN (
 const EN_LA_RAMA_DE = `t.id IN (
   WITH RECURSIVE rama (id) AS (
     SELECT h.id FROM usuarios AS h WHERE h.superior_id = ? AND h.deleted_at IS NULL
-    UNION ALL
+    UNION
     SELECT n.id FROM usuarios AS n JOIN rama ON n.superior_id = rama.id AND n.deleted_at IS NULL
   )
   SELECT id FROM rama
@@ -219,13 +219,16 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  buscarPorIds(ids: readonly string[]): Promise<UsuarioFila[]> {
+  buscarPorIds(ids: readonly string[], tx?: Transaccion): Promise<UsuarioFila[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return this.seleccionar<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.id IN (?)',
-      params: [ids],
-    });
+    return this.seleccionar<UsuarioFila>(
+      {
+        columnas: COLUMNAS_DE_USUARIO,
+        donde: 't.id IN (?)',
+        params: [ids],
+      },
+      tx,
+    );
   }
 
   /** Un usuario de la rama de `superiorId` (ADR 0028 §4); uno de otra rama o el propio `superiorId` no existe. */
@@ -283,11 +286,14 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   }
 
   /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
-  listarTodos(): Promise<UsuarioFila[]> {
-    return this.seleccionar<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      orden: 't.etiqueta, t.id',
-    });
+  listarTodos(tx?: Transaccion): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>(
+      {
+        columnas: COLUMNAS_DE_USUARIO,
+        orden: 't.etiqueta, t.id',
+      },
+      tx,
+    );
   }
 
   /** Cuelga a `id` de otro Administrador; sus Miembros y su unidad lo siguen por el árbol (ADR 0028 §7). */
@@ -323,6 +329,15 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     return this.actualizar(tx, id, columnasDeEstado(cambio), {
       cuando: siSigueEnEstado(antes.estado, antes.impuestoPor),
     });
+  }
+
+  /**
+   * Cambia solo QUIÉN impuso el estado propio de `id` (el estado, el motivo y el desde no se tocan). Lo usa
+   * la reasignación de AGROCOM: quien impuso el estado ya no está sobre el usuario movido. La bitácora lo
+   * registra.
+   */
+  cambiarQuienImpusoElEstado(tx: Transaccion, id: string, impuestoPor: string): Promise<boolean> {
+    return this.actualizar(tx, id, { estado_impuesto_por: impuestoPor });
   }
 
   /** El PIN anterior deja de servir en el mismo UPDATE (ADR 0018 §2). */

@@ -53,6 +53,19 @@ describe('estado efectivo (D-25, ADR 0031 §2)', () => {
     });
   });
 
+  it('falla cerrado ante un estado desconocido del nodo, de un superior o de la cuenta: eliminado', () => {
+    const raro = 'bloqueado' as Estado;
+    const eliminado = { estado: 'eliminado', origen: null };
+    expect(estadoEfectivo('3', arbol({ '3': raro }), 'activo')).toEqual(eliminado);
+    // Un superior con un valor fuera del catálogo tampoco se toma por «activo».
+    expect(estadoEfectivo('3', arbol({ '1': raro }), 'activo')).toEqual(eliminado);
+    expect(estadoEfectivo('3', arbol(), raro)).toEqual(eliminado);
+    // Un nombre heredado de Object no es un estado.
+    expect(estadoEfectivo('3', arbol({ '3': 'constructor' as Estado }), 'activo')).toEqual(
+      eliminado,
+    );
+  });
+
   it('gana el peor entre el propio, los superiores y la cuenta', () => {
     expect(
       estadoEfectivo('3', arbol({ '3': 'restringido', '1': 'suspendido' }), 'activo').estado,

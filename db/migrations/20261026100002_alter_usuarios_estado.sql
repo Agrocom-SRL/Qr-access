@@ -27,7 +27,8 @@ ALTER TABLE usuarios
   ADD CONSTRAINT ck_usuarios_estado CHECK (estado IN ('activo', 'restringido', 'suspendido')),
   ADD CONSTRAINT ck_usuarios_estado_datos CHECK (
     (estado = 'activo' AND estado_impuesto_por IS NULL AND estado_desde IS NULL AND estado_motivo IS NULL)
-    OR (estado <> 'activo' AND estado_desde IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
+    OR (estado <> 'activo' AND estado_desde IS NOT NULL
+         AND estado_motivo IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
   ),
   DROP COLUMN activo;
 

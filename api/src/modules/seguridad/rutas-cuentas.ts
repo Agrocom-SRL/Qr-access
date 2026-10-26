@@ -9,6 +9,7 @@ import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
 import { deCuenta as estadisticasDeCuenta } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
 import { ejecutar as reactivarCuenta } from './actions/reactivar-cuenta.js';
+import { ejecutar as reactivarUsuarioDeCuenta } from './actions/reactivar-usuario-de-cuenta.js';
 import { ejecutar as restringirCuenta } from './actions/restringir-cuenta.js';
 import { ejecutar as suspenderCuenta } from './actions/suspender-cuenta.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
@@ -31,6 +32,7 @@ import {
   consultaDeCuentas,
   cuerpoDeNuevaCuenta,
   parametrosDeCuenta,
+  parametrosDeUsuarioDeCuenta,
   respuestaDeCobranza,
   respuestaDeCodigoDeCuenta,
   respuestaDeSuscripcionDeCuenta,
@@ -205,6 +207,30 @@ export const rutasDeCuentas =
       },
       async (request, reply) => {
         await reactivarCuenta(pool, plataformaDe(request), request.params.id);
+        return reply.status(204).send();
+      },
+    );
+
+    // La salida de un usuario restringido o suspendido que nadie de la cuenta puede levantar (sin autor,
+    // impuesto por AGROCOM o por quien ya no está sobre él): AGROCOM lo levanta siempre, con motivo.
+    app.post(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/reactivacion',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          body: cuerpoDeCambioDeEstado,
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        const { id, usuarioId } = request.params;
+        await reactivarUsuarioDeCuenta(pool, plataformaDe(request), id, usuarioId);
+        request.log.info(
+          { cuentaId: id, usuarioId, motivo: request.body.motivo },
+          'usuario reactivado por la plataforma',
+        );
         return reply.status(204).send();
       },
     );
