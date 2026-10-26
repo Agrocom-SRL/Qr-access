@@ -9,7 +9,11 @@ export interface CuentaFila extends RowDataPacket {
   codigo: string;
   nombre: string;
   activo: number;
+  /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
+  max_miembros_por_titular: number;
 }
+
+const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular';
 
 /** Dueño de `cuentas` (tabla de plataforma). */
 export class RepositorioDeCuentas extends RepositorioDePlataforma {
@@ -25,7 +29,7 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
   /** Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. */
   buscarActivaPorCodigo(codigo: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo',
+      columnas: COLUMNAS_DE_CUENTA,
       donde: 't.codigo = ? AND t.activo = 1',
       params: [codigo],
     });
@@ -33,7 +37,7 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
 
   buscarActivaPorId(id: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo',
+      columnas: COLUMNAS_DE_CUENTA,
       donde: 't.id = ? AND t.activo = 1',
       params: [id],
     });
@@ -44,17 +48,35 @@ export interface UsuarioFila extends RowDataPacket {
   id: string;
   etiqueta: string | null;
   pin_hash: string | null;
-  rol_preferido_id: string | null;
+  /** El nivel de arriba en el árbol (ADR 0028); `null` en el Administrador. */
+  superior_id: string | null;
   activo: number;
   pin_generado_at: Date | null;
   created_at: Date;
 }
 
 const COLUMNAS_DE_USUARIO =
-  't.id, t.etiqueta, t.pin_hash, t.rol_preferido_id, t.activo, t.pin_generado_at, t.created_at';
+  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.activo, t.pin_generado_at, t.created_at';
+
+/**
+ * Filtro "está en la rama de X": todos los descendientes de X por `superior_id`, sin X. Es la segunda
+ * capa sobre el aislamiento por cuenta (ADR 0028 §4): se agrega SIEMPRE al `donde` de una consulta de
+ * `RepositorioDeUsuarios`, que ya filtra por la cuenta del contexto, así que un vínculo que cruzara
+ * cuentas nunca devolvería filas de otra. Lleva un `?`: el id de X.
+ */
+const EN_LA_RAMA_DE = `t.id IN (
+  WITH RECURSIVE rama (id) AS (
+    SELECT h.id FROM usuarios AS h WHERE h.superior_id = ? AND h.deleted_at IS NULL
+    UNION ALL
+    SELECT n.id FROM usuarios AS n JOIN rama ON n.superior_id = rama.id AND n.deleted_at IS NULL
+  )
+  SELECT id FROM rama
+)`;
 
 export interface NuevoUsuario {
   readonly etiqueta: string;
+  /** Quien lo crea y queda arriba de él en el árbol; `null` para el Administrador de una cuenta nueva. */
+  readonly superiorId: string | null;
   readonly pinIndice: string;
   readonly pinHash: string;
   readonly ahora: Date;
@@ -76,9 +98,10 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         'pin_indice',
         'pin_hash',
         'pin_generado_at',
+        'pin_compartido_at',
         'username',
         'contrasena_hash',
-        'rol_preferido_id',
+        'superior_id',
         'activo',
       ],
       sensibles: ['pin_indice', 'pin_hash', 'contrasena_hash'],
@@ -103,10 +126,6 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  async recordarRolPreferido(tx: Transaccion, usuarioId: string, rolId: string): Promise<void> {
-    await this.actualizar(tx, usuarioId, { rol_preferido_id: rolId });
-  }
-
   /** Un usuario de la cuenta, esté activo o no (para administrarlo). Borrado = no existe. */
   buscarPorId(id: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
@@ -125,14 +144,68 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  /** Los usuarios de la cuenta (cada PIN es uno, ADR 0018 §2), los más nuevos primero. */
-  listar(limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
+  /** Un usuario de la rama de `superiorId` (ADR 0028 §4); uno de otra rama o el propio `superiorId` no existe. */
+  buscarEnRama(superiorId: string, id: string): Promise<UsuarioFila | null> {
+    return this.seleccionarUna<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      donde: `t.id = ? AND ${EN_LA_RAMA_DE}`,
+      params: [id, superiorId],
+    });
+  }
+
+  /** La rama de `superiorId` (cada PIN es un usuario, ADR 0018 §2), los más nuevos primero. */
+  listarDeRama(superiorId: string, limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
     return this.seleccionar<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
+      donde: EN_LA_RAMA_DE,
+      params: [superiorId],
       orden: 't.created_at DESC, t.id DESC',
       limite,
       desplazamiento,
     });
+  }
+
+  contarDeRama(superiorId: string): Promise<number> {
+    return this.contar({ donde: EN_LA_RAMA_DE, params: [superiorId] });
+  }
+
+  /** Los ids de toda la rama de `id` (sus descendientes, sin él): lo que cae con su baja en cascada. */
+  async idsDeRama(id: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
+      columnas: 't.id',
+      donde: EN_LA_RAMA_DE,
+      params: [id],
+      orden: 't.id',
+    });
+    return filas.map((fila) => fila.id);
+  }
+
+  /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */
+  contarDirectos(id: string): Promise<number> {
+    return this.contar({ donde: 't.superior_id = ?', params: [id] });
+  }
+
+  /** Toda la rama de `superiorId`, sin paginar: para las estadísticas de uso de quien la administra. */
+  todosDeRama(superiorId: string): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      donde: EN_LA_RAMA_DE,
+      params: [superiorId],
+      orden: 't.etiqueta, t.id',
+    });
+  }
+
+  /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
+  listarTodos(): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      orden: 't.etiqueta, t.id',
+    });
+  }
+
+  /** Cuelga a `id` de otro Administrador; sus Miembros y su unidad lo siguen por el árbol (ADR 0028 §7). */
+  cambiarSuperior(tx: Transaccion, id: string, superiorId: string): Promise<boolean> {
+    return this.actualizar(tx, id, { superior_id: superiorId });
   }
 
   /** Cuántos usuarios tiene la cuenta: es lo que limita `max_usuarios` del plan (ADR 0017). */
@@ -143,6 +216,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   crear(tx: Transaccion, usuario: NuevoUsuario): Promise<string> {
     return this.insertar(tx, {
       etiqueta: usuario.etiqueta,
+      superior_id: usuario.superiorId,
       pin_indice: usuario.pinIndice,
       pin_hash: usuario.pinHash,
       pin_generado_at: usuario.ahora,
@@ -157,6 +231,14 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
       pin_hash: pin.pinHash,
       pin_generado_at: pin.ahora,
     });
+  }
+
+  /**
+   * Anota que el PIN de `id` se compartió por un canal de terceros (ADR 0028 §7). Es un cambio más de
+   * `usuarios`: la bitácora lo registra con quién lo hizo, cuándo y la fecha anterior; el PIN no.
+   */
+  marcarPinCompartido(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(tx, id, { pin_compartido_at: ahora });
   }
 
   cambiarEtiqueta(tx: Transaccion, id: string, etiqueta: string): Promise<boolean> {
@@ -183,6 +265,15 @@ export class RepositorioDeRoles extends RepositorioDeCuenta {
   /** Alta de un rol de la cuenta del contexto (los tres roles base de una cuenta nueva). */
   crear(tx: Transaccion, rol: { nombre: string; protegido: boolean }): Promise<string> {
     return this.insertar(tx, { nombre: rol.nombre, protegido: rol.protegido ? 1 : 0, activo: 1 });
+  }
+
+  /** El rol activo de la cuenta con ese nombre (los roles base son únicos por nombre). */
+  buscarActivoPorNombre(nombre: string): Promise<RolFila | null> {
+    return this.seleccionarUna<RolFila>({
+      columnas: 't.id, t.nombre',
+      donde: 't.nombre = ? AND t.activo = 1',
+      params: [nombre],
+    });
   }
 
   listarActivos(): Promise<RolFila[]> {
@@ -234,11 +325,6 @@ interface RolDeUsuarioFila extends RowDataPacket {
   nombre: string;
 }
 
-export interface AsignacionFila extends RowDataPacket {
-  id: string;
-  rol_id: string;
-}
-
 /** Dueño de `usuario_roles` y quien lee `roles`, `rol_permisos` y `permisos` para los permisos efectivos. */
 export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
   constructor(pool: Pool) {
@@ -283,15 +369,6 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
     return mapa;
   }
 
-  /** Las filas de asignación vigentes de un usuario, para agregar o quitar roles. */
-  asignacionesDe(usuarioId: string): Promise<AsignacionFila[]> {
-    return this.seleccionar<AsignacionFila>({
-      columnas: 't.id, t.rol_id',
-      donde: 't.usuario_id = ?',
-      params: [usuarioId],
-    });
-  }
-
   asignar(tx: Transaccion, usuarioId: string, rolId: string): Promise<string> {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
   }
@@ -317,10 +394,6 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
         'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
       ].join(' '),
     });
-  }
-
-  quitar(tx: Transaccion, asignacionId: string): Promise<boolean> {
-    return this.borrar(tx, asignacionId);
   }
 
   /** Permisos de ámbito cuenta de UN rol (el activo), nunca la unión de los roles del usuario. */
@@ -421,15 +494,6 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
           params: [refreshActual, ahora],
         },
       },
-    );
-  }
-
-  cambiarRolActivo(tx: Transaccion, id: string, rolId: string): Promise<boolean> {
-    return this.actualizar(
-      tx,
-      id,
-      { rol_activo_id: rolId },
-      { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }
 
@@ -802,8 +866,13 @@ export interface CuentaDePlataformaFila extends RowDataPacket {
   codigo: string;
   nombre: string;
   activo: number;
+  /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
+  max_miembros_por_titular: number;
   created_at: Date;
 }
+
+const COLUMNAS_DE_CUENTA_DE_PLATAFORMA =
+  't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular, t.created_at';
 
 export interface NuevaCuenta {
   readonly nombre: string;
@@ -815,7 +884,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo'],
+      columnas: ['nombre', 'codigo', 'activo', 'max_miembros_por_titular'],
       perfil: 'dominio',
       deCuenta: false,
     });
@@ -824,14 +893,14 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   /** Todas las cuentas vigentes (la plataforma maneja cientos, no millones: se pagina en memoria). */
   listarTodas(): Promise<CuentaDePlataformaFila[]> {
     return this.seleccionar<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       orden: 't.nombre, t.id',
     });
   }
 
   buscarPorId(id: string): Promise<CuentaDePlataformaFila | null> {
     return this.seleccionarUna<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       donde: 't.id = ?',
       params: [id],
     });
@@ -839,7 +908,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
 
   buscarPorCodigo(codigo: string): Promise<CuentaDePlataformaFila | null> {
     return this.seleccionarUna<CuentaDePlataformaFila>({
-      columnas: 't.id, t.codigo, t.nombre, t.activo, t.created_at',
+      columnas: COLUMNAS_DE_CUENTA_DE_PLATAFORMA,
       donde: 't.codigo = ?',
       params: [codigo],
     });
@@ -870,6 +939,11 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
     return this.actualizar(tx, id, { nombre });
   }
 
+  /** Cambia cuántos Miembros puede tener cada Titular de la cuenta (ADR 0028 §6). */
+  cambiarMaxMiembros(tx: Transaccion, id: string, maximo: number): Promise<boolean> {
+    return this.actualizar(tx, id, { max_miembros_por_titular: maximo });
+  }
+
   /** Baja lógica de la cuenta: nadie de ella vuelve a ingresar y su código queda libre. */
   eliminar(tx: Transaccion, id: string): Promise<boolean> {
     return this.borrar(tx, id);
@@ -877,19 +951,21 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
 }
 
 export interface DatosDeEmpresa {
-  readonly nit: string;
+  readonly nit: string | null;
   readonly ciudad: string;
   readonly contactoNombre: string;
-  readonly contactoTelefono: string;
+  readonly contactoApellido: string;
+  readonly contactoTelefono: string | null;
   readonly contactoCorreo: string | null;
 }
 
 export interface DatosDeEmpresaFila extends RowDataPacket {
   id: string;
-  nit: string;
+  nit: string | null;
   ciudad: string;
   contacto_nombre: string;
-  contacto_telefono: string;
+  contacto_apellido: string;
+  contacto_telefono: string | null;
   contacto_correo: string | null;
 }
 
@@ -898,7 +974,14 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuenta_datos_empresa',
-      columnas: ['nit', 'ciudad', 'contacto_nombre', 'contacto_telefono', 'contacto_correo'],
+      columnas: [
+        'nit',
+        'ciudad',
+        'contacto_nombre',
+        'contacto_apellido',
+        'contacto_telefono',
+        'contacto_correo',
+      ],
       perfil: 'dominio',
       deCuenta: true,
     });
@@ -906,7 +989,8 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
 
   buscar(): Promise<DatosDeEmpresaFila | null> {
     return this.seleccionarUna<DatosDeEmpresaFila>({
-      columnas: 't.id, t.nit, t.ciudad, t.contacto_nombre, t.contacto_telefono, t.contacto_correo',
+      columnas:
+        't.id, t.nit, t.ciudad, t.contacto_nombre, t.contacto_apellido, t.contacto_telefono, t.contacto_correo',
     });
   }
 
@@ -916,6 +1000,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
       nit: datos.nit,
       ciudad: datos.ciudad,
       contacto_nombre: datos.contactoNombre,
+      contacto_apellido: datos.contactoApellido,
       contacto_telefono: datos.contactoTelefono,
       contacto_correo: datos.contactoCorreo,
     });
@@ -926,6 +1011,7 @@ export class RepositorioDeDatosDeEmpresa extends RepositorioDeCuenta {
       nit: datos.nit,
       ciudad: datos.ciudad,
       contacto_nombre: datos.contactoNombre,
+      contacto_apellido: datos.contactoApellido,
       contacto_telefono: datos.contactoTelefono,
       contacto_correo: datos.contactoCorreo,
     });

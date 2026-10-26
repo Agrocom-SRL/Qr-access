@@ -46,6 +46,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
     nit: '1029384756',
     ciudad: 'Warnes',
     contacto_nombre: 'Ana Rojas',
+    contacto_apellido: 'Pérez',
     contacto_telefono: '7 700 1122',
     contacto_correo: 'ana@granjalospinos.bo',
     plan_id: planId,
@@ -85,7 +86,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
     }>();
 
   describe('cuenta nueva sin pago', () => {
-    it('nace pendiente de pago, aparece en cobranza "por activar" y no emite QR', async () => {
+    it('nace pendiente de pago, aparece en cobranza "por activar" y no genera QR', async () => {
       const respuesta = await crear(sinPago());
       expect(respuesta.statusCode, respuesta.body).toBe(201);
       const creada = respuesta.json<CuentaCreadaDto>();
@@ -107,13 +108,13 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
         payload: { nombre: 'Granja' },
       });
       expect(puertas.statusCode).toBe(201);
-      const emitir = await prueba.app.inject({
+      const generar = await prueba.app.inject({
         method: 'POST',
         url: '/api/v1/qr-accesos',
         headers: conUsuario(sesion),
         payload: { puerta_ids: ['1'] },
       });
-      expect([403, 404]).toContain(emitir.statusCode);
+      expect([403, 404]).toContain(generar.statusCode);
     });
 
     it('con el pago de alta se activa y el año corre desde la fecha del pago', async () => {
@@ -189,6 +190,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
           nit: '1029384757',
           ciudad: 'Montero',
           contacto_nombre: 'Luis Soria',
+          contacto_apellido: 'Pérez',
           contacto_telefono: '3 922 0011',
           contacto_correo: 'luis@granjalospinos.bo',
         },
@@ -205,11 +207,45 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
         empresa: {
           nit: '1029384757',
           ciudad: 'Montero',
-          contacto: 'Luis Soria',
+          contacto: 'Luis Soria Pérez',
+          contacto_nombre: 'Luis Soria',
+          contacto_apellido: 'Pérez',
           telefono: '3 922 0011',
           correo: 'luis@granjalospinos.bo',
         },
       });
+    });
+
+    it('acepta una cuenta sin NIT ni teléfono (quedan en null) y exige el apellido', async () => {
+      const creada = (await crear(sinPago())).json<CuentaCreadaDto>();
+      const url = `${BASE}/cuentas/${creada.cuenta.id}`;
+      const base = {
+        razon_social: 'Sin Datos S.A.',
+        ciudad: 'Montero',
+        contacto_nombre: 'Luis',
+        contacto_apellido: 'Soria',
+      };
+      const sinOpcionales = await prueba.app.inject({
+        method: 'PATCH',
+        url,
+        headers,
+        payload: { ...base, nit: '', contacto_telefono: '' },
+      });
+      expect(sinOpcionales.statusCode, sinOpcionales.body).toBe(204);
+      const detalle = await prueba.app.inject({ method: 'GET', url, headers });
+      expect(detalle.json()).toMatchObject({
+        empresa: { nit: null, telefono: null, contacto: 'Luis Soria' },
+      });
+      const ausentes = await prueba.app.inject({ method: 'PATCH', url, headers, payload: base });
+      expect(ausentes.statusCode).toBe(204);
+      const sinApellido = { ...base, contacto_apellido: undefined };
+      const rechazada = await prueba.app.inject({
+        method: 'PATCH',
+        url,
+        headers,
+        payload: sinApellido,
+      });
+      expect(rechazada.statusCode).toBe(400);
     });
 
     it('rechaza datos inválidos y una cuenta que no existe', async () => {
@@ -219,6 +255,7 @@ describe('plataforma: cuentas nuevas pendientes de pago, edición y baja', () =>
         nit: '12',
         ciudad: 'Montero',
         contacto_nombre: 'Luis',
+        contacto_apellido: 'Pérez',
         contacto_telefono: '3 922 0011',
       };
       const invalido = await prueba.app.inject({

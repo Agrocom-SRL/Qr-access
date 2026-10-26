@@ -76,12 +76,17 @@ export async function ejecutar(
   // 3 a 6. Anulado, vencido, otra puerta, suscripción.
   const puertasDelQr =
     (await new RepositorioDePuertasDeQr(pool).puertasDe([qr.id])).get(qr.id) ?? [];
-  const [emisorActivo, suscripcion] = await Promise.all([
-    crearServicioDeUsuarios(pool).estaActivo(qr.emitido_por),
+  const [generadorActivo, suscripcion] = await Promise.all([
+    crearServicioDeUsuarios(pool).estaActivo(qr.generado_por),
     crearServicioDeSuscripciones(pool).obtenerVigente(ahora),
   ]);
   const motivo = decidirAntesDeConsumir({
-    qr: { anuladoAt: qr.anulado_at, venceAt: qr.vence_at, puertaIds: puertasDelQr, emisorActivo },
+    qr: {
+      anuladoAt: qr.anulado_at,
+      venceAt: qr.vence_at,
+      puertaIds: puertasDelQr,
+      generadorActivo,
+    },
     puertaDelDispositivoId: dispositivo.puertaId,
     ahora,
     suscripcionVigente: suscripcion !== null,

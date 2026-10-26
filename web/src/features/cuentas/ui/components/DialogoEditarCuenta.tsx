@@ -9,7 +9,11 @@ import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { useEditarCuenta } from '../../application/useCuentas';
 import { CIUDADES, validarEmpresa, type DatosDeEmpresa } from '../../domain/alta';
-import type { DetalleDeCuenta } from '../../domain/cuenta';
+import {
+  MAX_MIEMBROS_POR_TITULAR,
+  topeDeMiembrosValido,
+  type DetalleDeCuenta,
+} from '../../domain/cuenta';
 import styles from './DialogoEditarCuenta.module.css';
 
 type Datos = Omit<DatosDeEmpresa, 'codigo'>;
@@ -26,7 +30,8 @@ function iniciales(detalle: DetalleDeCuenta): Datos {
     razonSocial: detalle.cuenta.nombre,
     nit: detalle.empresa?.nit ?? '',
     ciudad: detalle.empresa?.ciudad ?? '',
-    contactoNombre: detalle.empresa?.contacto ?? '',
+    contactoNombre: detalle.empresa?.contactoNombre ?? '',
+    contactoApellido: detalle.empresa?.contactoApellido ?? '',
     contactoTelefono: detalle.empresa?.telefono ?? '',
     contactoCorreo: detalle.empresa?.correo ?? '',
   };
@@ -41,6 +46,13 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
   const editar = useEditarCuenta(detalle.cuenta.id);
   const [datos, setDatos] = useState<Datos>(() => iniciales(detalle));
   const [tocados, setTocados] = useState<ReadonlySet<keyof Datos>>(new Set());
+  // El tope se escribe como texto para poder vaciarlo; se valida como número al guardar.
+  const [tope, setTope] = useState(String(detalle.cuenta.maxMiembrosPorTitular));
+  const topeNumerico = Number(tope);
+  const errorDeTope =
+    tope.trim() !== '' && topeDeMiembrosValido(topeNumerico)
+      ? undefined
+      : t('detalle:maxMiembrosInvalido', { max: MAX_MIEMBROS_POR_TITULAR });
 
   const errores = validarEmpresa({ ...datos, codigo: detalle.cuenta.codigo });
   const mensaje = (campo: keyof Datos): string | undefined => {
@@ -55,11 +67,12 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
   };
   const cerrar = () => {
     setDatos(iniciales(detalle));
+    setTope(String(detalle.cuenta.maxMiembrosPorTitular));
     setTocados(new Set());
     editar.reset();
     onCerrar();
   };
-  const valido = Object.keys(errores).length === 0;
+  const valido = Object.keys(errores).length === 0 && errorDeTope === undefined;
 
   return (
     <Dialogo
@@ -76,7 +89,10 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             cargando={editar.isPending}
             disabled={!valido}
             onClick={() => {
-              editar.mutate(datos, { onSuccess: cerrar });
+              editar.mutate(
+                { ...datos, maxMiembrosPorTitular: topeNumerico },
+                { onSuccess: cerrar },
+              );
             }}
           >
             {editar.isPending ? t('detalle:guardando') : t('detalle:guardarCambios')}
@@ -126,18 +142,32 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
           />
         </div>
         <p className={styles.seccion}>{t('crearCuenta:responsableTitulo')}</p>
-        <AccesoCampoTexto
-          etiqueta={t('crearCuenta:responsableNombre')}
-          value={datos.contactoNombre}
-          error={mensaje('contactoNombre')}
-          autoComplete="name"
-          onBlur={() => {
-            tocar('contactoNombre');
-          }}
-          onChange={(e) => {
-            cambiar({ contactoNombre: e.target.value });
-          }}
-        />
+        <div className={styles.fila}>
+          <AccesoCampoTexto
+            etiqueta={t('crearCuenta:responsableNombre')}
+            value={datos.contactoNombre}
+            error={mensaje('contactoNombre')}
+            autoComplete="given-name"
+            onBlur={() => {
+              tocar('contactoNombre');
+            }}
+            onChange={(e) => {
+              cambiar({ contactoNombre: e.target.value });
+            }}
+          />
+          <AccesoCampoTexto
+            etiqueta={t('crearCuenta:responsableApellido')}
+            value={datos.contactoApellido}
+            error={mensaje('contactoApellido')}
+            autoComplete="family-name"
+            onBlur={() => {
+              tocar('contactoApellido');
+            }}
+            onChange={(e) => {
+              cambiar({ contactoApellido: e.target.value });
+            }}
+          />
+        </div>
         <div className={styles.fila}>
           <AccesoCampoTexto
             etiqueta={t('crearCuenta:telefono')}
@@ -157,6 +187,7 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             value={datos.contactoCorreo}
             type="email"
             error={mensaje('contactoCorreo')}
+            autoComplete="email"
             onBlur={() => {
               tocar('contactoCorreo');
             }}
@@ -165,6 +196,17 @@ export function DialogoEditarCuenta({ abierto, onCerrar, detalle }: Props) {
             }}
           />
         </div>
+        <AccesoCampoTexto
+          etiqueta={t('detalle:maxMiembros')}
+          ayuda={t('detalle:maxMiembrosAyuda')}
+          value={tope}
+          mono
+          inputMode="numeric"
+          error={errorDeTope}
+          onChange={(e) => {
+            setTope(e.target.value);
+          }}
+        />
       </div>
       {editar.isError ? (
         <Aviso tono="peligro">{traducirError(t, codigoDe(editar.error))}</Aviso>

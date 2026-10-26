@@ -42,30 +42,22 @@ export const respuestaDeCambioDePlan = z.object({
 });
 
 /**
- * Dónde llegó el dinero y su comprobante (ADR 0024). Una transferencia o un depósito exigen los tres
- * datos; un pago en efectivo no los lleva. Lo usan también el alta de una cuenta y el registro de un pago.
+ * El comprobante del pago (ADR 0024). Una transferencia o un pago por QR lo exigen; un pago en efectivo no
+ * lo lleva. El banco y la cuenta de destino ya no se piden: AGROCOM registra pagos hechos a sí misma.
+ * Lo usan también el alta de una cuenta y el registro de un pago.
  */
-export const camposDeBancoYComprobante = {
-  banco: z.string().trim().min(1).max(60).optional(),
-  cuenta_destino: z.string().trim().min(1).max(60).optional(),
+export const camposDeComprobante = {
   comprobante_id: esquemaId.optional(),
 };
 
-/** Falla si un pago no efectivo no trae banco, cuenta de destino y comprobante. */
+/** Falla si un pago no efectivo no trae comprobante. */
 export function exigirRespaldoDelPago(
-  pago: {
-    medio: string;
-    banco?: string | undefined;
-    cuenta_destino?: string | undefined;
-    comprobante_id?: string | undefined;
-  },
+  pago: { medio: string; comprobante_id?: string | undefined },
   ctx: z.RefinementCtx,
 ): void {
   if (pago.medio === 'efectivo') return;
-  for (const campo of ['banco', 'cuenta_destino', 'comprobante_id'] as const) {
-    if (pago[campo] === undefined) {
-      ctx.addIssue({ code: 'custom', path: [campo], message: 'requerido' });
-    }
+  if (pago.comprobante_id === undefined) {
+    ctx.addIssue({ code: 'custom', path: ['comprobante_id'], message: 'requerido' });
   }
 }
 
@@ -78,9 +70,10 @@ export const cuerpoDePago = z
       .max(99_999_999)
       .refine((n) => Math.round(n * 100) / 100 === n),
     fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    medio: z.enum(['transferencia', 'deposito', 'efectivo']),
-    referencia: z.string().trim().min(1).max(80),
-    ...camposDeBancoYComprobante,
+    medio: z.enum(['transferencia', 'qr', 'efectivo']),
+    // Es un pago completo, no por cuotas: la referencia es un dato opcional.
+    referencia: z.string().trim().max(80).default(''),
+    ...camposDeComprobante,
   })
   .superRefine(exigirRespaldoDelPago);
 
@@ -119,3 +112,51 @@ export const parametrosDePlan = z.object({ id: esquemaId });
 
 export const respuestaDePlanCreado = z.object({ id: z.string() });
 export const respuestaDePlanRetirado = z.object({ resultado: z.enum(['retirado', 'eliminado']) });
+
+/** Las cuentas donde AGROCOM recibe pagos (ADR 0029). */
+const esquemaBanco = z.string().trim().min(1).max(60);
+const esquemaTipoDeCuenta = z.enum(['ahorro', 'corriente']);
+const textoOpcional = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .transform((texto) => (texto === '' ? null : texto));
+
+export const esquemaCuentaDeCobro = z.object({
+  id: z.string(),
+  metodo: z.enum(['transferencia', 'qr']),
+  banco: z.string(),
+  titular: z.string().nullable(),
+  numero_cuenta: z.string().nullable(),
+  tipo_cuenta: esquemaTipoDeCuenta.nullable(),
+  imagen_id: z.string().nullable(),
+  nota: z.string().nullable(),
+  activo: z.boolean(),
+});
+
+export const respuestaDeCuentasDeCobro = z.object({ datos: z.array(esquemaCuentaDeCobro) });
+
+export const cuerpoDeCuentaDeCobroNueva = z.object({
+  metodo: z.enum(['transferencia', 'qr']),
+  banco: esquemaBanco,
+  titular: textoOpcional(120).optional(),
+  numero_cuenta: textoOpcional(40).optional(),
+  tipo_cuenta: esquemaTipoDeCuenta.optional(),
+  imagen_id: esquemaId.optional(),
+  nota: textoOpcional(200).optional(),
+});
+
+export const cuerpoDeEdicionDeCuentaDeCobro = z
+  .object({
+    banco: esquemaBanco.optional(),
+    titular: textoOpcional(120).optional(),
+    numero_cuenta: textoOpcional(40).optional(),
+    tipo_cuenta: esquemaTipoDeCuenta.nullable().optional(),
+    imagen_id: esquemaId.nullable().optional(),
+    nota: textoOpcional(200).optional(),
+    activo: z.boolean().optional(),
+  })
+  .refine((cuerpo) => Object.keys(cuerpo).length > 0);
+
+export const parametrosDeCuentaDeCobro = z.object({ id: esquemaId });

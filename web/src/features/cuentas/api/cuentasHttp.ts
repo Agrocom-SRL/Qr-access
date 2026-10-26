@@ -26,12 +26,21 @@ interface ListadoCuentasDto extends ListadoDto<CuentaDto> {
 }
 
 interface DetalleDto {
-  cuenta: { id: string; codigo: string; nombre: string; activa: boolean; cliente_desde: string };
+  cuenta: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    activa: boolean;
+    cliente_desde: string;
+    max_miembros_por_titular: number;
+  };
   empresa: {
-    nit: string;
+    nit: string | null;
     ciudad: string;
     contacto: string;
-    telefono: string;
+    contacto_nombre: string;
+    contacto_apellido: string;
+    telefono: string | null;
     correo: string | null;
   } | null;
   suscripcion: {
@@ -94,8 +103,20 @@ export function detalleDesdeDto(dto: DetalleDto): DetalleDeCuenta {
       nombre: dto.cuenta.nombre,
       activa: dto.cuenta.activa,
       clienteDesde: new Date(dto.cuenta.cliente_desde),
+      maxMiembrosPorTitular: dto.cuenta.max_miembros_por_titular,
     },
-    empresa: dto.empresa,
+    empresa:
+      dto.empresa === null
+        ? null
+        : {
+            nit: dto.empresa.nit,
+            ciudad: dto.empresa.ciudad,
+            contacto: dto.empresa.contacto,
+            contactoNombre: dto.empresa.contacto_nombre,
+            contactoApellido: dto.empresa.contacto_apellido,
+            telefono: dto.empresa.telefono,
+            correo: dto.empresa.correo,
+          },
     suscripcion:
       dto.suscripcion === null
         ? null
@@ -190,14 +211,12 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           nit: empresa.nit.trim(),
           ciudad: empresa.ciudad,
           contacto_nombre: empresa.contactoNombre.trim(),
+          contacto_apellido: empresa.contactoApellido.trim(),
           contacto_telefono: empresa.contactoTelefono.trim(),
           contacto_correo: empresa.contactoCorreo.trim(),
           plan_id: borrador.planId,
           inicio: vigencia.inicio,
-          administrador_nombre: (vigencia.adminIgualAlResponsable
-            ? empresa.contactoNombre
-            : vigencia.administradorNombre
-          ).trim(),
+          administrador_nombre: vigencia.administradorNombre.trim(),
           ...(borrador.pago.modo === 'ahora'
             ? {
                 pago: {
@@ -205,13 +224,7 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
                   fecha_pago: borrador.pago.fechaPago,
                   medio: borrador.pago.medio,
                   referencia: borrador.pago.referencia.trim(),
-                  ...(comprobanteId === undefined
-                    ? {}
-                    : {
-                        banco: borrador.pago.banco,
-                        cuenta_destino: borrador.pago.cuentaDestino.trim(),
-                        comprobante_id: comprobanteId,
-                      }),
+                  ...(comprobanteId === undefined ? {} : { comprobante_id: comprobanteId }),
                 },
               }
             : {}),
@@ -222,6 +235,115 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
         administrador: dto.administrador,
         estado: ESTADO_DESDE_DTO[dto.suscripcion.estado],
       };
+    },
+
+    async crearAdministrador(cuentaId, datos) {
+      return cliente.solicitar<{ id: string; etiqueta: string; pin: string }>({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/administradores`,
+        cuerpo: {
+          etiqueta: datos.etiqueta.trim(),
+          ...(datos.sufijo === undefined || datos.sufijo === ''
+            ? {}
+            : { sufijo: datos.sufijo.trim() }),
+        },
+      });
+    },
+
+    async estadisticasDeUsuarios(cuentaId) {
+      const dto = await cliente.solicitar<{
+        ventana_dias: number;
+        umbral_inactivo_dias: number;
+        umbral_ruidoso_por_dia: number;
+        usuarios: {
+          id: string;
+          etiqueta: string | null;
+          rol: string | null;
+          unidad: string | null;
+          qr_generados: number;
+          qr_usados: number;
+          max_qr_en_un_dia: number;
+          ultimo_qr_at: string | null;
+          inactivo: boolean;
+          ruidoso: boolean;
+        }[];
+        titulares: {
+          id: string;
+          etiqueta: string | null;
+          unidad: string | null;
+          miembros: number;
+          tope: number;
+          porcentaje: number;
+          cerca_del_tope: boolean;
+        }[];
+        ramas: { id: string; etiqueta: string | null; usuarios: number }[];
+      }>({ metodo: 'GET', ruta: `/plataforma/cuentas/${cuentaId}/estadisticas-de-usuarios` });
+      return {
+        ventanaDias: dto.ventana_dias,
+        umbralInactivoDias: dto.umbral_inactivo_dias,
+        umbralRuidosoPorDia: dto.umbral_ruidoso_por_dia,
+        usuarios: dto.usuarios.map((u) => ({
+          id: u.id,
+          etiqueta: u.etiqueta ?? '—',
+          rol: u.rol,
+          unidad: u.unidad,
+          qrGenerados: u.qr_generados,
+          qrUsados: u.qr_usados,
+          maxQrEnUnDia: u.max_qr_en_un_dia,
+          ultimoQrEn: u.ultimo_qr_at === null ? null : new Date(u.ultimo_qr_at),
+          inactivo: u.inactivo,
+          ruidoso: u.ruidoso,
+        })),
+        titulares: dto.titulares.map((t) => ({
+          id: t.id,
+          etiqueta: t.etiqueta ?? '—',
+          unidad: t.unidad,
+          miembros: t.miembros,
+          tope: t.tope,
+          porcentaje: t.porcentaje,
+          cercaDelTope: t.cerca_del_tope,
+        })),
+        ramas: dto.ramas.map((r) => ({
+          id: r.id,
+          etiqueta: r.etiqueta ?? '—',
+          usuarios: r.usuarios,
+        })),
+      };
+    },
+
+    async jerarquia(cuentaId) {
+      const dto = await cliente.solicitar<{
+        administradores: {
+          id: string;
+          etiqueta: string | null;
+          guardias: { id: string; etiqueta: string | null }[];
+          titulares: {
+            id: string;
+            etiqueta: string | null;
+            unidad: string | null;
+            miembros: number;
+          }[];
+        }[];
+      }>({ metodo: 'GET', ruta: `/plataforma/cuentas/${cuentaId}/jerarquia` });
+      return dto.administradores.map((admin) => ({
+        id: admin.id,
+        etiqueta: admin.etiqueta ?? '—',
+        guardias: admin.guardias.map((g) => ({ id: g.id, etiqueta: g.etiqueta ?? '—' })),
+        titulares: admin.titulares.map((t) => ({
+          id: t.id,
+          etiqueta: t.etiqueta ?? '—',
+          unidad: t.unidad,
+          miembros: t.miembros,
+        })),
+      }));
+    },
+
+    async reasignar(cuentaId, usuarioId, administradorId) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${cuentaId}/reasignaciones`,
+        cuerpo: { usuario_id: usuarioId, administrador_id: administradorId },
+      });
     },
 
     async administradores(cuentaId) {
@@ -272,8 +394,12 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
           nit: datos.nit.trim(),
           ciudad: datos.ciudad,
           contacto_nombre: datos.contactoNombre.trim(),
+          contacto_apellido: datos.contactoApellido.trim(),
           contacto_telefono: datos.contactoTelefono.trim(),
           contacto_correo: datos.contactoCorreo.trim(),
+          ...(datos.maxMiembrosPorTitular === undefined
+            ? {}
+            : { max_miembros_por_titular: datos.maxMiembrosPorTitular }),
         },
       });
     },

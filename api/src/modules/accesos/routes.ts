@@ -5,7 +5,7 @@ import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as anularQr } from './actions/anular-qr.js';
 import { ejecutar as consultarEstadoQr } from './actions/consultar-estado-qr.js';
-import { ejecutar as emitirQr } from './actions/emitir-qr.js';
+import { ejecutar as generarQr } from './actions/generar-qr.js';
 import { ejecutar as listarEventos } from './actions/listar-eventos.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
 import { ejecutar as resumirEventos } from './actions/resumir-eventos.js';
@@ -15,11 +15,11 @@ import type { EstadoDeQr } from './domain/estado-qr.js';
 import {
   consultaDeEventos,
   consultaDeQr,
-  cuerpoDeEmision,
+  cuerpoDeGeneracion,
   cuerpoDeValidacion,
   esquemaQr,
   parametrosDeQr,
-  respuestaDeEmision,
+  respuestaDeGeneracion,
   respuestaDeEstadoDeQr,
   respuestaDeResumenDeEventos,
   respuestaDeResumenDeQr,
@@ -53,11 +53,20 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
     app.post(
       '/qr-accesos',
       {
-        schema: { tags: ['accesos'], body: cuerpoDeEmision, response: { 201: respuestaDeEmision } },
-        preHandler: permiso('accesos.qr.emitir'),
+        schema: {
+          tags: ['accesos'],
+          body: cuerpoDeGeneracion,
+          response: { 201: respuestaDeGeneracion },
+        },
+        // El QR propio y el de visitas son permisos distintos: el Guardia solo tiene el primero (ADR 0028 §5).
+        // El cuerpo ya está validado cuando corre el `preHandler`.
+        preHandler: (request) =>
+          permiso(
+            request.body.propio === true ? 'accesos.qr.generar_propio' : 'accesos.qr.generar',
+          )(request),
       },
       async (request, reply) => {
-        const qr = await emitirQr(pool, usuarioDe(request), {
+        const qr = await generarQr(pool, usuarioDe(request), {
           puertaIds: request.body.puerta_ids,
           venceAt: request.body.vence_at ?? null,
           etiqueta: request.body.etiqueta ?? null,

@@ -1,6 +1,9 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
+import 'package:agrocom_acceso/features/administracion/domain/nivel_usuario.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +38,18 @@ final FutureProvider<List<Rol>> rolesProvider =
       (ref) => ref.watch(usuariosRepositorioProvider).roles(),
     );
 
+/// El uso del cupo de usuarios del plan: solo se pide con `seguridad.cupo.ver`.
+final FutureProvider<Cupo> cupoProvider = FutureProvider.autoDispose<Cupo>(
+  (ref) => ref.watch(usuariosRepositorioProvider).cupo(),
+);
+
+/// Inactivos, ruidosos y Titulares cerca del tope de la rama (ADR 0028 §4):
+/// solo se pide con `seguridad.estadistica.ver`.
+final FutureProvider<EstadisticasDeUsuarios> estadisticasProvider =
+    FutureProvider.autoDispose<EstadisticasDeUsuarios>(
+      (ref) => ref.watch(usuariosRepositorioProvider).estadisticas(),
+    );
+
 /// Acciones sobre un usuario del listado: generar PIN y eliminar. El estado
 /// es el id del usuario con una acción en curso.
 class AccionesUsuarioControlador extends Notifier<String?> {
@@ -60,11 +75,19 @@ class AccionesUsuarioControlador extends Notifier<String?> {
     }
   }
 
-  Future<ErrorApi?> eliminar(Usuario usuario) async {
-    state = usuario.id;
+  /// Sin [confirmar], quien tiene a otros a su cargo responde
+  /// `usuario.con_dependientes` con cuántos caerían; con él, la baja es en
+  /// cascada y libera todos esos lugares del cupo (ADR 0028 §7).
+  Future<ErrorApi?> eliminar(String usuarioId, {bool confirmar = false}) async {
+    state = usuarioId;
     try {
-      await ref.read(usuariosRepositorioProvider).eliminar(usuario.id);
-      ref.invalidate(usuariosProvider);
+      await ref
+          .read(usuariosRepositorioProvider)
+          .eliminar(usuarioId, confirmar: confirmar);
+      ref
+        ..invalidate(usuariosProvider)
+        ..invalidate(cupoProvider)
+        ..invalidate(estadisticasProvider);
       return null;
     } on ErrorApi catch (error) {
       return error;
@@ -85,7 +108,9 @@ accionesUsuarioProvider =
 class FormularioUsuarioEstado {
   const new({
     this.etiqueta = '',
-    this.rolIds = const {},
+    this.rol,
+    this.sitioId,
+    this.unidad = '',
     this.enviando = false,
     this.errorDatos,
     this.errorApi,
@@ -97,7 +122,13 @@ class FormularioUsuarioEstado {
   });
 
   final String etiqueta;
-  final Set<String> rolIds;
+
+  /// El único rol del usuario nuevo (ADR 0028).
+  final Rol? rol;
+
+  /// Propiedad y nombre de la unidad: solo para un Titular.
+  final String? sitioId;
+  final String unidad;
   final bool enviando;
   final ErrorDatosUsuario? errorDatos;
   final ErrorApi? errorApi;
@@ -114,9 +145,16 @@ class FormularioUsuarioEstado {
   final PuertasAsignadas puertas;
   final bool puertasCargadas;
 
+  /// El nivel del rol elegido; `null` si aún no eligió.
+  NivelUsuario? get nivel => rol == null ? null : nivelDeRol(rol!.nombre);
+
   FormularioUsuarioEstado copiar({
     String? etiqueta,
-    Set<String>? rolIds,
+    Rol? rol,
+    bool sinRol = false,
+    String? sitioId,
+    bool sinSitio = false,
+    String? unidad,
     bool enviando = false,
     ErrorDatosUsuario? errorDatos,
     ErrorApi? errorApi,
@@ -127,7 +165,9 @@ class FormularioUsuarioEstado {
     bool? puertasCargadas,
   }) => FormularioUsuarioEstado(
     etiqueta: etiqueta ?? this.etiqueta,
-    rolIds: rolIds ?? this.rolIds,
+    rol: sinRol ? null : rol ?? this.rol,
+    sitioId: sinSitio ? null : sitioId ?? this.sitioId,
+    unidad: unidad ?? this.unidad,
     enviando: enviando,
     errorDatos: errorDatos,
     errorApi: errorApi,
@@ -145,10 +185,9 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
   @override
   FormularioUsuarioEstado build() => const FormularioUsuarioEstado();
 
-  void cargar(Usuario usuario) => state = FormularioUsuarioEstado(
-    etiqueta: usuario.etiqueta ?? '',
-    rolIds: usuario.roles.map((r) => r.id).toSet(),
-  );
+  /// Al editar solo cuenta el nombre: el rol y la unidad no se tocan.
+  void cargar(Usuario usuario) =>
+      state = FormularioUsuarioEstado(etiqueta: usuario.etiqueta ?? '');
 
   void cambiarEtiqueta(String etiqueta) =>
       state = state.copiar(etiqueta: etiqueta);
@@ -176,16 +215,30 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
     );
   }
 
-  void alternarRol(String rolId) {
-    final ids = {...state.rolIds};
-    if (!ids.remove(rolId)) ids.add(rolId);
-    state = state.copiar(rolIds: ids);
+  /// Elige el rol del usuario nuevo. Al cambiar a un nivel que no es Titular,
+  /// la unidad ya no corresponde y se descarta.
+  void elegirRol(Rol rol) {
+    final esTitular = nivelDeRol(rol.nombre) == NivelUsuario.titular;
+    state = state.copiar(
+      rol: rol,
+      sinSitio: !esTitular,
+      unidad: esTitular ? state.unidad : '',
+    );
   }
 
-  DatosUsuario? _validar() {
+  void elegirPropiedad(String? sitioId) => state = sitioId == null
+      ? state.copiar(sinSitio: true)
+      : state.copiar(sitioId: sitioId);
+
+  void cambiarUnidad(String unidad) => state = state.copiar(unidad: unidad);
+
+  DatosUsuario? _validarAlta() {
     final error = DatosUsuario.errorDe(
       etiqueta: state.etiqueta,
-      rolIds: state.rolIds,
+      rolId: state.rol?.id,
+      nivel: state.nivel,
+      sitioId: state.sitioId,
+      unidad: state.unidad,
     );
     if (error != null) {
       state = state.copiar(errorDatos: error);
@@ -197,7 +250,10 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
     }
     return DatosUsuario(
       etiqueta: state.etiqueta,
-      rolIds: state.rolIds,
+      rolId: state.rol!.id,
+      unidad: state.nivel == NivelUsuario.titular
+          ? DatosUnidad(sitioId: state.sitioId!, nombre: state.unidad.trim())
+          : null,
       sufijoDePin: state.elegirSufijo ? state.sufijo.toUpperCase() : null,
     );
   }
@@ -206,7 +262,7 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
   /// asignadas las puertas elegidas.
   Future<PinGenerado?> crear({bool asignarPuertas = false}) async {
     if (state.enviando) return null;
-    final datos = _validar();
+    final datos = _validarAlta();
     if (datos == null) return null;
     state = state.copiar(enviando: true);
     try {
@@ -218,7 +274,10 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
       if (asignarPuertas && id != null && hayPuertas) {
         await repositorio.asignarPuertas(id, state.puertas);
       }
-      ref.invalidate(usuariosProvider);
+      ref
+        ..invalidate(usuariosProvider)
+        ..invalidate(cupoProvider)
+        ..invalidate(estadisticasProvider);
       state = state.copiar();
       return pin;
     } on ErrorApi catch (error) {
@@ -229,12 +288,15 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
 
   Future<bool> editar(String id, {bool asignarPuertas = false}) async {
     if (state.enviando) return false;
-    final datos = _validar();
-    if (datos == null) return false;
+    final error = DatosUsuario.errorDeEtiqueta(state.etiqueta);
+    if (error != null) {
+      state = state.copiar(errorDatos: error);
+      return false;
+    }
     state = state.copiar(enviando: true);
     try {
       final repositorio = ref.read(usuariosRepositorioProvider);
-      await repositorio.editar(id, datos);
+      await repositorio.editar(id, etiqueta: state.etiqueta.trim());
       if (asignarPuertas && state.puertasCargadas) {
         await repositorio.asignarPuertas(id, state.puertas);
       }

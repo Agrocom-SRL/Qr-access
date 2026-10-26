@@ -10,7 +10,7 @@ import '../../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
-final _qr = QrEmitido(
+final _qr = QrGenerado(
   id: 'qr1',
   texto: 'AQ1.token-de-prueba',
   venceAt: DateTime.utc(2026, 10, 9, 23, 59),
@@ -21,7 +21,7 @@ final _qr = QrEmitido(
   ],
 );
 
-Future<CompartirFalso> _montar(WidgetTester tester, {QrEmitido? qr}) async {
+Future<CompartirFalso> _montar(WidgetTester tester, {QrGenerado? qr}) async {
   final compartir = CompartirFalso();
   await montarPantalla(
     tester,
@@ -32,7 +32,7 @@ Future<CompartirFalso> _montar(WidgetTester tester, {QrEmitido? qr}) async {
     ],
   );
   await tester.pump();
-  // El Lottie de emisión dura 1 s y el QR entra en 300 ms.
+  // El Lottie de generación dura 1 s y el QR entra en 300 ms.
   await tester.pump(const Duration(seconds: 1));
   await tester.pump(const Duration(milliseconds: 16));
   await tester.pump(const Duration(milliseconds: 300));
@@ -59,7 +59,7 @@ void main() {
   testWidgets('sin etiqueta, lo dice en vez de dejar un hueco', (tester) async {
     await _montar(
       tester,
-      qr: QrEmitido(
+      qr: QrGenerado(
         id: 'qr2',
         texto: 'AQ1.otro',
         venceAt: _qr.venceAt,

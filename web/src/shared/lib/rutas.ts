@@ -8,6 +8,8 @@ export const RUTAS = {
   cuentas: '/cuentas',
   cuentaNueva: '/cuentas/nueva',
   cobranza: '/cobranza',
+  cuentasDeCobro: '/cobranza/cuentas-de-cobro',
+  estadisticas: '/estadisticas',
   planes: '/planes',
   placas: '/placas',
   accesos: '/accesos',

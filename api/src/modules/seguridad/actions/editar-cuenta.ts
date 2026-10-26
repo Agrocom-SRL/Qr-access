@@ -11,10 +11,13 @@ import {
 
 export interface CorreccionDeCuenta extends DatosDeEmpresa {
   readonly razonSocial: string;
+  /** Tope de Miembros por Titular (ADR 0028 §6); sin él, se deja el que tiene. */
+  readonly maxMiembrosPorTitular?: number | undefined;
 }
 
 /**
- * Corrige los datos de una cuenta: la razón social y los de la empresa y su persona responsable.
+ * Corrige los datos de una cuenta: la razón social, los de la empresa y su persona responsable y,
+ * si se manda, el tope de Miembros por Titular.
  * El código no se toca acá (tiene su propia acción, ADR 0023). Todo o nada; si la cuenta aún no
  * tenía datos de empresa (cuentas anteriores al panel), se crean.
  */
@@ -34,6 +37,12 @@ export async function ejecutar(
     await enTransaccion(pool, async (tx) => {
       if (cuenta.nombre !== datos.razonSocial) {
         await cuentas.renombrar(tx, cuenta.id, datos.razonSocial);
+      }
+      if (
+        datos.maxMiembrosPorTitular !== undefined &&
+        datos.maxMiembrosPorTitular !== cuenta.max_miembros_por_titular
+      ) {
+        await cuentas.cambiarMaxMiembros(tx, cuenta.id, datos.maxMiembrosPorTitular);
       }
       if (actual === null) await empresa.crear(tx, datos);
       else await empresa.corregir(tx, actual.id, datos);

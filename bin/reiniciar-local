@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# Deja la base de DESARROLLO como queda la de producción tras su reinicio (jerarquia-de-usuarios.md §13):
+# respaldo previo, base recreada, migraciones, catálogo de permisos y solo el super admin `root`.
+# Sin la cuenta demo `DEM`: para eso, `--con-demo`.
+#
+# Solo toca `qr_access` del contenedor `db` local; nunca `qr_access_testing` ni volúmenes (-v).
+# Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--con-demo] [--si]
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+con_demo=0
+confirmado=0
+for arg in "$@"; do
+  case "$arg" in
+    --con-demo) con_demo=1 ;;
+    --si) confirmado=1 ;;
+    *) echo "Uso: bin/reiniciar-local [--con-demo] [--si]" >&2; exit 2 ;;
+  esac
+done
+
+mysql_root() { docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4 "$@"' -- "$@"; }
+base=qr_access
+
+if [ "$confirmado" -ne 1 ]; then
+  echo "Esto borra TODOS los datos de la base local '$base' (se hace un respaldo antes)."
+  read -r -p "Escribe REINICIAR para continuar: " respuesta
+  [ "$respuesta" = "REINICIAR" ] || { echo "Cancelado."; exit 1; }
+fi
+
+echo "==> Respaldo"
+mkdir -p respaldos
+respaldo="respaldos/${base}-$(date +%Y%m%d-%H%M%S).sql"
+docker compose exec -T db sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --routines --default-character-set=utf8mb4 '"$base" > "$respaldo" 2>/dev/null
+[ -s "$respaldo" ] || { echo "El respaldo quedó vacío: no se toca la base." >&2; rm -f "$respaldo"; exit 1; }
+echo "Guardado en $respaldo"
+
+echo "==> Deteniendo la API"
+docker compose stop api >/dev/null
+
+echo "==> Recreando la base"
+mysql_root -e "DROP DATABASE IF EXISTS \`$base\`; CREATE DATABASE \`$base\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; GRANT ALL ON \`$base\`.* TO 'qr_access'@'%';"
+
+echo "==> Migraciones y catálogo"
+docker compose --profile herramientas run --rm dbmate up
+mysql_root "$base" < db/seeds/01_catalogo.sql
+
+if [ "$con_demo" -eq 1 ]; then
+  echo "==> Cuenta demo DEM (incluye el super admin root)"
+  mysql_root "$base" < db/seeds/02_demo.sql
+else
+  echo "==> Super admin root (contraseña de desarrollo 12345678, temporal: el panel pide cambiarla)"
+  # Mismo hash que el seed de desarrollo; contrasena_temporal = 1 como en producción.
+  mysql_root "$base" <<'SQL'
+SET NAMES utf8mb4;
+INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo)
+  VALUES (NULL, 'Root', 'root', '$argon2id$v=19$m=19456,p=1,t=2$NRcwaBfCTiX8FgW0y18mfg$SUI+cnQZNQ/LmXeaS1puV66pCoHr1G0gVkWGoC6uS+4', 1, 1);
+INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id)
+  SELECT NULL, u.id, r.id FROM usuarios u
+    JOIN roles r ON r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL
+   WHERE u.tenant_id IS NULL AND u.username = 'root' AND u.deleted_at IS NULL;
+SQL
+fi
+
+echo "==> Levantando la API"
+docker compose up -d api >/dev/null
+echo "Listo. Las placas vinculadas hay que vincularlas de nuevo."

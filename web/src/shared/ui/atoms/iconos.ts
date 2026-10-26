@@ -2,6 +2,7 @@
 import space_dashboard from '@material-symbols/svg-400/outlined/space_dashboard.svg?raw';
 import apartment from '@material-symbols/svg-400/outlined/apartment.svg?raw';
 import payments from '@material-symbols/svg-400/outlined/payments.svg?raw';
+import bar_chart from '@material-symbols/svg-400/outlined/bar_chart.svg?raw';
 import sell from '@material-symbols/svg-400/outlined/sell.svg?raw';
 import history from '@material-symbols/svg-400/outlined/history.svg?raw';
 import group from '@material-symbols/svg-400/outlined/group.svg?raw';
@@ -23,6 +24,7 @@ import chevron_left from '@material-symbols/svg-400/outlined/chevron_left.svg?ra
 import chevron_right from '@material-symbols/svg-400/outlined/chevron_right.svg?raw';
 import check from '@material-symbols/svg-400/outlined/check.svg?raw';
 import content_copy from '@material-symbols/svg-400/outlined/content_copy.svg?raw';
+import share from '@material-symbols/svg-400/outlined/share.svg?raw';
 import close from '@material-symbols/svg-400/outlined/close.svg?raw';
 import arrow_back from '@material-symbols/svg-400/outlined/arrow_back.svg?raw';
 import arrow_forward from '@material-symbols/svg-400/outlined/arrow_forward.svg?raw';
@@ -52,6 +54,7 @@ import visibility_lock from '@material-symbols/svg-400/outlined/visibility_lock.
 import space_dashboard_fill from '@material-symbols/svg-400/outlined/space_dashboard-fill.svg?raw';
 import apartment_fill from '@material-symbols/svg-400/outlined/apartment-fill.svg?raw';
 import payments_fill from '@material-symbols/svg-400/outlined/payments-fill.svg?raw';
+import bar_chart_fill from '@material-symbols/svg-400/outlined/bar_chart-fill.svg?raw';
 import sell_fill from '@material-symbols/svg-400/outlined/sell-fill.svg?raw';
 import history_fill from '@material-symbols/svg-400/outlined/history-fill.svg?raw';
 import delete_icono from '@material-symbols/svg-400/outlined/delete.svg?raw';
@@ -71,6 +74,7 @@ const registro = {
   space_dashboard,
   apartment,
   payments,
+  bar_chart,
   sell,
   history,
   group,
@@ -92,6 +96,7 @@ const registro = {
   chevron_right,
   check,
   content_copy,
+  share,
   close,
   arrow_back,
   arrow_forward,
@@ -121,6 +126,7 @@ const registro = {
   space_dashboard_fill,
   apartment_fill,
   payments_fill,
+  bar_chart_fill,
   sell_fill,
   history_fill,
   group_fill,

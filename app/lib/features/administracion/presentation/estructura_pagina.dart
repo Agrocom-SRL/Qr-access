@@ -77,7 +77,7 @@ class EstructuraPagina extends ConsumerWidget {
               },
             ),
     );
-    // En compacto, la misma estructura de "Emitir QR": barra superior con la
+    // En compacto, la misma estructura de "Generar QR": barra superior con la
     // flecha para volver a Administración › Puertas y sin navegación inferior.
     if (context.esCompacta) {
       return PopScope(

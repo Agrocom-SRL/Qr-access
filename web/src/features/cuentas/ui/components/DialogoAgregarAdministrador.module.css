@@ -1,0 +1,10 @@
+.texto {
+  margin: 0 0 var(--esp16);
+  color: var(--textoSecundario);
+}
+
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}

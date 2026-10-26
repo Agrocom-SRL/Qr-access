@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -18,22 +19,16 @@ import '../../helpers/http.dart';
 const Map<String, Object> _sesionActual = {
   'usuario': {'id': 'u1', 'etiqueta': 'Ana'},
   'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
-  'roles': [
-    {'id': 'r1', 'nombre': 'Usuario'},
-  ],
-  'rol_activo': {'id': 'r1', 'nombre': 'Usuario'},
-  'permisos': ['accesos.qr.emitir'],
+  'rol_activo': {'id': 'r1', 'nombre': 'Miembro'},
+  'permisos': ['accesos.qr.generar'],
   'suscripcion': {'plan': 'Empresa', 'hasta': '2027-03-31T04:00:00.000Z'},
 };
 
-/// La misma sesión reabierta sin rol elegido y con un PIN sin etiqueta.
+/// La sesión de un usuario al que le quitaron el rol (y con un PIN sin
+/// etiqueta).
 const Map<String, Object?> _sesionActualSinRol = {
   'usuario': {'id': 'u1', 'etiqueta': null},
   'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
-  'roles': [
-    {'id': 'r1', 'nombre': 'Usuario'},
-    {'id': 'r2', 'nombre': 'Guardia'},
-  ],
   'rol_activo': null,
   'permisos': <String>[],
 };
@@ -63,8 +58,6 @@ Future<ResponseBody> _api(
       return respuestaJson(200, {'acceso': 'acc-2', 'refresco': 'ref-2'});
     case ('GET', '/sesiones/actual'):
       return respuestaJson(200, sinRol ? _sesionActualSinRol : _sesionActual);
-    case ('POST', '/sesiones/rol-activo'):
-      return respuestaJson(200, {'acceso': 'acc-3'});
     case ('DELETE', '/sesiones/actual'):
       return ResponseBody.fromString('', 204);
     default:
@@ -111,28 +104,29 @@ void main() {
   setUp(() => almacen = AlmacenRefrescoFalso());
 
   group('adoptarInicio', () {
-    test('sin rol activo, deja al usuario eligiendo rol', () async {
+    test('sin rol vigente no entra y no deja tokens a medias', () async {
       final contenedor = _contenedor(almacen: almacen);
       addTearDown(contenedor.dispose);
       final controlador = contenedor.read(sesionControladorProvider.notifier);
       await _asentar();
 
-      await controlador.adoptarInicio(
-        const RespuestaInicio(
-          acceso: 'acc-1',
-          refresco: 'ref-1',
-          usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
-          cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-          roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
-          rolActivoId: null,
+      await expectLater(
+        controlador.adoptarInicio(
+          const RespuestaInicio(
+            acceso: 'acc-1',
+            refresco: 'ref-1',
+            usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+            cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+            rolActivoId: null,
+          ),
+        ),
+        throwsA(
+          isA<ErrorApi>().having((e) => e.code, 'code', 'sesion.sin_rol'),
         ),
       );
 
-      expect(
-        contenedor.read(sesionControladorProvider),
-        isA<SesionEligiendoRol>(),
-      );
-      expect(almacen.refresco, 'ref-1');
+      expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      expect(almacen.refresco, isNull);
     });
 
     test('con rol activo, carga permisos y entra', () async {
@@ -147,42 +141,44 @@ void main() {
           refresco: 'ref-1',
           usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
           cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-          roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
           rolActivoId: 'r1',
         ),
       );
 
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
       expect(estado.tiene(Permisos.anularQr), isFalse);
       final autenticada = estado as SesionAutenticada;
       expect(autenticada.suscripcion?.plan, 'Empresa');
-      expect(autenticada.roles.map((r) => r.id), ['r1']);
-      expect(autenticada.tieneVariosRoles, isFalse);
+      expect(autenticada.rolActivo.nombre, 'Miembro');
     });
 
     test(
-      'pedir cambio de rol vuelve a elegir con el actual preseleccionado',
+      'si la API ya no le da rol, no entra aunque el inicio lo traiga',
       () async {
         final contenedor = _contenedor(almacen: almacen, sinRol: true);
         addTearDown(contenedor.dispose);
         final controlador = contenedor.read(sesionControladorProvider.notifier);
         await _asentar();
-        await controlador.adoptarInicio(
-          const RespuestaInicio(
-            acceso: 'acc-1',
-            refresco: 'ref-1',
-            usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
-            cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-            roles: [],
-            rolActivoId: null,
+
+        await expectLater(
+          controlador.adoptarInicio(
+            const RespuestaInicio(
+              acceso: 'acc-1',
+              refresco: 'ref-1',
+              usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+              cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+              rolActivoId: 'r1',
+            ),
+          ),
+          throwsA(
+            isA<ErrorApi>().having((e) => e.code, 'code', 'sesion.sin_rol'),
           ),
         );
-        expect(
-          contenedor.read(sesionControladorProvider),
-          isA<SesionEligiendoRol>(),
-        );
+
+        expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+        expect(almacen.refresco, isNull);
       },
     );
 
@@ -199,7 +195,6 @@ void main() {
             refresco: 'ref-1',
             usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
             cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-            roles: [],
             rolActivoId: 'r1',
           ),
         ),
@@ -276,22 +271,18 @@ void main() {
 
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
     });
 
-    test('sin rol activo, ofrece elegir entre sus roles', () async {
+    test('si le quitaron el rol, no entra y olvida el refresco', () async {
       almacen.refresco = 'ref-1';
       final contenedor = _contenedor(almacen: almacen, sinRol: true);
       addTearDown(contenedor.dispose);
       contenedor.read(sesionControladorProvider.notifier);
       await _asentar();
 
-      final estado = contenedor.read(sesionControladorProvider);
-      expect(estado, isA<SesionEligiendoRol>());
-      final eligiendo = estado as SesionEligiendoRol;
-      expect(eligiendo.roles.map((r) => r.id), ['r1', 'r2']);
-      expect(eligiendo.usuario.etiqueta, isNull);
-      expect(almacen.refresco, 'ref-2');
+      expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      expect(almacen.refresco, isNull);
     });
   });
 
@@ -300,11 +291,7 @@ void main() {
       usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
       cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Cuenta Demo'),
       rolActivo: RolSesion(id: 'r2', nombre: 'Guardia'),
-      permisos: {Permisos.emitirQr},
-      roles: [
-        RolSesion(id: 'r1', nombre: 'Usuario'),
-        RolSesion(id: 'r2', nombre: 'Guardia'),
-      ],
+      permisos: {Permisos.generarQr},
     );
 
     test('al abrir la app entra con la última sesión y su mismo rol', () async {
@@ -323,7 +310,7 @@ void main() {
       final estado = contenedor.read(sesionControladorProvider);
       expect(estado, isA<SesionAutenticada>());
       expect((estado as SesionAutenticada).rolActivo.nombre, 'Guardia');
-      expect(estado.tiene(Permisos.emitirQr), isTrue);
+      expect(estado.tiene(Permisos.generarQr), isTrue);
       // El refresco se conserva para renovar cuando vuelva la red.
       expect(almacen.refresco, 'ref-1');
     });
@@ -341,61 +328,9 @@ void main() {
         expect(almacen.refresco, 'ref-1');
       },
     );
-
-    test('cambiar de rol y volver atrás deja la sesión como estaba', () async {
-      almacen.refresco = 'ref-1';
-      final preferencias = AlmacenPreferenciasFalso()
-        ..valores[claveSesionGuardada] = codificarSesion(guardada);
-      final contenedor = _contenedor(
-        almacen: almacen,
-        red: true,
-        preferencias: preferencias,
-      );
-      addTearDown(contenedor.dispose);
-      final controlador = contenedor.read(sesionControladorProvider.notifier);
-      await _asentar();
-
-      controlador.pedirCambioDeRol();
-      expect(
-        contenedor.read(sesionControladorProvider),
-        isA<SesionEligiendoRol>(),
-      );
-      expect(controlador.puedeCancelarCambioDeRol, isTrue);
-
-      controlador.cancelarCambioDeRol();
-      final estado = contenedor.read(sesionControladorProvider);
-      expect(estado, isA<SesionAutenticada>());
-      expect((estado as SesionAutenticada).rolActivo.nombre, 'Guardia');
-      expect(controlador.puedeCancelarCambioDeRol, isFalse);
-    });
   });
 
-  group('elegirRol y cerrar', () {
-    test('elegir rol cambia el acceso y carga los permisos del rol', () async {
-      final contenedor = _contenedor(almacen: almacen);
-      addTearDown(contenedor.dispose);
-      final controlador = contenedor.read(sesionControladorProvider.notifier);
-      await _asentar();
-      await controlador.adoptarInicio(
-        const RespuestaInicio(
-          acceso: 'acc-1',
-          refresco: 'ref-1',
-          usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
-          cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-          roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
-          rolActivoId: null,
-        ),
-      );
-
-      await controlador.elegirRol('r1');
-
-      expect(controlador.acceso, 'acc-3');
-      expect(
-        contenedor.read(sesionControladorProvider),
-        isA<SesionAutenticada>(),
-      );
-    });
-
+  group('cerrar', () {
     test('cerrar olvida la sesión y el refresco del dispositivo', () async {
       final contenedor = _contenedor(almacen: almacen);
       addTearDown(contenedor.dispose);

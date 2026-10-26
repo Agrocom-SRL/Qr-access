@@ -1,10 +1,10 @@
 # AGROCOM Acceso
 
-Control de acceso a puertas eléctricas con QR — `acceso.agrocom.com.bo`. Plataforma por suscripción: cada cuenta (empresa) tiene sus usuarios, que entran con un PIN y emiten QR de un solo uso para quien tiene que entrar; un ESP32 con lector en la puerta los valida contra la API.
+Control de acceso a puertas eléctricas con QR — `acceso.agrocom.com.bo`. Plataforma por suscripción: cada cuenta (empresa) tiene sus usuarios, que entran con un PIN y generan QR de un solo uso para quien tiene que entrar; un ESP32 con lector en la puerta los valida contra la API.
 
 ```
 api/        Node.js 22 + TypeScript + Fastify, SQL a mano con mysql2 (sin ORM)
-app/        Flutter (Android, iOS y web): login por PIN, emisión de QR, administración
+app/        Flutter (Android, iOS y web): login por PIN, generación de QR, administración
 firmware/   ESP32 (framework Arduino, PlatformIO): lector QR + pulso de cerradura por Ethernet
 db/         Migraciones SQL (dbmate) sobre MySQL 8
 docs/       Funcional, modelo de datos, ADRs, diseño, hardware y gestión
@@ -25,7 +25,7 @@ Para publicar una versión nueva: sube el número en esos cuatro archivos y en e
 cp .env.example .env
 docker compose up -d                                       # MySQL (:3307) + API (:3000)
 docker compose --profile herramientas run --rm dbmate up   # migraciones
-docker compose --profile web up -d --build                 # + app web (:8080, proxy de /api)
+docker compose --profile panel --profile web up -d --build # + panel (:8080) y app web (:8080/app/)
 docker compose --profile herramientas run --rm firmware    # compila el firmware y corre sus tests
 ./bin/verify                                               # compuerta de calidad de todo el monorepo
 ```

@@ -10,14 +10,16 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/baja_de_usuario.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/banner_cupo.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogo_regenerar_pin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/tarjeta_estadisticas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -80,6 +82,8 @@ class VistaUsuarios extends ConsumerWidget {
             runSpacing: tokens.espacio.xs,
             children: [
               for (final rol in usuario.roles) ChipEtiqueta(texto: rol.nombre),
+              if (usuario.unidad != null)
+                ChipEtiqueta(texto: usuario.unidad!.nombre),
             ],
           ),
         ),
@@ -113,6 +117,8 @@ class VistaUsuarios extends ConsumerWidget {
             runSpacing: tokens.espacio.xs,
             children: [
               for (final rol in usuario.roles) ChipEtiqueta(texto: rol.nombre),
+              if (usuario.unidad != null)
+                ChipEtiqueta(texto: usuario.unidad!.nombre),
             ],
           ),
         ),
@@ -164,7 +170,12 @@ class VistaUsuarios extends ConsumerWidget {
                   accion: AccionDeFila.eliminar,
                   etiqueta: l10n.comunEliminar,
                   onPressed: enCurso == null
-                      ? () => _eliminar(context, ref, usuario)
+                      ? () => pedirBajaDeUsuario(
+                          context,
+                          ref,
+                          id: usuario.id,
+                          etiqueta: usuario.etiqueta,
+                        )
                       : null,
                 ),
               ],
@@ -173,11 +184,24 @@ class VistaUsuarios extends ConsumerWidget {
         ),
       ],
     );
+    final verCupo = sesion.tiene(Permisos.verCupo);
+    final verEstadisticas = sesion.tiene(Permisos.verEstadisticas);
     // En compacto, una banda de foto sobre el listado, como en Puertas; en
     // medio y expandido la tabla ya llena la pantalla.
-    if (context.clasePantalla != ClasePantalla.compacta) return listado;
+    if (context.clasePantalla != ClasePantalla.compacta) {
+      if (!verCupo && !verEstadisticas) return listado;
+      return Column(
+        children: [
+          if (verCupo) const BannerCupo(),
+          if (verEstadisticas) const TarjetaEstadisticas(),
+          Expanded(child: listado),
+        ],
+      );
+    }
     return Column(
       children: [
+        if (verCupo) const BannerCupo(),
+        if (verEstadisticas) const TarjetaEstadisticas(),
         Padding(
           padding: EdgeInsets.all(tokens.espacio.l),
           child: ClipRRect(
@@ -220,29 +244,5 @@ class VistaUsuarios extends ConsumerWidget {
       return;
     }
     await mostrarPinGenerado(context, resultado.pin!);
-  }
-
-  Future<void> _eliminar(
-    BuildContext context,
-    WidgetRef ref,
-    Usuario usuario,
-  ) async {
-    final l10n = context.l10n;
-    final confirmado = await ConfirmarDialogo.mostrar(
-      context,
-      titulo: l10n.usuariosEliminarTitulo(
-        usuario.etiqueta ?? l10n.qrSinEtiqueta,
-      ),
-      mensaje: l10n.usuariosEliminarMensaje,
-      textoConfirmar: l10n.comunEliminar,
-    );
-    if (!confirmado || !context.mounted) return;
-    final error = await ref
-        .read(accionesUsuarioProvider.notifier)
-        .eliminar(usuario);
-    if (error != null && context.mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(textoDeError(l10n, error))));
-    }
   }
 }

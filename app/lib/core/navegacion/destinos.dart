@@ -6,7 +6,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 /// Destinos de la navegación principal (handoff §Breakpoints y navegación).
 enum DestinoNav {
   inicio(Rutas.inicio),
-  emitirQr(Rutas.qrNuevo),
+  generarQr(Rutas.qrNuevo),
   misQr(Rutas.qrMios),
   eventos(Rutas.eventos),
   puertas(Rutas.adminPuertas),
@@ -28,9 +28,9 @@ const maxDestinosCompactos = 4;
 ///
 /// | Rol | Compacto | Rail |
 /// |---|---|---|
-/// | Usuario | Inicio · Mis QR · Eventos · Perfil | + Emitir QR |
+/// | Usuario | Inicio · Mis QR · Eventos · Perfil | + Generar QR |
 /// | Guardia | Inicio · Eventos · Puertas · Perfil | igual |
-/// | Administrador | Inicio · Mis QR · Admin · Perfil | Inicio · Emitir QR ·
+/// | Administrador | Inicio · Mis QR · Admin · Perfil | Inicio · Generar QR ·
 ///   Eventos · Puertas · Usuarios · Perfil |
 ///
 /// En compacto caben cuatro: si sobran, Eventos cede el lugar (los ve desde
@@ -63,7 +63,7 @@ List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
   }
   return [
     DestinoNav.inicio,
-    if (sesion.tiene(Permisos.emitirQr)) DestinoNav.emitirQr,
+    if (sesion.tiene(Permisos.generarQr)) DestinoNav.generarQr,
     if (!administra && sesion.tiene(Permisos.verQr)) DestinoNav.misQr,
     if (sesion.tiene(Permisos.verEventos)) DestinoNav.eventos,
     if (supervisa) DestinoNav.puertas,
@@ -72,9 +72,9 @@ List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
   ];
 }
 
-/// El guardia ve los eventos de sus puertas asignadas y tiene su QR propio,
-/// pero no comparte QR con otras personas (eso es del usuario y del
-/// administrador). Se reconoce por lo que puede ver, no por el nombre del rol.
+/// El guardia ve los eventos de sus puertas asignadas y tiene su QR propio
+/// (`generarQrPropio`), pero no genera QR de visitas (`generarQr`, de los
+/// demás roles). Se reconoce por lo que puede ver, no por el nombre del rol.
 bool esGuardia(SesionEstado sesion) =>
     sesion.tiene(Permisos.verEventosAsignados) &&
     !sesion.tiene(Permisos.verTodosLosEventos);

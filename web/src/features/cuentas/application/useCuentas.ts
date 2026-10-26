@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
-import type { BorradorDeCuenta, DatosDeEmpresa } from '../domain/alta';
+import type { CorreccionDeCuenta } from '../api/CuentasRepositorio';
+import type { BorradorDeCuenta } from '../domain/alta';
 import type { DatosDePuerta, DatosDeSitio, FiltrosDeCuentas } from '../domain/cuenta';
 import { useCuentasRepositorio } from './contextos';
 
@@ -74,6 +75,50 @@ export function useCrearCuenta() {
   });
 }
 
+/** El uso de los usuarios de la cuenta (ADR 0028 §4): informativo, con umbrales fijos de la API. */
+export function useEstadisticasDeUsuarios(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  return useQuery({
+    queryKey: [...CLAVE_CUENTAS, 'estadisticas-de-usuarios', cuentaId],
+    queryFn: () => repositorio.estadisticasDeUsuarios(cuentaId),
+  });
+}
+
+/** El árbol de la cuenta (ADR 0028): Administradores con sus Guardias y Titulares. */
+export function useJerarquia(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  return useQuery({
+    queryKey: [...CLAVE_CUENTAS, 'jerarquia', cuentaId],
+    queryFn: () => repositorio.jerarquia(cuentaId),
+  });
+}
+
+/**
+ * Suma un Administrador. Como el alta de cuenta, no retiene el resultado (`gcTime: 0`): el PIN en
+ * claro solo debe vivir en el estado de quien lo muestra.
+ */
+export function useCrearAdministrador(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (datos: { etiqueta: string; sufijo?: string }) =>
+      repositorio.crearAdministrador(cuentaId, datos),
+    gcTime: 0,
+    onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
+  });
+}
+
+/** Mueve un Guardia o un Titular a otro Administrador: cambia el árbol y queda en la bitácora. */
+export function useReasignar(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (datos: { usuarioId: string; administradorId: string }) =>
+      repositorio.reasignar(cuentaId, datos.usuarioId, datos.administradorId),
+    onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
+  });
+}
+
 export function useAdministradores(cuentaId: string) {
   const repositorio = useCuentasRepositorio();
   return useQuery({
@@ -135,7 +180,7 @@ export function useEditarCuenta(cuentaId: string) {
   const repositorio = useCuentasRepositorio();
   const clienteConsultas = useQueryClient();
   return useMutation({
-    mutationFn: (datos: Omit<DatosDeEmpresa, 'codigo'>) => repositorio.editar(cuentaId, datos),
+    mutationFn: (datos: CorreccionDeCuenta) => repositorio.editar(cuentaId, datos),
     onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
   });
 }

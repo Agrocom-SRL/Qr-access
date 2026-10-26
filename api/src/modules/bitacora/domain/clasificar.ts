@@ -23,6 +23,7 @@ export const TABLAS_RELEVANTES = [
   'suscripciones',
   'pagos',
   'planes',
+  'cuentas_de_cobro',
   'usuarios',
   'sitios',
   'puertas',
@@ -31,6 +32,7 @@ export const TABLAS_RELEVANTES = [
 
 const SINGULAR: Readonly<Record<string, string>> = {
   planes: 'plan',
+  cuentas_de_cobro: 'cuenta_de_cobro',
   sitios: 'sitio',
   puertas: 'puerta',
   dispositivos: 'dispositivo',
@@ -40,8 +42,8 @@ const SINGULAR: Readonly<Record<string, string>> = {
 /** Columnas que no le dicen nada al super admin en un cambio genérico. */
 const CAMPOS_INTERNOS: readonly string[] = [
   'pin_generado_at',
+  'pin_compartido_at',
   'contrasena_temporal',
-  'rol_preferido_id',
   'updated_at',
 ];
 
@@ -95,8 +97,10 @@ export function clasificarCambio(c: CambioCrudo): string {
         if (c.accion === 'creado') return 'equipo.agregado';
         if (c.despues?.activo === 0) return 'equipo.desactivado';
         if (cambio(c.despues, 'contrasena_temporal')) return 'equipo.contrasena_cambiada';
-      } else if (c.accion !== 'creado' && cambio(c.despues, 'pin_generado_at')) {
-        return 'usuario.pin_regenerado';
+      } else if (c.accion !== 'creado') {
+        // Compartir el PIN solo mueve esta fecha; regenerarlo también cambia `pin_generado_at`
+        if (cambio(c.despues, 'pin_compartido_at')) return 'usuario.pin_compartido';
+        if (cambio(c.despues, 'pin_generado_at')) return 'usuario.pin_regenerado';
       }
       break;
     default:

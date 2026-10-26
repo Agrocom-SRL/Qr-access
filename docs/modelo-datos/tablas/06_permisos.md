@@ -24,7 +24,7 @@ El SQL completo está en `03-schema-sql.md`.
 ## Reglas
 
 - Se siembra con `db/seeds/01_catalogo.sql` (idempotente, también en producción); nunca a mano.
-- Núcleo V1: `organizacion.puerta.ver`, `accesos.qr.{emitir,ver,ver_todos,anular,anular_todos}`, `accesos.evento.{ver,ver_todos}`.
+- Núcleo V1: `organizacion.puerta.ver`, `accesos.qr.{generar,ver,ver_todos,anular,anular_todos}`, `accesos.evento.{ver,ver_todos}`.
 
 ## Dudas
 

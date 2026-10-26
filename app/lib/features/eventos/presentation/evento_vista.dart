@@ -19,13 +19,13 @@ String textoMotivoEvento(AppLocalizations l10n, String motivoCode) =>
     };
 
 /// Línea secundaria de un evento: el motivo si fue rechazado; si fue
-/// permitido, la etiqueta del QR y quién lo emitió ("Proveedor de gas · QR
+/// permitido, la etiqueta del QR y quién lo generó ("Proveedor de gas · QR
 /// de Jorge R.").
 String textoDetalleEvento(AppLocalizations l10n, EventoAcceso evento) {
   if (!evento.esPermitido) return textoMotivoEvento(l10n, evento.motivoCode);
   final etiqueta = evento.qrEtiqueta ?? l10n.qrSinEtiqueta;
-  final emisor = evento.emisorEtiqueta;
-  return emisor == null ? etiqueta : l10n.eventoQrDe(etiqueta, emisor);
+  final generador = evento.generadorEtiqueta;
+  return generador == null ? etiqueta : l10n.eventoQrDe(etiqueta, generador);
 }
 
 /// Texto del resultado de un evento.

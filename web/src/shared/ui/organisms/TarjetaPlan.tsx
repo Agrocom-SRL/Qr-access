@@ -4,6 +4,8 @@ import { cx } from '../../lib/cx';
 import styles from './TarjetaPlan.module.css';
 
 interface Props {
+  /** Nombre del plan, sobre el cupo. */
+  nombre: string;
   /** "Hasta" */
   etiquetaCupo: string;
   /** "100 usuarios" */
@@ -19,6 +21,7 @@ interface Props {
 
 /** Tarjeta de un plan: cupo grande, ícono, cuerpo y pie. La reusan Planes (A09) y "Elige el plan" (A04b). */
 export function TarjetaPlan({
+  nombre,
   etiquetaCupo,
   cupo,
   children,
@@ -30,6 +33,7 @@ export function TarjetaPlan({
     <article className={cx(styles.tarjeta, seleccionada && styles.seleccionada)}>
       <div className={styles.cabecera}>
         <div>
+          <p className={styles.nombre}>{nombre}</p>
           <p className={styles.hasta}>{etiquetaCupo}</p>
           <h2 className={styles.cupo}>{cupo}</h2>
         </div>

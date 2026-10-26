@@ -8,5 +8,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 export 'package:agrocom_acceso/core/plataforma/almacen_qr_contrato.dart';
 
-/// Almacén de los textos de QR emitidos, según la plataforma.
+/// Almacén de los textos de QR generados, según la plataforma.
 final almacenQrProvider = Provider<AlmacenQr>((ref) => crearAlmacenQr());

@@ -7,12 +7,14 @@ import { FilaClaveValor } from '../../../../shared/ui/molecules/FilaClaveValor';
 import { FormularioSecciones } from '../../../../shared/ui/organisms/FormularioSecciones';
 import { formatearNumero } from '../../../../l10n/formatos';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
+import { CuentasParaPagar } from '../../../cobro';
 import { CamposDePago, type FormularioDePago } from '../../../pagos';
 import {
   validarPagoDeAlta,
   venceUnAnioDespues,
   type BorradorDeCuenta,
   type DatosDePagoDeAlta,
+  nombreCompletoDelResponsable,
 } from '../../domain/alta';
 import styles from './PasoConfirmar.module.css';
 
@@ -54,12 +56,14 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
               <FilaClaveValor clave={t('razonSocial')}>{empresa.razonSocial}</FilaClaveValor>
               <FilaClaveValor clave={t('codigoNit')}>
                 <TextoMono fuerte>
-                  {empresa.codigo} · {empresa.nit}
+                  {empresa.codigo}
+                  {empresa.nit.trim() === '' ? '' : ` · ${empresa.nit.trim()}`}
                 </TextoMono>
               </FilaClaveValor>
               <FilaClaveValor clave={t('ciudad')}>{empresa.ciudad}</FilaClaveValor>
               <FilaClaveValor clave={t('responsableTitulo')}>
-                {empresa.contactoNombre} · {empresa.contactoCorreo}
+                {nombreCompletoDelResponsable(empresa)}
+                {empresa.contactoCorreo.trim() === '' ? '' : ` · ${empresa.contactoCorreo.trim()}`}
               </FilaClaveValor>
             </dl>
           ),
@@ -116,6 +120,9 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
                   datos={datosDePago}
                   errores={validarPagoDeAlta(pago)}
                   tocados={tocados}
+                  bajoElMedio={
+                    pago.medio === 'efectivo' ? undefined : <CuentasParaPagar metodo={pago.medio} />
+                  }
                   onCambio={(parcial) => {
                     onPago({ ...pago, ...parcial });
                   }}
@@ -125,20 +132,6 @@ export function PasoConfirmar({ borrador, plan, onEditar, onPago }: Props) {
                 />
               )}
             </div>
-          ),
-        },
-        {
-          id: 'resumen-admin',
-          titulo: t('secciones.administrador'),
-          accion: editar(2),
-          contenido: (
-            <dl>
-              <FilaClaveValor clave={t('nombreAdministrador')}>
-                {vigencia.adminIgualAlResponsable
-                  ? empresa.contactoNombre
-                  : vigencia.administradorNombre}
-              </FilaClaveValor>
-            </dl>
           ),
         },
       ]}

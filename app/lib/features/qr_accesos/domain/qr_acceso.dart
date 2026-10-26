@@ -10,8 +10,8 @@ class PuertaDeQr {
   final String nombre;
 }
 
-/// QR que la persona ya emitió, tal como aparece en el listado. No trae el
-/// `texto` del token: ese solo llega al emitirlo (ADR 0008).
+/// QR que la persona ya generó, tal como aparece en el listado. No trae el
+/// `texto` del token: ese solo llega al generarlo (ADR 0008).
 @immutable
 class QrAcceso {
   const new({
@@ -27,7 +27,7 @@ class QrAcceso {
 
   final String id;
 
-  /// Nota libre de quien lo emitió (D-21). `null` si no se escribió una.
+  /// Nota libre de quien lo generó (D-21). `null` si no se escribió una.
   final String? etiqueta;
   final EstadoQr estado;
   final DateTime venceAt;
@@ -43,11 +43,11 @@ class QrAcceso {
   String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');
 }
 
-/// QR emitido. `texto` es el token en claro: el servidor no lo conserva (solo
-/// su hash); el dispositivo que lo emitió lo guarda cifrado hasta que vence
+/// QR generado. `texto` es el token en claro: el servidor no lo conserva (solo
+/// su hash); el dispositivo que lo generó lo guarda cifrado hasta que vence
 /// para poder volver a mostrarlo (ADR 0008).
 @immutable
-class QrEmitido {
+class QrGenerado {
   const new({
     required this.id,
     required this.texto,
@@ -64,12 +64,12 @@ class QrEmitido {
   final String? etiqueta;
   final List<PuertaDeQr> puertas;
 
-  /// `true` si se vuelve a abrir desde Mis QR: el QR ya se emitió y se puede
+  /// `true` si se vuelve a abrir desde Mis QR: el QR ya se generó y se puede
   /// ver de nuevo, así que cerrar no pide confirmación.
   final bool repaso;
 
   /// `true` si es el último QR propio guardado en el dispositivo, mostrado
-  /// porque no hay conexión para emitir uno nuevo.
+  /// porque no hay conexión para generar uno nuevo.
   final bool respaldo;
 
   String get nombresDePuertas => puertas.map((p) => p.nombre).join(' · ');

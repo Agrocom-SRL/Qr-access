@@ -16,7 +16,6 @@ const _inicio = RespuestaInicio(
   refresco: 'ref',
   usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
   cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
-  roles: [RolSesion(id: 'r1', nombre: 'Usuario')],
   rolActivoId: 'r1',
 );
 

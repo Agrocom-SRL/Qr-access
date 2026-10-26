@@ -127,7 +127,6 @@ CREATE TABLE usuarios (
   username VARCHAR(60) NULL,
   contrasena_hash VARCHAR(255) NULL,
   contrasena_temporal TINYINT(1) NOT NULL DEFAULT 0,
-  rol_preferido_id BIGINT UNSIGNED NULL,
   activo TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
@@ -138,7 +137,6 @@ CREATE TABLE usuarios (
   tenant_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(tenant_id, 0)) STORED,
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_usuarios_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_usuarios_rol_preferido FOREIGN KEY (rol_preferido_id) REFERENCES roles (id),
   UNIQUE KEY uq_usuarios_pin (tenant_clave, pin_indice, vigente),
   UNIQUE KEY uq_usuarios_username (tenant_clave, username, vigente),
   CONSTRAINT ck_usuarios_credencial CHECK (
@@ -393,7 +391,7 @@ Migraciones: `db/migrations/20261009100014_create_qr_accesos.sql` y `20261012100
 CREATE TABLE qr_accesos (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
-  emitido_por BIGINT UNSIGNED NOT NULL,
+  generado_por BIGINT UNSIGNED NOT NULL,
   token_hash CHAR(64) NOT NULL,
   etiqueta VARCHAR(60) NULL,
   es_propio TINYINT(1) NOT NULL DEFAULT 0,
@@ -410,12 +408,12 @@ CREATE TABLE qr_accesos (
   deleted_by BIGINT UNSIGNED NULL,
   propio_activo TINYINT GENERATED ALWAYS AS (IF(es_propio = 1 AND anulado_at IS NULL AND usado_at IS NULL AND deleted_at IS NULL, 1, NULL)) STORED,
   CONSTRAINT fk_qr_accesos_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_qr_accesos_emisor FOREIGN KEY (emitido_por) REFERENCES usuarios (id),
+  CONSTRAINT fk_qr_accesos_generador FOREIGN KEY (generado_por) REFERENCES usuarios (id),
   CONSTRAINT fk_qr_accesos_dispositivo FOREIGN KEY (usado_dispositivo_id) REFERENCES dispositivos (id),
   CONSTRAINT fk_qr_accesos_anulador FOREIGN KEY (anulado_por) REFERENCES usuarios (id),
   UNIQUE KEY uq_qr_accesos_token (token_hash),
-  UNIQUE KEY uq_qr_accesos_propio_activo (emitido_por, propio_activo),
-  KEY idx_qr_accesos_emisor (tenant_id, emitido_por, created_at),
+  UNIQUE KEY uq_qr_accesos_propio_activo (generado_por, propio_activo),
+  KEY idx_qr_accesos_generador (tenant_id, generado_por, created_at),
   KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```
@@ -475,16 +473,17 @@ CREATE TABLE eventos_acceso (
 
 ## cuenta_datos_empresa
 
-Migración: `db/migrations/20261012100004_create_cuenta_datos_empresa.sql`
+Migraciones: `db/migrations/20261012100004_create_cuenta_datos_empresa.sql` y `db/migrations/20261021100001_ajusta_cuenta_datos_empresa.sql` (NIT y teléfono opcionales, apellido del contacto). Se muestra el esquema resultante.
 
 ```sql
 CREATE TABLE cuenta_datos_empresa (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
-  nit VARCHAR(20) NOT NULL,
+  nit VARCHAR(20) NULL,
   ciudad VARCHAR(80) NOT NULL,
   contacto_nombre VARCHAR(120) NOT NULL,
-  contacto_telefono VARCHAR(30) NOT NULL,
+  contacto_apellido VARCHAR(120) NOT NULL DEFAULT '',
+  contacto_telefono VARCHAR(30) NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   deleted_at DATETIME(3) NULL,
@@ -527,7 +526,7 @@ CREATE TABLE pagos (
   KEY idx_pagos_tenant_fecha (tenant_id, fecha_pago),
   KEY idx_pagos_fecha (fecha_pago),
   CONSTRAINT ck_pagos_tipo CHECK (tipo IN ('renovacion', 'mejora_de_plan')),
-  CONSTRAINT ck_pagos_medio CHECK (medio IN ('transferencia', 'deposito', 'efectivo')),
+  CONSTRAINT ck_pagos_medio CHECK (medio IN ('transferencia', 'qr', 'efectivo')),
   CONSTRAINT ck_pagos_monto CHECK (monto > 0),
   CONSTRAINT ck_pagos_periodo CHECK (periodo_desde < periodo_hasta)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -564,4 +563,116 @@ ALTER TABLE pagos
   ADD COLUMN cuenta_destino VARCHAR(60) NULL AFTER banco,
   ADD COLUMN comprobante_id BIGINT UNSIGNED NULL AFTER cuenta_destino,
   ADD CONSTRAINT fk_pagos_comprobante FOREIGN KEY (comprobante_id) REFERENCES comprobantes (id);
+```
+
+## unidades
+
+Migración: `db/migrations/20261022100001_create_unidades.sql`
+
+```sql
+CREATE TABLE unidades (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  sitio_id BIGINT UNSIGNED NOT NULL,
+  nombre VARCHAR(80) NOT NULL,
+  titular_id BIGINT UNSIGNED NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_unidades_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_unidades_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
+  CONSTRAINT fk_unidades_titular FOREIGN KEY (titular_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_unidades_nombre (sitio_id, nombre, vigente),
+  UNIQUE KEY uq_unidades_titular (titular_id, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+```
+
+## usuarios: superior en el árbol
+
+Migración: `db/migrations/20261022100002_alter_usuarios_superior.sql`
+
+```sql
+ALTER TABLE usuarios
+  ADD COLUMN superior_id BIGINT UNSIGNED NULL AFTER tenant_id,
+  ADD KEY idx_usuarios_superior (superior_id),
+  ADD CONSTRAINT fk_usuarios_superior FOREIGN KEY (superior_id) REFERENCES usuarios (id);
+```
+
+## usuarios y usuario_roles: un rol por usuario
+
+Migración: `db/migrations/20261022100003_un_rol_por_usuario.sql`
+
+```sql
+-- Antes (solo si ya hay datos): da de baja los roles de más y deja el de mayor nivel por usuario.
+ALTER TABLE usuario_roles ADD UNIQUE KEY uq_usuario_roles_usuario (usuario_id, vigente);
+ALTER TABLE usuarios DROP FOREIGN KEY fk_usuarios_rol_preferido, DROP COLUMN rol_preferido_id;
+```
+
+Migración de datos: `db/migrations/20261022100004_vincula_usuarios_existentes.sql` cuelga a los usuarios de cuenta que aún no tienen superior del primer Administrador de su cuenta.
+
+## cuentas: tope de Miembros por Titular
+
+Migración: `db/migrations/20261022100005_add_max_miembros_a_cuentas.sql`
+
+```sql
+ALTER TABLE cuentas
+  ADD COLUMN max_miembros_por_titular SMALLINT UNSIGNED NOT NULL DEFAULT 10 AFTER activo,
+  ADD CONSTRAINT ck_cuentas_max_miembros CHECK (max_miembros_por_titular >= 1);
+```
+
+## usuarios: PIN compartido
+
+Migración: `db/migrations/20261022100006_add_pin_compartido_a_usuarios.sql`
+
+```sql
+ALTER TABLE usuarios ADD COLUMN pin_compartido_at DATETIME(3) NULL AFTER pin_generado_at;
+```
+
+## qr_accesos: `generado_por`
+
+Migración: `db/migrations/20261022100007_renombra_emitir_a_generar.sql`. Un QR se genera, no se emite: `emitido_por` pasa a `generado_por` (con su índice `idx_qr_accesos_generador` y su clave foránea `fk_qr_accesos_generador`) y el permiso `accesos.qr.emitir` pasa a `accesos.qr.generar`. El `CREATE TABLE` de arriba muestra la tabla ya con el nombre nuevo; la migración original conserva el nombre con el que se creó.
+
+```sql
+ALTER TABLE qr_accesos DROP FOREIGN KEY fk_qr_accesos_emisor;
+ALTER TABLE qr_accesos RENAME COLUMN emitido_por TO generado_por;
+ALTER TABLE qr_accesos RENAME INDEX idx_qr_accesos_emisor TO idx_qr_accesos_generador;
+ALTER TABLE qr_accesos ADD CONSTRAINT fk_qr_accesos_generador FOREIGN KEY (generado_por) REFERENCES usuarios (id);
+UPDATE permisos SET codigo = 'accesos.qr.generar' WHERE codigo = 'accesos.qr.emitir';
+```
+
+
+## cuentas_de_cobro
+
+Migración: `db/migrations/20261022100010_create_cuentas_de_cobro.sql`. Dónde recibe AGROCOM los pagos (ADR 0029); es de plataforma, sin `tenant_id`.
+
+```sql
+CREATE TABLE cuentas_de_cobro (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  metodo VARCHAR(20) NOT NULL,
+  banco VARCHAR(60) NOT NULL,
+  titular VARCHAR(120) NULL,
+  numero_cuenta VARCHAR(40) NULL,
+  tipo_cuenta VARCHAR(20) NULL,
+  imagen_id BIGINT UNSIGNED NULL,
+  nota VARCHAR(200) NULL,
+  activo TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_cuentas_de_cobro_imagen FOREIGN KEY (imagen_id) REFERENCES comprobantes (id),
+  UNIQUE KEY uq_cuentas_de_cobro_numero (banco, numero_cuenta, vigente),
+  CONSTRAINT ck_cuentas_de_cobro_metodo CHECK (metodo IN ('transferencia', 'qr')),
+  CONSTRAINT ck_cuentas_de_cobro_tipo CHECK (tipo_cuenta IS NULL OR tipo_cuenta IN ('ahorro', 'corriente')),
+  CONSTRAINT ck_cuentas_de_cobro_transferencia CHECK (metodo <> 'transferencia' OR (titular IS NOT NULL AND numero_cuenta IS NOT NULL)),
+  CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 ```

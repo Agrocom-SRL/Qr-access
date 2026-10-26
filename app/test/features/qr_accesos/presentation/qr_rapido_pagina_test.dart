@@ -4,7 +4,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
@@ -17,7 +17,7 @@ import '../../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
-final _emitido = QrEmitido(
+final _generado = QrGenerado(
   id: 'qr1',
   texto: 'AQ1.token',
   venceAt: DateTime.utc(2026, 10, 9, 16, 30),
@@ -38,12 +38,12 @@ const _puertas = [
 Future<QrAccesosRepositorioFalso> _montar(
   WidgetTester tester, {
   List<Puerta> puertas = _puertas,
-  Exception? errorEmitir,
-  QrEmitido? respaldo,
+  Exception? errorGenerar,
+  QrGenerado? respaldo,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(
-    emitido: _emitido,
-    errorEmitir: errorEmitir,
+    generado: _generado,
+    errorGenerar: errorGenerar,
     respaldo: respaldo,
   );
   await montarPantalla(
@@ -56,13 +56,13 @@ Future<QrAccesosRepositorioFalso> _montar(
       ),
       relojProvider.overrideWithValue(() => _ahora),
       sesionControladorProvider.overrideWith(
-        () => SesionFalsa(sesionCon(permisos: {Permisos.emitirQr})),
+        () => SesionFalsa(sesionCon(permisos: {Permisos.generarQrPropio})),
       ),
     ],
   );
   await tester.pump();
   await tester.pump();
-  // El Lottie de emisión dura 1 s y el QR entra en 300 ms.
+  // El Lottie de generación dura 1 s y el QR entra en 300 ms.
   await tester.pump(const Duration(seconds: 1));
   await tester.pump(const Duration(milliseconds: 16));
   await tester.pumpAndSettle();
@@ -70,15 +70,15 @@ Future<QrAccesosRepositorioFalso> _montar(
 }
 
 void main() {
-  testWidgets('emite sin formulario: todas las puertas y 2 horas', (
+  testWidgets('genera sin formulario: todas las puertas y 2 horas', (
     tester,
   ) async {
     final repositorio = await _montar(tester);
 
-    final emision = repositorio.emisiones.single;
-    expect(emision.puertaIds, ['p1', 'p2']);
-    expect(emision.vigencia.opcion, OpcionVigencia.finDelDia);
-    expect(emision.etiqueta, isNotNull);
+    final generacion = repositorio.generaciones.single;
+    expect(generacion.puertaIds, ['p1', 'p2']);
+    expect(generacion.vigencia.opcion, OpcionVigencia.finDelDia);
+    expect(generacion.etiqueta, isNotNull);
     expect(find.byType(VisorQr), findsOneWidget);
   });
 
@@ -95,28 +95,28 @@ void main() {
     expect(find.text('destino /inicio'), findsOneWidget);
   });
 
-  testWidgets('sin puertas, lo dice y no emite', (tester) async {
+  testWidgets('sin puertas, lo dice y no genera', (tester) async {
     final repositorio = await _montar(tester, puertas: const []);
     final textos = textosEn(tester);
 
-    expect(repositorio.emisiones, isEmpty);
-    expect(find.text(textos.qrEmitirSinPuertas), findsOneWidget);
+    expect(repositorio.generaciones, isEmpty);
+    expect(find.text(textos.qrGenerarSinPuertas), findsOneWidget);
   });
 
   testWidgets('si la API falla, ofrece reintentar', (tester) async {
     final repositorio = await _montar(
       tester,
-      errorEmitir: const ErrorApi(code: ErrorApi.sinConexion),
+      errorGenerar: const ErrorApi(code: ErrorApi.sinConexion),
     );
     final textos = textosEn(tester);
 
     expect(find.byType(VisorQr), findsNothing);
     expect(find.text(textos.qrRapidoError), findsOneWidget);
-    repositorio.errorEmitir = null;
+    repositorio.errorGenerar = null;
     await tester.tap(find.text(textos.comunReintentar));
     await tester.pump();
     await tester.pump();
-    expect(repositorio.emisiones, hasLength(2));
+    expect(repositorio.generaciones, hasLength(2));
   });
 
   testWidgets('sin internet muestra el último QR propio guardado', (
@@ -124,13 +124,13 @@ void main() {
   ) async {
     await _montar(
       tester,
-      errorEmitir: const ErrorApi(code: ErrorApi.sinConexion),
-      respaldo: QrEmitido(
+      errorGenerar: const ErrorApi(code: ErrorApi.sinConexion),
+      respaldo: QrGenerado(
         id: 'qr0',
         texto: 'AQ1.respaldo',
-        venceAt: _emitido.venceAt,
+        venceAt: _generado.venceAt,
         etiqueta: 'Entrada para Ana',
-        puertas: _emitido.puertas,
+        puertas: _generado.puertas,
         respaldo: true,
       ),
     );
@@ -146,8 +146,8 @@ void main() {
   ) async {
     await _montar(
       tester,
-      errorEmitir: const ErrorApi(code: 'servidor.error'),
-      respaldo: _emitido,
+      errorGenerar: const ErrorApi(code: 'servidor.error'),
+      respaldo: _generado,
     );
 
     expect(find.byType(VisorQr), findsNothing);

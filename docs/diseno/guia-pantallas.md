@@ -26,7 +26,7 @@ Un componente que sirve a dos features sube a `lib/shared/widgets/`. Las feature
 | C03 · E03 | Elegir rol | `sesion/presentation/elegir_rol_pagina.dart` (`TarjetaSeleccionable`, último rol preseleccionado) |
 | C04a · E04a | Inicio de usuario | `inicio/presentation/widgets/inicio_usuario.dart` (hero, 4 accesos rápidos, vigentes hoy) |
 | C04b · E04b | Tablero de administración | `inicio/presentation/widgets/inicio_admin.dart` (3 `TarjetaIndicador`, últimos eventos, refresco cada 30 s) |
-| C05a–c · E05 | Emitir QR | `qr_accesos/presentation/emitir_qr_pagina.dart` (stepper; resumen fijo a la derecha en expandido) |
+| C05a–c · E05 | Generar QR | `qr_accesos/presentation/emitir_qr_pagina.dart` (stepper; resumen fijo a la derecha en expandido) |
 | C06 · E06 · S05 | QR emitido | `qr_accesos/presentation/mostrar_qr_pagina.dart` (`PlantillaPantallaCompleta`, confirmación al cerrar sin compartir) |
 | C07 · C07b · E07 | Mis QR | `qr_accesos/presentation/mis_qr_pagina.dart` (pastillas con conteos, tabla en expandido, "Vigente → Anulado") |
 | C08 · E08 | Eventos | `eventos/presentation/eventos_pagina.dart` (filtros por resultado y puerta, grupos por día, tabla con segundos) |
@@ -52,8 +52,8 @@ Orden fijo: **título** (grande, en el contenido) con la acción principal a la 
 - **`activo` nunca va en el formulario**: un registro nace activo y se da de baja con una acción aparte confirmada.
 - Cancelar vuelve al listado.
 
-### 3.4 Stepper (Emitir QR)
-`IndicadorPasos` + un contenido por paso + `BarraDeAcciones` (Atrás · Siguiente / Emitir QR). Cada paso valida lo suyo antes de avanzar; el error de la API se muestra en el paso 3 con Reintentar. En expandido, `ResumenEmision` fijo a la derecha con el botón del paso.
+### 3.4 Stepper (Generar QR)
+`IndicadorPasos` + un contenido por paso + `BarraDeAcciones` (Atrás · Siguiente / Generar QR). Cada paso valida lo suyo antes de avanzar; el error de la API se muestra en el paso 3 con Reintentar. En expandido, `ResumenEmision` fijo a la derecha con el botón del paso.
 
 ### 3.5 Pantalla completa
 `PlantillaPantallaCompleta` para lo que se ve una sola vez (QR emitido, PIN generado): cerrar arriba a la izquierda, acción principal abajo, aviso en `AccesoAviso` de advertencia. Cerrar sin compartir el QR pide confirmación.

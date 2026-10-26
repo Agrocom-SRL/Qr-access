@@ -9,17 +9,21 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/nivel_usuario.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/pestana_admin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/seccion_puertas_asignadas.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/seccion_unidad.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/selector_de_rol.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/selector_sufijo_pin.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
@@ -27,9 +31,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Alta de un usuario (etiqueta y roles → PIN una sola vez) o edición de uno
-/// existente (HU-06). Tras guardar una edición vuelve a la lista de usuarios
-/// con el aviso de "Cambios guardados".
+/// Alta de un usuario (etiqueta, rol y, para un Titular, su unidad → PIN una
+/// sola vez) o edición de uno existente (HU-06, ADR 0028). El rol define el
+/// nivel y no se edita: al editar solo cambian el nombre y las puertas. Tras
+/// guardar una edición vuelve a la lista de usuarios con el aviso de "Cambios
+/// guardados".
 class UsuarioFormularioPagina extends ConsumerStatefulWidget {
   const new({this.usuarioId, super.key});
 
@@ -44,9 +50,38 @@ class UsuarioFormularioPagina extends ConsumerStatefulWidget {
 class _UsuarioFormularioPaginaEstado
     extends ConsumerState<UsuarioFormularioPagina> {
   final _etiqueta = TextEditingController();
+  final _unidad = TextEditingController();
   var _cargado = false;
 
+  /// El usuario que se edita: se muestran su rol y su unidad, sin editarlos.
+  Usuario? _usuario;
+
   bool get _esNuevo => widget.usuarioId == null;
+
+  /// El Titular no elige rol (ADR 0028 §3): todo lo que crea es Miembro, así
+  /// que se deja puesto apenas llegan los roles y no se muestra selector.
+  void _fijarMiembroSiEsTitular() {
+    if (!(_esNuevo && _actorEsTitular)) return;
+    final miembro = ref
+        .watch(rolesProvider)
+        .value
+        ?.where((r) => nivelDeRol(r.nombre) == NivelUsuario.miembro)
+        .firstOrNull;
+    if (miembro == null) return;
+    if (ref.read(formularioUsuarioProvider).rol?.id == miembro.id) return;
+    // Fuera del build: no se puede cambiar un provider mientras se arma.
+    unawaited(
+      Future.microtask(
+        () => ref.read(formularioUsuarioProvider.notifier).elegirRol(miembro),
+      ),
+    );
+  }
+
+  bool get _actorEsTitular {
+    final sesion = ref.read(sesionControladorProvider);
+    return sesion is SesionAutenticada &&
+        nivelDeRol(sesion.rolActivo.nombre) == NivelUsuario.titular;
+  }
 
   @override
   void initState() {
@@ -65,12 +100,14 @@ class _UsuarioFormularioPaginaEstado
   @override
   void dispose() {
     _etiqueta.dispose();
+    _unidad.dispose();
     super.dispose();
   }
 
   void _cargarDesde(Usuario usuario) {
     if (_cargado) return;
     _cargado = true;
+    _usuario = usuario;
     _etiqueta.text = usuario.etiqueta ?? '';
     unawaited(
       Future.microtask(
@@ -126,11 +163,11 @@ class _UsuarioFormularioPaginaEstado
 
   @override
   Widget build(BuildContext context) {
+    _fijarMiembroSiEsTitular();
     final l10n = context.l10n;
     final tokens = context.tokens;
     final estado = ref.watch(formularioUsuarioProvider);
     final controlador = ref.read(formularioUsuarioProvider.notifier);
-    final roles = ref.watch(rolesProvider);
     final errorApi = estado.errorApi;
     final errorDatos = estado.errorDatos;
     final puedeAsignar = ref
@@ -201,41 +238,37 @@ class _UsuarioFormularioPaginaEstado
               ),
             ],
           ),
-          SeccionDeFormulario(
-            titulo: l10n.usuariosSeccionRoles,
-            campos: [
-              roles.when(
-                loading: () => const AccesoCargando(),
-                error: (error, _) => AccesoAviso(
-                  tono: TonoAviso.peligro,
-                  texto: textoDeError(l10n, error),
-                ),
-                data: (lista) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (final rol in lista)
-                      CheckboxListTile(
-                        value: estado.rolIds.contains(rol.id),
-                        onChanged: (_) => controlador.alternarRol(rol.id),
-                        title: Text(rol.nombre),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    if (errorDatos == ErrorDatosUsuario.sinRoles)
-                      Padding(
-                        padding: EdgeInsets.only(top: tokens.espacio.s),
-                        child: Text(
-                          l10n.usuariosErrorSinRoles,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: tokens.colores.peligro),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          if (!(_esNuevo && _actorEsTitular))
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionRoles,
+              campos: [
+                if (_esNuevo)
+                  SelectorDeRol(
+                    conError: errorDatos == ErrorDatosUsuario.sinRol,
+                  )
+                else
+                  Wrap(
+                    spacing: tokens.espacio.s,
+                    runSpacing: tokens.espacio.xs,
+                    children: [
+                      for (final rol in _usuario?.roles ?? const <Rol>[])
+                        ChipEtiqueta(texto: rol.nombre),
+                    ],
+                  ),
+              ],
+            ),
+          if (_esNuevo && estado.nivel == NivelUsuario.titular)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionUnidad,
+              campos: [
+                SeccionUnidad(controlador: _unidad, errorDatos: errorDatos),
+              ],
+            )
+          else if (_usuario?.unidad case final unidad?)
+            SeccionDeFormulario(
+              titulo: l10n.usuariosSeccionUnidad,
+              campos: [ChipEtiqueta(texto: unidad.nombre)],
+            ),
           if (_esNuevo)
             SeccionDeFormulario(
               titulo: l10n.usuariosSeccionPin,

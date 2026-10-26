@@ -4,7 +4,7 @@
 
 | Entorno | Dónde vive | Base de datos | Propósito |
 |---|---|---|---|
-| **local** | `docker compose up -d` (db + api); `--profile web` suma la app web en :8080 y `--profile panel`, el panel de administración (React) en :8081 | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
+| **local** | `docker compose up -d` (db + api); `--profile panel` suma el panel de administración (React) en :8080 y `--profile web`, la app web, que no tiene puerto propio y se abre en http://localhost:8080/app/ (como en producción; usa los dos perfiles juntos) | `qr_access` en el contenedor `db` (volumen `qr-access-db-data`, puerto 3307) | Desarrollo |
 | **tests local** | El mismo contenedor `db` | `qr_access_testing` (la fuerza el setup de Vitest) | `bin/verify`. Los tests la vacían: **nunca** apuntan a la de desarrollo |
 | **verificación** | Proyecto compose descartable `-p qr-access-verif` | Propia, efímera | Probar migraciones contra MySQL limpio (skill `verificacion`) |
 | **CI** | GitHub Actions (`ci.yml`) | Servicio `mysql:8.4` efímero | Lint, tipos, fronteras, tests y builds |
@@ -48,21 +48,23 @@ docker compose exec -T db mysql -uqr_access -pqr_access --default-character-set=
 docker compose up -d api                # reinicia la API para que lea el .env
 ```
 
+Para dejar la base de desarrollo como queda la de producción tras su reinicio (sin la cuenta demo, solo el super admin `root`): `bin/reiniciar-local` (con `--con-demo` vuelve a cargar la cuenta `DEM`). Hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes.
+
 Los seeds son idempotentes: se pueden correr de nuevo sin duplicar nada. `02_demo.sql` solo funciona con la `PIN_PIMIENTA` de desarrollo de `.env.example` (el índice del PIN es un HMAC con esa pimienta). La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
 
 | Qué | Valor |
 |---|---|
 | Cuenta | `DEM` (id 9001), plan y suscripción vigentes hasta 2036 |
 | Super admin del panel web (solo desarrollo) | usuario `root`, contraseña `12345678` |
-| PIN del **administrador** (todos los permisos de cuenta; también tiene el rol Usuario, así que elige rol al entrar) | `DEMADM1` |
-| PIN del **usuario** (emite y ve lo suyo) | `DEMUSR1` |
-| PIN del **guardia** (roles Guardia y Usuario: al entrar elige uno) | `DEMGRD1` |
+| PIN del **Administrador** (todos los permisos de cuenta) | `DEMADM1` |
+| PIN del **Miembro** (genera y ve lo suyo; cuelga del Administrador) | `DEMUSR1` |
+| PIN del **Guardia** (un solo rol) | `DEMGRD1` |
 | Sitio | `Sede demo` (zona `America/La_Paz`) |
 | Puertas y dispositivos | Ninguno a propósito (ADR 0026): las puertas se crean desde la app y las placas se vinculan desde el panel, como en producción. El seed retira las puertas 9001 y 9002 de versiones anteriores. |
 
 El PIN se escribe sin importar mayúsculas (`demadm1` entra igual).
 
-Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `root` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se emite un QR para esa puerta y se lee con el lector.
+Probar de punta a punta: la cuenta demo no trae puertas ni lectores, así que primero se crean. Con el administrador `DEMADM1` se crea una puerta en la app (Administración › Puertas) y con el super admin `root` se vincula una placa en el panel (**Placas › Vincular**, y se mantiene pulsado el botón de la placa 5 s; ver `docs/hardware/README.md`). Con eso la placa recibe su credencial `Dispositivo <id>.<clave>` y, desde la app, se genera un QR para esa puerta y se lee con el lector.
 
 Para el firmware en la mesa: compilar con `pio run -e esp32-dev -t upload` y, por serie, `set api_url http://<IP del Mac>:3000` y `reiniciar` (la compilación de desarrollo admite HTTP plano; la de producción trae la URL real de fábrica). Con 5 PIN erróneos seguidos desde la misma IP y para la misma cuenta, el login se bloquea un minuto (el doble en cada bloqueo siguiente, hasta una hora); reiniciar la API lo limpia, porque el límite vive en memoria.
 

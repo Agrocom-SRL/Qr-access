@@ -10,9 +10,14 @@ abstract final class Permisos {
   /// Ver el estado de las puertas y sus lectores (pestaña Puertas).
   static const supervisarPuertas = 'organizacion.puerta.supervisar';
 
-  static const emitirQr = 'accesos.qr.emitir';
+  /// Generar QR de visitas para compartirlos. El Guardia no lo tiene (ADR 0028
+  /// §5): solo usa el suyo, con [generarQrPropio].
+  static const generarQr = 'accesos.qr.generar';
 
-  /// Listar los QR emitidos: los propios, o todos los de la cuenta con
+  /// Generar el QR propio ("Mi QR de acceso"), para usarlo en este dispositivo.
+  static const generarQrPropio = 'accesos.qr.generar_propio';
+
+  /// Listar los QR generados: los propios, o todos los de la cuenta con
   /// `accesos.qr.ver_todos`.
   static const verQr = 'accesos.qr.ver';
 
@@ -39,4 +44,12 @@ abstract final class Permisos {
   static const crearUsuarios = 'seguridad.usuario.crear';
   static const editarUsuarios = 'seguridad.usuario.editar';
   static const eliminarUsuarios = 'seguridad.usuario.eliminar';
+
+  /// Ver cuánto del cupo de usuarios del plan usa la cuenta: solo el
+  /// Administrador (ADR 0028 §6).
+  static const verCupo = 'seguridad.cupo.ver';
+
+  /// Ver el uso de los usuarios de la rama (inactivos, ruidosos, Titulares
+  /// cerca del tope): solo el Administrador (ADR 0028 §4).
+  static const verEstadisticas = 'seguridad.estadistica.ver';
 }

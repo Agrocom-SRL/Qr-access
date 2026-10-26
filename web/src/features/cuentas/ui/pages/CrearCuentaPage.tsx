@@ -14,6 +14,7 @@ import { useCodigoDisponible, useCrearCuenta } from '../../application/useCuenta
 import {
   BORRADOR_VACIO,
   hoyIso,
+  nombreCompletoDelResponsable,
   validarEmpresa,
   validarPagoDeAlta,
   validarVigencia,
@@ -69,6 +70,18 @@ export function CrearCuentaPage() {
 
   const continuar = () => {
     if (!puedeContinuar) return;
+    // El administrador inicial parte con el nombre de la persona responsable; luego se edita a gusto.
+    setBorrador((actual) =>
+      actual.vigencia.administradorNombre.trim() === ''
+        ? {
+            ...actual,
+            vigencia: {
+              ...actual.vigencia,
+              administradorNombre: nombreCompletoDelResponsable(actual.empresa),
+            },
+          }
+        : actual,
+    );
     setPaso((actual) => actual + 1);
   };
 
@@ -151,7 +164,6 @@ export function CrearCuentaPage() {
       {idPaso === 'vigencia' ? (
         <PasoVigencia
           datos={borrador.vigencia}
-          nombreDelResponsable={borrador.empresa.contactoNombre}
           onCambio={(vigencia) => {
             setBorrador((actual) => ({ ...actual, vigencia }));
           }}

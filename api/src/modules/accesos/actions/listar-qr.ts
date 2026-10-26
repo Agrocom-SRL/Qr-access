@@ -23,7 +23,7 @@ export async function ejecutar(
 ): Promise<Listado<QrListado>> {
   const filtro = {
     estado: filtros.estado,
-    emitidoPor: tienePermiso(principal, 'accesos.qr.ver_todos') ? null : principal.usuarioId,
+    generadoPor: tienePermiso(principal, 'accesos.qr.ver_todos') ? null : principal.usuarioId,
     ahora,
   };
   const { limite, desplazamiento } = limiteDe(filtros.paginacion);

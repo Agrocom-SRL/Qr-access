@@ -5,18 +5,11 @@ import {
   crearEscenario,
   crearRol,
   crearUsuarioConPin,
+  PERMISOS_DE_GUARDIA,
   type Escenario,
   type UsuarioDePrueba,
 } from '../helpers/fixtures.js';
 import { conUsuario, iniciarSesion, type Sesion } from '../helpers/http.js';
-
-const PERMISOS_DE_GUARDIA = [
-  'organizacion.puerta.ver',
-  'organizacion.puerta.supervisar',
-  'accesos.qr.emitir',
-  'accesos.evento.ver',
-  'accesos.evento.ver_asignadas',
-];
 
 describe('asignación de guardias a puertas y alcance de sus eventos', () => {
   let prueba: AppDePrueba;

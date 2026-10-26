@@ -48,11 +48,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             paginaAnimada(context, state, const IngresoPagina()),
       ),
       GoRoute(
-        path: Rutas.elegirRol,
-        pageBuilder: (context, state) =>
-            paginaAnimada(context, state, const ElegirRolPagina()),
-      ),
-      GoRoute(
         path: Rutas.inicio,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const InicioPagina()),
@@ -67,24 +62,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => paginaAnimada(
           context,
           state,
-          EmitirQrPagina(
-            prellenado: state.extra is PrellenadoEmision
-                ? state.extra! as PrellenadoEmision
+          GenerarQrPagina(
+            prellenado: state.extra is PrellenadoGeneracion
+                ? state.extra! as PrellenadoGeneracion
                 : null,
           ),
           transicion: Transicion.flujo,
         ),
       ),
       GoRoute(
-        path: Rutas.qrEmitido,
+        path: Rutas.qrGenerado,
         // Sin el QR en `extra` (p. ej. al recargar la web), no hay nada que
         // mostrar.
         redirect: (context, state) =>
-            state.extra is QrEmitido ? null : Rutas.qrMios,
+            state.extra is QrGenerado ? null : Rutas.qrMios,
         pageBuilder: (context, state) => paginaAnimada(
           context,
           state,
-          MostrarQrPagina(qr: state.extra! as QrEmitido),
+          MostrarQrPagina(qr: state.extra! as QrGenerado),
           transicion: Transicion.flujo,
         ),
       ),
@@ -133,6 +128,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               context,
               state,
               const UsuarioFormularioPagina(),
+              transicion: Transicion.flujo,
+            ),
+          ),
+          GoRoute(
+            path: 'estadisticas',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              const EstadisticasUsuariosPagina(),
               transicion: Transicion.flujo,
             ),
           ),

@@ -4,10 +4,10 @@ library;
 
 export 'data/qr_accesos_repositorio.dart'
     show QrAccesosRepositorio, qrAccesosRepositorioProvider;
-export 'domain/datos_emision_qr.dart' show PrellenadoEmision, Vigencia;
+export 'domain/datos_generacion_qr.dart' show PrellenadoGeneracion, Vigencia;
 export 'domain/estado_qr.dart';
 export 'domain/qr_acceso.dart';
-export 'presentation/emitir_qr_pagina.dart' show EmitirQrPagina;
+export 'presentation/generar_qr_pagina.dart' show GenerarQrPagina;
 export 'presentation/mis_qr_pagina.dart' show MisQrPagina;
 export 'presentation/mostrar_qr_pagina.dart' show MostrarQrPagina;
 export 'presentation/qr_rapido_pagina.dart' show QrRapidoPagina;

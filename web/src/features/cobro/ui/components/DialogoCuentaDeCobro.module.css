@@ -1,0 +1,17 @@
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--esp16);
+}
+
+@media (width < 640px) {
+  .fila {
+    grid-template-columns: 1fr;
+  }
+}

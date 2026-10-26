@@ -1,4 +1,4 @@
-/// Estado de un QR emitido (ADR 0008). Los valores son los del contrato de la
+/// Estado de un QR generado (ADR 0008). Los valores son los del contrato de la
 /// API (`GET /qr-accesos?estado=`).
 enum EstadoQr {
   vigente('vigente'),

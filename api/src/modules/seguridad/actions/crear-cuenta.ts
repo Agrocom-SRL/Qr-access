@@ -24,10 +24,11 @@ import { conPinNuevo } from './pin-nuevo.js';
 export interface DatosDeNuevaCuenta {
   readonly razonSocial: string;
   readonly codigo: string;
-  readonly nit: string;
+  readonly nit: string | null;
   readonly ciudad: string;
   readonly contactoNombre: string;
-  readonly contactoTelefono: string;
+  readonly contactoApellido: string;
+  readonly contactoTelefono: string | null;
   readonly contactoCorreo: string | null;
   readonly planId: string;
   /** `aaaa-mm-dd`: el día de inicio, en la zona de la plataforma. */
@@ -37,10 +38,8 @@ export interface DatosDeNuevaCuenta {
   readonly pago?: {
     readonly monto: number;
     readonly fechaPago: string;
-    readonly medio: 'transferencia' | 'deposito' | 'efectivo';
+    readonly medio: 'transferencia' | 'qr' | 'efectivo';
     readonly referencia: string;
-    readonly banco?: string | undefined;
-    readonly cuentaDestino?: string | undefined;
     readonly comprobanteId?: string | undefined;
   };
 }
@@ -54,7 +53,7 @@ export interface CuentaCreada {
 
 /**
  * Alta de una cuenta cliente (HU-01), todo o nada en una transacción: la cuenta con su código
- * inmutable, los datos de la empresa, los tres roles base, su suscripción de 12 meses y el primer
+ * inmutable, los datos de la empresa, los cuatro roles base, su suscripción de 12 meses y el primer
  * administrador con un PIN sorteado por el servidor. Se firma con el usuario del super admin.
  * Sin `pago`, la suscripción queda pendiente de su primer pago: la cuenta existe, el administrador
  * tiene su PIN, pero nada abre hasta registrar el pago de alta (cobranza).
@@ -90,6 +89,7 @@ export async function ejecutar(
         nit: datos.nit,
         ciudad: datos.ciudad,
         contactoNombre: datos.contactoNombre,
+        contactoApellido: datos.contactoApellido,
         contactoTelefono: datos.contactoTelefono,
         contactoCorreo: datos.contactoCorreo,
       });
@@ -116,6 +116,7 @@ export async function ejecutar(
         async (sorteo) => {
           administradorId = await usuarios.crear(tx, {
             etiqueta: datos.administradorNombre,
+            superiorId: null,
             pinIndice: sorteo.indice,
             pinHash: sorteo.hash,
             ahora: new Date(),

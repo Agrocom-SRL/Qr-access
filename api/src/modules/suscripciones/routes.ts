@@ -5,6 +5,7 @@ import { TIPOS_DE_COMPROBANTE } from '../../platform/archivos/tipo-de-archivo.js
 import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as actualizarPrecios } from './actions/actualizar-precios.js';
+import * as gestionarCuentasDeCobro from './actions/gestionar-cuentas-de-cobro.js';
 import * as gestionarPlanes from './actions/gestionar-planes.js';
 import { ejecutar as cambiarEstado } from './actions/cambiar-estado.js';
 import { ejecutar as cambiarPlan } from './actions/cambiar-plan.js';
@@ -17,6 +18,10 @@ import {
 } from './actions/subir-comprobante.js';
 import {
   cuerpoDeCambioDePlan,
+  cuerpoDeCuentaDeCobroNueva,
+  cuerpoDeEdicionDeCuentaDeCobro,
+  parametrosDeCuentaDeCobro,
+  respuestaDeCuentasDeCobro,
   cuerpoDeEdicionDePlan,
   cuerpoDePlanNuevo,
   cuerpoDePago,
@@ -167,6 +172,85 @@ export function rutas({ pool, config }: DependenciasDeModulo): FastifyPluginCall
       (request) => gestionarPlanes.retirar(pool, request.params.id),
     );
 
+    // Las cuentas donde AGROCOM recibe los pagos (ADR 0029): de plataforma, sin cuenta de por medio.
+    app.get(
+      '/plataforma/cuentas-de-cobro',
+      {
+        schema: { tags: ETIQUETA, response: { 200: respuestaDeCuentasDeCobro } },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.cobro.ver'),
+      },
+      async () => ({ datos: await gestionarCuentasDeCobro.listar(pool) }),
+    );
+
+    app.post(
+      '/plataforma/cuentas-de-cobro',
+      {
+        schema: {
+          tags: ETIQUETA,
+          body: cuerpoDeCuentaDeCobroNueva,
+          response: { 201: respuestaDePlanCreado },
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.cobro.crear'),
+      },
+      async (request, reply) => {
+        const cuerpo = request.body;
+        const cuenta = await gestionarCuentasDeCobro.crear(pool, {
+          metodo: cuerpo.metodo,
+          banco: cuerpo.banco,
+          titular: cuerpo.titular ?? null,
+          numeroCuenta: cuerpo.numero_cuenta ?? null,
+          tipoCuenta: cuerpo.tipo_cuenta ?? null,
+          imagenId: cuerpo.imagen_id ?? null,
+          nota: cuerpo.nota ?? null,
+        });
+        return reply
+          .status(201)
+          .header('location', `/api/v1/plataforma/cuentas-de-cobro/${cuenta.id}`)
+          .send(cuenta);
+      },
+    );
+
+    app.patch(
+      '/plataforma/cuentas-de-cobro/:id',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuentaDeCobro,
+          body: cuerpoDeEdicionDeCuentaDeCobro,
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.cobro.editar'),
+      },
+      async (request, reply) => {
+        const cuerpo = request.body;
+        await gestionarCuentasDeCobro.editar(pool, request.params.id, {
+          banco: cuerpo.banco,
+          titular: cuerpo.titular,
+          numeroCuenta: cuerpo.numero_cuenta,
+          tipoCuenta: cuerpo.tipo_cuenta,
+          imagenId: cuerpo.imagen_id,
+          nota: cuerpo.nota,
+          activo: cuerpo.activo,
+        });
+        return reply.status(204).send();
+      },
+    );
+
+    app.delete(
+      '/plataforma/cuentas-de-cobro/:id',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuentaDeCobro },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('suscripciones.cobro.eliminar'),
+      },
+      async (request, reply) => {
+        await gestionarCuentasDeCobro.eliminar(pool, request.params.id);
+        return reply.status(204).send();
+      },
+    );
+
     // Todo lo que sigue opera DENTRO de la cuenta (ADR 0004 §7): el super admin firma cada cambio.
     const enLaCuenta = <T>(
       request: Parameters<typeof plataformaDe>[0],
@@ -194,8 +278,6 @@ export function rutas({ pool, config }: DependenciasDeModulo): FastifyPluginCall
             fechaPago: request.body.fecha_pago,
             medio: request.body.medio,
             referencia: request.body.referencia,
-            banco: request.body.banco,
-            cuentaDestino: request.body.cuenta_destino,
             comprobanteId: request.body.comprobante_id,
           }),
         );

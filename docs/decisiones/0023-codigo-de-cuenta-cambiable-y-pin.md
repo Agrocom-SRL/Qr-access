@@ -4,7 +4,7 @@
 
 ## Contexto
 
-El PIN de un usuario son 7 caracteres: el **código de la cuenta** (3 letras) más 4 al azar (ADR 0018). AGROCOM no conoce los PIN de los usuarios (se muestran una sola vez y se guardan hasheados), y cada administrador de la cuenta crea y regenera los PIN de sus usuarios. AGROCOM solo emite el primer PIN de administrador. Hasta ahora el código era inmutable porque el `pin_hash` era el argon2id del PIN completo: cambiar el código habría invalidado todos los PIN sin forma de recalcularlos.
+El PIN de un usuario son 7 caracteres: el **código de la cuenta** (3 letras) más 4 al azar (ADR 0018). AGROCOM no conoce los PIN de los usuarios (se muestran una sola vez y se guardan hasheados), y cada administrador de la cuenta crea y regenera los PIN de sus usuarios. AGROCOM solo genera el primer PIN de administrador. Hasta ahora el código era inmutable porque el `pin_hash` era el argon2id del PIN completo: cambiar el código habría invalidado todos los PIN sin forma de recalcularlos.
 
 ## Decisión
 

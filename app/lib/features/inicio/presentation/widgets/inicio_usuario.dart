@@ -4,12 +4,12 @@ import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
-import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
@@ -23,7 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Inicio del usuario (handoff C04a/E04a): hero "Emitir QR", accesos rápidos
+/// Inicio del usuario (handoff C04a/E04a): hero "Generar QR", accesos rápidos
 /// y los QR vigentes de hoy.
 class InicioUsuario extends ConsumerWidget {
   const new({required this.sesion, super.key});
@@ -40,17 +40,19 @@ class InicioUsuario extends ConsumerWidget {
         ? ref.watch(qrVigentesProvider)
         : null;
     final ahora = ref.read(relojProvider)();
-    final puedeEmitir = sesion.tiene(Permisos.emitirQr);
-    // El guardia tiene su QR propio, pero no comparte QR con otras personas.
+    final puedeGenerar = sesion.tiene(Permisos.generarQr);
+    final puedeQrPropio = sesion.tiene(Permisos.generarQrPropio);
+    // El guardia solo tiene su QR propio (no `generarQr`): ve el tablero de
+    // vigilancia en lugar del héroe de generar.
     final guardia = esGuardia(sesion);
-    final puedeCompartir = puedeEmitir && !guardia;
+    final puedeCompartir = puedeGenerar;
     final veEventosAqui = guardia && sesion.tiene(Permisos.verEventos);
     final eventos = veEventosAqui ? ref.watch(ultimosEventosProvider) : null;
     final resumenDeHoy = guardia ? ref.watch(resumenDeHoyProvider) : null;
     final ultimo = vigentes?.value?.datos.firstOrNull;
 
     final accesos = <_AccesoRapido>[
-      // Siempre visible para quien emite: sin un QR previo queda apagado en
+      // Siempre visible para quien genera: sin un QR previo queda apagado en
       // vez de desaparecer, para que los accesos no cambien de lugar.
       if (puedeCompartir)
         _AccesoRapido(
@@ -60,15 +62,15 @@ class InicioUsuario extends ConsumerWidget {
               ? null
               : () => context.go(
                   Rutas.qrNuevo,
-                  extra: PrellenadoEmision(
+                  extra: PrellenadoGeneracion(
                     puertaIds: ultimo.puertas.map((p) => p.id).toSet(),
                     etiqueta: ultimo.etiqueta,
                   ),
                 ),
         ),
-      // Emite al instante el QR propio, sin formulario, para usarlo en este
+      // Genera al instante el QR propio, sin formulario, para usarlo en este
       // mismo dispositivo.
-      if (puedeEmitir)
+      if (puedeQrPropio)
         _AccesoRapido(
           icono: Icons.person_pin_outlined,
           etiqueta: l10n.inicioQrPropio,
@@ -87,14 +89,6 @@ class InicioUsuario extends ConsumerWidget {
           etiqueta: l10n.navEventos,
           alTocar: () => context.go(Rutas.eventos),
         ),
-      if (sesion.tieneVariosRoles)
-        _AccesoRapido(
-          icono: Icons.swap_horiz,
-          etiqueta: l10n.perfilCambiarRol,
-          alTocar: ref
-              .read(sesionControladorProvider.notifier)
-              .pedirCambioDeRol,
-        ),
     ];
 
     return RefreshIndicator(
@@ -110,25 +104,28 @@ class InicioUsuario extends ConsumerWidget {
         // Con el botón flotante, el final del contenido no queda tapado.
         padding: EdgeInsets.only(
           top: tokens.espacio.l,
-          bottom: puedeEmitir
+          bottom: puedeCompartir
               ? tokens.tamano.fab + tokens.espacio.xl
               : tokens.espacio.l,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            EncabezadoInicio(sesion: sesion),
+            EncabezadoInicio(
+              sesion: sesion,
+              accion: puedeQrPropio ? const BotonQrPropio() : null,
+            ),
             SizedBox(height: tokens.espacio.xl),
             if (guardia) ...[
-              // Mismo diseño que "Emitir QR", pero con lo que le toca vigilar.
+              // Mismo diseño que "Generar QR", pero con lo que le toca vigilar.
               HeroAccesosDeHoy(
                 permitidos: resumenDeHoy?.value?.permitidos,
                 rechazados: resumenDeHoy?.value?.rechazados,
                 alTocar: () => context.go(Rutas.eventos),
               ),
               SizedBox(height: tokens.espacio.xl),
-            ] else if (puedeEmitir) ...[
-              _HeroEmitir(alEmitir: () => context.go(Rutas.qrNuevo)),
+            ] else if (puedeCompartir) ...[
+              _HeroGenerar(alGenerar: () => context.go(Rutas.qrNuevo)),
               SizedBox(height: tokens.espacio.xl),
             ],
             if (accesos.isNotEmpty) ...[
@@ -238,9 +235,9 @@ class InicioUsuario extends ConsumerWidget {
                         ilustracion: Multimedia.vacioQr,
                         titulo: l10n.inicioSinVigentes,
                         ayuda: l10n.inicioSinVigentesAyuda,
-                        textoAccion: puedeEmitir ? l10n.qrEmitirBoton : null,
+                        textoAccion: puedeGenerar ? l10n.qrGenerarBoton : null,
                         iconoAccion: Icons.add,
-                        alAccionar: puedeEmitir
+                        alAccionar: puedeGenerar
                             ? () => context.go(Rutas.qrNuevo)
                             : null,
                       )
@@ -268,10 +265,10 @@ class InicioUsuario extends ConsumerWidget {
   }
 }
 
-class _HeroEmitir extends StatelessWidget {
-  const new({required this.alEmitir});
+class _HeroGenerar extends StatelessWidget {
+  const new({required this.alGenerar});
 
-  final VoidCallback alEmitir;
+  final VoidCallback alGenerar;
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +286,7 @@ class _HeroEmitir extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  l10n.qrEmitirTitulo,
+                  l10n.qrGenerarTitulo,
                   style: textos.headlineLarge?.copyWith(
                     color: colores.sobreHero,
                   ),
@@ -301,7 +298,7 @@ class _HeroEmitir extends StatelessWidget {
                 ),
                 SizedBox(height: tokens.espacio.l),
                 FilledButton.icon(
-                  onPressed: alEmitir,
+                  onPressed: alGenerar,
                   style: FilledButton.styleFrom(
                     backgroundColor: colores.superficie,
                     foregroundColor: colores.primario,

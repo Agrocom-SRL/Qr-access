@@ -41,13 +41,13 @@ app/lib/
                                 FormularioSecciones (+ BarraDeAcciones), VisorQr
     templates/                  PlantillaAuth, PlantillaAdmin (NavigationBar / rail / rail extendido), PlantillaPantallaCompleta
   features/
-    sesion/                     bienvenida, ingreso por PIN (casillas_pin.dart), elegir rol
+    sesion/                     bienvenida, ingreso por PIN (casillas_pin.dart); un usuario tiene un solo rol (ADR 0028), ya no hay elegir rol
     inicio/                     inicio de usuario (hero, accesos rápidos, vigentes hoy) y tablero de administración
     puertas/                    solo datos (puertas con su lector y estado); barrel puertas.dart
-    qr_accesos/                 stepper de emisión, QR emitido (compartir PNG), Mis QR con anulación (ADR 0008)
+    qr_accesos/                 stepper de generación, QR generado (compartir PNG), Mis QR con anulación (ADR 0008)
     eventos/                    bitácora con filtros, grupos por día y tabla (ADR 0007)
-    perfil/                     cuenta, plan, rol activo (cambiar), tema, cerrar sesión
-    administracion/             Puertas (estado del lector), Usuarios (nuevo, editar, eliminar, generar PIN), PIN generado
+    perfil/                     cuenta, plan, rol (solo lectura), tema, cerrar sesión
+    administracion/             Puertas (estado del lector), Usuarios (alta por nivel con rol único y, para un Titular, su unidad; editar el nombre; baja en cascada con confirmación; generar PIN; cupo del plan para el Administrador), PIN generado
       <feature>.dart            lo único que otras features pueden importar
   l10n/app_es.arb               textos (prefijo por feature; comun* para lo compartido), en tuteo, los del handoff
 ```
@@ -55,7 +55,7 @@ app/lib/
 Dentro de una feature:
 
 ```
-domain/        modelos y reglas puras (Pin, DatosEmision, EstadoQr); sin Flutter ni red
+domain/        modelos y reglas puras (Pin, DatosGeneracion, EstadoQr); sin Flutter ni red
 data/          repositorio abstracto + implementación con ClienteApi; convierte contratos a dominio
 presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), widgets/ propios
 ```
@@ -75,7 +75,7 @@ presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), w
 7. **Fakes con el shape real**: los tests sobrescriben `xxxRepositorioProvider` con un fake que devuelve lo que devuelve el contrato.
 8. **Web y móvil con el mismo código**: lo específico de plataforma va detrás de una interfaz en `core/plataforma/` y se elige por importación condicional (`if (dart.library.io)`). Nada de `dart:io` fuera de `*_movil.dart`.
 9. **QR**: negro sobre blanco siempre (`colores.qrModulo`/`qrFondo`), al menos `tamano.qrMinimo` dp, zona de silencio de `tamano.qrZonaSilencioModulos`, con la hora de vencimiento visible. El `texto` del token solo vive en la pantalla que lo muestra y comparte (ADR 0008): se pasa por `extra` de la ruta y no se guarda.
-10. **Sesión**: el acceso vive en memoria. El refresco se guarda cifrado en móvil y solo en memoria en web (ADR 0004). El interceptor renueva una sola vez aunque lleguen varios 401 a la vez. Lo que el rol activo no puede usar no se muestra y la ruta tampoco se abre (`guarda_sesion.dart`). Los destinos de la navegación salen de los permisos (`destinosPara`), nunca del nombre del rol.
+10. **Sesión**: el acceso vive en memoria. El refresco se guarda cifrado en móvil y solo en memoria en web (ADR 0004). El interceptor renueva una sola vez aunque lleguen varios 401 a la vez. Lo que el rol no puede usar no se muestra y la ruta tampoco se abre (`guarda_sesion.dart`). Los destinos de la navegación salen de los permisos (`destinosPara`), nunca del nombre del rol.
 11. **Breakpoints**: `context.clasePantalla` (compacta < 600, media < 1024, expandida). Una pantalla con listado se prueba en 360×800 y en 1440×900 (`montarPantalla(expandida: true)`). Cada pantalla se compara con la captura de su id en `docs/diseno/handoff/capturas/`.
 12. **Lo que se ve una sola vez** (el token del QR, el PIN generado) viaja por `extra` de go_router y nunca se guarda; su pantalla usa `PlantillaPantallaCompleta`.
 
@@ -91,13 +91,13 @@ Pendiente: brillo de pantalla para el QR (CLAUDE.md, invariante 5) y la cookie H
 
 ## Reglas de pantalla (de ACRECIA, `guia-pantallas.md`)
 
-- Arquetipos: **Tablero** (`inicio`), **Listado** (`qr_accesos`, `eventos`, `administracion`), **Formulario** (`FormularioSecciones`), **Stepper** (emitir QR), **Pantalla completa** (QR emitido, PIN generado).
-- Tras guardar, el formulario se queda en edición (no vuelve al listado). Para emitir, la pantalla avanza a mostrar el QR.
+- Arquetipos: **Tablero** (`inicio`), **Listado** (`qr_accesos`, `eventos`, `administracion`), **Formulario** (`FormularioSecciones`), **Stepper** (generar QR), **Pantalla completa** (QR generado, PIN generado).
+- Tras guardar, el formulario se queda en edición (no vuelve al listado). Para generar, la pantalla avanza a mostrar el QR.
 - `activo` nunca va en un formulario: se activa/desactiva con una acción aparte.
 - Colores fijos de acción: Ver = info, Editar = advertencia, Eliminar = peligro; un cambio de estado lleva el tono del estado destino. Toda baja o cambio de estado confirma con `ConfirmarDialogo`.
 
 ## Tests
 
-- `test/features/<feature>/domain/*` y `test/core/*`: unitarios (Pin, DatosEmision, interceptor, controladores de sesión).
+- `test/features/<feature>/domain/*` y `test/core/*`: unitarios (Pin, DatosGeneracion, interceptor, controladores de sesión).
 - `presentation/*`: widget tests con `montarPantalla` (test/helpers/pantalla.dart; compacto por defecto, `expandida: true` para las tablas) y los fakes de `test/helpers/fakes.dart`. `textosEn(tester)` da los textos del ARB ya cargados.
 - `test/l10n/` (redacción neutra, textos literales) y `test/arquitectura/` (tokens, fronteras).

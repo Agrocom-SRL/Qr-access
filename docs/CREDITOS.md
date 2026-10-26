@@ -17,7 +17,7 @@ para ciudades, edificios, parqueos, condominios y haciendas.
 | `app/assets/logo/logo_android12.png` | Ícono del splash de Android 12+ | `app/assets/imagenes/logo_agrocom.png` con margen para que el círculo no lo recorte | Marca de AGROCOM, uso interno |
 | `app/assets/logo/fondo_splash.png`, `fondo_splash_oscuro.png` | Fondo del splash (claro y oscuro) | Degradado generado por script con los verdes de marca | Propietaria del proyecto |
 | `app/assets/lottie/splash_logo.json` | Splash animado (≤ 800 ms) | Creación propia | Propietaria del proyecto |
-| `app/assets/lottie/qr_emitido.json` | Confirmación al emitir un QR (1 s) | Creación propia | Propietaria del proyecto |
+| `app/assets/lottie/qr_generado.json` | Confirmación al generar un QR (1 s) | Creación propia | Propietaria del proyecto |
 | `app/assets/ilustraciones/vacio_qr.svg` | Mis QR vacío | Storyset (Freepik), «QR Code-pana», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
 | `app/assets/ilustraciones/vacio_eventos.svg` | Eventos vacío | Storyset (Freepik), «Schedule-amico», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
 | `app/assets/ilustraciones/vacio_puertas.svg` | Puertas vacío | Storyset (Freepik), «Business inequality-pana», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |

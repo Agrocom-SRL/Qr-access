@@ -12,7 +12,7 @@ enum Transicion {
   /// deja ver el fondo en medio).
   mismoNivel,
 
-  /// Hacia adelante en un flujo (emitir, QR emitido, formularios): las dos se
+  /// Hacia adelante en un flujo (generar, QR generado, formularios): las dos se
   /// desplazan en el eje horizontal.
   flujo,
 }

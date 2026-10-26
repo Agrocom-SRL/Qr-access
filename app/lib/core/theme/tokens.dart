@@ -118,12 +118,12 @@ class ColoresSemanticos {
   final Color informacion;
   final Color informacionSuave;
 
-  /// Color de resalte para la acción principal flotante (emitir QR): se
+  /// Color de resalte para la acción principal flotante (generar QR): se
   /// distingue del verde de la marca para que se vea de antemano.
   final Color acento;
   final Color sobreAcento;
 
-  /// Fondo del bloque de marca (bienvenida, tarjeta de cuenta, "Emitir QR").
+  /// Fondo del bloque de marca (bienvenida, tarjeta de cuenta, "Generar QR").
   final Color hero;
   final Color heroAcento;
   final Color sobreHero;
@@ -192,9 +192,6 @@ class Duraciones {
   /// Paso de una cuenta regresiva (bloqueo del PIN).
   Duration get segundo => const Duration(seconds: 1);
   Curve get curva => Curves.easeOutCubic;
-
-  /// Segundos que "Copiado" reemplaza a "Copiar" tras copiar el PIN.
-  Duration get confirmacionCopiado => const Duration(seconds: 2);
 
   /// Tope del splash animado: lo que dura el Lottie de arranque.
   Duration get splash => const Duration(milliseconds: 800);
@@ -293,6 +290,9 @@ class Tamanos {
   double get bordeSeleccion => 2;
   double get bordeFino => 1;
   double get barraResultado => 4;
+
+  /// Alto de la barra de uso (p. ej. el cupo de usuarios).
+  double get barraUso => 8;
   double get puntoBadge => 6;
 
   /// Ancho mínimo de una tarjeta antes de pasar a otra columna.

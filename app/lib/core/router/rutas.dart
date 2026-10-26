@@ -4,21 +4,20 @@ abstract final class Rutas {
   static const arranque = '/arranque';
   static const bienvenida = '/bienvenida';
   static const ingreso = '/ingreso';
-  static const elegirRol = '/roles';
   static const inicio = '/inicio';
 
-  /// Listado de los QR emitidos por el usuario.
+  /// Listado de los QR generados por el usuario.
   static const qrMios = '/qr';
 
-  /// Emitir un QR nuevo.
+  /// Generar un QR nuevo.
   static const qrNuevo = '/qr/nuevo';
 
-  /// QR rápido: emite al instante el QR propio, sin formulario ni compartir.
+  /// QR rápido: genera al instante el QR propio, sin formulario ni compartir.
   static const qrRapido = '/qr/rapido';
 
-  /// El QR recién emitido, con su token. Solo llega con `extra`: no tiene
+  /// El QR recién generado, con su token. Solo llega con `extra`: no tiene
   /// URL que se pueda volver a abrir.
-  static const qrEmitido = '/qr/emitido';
+  static const qrGenerado = '/qr/generado';
 
   static const eventos = '/eventos';
   static const perfil = '/perfil';
@@ -31,6 +30,9 @@ abstract final class Rutas {
   static const adminEstructura = '/admin/estructura';
   static const adminUsuarios = '/admin/usuarios';
   static const adminUsuarioNuevo = '/admin/usuarios/nuevo';
+
+  /// Uso de los usuarios de la rama (inactivos, ruidosos y Titulares).
+  static const adminEstadisticas = '/admin/usuarios/estadisticas';
 
   /// Editar un usuario: `/admin/usuarios/:id`.
   static const adminUsuarioEditar = '/admin/usuarios/:id';

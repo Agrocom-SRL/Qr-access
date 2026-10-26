@@ -3,6 +3,8 @@ import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/usuarios_contratos.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,8 +16,25 @@ abstract interface class UsuariosRepositorio {
 
   /// Crea el usuario; el PIN llega solo acá.
   Future<PinGenerado> crear(DatosUsuario datos);
-  Future<Usuario> editar(String id, DatosUsuario datos);
-  Future<void> eliminar(String id);
+
+  /// Solo cambia el nombre: el rol define el nivel y no se edita (ADR 0028).
+  Future<Usuario> editar(String id, {required String etiqueta});
+
+  /// Con `confirmar` la baja es en cascada (un Titular arrastra a sus
+  /// Miembros). Sin él, quien tiene a otros a su cargo responde
+  /// `usuario.con_dependientes`.
+  Future<void> eliminar(String id, {bool confirmar = false});
+
+  /// Anota en la bitácora que el PIN del usuario se compartió por un canal de
+  /// terceros. No cambia el PIN ni obliga a cambiarlo (ADR 0028 §7).
+  Future<void> registrarPinCompartido(String usuarioId);
+
+  /// El uso del cupo de usuarios del plan (solo lo ve el Administrador).
+  Future<Cupo> cupo();
+
+  /// Inactivos, ruidosos y Titulares cerca del tope en la rama de quien
+  /// pregunta (solo lo ve el Administrador).
+  Future<EstadisticasDeUsuarios> estadisticas();
 
   /// Regenera el PIN: el anterior deja de servir.
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo});
@@ -45,7 +64,9 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
   Future<PinGenerado> crear(DatosUsuario datos) async {
     final dto = await _api.crearUsuario(
       etiqueta: datos.etiqueta,
-      rolIds: datos.rolIds,
+      rolId: datos.rolId,
+      unidadSitioId: datos.unidad?.sitioId,
+      unidadNombre: datos.unidad?.nombre,
       sufijo: datos.sufijoDePin,
     );
     return PinGenerado(
@@ -58,21 +79,75 @@ class UsuariosRepositorioApi implements UsuariosRepositorio {
   }
 
   @override
-  Future<Usuario> editar(String id, DatosUsuario datos) async => _aUsuario(
-    await _api.editarUsuario(
-      id,
-      etiqueta: datos.etiqueta,
-      rolIds: datos.rolIds,
-    ),
-  );
+  Future<Usuario> editar(String id, {required String etiqueta}) async =>
+      _aUsuario(await _api.editarUsuario(id, etiqueta: etiqueta));
 
   @override
-  Future<void> eliminar(String id) => _api.eliminarUsuario(id);
+  Future<void> eliminar(String id, {bool confirmar = false}) =>
+      _api.eliminarUsuario(id, confirmar: confirmar);
+
+  @override
+  Future<void> registrarPinCompartido(String usuarioId) =>
+      _api.registrarPinCompartido(usuarioId);
+
+  @override
+  Future<EstadisticasDeUsuarios> estadisticas() async {
+    final dto = await _api.estadisticasDeUsuarios();
+    return EstadisticasDeUsuarios(
+      ventanaDias: dto.ventanaDias,
+      umbralInactivoDias: dto.umbralInactivoDias,
+      umbralRuidosoPorDia: dto.umbralRuidosoPorDia,
+      usuarios: [
+        for (final u in dto.usuarios)
+          UsoDeUsuario(
+            id: u.id,
+            etiqueta: u.etiqueta,
+            rol: u.rol,
+            unidad: u.unidad,
+            qrGenerados: u.qrGenerados,
+            qrUsados: u.qrUsados,
+            maxQrEnUnDia: u.maxQrEnUnDia,
+            ultimoQrAt: u.ultimoQrAt,
+            inactivo: u.inactivo,
+            ruidoso: u.ruidoso,
+          ),
+      ],
+      titulares: [
+        for (final t in dto.titulares)
+          TitularConMiembros(
+            id: t.id,
+            etiqueta: t.etiqueta,
+            unidad: t.unidad,
+            miembros: t.miembros,
+            tope: t.tope,
+            porcentaje: t.porcentaje,
+            cercaDelTope: t.cercaDelTope,
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<Cupo> cupo() async {
+    final dto = await _api.cupo();
+    return Cupo(
+      usados: dto.usados,
+      maximo: dto.maximo,
+      porcentaje: dto.porcentaje,
+      aviso: switch (dto.aviso) {
+        'cerca_del_limite' => AvisoCupo.cercaDelLimite,
+        'limite_alcanzado' => AvisoCupo.limiteAlcanzado,
+        _ => null,
+      },
+      maxMiembrosPorTitular: dto.maxMiembrosPorTitular,
+    );
+  }
 
   @override
   Future<PinGenerado> generarPin(Usuario usuario, {String? sufijo}) async {
     final dto = await _api.generarPin(usuario.id, sufijo: sufijo);
     return PinGenerado(
+      usuarioId: usuario.id,
       pin: dto.pin,
       usuarioEtiqueta: usuario.etiqueta,
       roles: usuario.roles,
@@ -102,6 +177,13 @@ Usuario _aUsuario(UsuarioAdminDto dto) => Usuario(
   etiqueta: dto.etiqueta,
   activo: dto.activo,
   roles: dto.roles.map(_aRol).toList(),
+  unidad: dto.unidad == null
+      ? null
+      : UnidadUsuario(
+          id: dto.unidad!.id,
+          nombre: dto.unidad!.nombre,
+          sitioId: dto.unidad!.sitioId,
+        ),
   pinGeneradoAt: dto.pinGeneradoAt,
   ultimoIngresoAt: dto.ultimoIngresoAt,
   creadoAt: dto.creadoAt,

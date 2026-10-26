@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+#
+# Compara docs/gestion/plan-maestro.md con GitHub y git: qué está integrado de verdad, qué PR
+# citados en el plan no lo están, qué ramas sobran y qué trabajo no tiene PR.
+#
+#   bin/estado-plan
+#
+# Solo lee (git fetch, gh pr view/list). No modifica ramas ni archivos. Requiere gh autenticado.
+#
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+plan=docs/gestion/plan-maestro.md
+titulo() { printf '\n\033[1m── %s ──\033[0m\n' "$1"; }
+aviso()  { printf '\033[33m· %s\033[0m\n' "$1"; }
+ok()     { printf '\033[32m✓ %s\033[0m\n' "$1"; }
+mal()    { printf '\033[31m✗ %s\033[0m\n' "$1"; }
+
+command -v gh >/dev/null 2>&1 || { mal "Falta la CLI gh"; exit 1; }
+git fetch --all --prune --quiet 2>/dev/null || aviso "No se pudo hacer fetch; se usa lo que hay en local."
+
+titulo "Rama actual"
+rama=$(git branch --show-current)
+echo "$rama"
+case "$rama" in master|main|develop) mal "Estás en una rama protegida: crea una rama antes de editar." ;; esac
+git status --short | head -15
+
+titulo "Desde el último release"
+tag=$(git describe --tags --abbrev=0 origin/develop 2>/dev/null || echo "")
+if [ -n "$tag" ]; then
+  echo "Último tag: $tag — commits en develop sin release: $(git rev-list --count "$tag"..origin/develop)"
+  git log "$tag"..origin/develop --oneline | head -12
+else
+  aviso "Sin tags."
+fi
+
+titulo "PR citados en el plan frente a GitHub"
+# Solo las filas marcadas «Integrado» o «En PR»: cada #N citado debe estar MERGED.
+grep -E '^\|' "$plan" | grep -E 'Integrado|En PR' | grep -oE '#[0-9]+' | tr -d '#' | sort -un | while read -r n; do
+  estado=$(gh pr view "$n" --json state --jq .state 2>/dev/null || echo "NO_ENCONTRADO")
+  if [ "$estado" = "MERGED" ]; then ok "#$n integrado"; else mal "#$n figura como integrado en el plan pero en GitHub está: $estado"; fi
+done
+
+titulo "PR abiertos"
+gh pr list --state open --json number,title,headRefName --jq '.[] | "#\(.number) \(.headRefName) — \(.title[0:80])"' 2>/dev/null | sed 's/^/  /'
+[ "$(gh pr list --state open --json number --jq length 2>/dev/null)" = "0" ] && ok "Ninguno."
+
+titulo "Ramas locales que ya no existen en el remoto (candidatas a borrar)"
+sobran=$(git branch -vv | grep ': gone]' | awk '{print $1}')
+if [ -z "$sobran" ]; then ok "Ninguna."; else echo "$sobran" | sed 's/^/  /'; aviso "Borrar con: git branch -d <rama> (confirma antes con Miguel)."; fi
+
+titulo "Ramas locales con trabajo que no está en develop"
+git branch --no-merged origin/develop --format='%(refname:short)' | while read -r r; do
+  [ "$r" = "$rama" ] && continue
+  echo "  $r ($(git rev-list --count origin/develop.."$r") commits)"
+done
+
+titulo "Ramas remotas no protegidas"
+git branch -r --format='%(refname:short)' | grep -vE 'origin/(HEAD|develop|master|main)$' | sed 's/^/  /'

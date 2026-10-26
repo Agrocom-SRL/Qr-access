@@ -1,15 +1,17 @@
-import 'dart:async';
-
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
+import 'package:agrocom_acceso/core/plataforma/compartir_texto.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Muestra el PIN una sola vez: en compacto a pantalla completa (C10c), en
@@ -38,28 +40,53 @@ Future<void> mostrarPinGenerado(BuildContext context, PinGenerado pin) async {
   context.go(Rutas.adminPinGenerado, extra: pin);
 }
 
-/// El PIN en mono 32 con "Copiar" (que pasa a "Copiado" 2 s) y la advertencia
-/// de que solo se ve ahora.
-class ContenidoPinGenerado extends StatefulWidget {
+/// El PIN en mono 32 con "Compartir" (la hoja del sistema; sin ella, queda en
+/// el portapapeles) y la advertencia de que solo se ve ahora.
+class ContenidoPinGenerado extends ConsumerStatefulWidget {
   const new({required this.pin, this.enDialogo = false, super.key});
 
   final PinGenerado pin;
   final bool enDialogo;
 
   @override
-  State<ContenidoPinGenerado> createState() => _ContenidoPinGeneradoEstado();
+  ConsumerState<ContenidoPinGenerado> createState() =>
+      _ContenidoPinGeneradoEstado();
 }
 
-class _ContenidoPinGeneradoEstado extends State<ContenidoPinGenerado> {
-  var _copiado = false;
+class _ContenidoPinGeneradoEstado extends ConsumerState<ContenidoPinGenerado> {
+  var _compartiendo = false;
 
-  Future<void> _copiar() async {
-    await Clipboard.setData(ClipboardData(text: widget.pin.pin));
-    unawaited(HapticFeedback.lightImpact());
-    if (!mounted) return;
-    setState(() => _copiado = true);
-    await Future<void>.delayed(context.tokens.duracion.confirmacionCopiado);
-    if (mounted) setState(() => _copiado = false);
+  /// Comparte el PIN con el menú del sistema y, si salió, deja registrado que
+  /// se compartió (ADR 0028 §7). Si el registro falla no se bloquea nada: el
+  /// PIN ya salió y la persona no puede hacer más.
+  Future<void> _compartir() async {
+    if (_compartiendo) return;
+    setState(() => _compartiendo = true);
+    try {
+      final resultado = await ref
+          .read(compartirTextoProvider)
+          .compartir(context.l10n.usuariosPinMensajeCompartir(widget.pin.pin));
+      final usuarioId = widget.pin.usuarioId;
+      final salio =
+          resultado == ResultadoCompartir.compartido ||
+          resultado == ResultadoCompartir.copiado;
+      if (resultado == ResultadoCompartir.copiado && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.usuariosPinCopiadoParaCompartir)),
+        );
+      }
+      if (salio && usuarioId != null) {
+        try {
+          await ref
+              .read(usuariosRepositorioProvider)
+              .registrarPinCompartido(usuarioId);
+        } on ErrorApi {
+          // Sin red o sin permiso: el envío ya ocurrió y no se puede deshacer.
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _compartiendo = false);
+    }
   }
 
   @override
@@ -93,11 +120,12 @@ class _ContenidoPinGeneradoEstado extends State<ContenidoPinGenerado> {
           .copyWith(letterSpacing: tokens.tipografia.espaciadoPin),
       semanticsLabel: l10n.usuariosPinSemantica(pin.pin),
     );
-    final botonCopiar = AccesoBoton(
-      texto: _copiado ? l10n.comunCopiado : l10n.comunCopiar,
-      icono: _copiado ? Icons.check : Icons.content_copy_outlined,
+    final botonCompartir = AccesoBoton(
+      texto: l10n.usuariosPinCompartir,
+      icono: Icons.ios_share,
       variante: VarianteBoton.tonal,
-      onPressed: _copiar,
+      cargando: _compartiendo,
+      onPressed: _compartir,
     );
 
     return Column(
@@ -129,14 +157,14 @@ class _ContenidoPinGeneradoEstado extends State<ContenidoPinGenerado> {
                   children: [
                     Expanded(child: valor),
                     SizedBox(width: tokens.espacio.l),
-                    botonCopiar,
+                    botonCompartir,
                   ],
                 )
               : Column(
                   children: [
                     Center(child: valor),
                     SizedBox(height: tokens.espacio.l),
-                    botonCopiar,
+                    botonCompartir,
                   ],
                 ),
         ),
@@ -146,6 +174,8 @@ class _ContenidoPinGeneradoEstado extends State<ContenidoPinGenerado> {
               ? l10n.usuariosPinAvisoNuevo
               : l10n.usuariosPinAvisoRegenerado(primerNombre),
         ),
+        SizedBox(height: tokens.espacio.m),
+        AccesoAviso(texto: l10n.usuariosPinAvisoCompartir),
       ],
     );
   }

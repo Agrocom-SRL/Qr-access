@@ -1,0 +1,216 @@
+import 'package:agrocom_acceso/core/sesion/permisos.dart';
+import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/puertas/puertas.dart';
+import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/generar_qr_pagina.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/indicador_pasos.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../../helpers/fakes.dart';
+import '../../../helpers/pantalla.dart';
+
+final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
+
+final _generado = QrGenerado(
+  id: 'qr1',
+  texto: 'AQ1.token',
+  venceAt: DateTime.utc(2026, 10, 9, 23, 59),
+  etiqueta: null,
+  puertas: const [PuertaDeQr(id: 'p1', nombre: 'Portón')],
+);
+
+const _puertas = [
+  Puerta(
+    id: 'p1',
+    nombre: 'Portón principal',
+    sitioId: 's1',
+    sitioNombre: 'Sede',
+    dispositivo: DispositivoDePuerta(
+      id: 'd1',
+      nombre: 'LECT-1',
+      enLinea: true,
+      ultimoLatidoAt: null,
+    ),
+  ),
+  Puerta(id: 'p2', nombre: 'Depósito', sitioId: 's2', sitioNombre: 'Bodega'),
+];
+
+Future<QrAccesosRepositorioFalso> _montar(
+  WidgetTester tester, {
+  List<Puerta> puertas = _puertas,
+  bool expandida = false,
+}) async {
+  final repositorio = QrAccesosRepositorioFalso(generado: _generado);
+  await montarPantalla(
+    tester,
+    pagina: const GenerarQrPagina(),
+    expandida: expandida,
+    overrides: [
+      qrAccesosRepositorioProvider.overrideWithValue(repositorio),
+      puertasRepositorioProvider.overrideWithValue(
+        PuertasRepositorioFalso(puertas),
+      ),
+      relojProvider.overrideWithValue(() => _ahora),
+      sesionControladorProvider.overrideWith(
+        () => SesionFalsa(sesionCon(permisos: {Permisos.generarQr})),
+      ),
+    ],
+  );
+  await tester.pump();
+  await tester.pump();
+  return repositorio;
+}
+
+Finder _boton(String texto) => find.widgetWithText(FilledButton, texto);
+
+void main() {
+  testWidgets(
+    'el paso 1 agrupa las puertas por sitio y marca las sin conexión',
+    (tester) async {
+      await _montar(tester);
+      final textos = textosEn(tester);
+
+      expect(find.byType(IndicadorPasos), findsOneWidget);
+      expect(find.text('SEDE'), findsOneWidget);
+      expect(find.text('BODEGA'), findsOneWidget);
+      expect(find.text('Portón principal'), findsOneWidget);
+      expect(find.text('Depósito'), findsOneWidget);
+      expect(find.text(textos.puertaSinConexion), findsOneWidget);
+    },
+  );
+
+  testWidgets('sin puertas, explica que hace falta pedirlas', (tester) async {
+    await _montar(tester, puertas: const []);
+    expect(find.text(textosEn(tester).qrGenerarSinPuertas), findsOneWidget);
+  });
+
+  testWidgets('Siguiente sin puertas marca el error y no avanza', (
+    tester,
+  ) async {
+    final repositorio = await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+
+    expect(find.text(textos.qrGenerarErrorSinPuertas), findsOneWidget);
+    expect(find.text(textos.qrGenerarPregunta), findsOneWidget);
+    expect(repositorio.generaciones, isEmpty);
+  });
+
+  testWidgets('el modo Días ofrece 2, 3, 5 y 7 días y "todo el día"', (
+    tester,
+  ) async {
+    final repositorio = await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text('Portón principal'));
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+
+    // Abre en horas (2 h por defecto): se pasa al modo días.
+    await tester.tap(find.text(textos.qrVigenciaModoDias));
+    await tester.pump();
+    expect(find.text(textos.qrVigenciaFinDelDia), findsOneWidget);
+    for (final dias in [2, 3, 5, 7]) {
+      expect(find.text(textos.qrVigenciaDias(dias)), findsOneWidget);
+    }
+    await tester.tap(find.text(textos.qrVigenciaDias(5)));
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+    await tester.tap(_boton(textos.qrGenerarBoton));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      repositorio.generaciones.single.vigencia.opcion,
+      OpcionVigencia.cincoDias,
+    );
+  });
+
+  testWidgets('los tres pasos: puerta, 1 h y etiqueta, y genera', (
+    tester,
+  ) async {
+    final repositorio = await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text('Portón principal'));
+    await tester.pump();
+    expect(
+      find.text('1 ${textos.qrGenerarPuertasContadas(1)}'),
+      findsOneWidget,
+    );
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+
+    // Por defecto abre en modo días, con "todo el día"; se pasa a horas.
+    expect(find.text(textos.qrVigenciaModoHoras), findsOneWidget);
+    await tester.tap(find.text(textos.qrVigenciaModoHoras));
+    await tester.pump();
+    expect(find.text(textos.qrVigenciaHoras(24)), findsOneWidget);
+    await tester.tap(find.text(textos.qrVigenciaHoras(1)));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), ' Proveedor de gas ');
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+
+    expect(find.text(textos.qrGenerarRevisa), findsOneWidget);
+    expect(find.text('Proveedor de gas'), findsOneWidget);
+    await tester.tap(_boton(textos.qrGenerarBoton));
+    await tester.pump();
+    await tester.pump();
+
+    final generacion = repositorio.generaciones.single;
+    expect(generacion.puertaIds, ['p1']);
+    expect(generacion.vigencia.opcion, OpcionVigencia.unaHora);
+    expect(generacion.etiqueta, 'Proveedor de gas');
+    // Tras generar, la pantalla del QR recibe el token en `extra`.
+    expect(find.text('destino /qr/generado'), findsOneWidget);
+  });
+
+  testWidgets('"Todas" de un sitio marca sus puertas', (tester) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text(textos.qrGenerarTodas).first);
+    await tester.pump();
+
+    expect(
+      find.text('1 ${textos.qrGenerarPuertasContadas(1)}'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('la etiqueta se corta en 40 caracteres y muestra el contador', (
+    tester,
+  ) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text('Depósito'));
+    await tester.pump();
+    await tester.tap(_boton(textos.comunSiguiente));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'a' * 41);
+    await tester.pump();
+
+    final campo = tester.widget<TextField>(find.byType(TextField));
+    expect(campo.controller?.text.length, 40);
+    expect(find.text('40/40'), findsOneWidget);
+  });
+
+  testWidgets('en expandido el resumen va fijo a la derecha', (tester) async {
+    await _montar(tester, expandida: true);
+    final textos = textosEn(tester);
+
+    expect(find.text(textos.qrResumenTitulo), findsOneWidget);
+    expect(find.text(textos.qrGenerarSeleccionarTodas), findsNWidgets(2));
+  });
+}

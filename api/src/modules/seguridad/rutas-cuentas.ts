@@ -6,6 +6,7 @@ import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
 import { ejecutar as editarCuenta } from './actions/editar-cuenta.js';
 import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
+import { deCuenta as estadisticasDeCuenta } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
@@ -14,9 +15,13 @@ import {
   consultaDeCobranza,
   cuerpoDeBajaDeCuenta,
   cuerpoDeCambioDeCodigo,
+  cuerpoDeNuevoAdministrador,
+  cuerpoDeReasignacion,
   cuerpoDeEdicionDeCuenta,
   parametrosDeAdministrador,
+  respuestaDeAdministradorCreado,
   respuestaDeAdministradores,
+  respuestaDeJerarquiaDeCuenta,
   respuestaDeCambioDeCodigo,
   consultaDeCodigoDeCuenta,
   consultaDeCuentas,
@@ -29,6 +34,7 @@ import {
   respuestaDeCuentas,
   respuestaDePinGenerado,
   respuestaDeDetalleDeCuenta,
+  respuestaDeEstadisticasDeCuenta,
 } from './schemas.js';
 import type { ServiciosDeSeguridad } from './servicios.js';
 
@@ -96,6 +102,7 @@ export const rutasDeCuentas =
           nit: cuerpo.nit,
           ciudad: cuerpo.ciudad,
           contactoNombre: cuerpo.contacto_nombre,
+          contactoApellido: cuerpo.contacto_apellido,
           contactoTelefono: cuerpo.contacto_telefono,
           contactoCorreo: cuerpo.contacto_correo,
           planId: cuerpo.plan_id,
@@ -109,8 +116,6 @@ export const rutasDeCuentas =
                   fechaPago: cuerpo.pago.fecha_pago,
                   medio: cuerpo.pago.medio,
                   referencia: cuerpo.pago.referencia,
-                  banco: cuerpo.pago.banco,
-                  cuentaDestino: cuerpo.pago.cuenta_destino,
                   comprobanteId: cuerpo.pago.comprobante_id,
                 },
               }),
@@ -150,8 +155,10 @@ export const rutasDeCuentas =
           nit: cuerpo.nit,
           ciudad: cuerpo.ciudad,
           contactoNombre: cuerpo.contacto_nombre,
+          contactoApellido: cuerpo.contacto_apellido,
           contactoTelefono: cuerpo.contacto_telefono,
           contactoCorreo: cuerpo.contacto_correo,
+          maxMiembrosPorTitular: cuerpo.max_miembros_por_titular,
         });
         return reply.status(204).send();
       },
@@ -199,6 +206,80 @@ export const rutasDeCuentas =
       async (request) => ({
         datos: await administradores.listar(pool, plataformaDe(request), request.params.id),
       }),
+    );
+
+    // Solo AGROCOM suma Administradores a una cuenta (ADR 0028): el PIN se ve una sola vez.
+    app.post(
+      '/plataforma/cuentas/:id/administradores',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          body: cuerpoDeNuevoAdministrador,
+          response: { 201: respuestaDeAdministradorCreado },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.administrador.crear'),
+      },
+      async (request, reply) => {
+        const creado = await administradores.crear(
+          servicios,
+          plataformaDe(request),
+          request.params.id,
+          {
+            etiqueta: request.body.etiqueta,
+            ...(request.body.sufijo === undefined ? {} : { sufijo: request.body.sufijo }),
+          },
+        );
+        return reply.status(201).send(creado);
+      },
+    );
+
+    // El uso de los usuarios de la cuenta (inactivos, ruidosos, Titulares cerca del tope) y su cupo por rama.
+    app.get(
+      '/plataforma/cuentas/:id/estadisticas-de-usuarios',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeEstadisticasDeCuenta },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      (request) => estadisticasDeCuenta(pool, plataformaDe(request), request.params.id),
+    );
+
+    // El árbol de la cuenta: cada Administrador con sus Guardias y Titulares.
+    app.get(
+      '/plataforma/cuentas/:id/jerarquia',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeCuenta,
+          response: { 200: respuestaDeJerarquiaDeCuenta },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.ver'),
+      },
+      (request) => administradores.verJerarquia(pool, plataformaDe(request), request.params.id),
+    );
+
+    // Mover un Guardia o una unidad completa (su Titular) a otro Administrador: solo AGROCOM.
+    app.post(
+      '/plataforma/cuentas/:id/reasignaciones',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeReasignacion },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.administrador.reasignar'),
+      },
+      async (request, reply) => {
+        await administradores.reasignar(pool, plataformaDe(request), request.params.id, {
+          usuarioId: request.body.usuario_id,
+          administradorId: request.body.administrador_id,
+        });
+        return reply.status(204).send();
+      },
     );
 
     // AGROCOM solo restablece el PIN de los administradores; ellos manejan el de sus usuarios.

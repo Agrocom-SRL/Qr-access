@@ -192,3 +192,49 @@ export class RepositorioDeAsignaciones extends RepositorioDeCuenta {
     return this.borrar(tx, id);
   }
 }
+
+export interface UnidadFila extends RowDataPacket {
+  id: string;
+  sitio_id: string;
+  nombre: string;
+  titular_id: string | null;
+}
+
+/** Dueño de `unidades`: una por Titular dentro de una propiedad (ADR 0028). */
+export class RepositorioDeUnidades extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'unidades',
+      columnas: ['sitio_id', 'nombre', 'titular_id', 'activo'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  crear(
+    tx: Transaccion,
+    unidad: { sitioId: string; nombre: string; titularId: string },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      sitio_id: unidad.sitioId,
+      nombre: unidad.nombre,
+      titular_id: unidad.titularId,
+      activo: 1,
+    });
+  }
+
+  /** Las unidades de esos Titulares; la de otra cuenta o de un Titular sin unidad no vuelve. */
+  deTitulares(titularIds: readonly string[]): Promise<UnidadFila[]> {
+    if (titularIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<UnidadFila>({
+      columnas: 't.id, t.sitio_id, t.nombre, t.titular_id',
+      donde: 't.titular_id IN (?)',
+      params: [titularIds],
+    });
+  }
+
+  /** Baja lógica de las unidades de esos Titulares (la baja del Titular se lleva su unidad). */
+  async darDeBajaDeTitulares(tx: Transaccion, titularIds: readonly string[]): Promise<void> {
+    for (const unidad of await this.deTitulares(titularIds)) await this.borrar(tx, unidad.id);
+  }
+}

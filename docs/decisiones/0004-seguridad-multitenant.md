@@ -1,6 +1,6 @@
-# ADR 0004 — Seguridad: cuentas (multitenant), multi-rol con rol activo, permisos por acción y credenciales de dispositivo
+# ADR 0004 — Seguridad: cuentas (multitenant), rol único por usuario, permisos por acción y credenciales de dispositivo
 
-**Estado:** Aceptada (2026-10-08) · **Origen:** ADR 0004 de ACRECIA, portado a Node + JWT y extendido a dispositivos.
+**Estado:** Aceptada (2026-10-08); §6 enmendado por el ADR 0028 (2026-10-21): un usuario tiene un solo rol y desaparece el rol activo · **Origen:** ADR 0004 de ACRECIA, portado a Node + JWT y extendido a dispositivos.
 
 ## Contexto
 
@@ -13,10 +13,10 @@ La plataforma `acceso.agrocom.com.bo` la usarán varias empresas (cuentas), cada
 3. **Login por PIN** (`AGR7K2Q`: código de cuenta de 3 letras + 4 caracteres al azar) para los usuarios de cuenta (ADR 0018, que reemplaza el usuario + contraseña de la versión anterior) y por usuario + contraseña (argon2id) para el super admin, con un mensaje único ante cualquier fallo y límite de intentos.
 4. **JWT de acceso corto (15 min) + refresh rotativo** guardado hasheado y revocable (`sesiones`). En web, el refresh va en cookie `HttpOnly`.
 5. **Roles por cuenta, permisos por ámbito** (`plataforma` | `cuenta`), con código `<modulo>.<entidad>.<accion>`. Roles base por cuenta: **Administrador** (protegido), **Guardia** y **Usuario**. Un rol de cuenta nunca recibe un permiso de plataforma.
-6. **Un usuario, un login, varios roles, un rol activo** (en el JWT). Los permisos efectivos son los del rol activo, nunca la unión, revalidados en cada request.
+6. **Un usuario, un login, un rol** (en el JWT; ADR 0028, que reemplaza al multi-rol con rol activo). Los permisos efectivos son los de ese rol, revalidados en cada request.
 7. **Super admin** con código reservado `agrocom`; puede elegir una cuenta como contexto y administrarla con las mismas pantallas, firmando todo con su usuario.
 8. **Dispositivos**: credencial propia (`id` + clave aleatoria de 32 bytes mostrada una vez, guardada hasheada), revocable, atada a una cuenta y una puerta. Header `Authorization: Dispositivo <id>.<clave>`. Solo acceden a `/api/v1/dispositivos/*`.
-9. **Dos capas de autorización**: permiso del rol activo en la ruta (`preHandler`) y aislamiento por registro en el repositorio.
+9. **Dos capas de autorización**: permiso del rol del usuario en la ruta (`preHandler`) y aislamiento por registro en el repositorio.
 
 ## Alternativas descartadas
 

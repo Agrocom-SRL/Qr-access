@@ -18,3 +18,5 @@ Reglas no negociables:
 8. Nada de reglas de negocio: el firmware lee, pregunta y obedece. Quién puede entrar lo decide la API.
 
 Antes de cerrar: `bin/verify firmware` en verde. Nunca flashees un dispositivo ni borres su flash sin confirmación del usuario.
+
+Límites y QR (ADR 0030 y 0031): el firmware no cambia su lógica; no guarda ni evalúa QR, vencimientos, y la validación nunca se limita por cuota. Excepción nueva (ADR 0031 §18): ampliar el latido con el estado del lector QR y del sensor de puerta, y reportar tras cada apertura si la puerta se abrió (`confirmada`/`no_confirmada`/`sin_sensor`). Solo lee pines y reporta; nada de lógica de negocio. Revisa `generacion-qr-segura` antes de proponer cualquier cambio.

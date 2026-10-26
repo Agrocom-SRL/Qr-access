@@ -60,17 +60,6 @@ class ClienteApi {
     });
   }
 
-  /// Devuelve el acceso nuevo del rol elegido.
-  Future<String> cambiarRolActivo(String rolId) {
-    return _ejecutar(() async {
-      final r = await _dio.post<Map<String, dynamic>>(
-        '/sesiones/rol-activo',
-        data: {'rol_id': rolId},
-      );
-      return r.data!['acceso'] as String;
-    });
-  }
-
   Future<SesionActualDto> sesionActual() {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>('/sesiones/actual');
@@ -99,7 +88,7 @@ class ClienteApi {
 
   /// `venceAt` y `etiqueta` van solo si el usuario los eligió; sin ellos, la
   /// API calcula el fin del día local del sitio (ADR 0008).
-  Future<QrEmitidoDto> emitirQr({
+  Future<QrGeneradoDto> generarQr({
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
@@ -115,7 +104,7 @@ class ClienteApi {
           if (propio) 'propio': true,
         },
       );
-      return QrEmitidoDto.desde(r.data!);
+      return QrGeneradoDto.desde(r.data!);
     });
   }
 
@@ -209,37 +198,74 @@ class ClienteApi {
   }
 
   /// El PIN del usuario nuevo llega solo acá (ADR 0018 §3).
+  ///
+  /// Un usuario tiene un solo rol (ADR 0028): `rol_ids` lleva exactamente uno.
+  /// Un Titular lleva además su `unidad`.
   Future<UsuarioCreadoDto> crearUsuario({
     required String etiqueta,
-    required List<String> rolIds,
+    required String rolId,
+    String? unidadSitioId,
+    String? unidadNombre,
     String? sufijo,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/usuarios',
-        data: {'etiqueta': etiqueta, 'rol_ids': rolIds, 'sufijo': ?sufijo},
+        data: {
+          'etiqueta': etiqueta,
+          'rol_ids': [rolId],
+          'sufijo': ?sufijo,
+          if (unidadSitioId != null && unidadNombre != null)
+            'unidad': {'sitio_id': unidadSitioId, 'nombre': unidadNombre},
+        },
       );
       return UsuarioCreadoDto.desde(r.data!);
     });
   }
 
-  Future<UsuarioAdminDto> editarUsuario(
-    String id, {
-    String? etiqueta,
-    List<String>? rolIds,
-  }) {
+  /// Solo el nombre se edita: el rol define el nivel y no cambia.
+  Future<UsuarioAdminDto> editarUsuario(String id, {required String etiqueta}) {
     return _ejecutar(() async {
       final r = await _dio.patch<Map<String, dynamic>>(
         '/usuarios/$id',
-        data: {'etiqueta': ?etiqueta, 'rol_ids': ?rolIds},
+        data: {'etiqueta': etiqueta},
       );
       return UsuarioAdminDto.desde(r.data!);
     });
   }
 
-  Future<void> eliminarUsuario(String id) {
+  /// Sin `confirmar`, un usuario con otros a su cargo responde 409
+  /// `usuario.con_dependientes` con cuántos caerían; con él, la baja es en
+  /// cascada (ADR 0028 §7).
+  Future<void> eliminarUsuario(String id, {bool confirmar = false}) {
     return _ejecutar(() async {
-      await _dio.delete<void>('/usuarios/$id');
+      await _dio.delete<void>(
+        '/usuarios/$id',
+        queryParameters: confirmar ? {'confirmar': true} : null,
+      );
+    });
+  }
+
+  /// Anota que el PIN del usuario se compartió por un canal de terceros: queda
+  /// en la bitácora con quién lo hizo y cuándo (ADR 0028 §7).
+  Future<void> registrarPinCompartido(String usuarioId) {
+    return _ejecutar(() async {
+      await _dio.post<void>('/usuarios/$usuarioId/pin/compartido');
+    });
+  }
+
+  /// El uso de los usuarios de la rama de quien pregunta (ADR 0028 §4).
+  Future<EstadisticasDeUsuariosDto> estadisticasDeUsuarios() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/usuarios/estadisticas');
+      return EstadisticasDeUsuariosDto.desde(r.data!);
+    });
+  }
+
+  Future<CupoDto> cupo() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/cupo');
+      return CupoDto.desde(r.data!);
     });
   }
 

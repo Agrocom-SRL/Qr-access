@@ -9,6 +9,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
@@ -58,9 +59,10 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     final tablero = ref.watch(tableroProvider);
     final datos = tablero.value;
     final expandida = context.esExpandida;
-    final puedeEmitir = widget.sesion.tiene(Permisos.emitirQr);
+    final puedeGenerar = widget.sesion.tiene(Permisos.generarQr);
+    final puedeQrPropio = widget.sesion.tiene(Permisos.generarQrPropio);
     // El administrador no tiene "Mis QR" en la barra (se llena con Admin):
-    // llega desde aquí a los QR que emitió, para volver a compartirlos.
+    // llega desde aquí a los QR que generó, para volver a compartirlos.
     final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
 
     // Las notas solo caben en expandido; en compacto (C04b) las tarjetas
@@ -111,7 +113,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
         // El botón flotante no tapa el final del contenido.
         padding: EdgeInsets.only(
           top: tokens.espacio.l,
-          bottom: puedeEmitir && !expandida
+          bottom: puedeGenerar && !expandida
               ? tokens.tamano.fab + tokens.espacio.xl
               : tokens.espacio.l,
         ),
@@ -140,7 +142,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
-                  if (puedeEmitir)
+                  if (puedeQrPropio)
                     AccesoBoton(
                       texto: l10n.inicioQrPropio,
                       icono: Icons.person_pin_outlined,
@@ -156,10 +158,10 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       onPressed: () => context.go(Rutas.qrMios),
                     ),
                   ],
-                  if (puedeEmitir) ...[
+                  if (puedeGenerar) ...[
                     SizedBox(width: tokens.espacio.m),
                     AccesoBoton(
-                      texto: l10n.qrEmitirBoton,
+                      texto: l10n.qrGenerarBoton,
                       icono: Icons.qr_code_2,
                       onPressed: () => context.go(Rutas.qrNuevo),
                     ),
@@ -169,21 +171,9 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                // Solo "Emitir QR": Mis QR es una pestaña y "Mi QR de acceso"
-                // es el botón flotante de la página.
-                accion: puedeEmitir
-                    ? IconButton.filled(
-                        tooltip: l10n.qrEmitirBoton,
-                        onPressed: () => context.go(Rutas.qrNuevo),
-                        // Relleno primario con ícono blanco (C04b); el
-                        // tema de IconButton pinta el ícono en texto.
-                        style: IconButton.styleFrom(
-                          backgroundColor: tokens.colores.primario,
-                          foregroundColor: tokens.colores.sobrePrimario,
-                        ),
-                        icon: const Icon(Icons.qr_code_2),
-                      )
-                    : null,
+                // Solo el QR propio: Mis QR es una pestaña y "Generar QR" es
+                // el botón flotante de la página.
+                accion: puedeQrPropio ? const BotonQrPropio() : null,
               ),
               SizedBox(height: tokens.espacio.xl),
               Row(
@@ -384,11 +374,11 @@ class _TablaUltimosEventos extends StatelessWidget {
                       celda(
                         Text(
                           evento.qrEtiqueta == null &&
-                                  evento.emisorEtiqueta == null
+                                  evento.generadorEtiqueta == null
                               ? l10n.comunGuion
                               : l10n.eventoQrDe(
                                   evento.qrEtiqueta ?? l10n.qrSinEtiqueta,
-                                  evento.emisorEtiqueta ?? l10n.comunGuion,
+                                  evento.generadorEtiqueta ?? l10n.comunGuion,
                                 ),
                           style: secundario,
                         ),

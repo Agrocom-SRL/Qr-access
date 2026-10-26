@@ -1,7 +1,15 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { COBRANZA, ErrorApi, EVENTOS, SUSCRIPCION, crearServiciosDePrueba } from '../servicios';
+import {
+  COBRANZA,
+  DETALLE,
+  ErrorApi,
+  EVENTOS,
+  SUSCRIPCION,
+  crearServiciosDePrueba,
+} from '../servicios';
+import type { CuentasRepositorio } from '@/features/cuentas';
 import type { PlacasRepositorio } from '@/features/placas';
 import { AppRutas } from '@/app/AppRutas';
 import type { Servicios } from '@/app/providers/crearServicios';
@@ -243,13 +251,105 @@ describe('planes (A09)', () => {
     await userEvent.click(await screen.findByRole('link', { name: /Planes/ }));
   }
 
-  it('muestra los tres planes con su precio, cuentas y usuarios en uso', async () => {
+  it('muestra el nombre y el precio de cada plan, sin las cifras de uso', async () => {
     await irAPlanes(crearServiciosDePrueba());
-    expect(await screen.findByText('100 usuarios')).toBeInTheDocument();
+    // El nombre y el cupo coinciden en los planes de ejemplo: aparecen en cada tarjeta.
+    expect((await screen.findAllByText('100 usuarios')).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText('21.600')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Guardar precios' })).not.toBeInTheDocument();
-    expect(screen.getByText('1.604')).toBeInTheDocument();
+    expect(screen.queryByText('Usuarios en uso')).toBeNull();
     expect(screen.getAllByText('QR ilimitados')).toHaveLength(3);
+  });
+});
+
+describe('cuentas de cobro (ADR 0029)', () => {
+  async function irACuentasDeCobro(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cobranza/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Cuentas de cobro' }));
+  }
+
+  it('desde Cobranza se llega a la lista de cuentas y QR de AGROCOM', async () => {
+    await irACuentasDeCobro(crearServiciosDePrueba());
+    expect(
+      await screen.findByRole('heading', { name: 'Cuentas de cobro', level: 1 }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('article', { name: 'Banco Unión' })).toBeInTheDocument();
+    expect(screen.getByText('10000123456')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Banco Mercantil Santa Cruz' })).toBeInTheDocument();
+  });
+
+  it('agrega una cuenta bancaria con su titular y su número', async () => {
+    const crear = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar cuenta' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    await userEvent.type(within(dialogo).getByLabelText('Banco'), 'Banco BISA');
+    await userEvent.type(within(dialogo).getByLabelText('Titular'), 'AGROCOM S.R.L.');
+    await userEvent.type(within(dialogo).getByLabelText('Número de cuenta'), '2000999');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metodo: 'transferencia',
+          banco: 'Banco BISA',
+          titular: 'AGROCOM S.R.L.',
+          numeroCuenta: '2000999',
+        }),
+      );
+    });
+  });
+
+  it('un QR pide su imagen antes de guardar', async () => {
+    const crear = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { crear } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Agregar cuenta' }));
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'QR' }));
+    await userEvent.type(within(dialogo).getByLabelText('Banco'), 'Banco Unión');
+    expect(within(dialogo).getByRole('button', { name: 'Guardar' })).toBeDisabled();
+    const qr = new File(['x'], 'qr.png', { type: 'image/png' });
+    await userEvent.upload(within(dialogo).getByLabelText('Imagen del QR'), qr);
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => {
+      expect(crear).toHaveBeenCalledWith(
+        expect.objectContaining({ metodo: 'qr', banco: 'Banco Unión', imagen: qr }),
+      );
+    });
+  });
+
+  it('desactiva y elimina una cuenta', async () => {
+    const cambiarActivo = vi.fn(() => Promise.resolve());
+    const eliminar = vi.fn(() => Promise.resolve());
+    await irACuentasDeCobro(crearServiciosDePrueba({ cobro: { cambiarActivo, eliminar } }));
+    const tarjeta = await screen.findByRole('article', { name: 'Banco Unión' });
+    await userEvent.click(within(tarjeta).getByRole('switch', { name: 'Activa' }));
+    await waitFor(() => {
+      expect(cambiarActivo).toHaveBeenCalledWith('1', false);
+    });
+    await userEvent.click(
+      within(tarjeta).getByRole('button', { name: 'Eliminar la cuenta de Banco Unión' }),
+    );
+    const confirmar = await screen.findByRole('dialog');
+    await userEvent.click(within(confirmar).getByRole('button', { name: 'Eliminar' }));
+    await waitFor(() => {
+      expect(eliminar).toHaveBeenCalledWith('1');
+    });
+  });
+});
+
+describe('estadísticas', () => {
+  it('tiene su entrada en el menú y muestra el uso de cada plan', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Estadísticas/ }));
+    expect(
+      await screen.findByRole('heading', { name: 'Estadísticas', level: 1 }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Uso por plan' })).toBeInTheDocument();
+    expect(screen.getByText('1.604')).toBeInTheDocument();
   });
 });
 
@@ -276,7 +376,7 @@ describe('cuentas (A03)', () => {
     const tabla = await screen.findByRole('table', { name: 'Cuentas' });
     for (const nombre of [
       'Ver Agroindustrial Norte',
-      'Sitios y puertas de Agroindustrial Norte',
+      'Propiedades y puertas de Agroindustrial Norte',
       'Editar Agroindustrial Norte',
       'Eliminar Agroindustrial Norte',
     ]) {
@@ -354,15 +454,19 @@ describe('cuentas (A03)', () => {
 describe('crear cuenta (A04)', () => {
   async function llenarEmpresa(codigo = 'AGU') {
     await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta' }));
-    await userEvent.type(await screen.findByLabelText('Razón social'), 'Agrícola Guarayos S.A.');
-    await userEvent.type(screen.getByLabelText('NIT'), '2876501019');
+    await userEvent.type(
+      await screen.findByLabelText('Nombre de la cuenta'),
+      'Agrícola Guarayos S.A.',
+    );
+    await userEvent.type(screen.getByLabelText(/^NIT/), '2876501019');
     // La ciudad es una lista con búsqueda (react-select): se escribe y se elige.
     await userEvent.type(screen.getByLabelText('Ciudad'), 'Guarayos');
     await userEvent.click(await screen.findByText('Ascensión de Guarayos'));
     await userEvent.type(screen.getByLabelText(/Código de cuenta/), codigo);
-    await userEvent.type(screen.getByLabelText('Nombre completo'), 'Rodrigo Añez');
-    await userEvent.type(screen.getByLabelText('Teléfono'), '7 712 4405');
-    await userEvent.type(screen.getByLabelText('Correo electrónico'), 'rodrigo@guarayos.bo');
+    await userEvent.type(screen.getByLabelText('Nombre'), 'Rodrigo');
+    await userEvent.type(screen.getByLabelText('Apellido'), 'Añez');
+    await userEvent.type(screen.getByLabelText(/^Teléfono/), '7 712 4405');
+    await userEvent.type(screen.getByLabelText(/^Correo electrónico/), 'rodrigo@guarayos.bo');
   }
 
   async function empezar(servicios: Servicios) {
@@ -417,6 +521,7 @@ describe('crear cuenta (A04)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Revisa y confirma' })).toBeInTheDocument();
     expect(screen.getByText('AGU · 2876501019')).toBeInTheDocument();
+    expect(screen.getByText('Rodrigo Añez · rodrigo@guarayos.bo')).toBeInTheDocument();
     expect(screen.getByText('Bs 21.600')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 
@@ -478,8 +583,8 @@ describe('detalle de cuenta (A05)', () => {
     expect(screen.getByText('Puede crear 13 usuarios más')).toBeInTheDocument();
     expect(screen.getByText(/Vence el 05\/11\/2026, en 24 días/)).toBeInTheDocument();
     expect(screen.getAllByText('Carla Méndez').length).toBeGreaterThan(0);
-    // Sitios y puertas son dos indicadores arriba, con enlace a su pestaña.
-    expect(screen.getByRole('link', { name: /Sitios\s*2/ })).toHaveAttribute(
+    // Propiedades y puertas son dos indicadores arriba, con enlace a su pestaña.
+    expect(screen.getByRole('link', { name: /Propiedades\s*2/ })).toHaveAttribute(
       'href',
       '/cuentas/1?pestana=sitios',
     );
@@ -489,14 +594,41 @@ describe('detalle de cuenta (A05)', () => {
     ).toBeInTheDocument();
   });
 
-  it('la pestaña Sitios y puertas muestra el estado de cada lector', async () => {
+  it('editar la cuenta usa el nombre de la cuenta y separa el nombre del apellido del responsable', async () => {
     await abrirDetalle(crearServiciosDePrueba());
-    await userEvent.click(await screen.findByRole('tab', { name: 'Sitios y puertas' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByLabelText('Nombre de la cuenta')).toHaveValue(
+      'Agroindustrial Norte',
+    );
+    expect(within(dialogo).getByLabelText('Nombre')).toHaveValue('Carla');
+    expect(within(dialogo).getByLabelText('Apellido')).toHaveValue('Méndez');
+    expect(within(dialogo).getByLabelText(/^NIT/)).toHaveValue('1023456021');
+  });
+
+  it('sin NIT ni teléfono, la ficha muestra un guion en su lugar', async () => {
+    const sinDatos = {
+      ...DETALLE,
+      empresa: { ...DETALLE.empresa, nit: null, telefono: null },
+    };
+    await abrirDetalle(
+      crearServiciosDePrueba({ cuentas: { obtener: () => Promise.resolve(sinDatos) } }),
+    );
+    expect(
+      await screen.findByRole('heading', { name: /Agroindustrial Norte/ }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('—')).toHaveLength(2);
+    expect(screen.queryByText('1023456021')).not.toBeInTheDocument();
+  });
+
+  it('la pestaña Propiedades y puertas muestra el estado de cada lector', async () => {
+    await abrirDetalle(crearServiciosDePrueba());
+    await userEvent.click(await screen.findByRole('tab', { name: 'Propiedades y puertas' }));
     expect(await screen.findByText('Planta Warnes')).toBeInTheDocument();
     expect(screen.getByText('En línea')).toBeInTheDocument();
     expect(screen.getByText('Sin conexión')).toBeInTheDocument();
     expect(screen.getByText('5 segundos')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Nuevo sitio' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nueva propiedad' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Editar Portón vehicular' })).toBeInTheDocument();
   });
 
@@ -593,7 +725,7 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Suspender' }));
     expect(suspender).not.toHaveBeenCalled();
     const dialogo = await screen.findByRole('dialog');
-    expect(within(dialogo).getByText(/no emite QR/)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/no genera QR/)).toBeInTheDocument();
     await userEvent.click(within(dialogo).getByRole('button', { name: 'Suspender' }));
     await waitFor(() => {
       expect(suspender).toHaveBeenCalledWith('1');
@@ -613,14 +745,13 @@ describe('suscripción de una cuenta (A05b, A06)', () => {
     expect(screen.queryByText('Pendiente')).toBeNull();
   });
 
-  it('el historial muestra banco y cuenta, y abre el comprobante', async () => {
+  it('el historial abre el comprobante', async () => {
     const verComprobante = vi.fn(() => Promise.resolve(new Blob(['x'], { type: 'image/png' })));
     URL.createObjectURL = vi.fn(() => 'blob:prueba');
     URL.revokeObjectURL = vi.fn();
     const abrir = vi.spyOn(globalThis, 'open').mockReturnValue(null);
     await abrirSuscripcion(crearServiciosDePrueba({ suscripciones: { verComprobante } }));
-    expect(await screen.findByText(/Banco Unión/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Ver comprobante' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver comprobante' }));
     await waitFor(() => {
       expect(verComprobante).toHaveBeenCalledWith('77');
       expect(abrir).toHaveBeenCalledWith('blob:prueba', '_blank', 'noopener');
@@ -661,10 +792,12 @@ describe('registrar pago (A07)', () => {
     expect(screen.getByText('Agroindustrial Norte · plan 100 usuarios')).toBeInTheDocument();
   });
 
-  it('la referencia es obligatoria', async () => {
+  it('parte en efectivo y la referencia es opcional: con monto y fecha ya se puede registrar', async () => {
     await abrirPago(crearServiciosDePrueba());
     await screen.findByLabelText('Monto');
-    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeDisabled();
+    expect(screen.getByLabelText('Referencia (opcional)')).toHaveValue('');
+    expect(screen.queryByText('Comprobante')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeEnabled();
   });
 
   it('confirma antes de registrar y manda el pago a la API', async () => {
@@ -676,14 +809,11 @@ describe('registrar pago (A07)', () => {
       }),
     );
     await abrirPago(crearServiciosDePrueba({ pagos: { registrar } }));
-    await userEvent.type(await screen.findByLabelText('Referencia'), 'TRF-912204');
-    await userEvent.click(screen.getByRole('button', { name: 'Depósito' }));
-    // Un depósito exige banco, cuenta y el comprobante: sin ellos no se llega a confirmar.
+    await userEvent.type(await screen.findByLabelText('Referencia (opcional)'), 'TRF-912204');
+    await userEvent.click(screen.getByRole('button', { name: 'QR' }));
+    // Un pago por QR exige el comprobante: sin él no se llega a confirmar.
     await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    await userEvent.click(screen.getByLabelText('Banco donde se recibió'));
-    await userEvent.click(await screen.findByRole('option', { name: 'Banco Unión' }));
-    await userEvent.type(screen.getByLabelText('Cuenta de destino'), '10000123456');
     const comprobante = new File(['x'], 'boleta.png', { type: 'image/png' });
     await userEvent.upload(screen.getByLabelText('Comprobante'), comprobante);
     expect(await screen.findByText('boleta.png')).toBeInTheDocument();
@@ -699,10 +829,8 @@ describe('registrar pago (A07)', () => {
         'renovacion',
         expect.objectContaining({
           monto: 12000,
-          medio: 'deposito',
+          medio: 'qr',
           referencia: 'TRF-912204',
-          banco: 'Banco Unión',
-          cuentaDestino: '10000123456',
           comprobante,
         }),
       );
@@ -745,6 +873,30 @@ describe('cobranza (A08)', () => {
       within(tabla).getByRole('button', { name: 'Registrar pago de Semillas del Este' }),
     );
     expect(await screen.findByRole('heading', { name: 'Registra el pago' })).toBeInTheDocument();
+  });
+
+  it('en una cuenta pendiente de pago, Registrar pago abre el pago sin entrar a la ficha', async () => {
+    const pendiente = {
+      cuenta: { id: '9', codigo: 'NSA', nombre: 'Nueva Sabana' },
+      plan: { id: '1', nombre: '100 usuarios', cupoUsuarios: 100 },
+      monto: 12000,
+      venceEl: new Date('2026-10-18T12:00:00Z'),
+      diasRestantes: 0,
+      pago: 'porActivar' as const,
+      estado: 'pendientePago' as const,
+    };
+    const servicios = crearServiciosDePrueba({
+      pagos: { cobranza: () => Promise.resolve({ ...COBRANZA, filas: [pendiente] }) },
+    });
+    const obtenerCuenta = vi.fn(servicios.cuentas.obtener);
+    servicios.cuentas.obtener = obtenerCuenta;
+    await abrirCobranza(servicios);
+    const tabla = await screen.findByRole('table', { name: 'Cuentas por cobrar' });
+    const boton = within(tabla).getByRole('button', { name: 'Registrar pago de Nueva Sabana' });
+    expect(boton).toHaveTextContent('Registrar pago');
+    await userEvent.click(boton);
+    expect(await screen.findByRole('heading', { name: 'Registra el pago' })).toBeInTheDocument();
+    expect(obtenerCuenta).not.toHaveBeenCalled();
   });
 
   it('cambiar de ventana consulta la API con esa ventana', async () => {
@@ -994,7 +1146,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(2);
+    // Como responsable, como administrador, en el árbol de la cuenta y en el cupo por rama (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(4);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1013,7 +1166,7 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
     });
     expect(await screen.findByRole('img', { name: 'A G R 7 K 2 Q' })).toBeInTheDocument();
     expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Ya lo copié' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Ya lo compartí' }));
     await waitFor(() => {
       expect(screen.queryByRole('img', { name: 'A G R 7 K 2 Q' })).not.toBeInTheDocument();
     });
@@ -1190,5 +1343,319 @@ describe('placas (ADR 0026)', () => {
     await ingresar();
     await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
     expect(screen.queryByRole('link', { name: /Placas/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('estructura de la cuenta: administradores, reasignación y tope (ADR 0028)', () => {
+  async function abrirCuenta(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+  }
+
+  /** Quien entra solo con los permisos que se le den, para probar lo que no se ofrece. */
+  function conPermisos(permisos: string[], cuentas: Partial<CuentasRepositorio> = {}) {
+    return crearServiciosDePrueba({
+      cuentas,
+      seguridad: {
+        ingresar: () =>
+          Promise.resolve({
+            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
+            debeCambiarContrasena: false,
+            permisos,
+          }),
+      },
+    });
+  }
+
+  describe('agregar un administrador', () => {
+    it('pide el nombre, lo crea y muestra su PIN una sola vez', async () => {
+      const crearAdministrador = vi.fn((_cuenta: string, datos: { etiqueta: string }) =>
+        Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGR9X8Z' }),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      const agregar = within(dialogo).getByRole('button', { name: 'Agregar' });
+      expect(agregar).toBeDisabled();
+      await userEvent.type(
+        within(dialogo).getByLabelText('Nombre del administrador'),
+        ' Rosa Vaca ',
+      );
+      await userEvent.click(agregar);
+      await waitFor(() => {
+        expect(crearAdministrador).toHaveBeenCalledWith('1', { etiqueta: 'Rosa Vaca' });
+      });
+      expect(await screen.findByRole('img', { name: 'A G R 9 X 8 Z' })).toBeInTheDocument();
+      expect(screen.getByText('Administrador nuevo: Rosa Vaca')).toBeInTheDocument();
+      expect(screen.getByText(/Este PIN no se vuelve a mostrar/)).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Ya lo compartí' }));
+      await waitFor(() => {
+        expect(screen.queryByRole('img', { name: 'A G R 9 X 8 Z' })).not.toBeInTheDocument();
+      });
+      expect(JSON.stringify(Object.entries(localStorage))).not.toContain('9X8Z');
+    });
+
+    it('con los 4 caracteres elegidos los manda en mayúsculas y valida su formato', async () => {
+      const crearAdministrador = vi.fn((_cuenta: string, datos: { etiqueta: string }) =>
+        Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGRAB12' }),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.type(within(dialogo).getByLabelText('Nombre del administrador'), 'Rosa Vaca');
+      const sufijo = within(dialogo).getByLabelText('Últimos 4 caracteres del PIN');
+      await userEvent.type(sufijo, 'a-');
+      expect(
+        within(dialogo).getByText('Son 4 caracteres entre letras y números.'),
+      ).toBeInTheDocument();
+      expect(within(dialogo).getByRole('button', { name: 'Agregar' })).toBeDisabled();
+      await userEvent.clear(sufijo);
+      await userEvent.type(sufijo, 'ab12');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Agregar' }));
+      await waitFor(() => {
+        expect(crearAdministrador).toHaveBeenCalledWith('1', {
+          etiqueta: 'Rosa Vaca',
+          sufijo: 'AB12',
+        });
+      });
+    });
+
+    it('un error de la API se traduce y el diálogo sigue abierto', async () => {
+      const crearAdministrador = vi.fn(() =>
+        Promise.reject(new ErrorApi(422, 'plan.limite_usuarios')),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { crearAdministrador } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Agregar administrador' }));
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.type(within(dialogo).getByLabelText('Nombre del administrador'), 'Rosa Vaca');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Agregar' }));
+      expect(
+        await within(dialogo).findByText('La cuenta alcanzó el cupo de usuarios de su plan.'),
+      ).toBeInTheDocument();
+    });
+
+    it('sin el permiso de crear administradores no se ofrece el botón', async () => {
+      await abrirCuenta(
+        conPermisos([
+          'seguridad.cuenta.ver',
+          'seguridad.administrador.regenerar_pin',
+          'resumen.panel.ver',
+        ]),
+      );
+      await screen.findByRole('heading', { name: 'Administradores' });
+      expect(
+        screen.queryByRole('button', { name: 'Agregar administrador' }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('quién depende de quién', () => {
+    it('muestra cada administrador con sus Titulares (unidad y Miembros) y Guardias', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
+      expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
+      expect(screen.getByText('Titular · Casa 12 · 3 Miembros')).toBeInTheDocument();
+      expect(screen.getByText('Portería norte')).toBeInTheDocument();
+      expect(screen.getByText('Todavía no tiene Titulares ni Guardias.')).toBeInTheDocument();
+    });
+
+    it('reasignar un Titular explica que lleva su unidad y sus Miembros, y lo manda a otro administrador', async () => {
+      const reasignar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Jorge Rivero a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      expect(within(dialogo).getByText(/con su unidad y sus 3 Miembros/)).toBeInTheDocument();
+      const reasignarBoton = within(dialogo).getByRole('button', { name: 'Reasignar' });
+      expect(reasignarBoton).toBeDisabled();
+      // El destino no incluye al administrador que ya lo tiene
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      expect(screen.queryByRole('option', { name: 'Carla Méndez' })).not.toBeInTheDocument();
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(reasignarBoton);
+      await waitFor(() => {
+        expect(reasignar).toHaveBeenCalledWith('1', '31', '12');
+      });
+    });
+
+    it('reasignar un Guardia manda al Guardia', async () => {
+      const reasignar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Portería norte a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Reasignar' }));
+      await waitFor(() => {
+        expect(reasignar).toHaveBeenCalledWith('1', '21', '12');
+      });
+    });
+
+    it('un error de la API al reasignar se traduce', async () => {
+      const reasignar = vi.fn(() =>
+        Promise.reject(new ErrorApi(422, 'reasignacion.mismo_administrador')),
+      );
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Reasignar a Portería norte a otro administrador',
+        }),
+      );
+      const dialogo = await screen.findByRole('dialog');
+      await userEvent.click(within(dialogo).getByLabelText('Nuevo administrador'));
+      await userEvent.click(await screen.findByRole('option', { name: 'Rosa Vaca' }));
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Reasignar' }));
+      expect(
+        await within(dialogo).findByText('Ya depende de ese administrador.'),
+      ).toBeInTheDocument();
+    });
+
+    it('sin el permiso de reasignar, el árbol se ve pero no se ofrece mover a nadie', async () => {
+      await abrirCuenta(conPermisos(['seguridad.cuenta.ver', 'resumen.panel.ver']));
+      expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
+      expect(screen.queryByRole('button', { name: /^Reasignar a/ })).not.toBeInTheDocument();
+    });
+
+    it('si el árbol no carga, lo dice y deja reintentar', async () => {
+      const jerarquia = vi
+        .fn()
+        .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
+        .mockResolvedValue([]);
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { jerarquia } }));
+      expect(
+        await screen.findByText('No pudimos cargar la estructura de la cuenta'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('tope de Miembros por Titular', () => {
+    it('la ficha muestra el tope de la cuenta', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      const etiquetas = await screen.findAllByText('Máximo de Miembros por Titular');
+      // En la ficha, la etiqueta va con su valor (10 por defecto) en la misma fila
+      expect(etiquetas[0]?.closest('div')).toHaveTextContent('10');
+    });
+
+    it('el diálogo de edición parte del tope vigente y lo manda al guardar', async () => {
+      const editar = vi.fn(() => Promise.resolve());
+      await abrirCuenta(crearServiciosDePrueba({ cuentas: { editar } }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+      const dialogo = await screen.findByRole('dialog');
+      const campo = within(dialogo).getByLabelText('Máximo de Miembros por Titular');
+      expect(campo).toHaveValue('10');
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '25');
+      await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar cambios' }));
+      await waitFor(() => {
+        expect(editar).toHaveBeenCalledWith(
+          '1',
+          expect.objectContaining({ maxMiembrosPorTitular: 25 }),
+        );
+      });
+    });
+
+    it('rechaza vacío, cero, decimales y más de 500', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+      const dialogo = await screen.findByRole('dialog');
+      const campo = within(dialogo).getByLabelText('Máximo de Miembros por Titular');
+      const guardar = within(dialogo).getByRole('button', { name: 'Guardar cambios' });
+      for (const invalido of ['', '0', '2.5', '501']) {
+        await userEvent.clear(campo);
+        if (invalido !== '') await userEvent.type(campo, invalido);
+        expect(guardar).toBeDisabled();
+        expect(
+          within(dialogo).getByText('Escribe un número entero de 1 a 500.'),
+        ).toBeInTheDocument();
+      }
+      await userEvent.clear(campo);
+      await userEvent.type(campo, '500');
+      expect(guardar).toBeEnabled();
+    });
+  });
+});
+
+describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
+  async function abrirCuenta(servicios: Servicios) {
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+  }
+
+  it('explica los umbrales y que es solo informativo', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('Uso de los usuarios')).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Inactivo: sin generar ningún QR en 30 días\. Ruidoso: más de 10 QR/),
+    ).toBeInTheDocument();
+  });
+
+  it('lista inactivos (con su último QR), ruidosos y Titulares cerca del tope', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('2 usuarios inactivos')).toBeInTheDocument();
+    expect(screen.getByText('Sin QR en 30 días · nunca generó uno')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sin QR en 30 días · el último fue el 02\/09\/2026/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('1 usuario ruidoso')).toBeInTheDocument();
+    expect(screen.getByText('Hasta 14 QR en un día · 40 en total')).toBeInTheDocument();
+    expect(screen.getByText('1 Titular cerca de su tope')).toBeInTheDocument();
+    expect(screen.getByText('Casa 12 · 9 de 10 Miembros')).toBeInTheDocument();
+    // Un Titular con holgura no aparece en esa lista
+    expect(screen.queryByText(/Casa 3 · 1 de 10/)).not.toBeInTheDocument();
+  });
+
+  it('muestra cuántos usuarios cuelgan de cada administrador', async () => {
+    await abrirCuenta(crearServiciosDePrueba());
+    expect(await screen.findByText('Usuarios por administrador')).toBeInTheDocument();
+    expect(screen.getByText('5 usuarios')).toBeInTheDocument();
+    expect(screen.getByText('0 usuarios')).toBeInTheDocument();
+  });
+
+  it('sin casos, cada grupo lo dice', async () => {
+    const vacio = {
+      ventanaDias: 30,
+      umbralInactivoDias: 30,
+      umbralRuidosoPorDia: 10,
+      usuarios: [],
+      titulares: [],
+      ramas: [],
+    };
+    await abrirCuenta(
+      crearServiciosDePrueba({
+        cuentas: { estadisticasDeUsuarios: () => Promise.resolve(vacio) },
+      }),
+    );
+    expect(await screen.findByText('Nadie está inactivo.')).toBeInTheDocument();
+    expect(screen.getByText('Nadie genera QR de más.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Ningún Titular está cerca de su tope de Miembros.'),
+    ).toBeInTheDocument();
+  });
+
+  it('si no carga, lo dice y deja reintentar', async () => {
+    const estadisticasDeUsuarios = vi
+      .fn()
+      .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
+      .mockResolvedValue({
+        ventanaDias: 30,
+        umbralInactivoDias: 30,
+        umbralRuidosoPorDia: 10,
+        usuarios: [],
+        titulares: [],
+        ramas: [],
+      });
+    await abrirCuenta(crearServiciosDePrueba({ cuentas: { estadisticasDeUsuarios } }));
+    expect(await screen.findByText('No pudimos cargar el uso de los usuarios')).toBeInTheDocument();
   });
 });

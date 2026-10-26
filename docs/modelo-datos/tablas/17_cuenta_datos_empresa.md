@@ -1,6 +1,6 @@
 # 17 — `cuenta_datos_empresa`
 
-**Módulo dueño:** `seguridad` · **Tenant:** sí · **Migración:** `db/migrations/20261012100004_create_cuenta_datos_empresa.sql`
+**Módulo dueño:** `seguridad` · **Tenant:** sí · **Migración:** `db/migrations/20261012100004_create_cuenta_datos_empresa.sql` y `20261021100001_ajusta_cuenta_datos_empresa.sql`
 
 ## Propósito
 
@@ -12,10 +12,11 @@ Datos de la empresa cliente que el equipo AGROCOM captura al crear la cuenta (we
 |---|---|---|---|
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
-| `nit` | `VARCHAR(20)` | no | NIT de la empresa |
+| `nit` | `VARCHAR(20)` | sí | NIT de la empresa (opcional) |
 | `ciudad` | `VARCHAR(80)` | no |  |
-| `contacto_nombre` | `VARCHAR(120)` | no | Contacto de facturación |
-| `contacto_telefono` | `VARCHAR(30)` | no |  |
+| `contacto_nombre` | `VARCHAR(120)` | no | Nombre del contacto de facturación |
+| `contacto_apellido` | `VARCHAR(120)` | no | Apellido del contacto; `''` en las filas anteriores a la migración |
+| `contacto_telefono` | `VARCHAR(30)` | sí | Opcional |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` (skill `modelo-datos`) |
 
 ## Índices y restricciones

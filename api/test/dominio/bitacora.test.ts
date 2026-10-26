@@ -48,6 +48,10 @@ describe('clasificarCambio', () => {
       { tabla: 'usuarios', accion: 'actualizado', despues: { pin_generado_at: 'x' } },
       'usuario.pin_regenerado',
     ],
+    [
+      { tabla: 'usuarios', accion: 'actualizado', despues: { pin_compartido_at: 'x' } },
+      'usuario.pin_compartido',
+    ],
     [{ tabla: 'usuarios', accion: 'creado' }, 'usuario.creado'],
     [{ tabla: 'puertas', accion: 'actualizado' }, 'puerta.editado'],
     [{ tabla: 'sitios', accion: 'eliminado' }, 'sitio.eliminado'],

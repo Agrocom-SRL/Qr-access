@@ -1,5 +1,5 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 
@@ -30,12 +30,14 @@ TonoAcceso tonoEstadoQr(EstadoQr estado) => switch (estado) {
   EstadoQr.anulado => TonoAcceso.neutro,
 };
 
-/// Texto de un error de los datos del formulario de emisión.
-String textoErrorDatosEmision(AppLocalizations l10n, ErrorDatosEmision error) =>
-    switch (error) {
-      ErrorDatosEmision.sinPuertas => l10n.qrEmitirErrorSinPuertas,
-      ErrorDatosEmision.etiquetaLarga => l10n.qrEmitirErrorEtiquetaLarga(
-        DatosEmision.largoMaximoEtiqueta,
-      ),
-      ErrorDatosEmision.vigenciaPasada => l10n.qrEmitirErrorVigenciaPasada,
-    };
+/// Texto de un error de los datos del formulario de generación.
+String textoErrorDatosGeneracion(
+  AppLocalizations l10n,
+  ErrorDatosGeneracion error,
+) => switch (error) {
+  ErrorDatosGeneracion.sinPuertas => l10n.qrGenerarErrorSinPuertas,
+  ErrorDatosGeneracion.etiquetaLarga => l10n.qrGenerarErrorEtiquetaLarga(
+    DatosGeneracion.largoMaximoEtiqueta,
+  ),
+  ErrorDatosGeneracion.vigenciaPasada => l10n.qrGenerarErrorVigenciaPasada,
+};

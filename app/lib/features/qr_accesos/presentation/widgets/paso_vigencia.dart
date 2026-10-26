@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_campo_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
@@ -62,7 +62,7 @@ class PasoVigencia extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(l10n.qrEmitirVigencia, style: textos.titleLarge),
+        Text(l10n.qrGenerarVigencia, style: textos.titleLarge),
         SizedBox(height: tokens.espacio.m),
         SelectorSegmentado<bool>(
           segmentos: [
@@ -133,16 +133,16 @@ class PasoVigencia extends StatelessWidget {
         ],
         SizedBox(height: tokens.espacio.xl),
         CampoFormulario(
-          etiqueta: l10n.qrEmitirEtiqueta,
+          etiqueta: l10n.qrGenerarEtiqueta,
           opcional: true,
-          ayuda: l10n.qrEmitirEtiquetaAyuda,
+          ayuda: l10n.qrGenerarEtiquetaAyuda,
           textoError: textoError,
           largoActual: etiqueta.length,
-          largoMaximo: DatosEmision.largoMaximoEtiqueta,
+          largoMaximo: DatosGeneracion.largoMaximoEtiqueta,
           child: AccesoCampoTexto(
             controlador: controladorEtiqueta,
-            placeholder: l10n.qrEmitirEtiquetaEjemplo,
-            maxLargo: DatosEmision.largoMaximoEtiqueta,
+            placeholder: l10n.qrGenerarEtiquetaEjemplo,
+            maxLargo: DatosGeneracion.largoMaximoEtiqueta,
             alCambiar: alCambiarEtiqueta,
           ),
         ),

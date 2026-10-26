@@ -11,7 +11,7 @@ ADR 0004. Origen: ADR 0004 de ACRECIA, portado de Laravel a Node.
 
 - `cuentas`: identidad (nombre, `codigo` de ingreso, `activo`). Datos de empresa aparte (`cuenta_datos_empresa`).
 - `usuarios.tenant_id NULL` = usuario de la **plataforma** (super admin de AGROCOM).
-- Todo lo demás de una cuenta (suscripción, sitios, puertas, dispositivos, QR emitidos, eventos) lleva `tenant_id`.
+- Todo lo demás de una cuenta (suscripción, sitios, puertas, dispositivos, QR generados, eventos) lleva `tenant_id`.
 
 ## Aislamiento por construcción
 
@@ -29,14 +29,15 @@ Usuarios de cuenta (ADR 0018): `POST /api/v1/sesiones { pin }`:
 - El refresh se rota **en sitio** (misma fila de `sesiones`, nuevo hash): el JWT de acceso en vuelo sigue valiendo y un refresh ya usado deja de servir. Cada petición revalida contra la base la sesión, el usuario, la cuenta y el rol activo.
 
 Super admin: `POST /api/v1/sesiones/plataforma { usuario, contrasena }` con **argon2id** [confirmar ruta al implementar].
-- Respuesta: JWT de acceso (15 min) + refresh (30 días, rotativo, guardado hasheado en `sesiones`, revocable). Si el usuario tiene más de un rol y ninguno preferido, el JWT sale sin rol activo y la app pide elegirlo.
+- Respuesta: JWT de acceso (15 min) + refresh (30 días, rotativo, guardado hasheado en `sesiones`, revocable). Un usuario tiene un solo rol (ADR 0028): el JWT lleva ese rol; sin rol vigente sale sin permisos.
 
 ## Roles y permisos
 
-- `roles.tenant_id`: cada cuenta tiene los suyos; cada cuenta nace con **Administrador** (protegido) y **Guardia**; usuarios finales con **Usuario**.
+- `roles.tenant_id`: cada cuenta tiene los suyos; cada cuenta nace con **Administrador** (protegido), **Titular**, **Miembro** y **Guardia** (`domain/roles-base.ts`); el nombre del rol define el nivel en el árbol (`domain/jerarquia.ts`).
 - `permisos`: catálogo global sembrado (`<modulo>.<entidad>.<accion>`, p. ej. `organizacion.puerta.editar`, `accesos.evento.ver`, `accesos.qr.escanear`) con **ámbito** `plataforma` o `cuenta`. Un rol de cuenta nunca recibe uno de plataforma.
-- **Rol activo**: viaja en el JWT (`rol`). `POST /api/v1/sesiones/rol-activo` emite un JWT nuevo sin pedir contraseña. Los permisos efectivos son los del rol activo, **nunca la unión**, revalidados contra la base en cada request (un rol quitado deja de servir de inmediato).
-- Ruta: `preHandler: permiso('organizacion.puerta.editar')`. Menú de la app: `GET /api/v1/sesiones/actual` devuelve los permisos del rol activo y la app oculta lo que no corresponde (presentación, no autorización).
+- **Un usuario, un rol** (ADR 0028; ya no hay cambio de rol): el rol viaja en el JWT (`rid`) y la base lo impone (`uq_usuario_roles_usuario`). Los permisos efectivos son los de ese rol, revalidados contra la base en cada request (un rol quitado deja de servir de inmediato).
+- **Árbol y visibilidad por rama** (ADR 0028): `usuarios.superior_id` vincula Administrador → Titular y Guardia → Miembro. Cada nivel crea solo el de abajo (`puedeCrear`) y ve, edita, da de baja y regenera el PIN solo de su **rama** (`RepositorioDeUsuarios.buscarEnRama`/`listarDeRama`), nunca de un igual ni un superior (404). Es una segunda capa sobre el aislamiento por cuenta, no su reemplazo. Compartir el PIN: la app lo manda por la hoja de compartir del sistema y llama a `POST /usuarios/:id/pin/compartido` (permiso `seguridad.usuario.editar`, solo la rama del actor) para dejar en la bitácora quién lo compartió y cuándo (`usuarios.pin_compartido_at`); no se fuerza el cambio del PIN. Estadísticas de uso (informativas, umbrales fijos: 30 días sin QR = inactivo, más de 10 QR en un día = ruidoso, Titular cerca del tope desde el 80 %): `GET /usuarios/estadisticas` (permiso `seguridad.estadistica.ver`, solo el Administrador, solo su rama) y `GET /plataforma/cuentas/:id/estadisticas-de-usuarios` (AGROCOM, toda la cuenta con el cupo de cada rama); los calcula la API (`domain/actividad-de-usuarios.ts`) a partir de `qr_accesos` y las apps no calculan nada. Solo AGROCOM (panel web, rutas `/plataforma/cuentas/:id/…`) suma Administradores (`administradores`, permiso `seguridad.administrador.crear`), ve el árbol de la cuenta (`jerarquia`), reasigna un Guardia o un Titular con su unidad y Miembros a otro Administrador (`reasignaciones`, permiso `seguridad.administrador.reasignar`) y fija `max_miembros_por_titular` al editar la cuenta. Un Titular nace con su unidad (`unidad` en `POST /usuarios`); la baja de quien tiene a otros debajo exige `?confirmar=true` y es en cascada (unidades y sesiones incluidas); un Titular tiene hasta `cuentas.max_miembros_por_titular` Miembros; `GET /cupo` (permiso `seguridad.cupo.ver`, solo el Administrador) muestra el uso del cupo de toda la cuenta.
+- Ruta: `preHandler: permiso('organizacion.puerta.editar')`. Cuando el permiso depende del cuerpo (el cuerpo ya está validado en el `preHandler`), se elige ahí: `POST /qr-accesos` exige `accesos.qr.generar_propio` si `propio` es true y `accesos.qr.generar` si no; el Guardia solo tiene el primero. Menú de la app: `GET /api/v1/sesiones/actual` devuelve los permisos del rol y la app oculta lo que no corresponde (presentación, no autorización).
 
 ## Super admin
 

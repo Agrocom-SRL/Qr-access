@@ -128,7 +128,7 @@ describe('GET /api/v1/puertas', () => {
     expect(sinSesion.statusCode).toBe(401);
     await prueba.pool.query(
       'DELETE rp FROM rol_permisos rp JOIN permisos p ON p.id = rp.permiso_id WHERE p.codigo = ? AND rp.rol_id = ?',
-      ['organizacion.puerta.ver', a.rolUsuarioId],
+      ['organizacion.puerta.ver', a.rolMiembroId],
     );
     const sinPermiso = await listar(sesionA);
     expect(sinPermiso.statusCode).toBe(403);

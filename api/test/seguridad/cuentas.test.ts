@@ -51,6 +51,7 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
     nit: '2876501019',
     ciudad: 'Ascensión de Guarayos',
     contacto_nombre: 'Rodrigo Añez',
+    contacto_apellido: 'Pérez',
     contacto_telefono: '7 712 4405',
     contacto_correo: 'rodrigo@guarayos.bo',
     plan_id: planIds[1],
@@ -94,12 +95,12 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       }>();
       expect(cuerpo.roles.map((r) => r.nombre)).toEqual(['Administrador']);
       expect(cuerpo.permisos).toContain('seguridad.usuario.crear');
-      expect(cuerpo.permisos).toContain('accesos.qr.emitir');
+      expect(cuerpo.permisos).toContain('accesos.qr.generar');
       expect(cuerpo.permisos.some((p) => p.startsWith('seguridad.cuenta'))).toBe(false);
       expect(cuerpo.suscripcion?.plan).toBe('200 usuarios');
     });
 
-    it('trae los tres roles base y guarda los datos de la empresa', async () => {
+    it('trae los cuatro roles base y guarda los datos de la empresa', async () => {
       const creada = (await crear(nueva())).json<CuentaCreadaDto>();
       const [roles] = await prueba.pool.query<RowDataPacket[]>(
         'SELECT nombre, protegido FROM roles WHERE tenant_id = ? ORDER BY nombre',
@@ -108,7 +109,8 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       expect(roles.map((r: RowDataPacket) => [String(r.nombre), Number(r.protegido)])).toEqual([
         ['Administrador', 1],
         ['Guardia', 0],
-        ['Usuario', 0],
+        ['Miembro', 0],
+        ['Titular', 0],
       ]);
       const [empresa] = await prueba.pool.query<RowDataPacket[]>(
         'SELECT nit, ciudad, contacto_nombre, contacto_telefono FROM cuenta_datos_empresa WHERE tenant_id = ?',
@@ -281,7 +283,11 @@ describe('plataforma: cuentas (A03, A04, A05)', () => {
       expect(respuesta.statusCode, respuesta.body).toBe(200);
       expect(respuesta.json()).toMatchObject({
         cuenta: { codigo: 'AGU', nombre: 'Agrícola Guarayos S.A.', activa: true },
-        empresa: { nit: '2876501019', ciudad: 'Ascensión de Guarayos', contacto: 'Rodrigo Añez' },
+        empresa: {
+          nit: '2876501019',
+          ciudad: 'Ascensión de Guarayos',
+          contacto: 'Rodrigo Añez Pérez',
+        },
         suscripcion: {
           plan: { nombre: '200 usuarios', cupo_usuarios: 200, precio_anual: 21600 },
           estado: 'activa',

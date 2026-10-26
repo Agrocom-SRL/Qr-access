@@ -3,26 +3,11 @@ import type { DefinicionDeLibro } from '../../../shared/lib/excel';
 
 /** Reglas puras de los pagos y la cobranza (A07 y A08), ADR 0022. */
 
-export type MedioDePago = 'transferencia' | 'deposito' | 'efectivo';
-export const MEDIOS: readonly MedioDePago[] = ['transferencia', 'deposito', 'efectivo'];
+export type MedioDePago = 'transferencia' | 'qr' | 'efectivo';
+/** El efectivo va primero: es el medio por defecto. */
+export const MEDIOS: readonly MedioDePago[] = ['efectivo', 'transferencia', 'qr'];
 
 export type TipoDePago = 'alta' | 'renovacion' | 'mejora_de_plan';
-
-/** Bancos donde AGROCOM recibe los pagos. TODO(docs): confirmar con negocio las cuentas reales. */
-export const BANCOS = [
-  'Banco Unión',
-  'Banco Nacional de Bolivia',
-  'Banco de Crédito',
-  'Banco Mercantil Santa Cruz',
-  'Banco BISA',
-  'Banco Ganadero',
-  'Banco Económico',
-  'Banco FIE',
-  'Banco Sol',
-  'Banco Fassil',
-  'Banco Prodem',
-  'Otro',
-] as const;
 
 /** Lo que acepta la API como comprobante (ADR 0024): se revisa también acá para avisar antes de subir. */
 export const TIPOS_DE_COMPROBANTE = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
@@ -38,11 +23,9 @@ export interface FormularioDePago {
   /** `aaaa-mm-dd`. */
   fechaPago: string;
   medio: MedioDePago;
+  /** Dato opcional: un pago completo no tiene más detalle que haberse hecho. */
   referencia: string;
-  /** A qué banco y cuenta de AGROCOM llegó el dinero; solo para transferencia y depósito. */
-  banco: string;
-  cuentaDestino: string;
-  /** La foto o el PDF del comprobante; solo para transferencia y depósito. */
+  /** La foto o el PDF del comprobante; solo para transferencia y QR. */
   comprobante: File | null;
 }
 
@@ -64,10 +47,7 @@ export function validarPago(
   else if (parsearMonto(datos.monto) === null) errores.monto = 'formato';
   if (datos.fechaPago === '') errores.fechaPago = 'requerido';
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(datos.fechaPago)) errores.fechaPago = 'formato';
-  if (datos.referencia.trim() === '') errores.referencia = 'requerido';
   if (requiereRespaldo(datos.medio)) {
-    if (datos.banco.trim() === '') errores.banco = 'requerido';
-    if (datos.cuentaDestino.trim() === '') errores.cuentaDestino = 'requerido';
     if (datos.comprobante === null) errores.comprobante = 'requerido';
     else if (!TIPOS_DE_COMPROBANTE.includes(datos.comprobante.type)) {
       errores.comprobante = 'archivoInvalido';

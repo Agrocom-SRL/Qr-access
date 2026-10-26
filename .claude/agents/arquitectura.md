@@ -16,3 +16,5 @@ Responsabilidades:
 4. Auditar un cambio contra los ADRs y decir cuál contradice y por qué.
 
 No implementes: tu salida es la ubicación, el ADR o el hallazgo.
+
+Límites y QR (ADR 0030 y 0031): el rate limit, las señales y las notificaciones deben caber en los módulos existentes sin que un módulo lea el repositorio de otro (solo `contracts.ts` y `events.ts`). Audita que ningún cambio limite la validación y que el ADR 0031 se acepte o descarte punto por punto antes de implementar.

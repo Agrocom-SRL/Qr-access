@@ -165,12 +165,17 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
         { monto: -5 },
         { monto: 10.123 },
         { medio: 'cheque' },
-        { referencia: ' ' },
+        { medio: 'deposito' },
         { fecha_pago: '12/10/2026' },
       ]) {
         expect((await pago(cambio)).statusCode).toBe(400);
       }
       expect(await contarFilas(prueba.pool, 'pagos')).toBe(0);
+    });
+
+    it('la referencia es opcional: sin ella el pago se registra con la referencia vacía', async () => {
+      const respuesta = await pago({ referencia: undefined });
+      expect(respuesta.statusCode, respuesta.body).toBe(201);
     });
 
     it('una suscripción suspendida no se renueva hasta reactivarla', async () => {
@@ -261,7 +266,11 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
           method: 'POST',
           url: '/api/v1/usuarios',
           headers: conUsuario(sesion),
-          payload: { etiqueta: 'Nuevo', rol_ids: [escenario.rolUsuarioId] },
+          payload: {
+            etiqueta: 'Nuevo',
+            rol_ids: [escenario.rolTitularId],
+            unidad: { sitio_id: escenario.sitioId, nombre: 'Casa 1' },
+          },
         });
       expect((await crear()).json<Problema>().code).toBe('plan.limite_usuarios');
       await cambiar(planes[200]);
@@ -270,30 +279,30 @@ describe('plataforma: suscripción, pagos y cobranza (A05b, A06, A07, A08)', () 
   });
 
   describe('suspender y reactivar', () => {
-    it('suspendida, la cuenta no emite QR; reactivada, vuelve a emitir', async () => {
+    it('suspendida, la cuenta no genera QR; reactivada, vuelve a generar', async () => {
       const sesion = await iniciarSesion(prueba.app, escenario.usuario.pin);
-      const emitir = () =>
+      const generar = () =>
         prueba.app.inject({
           method: 'POST',
           url: '/api/v1/qr-accesos',
           headers: conUsuario(sesion),
           payload: { puerta_ids: [escenario.puertaPrincipal.id] },
         });
-      expect((await emitir()).statusCode).toBe(201);
+      expect((await generar()).statusCode).toBe(201);
       const suspension = await prueba.app.inject({
         method: 'POST',
         url: url('/suscripcion/suspension'),
         headers,
       });
       expect(suspension.statusCode).toBe(204);
-      const rechazado = await emitir();
+      const rechazado = await generar();
       expect(rechazado.statusCode).toBe(403);
       expect(rechazado.json<Problema>().code).toBe('suscripcion.vencida');
       expect((await suscripcion()).suscripcion.estado).toBe('suspendida');
       expect((await suscripcion()).proximo_pago).toBeNull();
 
       await prueba.app.inject({ method: 'POST', url: url('/suscripcion/reactivacion'), headers });
-      expect((await emitir()).statusCode).toBe(201);
+      expect((await generar()).statusCode).toBe(201);
     });
 
     it('es idempotente', async () => {

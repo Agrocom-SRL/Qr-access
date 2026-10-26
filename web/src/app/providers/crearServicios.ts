@@ -1,6 +1,7 @@
 import { AlmacenSesion } from '../../shared/api/almacenSesion';
 import { crearClienteFetch } from '../../shared/api/clienteHttp';
 import { crearBitacoraHttp, type BitacoraRepositorio } from '../../features/bitacora';
+import { crearCobroHttp, type CobroRepositorio } from '../../features/cobro';
 import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuentas';
 import { crearEventosHttp, type EventosRepositorio } from '../../features/eventos';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
@@ -21,6 +22,7 @@ export interface Servicios {
   seguridad: SeguridadRepositorio;
   equipo: EquipoRepositorio;
   planes: PlanesRepositorio;
+  cobro: CobroRepositorio;
   placas: PlacasRepositorio;
   cuentas: CuentasRepositorio;
   suscripciones: SuscripcionesRepositorio;
@@ -43,6 +45,7 @@ export function crearServicios(
     seguridad: crearSeguridadHttp(cliente, almacen),
     equipo: crearEquipoHttp(cliente),
     planes: crearPlanesHttp(cliente),
+    cobro: crearCobroHttp(cliente),
     placas: crearPlacasHttp(cliente),
     cuentas: crearCuentasHttp(cliente),
     suscripciones: crearSuscripcionesHttp(cliente),

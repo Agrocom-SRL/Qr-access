@@ -14,6 +14,8 @@ import { tienePermiso, useSesion } from '../../../seguridad';
 import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
+import { JerarquiaDeCuenta } from './JerarquiaDeCuenta';
+import { UsoDeUsuarios } from './UsoDeUsuarios';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
 import styles from './ResumenDeCuenta.module.css';
 
@@ -35,7 +37,7 @@ function textoDeVencimiento(
 
 /** Pestaña "Resumen" de la ficha: plan y uso, datos de la empresa y tres indicadores (A05a). */
 export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
-  const { t } = useTranslation(['detalle', 'planes']);
+  const { t } = useTranslation(['detalle', 'planes', 'comun']);
   const { suscripcion, empresa, uso } = detalle;
   const { sesion } = useSesion();
   const puedeCambiarCodigo = tienePermiso(
@@ -46,6 +48,11 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
     sesion?.permisos ?? [],
     'seguridad.administrador.regenerar_pin',
   );
+  const puedeAgregarAdministrador = tienePermiso(
+    sesion?.permisos ?? [],
+    'seguridad.administrador.crear',
+  );
+  const puedeReasignar = tienePermiso(sesion?.permisos ?? [], 'seguridad.administrador.reasignar');
   const [cambiandoCodigo, setCambiandoCodigo] = useState(false);
   const cupo = suscripcion?.plan.cupoUsuarios ?? null;
   const disponibles = usuariosDisponibles(uso.usuariosActivos, cupo);
@@ -167,8 +174,13 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
                   ) : null}
                 </span>
               </FilaClaveValor>
-              <FilaClaveValor clave={t('detalle:nit')}>{empresa.nit}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:nit')}>
+                {empresa.nit || t('comun:sinDato')}
+              </FilaClaveValor>
               <FilaClaveValor clave={t('detalle:ciudad')}>{empresa.ciudad}</FilaClaveValor>
+              <FilaClaveValor clave={t('detalle:maxMiembros')}>
+                {detalle.cuenta.maxMiembrosPorTitular}
+              </FilaClaveValor>
               <FilaClaveValor clave={t('detalle:clienteDesde')}>
                 {formatearFecha(detalle.cuenta.clienteDesde)}
               </FilaClaveValor>
@@ -187,8 +199,12 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
               <Avatar grande nombre={empresa.contacto} />
               <dl className={styles.contacto}>
                 <strong className={styles.nombrePersona}>{empresa.contacto}</strong>
-                <FilaClaveValor clave={t('detalle:telefono')}>{empresa.telefono}</FilaClaveValor>
-                <FilaClaveValor clave={t('detalle:correo')}>{empresa.correo ?? '—'}</FilaClaveValor>
+                <FilaClaveValor clave={t('detalle:telefono')}>
+                  {empresa.telefono || t('comun:sinDato')}
+                </FilaClaveValor>
+                <FilaClaveValor clave={t('detalle:correo')}>
+                  {empresa.correo || t('comun:sinDato')}
+                </FilaClaveValor>
               </dl>
             </div>
           ) : (
@@ -198,7 +214,19 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
       </div>
 
       <div className={styles.administradores}>
-        <AdministradoresDeCuenta cuentaId={detalle.cuenta.id} puedeRegenerar={puedeRegenerar} />
+        <AdministradoresDeCuenta
+          cuentaId={detalle.cuenta.id}
+          puedeRegenerar={puedeRegenerar}
+          puedeAgregar={puedeAgregarAdministrador}
+        />
+      </div>
+
+      <div className={styles.administradores}>
+        <JerarquiaDeCuenta cuentaId={detalle.cuenta.id} puedeReasignar={puedeReasignar} />
+      </div>
+
+      <div className={styles.administradores}>
+        <UsoDeUsuarios cuentaId={detalle.cuenta.id} />
       </div>
 
       <DialogoCambiarCodigo

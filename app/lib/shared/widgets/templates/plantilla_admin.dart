@@ -45,7 +45,7 @@ class PlantillaAdmin extends ConsumerWidget {
   /// En compacto, un ícono en vez del botón; sin él se usa [accion].
   final Widget? accionCompacta;
 
-  /// Botón flotante (compacto): "Emitir QR" en Mis QR.
+  /// Botón flotante (compacto): "Generar QR" en Mis QR.
   final Widget? fab;
 
   /// A dónde lleva "atrás" en una pantalla que no es un destino principal
@@ -171,7 +171,7 @@ class PlantillaAdmin extends ConsumerWidget {
 
   static IconData _icono(DestinoNav d, {required bool activo}) => switch (d) {
     DestinoNav.inicio => activo ? Icons.home : Icons.home_outlined,
-    DestinoNav.emitirQr => Icons.qr_code_2,
+    DestinoNav.generarQr => Icons.qr_code_2,
     DestinoNav.misQr => Icons.qr_code_2,
     DestinoNav.eventos => Icons.history,
     DestinoNav.puertas =>
@@ -183,7 +183,7 @@ class PlantillaAdmin extends ConsumerWidget {
 
   static String _etiqueta(AppLocalizations l10n, DestinoNav d) => switch (d) {
     DestinoNav.inicio => l10n.navInicio,
-    DestinoNav.emitirQr => l10n.navEmitirQr,
+    DestinoNav.generarQr => l10n.navGenerarQr,
     DestinoNav.misQr => l10n.navMisQr,
     DestinoNav.eventos => l10n.navEventos,
     DestinoNav.puertas => l10n.navPuertas,

@@ -2,8 +2,8 @@ import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { permiso, usuarioDe } from '../../plugins/permisos.js';
-import { ejecutar as cambiarRolActivo } from './actions/cambiar-rol-activo.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
+import { ejecutar as compartirPin } from './actions/compartir-pin.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
 import { ejecutar as editarMiPerfil } from './actions/editar-mi-perfil.js';
 import { ejecutar as editarUsuario } from './actions/editar-usuario.js';
@@ -13,21 +13,24 @@ import { ejecutar as iniciarSesion } from './actions/iniciar-sesion.js';
 import { ejecutar as listarRoles } from './actions/listar-roles.js';
 import { ejecutar as listarUsuarios } from './actions/listar-usuarios.js';
 import { ejecutar as refrescarSesion } from './actions/refrescar-sesion.js';
+import { ejecutar as estadisticasDeUsuarios } from './actions/estadisticas-de-usuarios.js';
+import { ejecutar as verCupo } from './actions/ver-cupo.js';
 import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
   cuerpoDeMiPerfil,
   cuerpoDeNuevoUsuario,
+  consultaDeBaja,
   cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
-  cuerpoDeRolActivo,
   esquemaUsuario,
   parametrosDeUsuario,
+  respuestaDeCupo,
+  respuestaDeEstadisticasDeUsuarios,
   respuestaDeIngreso,
   respuestaDePinGenerado,
   respuestaDeRefresco,
-  respuestaDeRolActivo,
   respuestaDeSesionActual,
   respuestaDeMiPerfil,
   respuestaDeUsuarioCreado,
@@ -78,18 +81,6 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       (request) => refrescarSesion(servicios, request.body.refresco),
     );
 
-    app.post(
-      '/sesiones/rol-activo',
-      {
-        schema: {
-          tags: ['seguridad'],
-          body: cuerpoDeRolActivo,
-          response: { 200: respuestaDeRolActivo },
-        },
-      },
-      (request) => cambiarRolActivo(servicios, usuarioDe(request), request.body.rol_id),
-    );
-
     app.get(
       '/sesiones/actual',
       { schema: { tags: ['seguridad'], response: { 200: respuestaDeSesionActual } } },
@@ -114,6 +105,26 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       return reply.status(204).send();
     });
 
+    // El porcentaje y los avisos del cupo los ve solo el Administrador (ADR 0028 §6).
+    app.get(
+      '/cupo',
+      {
+        schema: { tags: ['seguridad'], response: { 200: respuestaDeCupo } },
+        preHandler: permiso('seguridad.cupo.ver'),
+      },
+      (request) => verCupo(pool, usuarioDe(request)),
+    );
+
+    // El uso de la rama del actor: inactivos, ruidosos y Titulares cerca de su tope (ADR 0028 §4).
+    app.get(
+      '/usuarios/estadisticas',
+      {
+        schema: { tags: ['seguridad'], response: { 200: respuestaDeEstadisticasDeUsuarios } },
+        preHandler: permiso('seguridad.estadistica.ver'),
+      },
+      (request) => estadisticasDeUsuarios(pool, usuarioDe(request)),
+    );
+
     app.get(
       '/roles',
       {
@@ -133,7 +144,7 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         },
         preHandler: permiso('seguridad.usuario.ver'),
       },
-      (request) => listarUsuarios(pool, request.query),
+      (request) => listarUsuarios(pool, usuarioDe(request), request.query),
     );
 
     app.post(
@@ -151,6 +162,14 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           etiqueta: request.body.etiqueta,
           rolIds: request.body.rol_ids,
           ...(request.body.sufijo === undefined ? {} : { sufijo: request.body.sufijo }),
+          ...(request.body.unidad === undefined
+            ? {}
+            : {
+                unidad: {
+                  sitioId: request.body.unidad.sitio_id,
+                  nombre: request.body.unidad.nombre,
+                },
+              }),
         });
         return reply.status(201).header('location', `/api/v1/usuarios/${usuario.id}`).send(usuario);
       },
@@ -168,20 +187,17 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         preHandler: permiso('seguridad.usuario.editar'),
       },
       (request) =>
-        editarUsuario(pool, usuarioDe(request), request.params.id, {
-          ...(request.body.etiqueta === undefined ? {} : { etiqueta: request.body.etiqueta }),
-          ...(request.body.rol_ids === undefined ? {} : { rolIds: request.body.rol_ids }),
-        }),
+        editarUsuario(pool, usuarioDe(request), request.params.id, request.body.etiqueta),
     );
 
     app.delete(
       '/usuarios/:id',
       {
-        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, querystring: consultaDeBaja },
         preHandler: permiso('seguridad.usuario.eliminar'),
       },
       async (request, reply) => {
-        await eliminarUsuario(pool, usuarioDe(request), request.params.id);
+        await eliminarUsuario(pool, usuarioDe(request), request.params.id, request.query.confirmar);
         return reply.status(204).send();
       },
     );
@@ -206,6 +222,18 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           new Date(),
           request.body?.sufijo,
         ),
+    );
+    // Anota que el PIN se compartió por un canal de terceros: solo el nivel superior, y queda en la bitácora.
+    app.post(
+      '/usuarios/:id/pin/compartido',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        preHandler: permiso('seguridad.usuario.editar'),
+      },
+      async (request, reply) => {
+        await compartirPin(pool, usuarioDe(request), request.params.id);
+        return reply.status(204).send();
+      },
     );
     app.register(rutasDePlataforma(servicios));
     app.register(rutasDeCuentas(servicios));

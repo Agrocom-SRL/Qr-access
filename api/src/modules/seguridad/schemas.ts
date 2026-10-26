@@ -21,10 +21,6 @@ export const cuerpoDeRefresco = z.object({ refresco: z.string().min(1).max(256) 
 
 export const respuestaDeRefresco = z.object({ acceso: z.string(), refresco: z.string() });
 
-export const cuerpoDeRolActivo = z.object({ rol_id: esquemaId });
-
-export const respuestaDeRolActivo = z.object({ acceso: z.string() });
-
 export const respuestaDeSesionActual = z.object({
   usuario: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
@@ -36,13 +32,17 @@ export const respuestaDeSesionActual = z.object({
 
 /** Largo de `usuarios.etiqueta`. */
 export const MAX_ETIQUETA_DE_USUARIO = 80;
-export const MAX_ROLES_POR_USUARIO = 20;
+/** Tope máximo que puede fijar AGROCOM para los Miembros de un Titular. */
+const MAX_MIEMBROS_POR_TITULAR = 500;
+/** Largo de `unidades.nombre`. */
+const MAX_NOMBRE_DE_UNIDAD = 80;
 
 export const esquemaUsuario = z.object({
   id: z.string(),
   etiqueta: z.string().nullable(),
   activo: z.boolean(),
   roles: z.array(esquemaRol),
+  unidad: z.object({ id: z.string(), nombre: z.string(), sitio_id: z.string() }).nullable(),
   pin_generado_at: esquemaFecha.nullable(),
   ultimo_ingreso_at: esquemaFecha.nullable(),
   created_at: esquemaFecha,
@@ -51,7 +51,8 @@ export const esquemaUsuario = z.object({
 export const respuestaListadoDeUsuarios = esquemaListado(esquemaUsuario);
 
 const esquemaEtiqueta = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO);
-const esquemaRolIds = z.array(esquemaId).min(1).max(MAX_ROLES_POR_USUARIO);
+/** Un usuario tiene un solo rol (ADR 0028 §2): la lista se conserva por compatibilidad, con exactamente uno. */
+const esquemaRolIds = z.array(esquemaId).length(1);
 
 /** Los 4 caracteres finales del PIN elegidos por el administrador: `A`–`Z` y `0`–`9`, sin distinguir mayúsculas. */
 const esquemaSufijoDePin = z
@@ -59,10 +60,18 @@ const esquemaSufijoDePin = z
   .regex(/^[A-Za-z0-9]{4}$/)
   .transform((sufijo) => sufijo.toUpperCase());
 
+/** La unidad de un Titular (ADR 0028): en qué propiedad está y cómo se llama ("Casa 12"). */
+const esquemaUnidadNueva = z.object({
+  sitio_id: esquemaId,
+  nombre: z.string().trim().min(1).max(MAX_NOMBRE_DE_UNIDAD),
+});
+
 export const cuerpoDeNuevoUsuario = z.object({
   etiqueta: esquemaEtiqueta,
   rol_ids: esquemaRolIds,
   sufijo: esquemaSufijoDePin.optional(),
+  /** Obligatoria al crear un Titular y prohibida para los demás niveles. */
+  unidad: esquemaUnidadNueva.optional(),
 });
 
 /** Regenerar el PIN: sin cuerpo (lo sortea el servidor) o con el sufijo elegido. */
@@ -76,13 +85,26 @@ export const respuestaDeMiPerfil = z.object({ id: z.string(), etiqueta: z.string
 /** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
 export const respuestaDeUsuarioCreado = esquemaUsuario.extend({ pin: z.string() });
 
-export const cuerpoDeEdicionDeUsuario = z
-  .object({ etiqueta: esquemaEtiqueta.optional(), rol_ids: esquemaRolIds.optional() })
-  .refine((cuerpo) => cuerpo.etiqueta !== undefined || cuerpo.rol_ids !== undefined, {
-    message: 'sin_cambios',
-  });
+/** Solo el nombre se edita: el rol define el nivel en el árbol y no cambia (ADR 0028 §2). */
+export const cuerpoDeEdicionDeUsuario = z.object({ etiqueta: esquemaEtiqueta });
 
 export const parametrosDeUsuario = z.object({ id: esquemaId });
+
+/** `?confirmar=true`: acepta la baja en cascada de lo que cuelga del usuario (ADR 0028 §7). */
+export const consultaDeBaja = z.object({
+  confirmar: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((valor) => valor === 'true'),
+});
+
+export const respuestaDeCupo = z.object({
+  usados: z.number(),
+  maximo: z.number().nullable(),
+  porcentaje: z.number().nullable(),
+  aviso: z.enum(['cerca_del_limite', 'limite_alcanzado']).nullable(),
+  max_miembros_por_titular: z.number(),
+});
 
 export const respuestaDePinGenerado = z.object({ pin: z.string(), pin_generado_at: esquemaFecha });
 
@@ -154,10 +176,18 @@ export const cuerpoDeEdicionDePerfil = z.object({ nombre: esquemaNombreDePersona
 
 // --- Cuentas (administración por AGROCOM, web admin) ---
 
-const esquemaTelefono = z
-  .string()
-  .trim()
-  .regex(/^[0-9+() -]{6,30}$/);
+/** Un texto opcional con formato: vacío o ausente = sin dato (null); si viene, cumple el patrón. */
+function opcionalConFormato(patron: RegExp) {
+  return z
+    .string()
+    .trim()
+    .nullish()
+    .transform((valor) => (valor === undefined || valor === null || valor === '' ? null : valor))
+    .refine((valor) => valor === null || patron.test(valor));
+}
+
+const esquemaTelefono = opcionalConFormato(/^[0-9+() -]{6,30}$/);
+const esquemaNit = opcionalConFormato(/^[0-9A-Za-z.-]{4,20}$/);
 /** El correo de la persona responsable; vacío o ausente = sin correo. */
 const esquemaCorreo = z
   .union([z.literal(''), z.email().max(120)])
@@ -219,12 +249,10 @@ export const respuestaDeCodigoDeCuenta = z.object({
 export const cuerpoDeNuevaCuenta = z.object({
   razon_social: z.string().trim().min(1).max(150),
   codigo: z.string().min(1).max(10),
-  nit: z
-    .string()
-    .trim()
-    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  nit: esquemaNit,
   ciudad: z.string().trim().min(1).max(80),
   contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_apellido: z.string().trim().min(1).max(120),
   contacto_telefono: esquemaTelefono,
   contacto_correo: esquemaCorreo,
   plan_id: esquemaId,
@@ -235,19 +263,15 @@ export const cuerpoDeNuevaCuenta = z.object({
     .object({
       monto: z.number().positive().max(99_999_999),
       fecha_pago: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
-      referencia: z.string().trim().min(1).max(80),
-      // Una transferencia o un depósito exigen banco, cuenta y comprobante (ADR 0024).
-      banco: z.string().trim().min(1).max(60).optional(),
-      cuenta_destino: z.string().trim().min(1).max(60).optional(),
+      medio: z.enum(['transferencia', 'qr', 'efectivo']),
+      referencia: z.string().trim().max(80).default(''),
+      // Una transferencia o un pago por QR exigen comprobante (ADR 0024).
       comprobante_id: esquemaId.optional(),
     })
     .superRefine((pago, ctx) => {
       if (pago.medio === 'efectivo') return;
-      for (const campo of ['banco', 'cuenta_destino', 'comprobante_id'] as const) {
-        if (pago[campo] === undefined) {
-          ctx.addIssue({ code: 'custom', path: [campo], message: 'requerido' });
-        }
+      if (pago.comprobante_id === undefined) {
+        ctx.addIssue({ code: 'custom', path: ['comprobante_id'], message: 'requerido' });
       }
     })
     .optional(),
@@ -256,14 +280,14 @@ export const cuerpoDeNuevaCuenta = z.object({
 /** Lo que se puede corregir de una cuenta ya creada; el código tiene su propia ruta (ADR 0023). */
 export const cuerpoDeEdicionDeCuenta = z.object({
   razon_social: z.string().trim().min(1).max(150),
-  nit: z
-    .string()
-    .trim()
-    .regex(/^[0-9A-Za-z.-]{4,20}$/),
+  nit: esquemaNit,
   ciudad: z.string().trim().min(1).max(80),
   contacto_nombre: z.string().trim().min(1).max(120),
+  contacto_apellido: z.string().trim().min(1).max(120),
   contacto_telefono: esquemaTelefono,
   contacto_correo: esquemaCorreo,
+  /** Cuántos Miembros puede tener cada Titular (ADR 0028 §6); sin él, no cambia. */
+  max_miembros_por_titular: z.number().int().min(1).max(MAX_MIEMBROS_POR_TITULAR).optional(),
 });
 
 export const respuestaDeCuentaCreada = z.object({
@@ -288,13 +312,16 @@ export const respuestaDeDetalleDeCuenta = z.object({
     nombre: z.string(),
     activa: z.boolean(),
     cliente_desde: esquemaFecha,
+    max_miembros_por_titular: z.number().int(),
   }),
   empresa: z
     .object({
-      nit: z.string(),
+      nit: z.string().nullable(),
       ciudad: z.string(),
       contacto: z.string(),
-      telefono: z.string(),
+      contacto_nombre: z.string(),
+      contacto_apellido: z.string(),
+      telefono: z.string().nullable(),
       correo: z.string().nullable(),
     })
     .nullable(),
@@ -409,7 +436,7 @@ export const respuestaDeSuscripcionDeCuenta = z.object({
       plan: z.string(),
       monto: z.number(),
       fecha_pago: z.string(),
-      medio: z.enum(['transferencia', 'deposito', 'efectivo']),
+      medio: z.enum(['transferencia', 'qr', 'efectivo']),
       referencia: z.string(),
       banco: z.string().nullable(),
       cuenta_destino: z.string().nullable(),
@@ -473,5 +500,86 @@ export const respuestaDeAdministradores = z.object({
       pin_generado_at: esquemaFecha.nullable(),
       ultimo_ingreso_at: esquemaFecha.nullable(),
     }),
+  ),
+});
+
+/** Alta de otro Administrador en una cuenta (solo AGROCOM, ADR 0028). */
+export const cuerpoDeNuevoAdministrador = z.object({
+  etiqueta: esquemaEtiqueta,
+  sufijo: esquemaSufijoDePin.optional(),
+});
+
+/** El PIN en claro va solo acá, una vez (ADR 0018 §3). */
+export const respuestaDeAdministradorCreado = z.object({
+  id: z.string(),
+  etiqueta: z.string(),
+  pin: z.string(),
+});
+
+export const respuestaDeJerarquiaDeCuenta = z.object({
+  administradores: z.array(
+    z.object({
+      id: z.string(),
+      etiqueta: z.string().nullable(),
+      guardias: z.array(z.object({ id: z.string(), etiqueta: z.string().nullable() })),
+      titulares: z.array(
+        z.object({
+          id: z.string(),
+          etiqueta: z.string().nullable(),
+          unidad: z.string().nullable(),
+          miembros: z.number().int(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/** Mover un Guardia o un Titular (con su unidad y sus Miembros) a otro Administrador (ADR 0028 §7). */
+export const cuerpoDeReasignacion = z.object({
+  usuario_id: esquemaId,
+  administrador_id: esquemaId,
+});
+
+const esquemaUsuarioConUso = z.object({
+  id: z.string(),
+  etiqueta: z.string().nullable(),
+  rol: z.string().nullable(),
+  unidad: z.string().nullable(),
+  qr_generados: z.number().int(),
+  qr_usados: z.number().int(),
+  max_qr_en_un_dia: z.number().int(),
+  ultimo_qr_at: esquemaFecha.nullable(),
+  inactivo: z.boolean(),
+  ruidoso: z.boolean(),
+});
+
+const esquemaTitularConMiembros = z.object({
+  id: z.string(),
+  etiqueta: z.string().nullable(),
+  unidad: z.string().nullable(),
+  miembros: z.number().int(),
+  tope: z.number().int(),
+  porcentaje: z.number().int(),
+  cerca_del_tope: z.boolean(),
+});
+
+/** Uso de los usuarios: informativo, con umbrales fijos (ADR 0028). */
+export const respuestaDeEstadisticasDeUsuarios = z.object({
+  ventana_dias: z.number().int(),
+  umbral_inactivo_dias: z.number().int(),
+  umbral_ruidoso_por_dia: z.number().int(),
+  resumen: z.object({
+    usuarios: z.number().int(),
+    inactivos: z.number().int(),
+    ruidosos: z.number().int(),
+    titulares_cerca_del_tope: z.number().int(),
+  }),
+  usuarios: z.array(esquemaUsuarioConUso),
+  titulares: z.array(esquemaTitularConMiembros),
+});
+
+export const respuestaDeEstadisticasDeCuenta = respuestaDeEstadisticasDeUsuarios.extend({
+  ramas: z.array(
+    z.object({ id: z.string(), etiqueta: z.string().nullable(), usuarios: z.number().int() }),
   ),
 });

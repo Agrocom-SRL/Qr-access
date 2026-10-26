@@ -1,14 +1,18 @@
 import 'dart:typed_data';
 
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
+import 'package:agrocom_acceso/core/plataforma/compartir_texto.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/features/administracion/data/estructura_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
+import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
+import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
@@ -16,7 +20,7 @@ import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/datos_emision_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
@@ -33,9 +37,7 @@ class SesionFalsa extends SesionControlador {
 
   final SesionEstado _estado;
   final List<RespuestaInicio> inicios = [];
-  final List<String> rolesElegidos = [];
   int cierres = 0;
-  int cambiosDeRolPedidos = 0;
 
   /// Error que lanza `adoptarInicio`, para probar los caminos de fallo.
   Exception? errorAlAdoptar;
@@ -50,16 +52,7 @@ class SesionFalsa extends SesionControlador {
   }
 
   @override
-  Future<void> elegirRol(String rolId) async => rolesElegidos.add(rolId);
-
-  @override
   Future<void> cerrar() async => cierres++;
-
-  @override
-  void pedirCambioDeRol() {
-    cambiosDeRolPedidos++;
-    super.pedirCambioDeRol();
-  }
 }
 
 const usuarioDePrueba = UsuarioSesion(id: 'u1', etiqueta: 'Ana Pérez');
@@ -69,14 +62,13 @@ const rolDePrueba = RolSesion(id: 'r1', nombre: 'Administrador');
 /// Sesión autenticada con los permisos dados, para las pantallas con sesión.
 SesionAutenticada sesionCon({
   Set<String> permisos = const {},
-  List<RolSesion> roles = const [rolDePrueba],
   SuscripcionSesion? suscripcion,
+  RolSesion rol = rolDePrueba,
 }) => SesionAutenticada(
   usuario: usuarioDePrueba,
   cuenta: cuentaDePrueba,
-  rolActivo: rolDePrueba,
+  rolActivo: rol,
   permisos: permisos,
-  roles: roles,
   suscripcion: suscripcion,
 );
 
@@ -143,39 +135,39 @@ class PuertasRepositorioFalso implements PuertasRepositorio {
 
 class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
   new({
-    this.emitido,
+    this.generado,
     this.listado,
     this.resumen = const {},
-    this.errorEmitir,
+    this.errorGenerar,
     this.errorAnular,
     this.errorListar,
     this.respaldo,
   });
 
-  QrEmitido? emitido;
+  QrGenerado? generado;
 
   /// Lo que devuelve el respaldo sin internet del QR propio.
-  QrEmitido? respaldo;
+  QrGenerado? respaldo;
   Pagina<QrAcceso>? listado;
   Map<EstadoQr, int> resumen;
-  Exception? errorEmitir;
+  Exception? errorGenerar;
   Exception? errorAnular;
   Exception? errorListar;
 
-  final List<DatosEmision> emisiones = [];
+  final List<DatosGeneracion> generaciones = [];
   final List<DateTime> ahoras = [];
   final List<EstadoQr> estadosListados = [];
   final List<String> anulados = [];
 
   @override
-  Future<QrEmitido> emitir(
-    DatosEmision datos, {
+  Future<QrGenerado> generar(
+    DatosGeneracion datos, {
     required DateTime ahora,
   }) async {
-    emisiones.add(datos);
+    generaciones.add(datos);
     ahoras.add(ahora);
-    if (errorEmitir != null) throw errorEmitir!;
-    return emitido!;
+    if (errorGenerar != null) throw errorGenerar!;
+    return generado!;
   }
 
   @override
@@ -210,7 +202,7 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
   }
 
   @override
-  Future<QrEmitido?> ultimoPropioGuardado() async => respaldo;
+  Future<QrGenerado?> ultimoPropioGuardado() async => respaldo;
 }
 
 class EventosRepositorioFalso implements EventosRepositorio {
@@ -297,8 +289,30 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
     this.pinGenerado,
     this.error,
     this.asignadas = const PuertasAsignadas(),
+    this.dependientes = const {},
+    this.estadisticasActuales = const EstadisticasDeUsuarios(
+      ventanaDias: 30,
+      umbralInactivoDias: 30,
+      umbralRuidosoPorDia: 10,
+      usuarios: [],
+      titulares: [],
+    ),
+    this.cupoActual = const Cupo(
+      usados: 4,
+      maximo: 10,
+      porcentaje: 40,
+      aviso: null,
+      maxMiembrosPorTitular: 10,
+    ),
   });
 
+  /// Cuántos usuarios cuelgan de cada usuario: sin `confirmar`, eliminarlo
+  /// responde 409 con esa cantidad, como la API.
+  final Map<String, int> dependientes;
+  final Cupo cupoActual;
+  final EstadisticasDeUsuarios estadisticasActuales;
+  final List<String> pinesCompartidos = [];
+  final List<String> eliminadosEnCascada = [];
   final List<Usuario> usuarios;
   final PuertasAsignadas asignadas;
   final List<(String, PuertasAsignadas)> asignaciones = [];
@@ -307,7 +321,7 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   final PinGenerado? pinGenerado;
   final Exception? error;
   final List<DatosUsuario> creados = [];
-  final List<(String, DatosUsuario)> editados = [];
+  final List<(String, String)> editados = [];
   final List<String> eliminados = [];
   final List<String> pinesRegenerados = [];
 
@@ -336,16 +350,40 @@ class UsuariosRepositorioFalso implements UsuariosRepositorio {
   }
 
   @override
-  Future<Usuario> editar(String id, DatosUsuario datos) async {
+  Future<Usuario> editar(String id, {required String etiqueta}) async {
     if (error != null) throw error!;
-    editados.add((id, datos));
+    editados.add((id, etiqueta));
     return usuarios.firstWhere((u) => u.id == id);
   }
 
   @override
-  Future<void> eliminar(String id) async {
+  Future<void> eliminar(String id, {bool confirmar = false}) async {
     if (error != null) throw error!;
+    final cantidad = dependientes[id] ?? 0;
+    if (cantidad > 0 && !confirmar) {
+      throw ErrorApi(
+        code: 'usuario.con_dependientes',
+        status: 409,
+        detalles: {'dependientes': cantidad},
+      );
+    }
     eliminados.add(id);
+    if (confirmar) eliminadosEnCascada.add(id);
+  }
+
+  @override
+  Future<void> registrarPinCompartido(String usuarioId) async {
+    if (error != null) throw error!;
+    pinesCompartidos.add(usuarioId);
+  }
+
+  @override
+  Future<Cupo> cupo() async => cupoActual;
+
+  @override
+  Future<EstadisticasDeUsuarios> estadisticas() async {
+    if (error != null) throw error!;
+    return estadisticasActuales;
   }
 
   @override
@@ -391,7 +429,7 @@ class CompartirFalso implements CompartirImagen {
   }
 }
 
-/// Almacén de QR emitidos en memoria, sin vencimiento automático.
+/// Almacén de QR generados en memoria, sin vencimiento automático.
 class AlmacenQrEnMemoria implements AlmacenQr {
   final Map<String, String> _textos = {};
 
@@ -417,5 +455,19 @@ class AlmacenQrEnMemoria implements AlmacenQr {
   @override
   Future<void> borrarUltimoPropio(String id) async {
     if (ultimoPropio?.id == id) ultimoPropio = null;
+  }
+}
+
+/// Registra el texto que se pidió compartir, sin abrir el menú del sistema.
+class CompartirTextoFalso implements CompartirTexto {
+  new([this.resultado = ResultadoCompartir.compartido]);
+
+  final ResultadoCompartir resultado;
+  final List<String> enviados = [];
+
+  @override
+  Future<ResultadoCompartir> compartir(String texto) async {
+    enviados.add(texto);
+    return resultado;
   }
 }

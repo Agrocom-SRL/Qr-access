@@ -21,7 +21,21 @@ import {
   generarSufijoDePin,
   normalizarPin,
 } from '../../src/modules/seguridad/domain/pin.js';
-import { decidirRolActivo } from '../../src/modules/seguridad/domain/rol-activo.js';
+import {
+  QR_POR_DIA_PARA_RUIDOSO,
+  SIN_ACTIVIDAD,
+  estaCercaDelTope,
+  evaluarUsuario,
+  porcentajeDelTope,
+  usuariosPorRama,
+} from '../../src/modules/seguridad/domain/actividad-de-usuarios.js';
+import {
+  armarJerarquia,
+  nivelDeRol,
+  puedeCrear,
+  type NodoDeUsuario,
+} from '../../src/modules/seguridad/domain/jerarquia.js';
+import { rolUnico } from '../../src/modules/seguridad/domain/rol-unico.js';
 
 describe('PIN (ADR 0018)', () => {
   it('normaliza a mayúsculas y sin espacios', () => {
@@ -54,13 +68,137 @@ describe('PIN (ADR 0018)', () => {
   });
 });
 
-describe('rol activo', () => {
-  it('el único rol; el preferido si lo sigue teniendo; si no, ninguno', () => {
-    expect(decidirRolActivo(['5'], null)).toBe('5');
-    expect(decidirRolActivo(['5', '6'], '6')).toBe('6');
-    expect(decidirRolActivo(['5', '6'], '7')).toBeNull();
-    expect(decidirRolActivo(['5', '6'], null)).toBeNull();
-    expect(decidirRolActivo([], '6')).toBeNull();
+describe('un usuario, un rol (ADR 0028 §2)', () => {
+  it('el rol de la sesión es el único; con cero o con varios, ninguno (falla cerrado)', () => {
+    expect(rolUnico(['5'])).toBe('5');
+    expect(rolUnico([])).toBeNull();
+    expect(rolUnico(['5', '6'])).toBeNull();
+  });
+});
+
+describe('jerarquía de usuarios (ADR 0028 §3)', () => {
+  it('el nivel sale del nombre del rol base; otro nombre no tiene nivel', () => {
+    expect(nivelDeRol('Administrador')).toBe('administrador');
+    expect(nivelDeRol('Titular')).toBe('titular');
+    expect(nivelDeRol('Miembro')).toBe('miembro');
+    expect(nivelDeRol('Guardia')).toBe('guardia');
+    expect(nivelDeRol('Usuario')).toBeNull();
+    expect(nivelDeRol('administrador')).toBeNull();
+  });
+
+  it('cada nivel crea solo el de abajo', () => {
+    expect(puedeCrear('administrador', 'titular')).toBe(true);
+    expect(puedeCrear('administrador', 'guardia')).toBe(true);
+    expect(puedeCrear('titular', 'miembro')).toBe(true);
+    // Nunca un igual, un superior ni saltarse un nivel
+    expect(puedeCrear('administrador', 'administrador')).toBe(false);
+    expect(puedeCrear('administrador', 'miembro')).toBe(false);
+    expect(puedeCrear('titular', 'titular')).toBe(false);
+    expect(puedeCrear('titular', 'guardia')).toBe(false);
+    expect(puedeCrear('titular', 'administrador')).toBe(false);
+    // Los que no crean a nadie, y un nivel desconocido
+    expect(puedeCrear('miembro', 'miembro')).toBe(false);
+    expect(puedeCrear('guardia', 'miembro')).toBe(false);
+    expect(puedeCrear(null, 'miembro')).toBe(false);
+    expect(puedeCrear('administrador', null)).toBe(false);
+  });
+});
+
+describe('árbol de una cuenta para AGROCOM (ADR 0028)', () => {
+  const nodo = (
+    id: string,
+    nivel: NodoDeUsuario['nivel'],
+    superiorId: string | null,
+  ): NodoDeUsuario => ({ id, etiqueta: `U${id}`, superiorId, nivel });
+
+  it('agrupa Guardias y Titulares bajo su Administrador y cuenta los Miembros de cada Titular', () => {
+    const arbol = armarJerarquia([
+      nodo('1', 'administrador', null),
+      nodo('2', 'administrador', null),
+      nodo('3', 'titular', '1'),
+      nodo('4', 'miembro', '3'),
+      nodo('5', 'miembro', '3'),
+      nodo('6', 'guardia', '1'),
+      nodo('7', 'titular', '2'),
+    ]);
+    expect(arbol).toEqual([
+      {
+        id: '1',
+        etiqueta: 'U1',
+        guardias: [{ id: '6', etiqueta: 'U6' }],
+        titulares: [{ id: '3', etiqueta: 'U3', miembros: 2 }],
+      },
+      {
+        id: '2',
+        etiqueta: 'U2',
+        guardias: [],
+        titulares: [{ id: '7', etiqueta: 'U7', miembros: 0 }],
+      },
+    ]);
+  });
+
+  it('lo que no cuelga de un Administrador (rol sin nivel, huérfano) no aparece', () => {
+    const arbol = armarJerarquia([
+      nodo('1', 'administrador', null),
+      nodo('2', null, '1'),
+      nodo('3', 'titular', null),
+      nodo('4', 'guardia', '99'),
+    ]);
+    expect(arbol).toEqual([{ id: '1', etiqueta: 'U1', guardias: [], titulares: [] }]);
+  });
+});
+
+describe('uso de los usuarios (ADR 0028 §4)', () => {
+  const ahora = new Date('2026-10-22T12:00:00Z');
+  const haceDias = (dias: number) => new Date(ahora.getTime() - dias * 86_400_000);
+
+  it('sin QR en la ventana es inactivo solo si ya tiene 30 días de antigüedad', () => {
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(29), ahora).inactivo).toBe(false);
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(30), ahora).inactivo).toBe(true);
+    expect(evaluarUsuario(SIN_ACTIVIDAD, haceDias(400), ahora).inactivo).toBe(true);
+  });
+
+  it('un solo QR en la ventana lo saca de inactivo', () => {
+    const uno = { ...SIN_ACTIVIDAD, generados: 1, maxEnUnDia: 1 };
+    expect(evaluarUsuario(uno, haceDias(400), ahora).inactivo).toBe(false);
+  });
+
+  it('ruidoso es estrictamente más que el umbral por día', () => {
+    expect(QR_POR_DIA_PARA_RUIDOSO).toBe(10);
+    const con = (maxEnUnDia: number) => ({ ...SIN_ACTIVIDAD, generados: maxEnUnDia, maxEnUnDia });
+    expect(evaluarUsuario(con(10), haceDias(1), ahora).ruidoso).toBe(false);
+    expect(evaluarUsuario(con(11), haceDias(1), ahora).ruidoso).toBe(true);
+  });
+
+  it('el tope de Miembros: porcentaje hacia abajo y aviso desde el 80 %', () => {
+    expect(porcentajeDelTope(2, 10)).toBe(20);
+    expect(porcentajeDelTope(7, 9)).toBe(77);
+    expect(porcentajeDelTope(3, 0)).toBe(0);
+    expect(estaCercaDelTope(7, 10)).toBe(false);
+    expect(estaCercaDelTope(8, 10)).toBe(true);
+    expect(estaCercaDelTope(10, 10)).toBe(true);
+  });
+
+  it('cuenta a cualquier profundidad lo que cuelga de cada nodo', () => {
+    const cuentas = usuariosPorRama([
+      { id: '1', superiorId: null },
+      { id: '2', superiorId: '1' },
+      { id: '3', superiorId: '2' },
+      { id: '4', superiorId: '2' },
+      { id: '5', superiorId: '1' },
+      { id: '6', superiorId: null },
+    ]);
+    expect(cuentas.get('1')).toBe(4);
+    expect(cuentas.get('2')).toBe(2);
+    expect(cuentas.get('6')).toBe(0);
+  });
+
+  it('un ciclo no cuelga el recorrido', () => {
+    const cuentas = usuariosPorRama([
+      { id: '1', superiorId: '2' },
+      { id: '2', superiorId: '1' },
+    ]);
+    expect(cuentas.get('1')).toBe(1);
   });
 });
 
@@ -182,7 +320,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
       anuladoAt: null,
       venceAt: new Date('2026-10-09T13:00:00Z'),
       puertaIds: ['1', '2'],
-      emisorActivo: true,
+      generadorActivo: true,
     },
     puertaDelDispositivoId: '2',
     ahora,
@@ -197,7 +335,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, anuladoAt: ahora } })).toBe(
       'qr.anulado',
     );
-    expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, emisorActivo: false } })).toBe(
+    expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, generadorActivo: false } })).toBe(
       'qr.anulado',
     );
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, venceAt: ahora } })).toBe(
@@ -211,7 +349,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
 
   it('respeta el orden del ADR: anulado antes que vencido, vencido antes que otra puerta, otra puerta antes que suscripción', () => {
     const todoMal: EntradaDeDecision = {
-      qr: { anuladoAt: ahora, venceAt: ahora, puertaIds: [], emisorActivo: true },
+      qr: { anuladoAt: ahora, venceAt: ahora, puertaIds: [], generadorActivo: true },
       puertaDelDispositivoId: '9',
       ahora,
       suscripcionVigente: false,

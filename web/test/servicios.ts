@@ -9,10 +9,37 @@ import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisti
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
+import type { EstadisticasDeUsuarios, RamaDeAdministrador } from '@/features/cuentas/domain/cuenta';
 import type { PlacasRepositorio, Placa } from '@/features/placas';
+import type { CobroRepositorio, CuentaDeCobro } from '@/features/cobro';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
+
+export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
+  {
+    id: '1',
+    metodo: 'transferencia',
+    banco: 'Banco Unión',
+    titular: 'AGROCOM S.R.L.',
+    numeroCuenta: '10000123456',
+    tipoCuenta: 'corriente',
+    imagenId: null,
+    nota: null,
+    activo: true,
+  },
+  {
+    id: '2',
+    metodo: 'qr',
+    banco: 'Banco Mercantil Santa Cruz',
+    titular: null,
+    numeroCuenta: null,
+    tipoCuenta: null,
+    imagenId: '50',
+    nota: 'Vale para cualquier banco',
+    activo: true,
+  },
+];
 
 export const SUPER_ADMIN = {
   usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
@@ -34,10 +61,16 @@ export const SUPER_ADMIN = {
     'organizacion.sitio.gestionar',
     'organizacion.puerta.gestionar',
     'seguridad.administrador.regenerar_pin',
+    'seguridad.administrador.crear',
+    'seguridad.administrador.reasignar',
     'suscripciones.suscripcion.ver',
     'suscripciones.suscripcion.editar',
     'suscripciones.pago.registrar',
     'suscripciones.cobranza.ver',
+    'suscripciones.cobro.ver',
+    'suscripciones.cobro.crear',
+    'suscripciones.cobro.editar',
+    'suscripciones.cobro.eliminar',
     'bitacora.registro.ver',
     'resumen.panel.ver',
     'dispositivos.placa.ver',
@@ -135,11 +168,14 @@ export const DETALLE = {
     nombre: 'Agroindustrial Norte',
     activa: true,
     clienteDesde: new Date('2024-11-05T12:00:00Z'),
+    maxMiembrosPorTitular: 10,
   },
   empresa: {
     nit: '1023456021',
     ciudad: 'Santa Cruz de la Sierra',
     contacto: 'Carla Méndez',
+    contactoNombre: 'Carla',
+    contactoApellido: 'Méndez',
     telefono: '3 342 1180',
     correo: 'carla@agroindustrialnorte.bo',
   },
@@ -158,6 +194,86 @@ export const DETALLE = {
     dispositivosSinConexion: 2,
     administradores: 2,
   },
+};
+
+/** El árbol de la cuenta de ejemplo: dos Administradores, uno con un Titular y un Guardia. */
+export const JERARQUIA: readonly RamaDeAdministrador[] = [
+  {
+    id: '11',
+    etiqueta: 'Carla Méndez',
+    guardias: [{ id: '21', etiqueta: 'Portería norte' }],
+    titulares: [{ id: '31', etiqueta: 'Jorge Rivero', unidad: 'Casa 12', miembros: 3 }],
+  },
+  { id: '12', etiqueta: 'Rosa Vaca', guardias: [], titulares: [] },
+];
+
+/** El uso de los usuarios de la cuenta de ejemplo: un inactivo, un ruidoso y un Titular cerca del tope. */
+export const ESTADISTICAS_DE_USUARIOS: EstadisticasDeUsuarios = {
+  ventanaDias: 30,
+  umbralInactivoDias: 30,
+  umbralRuidosoPorDia: 10,
+  usuarios: [
+    {
+      id: '31',
+      etiqueta: 'Jorge Rivero',
+      rol: 'Titular',
+      unidad: 'Casa 12',
+      qrGenerados: 40,
+      qrUsados: 2,
+      maxQrEnUnDia: 14,
+      ultimoQrEn: null,
+      inactivo: false,
+      ruidoso: true,
+    },
+    {
+      id: '41',
+      etiqueta: 'Marta Soliz',
+      rol: 'Miembro',
+      unidad: null,
+      qrGenerados: 0,
+      qrUsados: 0,
+      maxQrEnUnDia: 0,
+      ultimoQrEn: null,
+      inactivo: true,
+      ruidoso: false,
+    },
+    {
+      id: '42',
+      etiqueta: 'Luis Peña',
+      rol: 'Guardia',
+      unidad: null,
+      qrGenerados: 0,
+      qrUsados: 0,
+      maxQrEnUnDia: 0,
+      ultimoQrEn: new Date('2026-09-02T15:00:00Z'),
+      inactivo: true,
+      ruidoso: false,
+    },
+  ],
+  titulares: [
+    {
+      id: '31',
+      etiqueta: 'Jorge Rivero',
+      unidad: 'Casa 12',
+      miembros: 9,
+      tope: 10,
+      porcentaje: 90,
+      cercaDelTope: true,
+    },
+    {
+      id: '32',
+      etiqueta: 'Rosa Vaca',
+      unidad: 'Casa 3',
+      miembros: 1,
+      tope: 10,
+      porcentaje: 10,
+      cercaDelTope: false,
+    },
+  ],
+  ramas: [
+    { id: '11', etiqueta: 'Carla Méndez', usuarios: 5 },
+    { id: '12', etiqueta: 'Rosa Vaca', usuarios: 0 },
+  ],
 };
 
 export const PLACAS: Placa[] = [
@@ -253,8 +369,6 @@ export const SUSCRIPCION = {
       fechaPago: '2025-10-30',
       medio: 'transferencia' as const,
       referencia: 'TRF-884120',
-      banco: 'Banco Unión',
-      cuentaDestino: '10000123456',
       comprobanteId: '77',
       periodoDesde: new Date('2025-11-05T12:00:00Z'),
       periodoHasta: new Date('2026-11-05T12:00:00Z'),
@@ -398,6 +512,7 @@ export function crearServiciosDePrueba(
     seguridad?: Partial<SeguridadRepositorio>;
     equipo?: Partial<EquipoRepositorio>;
     planes?: Partial<PlanesRepositorio>;
+    cobro?: Partial<CobroRepositorio>;
     placas?: Partial<PlacasRepositorio>;
     eventos?: Partial<EventosRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
@@ -451,6 +566,15 @@ export function crearServiciosDePrueba(
     reactivar: () => Promise.resolve(),
     renombrar: () => Promise.resolve(),
     ...parcial.equipo,
+  };
+  const cobro: CobroRepositorio = {
+    listar: () => Promise.resolve(CUENTAS_DE_COBRO),
+    crear: () => Promise.resolve(),
+    editar: () => Promise.resolve(),
+    cambiarActivo: () => Promise.resolve(),
+    eliminar: () => Promise.resolve(),
+    verImagen: () => Promise.resolve(new Blob(['x'], { type: 'image/png' })),
+    ...parcial.cobro,
   };
   const planes: PlanesRepositorio = {
     listar: () => Promise.resolve(PLANES),
@@ -511,6 +635,11 @@ export function crearServiciosDePrueba(
         },
       ]),
     regenerarPin: () => Promise.resolve('AGR7K2Q'),
+    crearAdministrador: (_cuentaId, datos) =>
+      Promise.resolve({ id: '99', etiqueta: datos.etiqueta, pin: 'AGR9X8Z' }),
+    jerarquia: () => Promise.resolve(JERARQUIA),
+    estadisticasDeUsuarios: () => Promise.resolve(ESTADISTICAS_DE_USUARIOS),
+    reasignar: () => Promise.resolve(),
     cambiarCodigo: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),
     editar: () => Promise.resolve(),
@@ -569,6 +698,7 @@ export function crearServiciosDePrueba(
     seguridad,
     equipo,
     planes,
+    cobro,
     placas,
     cuentas,
     suscripciones,

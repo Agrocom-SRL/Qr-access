@@ -1,6 +1,6 @@
 # Agentes especializados de AGROCOM Acceso
 
-Catorce subagentes en dos grupos según el tipo de trabajo, para no gastar un modelo grande en tareas mecánicas. El `model` se declara con el alias de la familia (`sonnet`, `haiku`): así el costo no depende del modelo con que esté abierta la sesión. Vienen de ACRECIA, adaptados al monorepo Node + Flutter + ESP32.
+Quince subagentes en dos grupos según el tipo de trabajo, para no gastar un modelo grande en tareas mecánicas. El `model` se declara con el alias de la familia (`sonnet`, `haiku`): así el costo no depende del modelo con que esté abierta la sesión. Vienen de ACRECIA, adaptados al monorepo Node + Flutter + ESP32.
 
 ## Ejecución (modelo económico: `haiku`)
 
@@ -27,6 +27,7 @@ Trabajo que sigue un patrón ya definido en un ADR o una convención: no decide 
 | `negocio` | Interpreta el documento funcional; distingue lo confirmado de lo preliminar |
 | `orquestador` | Decide qué agentes intervienen y en qué orden en una tarea que cruza partes |
 | `validador` | Revisa el trabajo de los demás contra `CLAUDE.md` y los ADRs antes de cerrar un cambio |
+| `auditor-seguridad` | Audita inyección, caché de datos autenticados, cabeceras, JWT, aislamiento y logs; solo lee y reporta |
 
 ## Cuándo usar `orquestador` y cuándo ir directo al agente
 

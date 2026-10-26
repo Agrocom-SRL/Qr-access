@@ -1,13 +1,13 @@
 {
-  "nota": "Aqui são registrados os locais e as portas da conta. Depois o ESP32 é vinculado a cada porta; o administrador da conta pode renomeá-las ou desativá-las pelo app.",
-  "sitioNuevo": "Novo local",
-  "sitioEditar": "Editar local",
-  "sitioNombre": "Nome do local",
+  "nota": "Aqui são registradas as propriedades e as portas da conta. Depois o ESP32 é vinculado a cada porta; o administrador da conta pode renomeá-las ou desativá-las pelo app.",
+  "sitioNuevo": "Nova propriedade",
+  "sitioEditar": "Editar propriedade",
+  "sitioNombre": "Nome da propriedade",
   "sitioNombreAyuda": "O lugar onde estão as portas: “Sede central”, “Planta Norte”…",
   "direccion": "Endereço · opcional",
   "zona": "Fuso horário",
   "zonaAyuda": "Os horários de acesso e o fim do dia de um QR são calculados com este fuso.",
-  "sitioActivo": "Local ativo",
+  "sitioActivo": "Propriedade ativa",
   "desactivado": "Desativado",
   "desactivada": "Desativada",
   "puertaAgregar": "Adicionar porta",
@@ -28,7 +28,7 @@
   "quitarSitio": "Excluir {{sitio}}",
   "quitarPuerta": "Excluir {{puerta}}",
   "quitarSitioTitulo": "Excluir {{sitio}}?",
-  "quitarSitioTexto": "Só é possível excluir um local sem portas. Ele é mantido no registro de atividades.",
+  "quitarSitioTexto": "Só é possível excluir uma propriedade sem portas. Ela é mantida no registro de atividades.",
   "quitarPuertaTitulo": "Excluir {{puerta}}?",
   "quitarPuertaTexto": "Se tiver um leitor em serviço, primeiro é preciso desativá-lo. Os QR que a incluíam deixam de abri-la.",
   "quitar": "Excluir",
@@ -36,6 +36,6 @@
   "guardar": "Salvar",
   "guardando": "Salvando",
   "requerido": "Este campo é obrigatório",
-  "sinPuertas": "Este local ainda não tem portas.",
-  "vacioTexto": "Crie o primeiro local e depois adicione suas portas."
+  "sinPuertas": "Esta propriedade ainda não tem portas.",
+  "vacioTexto": "Crie a primeira propriedade e depois adicione suas portas."
 }

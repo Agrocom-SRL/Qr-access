@@ -1,13 +1,66 @@
 # Estado del proyecto — AGROCOM Acceso
 
-**Última actualización:** 2026-10-13 (rama `feature/lector-rs485`)
+> **Limpieza de ramas y próxima versión (anotado el 2026-10-23, pendiente de ejecutar).** Antes de lanzar la siguiente versión hay que depurar las ramas, con `bin/estado-plan` como guía y la confirmación de Miguel:
+> - **Integradas** (su PR figura como MERGED): borrar las ramas locales marcadas `gone` y las remotas sobrantes (`feature/reiniciar-base-local`, `feature/version-1.0.3`). No se pierde trabajo: está en `develop`.
+> - **No integradas** (PR cerrado sin merge, como #46, #62, #63, #70, #73 y #77, o ramas locales con commits que no están en `develop`): revisar una por una; cada una se rescata en una rama nueva desde `develop` o se descarta de forma explícita. Nada se borra a ciegas.
+> - Después: podar este archivo (§4.5 del plan maestro) y lanzar la versión (ola W-REL: tag, versiones alineadas en api, web, app y firmware, despliegue con `bin/desplegar`).
+
+**Última actualización:** 2026-10-22, al cierre de la sesión de ajustes del panel (#80, #81 y #82, integrados en `develop`)
+
+## Relevo de la sesión del 2026-10-22: ajustes del panel y cuentas de cobro
+
+Todo esto está integrado en `develop` por tres PR. La API local del puerto 3000 quedó **detenida a pedido de Miguel, hasta nuevo aviso**.
+
+### Hecho
+
+- **#80 — plan único y versión:** el seed de producción deja un solo plan, "100 usuarios" a 1000 Bs; la migración `20261022100008` lo aplica a bases ya sembradas (fija el precio y da de baja los planes de 200 y 350 usuarios **solo si ninguna suscripción los usa**). El helper de tests (`cargarCatalogo`) recrea los otros planes para los tests de cambio de plan. Incluye la versión 1.0.3 y las 13 actualizaciones de dependencias de `web` (se cerraron #77 y #73).
+- **#81 — ajustes del panel web:**
+  - Planes: tarjetas en tres columnas, con el nombre del plan visible; se quitaron "Cuentas" y "Usuarios en uso".
+  - Estadísticas: página nueva (`/estadisticas`, ítem en el menú, permiso `resumen.panel.ver`) con las gráficas que estaban en el Resumen y la tabla "Uso por plan".
+  - Alta de cuenta: el plan en tres columnas; se quitó el interruptor "es la misma persona responsable" (el administrador inicial parte con ese nombre y se edita); se quitó la sección "Administrador inicial" del resumen de confirmación.
+  - Pagos: efectivo por defecto, referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR. Migración `20261022100009` (los `deposito` existentes pasan a `transferencia`). La API ya no acepta `deposito` ni pide `banco` y `cuenta_destino`; las columnas quedan como históricas.
+- **#82 — cuentas de cobro (ADR 0029) y responsive:**
+  - Tabla `cuentas_de_cobro` (`20261022100010`), permisos `suscripciones.cobro.ver|crear|editar|eliminar` en el seed y `/plataforma/cuentas-de-cobro` (módulo `suscripciones`).
+  - Panel: página "Cuentas de cobro" (botón en Cobranza) para agregar, editar, activar o desactivar y eliminar cuentas bancarias y QR de AGROCOM. Se muestran al registrar el pago de **alta**, según el medio (transferencia o QR).
+  - Responsive: el filtro segmentado se desplaza en horizontal en vez de partir sus textos, el buscador de Cuentas ocupa todo el ancho en pantallas angostas y el encabezado apila la acción.
+
+### Pendiente para continuar
+
+1. **Ver los cambios en local (nada de esto se vio en un navegador).** Levantar Docker Desktop (se había apagado), reconstruir el panel con `docker compose --profile panel up -d --build panel` y encender la API (`docker compose up -d api`) **solo cuando Miguel lo indique**. Después recorrer: Estadísticas, Planes, alta de cuenta (los cuatro pasos), registrar pago por transferencia y QR, Cuentas de cobro, y el filtro de Cuentas en ancho angosto. La base local ya tiene las tres migraciones y los permisos nuevos.
+2. **Despliegue a producción.** `bin/desplegar` aplicará las migraciones `100008` a `100010` y sembrará los permisos. Antes, revisar si producción tiene suscripciones en los planes de 200 o 350: en ese caso se conservan y el catálogo queda con más de un plan. Tras el despliegue, cargar las cuentas bancarias y el QR reales en "Cuentas de cobro"; no hay datos de ejemplo.
+3. **Contrato incompatible dentro de `/api/v1`:** el medio `deposito` desapareció (pasó a `qr`) y la `referencia` dejó de ser obligatoria. Solo lo usa el panel de este repo, pero se suma a la contradicción con el ADR 0005 que ya figura abajo en "Pendiente de decidir o confirmar".
+4. **Decisiones de producto a confirmar con Miguel:**
+   - Las cuentas de cobro se muestran solo en el pago de alta, no en renovaciones ni mejoras de plan.
+   - El nombre del administrador inicial ya no aparece en el resumen de confirmación del alta.
+   - La página Estadísticas usa el permiso del Resumen; si se quiere uno propio, hay que agregarlo al seed.
+   - Las columnas históricas `banco` y `cuenta_destino` de `pagos` se pueden retirar con otra migración si no se van a usar.
+5. **Mostrar las cuentas de cobro a la empresa cliente** (por ejemplo, en su pantalla de suscripción): hoy solo las ve quien cobra. Está anotado en el ADR 0029.
+6. **Pruebas que faltan:** los tests de `web` cubren la página y el componente "dónde pagar", pero no el recorrido completo del pago de alta con QR. La bitácora del panel muestra los eventos `cuenta_de_cobro.*` con el texto genérico; falta revisar cómo se leen.
+7. **Responsive del resto del panel:** se arregló el filtro segmentado y el encabezado para todas las páginas, pero solo se revisó el diseño de Cuentas. Falta mirar Cobranza, Eventos y Placas.
+8. **Tareas anteriores que siguen abiertas:** ver "Lo que falta para un V1 usable" y "Pendiente de decidir o confirmar", más abajo. La app Flutter no se tocó en esta sesión.
+
+## Límites de uso y abuso (ADR 0030, 2026-10-23, rama `feature/limites-de-uso`, sin PR)
+
+Solo documentación; no hay código. Decidido con Miguel: la validación de QR en el lector **nunca** se limita, solo la generación; los QR dejan de ser ilimitados (enmienda al ADR 0017); tope diario **por usuario** y global (429 `qr.limite_diario`, sin bloqueo, con aviso al propietario y a AGROCOM); "ruidoso" pasa a 20 QR **no usados** por día; bolsa mensual por plan con un número fijo inicial y **sin corte por ahora** (se negocia con la cuenta). Pendiente de implementar: `@fastify/rate-limit` y reglas de borde en NPMplus, topes en `generar-qr`, tabla `notificaciones` (bandeja propia; push con FCM como paso posterior, §6 es propuesta), señales nuevas (uso masivo, flujo atípico de cuenta, altas en ráfaga, tasa de uso) y la vista de AGROCOM en el panel. Valores concretos por fijar al implementar.
+
+**Actualización del mismo día:** ADR 0031 (endurecimiento de la generación de QR) aceptado: revocación en cascada con los estados «restringido» (leve) y «suspendido» (crítico), comprobación del generador y sus superiores al validar, idempotencia con caché en la app y aviso de placa sin conexión. Descartados: captura de pantalla, ráfaga de tokens desconocidos, ventana de activación y franja horaria (la vida del QR es solo su vencimiento). Nuevo: estados de placa (sin conexión, desaparecida a las 24 h, en observación, lector sin respuesta) y confirmación de apertura con el sensor de puerta. Confirmado: la restricción (nivel leve, solo generación) no anula los QR ya generados; la suspensión (nivel crítico) sí, y arrastra a la rama o cuenta. Placas: caída sostenida a los 15 min (aviso) y desaparecida a las 2 h (revisión física), avisos agrupados por sitio. Aceptadas además la anulación masiva, el límite de puertas por QR, la versión del formato y el contador de rechazos; en futuro: puerta sensible, etiqueta obligatoria, reautenticación y aprobación. ADR 0032 (concurrencia, pools separados, ventana de repetición de 15 s y registro de lecturas repetidas) en propuesta; el renombrado del registro (`intentos_acceso` recomendado) se deja para el último PR.
+
+**Seguridad (ADR 0033, propuesta):** nombres de estado (activo, restringido, suspendido, eliminado), tabla de defensas con lo hecho y lo que falta (sin `Cache-Control: no-store` ni cabeceras de seguridad en la API, sin rate limit, sin CSP, sin CodeQL ni `npm audit` en CI), autoadministración por rol e incidentes de uso con reincidencia que propone, no aplica. Skill `seguridad-plataforma` y agente `auditor-seguridad` creados. Aceptado con Miguel: refresco de las apps web en cookie `HttpOnly` con protección CSRF (§5, ola W1b del plan maestro).
+
+## Preguntas pendientes de respuesta de Miguel (2026-10-23)
+
+Miguel pidió dejarlas aquí para contestarlas después. **No se ejecutó ninguna.**
+
+1. **Borrar las ramas viejas.** No se tocó ninguna. Se pueden borrar las ramas locales ya integradas (`bin/estado-plan` las lista; no pierden trabajo) y las dos remotas sobrantes (`feature/reiniciar-base-local`, `feature/version-1.0.3`). ¿Se hace?
+2. **Podar `estado_proyecto.md`.** Conserva secciones «pendiente de PR» de ramas ya integradas y dice que las versiones siguen en 1.0.0 cuando #80 las subió a 1.0.3. Anotado como tarea de higiene en `plan-maestro.md` §4.5, en un PR aparte.
+3. **Commits y PR de esta rama (`feature/limites-de-uso`).** Propuesta: tres commits (ADR más funcional; skills y agentes; plan maestro más `bin/estado-plan`) y PR contra `develop`. ¿Se hacen?
 
 ## Qué ya existe
 
 - **Repo en GitHub** con `develop` como rama de integración, ramas protegidas, Dependabot (actions agrupadas) y auto-merge cuando `ci` queda en verde. Integrados: la base del proyecto (#1) y las actualizaciones de actions (#2, #4, #6, #7).
 - **Kit de procesos** heredado de ACRECIA y adaptado al monorepo: `CLAUDE.md`, `CONTRIBUTING.md`, 14 agentes y 9 skills en `.claude/`, guardarraíles en `.claude/hooks/`, `bin/verify` por partes y workflows `ci.yml`, `auto-merge.yml` y `release.yml`.
 - **Alcance V1 replanteado con el cliente** (rama `feature/alcance-v1`):
-  - Dudas **D-01 a D-05 cerradas**: lector QR en la puerta con ESP32; QR emitido por un usuario, de un solo uso y con vencimiento en el día; comunicación HTTPS sobre WiFi (sin RS485, Firebase ni MQTT); cerradura por pulso; sin red no se abre. Además se cerraron D-07, D-09, D-10 y D-11, que se resolvían con lo anterior.
+  - Dudas **D-01 a D-05 cerradas**: lector QR en la puerta con ESP32; QR generado por un usuario, de un solo uso y con vencimiento en el día; comunicación HTTPS sobre WiFi (sin RS485, Firebase ni MQTT); cerradura por pulso; sin red no se abre. Además se cerraron D-07, D-09, D-10 y D-11, que se resolvían con lo anterior.
   - **ADR 0008 reescrito**: el QR es un token aleatorio, guardado como hash, que se consume de forma atómica al primer uso. Quien entra no tiene app ni queda registrado.
   - **ADR 0017**: cuentas con suscripción y plan con límites (dispositivos, usuarios, vigencia máxima del QR); los QR son ilimitados.
   - **ADR 0018 (propuesta)**: login de los usuarios de cuenta con código de cuenta + PIN de 8 dígitos generado por el servidor.
@@ -49,8 +102,8 @@ Sale de `develop` (ya con el panel #28, #29 y el QR propio #31):
 
 ## Núcleo V1 integrado en `develop` (#14, #15, #16)
 
-- **API (#15):** 16 migraciones (una por tabla) y `03-schema-sql.md` al día; seeds `01_catalogo` (permisos) y `02_demo` (cuenta `DEM`, solo desarrollo, ver `entornos.md`). `RepositorioDeCuenta` / `RepositorioDePlataforma` (tenant, soft delete, autoría y bitácora por construcción), argon2id, HMAC con pimienta, JWT y autenticación que falla cerrado. Módulos `seguridad` (login por PIN, refresco rotativo, rol activo, sesión actual con sus roles), `organizacion` (listar puertas), `suscripciones` (vigencia vía contrato), `accesos` (emitir, listar y anular QR; validación con consumo atómico; eventos) y `dispositivos` (credencial, latido, configuración). 148 tests.
-- **App (#16):** ingreso por PIN con elección de rol (también al reabrir), tablero por permisos, emisión de QR para una o más puertas, visor y compartir PNG, listado con anulación y bitácora paginada. Cliente de la API escrito a mano con los `code` de error traducidos en el ARB. 156 tests; compila web y APK.
+- **API (#15):** 16 migraciones (una por tabla) y `03-schema-sql.md` al día; seeds `01_catalogo` (permisos) y `02_demo` (cuenta `DEM`, solo desarrollo, ver `entornos.md`). `RepositorioDeCuenta` / `RepositorioDePlataforma` (tenant, soft delete, autoría y bitácora por construcción), argon2id, HMAC con pimienta, JWT y autenticación que falla cerrado. Módulos `seguridad` (login por PIN, refresco rotativo, rol activo, sesión actual con sus roles), `organizacion` (listar puertas), `suscripciones` (vigencia vía contrato), `accesos` (generar, listar y anular QR; validación con consumo atómico; eventos) y `dispositivos` (credencial, latido, configuración). 148 tests.
+- **App (#16):** ingreso por PIN con elección de rol (también al reabrir), tablero por permisos, generación de QR para una o más puertas, visor y compartir PNG, listado con anulación y bitácora paginada. Cliente de la API escrito a mano con los `code` de error traducidos en el ARB. 156 tests; compila web y APK.
 - **Firmware (#14):** contrato V1 estricto (abre solo con `abrir:true`, `motivo_code=acceso.permitido`, `evento_id` y `segundos` válidos), tope de apertura de 10 s, credencial del dispositivo en NVS, TLS con CA embebida (HTTP plano solo en `esp32-dev`), latido, configuración, NTP, watchdog, aprovisionamiento por serie e indicaciones por LED y buzzer. 69 tests nativos.
 - **Después de actualizar `develop`:** `flutter pub get` y `flutter gen-l10n` en `app/` (las traducciones generadas no se versionan), `npm ci` en `api/`, copiar `JWT_SECRETO` y `PIN_PIMIENTA` de `.env.example` al `.env`, y migrar y sembrar la base de desarrollo (`entornos.md`, "Datos de desarrollo").
 
@@ -58,8 +111,8 @@ Sale de `develop` (ya con el panel #28, #29 y el QR propio #31):
 
 Aplica el handoff de diseño V1 (`docs/diseno/handoff/`, antes `design_handoff_agrocom_acceso/` en la raíz) a la app, y amplía la API para lo que esas pantallas necesitan:
 
-- **API (+25 tests, 173 en total):** permisos nuevos `organizacion.puerta.supervisar` y `seguridad.usuario.{ver,crear,editar,eliminar}` (`01_catalogo.sql`); `GET/POST /usuarios`, `PATCH/DELETE /usuarios/:id`, `POST /usuarios/:id/pin` (PIN sorteado por el servidor, mostrado una sola vez, límite `max_usuarios`, D-19 con `rol.permisos_excedidos`, baja y regeneración cortan las sesiones) y `GET /roles`; `GET /puertas` trae el lector y si está en línea (3 min sin latido = sin conexión); `GET /eventos-acceso` filtra por `resultado`, `puerta_id`, `desde` y `hasta` y trae sitio y QR con su emisor; `GET /eventos-acceso/resumen` y `GET /qr-accesos/resumen` para los indicadores; `GET /sesiones/actual` trae `suscripcion` (plan y vencimiento). Seed demo: rol Guardia y PIN `DEMGRD1` (Guardia + Usuario, para probar la elección de rol).
-- **App (237 tests, build web OK):** sistema de diseño completo del handoff (tokens propuestos, IBM Plex Sans y Mono empaquetadas, `ThemeData` claro y oscuro), todos los átomos, moléculas, organismos y plantillas con los nombres obligatorios, navegación por rol y breakpoint (`NavigationBar` / rail / rail extendido, destinos por permisos), y las pantallas C01–C10c y E01–E10b: bienvenida, ingreso con casillas de PIN y bloqueo con cuenta regresiva, elegir rol, inicio de usuario y tablero de administración, stepper de emisión, QR emitido (PNG 1080×1350; en web, Web Share API o descarga), Mis QR, Eventos, Perfil (tema oscuro recordado) y Administración (Puertas, Usuarios, nuevo/editar, PIN generado). Todo listado con sus cuatro estados; tablas en ≥ 1024.
+- **API (+25 tests, 173 en total):** permisos nuevos `organizacion.puerta.supervisar` y `seguridad.usuario.{ver,crear,editar,eliminar}` (`01_catalogo.sql`); `GET/POST /usuarios`, `PATCH/DELETE /usuarios/:id`, `POST /usuarios/:id/pin` (PIN sorteado por el servidor, mostrado una sola vez, límite `max_usuarios`, D-19 con `rol.permisos_excedidos`, baja y regeneración cortan las sesiones) y `GET /roles`; `GET /puertas` trae el lector y si está en línea (3 min sin latido = sin conexión); `GET /eventos-acceso` filtra por `resultado`, `puerta_id`, `desde` y `hasta` y trae sitio y QR con su generador; `GET /eventos-acceso/resumen` y `GET /qr-accesos/resumen` para los indicadores; `GET /sesiones/actual` trae `suscripcion` (plan y vencimiento). Seed demo: rol Guardia y PIN `DEMGRD1` (Guardia + Usuario, para probar la elección de rol).
+- **App (237 tests, build web OK):** sistema de diseño completo del handoff (tokens propuestos, IBM Plex Sans y Mono empaquetadas, `ThemeData` claro y oscuro), todos los átomos, moléculas, organismos y plantillas con los nombres obligatorios, navegación por rol y breakpoint (`NavigationBar` / rail / rail extendido, destinos por permisos), y las pantallas C01–C10c y E01–E10b: bienvenida, ingreso con casillas de PIN y bloqueo con cuenta regresiva, elegir rol, inicio de usuario y tablero de administración, stepper de generación, QR generado (PNG 1080×1350; en web, Web Share API o descarga), Mis QR, Eventos, Perfil (tema oscuro recordado) y Administración (Puertas, Usuarios, nuevo/editar, PIN generado). Todo listado con sus cuatro estados; tablas en ≥ 1024.
 - **Docs:** `sistema-diseno.md` y `guia-pantallas.md` reescritos sobre el handoff; D-19 cerrada en código.
 - **Después de actualizar:** `flutter pub get` y `flutter gen-l10n` en `app/`; volver a correr `db/seeds/01_catalogo.sql` y `02_demo.sql` (permisos y guardia nuevos) y reiniciar la API.
 - **Queda fuera de la rama:** alta y edición de sitios, puertas y dispositivos desde la app (el handoff dibuja "Nueva puerta", editar y eliminar en E10a, pero la API no tiene esos endpoints: HU-07, HU-08 y HU-10 siguen pendientes); el logo final; "Repetir último" se implementó prellenando el formulario (pendiente de confirmar con negocio, handoff §6); brillo de pantalla al mostrar el QR; revisión visual en dispositivo contra las capturas (los tests cubren comportamiento y layout en 360×800 y 1440×900, no el píxel).
@@ -76,22 +129,49 @@ Sale de `develop` y corrige lo que se vio al comparar capturas del teléfono con
 - **Seed demo:** el administrador `DEMADM1` también tiene el rol Usuario (para ver la elección de rol); el plan se llama "Demo (desarrollo)". Volver a correr `db/seeds/02_demo.sql`.
 - **Pendiente:** revisar en el teléfono; decidir si la barra inferior pasa a `google_nav_bar` (cambiaría el aspecto respecto al handoff); `pinput` para las casillas del PIN y `skeletonizer` para la carga serían los siguientes paquetes razonables.
 
-## Lo que falta para un V1 usable
+## Integrado en `develop` desde el 2026-10-13 (estado al 2026-10-22)
 
-1. **Prueba de punta a punta:** API local con el seed `DEM`, la app y el firmware `esp32-dev` en la placa. Nunca se probaron las tres partes juntas.
-2. **Revisión línea por línea de lo crítico** (CLAUDE.md): aislamiento por cuenta, validación y consumo del QR, autenticación de dispositivos y firmware de la cerradura. El núcleo se integró sin ella.
-3. **Administración:** altas y gestión de cuentas, sitios, puertas y dispositivos. Usuarios y PIN ya están (rama `feature/diseno-pantallas`); el resto solo existe en el seed.
-4. **Límites del plan** para dispositivos y usuarios (RF-10).
-5. **Login del super admin** (usuario + contraseña) y **baja diaria de QR vencidos** (ADR 0008 §7).
-6. **Seguridad de la API:** rate limit en las validaciones por dispositivo, CORS, límite de intentos del login compartido entre instancias (hoy en memoria) y detección de reuso de un refresh robado.
-7. **Bitácora del bloqueo del login:** el ADR 0018 la pide, pero `bitacoras.accion` no tiene un valor para el bloqueo; hoy solo deja un `warn` en el log. Decidir si se agrega `bloqueado` al CHECK.
-8. **Test del OpenAPI** contra el contrato publicado.
-9. **App:** brillo de pantalla al mostrar el QR, compilación en iOS, revisión visual en dispositivo contra el handoff, y revisar que el token del QR viaje por `extra` de go_router (en web queda en el historial de la pestaña).
-10. **Firmware:** confirmar la polaridad del sensor reed con el sensor real (`SENSOR_PUERTA_NIVEL_ABIERTA`), la CA para producción y el portal AP de aprovisionamiento; OTA queda fuera de V1.
+Lo que entró después de la versión anterior de este documento. Los números son PR de GitHub; las ramas sin número se citan por su nombre.
+
+- **Cuentas de cobro (#82, ADR 0029):** tabla `cuentas_de_cobro` (`20261022100010`) y `/plataforma/cuentas-de-cobro` con sus permisos `suscripciones.cobro.*`. Panel: página "Cuentas de cobro" (desde Cobranza) para cargar cuentas bancarias y QR de AGROCOM, que se muestran al registrar el pago de alta según el medio. Filtros del panel que se desplazan en pantallas angostas.
+- **Ajustes del panel (#81):** tarjetas de plan en tres columnas y con el nombre visible; el uso por plan sale de Planes y pasa a una página Estadísticas (con las gráficas que estaban en el Resumen); el administrador inicial parte con el nombre de la persona responsable, sin interruptor; el pago de alta y el registro de pago parten en efectivo, con referencia opcional, sin banco ni cuenta de destino, y el depósito pasa a QR (migración `20261022100009`).
+- **Integración final (#34-#36):** cierre de las ramas de trabajo que quedaban fuera de `develop`.
+- **Ethernet y vinculación de placas (#37-#45):** la placa va por Ethernet, sin WiFi (ADR 0025). La vinculación automática con confirmación física (ADR 0026): la placa se anuncia sola y se confirma manteniendo 5 s el pulsador de salida. Lector RS485 con QR600. Tabla `asignaciones_puerta` (`20261015100001`).
+- **Modo sin conexión, perfil propio, sesión persistente y accesos en vivo (#47-#55):** modo sin conexión de la app (ADR 0027), perfil propio y sesión persistente en la app, y accesos en vivo.
+- **Release v1.0.0 y despliegue en producción (#47-#55):** `acceso.agrocom.com.bo` en el CT 120 (`docs/gestion/despliegue.md`). La primera prueba con un administrador real fue el 2026-10-20. Tags publicados: `v0.5.0`, `v1.0.0`, `v1.0.1` y `v1.0.2`.
+- **Hora de Bolivia, textos y formularios (#57-#58):** la hora de la app y de la API sigue la zona de Bolivia; cambios de textos y formularios de la cuenta (nombre de la cuenta, NIT opcional, responsable con nombre y apellido; migración `20261021100001`).
+- **Jerarquía de usuarios, ADR 0028 (#59-#61):** árbol Administrador → Titular → Miembro, con Guardia bajo un Administrador; un rol por usuario; unidades y `superior_id`; visibilidad por rama. Migraciones `20261022100001` a `20261022100004`.
+- **Panel web (#64-#68):** varios Administradores por cuenta, árbol de la cuenta en la ficha, reasignar Guardias y unidades (solo AGROCOM, con bitácora) y tope de Miembros por Titular editable por cuenta.
+- **App (#64-#68):** usuarios por nivel (el selector de rol solo lo ve el Administrador), unidad del Titular, baja en cascada con confirmación y tarjeta de cupo.
+- **API (#64-#68):** jerarquía, cupo (cuentan todos los niveles; tope de Miembros por Titular), estadísticas de uso (inactivos, ruidosos y Titulares cerca del 80 % del cupo; informativas) y compartir el PIN con registro en la bitácora. Migración `20261022100005` (`max_miembros` por cuenta) y `20261022100006` (PIN compartido).
+- **Estadísticas de uso (#67)** en la app (Administrador, con baja directa) y en el panel web (AGROCOM).
+- **Compartir el PIN (#68):** botón Compartir junto a la creación o regeneración del PIN; cada envío queda en la bitácora.
+- **Sin botón Copiar del PIN (#69):** Compartir es la única salida.
+- **"Generar" en lugar de "emitir" (#71):** textos, nombres, base de datos y permiso. Migración `20261022100007` (`emitido_por` pasa a `generado_por`; `accesos.qr.emitir` pasa a `accesos.qr.generar`). Es un cambio incompatible para los clientes instalados.
+- **Permiso `accesos.qr.generar_propio` (#72):** el Guardia genera solo su QR propio; no genera ni comparte QR de visitas.
+- **Textos en inglés y portugués completos (#74, abierto):** sin integrar.
+- **Rama `feature/diseno-jerarquia-y-cierre` (2026-10-22, sin PR):** este documento, las marcas de avance en `docs/gestion/jerarquia-de-usuarios.md` y el plan del release en `docs/gestion/release-jerarquia.md`. No publica nada ni cambia versiones.
+
+## Lo que falta para un V1 usable (revisado 2026-10-22)
+
+1. **Prueba de punta a punta:** la API, la app y el panel están en producción desde el 2026-10-20 (primera prueba con un administrador real). **Sin confirmar:** la placa real con la vinculación automática (ADR 0026) contra la API de producción.
+2. **Revisión línea por línea de lo crítico** (CLAUDE.md y ADR 0028, Consecuencias): aislamiento por cuenta y por rama, validación y consumo del QR, autenticación de dispositivos, firmware de la cerradura y modelo de permisos. **Pendiente:** no consta como hecha.
+3. **Administración:** en el panel web, cuentas, sitios (ahora Propiedades), puertas y placas (desde la integración final, #34-#36). En la app, usuarios, unidades, baja en cascada y cupo (#64-#68). **Pendiente:** alta y edición de propiedades, puertas y dispositivos desde la app (HU-07, HU-08 y HU-10).
+4. **Límites del plan** (RF-10): **hecho para usuarios** (`max_usuarios` y tope de Miembros por Titular, #64-#68). **Pendiente para dispositivos.**
+5. **Login del super admin** (usuario + contraseña): **hecho** en el panel. **Pendiente:** baja diaria de QR vencidos (ADR 0008 §7).
+6. **Seguridad de la API:** rate limit en las validaciones por dispositivo, CORS, límite de intentos del login compartido entre instancias (hoy en memoria) y detección de reuso de un refresh robado. **Pendiente:** el historial #34-#74 no incluye estos puntos.
+7. **Bitácora del bloqueo del login:** pendiente. El ADR 0018 la pide, pero `bitacoras.accion` no tiene un valor para el bloqueo; hoy solo deja un `warn` en el log.
+8. **Test del OpenAPI** contra el contrato publicado: pendiente.
+9. **App:** brillo de pantalla al mostrar el QR, compilación en iOS, token del QR en `extra` de go_router (en web queda en el historial de la pestaña) y **revisión visual en un entorno levantado** contra el handoff y las capturas (pendiente real; ver "Pendiente de decidir").
+10. **Firmware:** confirmar la polaridad del sensor reed con el sensor real (`SENSOR_PUERTA_NIVEL_ABIERTA`) y la CA para producción (hoy ISRG Root X1). OTA queda fuera de V1. **Ya no aplica** el portal AP de aprovisionamiento: desde el ADR 0025 la placa va por Ethernet y se vincula sola (ADR 0026).
 
 ## Pendiente de decidir o confirmar
 
-- Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24).
+- **Jerarquía de usuarios (ADR 0028, 2026-10-20):** implementada en `develop` (#59-#68, #71 y #72). Quedan la revisión visual (pendiente real), el rótulo "Registrar pago" en cobranza (`docs/gestion/jerarquia-de-usuarios.md` §6.3) y los textos en/pt (#74, abierto). Las marcas por punto están en ese documento.
+- **Release con cambio incompatible (versión 1.0.3, decidida por Miguel; reinicio de la base de producción aprobado):** plan en `docs/gestion/release-jerarquia.md`. **No se publicó tag ni se desplegó.** Pendiente de Miguel: la versión, el reinicio de la base de producción (borra cuentas, bitácora y `eventos_acceso` de la primera prueba; el respaldo es la única copia) y el aviso a los clientes con la app instalada.
+- **Contradicción entre documentos:** ADR 0005 y la invariante 11 de `CLAUDE.md` prohíben un cambio incompatible dentro de la misma versión de la API; los cambios de #71 y #72 (nombres de permisos y campos en `/api/v1`) lo son para los clientes instalados. Decidir: excepción documentada en un ADR o `/api/v2`.
+- **Versiones desfasadas:** `api/package.json`, `web/package.json` y `app/pubspec.yaml` siguen en 1.0.0 (+7), y `firmware/include/version.h` en 1.0.0 (el #80 los sube a 1.0.3, pendiente de confirmar con Miguel), aunque existen los tags `v1.0.1` y `v1.0.2`. ADR 0014 dice que el tag fija la versión. Confirmar qué contienen `v1.0.1` y `v1.0.2`.
+- Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24). D-19 está cerrada en código desde `feature/diseno-pantallas`; falta reflejarlo en ese documento.
 - Hex oficial del verde de marca (D-08).
-- Servidor de producción y DNS (D-13): de eso dependen el `docker-compose.prod.yml` con TLS y la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
-- Lector de la mesa: es RS485 (con Wiegand) detrás de un módulo TTL-RS485, cableado en `docs/hardware/README.md`. Falta confirmar su modelo, que lea QR, su velocidad y su formato de salida (rama `feature/lector-rs485`, sin PR). Detalle eléctrico de la cerradura: se confirma al comprar.
+- Servidor de producción y DNS (D-13): **resuelto en parte.** Producción corre en `acceso.agrocom.com.bo` (CT 120, NPMplus, `docs/gestion/despliegue.md`). Falta confirmar la CA que embebe el firmware (hoy, ISRG Root X1 de Let's Encrypt).
+- Lector de la mesa: el lector RS485 con QR600 entró en #37-#45 según el historial; falta confirmar su formato de salida con el hardware real. Detalle eléctrico de la cerradura: se confirma al comprar.

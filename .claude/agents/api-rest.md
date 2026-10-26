@@ -19,3 +19,5 @@ Reglas:
 7. Endpoints del dispositivo: respuestas mínimas y de tamaño acotado (el ESP32 tiene poca RAM), sin datos personales más allá de lo que muestra el display.
 
 Tu salida es el esquema y la ruta definidos (o el hallazgo de incompatibilidad), listos para que `backend` los implemente y `app-flutter`/`firmware` los consuman.
+
+Límites y QR (ADR 0030 y 0031): los códigos `qr.limite_diario`, `qr.limite_pendientes`, `qr.limite_propios_sin_uso`, `qr.formato_invalido`, `qr.generacion_restringida`, `qr.generador_suspendido` y el encabezado `Idempotency-Key` son adiciones compatibles a `/api/v1`. Todo 429 lleva `Retry-After` cuando aplica. Revisa los skills `generacion-qr-segura` y `limites-y-abuso`; `reutilizado` en la respuesta de `POST /qr-accesos` se documenta en el OpenAPI.

@@ -22,3 +22,7 @@ Reglas de trabajo:
 7. Actualiza la ficha de la tabla en `docs/modelo-datos/tablas/` y el `03-schema-sql.md` en el mismo PR.
 
 Si una tabla depende de una duda abierta del modelo, no la cierres por tu cuenta: anótala y pregunta.
+
+Límites y QR (ADR 0030 y 0031): las columnas y tablas nuevas (`sesiones.instalacion_id`/`plataforma`, sesión de origen en `qr_accesos`, puerta sensible, `confirmaciones_apertura`, diagnóstico del latido (lector y sensor), bolsa en `planes`, `notificaciones`, configuración de topes, idempotencia) van una por migración con índices para los conteos por usuario y día. Carga `generacion-qr-segura` y `limites-y-abuso` y verifica cada una contra un MySQL descartable.
+
+Seguridad (ADR 0033): `usuarios.estado` y `cuentas.estado` reemplazan a `activo` (con `estado_impuesto_por` y `estado_desde`); tabla `incidentes_uso`; verificar que el usuario de la API no tenga `UPDATE`/`DELETE` sobre `eventos_acceso` ni `bitacoras`.

@@ -6,10 +6,10 @@
   "medio": "Payment method",
   "medios": {
     "transferencia": "Bank transfer",
-    "deposito": "Deposit",
+    "qr": "QR",
     "efectivo": "Cash"
   },
-  "referencia": "Reference",
+  "referencia": "Reference (optional)",
   "referenciaAyuda": "Transaction or slip number",
   "comprobante": "Receipt",
   "nuevaVigencia": "New term",
@@ -37,16 +37,11 @@
   "subtituloAlta": "{{cuenta}} · first payment of the {{plan}} plan",
   "confirmarAltaTitulo": "Record the first payment and activate the account?",
   "confirmarAltaTexto": "{{cuenta}} starts operating today and is active until {{fecha}}.",
-  "banco": "Bank where it was received",
-  "bancoElegir": "Choose the bank",
-  "cuentaDestino": "Destination account",
-  "cuentaDestinoAyuda": "AGROCOM account number or alias",
   "comprobanteSubir": "Upload the receipt photo or PDF",
   "comprobanteAyuda": "JPG, PNG, WEBP or PDF · up to {{max}} MB",
   "comprobanteCambiar": "Change",
   "comprobanteQuitar": "Remove",
   "comprobanteVista": "Receipt preview",
   "archivoInvalido": "Upload an image (JPG, PNG or WEBP) or a PDF",
-  "archivoGrande": "The file is larger than 5 MB",
-  "filaBanco": "Bank and account"
+  "archivoGrande": "The file is larger than 5 MB"
 }

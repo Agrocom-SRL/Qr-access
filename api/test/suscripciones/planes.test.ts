@@ -301,13 +301,13 @@ describe('plataforma: gestión de planes (crear, editar, retirar)', () => {
       expect((await lista()).some((p) => p.id === id)).toBe(false);
 
       const sesion = await iniciarSesion(prueba.app, escenario.usuario.pin);
-      const emitir = await prueba.app.inject({
+      const generar = await prueba.app.inject({
         method: 'POST',
         url: '/api/v1/qr-accesos',
         headers: conUsuario(sesion),
         payload: { puerta_ids: [escenario.puertaPrincipal.id] },
       });
-      expect(emitir.statusCode, emitir.body).toBe(201);
+      expect(generar.statusCode, generar.body).toBe(201);
       const detalle = await prueba.app.inject({
         method: 'GET',
         url: `/api/v1/plataforma/cuentas/${escenario.cuenta.id}/suscripcion`,
@@ -330,6 +330,7 @@ describe('plataforma: gestión de planes (crear, editar, retirar)', () => {
           nit: '1234567',
           ciudad: 'Montero',
           contacto_nombre: 'X',
+          contacto_apellido: 'Pérez',
           contacto_telefono: '3 922 0011',
           plan_id: id,
           inicio: '2026-10-12',

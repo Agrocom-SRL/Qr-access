@@ -38,11 +38,11 @@ class TarjetaQr extends StatelessWidget {
   /// dispositivo.
   final VoidCallback? alVer;
 
-  /// El QR sigue vigente pero se emitió en otro dispositivo: se avisa en lugar
+  /// El QR sigue vigente pero se generó en otro dispositivo: se avisa en lugar
   /// de ofrecer "Ver QR".
   final bool soloEnOtroDispositivo;
 
-  /// Versión del tablero: sin horas de emisión ni acción.
+  /// Versión del tablero: sin horas de generación ni acción.
   final bool compacta;
 
   @override
@@ -135,10 +135,10 @@ class TarjetaQr extends StatelessWidget {
 
 /// "Hoy 09:12 → vence 23:59", o la hora de uso o anulación según el estado.
 String textoHorasDeQr(AppLocalizations l10n, QrAcceso qr, DateTime ahora) {
-  final emitido = textoHoraCorta(l10n, qr.creadoAt, ahora);
+  final generado = textoHoraCorta(l10n, qr.creadoAt, ahora);
   return switch (qr.estado) {
-    EstadoQr.vigente || EstadoQr.vencido => l10n.qrEmitidoYVence(
-      emitido,
+    EstadoQr.vigente || EstadoQr.vencido => l10n.qrGeneradoYVence(
+      generado,
       textoHoraCorta(l10n, qr.venceAt, ahora),
     ),
     EstadoQr.usado => l10n.qrUsadoEl(

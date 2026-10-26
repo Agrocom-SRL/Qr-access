@@ -1,13 +1,24 @@
+/* Si las opciones no caben, el filtro se desplaza en horizontal en vez de partir sus textos en dos líneas. */
 .contenedor {
   display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
   padding: var(--esp4);
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radioCompleto);
 }
 
+.contenedor::-webkit-scrollbar {
+  display: none;
+}
+
 .opcion {
   display: inline-flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   gap: var(--esp8);
   height: var(--tam40);

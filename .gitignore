@@ -30,3 +30,6 @@ db/schema.sql
 
 # Copias de trabajo de los agentes en paralelo (no se versionan)
 .claude/worktrees/
+
+# Respaldos de la base local (bin/reiniciar-local)
+respaldos/

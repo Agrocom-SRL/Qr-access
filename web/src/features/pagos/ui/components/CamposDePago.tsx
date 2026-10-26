@@ -1,11 +1,10 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { AccesoCampoTexto } from '../../../../shared/ui/molecules/AccesoCampoTexto';
 import { CampoMonto } from '../../../../shared/ui/molecules/CampoMonto';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import {
-  BANCOS,
   MEDIOS,
   requiereRespaldo,
   type ErrorDePago,
@@ -24,10 +23,20 @@ interface Props {
   onTocar: (campo: keyof FormularioDePago) => void;
   /** Texto bajo el monto (p. ej. "Precio vigente del plan"). */
   ayudaDelMonto?: string;
+  /** Contenido bajo el selector de medio (p. ej. las cuentas de AGROCOM donde pagar). */
+  bajoElMedio?: ReactNode;
 }
 
-/** Monto, fecha, medio y referencia de un pago manual: los mismos en el alta de una cuenta y en el registro de un pago. */
-export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayudaDelMonto }: Props) {
+/** Monto, fecha, medio, referencia (opcional) y comprobante de un pago manual: los mismos en el alta de una cuenta y en el registro de un pago. */
+export function CamposDePago({
+  datos,
+  errores,
+  tocados,
+  onCambio,
+  onTocar,
+  ayudaDelMonto,
+  bajoElMedio,
+}: Props) {
   const { t } = useTranslation('pago');
   const mensaje = (campo: keyof FormularioDePago): string | undefined => {
     const error = errores[campo];
@@ -76,6 +85,8 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
         />
       </div>
 
+      {bajoElMedio}
+
       <AccesoCampoTexto
         etiqueta={t('referencia')}
         mono
@@ -92,50 +103,16 @@ export function CamposDePago({ datos, errores, tocados, onCambio, onTocar, ayuda
       />
 
       {requiereRespaldo(datos.medio) ? (
-        <>
-          <div className={styles.fila}>
-            <AccesoSelectorBuscable
-              conBusqueda={false}
-              etiqueta={t('banco')}
-              valor={datos.banco}
-              error={mensaje('banco')}
-              opciones={[
-                { valor: '', etiqueta: t('bancoElegir') },
-                ...BANCOS.map((banco) => ({ valor: banco, etiqueta: banco })),
-              ]}
-              onBlur={() => {
-                onTocar('banco');
-              }}
-              onCambio={(banco) => {
-                onCambio({ banco });
-              }}
-            />
-            <AccesoCampoTexto
-              etiqueta={t('cuentaDestino')}
-              mono
-              value={datos.cuentaDestino}
-              ayuda={t('cuentaDestinoAyuda')}
-              error={mensaje('cuentaDestino')}
-              autoComplete="off"
-              onBlur={() => {
-                onTocar('cuentaDestino');
-              }}
-              onChange={(e) => {
-                onCambio({ cuentaDestino: e.target.value });
-              }}
-            />
-          </div>
-          <CampoComprobante
-            archivo={datos.comprobante}
-            error={mensaje('comprobante')}
-            onCambio={(comprobante) => {
-              onCambio({ comprobante });
-            }}
-            onBlur={() => {
-              onTocar('comprobante');
-            }}
-          />
-        </>
+        <CampoComprobante
+          archivo={datos.comprobante}
+          error={mensaje('comprobante')}
+          onCambio={(comprobante) => {
+            onCambio({ comprobante });
+          }}
+          onBlur={() => {
+            onTocar('comprobante');
+          }}
+        />
       ) : null}
     </div>
   );

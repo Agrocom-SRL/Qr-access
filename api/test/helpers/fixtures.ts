@@ -25,7 +25,8 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'organizacion.sitio.administrar',
   'organizacion.puerta.administrar',
   'organizacion.guardia.asignar',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
+  'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.ver_todos',
   'accesos.qr.anular',
@@ -36,14 +37,36 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
+  'seguridad.cupo.ver',
+  'seguridad.estadistica.ver',
 ];
 
+/** Lo que tiene un Miembro (ADR 0028): usar la puerta con sus QR. */
 export const PERMISOS_DE_USUARIO = [
   'organizacion.puerta.ver',
-  'accesos.qr.emitir',
+  'accesos.qr.generar',
+  'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
   'accesos.evento.ver',
+];
+
+/** Lo que tiene un Guardia (ADR 0028 §5): su QR propio, no los de visitas. */
+export const PERMISOS_DE_GUARDIA = [
+  'organizacion.puerta.ver',
+  'organizacion.puerta.supervisar',
+  'accesos.qr.generar_propio',
+  'accesos.evento.ver',
+  'accesos.evento.ver_asignadas',
+];
+
+/** Un Titular tiene lo del Miembro y además administra a sus Miembros. */
+export const PERMISOS_DE_TITULAR = [
+  ...PERMISOS_DE_USUARIO,
+  'seguridad.usuario.ver',
+  'seguridad.usuario.crear',
+  'seguridad.usuario.editar',
+  'seguridad.usuario.eliminar',
 ];
 
 export interface Cuenta {
@@ -91,14 +114,15 @@ export async function crearUsuarioConPin(
   cuenta: Cuenta,
   sufijo: string,
   rolIds: readonly string[],
-  opciones: { activo?: boolean } = {},
+  opciones: { activo?: boolean; superiorId?: string } = {},
 ): Promise<UsuarioDePrueba> {
   const pin = `${cuenta.codigo}${sufijo}`;
   const id = await insertar(
     pool,
-    'INSERT INTO usuarios (tenant_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES (?, ?, ?, ?, NOW(3), ?)',
+    'INSERT INTO usuarios (tenant_id, superior_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES (?, ?, ?, ?, ?, NOW(3), ?)',
     [
       cuenta.id,
+      opciones.superiorId ?? null,
       `Usuario ${pin}`,
       calcularIndiceDePin(cargarConfig().PIN_PIMIENTA, cuenta.id, sufijo),
       await hashear(secretoDePin(cuenta.id, sufijo)),
@@ -204,21 +228,21 @@ export interface QrDePrueba {
   readonly texto: string;
 }
 
-/** Un QR escrito directo en la base, para armar estados (vencido, usado…) que la API no emite. */
+/** Un QR escrito directo en la base, para armar estados (vencido, usado…) que la API no genera. */
 export async function crearQr(
   pool: Pool,
   cuenta: Cuenta,
-  emisorId: string,
+  generadorId: string,
   puertaIds: readonly string[],
   opciones: { venceAt?: Date; usadoAt?: Date; anuladoAt?: Date } = {},
 ): Promise<QrDePrueba> {
   const token = generarTokenQr();
   const id = await insertar(
     pool,
-    'INSERT INTO qr_accesos (tenant_id, emitido_por, token_hash, vence_at, usado_at, anulado_at) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO qr_accesos (tenant_id, generado_por, token_hash, vence_at, usado_at, anulado_at) VALUES (?, ?, ?, ?, ?, ?)',
     [
       cuenta.id,
-      emisorId,
+      generadorId,
       hashDeToken(token),
       opciones.venceAt ?? new Date(Date.now() + 3_600_000),
       opciones.usadoAt ?? null,
@@ -234,11 +258,16 @@ export async function crearQr(
   return { id, texto: textoDeQr(token) };
 }
 
-/** Una cuenta completa: administrador, usuario, sitio, dos puertas con su dispositivo y suscripción vigente. */
+/**
+ * Una cuenta completa: administrador, un Miembro que cuelga de él (`usuario`), sitio, dos puertas con
+ * su dispositivo y suscripción vigente. Trae los roles Administrador, Titular y Miembro (ADR 0028);
+ * el Titular no tiene usuario: cada test arma su propio árbol cuando lo necesita.
+ */
 export interface Escenario {
   readonly cuenta: Cuenta;
   readonly rolAdministradorId: string;
-  readonly rolUsuarioId: string;
+  readonly rolTitularId: string;
+  readonly rolMiembroId: string;
   readonly administrador: UsuarioDePrueba;
   readonly usuario: UsuarioDePrueba;
   readonly sitioId: string;
@@ -256,9 +285,12 @@ export async function crearEscenario(pool: Pool, codigo: string): Promise<Escena
     'Administrador',
     PERMISOS_DE_ADMINISTRADOR,
   );
-  const rolUsuarioId = await crearRol(pool, cuenta, 'Usuario', PERMISOS_DE_USUARIO);
+  const rolTitularId = await crearRol(pool, cuenta, 'Titular', PERMISOS_DE_TITULAR);
+  const rolMiembroId = await crearRol(pool, cuenta, 'Miembro', PERMISOS_DE_USUARIO);
   const administrador = await crearUsuarioConPin(pool, cuenta, 'AD01', [rolAdministradorId]);
-  const usuario = await crearUsuarioConPin(pool, cuenta, 'US01', [rolUsuarioId]);
+  const usuario = await crearUsuarioConPin(pool, cuenta, 'US01', [rolMiembroId], {
+    superiorId: administrador.id,
+  });
   await crearSuscripcion(pool, cuenta);
   const sitioId = await crearSitio(pool, cuenta, `Sitio ${codigo}`);
   const puertaPrincipal = await crearPuerta(pool, cuenta, sitioId, `Principal ${codigo}`, 6);
@@ -266,7 +298,8 @@ export async function crearEscenario(pool: Pool, codigo: string): Promise<Escena
   return {
     cuenta,
     rolAdministradorId,
-    rolUsuarioId,
+    rolTitularId,
+    rolMiembroId,
     administrador,
     usuario,
     sitioId,

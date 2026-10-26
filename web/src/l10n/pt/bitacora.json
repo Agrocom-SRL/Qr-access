@@ -68,10 +68,11 @@
     "usuario_editado": "Editou usuário",
     "usuario_eliminado": "Excluiu usuário",
     "usuario_pin_regenerado": "Redefiniu o PIN do usuário",
+    "usuario_pin_compartido": "Compartilhou o PIN de um usuário",
     "cuenta_codigo_cambiado": "Alterou o código da conta",
-    "sitio_creado": "Criou local",
-    "sitio_editado": "Editou local",
-    "sitio_eliminado": "Excluiu local",
+    "sitio_creado": "Criou propriedade",
+    "sitio_editado": "Editou propriedade",
+    "sitio_eliminado": "Excluiu propriedade",
     "puerta_creado": "Criou porta",
     "puerta_editado": "Editou porta",
     "puerta_eliminado": "Excluiu porta",
@@ -86,7 +87,7 @@
     "suspendida": "Suspensa",
     "activo": "Ativo",
     "desactivado": "Desativado",
-    "pin": "Novo PIN emitido"
+    "pin": "Novo PIN gerado"
   },
   "detalle": {
     "abrir": "Ver mais",

@@ -2,17 +2,17 @@ import type { Pool } from 'mysql2/promise';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import { permisoQueExcede } from '../domain/asignacion-de-roles.js';
-import { RepositorioDeRoles } from '../repository.js';
+import { RepositorioDeRoles, type RolFila } from '../repository.js';
 
 /**
  * Comprueba que todos los roles existen en la cuenta y que ninguno tiene un permiso que el actor
- * no tenga con su rol activo (D-19). Un rol ajeno o inactivo no existe: 404.
+ * no tenga con su rol (D-19). Un rol ajeno o inactivo no existe: 404.
  */
 export async function exigirRolesAsignables(
   pool: Pool,
   principal: PrincipalUsuario,
   rolIds: readonly string[],
-): Promise<void> {
+): Promise<RolFila[]> {
   const unicos = [...new Set(rolIds)];
   const repositorio = new RepositorioDeRoles(pool);
   const roles = await repositorio.buscarActivosPorIds(unicos);
@@ -27,4 +27,5 @@ export async function exigirRolesAsignables(
       permiso: exceso.permiso,
     });
   }
+  return roles;
 }
