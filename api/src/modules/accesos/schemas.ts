@@ -106,6 +106,8 @@ export const esquemaEvento = z.object({
       generador: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
     })
     .nullable(),
+  /** Relecturas del mismo lector dentro de la ventana, enlazadas a este intento («×N»; ADR 0032 §4). */
+  repeticiones: z.number().int(),
 });
 export const respuestaListadoDeEventos = esquemaListado(esquemaEvento);
 

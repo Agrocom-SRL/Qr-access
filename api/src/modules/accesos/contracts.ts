@@ -40,7 +40,8 @@ interface EventoDePlataformaFila extends RowDataPacket {
 
 /** El `WHERE` de los filtros presentes; los valores van siempre como parámetros. */
 function armarFiltro(filtro: FiltroDeEventosDePlataforma): { donde?: string; params: unknown[] } {
-  const condiciones: string[] = [];
+  // Solo el primer intento; las repeticiones no se cuentan aparte (ADR 0032 §4.2).
+  const condiciones: string[] = ['t.repetido_de_id IS NULL'];
   const params: unknown[] = [];
   if (filtro.cuentaId !== null) {
     condiciones.push('t.tenant_id = ?');
@@ -114,7 +115,7 @@ class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
     return this.seleccionar<AccesosPorDiaFila>({
       columnas:
         "DATE_FORMAT(CONVERT_TZ(t.ocurrido_at, '+00:00', ?), '%Y-%m-%d') AS dia, t.resultado, COUNT(*) AS total",
-      donde: 't.ocurrido_at >= ? AND t.ocurrido_at < ?',
+      donde: 't.repetido_de_id IS NULL AND t.ocurrido_at >= ? AND t.ocurrido_at < ?',
       agrupar: 'dia, t.resultado',
       params: [zona, desde, hasta],
       orden: 'dia',

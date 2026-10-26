@@ -14,7 +14,14 @@
 namespace puerta {
 
 constexpr uint32_t TIMEOUT_VALIDACION_MS = 3000;
-constexpr uint32_t ANTIRREBOTE_MISMO_QR_MS = 2000;
+// Antirrebote del lector (ADR 0032 §4.1): tras una respuesta de la API (permitido o denegado) se
+// ignora el MISMO texto durante este tiempo, contado desde la respuesta, para no mandar la misma
+// lectura dos veces. No decide nada: solo evita enviar. La ventana de repetición de la API (15 s)
+// es independiente y cubre al lector que insiste tras perder una respuesta.
+constexpr uint32_t ANTIRREBOTE_MISMO_QR_MS = 3000;
+// Si no hubo respuesta válida (sin red, timeout, respuesta inválida) la persona tiene que poder
+// reintentar pronto: la falla segura no cambia (esa lectura no abrió), solo se acorta la espera.
+constexpr uint32_t ANTIRREBOTE_TRAS_FALLO_MS = 1000;
 // Tope DURO de compilación: ni la API ni la configuración lo superan.
 constexpr uint16_t MAX_APERTURA_S = 10;
 // Tope vigente hasta que la configuración diga otro (siempre <= MAX_APERTURA_S).
@@ -92,7 +99,8 @@ class Maquina {
   uint16_t maxAperturaS_ = APERTURA_POR_DEFECTO_S;
   char qr_[MAX_QR + 1] = {0};
   char ultimoQr_[MAX_QR + 1] = {0};
-  uint32_t ultimoQrMs_ = 0;
+  uint32_t ultimoQrMs_ = 0;      // cuándo terminó el último intento con ese texto
+  uint32_t ventanaQrMs_ = 0;     // cuánto dura el antirrebote de ese intento
   bool hayUltimoQr_ = false;
 };
 

@@ -26,6 +26,8 @@ export interface EventoListado {
     etiqueta: string | null;
     generador: { id: string; etiqueta: string | null };
   } | null;
+  /** Relecturas enlazadas a este intento dentro de la ventana (ADR 0032 §4); el listado no las repite. */
+  repeticiones: number;
 }
 
 export interface FiltrosDeEventos {
@@ -77,7 +79,7 @@ export async function ejecutar(
     repositorio.listar(filtro, limite, desplazamiento),
     repositorio.contarVisibles(filtro),
   ]);
-  const [puertas, etiquetas] = await Promise.all([
+  const [puertas, etiquetas, repeticiones] = await Promise.all([
     puertasPorId(
       pool,
       filas.map((fila) => fila.puerta_id),
@@ -87,6 +89,7 @@ export async function ejecutar(
         filas.flatMap((fila) => (fila.qr_generado_por === null ? [] : [fila.qr_generado_por])),
       ),
     ]),
+    repositorio.contarRepeticiones(filas.map((fila) => fila.id)),
   ]);
   return armarListado(
     filas.map((fila) => {
@@ -102,6 +105,7 @@ export async function ejecutar(
           sitio: { id: puerta?.sitioId ?? '', nombre: puerta?.sitioNombre ?? '' },
         },
         qr_id: fila.qr_acceso_id,
+        repeticiones: repeticiones.get(fila.id) ?? 0,
         qr:
           fila.qr_acceso_id === null || fila.qr_generado_por === null
             ? null

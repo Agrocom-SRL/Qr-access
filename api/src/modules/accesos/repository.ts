@@ -407,7 +407,8 @@ export interface ResumenDeEventosFila extends RowDataPacket {
 }
 
 function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
-  const condiciones: string[] = [];
+  // Por omisión solo el primer intento; las repeticiones se cuentan aparte («×N», ADR 0032 §4.2).
+  const condiciones: string[] = ['t.repetido_de_id IS NULL'];
   const params: unknown[] = [];
   if (filtro.generadoPor !== null) {
     condiciones.push('q.generado_por = ?');
@@ -449,6 +450,13 @@ export interface NuevoEvento {
   readonly motivoCode: string;
   readonly ocurridoAt: Date;
   readonly leidoEnDispositivoAt: Date | null;
+  /** Id del intento original cuando este es una repetición dentro de la ventana (ADR 0032 §3 y §4). */
+  readonly repetidoDeId?: string | null;
+}
+
+/** El intento original que enlaza una repetición. */
+export interface OriginalFila extends RowDataPacket {
+  id: string;
 }
 
 /** El QR de una unión con `qr_accesos` es de la misma cuenta; no se filtra por `deleted_at` para no perder el historial. */
@@ -469,6 +477,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
         'motivo_code',
         'ocurrido_at',
         'leido_en_dispositivo_at',
+        'repetido_de_id',
       ],
       perfil: 'solo_insercion',
       deCuenta: true,
@@ -486,7 +495,41 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       motivo_code: evento.motivoCode,
       ocurrido_at: evento.ocurridoAt,
       leido_en_dispositivo_at: evento.leidoEnDispositivoAt,
+      repetido_de_id: evento.repetidoDeId ?? null,
     });
+  }
+
+  /**
+   * El primer intento (nunca una repetición) del MISMO dispositivo, con el MISMO hash de token,
+   * resultado y motivo, ocurrido desde `desde`. Es el original al que se enlaza una repetición
+   * (ADR 0032 §3 y §4). Solo de la cuenta del contexto; compara por hash, nunca por texto.
+   */
+  buscarOriginal(
+    dispositivoId: string,
+    tokenHash: string,
+    resultado: 'permitido' | 'rechazado',
+    motivoCode: string,
+    desde: Date,
+  ): Promise<OriginalFila | null> {
+    return this.seleccionarUna<OriginalFila>({
+      columnas: 't.id',
+      donde:
+        't.dispositivo_id = ? AND t.token_hash = ? AND t.resultado = ? AND t.motivo_code = ? AND t.repetido_de_id IS NULL AND t.ocurrido_at >= ?',
+      params: [dispositivoId, tokenHash, resultado, motivoCode, desde],
+      orden: 't.ocurrido_at ASC, t.id ASC',
+    });
+  }
+
+  /** Cuántas repeticiones tiene cada intento original (ADR 0032 §4.2); los que no tienen, no aparecen. */
+  async contarRepeticiones(originalIds: readonly string[]): Promise<Map<string, number>> {
+    if (originalIds.length === 0) return new Map();
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.repetido_de_id AS original_id, COUNT(*) AS total',
+      donde: 't.repetido_de_id IN (?)',
+      params: [originalIds],
+      agrupar: 't.repetido_de_id',
+    });
+    return new Map(filas.map((fila) => [String(fila.original_id), Number(fila.total)]));
   }
 
   listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {

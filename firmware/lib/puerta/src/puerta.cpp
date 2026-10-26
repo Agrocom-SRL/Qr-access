@@ -24,13 +24,14 @@ Acciones Maquina::alLeer(const char* texto, uint32_t ahoraMs) {
   if (largo == 0 || largo > MAX_QR) return acciones;
 
   if (hayUltimoQr_ && strcmp(texto, ultimoQr_) == 0 &&
-      transcurrido(ultimoQrMs_, ahoraMs) < ANTIRREBOTE_MISMO_QR_MS) {
+      transcurrido(ultimoQrMs_, ahoraMs) < ventanaQrMs_) {
     return acciones;
   }
 
   memcpy(qr_, texto, largo + 1);
   memcpy(ultimoQr_, texto, largo + 1);
   ultimoQrMs_ = ahoraMs;
+  ventanaQrMs_ = ANTIRREBOTE_TRAS_FALLO_MS;  // se reajusta al terminar el intento
   hayUltimoQr_ = true;
 
   estado_ = Estado::Validando;
@@ -47,6 +48,9 @@ Acciones Maquina::alResponder(uint32_t id, const Resultado& resultado, uint32_t 
   if (estado_ != Estado::Validando || id != idValidacion_) return acciones;
 
   memset(qr_, 0, sizeof(qr_));
+  // El antirrebote corre desde la respuesta, no desde la lectura.
+  ultimoQrMs_ = ahoraMs;
+  ventanaQrMs_ = resultado.valida ? ANTIRREBOTE_MISMO_QR_MS : ANTIRREBOTE_TRAS_FALLO_MS;
   if (resultado.valida && resultado.abrir && resultado.segundos > 0) {
     const uint16_t segundos =
         resultado.segundos > maxAperturaS_ ? maxAperturaS_ : resultado.segundos;
@@ -78,6 +82,8 @@ Acciones Maquina::tick(uint32_t ahoraMs) {
   if (estado_ == Estado::Validando && pasado >= TIMEOUT_VALIDACION_MS) {
     estado_ = Estado::Reposo;
     memset(qr_, 0, sizeof(qr_));
+    ultimoQrMs_ = ahoraMs;  // sin respuesta: antirrebote corto, el reintento debe poder salir
+    ventanaQrMs_ = ANTIRREBOTE_TRAS_FALLO_MS;
     acciones.indicacion = Indicacion::Error;
   } else if (estado_ == Estado::Abierta && pasado >= duracionMs_) {
     estado_ = Estado::Reposo;

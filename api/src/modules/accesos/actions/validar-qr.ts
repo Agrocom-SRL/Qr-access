@@ -11,6 +11,8 @@ import {
   decidirAntesDeConsumir,
   motivoTrasConsumoFallido,
   MOTIVO_PERMITIDO,
+  VENTANA_DE_RECHAZO_REPETIDO_MS,
+  VENTANA_DE_REPETICION_MS,
   type MotivoDeRechazo,
 } from '../domain/validacion.js';
 import { RepositorioDePuertasDeQr, RepositorioDeEventos, RepositorioDeQr } from '../repository.js';
@@ -33,6 +35,13 @@ export interface LecturaDelDispositivo {
  * Las dos transacciones (rechazo y consumo) son idempotentes: ante un deadlock se repiten una
  * vez (ADR 0032 §2); si vuelve a fallar, el error sale como 503 y la puerta no abre. `señal` es la
  * de la petición: vencida, el consumo se deshace en vez de confirmarse.
+ *
+ * Ventana de repetición (ADR 0032 §3): si el MISMO dispositivo relee el MISMO token (por hash) dentro
+ * de 15 s de una lectura que ya fue `permitido`, responde de nuevo `abrir: true` SIN consumir otra
+ * vez, con un evento enlazado por `repetido_de_id` al original. Solo pasa las mismas comprobaciones
+ * que cualquier QR (anulado, vencido, generador, puerta, suscripción) y nunca se encadena: la ventana
+ * cuenta desde el original. Un rechazo idéntico (mismo dispositivo, hash y motivo) dentro de 60 s
+ * se inserta igual, pero enlazado al primero (§4.2): ningún intento desaparece (invariante 4).
  */
 export async function ejecutar(
   pool: Pool,
@@ -53,6 +62,13 @@ export async function ejecutar(
     tokenHash: string,
     qrId: string | null,
   ): Promise<ResultadoDeValidacion> => {
+    const original = await eventos.buscarOriginal(
+      dispositivo.dispositivoId,
+      tokenHash,
+      'rechazado',
+      motivo,
+      new Date(ahora.getTime() - VENTANA_DE_RECHAZO_REPETIDO_MS),
+    );
     const eventoId = await enTransaccionIdempotente(pool, (tx) =>
       eventos.registrar(tx, {
         puertaId: dispositivo.puertaId,
@@ -63,6 +79,7 @@ export async function ejecutar(
         motivoCode: motivo,
         ocurridoAt: ahora,
         leidoEnDispositivoAt: lectura.leidoEn,
+        repetidoDeId: original?.id ?? null,
       }),
     );
     return { abrir: false, evento_id: eventoId, motivo_code: motivo };
@@ -96,6 +113,50 @@ export async function ejecutar(
     suscripcionVigente: suscripcion !== null,
   });
   if (motivo !== null) return rechazar(motivo, tokenHash, qr.id);
+
+  /**
+   * Repite la apertura de una lectura permitida hace menos de 15 s por este mismo dispositivo, sin
+   * consumir nada. Solo se llama con el QR ya usado y con las comprobaciones de arriba en verde.
+   */
+  const repetirApertura = async (): Promise<ResultadoDeValidacion | null> => {
+    const original = await eventos.buscarOriginal(
+      dispositivo.dispositivoId,
+      tokenHash,
+      'permitido',
+      MOTIVO_PERMITIDO,
+      new Date(ahora.getTime() - VENTANA_DE_REPETICION_MS),
+    );
+    if (original === null) return null;
+    const eventoId = await enTransaccionIdempotente(
+      pool,
+      (tx) =>
+        eventos.registrar(tx, {
+          puertaId: dispositivo.puertaId,
+          dispositivoId: dispositivo.dispositivoId,
+          qrAccesoId: qr.id,
+          tokenHash,
+          resultado: 'permitido',
+          motivoCode: MOTIVO_PERMITIDO,
+          ocurridoAt: ahora,
+          leidoEnDispositivoAt: lectura.leidoEn,
+          repetidoDeId: original.id,
+        }),
+      { ...(señal === undefined ? {} : { señal }) },
+    );
+    return {
+      abrir: true,
+      segundos: puerta.segundosApertura,
+      evento_id: eventoId,
+      motivo_code: MOTIVO_PERMITIDO,
+    };
+  };
+
+  // Ya usado: solo puede ser una repetición del mismo lector (sin consumir) o un `qr.usado`.
+  if (qr.usado_at !== null) {
+    const repeticion = await repetirApertura();
+    if (repeticion !== null) return repeticion;
+    return rechazar('qr.usado', tokenHash, qr.id);
+  }
 
   // 7. Consumo atómico + evento "permitido" en la MISMA transacción: si el evento no queda,
   // el consumo se deshace y la puerta no abre. Con la señal de la petición vencida (la placa ya
@@ -137,5 +198,10 @@ export async function ejecutar(
       : { anuladoAt: actual.anulado_at, usadoAt: actual.usado_at, venceAt: actual.vence_at },
     ahora,
   );
+  // Perdió la carrera contra una lectura del MISMO lector (relectura simultánea): es una repetición.
+  if (motivoFinal === 'qr.usado') {
+    const repeticion = await repetirApertura();
+    if (repeticion !== null) return repeticion;
+  }
   return rechazar(motivoFinal, tokenHash, qr.id);
 }

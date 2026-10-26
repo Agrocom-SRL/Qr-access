@@ -11,6 +11,16 @@ export type MotivoDeRechazo =
 
 export const MOTIVO_PERMITIDO = 'acceso.permitido';
 
+/**
+ * Ventana de repetición de una apertura (ADR 0032 §3, decisión de Miguel: 15 s). Corta a propósito:
+ * recupera la respuesta perdida de una lectura legítima sin ser una segunda oportunidad útil para
+ * quien fotografió el QR.
+ */
+export const VENTANA_DE_REPETICION_MS = 15_000;
+
+/** Ventana para enlazar un rechazo idéntico al primero y no llenar el registro de ruido (ADR 0032 §4.2). */
+export const VENTANA_DE_RECHAZO_REPETIDO_MS = 60_000;
+
 export interface QrParaDecidir {
   readonly anuladoAt: Date | null;
   readonly venceAt: Date;

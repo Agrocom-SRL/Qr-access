@@ -95,10 +95,13 @@ describe('GET /api/v1/qr-accesos/{id}/estado', () => {
     });
   });
 
-  it('un segundo intento sobre un QR usado devuelve el último: qr.usado', async () => {
-    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+  it('un segundo intento de otro lector sobre un QR usado devuelve el último: qr.usado', async () => {
+    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [
+      a.puertaPrincipal.id,
+      a.puertaTrasera.id,
+    ]);
     await leer(a.dispositivoPrincipal, qr.texto);
-    await leer(a.dispositivoPrincipal, qr.texto);
+    await leer(a.dispositivoTrasero, qr.texto);
     const cuerpo = (await estado(sesionUsuarioA, qr.id)).json<EstadoDeQr>();
     expect(cuerpo.ultimo_intento).toMatchObject({
       resultado: 'rechazado',

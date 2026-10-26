@@ -171,7 +171,41 @@ void test_mismo_qr_inmediato_se_ignora_y_luego_se_acepta() {
   auto m = validando(1000);
   m.alResponder(m.idValidacion(), Resultado::denegado(Motivo::QrVencido), 1100);
   TEST_ASSERT_FALSE(m.alLeer(QR, 1500).enviarValidacion);
-  TEST_ASSERT_TRUE(m.alLeer(QR, 1000 + puerta::ANTIRREBOTE_MISMO_QR_MS).enviarValidacion);
+  TEST_ASSERT_TRUE(m.alLeer(QR, 1100 + puerta::ANTIRREBOTE_MISMO_QR_MS).enviarValidacion);
+}
+
+void test_el_antirrebote_corre_desde_la_respuesta_no_desde_la_lectura() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::denegado(Motivo::QrVencido), 2500);
+  // 2 s despues de la lectura pero solo 1,5 s despues de la respuesta: se ignora.
+  TEST_ASSERT_FALSE(m.alLeer(QR, 4000).enviarValidacion);
+  TEST_ASSERT_FALSE(m.alLeer(QR, 2500 + puerta::ANTIRREBOTE_MISMO_QR_MS - 1).enviarValidacion);
+  TEST_ASSERT_TRUE(m.alLeer(QR, 2500 + puerta::ANTIRREBOTE_MISMO_QR_MS).enviarValidacion);
+}
+
+void test_otro_texto_no_lo_frena_el_antirrebote() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::denegado(Motivo::QrVencido), 1100);
+  TEST_ASSERT_TRUE(m.alLeer("AQ1.otroqrotroqrotroqrot", 1200).enviarValidacion);
+}
+
+void test_sin_respuesta_el_reintento_sale_pronto_y_sigue_sin_abrir() {
+  auto m = validando(1000);
+  auto t = m.tick(1000 + puerta::TIMEOUT_VALIDACION_MS);
+  TEST_ASSERT_EQUAL(Indicacion::Error, t.indicacion);
+  TEST_ASSERT_FALSE(t.activarCerradura);
+  const uint32_t finDelTimeout = 1000 + puerta::TIMEOUT_VALIDACION_MS;
+  TEST_ASSERT_FALSE(m.alLeer(QR, finDelTimeout + 100).enviarValidacion);
+  auto reintento = m.alLeer(QR, finDelTimeout + puerta::ANTIRREBOTE_TRAS_FALLO_MS);
+  TEST_ASSERT_TRUE(reintento.enviarValidacion);
+  TEST_ASSERT_FALSE(reintento.activarCerradura);  // preguntar no es abrir (invariante 2)
+}
+
+void test_respuesta_invalida_usa_el_antirrebote_corto() {
+  auto m = validando(1000);
+  m.alResponder(m.idValidacion(), Resultado::invalido(Motivo::SinRed), 1500);
+  TEST_ASSERT_FALSE(m.alLeer(QR, 1600).enviarValidacion);
+  TEST_ASSERT_TRUE(m.alLeer(QR, 1500 + puerta::ANTIRREBOTE_TRAS_FALLO_MS).enviarValidacion);
 }
 
 void test_linea_vacia_o_demasiado_larga_se_descarta() {
@@ -229,6 +263,10 @@ int main() {
   RUN_TEST(test_el_pulso_termina_solo);
   RUN_TEST(test_lecturas_durante_validacion_o_apertura_se_ignoran);
   RUN_TEST(test_mismo_qr_inmediato_se_ignora_y_luego_se_acepta);
+  RUN_TEST(test_el_antirrebote_corre_desde_la_respuesta_no_desde_la_lectura);
+  RUN_TEST(test_otro_texto_no_lo_frena_el_antirrebote);
+  RUN_TEST(test_sin_respuesta_el_reintento_sale_pronto_y_sigue_sin_abrir);
+  RUN_TEST(test_respuesta_invalida_usa_el_antirrebote_corto);
   RUN_TEST(test_linea_vacia_o_demasiado_larga_se_descarta);
   RUN_TEST(test_pulsador_abre_sin_red);
   RUN_TEST(test_pulsador_durante_validacion_descarta_la_respuesta);
