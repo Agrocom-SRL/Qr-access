@@ -1,0 +1,37 @@
+name: iOS
+
+# Compila la app para iOS en un runner macOS (el Mac de desarrollo es Intel y
+# ya no puede con el Xcode vigente). Va aparte de ci.yml a propósito: los
+# minutos de macOS cuestan 10 veces los de Linux y no deben consumirse en cada
+# PR. Corre a mano y al pushear un tag de versión.
+#
+# Hoy compila SIN firma (`--no-codesign`): comprueba que el código y los pods
+# compilan en iOS. La firma y el envío a TestFlight requieren la cuenta Apple
+# Developer y sus secretos (certificado, perfil y clave de App Store Connect),
+# que nunca van en el repo (invariante 6).
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    name: ios
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Build iOS sin firma
+        run: flutter build ios --release --no-codesign

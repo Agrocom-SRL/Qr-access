@@ -1,4 +1,4 @@
-package bo.com.agrocom.agrocom_acceso
+package bo.com.agrocom.acceso
 
 import io.flutter.embedding.android.FlutterActivity
 
