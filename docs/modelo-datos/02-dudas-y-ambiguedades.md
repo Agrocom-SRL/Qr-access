@@ -18,7 +18,7 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 | D-20 | ¿Hace falta un escáner de guardia en la app (puertas sin lector)? | Feature `escaner` y rol Guardia | Fuera de V1 | Abierta |
 | D-21 | ¿Se anota algo de la persona que entra (nombre, motivo) al generar el QR? | Datos personales y lo que muestra el historial | Solo una etiqueta libre opcional ("Proveedor de gas"); no se registra a la persona | Abierta |
 | D-24 | ¿El administrador de la cuenta también entra con PIN, o con usuario y contraseña? | Un solo mecanismo de login o dos | Todos los usuarios de cuenta con PIN; usuario y contraseña solo para el super admin | Abierta |
-| D-25 | ¿Restringir a un Titular (o a un Administrador) restringe también a su rama, como la suspensión? | ADR 0033 §1 y ADR 0031 §0 solo dicen que la suspensión arrastra a la rama; no dicen nada de la restricción | No: la restricción es solo del usuario o de la cuenta señalada; solo la suspensión se deriva hacia abajo | Abierta |
+| D-25 | ¿Restringir a un Titular (o a un Administrador) restringe también a su rama, como la suspensión? | ADR 0033 §1 y ADR 0031 §0 solo dicen que la suspensión arrastra a la rama; no dicen nada de la restricción | **Sí:** cuando se restringe a un usuario con rama, toda su rama pasa al mismo estado que el usuario raíz (restringido o suspendido). Se deriva al consultar, recorriendo `superior_id` hacia arriba; al reactivar al raíz la rama vuelve, salvo quien tenga un estado propio. Decidido por Miguel el 2026-10-26 | Resuelta |
 
 ## Cerradas
 
