@@ -18,7 +18,7 @@ set +a
 
 cd "$(dirname "$0")/.."
 compose() { docker compose -p acceso --env-file "$ENV_ARCHIVO" -f docker-compose.prod.yml "$@"; }
-mysql_en_db() { compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4 "$MYSQL_DATABASE"'; }
+mysql_en_db() { compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" --default-character-set=utf8mb4 "$MARIADB_DATABASE"'; }
 
 echo "==> Construyendo imágenes (api, app, panel)"
 compose build api app panel

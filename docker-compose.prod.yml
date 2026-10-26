@@ -8,13 +8,13 @@
 
 services:
   db:
-    image: mysql:8.4
+    image: mariadb:11.8
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       TZ: UTC
     command:
       - --character-set-server=utf8mb4
@@ -23,9 +23,9 @@ services:
       - --default-time-zone=+00:00
     # Sin `ports`: solo la API (y las herramientas) alcanzan la base, por la red interna de Docker.
     volumes:
-      - datos-db:/var/lib/mysql
+      - datos-mariadb:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -110,5 +110,5 @@ services:
         condition: service_healthy
 
 volumes:
-  datos-db:
+  datos-mariadb:
   archivos:
