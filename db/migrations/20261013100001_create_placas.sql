@@ -18,7 +18,7 @@ CREATE TABLE placas (
   vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
   UNIQUE KEY uq_placas_mac (mac, vigente),
   CONSTRAINT ck_placas_mac CHECK (mac REGEXP '^[0-9A-F]{2}(:[0-9A-F]{2}){5}$')
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE placas;

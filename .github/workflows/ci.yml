@@ -57,10 +57,10 @@ jobs:
     needs: detectar
     if: needs.detectar.outputs.api == 'true'
     runs-on: ubuntu-24.04
-    # MariaDB 11.8, el mismo motor que producción: los tests nunca usan SQLite.
+    # MariaDB 10.11, el mismo motor que producción: los tests nunca usan SQLite.
     services:
       mariadb:
-        image: mariadb:11.8
+        image: mariadb:10.11
         env:
           MARIADB_DATABASE: qr_access_testing
           MARIADB_USER: qr_access

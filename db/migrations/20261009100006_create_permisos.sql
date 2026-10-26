@@ -6,7 +6,7 @@ CREATE TABLE permisos (
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_permisos_codigo (codigo),
   CONSTRAINT ck_permisos_ambito CHECK (ambito IN ('plataforma', 'cuenta'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE permisos;

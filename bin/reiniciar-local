@@ -36,7 +36,7 @@ echo "==> Deteniendo la API"
 docker compose stop api >/dev/null
 
 echo "==> Recreando la base"
-mysql_root -e "DROP DATABASE IF EXISTS \`$base\`; CREATE DATABASE \`$base\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci; GRANT ALL ON \`$base\`.* TO 'qr_access'@'%';"
+mysql_root -e "DROP DATABASE IF EXISTS \`$base\`; CREATE DATABASE \`$base\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL ON \`$base\`.* TO 'qr_access'@'%';"
 
 echo "==> Migraciones y catálogo"
 docker compose --profile herramientas run --rm dbmate up

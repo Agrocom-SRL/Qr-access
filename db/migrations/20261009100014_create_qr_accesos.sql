@@ -23,7 +23,7 @@ CREATE TABLE qr_accesos (
   UNIQUE KEY uq_qr_accesos_token (token_hash),
   KEY idx_qr_accesos_emisor (tenant_id, emitido_por, created_at),
   KEY idx_qr_accesos_vencimiento (tenant_id, vence_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE qr_accesos;

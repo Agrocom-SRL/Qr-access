@@ -15,7 +15,7 @@ CREATE TABLE qr_acceso_puertas (
   CONSTRAINT fk_qr_acceso_puertas_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT fk_qr_acceso_puertas_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
   UNIQUE KEY uq_qr_acceso_puertas (qr_acceso_id, puerta_id, vigente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE qr_acceso_puertas;

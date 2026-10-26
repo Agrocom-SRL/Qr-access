@@ -25,7 +25,7 @@ CREATE TABLE cuentas_de_cobro (
   CONSTRAINT ck_cuentas_de_cobro_tipo CHECK (tipo_cuenta IS NULL OR tipo_cuenta IN ('ahorro', 'corriente')),
   CONSTRAINT ck_cuentas_de_cobro_transferencia CHECK (metodo <> 'transferencia' OR (titular IS NOT NULL AND numero_cuenta IS NOT NULL)),
   CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down
 DROP TABLE cuentas_de_cobro;
