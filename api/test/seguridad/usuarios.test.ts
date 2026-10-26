@@ -23,6 +23,12 @@ interface UsuarioListado {
   id: string;
   etiqueta: string | null;
   activo: boolean;
+  estado: string;
+  estado_efectivo: string;
+  estado_origen: string | null;
+  estado_motivo: string | null;
+  estado_desde: string | null;
+  estado_impuesto_por: string | null;
   roles: { id: string; nombre: string }[];
   unidad: { id: string; nombre: string; sitio_id: string } | null;
   pin_generado_at: string | null;
@@ -31,6 +37,15 @@ interface UsuarioListado {
 }
 
 const PIN = /^[A-Z]{3}[A-Z0-9]{4}$/;
+/** Un usuario sin restricciones: estado propio y efectivo `activo`, sin motivo ni quién lo impuso. */
+const SIN_ESTADO = {
+  estado: 'activo',
+  estado_efectivo: 'activo',
+  estado_origen: null,
+  estado_motivo: null,
+  estado_desde: null,
+  estado_impuesto_por: null,
+};
 
 describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor (HU-06, ADR 0018, ADR 0028)', () => {
   let prueba: AppDePrueba;
@@ -136,6 +151,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         id: a.usuario.id,
         etiqueta: `Usuario ${a.usuario.pin}`,
         activo: true,
+        ...SIN_ESTADO,
         roles: [{ id: a.rolMiembroId, nombre: 'Miembro' }],
         unidad: null,
         pin_generado_at: fechaIsoUtc(),
@@ -226,6 +242,7 @@ describe('usuarios de la cuenta: árbol por rama y PIN generados por el servidor
         id: cualquierTexto(),
         etiqueta: 'Jorge Rivero',
         activo: true,
+        ...SIN_ESTADO,
         roles: [{ id: a.rolTitularId, nombre: 'Titular' }],
         unidad: { id: cualquierTexto(), nombre: nueva.nombre, sitio_id: a.sitioId },
         pin_generado_at: fechaIsoUtc(),

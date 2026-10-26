@@ -11,12 +11,15 @@ import {
   RepositorioDeSuperAdmins,
   RepositorioDeUsuarios,
 } from './repository.js';
+import { estadoEfectivo, nodosDeEstado } from './domain/estado.js';
 import { sesionVigente } from './domain/sesion.js';
 
 /**
  * Valida un JWT de acceso Y su vigencia real en la base (ADR 0004 §6): sesión sin revocar ni
- * vencer, usuario y cuenta activos, y rol activo todavía asignado. Un rol quitado o un usuario
- * dado de baja dejan de servir de inmediato, no cuando venza el JWT.
+ * vencer, usuario y cuenta no suspendidos, y rol activo todavía asignado. Un rol quitado, un usuario
+ * dado de baja o suspendido (él, un superior o su cuenta, ADR 0031 §2) dejan de servir de inmediato,
+ * no cuando venza el JWT. Un restringido sí entra: conserva la sesión y consulta (ADR 0033 §1); su
+ * estado viaja en el principal para que la generación de QR lo rechace.
  */
 export function crearAutenticadorDeUsuario({ pool, config }: DependenciasDeModulo) {
   const jwt = crearEmisorDeJwt(config.JWT_SECRETO, config.JWT_ACCESO_MINUTOS);
@@ -36,9 +39,15 @@ export function crearAutenticadorDeUsuario({ pool, config }: DependenciasDeModul
       const sesion = await new RepositorioDeSesiones(pool).buscarPorId(reclamos.sesionId);
       if (sesion === null || !sesionVigente(sesion, ahora)) return null;
       if (sesion.usuario_id !== reclamos.usuarioId) return null;
-      const usuario = await new RepositorioDeUsuarios(pool).buscarActivoPorId(reclamos.usuarioId);
-      if (usuario === null) return null;
-      if ((await new RepositorioDeCuentas(pool).buscarActivaPorId(cuentaId)) === null) return null;
+      const [cadena, cuenta] = await Promise.all([
+        new RepositorioDeUsuarios(pool).cadenaDeEstados(reclamos.usuarioId),
+        new RepositorioDeCuentas(pool).buscarPorId(cuentaId),
+      ]);
+      if (cuenta === null) return null;
+      const efectivo = estadoEfectivo(reclamos.usuarioId, nodosDeEstado(cadena), cuenta.estado);
+      // Suspendido o eliminado (él o un superior): sin acceso. Cualquier otro valor, falla cerrado.
+      if (efectivo.estado !== 'activo' && efectivo.estado !== 'restringido') return null;
+      const usuario = { id: reclamos.usuarioId };
 
       const rolesRepositorio = new RepositorioDeRolesDeUsuario(pool);
       let rolActivoId: string | null = null;
@@ -57,6 +66,8 @@ export function crearAutenticadorDeUsuario({ pool, config }: DependenciasDeModul
         sesionId: sesion.id,
         rolActivoId,
         permisos: new Set(permisos),
+        estado: efectivo.estado,
+        origenDelEstado: efectivo.origen,
       };
     });
   };

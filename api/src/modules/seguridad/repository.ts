@@ -3,42 +3,89 @@ import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js'
 import { RepositorioDeFilasDePlataforma } from '../../platform/db/repositorio-de-fila-de-plataforma.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import type { Estado } from './domain/estado.js';
 
 export interface CuentaFila extends RowDataPacket {
   id: string;
   codigo: string;
   nombre: string;
-  activo: number;
+  estado: Estado;
   /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
   max_miembros_por_titular: number;
 }
 
-const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular';
+const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.estado, t.max_miembros_por_titular';
+
+/** Las columnas del estado que se escriben juntas (la base exige que coincidan, `ck_*_estado_datos`). */
+export interface CambioDeEstado {
+  readonly estado: Estado;
+  /** Quién lo impuso (`null` solo al volver a `activo`). */
+  readonly impuestoPor: string | null;
+  readonly desde: Date | null;
+  readonly motivo: string | null;
+}
+
+/** Vuelve a `activo` y limpia los tres campos de apoyo. */
+export const SIN_ESTADO: CambioDeEstado = {
+  estado: 'activo',
+  impuestoPor: null,
+  desde: null,
+  motivo: null,
+};
+
+function columnasDeEstado(cambio: CambioDeEstado): Record<string, unknown> {
+  return {
+    estado: cambio.estado,
+    estado_impuesto_por: cambio.impuestoPor,
+    estado_desde: cambio.desde,
+    estado_motivo: cambio.motivo,
+  };
+}
+
+/**
+ * Condición de «compare-and-set» sobre el estado leído: si otro lo cambió entre la lectura y el UPDATE
+ * no se pisa. `<=>` compara también NULL.
+ */
+function siSigueEnEstado(estado: Estado, impuestoPor: string | null) {
+  return { sql: 'estado = ? AND estado_impuesto_por <=> ?', params: [estado, impuestoPor] };
+}
+
+const COLUMNAS_DE_ESTADO_ESCRIBIBLES = [
+  'estado',
+  'estado_impuesto_por',
+  'estado_desde',
+  'estado_motivo',
+] as const;
 
 /** Dueño de `cuentas` (tabla de plataforma). */
 export class RepositorioDeCuentas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo'],
+      columnas: ['nombre', 'codigo', ...COLUMNAS_DE_ESTADO_ESCRIBIBLES],
       perfil: 'dominio',
       deCuenta: false,
     });
   }
 
-  /** Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. */
-  buscarActivaPorCodigo(codigo: string): Promise<CuentaFila | null> {
+  /**
+   * Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. Trae la
+   * cuenta en cualquier estado (el login distingue «suspendida» solo después de verificar el PIN, para
+   * no revelar qué códigos existen); una cuenta eliminada no existe.
+   */
+  buscarPorCodigo(codigo: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
       columnas: COLUMNAS_DE_CUENTA,
-      donde: 't.codigo = ? AND t.activo = 1',
+      donde: 't.codigo = ?',
       params: [codigo],
     });
   }
 
-  buscarActivaPorId(id: string): Promise<CuentaFila | null> {
+  /** La cuenta en cualquier estado (no eliminada). */
+  buscarPorId(id: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
       columnas: COLUMNAS_DE_CUENTA,
-      donde: 't.id = ? AND t.activo = 1',
+      donde: 't.id = ?',
       params: [id],
     });
   }
@@ -50,13 +97,40 @@ export interface UsuarioFila extends RowDataPacket {
   pin_hash: string | null;
   /** El nivel de arriba en el árbol (ADR 0028); `null` en el Administrador. */
   superior_id: string | null;
-  activo: number;
+  /** Estado propio; el efectivo (con superiores y cuenta) se deriva en `domain/estado.ts`. */
+  estado: Estado;
+  estado_impuesto_por: string | null;
+  estado_desde: Date | null;
+  estado_motivo: string | null;
   pin_generado_at: Date | null;
   created_at: Date;
 }
 
 const COLUMNAS_DE_USUARIO =
-  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.activo, t.pin_generado_at, t.created_at';
+  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.estado, t.estado_impuesto_por, t.estado_desde, t.estado_motivo, t.pin_generado_at, t.created_at';
+
+/** Lo mínimo de un usuario para derivar el estado efectivo. */
+export interface UsuarioDeEstadoFila extends RowDataPacket {
+  id: string;
+  superior_id: string | null;
+  estado: Estado;
+}
+
+/**
+ * Filtro «es X o uno de sus superiores»: X y todos sus ascendientes por `superior_id`. Se recorre sin
+ * mirar `deleted_at` (un superior borrado debe notarse), pero la consulta que lo usa ya filtra por la
+ * cuenta del contexto y excluye lo borrado: quien falta en el resultado es un superior eliminado, y
+ * `estadoEfectivo` lo trata como tal. `UNION` (no `ALL`) corta un ciclo si algún dato lo trajera.
+ * Lleva un `?`: el id de X.
+ */
+const X_Y_SUS_SUPERIORES = `t.id IN (
+  WITH RECURSIVE cadena (id, superior_id) AS (
+    SELECT s.id, s.superior_id FROM usuarios AS s WHERE s.id = ?
+    UNION
+    SELECT p.id, p.superior_id FROM usuarios AS p JOIN cadena ON p.id = cadena.superior_id
+  )
+  SELECT id FROM cadena
+)`;
 
 /**
  * Filtro "está en la rama de X": todos los descendientes de X por `superior_id`, sin X. Es la segunda
@@ -102,7 +176,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         'username',
         'contrasena_hash',
         'superior_id',
-        'activo',
+        ...COLUMNAS_DE_ESTADO_ESCRIBIBLES,
       ],
       sensibles: ['pin_indice', 'pin_hash', 'contrasena_hash'],
       perfil: 'dominio',
@@ -110,23 +184,33 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  buscarActivoPorIndiceDePin(indice: string): Promise<UsuarioFila | null> {
+  /** El usuario del PIN en cualquier estado: el login decide después qué hacer con uno suspendido. */
+  buscarPorIndiceDePin(indice: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.pin_indice = ? AND t.activo = 1',
+      donde: 't.pin_indice = ?',
       params: [indice],
     });
   }
 
-  buscarActivoPorId(id: string): Promise<UsuarioFila | null> {
-    return this.seleccionarUna<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.id = ? AND t.activo = 1',
+  /**
+   * El usuario y todos sus superiores, con lo mínimo para derivar el estado efectivo. Solo de la cuenta
+   * del contexto y sin los borrados.
+   */
+  cadenaDeEstados(id: string): Promise<UsuarioDeEstadoFila[]> {
+    return this.seleccionar<UsuarioDeEstadoFila>({
+      columnas: 't.id, t.superior_id, t.estado',
+      donde: X_Y_SUS_SUPERIORES,
       params: [id],
     });
   }
 
-  /** Un usuario de la cuenta, esté activo o no (para administrarlo). Borrado = no existe. */
+  /** Todos los usuarios de la cuenta con lo mínimo para derivar su estado efectivo (listados). */
+  estadosDeTodos(): Promise<UsuarioDeEstadoFila[]> {
+    return this.seleccionar<UsuarioDeEstadoFila>({ columnas: 't.id, t.superior_id, t.estado' });
+  }
+
+  /** Un usuario de la cuenta, en el estado que sea (para administrarlo). Borrado = no existe. */
   buscarPorId(id: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
@@ -170,13 +254,16 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   }
 
   /** Los ids de toda la rama de `id` (sus descendientes, sin él): lo que cae con su baja en cascada. */
-  async idsDeRama(id: string): Promise<string[]> {
-    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
-      columnas: 't.id',
-      donde: EN_LA_RAMA_DE,
-      params: [id],
-      orden: 't.id',
-    });
+  async idsDeRama(id: string, tx?: Transaccion): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>(
+      {
+        columnas: 't.id',
+        donde: EN_LA_RAMA_DE,
+        params: [id],
+        orden: 't.id',
+      },
+      tx,
+    );
     return filas.map((fila) => fila.id);
   }
 
@@ -220,7 +307,21 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
       pin_indice: usuario.pinIndice,
       pin_hash: usuario.pinHash,
       pin_generado_at: usuario.ahora,
-      activo: 1,
+    });
+  }
+
+  /**
+   * Cambia el estado propio de `id` solo si sigue como lo leyó quien decide (`antes`): dos personas que
+   * cambian el mismo estado a la vez no se pisan, la segunda recibe `false`. La bitácora lo registra.
+   */
+  cambiarEstado(
+    tx: Transaccion,
+    id: string,
+    antes: { readonly estado: Estado; readonly impuestoPor: string | null },
+    cambio: CambioDeEstado,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio), {
+      cuando: siSigueEnEstado(antes.estado, antes.impuestoPor),
     });
   }
 
@@ -373,25 +474,25 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
   }
 
-  /** Ids de los usuarios activos de la cuenta con el rol protegido "Administrador". */
+  /** Ids de los usuarios no suspendidos de la cuenta con el rol protegido "Administrador". */
   async idsDeAdministradores(): Promise<string[]> {
     const filas = await this.seleccionar<RowDataPacket & { usuario_id: string }>({
       columnas: 'DISTINCT t.usuario_id',
       uniones: [
         "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
-        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+        "JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.estado <> 'suspendido'",
       ].join(' '),
       orden: 't.usuario_id',
     });
     return filas.map((fila) => fila.usuario_id);
   }
 
-  /** Usuarios activos de la cuenta que tienen el rol protegido "Administrador". */
+  /** Usuarios no suspendidos de la cuenta que tienen el rol protegido "Administrador". */
   contarAdministradores(): Promise<number> {
     return this.contar({
       uniones: [
         "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
-        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+        "JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.estado <> 'suspendido'",
       ].join(' '),
     });
   }
@@ -567,12 +668,13 @@ export interface SuperAdminFila extends RowDataPacket {
   username: string;
   contrasena_hash: string;
   contrasena_temporal: number;
-  activo: number;
+  /** El equipo AGROCOM solo está `activo` o `suspendido` (desactivado). */
+  estado: Estado;
   created_at: Date;
 }
 
 const COLUMNAS_DE_SUPER_ADMIN =
-  't.id, t.etiqueta, t.username, t.contrasena_hash, t.contrasena_temporal, t.activo, t.created_at';
+  't.id, t.etiqueta, t.username, t.contrasena_hash, t.contrasena_temporal, t.estado, t.created_at';
 
 export interface NuevoSuperAdmin {
   readonly nombre: string;
@@ -588,7 +690,13 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'usuarios',
-      columnas: ['etiqueta', 'username', 'contrasena_hash', 'contrasena_temporal', 'activo'],
+      columnas: [
+        'etiqueta',
+        'username',
+        'contrasena_hash',
+        'contrasena_temporal',
+        ...COLUMNAS_DE_ESTADO_ESCRIBIBLES,
+      ],
       sensibles: ['contrasena_hash'],
       perfil: 'dominio',
       deCuenta: false,
@@ -598,7 +706,7 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
     return this.seleccionarUna<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      donde: 't.username = ? AND t.activo = 1',
+      donde: "t.username = ? AND t.estado = 'activo'",
       params: [username],
     });
   }
@@ -606,7 +714,7 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   buscarActivoPorId(id: string): Promise<SuperAdminFila | null> {
     return this.seleccionarUna<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      donde: 't.id = ? AND t.activo = 1',
+      donde: "t.id = ? AND t.estado = 'activo'",
       params: [id],
     });
   }
@@ -627,7 +735,7 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   listar(limite: number, desplazamiento: number): Promise<SuperAdminFila[]> {
     return this.seleccionar<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      orden: 't.activo DESC, t.etiqueta, t.id',
+      orden: "(t.estado = 'activo') DESC, t.etiqueta, t.id",
       limite,
       desplazamiento,
     });
@@ -648,13 +756,13 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   }
 
   contarActivos(): Promise<number> {
-    return this.contar({ donde: 't.activo = 1' });
+    return this.contar({ donde: "t.estado = 'activo'" });
   }
 
   /** Bloquea las filas de los super admin activos hasta el fin de la transacción (nunca queda un equipo sin activos). */
   async idsActivosBloqueados(tx: Transaccion): Promise<string[]> {
     const filas = await this.seleccionar<RowDataPacket & { id: string }>(
-      { columnas: 't.id', donde: 't.activo = 1', orden: 't.id', bloquear: true },
+      { columnas: 't.id', donde: "t.estado = 'activo'", orden: 't.id', bloquear: true },
       tx,
     );
     return filas.map((fila) => fila.id);
@@ -666,7 +774,6 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
       username: nuevo.username,
       contrasena_hash: nuevo.contrasenaHash,
       contrasena_temporal: 1,
-      activo: 1,
     });
   }
 
@@ -674,12 +781,13 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
     return this.actualizar(tx, id, { contrasena_hash: contrasenaHash, contrasena_temporal: 0 });
   }
 
-  desactivar(tx: Transaccion, id: string): Promise<boolean> {
-    return this.actualizar(tx, id, { activo: 0 });
+  /** Desactivar a alguien del equipo es dejarlo `suspendido`, con quién lo hizo, desde cuándo y por qué. */
+  desactivar(tx: Transaccion, id: string, cambio: CambioDeEstado): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio));
   }
 
   reactivar(tx: Transaccion, id: string): Promise<boolean> {
-    return this.actualizar(tx, id, { activo: 1 });
+    return this.actualizar(tx, id, columnasDeEstado(SIN_ESTADO));
   }
 
   renombrar(tx: Transaccion, id: string, nombre: string): Promise<boolean> {
@@ -832,7 +940,7 @@ interface ConteoDeUsuariosFila extends RowDataPacket {
 }
 
 /**
- * Cuántos usuarios activos tiene cada cuenta, para el panel de plataforma. Es un SALTO
+ * Cuántos usuarios no suspendidos tiene cada cuenta, para el panel de plataforma. Es un SALTO
  * EXPLÍCITO del aislamiento (RepositorioDePlataforma sobre `usuarios`): solo lee conteos
  * agrupados por cuenta, nunca filas de usuarios, y nunca escribe.
  */
@@ -851,7 +959,7 @@ export class RepositorioDeConteoDeUsuarios extends RepositorioDePlataforma {
     if (cuentaIds.length === 0) return mapa;
     const filas = await this.seleccionar<ConteoDeUsuariosFila>({
       columnas: 't.tenant_id, COUNT(*) AS total',
-      donde: 't.tenant_id IN (?) AND t.activo = 1',
+      donde: "t.tenant_id IN (?) AND t.estado <> 'suspendido'",
       params: [cuentaIds],
       agrupar: 't.tenant_id',
     });
@@ -865,14 +973,17 @@ export interface CuentaDePlataformaFila extends RowDataPacket {
   id: string;
   codigo: string;
   nombre: string;
-  activo: number;
+  estado: Estado;
+  estado_impuesto_por: string | null;
+  estado_desde: Date | null;
+  estado_motivo: string | null;
   /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
   max_miembros_por_titular: number;
   created_at: Date;
 }
 
 const COLUMNAS_DE_CUENTA_DE_PLATAFORMA =
-  't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular, t.created_at';
+  't.id, t.codigo, t.nombre, t.estado, t.estado_impuesto_por, t.estado_desde, t.estado_motivo, t.max_miembros_por_titular, t.created_at';
 
 export interface NuevaCuenta {
   readonly nombre: string;
@@ -884,7 +995,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo', 'max_miembros_por_titular'],
+      columnas: ['nombre', 'codigo', ...COLUMNAS_DE_ESTADO_ESCRIBIBLES, 'max_miembros_por_titular'],
       perfil: 'dominio',
       deCuenta: false,
     });
@@ -923,7 +1034,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   }
 
   crear(tx: Transaccion, cuenta: NuevaCuenta): Promise<string> {
-    return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo, activo: 1 });
+    return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo });
   }
 
   /**
@@ -942,6 +1053,21 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   /** Cambia cuántos Miembros puede tener cada Titular de la cuenta (ADR 0028 §6). */
   cambiarMaxMiembros(tx: Transaccion, id: string, maximo: number): Promise<boolean> {
     return this.actualizar(tx, id, { max_miembros_por_titular: maximo });
+  }
+
+  /**
+   * Cambia el estado de la cuenta solo si sigue como lo leyó quien decide (`antes`), con quién lo
+   * impuso, desde cuándo y por qué. La bitácora lo registra.
+   */
+  cambiarEstado(
+    tx: Transaccion,
+    id: string,
+    antes: { readonly estado: Estado; readonly impuestoPor: string | null },
+    cambio: CambioDeEstado,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio), {
+      cuando: siSigueEnEstado(antes.estado, antes.impuestoPor),
+    });
   }
 
   /** Baja lógica de la cuenta: nadie de ella vuelve a ingresar y su código queda libre. */

@@ -4,6 +4,7 @@ import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { verificarContraRelleno, verificarHash } from '../../../platform/seguridad/hash.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
+import { estadoEfectivo, nodosDeEstado } from '../domain/estado.js';
 import { calcularIndiceDePin, normalizarPin, secretoDePin } from '../domain/pin.js';
 import { rolUnico } from '../domain/rol-unico.js';
 import {
@@ -48,6 +49,10 @@ function rechazar(
  * Login por PIN (ADR 0018): con los 3 primeros caracteres se busca la cuenta y con los 4
  * restantes el usuario DENTRO de ella. Cualquier fallo responde lo mismo y gasta el mismo
  * tiempo; los fallos se cuentan por IP y por cuenta y llevan a un bloqueo creciente.
+ *
+ * Suspendido (él, un superior o su cuenta, ADR 0031 §0) no entra, pero solo se le dice DESPUÉS de
+ * verificar el PIN, con `sesion.usuario_suspendido` o `sesion.cuenta_suspendida`: así un tercero no
+ * descubre qué cuentas o usuarios existen. Restringido sí entra (conserva sesión y consulta).
  */
 export async function ejecutar(
   servicios: ServiciosDeSeguridad,
@@ -71,8 +76,9 @@ export async function ejecutar(
     return rechazar(servicios, claves, datos.log);
   }
 
-  // Salto explícito del aislamiento (RepositorioDePlataforma): aún no sabemos la cuenta.
-  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorCodigo(codigo);
+  // Salto explícito del aislamiento (RepositorioDePlataforma): aún no sabemos la cuenta. Se trae en
+  // cualquier estado: la suspensión se informa recién con el PIN verificado.
+  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarPorCodigo(codigo);
   if (cuenta === null) {
     await verificarContraRelleno(pin.completo);
     return rechazar(servicios, claves, datos.log);
@@ -89,7 +95,7 @@ export async function ejecutar(
   return ContextoCuenta.ejecutar(contexto, async () => {
     const usuarios = new RepositorioDeUsuarios(servicios.pool);
     const indice = calcularIndiceDePin(servicios.config.PIN_PIMIENTA, cuenta.id, pin.sufijo);
-    const usuario = await usuarios.buscarActivoPorIndiceDePin(indice);
+    const usuario = await usuarios.buscarPorIndiceDePin(indice);
     const valido =
       usuario?.pin_hash == null
         ? await verificarContraRelleno(pin.completo)
@@ -97,6 +103,20 @@ export async function ejecutar(
     if (usuario === null || !valido) return rechazar(servicios, claves, datos.log);
 
     servicios.limitadorPorIp.registrarExito(claves.ip);
+
+    const efectivo = estadoEfectivo(
+      usuario.id,
+      nodosDeEstado(await usuarios.cadenaDeEstados(usuario.id)),
+      cuenta.estado,
+    );
+    // Un superior eliminado deja al usuario sin dueño: falla cerrado, como si el PIN no sirviera.
+    if (efectivo.estado === 'eliminado') return rechazar(servicios, claves, datos.log);
+    if (efectivo.estado === 'suspendido') {
+      throw new ErrorDeDominio(
+        efectivo.origen === 'cuenta' ? 'sesion.cuenta_suspendida' : 'sesion.usuario_suspendido',
+        403,
+      );
+    }
 
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
     const rolActivoId = rolUnico(roles.map((rol) => rol.id));

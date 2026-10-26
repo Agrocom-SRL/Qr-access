@@ -224,7 +224,8 @@ export class RepositorioDeUsoDePlanes extends RepositorioDePlataforma {
   async cuentasPorPlan(): Promise<Map<string, string[]>> {
     const filas = await this.seleccionar<UsoDePlanFila>({
       columnas: 't.plan_id, t.tenant_id',
-      uniones: 'JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL AND c.activo = 1',
+      uniones:
+        "JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL AND c.estado <> 'suspendido'",
     });
     const mapa = new Map<string, string[]>();
     for (const fila of filas)

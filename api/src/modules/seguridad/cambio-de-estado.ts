@@ -1,0 +1,146 @@
+import type { Pool } from 'mysql2/promise';
+import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
+import { enTransaccion } from '../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
+import type { PrincipalPlataforma, PrincipalUsuario } from '../../platform/seguridad/principal.js';
+import { crearServicioDeAnulacionDeQr } from '../accesos/contracts.js';
+import { puedeCambiarEstado, type Estado } from './domain/estado.js';
+import {
+  RepositorioDeCuentasDePlataforma,
+  RepositorioDeSesiones,
+  RepositorioDeUsuarios,
+  SIN_ESTADO,
+  type CambioDeEstado,
+} from './repository.js';
+
+/**
+ * Lo que comparten las acciones que cambian el estado de un usuario o de una cuenta (ADR 0033 §1,
+ * ADR 0031 §0 a §2, D-25). Vive acá y no en una acción porque son seis acciones (restringir, suspender y
+ * reactivar, de un usuario y de una cuenta) con una sola mecánica y cada acción es un archivo con una
+ * sola función `ejecutar`.
+ */
+
+/** A qué estado se pasa; restringir y suspender exigen un motivo, reactivar no. */
+export type DestinoDeEstado =
+  | { readonly estado: 'restringido' | 'suspendido'; readonly motivo: string }
+  | { readonly estado: 'activo' };
+
+/** El permiso de la cuenta que hace falta para levantar cada estado. */
+const PERMISO_PARA_LEVANTAR: Readonly<Record<Exclude<Estado, 'activo'>, string>> = {
+  restringido: 'seguridad.usuario.restringir',
+  suspendido: 'seguridad.usuario.suspender',
+};
+
+function cambioDe(destino: DestinoDeEstado, impuestoPor: string, ahora: Date): CambioDeEstado {
+  return destino.estado === 'activo'
+    ? SIN_ESTADO
+    : { estado: destino.estado, impuestoPor, desde: ahora, motivo: destino.motivo };
+}
+
+/**
+ * Restringe, suspende o reactiva a un usuario de la rama del actor.
+ *
+ * - Solo se llega a la propia rama (ADR 0028 §4): un par, un superior, otra rama o otra cuenta no existen
+ *   (404), así que un Titular nunca toca a otro Titular ni a su Administrador.
+ * - El estado propio de quien ya tiene uno solo lo cambia quien lo impuso o un superior suyo
+ *   (`puedeCambiarEstado`); lo impuesto por un superior del actor, por un par o por AGROCOM responde 403.
+ * - La rama NO se escribe: restringida o suspendida, se deriva al consultar. Suspender sí cierra en la
+ *   MISMA transacción las sesiones de toda la rama y anula sus QR vigentes; restringir no toca sesiones
+ *   ni QR (los ya generados siguen vivos hasta vencer).
+ * - La fila se cambia con «compare-and-set» sobre el estado leído: dos personas a la vez no se pisan.
+ * Pasar al mismo estado que ya tiene es inofensivo (no hace nada).
+ */
+export async function cambiarEstadoDeUsuario(
+  pool: Pool,
+  principal: PrincipalUsuario,
+  usuarioId: string,
+  destino: DestinoDeEstado,
+  ahora: Date,
+): Promise<void> {
+  if (usuarioId === principal.usuarioId) throw new ErrorDeDominio('usuario.propio', 422);
+  const usuarios = new RepositorioDeUsuarios(pool);
+  const rama = new Set(await usuarios.idsDeRama(principal.usuarioId));
+  const objetivo = rama.has(usuarioId) ? await usuarios.buscarPorId(usuarioId) : null;
+  if (objetivo === null) throw new ErrorDeDominio('usuario.no_encontrado', 404);
+  if (objetivo.estado === destino.estado) return;
+
+  if (destino.estado === 'activo') {
+    // Levantar una restricción o una suspensión exige el permiso de ese estado.
+    const permiso = PERMISO_PARA_LEVANTAR[objetivo.estado as Exclude<Estado, 'activo'>];
+    if (!principal.permisos.has(permiso)) {
+      throw new ErrorDeDominio('permiso.denegado', 403, { permiso });
+    }
+  }
+  const propio = { estado: objetivo.estado, impuestoPor: objetivo.estado_impuesto_por };
+  if (!puedeCambiarEstado(propio, principal.usuarioId, rama)) {
+    throw new ErrorDeDominio('estado.impuesto_por_superior', 403, { estado: objetivo.estado });
+  }
+
+  const sesiones = new RepositorioDeSesiones(pool);
+  await enTransaccion(pool, async (tx) => {
+    const cambiado = await usuarios.cambiarEstado(
+      tx,
+      usuarioId,
+      propio,
+      cambioDe(destino, principal.usuarioId, ahora),
+    );
+    if (!cambiado) throw new ErrorDeDominio('estado.cambio_concurrente', 409);
+
+    if (destino.estado === 'suspendido') {
+      // Él y toda su rama (los que ya estaban suspendidos también: no cuesta y no deja rastros vivos).
+      const afectados = [usuarioId, ...(await usuarios.idsDeRama(usuarioId, tx))];
+      for (const id of afectados) await sesiones.revocarTodasDe(tx, id, ahora);
+      await crearServicioDeAnulacionDeQr(pool).anularVigentes(
+        tx,
+        afectados,
+        principal.usuarioId,
+        ahora,
+      );
+    }
+  });
+}
+
+/**
+ * Restringe, suspende o reactiva una cuenta (AGROCOM con `seguridad.cuenta.editar`). Suspender cierra en
+ * la misma transacción las sesiones de TODOS sus usuarios y anula todos sus QR vigentes (ADR 0031 §1);
+ * reactivarla no los revive: se generan de nuevo. Restringida, la cuenta no genera QR pero lo ya
+ * generado sirve. Una cuenta inexistente o eliminada es 404.
+ */
+export async function cambiarEstadoDeCuenta(
+  pool: Pool,
+  principal: PrincipalPlataforma,
+  cuentaId: string,
+  destino: DestinoDeEstado,
+  ahora: Date,
+): Promise<void> {
+  const cuentas = new RepositorioDeCuentasDePlataforma(pool);
+  const cuenta = await cuentas.buscarPorId(cuentaId);
+  if (cuenta === null) throw new ErrorDeDominio('cuenta.no_encontrada', 404);
+  if (cuenta.estado === destino.estado) return;
+
+  // Salto explícito del aislamiento: AGROCOM opera DENTRO de la cuenta (ADR 0004 §7) para cerrar sus
+  // sesiones y anular sus QR; la bitácora firma con su usuario.
+  await ContextoCuenta.comoPlataformaEn(cuenta.id, principal.usuarioId, () =>
+    enTransaccion(pool, async (tx) => {
+      const cambiado = await cuentas.cambiarEstado(
+        tx,
+        cuenta.id,
+        { estado: cuenta.estado, impuestoPor: cuenta.estado_impuesto_por },
+        cambioDe(destino, principal.usuarioId, ahora),
+      );
+      if (!cambiado) throw new ErrorDeDominio('estado.cambio_concurrente', 409);
+
+      if (destino.estado === 'suspendido') {
+        const usuarios = await new RepositorioDeUsuarios(pool).listarTodos();
+        const sesiones = new RepositorioDeSesiones(pool);
+        for (const usuario of usuarios) await sesiones.revocarTodasDe(tx, usuario.id, ahora);
+        await crearServicioDeAnulacionDeQr(pool).anularVigentes(
+          tx,
+          null,
+          principal.usuarioId,
+          ahora,
+        );
+      }
+    }),
+  );
+}

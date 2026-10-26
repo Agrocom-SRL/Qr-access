@@ -1,7 +1,8 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
-import { permiso, usuarioDe } from '../../plugins/permisos.js';
+import { permiso, tienePermiso, usuarioDe } from '../../plugins/permisos.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
 import { ejecutar as compartirPin } from './actions/compartir-pin.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
@@ -12,11 +13,16 @@ import { ejecutar as generarPin } from './actions/generar-pin.js';
 import { ejecutar as iniciarSesion } from './actions/iniciar-sesion.js';
 import { ejecutar as listarRoles } from './actions/listar-roles.js';
 import { ejecutar as listarUsuarios } from './actions/listar-usuarios.js';
+import { ejecutar as reactivarUsuario } from './actions/reactivar-usuario.js';
 import { ejecutar as refrescarSesion } from './actions/refrescar-sesion.js';
+import { ejecutar as restringirUsuario } from './actions/restringir-usuario.js';
+import { ejecutar as suspenderUsuario } from './actions/suspender-usuario.js';
+import { ejecutar as verEstadoDeUsuario } from './actions/ver-estado-de-usuario.js';
 import { ejecutar as estadisticasDeUsuarios } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as verCupo } from './actions/ver-cupo.js';
 import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
+  cuerpoDeCambioDeEstado,
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
   cuerpoDeMiPerfil,
@@ -27,6 +33,7 @@ import {
   esquemaUsuario,
   parametrosDeUsuario,
   respuestaDeCupo,
+  respuestaDeEstadoDeUsuario,
   respuestaDeEstadisticasDeUsuarios,
   respuestaDeIngreso,
   respuestaDePinGenerado,
@@ -198,6 +205,69 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       },
       async (request, reply) => {
         await eliminarUsuario(pool, usuarioDe(request), request.params.id, request.query.confirmar);
+        return reply.status(204).send();
+      },
+    );
+
+    // Estados (ADR 0033 §1, D-25): restringir y suspender arrastran a toda la rama del usuario; el motivo
+    // es obligatorio. Reactivar exige el permiso del estado que levanta (lo comprueba la acción).
+    app.get(
+      '/usuarios/:id/estado',
+      {
+        schema: {
+          tags: ['seguridad'],
+          params: parametrosDeUsuario,
+          response: { 200: respuestaDeEstadoDeUsuario },
+        },
+        preHandler: permiso('seguridad.usuario.ver'),
+      },
+      (request) => verEstadoDeUsuario(pool, usuarioDe(request), request.params.id),
+    );
+
+    app.post(
+      '/usuarios/:id/restriccion',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, body: cuerpoDeCambioDeEstado },
+        preHandler: permiso('seguridad.usuario.restringir'),
+      },
+      async (request, reply) => {
+        await restringirUsuario(pool, usuarioDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/usuarios/:id/suspension',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, body: cuerpoDeCambioDeEstado },
+        preHandler: permiso('seguridad.usuario.suspender'),
+      },
+      async (request, reply) => {
+        await suspenderUsuario(pool, usuarioDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/usuarios/:id/reactivacion',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        preHandler: (request) => {
+          const usuario = usuarioDe(request);
+          const puede =
+            tienePermiso(usuario, 'seguridad.usuario.restringir') ||
+            tienePermiso(usuario, 'seguridad.usuario.suspender');
+          return puede
+            ? Promise.resolve()
+            : Promise.reject(
+                new ErrorDeDominio('permiso.denegado', 403, {
+                  permiso: 'seguridad.usuario.restringir',
+                }),
+              );
+        },
+      },
+      async (request, reply) => {
+        await reactivarUsuario(pool, usuarioDe(request), request.params.id);
         return reply.status(204).send();
       },
     );

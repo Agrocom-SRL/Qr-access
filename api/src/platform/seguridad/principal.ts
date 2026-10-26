@@ -8,6 +8,13 @@ export interface PrincipalUsuario {
   readonly rolActivoId: string | null;
   /** Permisos de su rol (invariante 10). */
   readonly permisos: ReadonlySet<string>;
+  /**
+   * Su estado efectivo (el peor entre el suyo, el de sus superiores y el de su cuenta, ADR 0031 §0).
+   * Nunca `suspendido`: ese no autentica. `restringido` no genera QR nuevos.
+   */
+  readonly estado: 'activo' | 'restringido';
+  /** De dónde viene el estado cuando no es `activo`; `null` si es `activo`. */
+  readonly origenDelEstado: 'usuario' | 'superior' | 'cuenta' | null;
 }
 
 export interface PrincipalDispositivo {

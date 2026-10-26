@@ -66,7 +66,7 @@ describe('plataforma: planes (A09)', () => {
       [b.id, plan100?.id],
     );
     const [filas] = await prueba.pool.query<RowDataPacket[]>(
-      'SELECT COUNT(*) AS n FROM usuarios WHERE tenant_id = ? AND activo = 1',
+      "SELECT COUNT(*) AS n FROM usuarios WHERE tenant_id = ? AND estado <> 'suspendido'",
       [a.cuenta.id],
     );
     const lista = await planes();

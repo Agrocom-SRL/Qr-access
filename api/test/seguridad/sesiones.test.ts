@@ -78,16 +78,8 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
     expect(enB.json<{ cuenta: { codigo: string } }>().cuenta.codigo).toBe('BBB');
   });
 
-  it('cualquier fallo responde exactamente lo mismo: PIN erróneo, cuenta inexistente, formato ilegible, usuario inactivo', async () => {
-    await crearUsuarioConPin(prueba.pool, a.cuenta, 'INAC', [a.rolMiembroId], { activo: false });
-    const casos = [
-      'AAAZ9Z9',
-      'ZZZ1234',
-      'no es un pin',
-      'AAAINAC',
-      'ÑAA1234',
-      `${a.administrador.pin}0`,
-    ];
+  it('cualquier fallo responde exactamente lo mismo: PIN erróneo, cuenta inexistente, formato ilegible, usuario inexistente', async () => {
+    const casos = ['AAAZ9Z9', 'ZZZ1234', 'no es un pin', 'ÑAA1234', `${a.administrador.pin}0`];
     const cuerpos = [];
     for (const [indice, pin] of casos.entries()) {
       const respuesta = await ingresar(pin, `10.1.1.${indice + 1}`);
@@ -98,9 +90,38 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
     for (const cuerpo of cuerpos) expect(cuerpo).toEqual(cuerpos[0]);
   });
 
-  it('una cuenta dada de baja no entra aunque el PIN sea correcto', async () => {
-    await prueba.pool.query('UPDATE cuentas SET activo = 0 WHERE id = ?', [a.cuenta.id]);
-    expect((await ingresar(a.administrador.pin)).statusCode).toBe(401);
+  it('una cuenta eliminada no entra aunque el PIN sea correcto: responde como cualquier fallo', async () => {
+    await prueba.pool.query('UPDATE cuentas SET deleted_at = NOW(3) WHERE id = ?', [a.cuenta.id]);
+    const respuesta = await ingresar(a.administrador.pin);
+    expect(respuesta.statusCode).toBe(401);
+    expect(respuesta.json()).toMatchObject({ code: 'sesion.credenciales_invalidas' });
+  });
+
+  it('una cuenta suspendida: con el PIN correcto dice sesion.cuenta_suspendida; con uno erróneo, como cualquier fallo', async () => {
+    await prueba.pool.query(
+      "UPDATE cuentas SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+      [a.cuenta.id],
+    );
+    const correcto = await ingresar(a.administrador.pin);
+    expect(correcto.statusCode).toBe(403);
+    expect(correcto.json()).toMatchObject({ code: 'sesion.cuenta_suspendida' });
+    // No se revela qué usuarios existen: un PIN que no es de nadie sigue siendo credenciales inválidas.
+    const erroneo = await ingresar('AAAZ9Z9', '10.2.2.2');
+    expect(erroneo.statusCode).toBe(401);
+    expect(erroneo.json()).toMatchObject({ code: 'sesion.credenciales_invalidas' });
+  });
+
+  it('un usuario suspendido no entra (sesion.usuario_suspendido); uno restringido, sí', async () => {
+    const suspendido = await crearUsuarioConPin(prueba.pool, a.cuenta, 'SUSP', [a.rolMiembroId], {
+      estado: 'suspendido',
+    });
+    const restringido = await crearUsuarioConPin(prueba.pool, a.cuenta, 'REST', [a.rolMiembroId], {
+      estado: 'restringido',
+    });
+    const sin = await ingresar(suspendido.pin, '10.3.3.3');
+    expect(sin.statusCode).toBe(403);
+    expect(sin.json()).toMatchObject({ code: 'sesion.usuario_suspendido' });
+    expect((await ingresar(restringido.pin, '10.3.3.4')).statusCode).toBe(200);
   });
 
   it('bloquea tras los fallos permitidos: ni el PIN correcto entra mientras dura el bloqueo', async () => {
@@ -232,6 +253,8 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
         rol_activo: { id: a.rolAdministradorId, nombre: 'Administrador' },
         permisos: [...PERMISOS_DE_ADMINISTRADOR].sort(),
         suscripcion: { plan: 'Plan AAA', hasta: fechaIsoUtc() },
+        estado: 'activo',
+        estado_origen: null,
       });
     });
 
@@ -255,7 +278,10 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
 
     it('un usuario dado de baja pierde el acceso con el mismo JWT', async () => {
       const sesion = await iniciarSesion(prueba.app, a.usuario.pin);
-      await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [a.usuario.id]);
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+        [a.usuario.id],
+      );
       const respuesta = await prueba.app.inject({
         method: 'GET',
         url: `${RUTA}/actual`,
@@ -332,7 +358,10 @@ describe('sesiones: login por PIN (ADR 0018)', () => {
       expect(vencido.statusCode).toBe(401);
 
       const otra = await iniciarSesion(prueba.app, a.administrador.pin);
-      await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [a.administrador.id]);
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+        [a.administrador.id],
+      );
       const baja = await prueba.app.inject({
         method: 'POST',
         url: `${RUTA}/refresco`,

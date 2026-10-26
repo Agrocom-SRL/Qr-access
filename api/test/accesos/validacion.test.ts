@@ -259,11 +259,14 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(filas[0]?.usado_at).toBeNull();
     });
 
-    it('si quien lo generó se desactiva deja de abrir (RF-06): qr.anulado', async () => {
+    it('si quien lo generó se suspende deja de abrir (RF-06): qr.generador_suspendido', async () => {
       const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'BA01', [a.rolMiembroId]);
       const qr = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
-      await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [otro.id]);
-      await rechazado(a.dispositivoPrincipal, qr.texto, 'qr.anulado');
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+        [otro.id],
+      );
+      await rechazado(a.dispositivoPrincipal, qr.texto, 'qr.generador_suspendido');
     });
   });
 
@@ -350,7 +353,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(filas[0]?.usado_at).toBeNull();
     });
 
-    it('un dispositivo dado de baja o desactivado, o de una cuenta dada de baja, no autentica', async () => {
+    it('un dispositivo dado de baja o desactivado, o de una cuenta eliminada, no autentica', async () => {
       await prueba.pool.query('UPDATE dispositivos SET activo = 0 WHERE id = ?', [
         a.dispositivoPrincipal.id,
       ]);
@@ -359,7 +362,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         a.dispositivoTrasero.id,
       ]);
       expect((await validar(a.dispositivoTrasero, 'x')).statusCode).toBe(401);
-      await prueba.pool.query('UPDATE cuentas SET activo = 0 WHERE id = ?', [b.cuenta.id]);
+      await prueba.pool.query('UPDATE cuentas SET deleted_at = NOW(3) WHERE id = ?', [b.cuenta.id]);
       expect((await validar(b.dispositivoPrincipal, 'x')).statusCode).toBe(401);
     });
 

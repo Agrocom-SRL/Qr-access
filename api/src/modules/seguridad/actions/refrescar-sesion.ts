@@ -3,6 +3,7 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
+import { estadoEfectivo, nodosDeEstado } from '../domain/estado.js';
 import { rolUnico } from '../domain/rol-unico.js';
 import { sesionVigente, type SesionRefrescada } from '../domain/sesion.js';
 import {
@@ -41,11 +42,15 @@ export async function ejecutar(
   const cuentaId = sesion.tenant_id;
 
   return ContextoCuenta.ejecutarEn(cuentaId, async () => {
-    const usuario = await new RepositorioDeUsuarios(servicios.pool).buscarActivoPorId(
-      sesion.usuario_id,
-    );
-    const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorId(cuentaId);
-    if (usuario === null || cuenta === null) throw invalido;
+    const [cadena, cuenta] = await Promise.all([
+      new RepositorioDeUsuarios(servicios.pool).cadenaDeEstados(sesion.usuario_id),
+      new RepositorioDeCuentas(servicios.pool).buscarPorId(cuentaId),
+    ]);
+    if (cuenta === null) throw invalido;
+    // Suspendido o eliminado (él, un superior o su cuenta): el refresh ya no sirve. Restringido sí.
+    const { estado } = estadoEfectivo(sesion.usuario_id, nodosDeEstado(cadena), cuenta.estado);
+    if (estado !== 'activo' && estado !== 'restringido') throw invalido;
+    const usuario = { id: sesion.usuario_id };
 
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
     // Se relee el rol en cada refresco: si el usuario cambió de rol, la sesión sigue al rol vigente.

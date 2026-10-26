@@ -77,11 +77,11 @@ export async function ejecutar(
   const qr = await qrs.buscarPorHash(tokenHash);
   if (qr === null) return rechazar('qr.desconocido', tokenHash, null);
 
-  // 3 a 6. Anulado, vencido, otra puerta, suscripción.
+  // 3 a 6. Anulado, generador (y sus superiores y su cuenta) suspendido, vencido, otra puerta, suscripción.
   const puertasDelQr =
     (await new RepositorioDePuertasDeQr(pool).puertasDe([qr.id])).get(qr.id) ?? [];
-  const [generadorActivo, suscripcion] = await Promise.all([
-    crearServicioDeUsuarios(pool).estaActivo(qr.generado_por),
+  const [generador, suscripcion] = await Promise.all([
+    crearServicioDeUsuarios(pool).estadoEfectivoDe(qr.generado_por),
     crearServicioDeSuscripciones(pool).obtenerVigente(ahora),
   ]);
   const motivo = decidirAntesDeConsumir({
@@ -89,7 +89,7 @@ export async function ejecutar(
       anuladoAt: qr.anulado_at,
       venceAt: qr.vence_at,
       puertaIds: puertasDelQr,
-      generadorActivo,
+      generador,
     },
     puertaDelDispositivoId: dispositivo.puertaId,
     ahora,

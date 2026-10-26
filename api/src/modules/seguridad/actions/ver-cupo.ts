@@ -20,7 +20,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
 ): Promise<CupoDeLaCuenta> {
   const [cuenta, suscripcion, usados] = await Promise.all([
-    new RepositorioDeCuentas(pool).buscarActivaPorId(principal.cuentaId),
+    new RepositorioDeCuentas(pool).buscarPorId(principal.cuentaId),
     crearServicioDeSuscripciones(pool).obtenerVigente(ahora),
     new RepositorioDeUsuarios(pool).contarTodos(),
   ]);

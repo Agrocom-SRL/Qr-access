@@ -58,6 +58,14 @@ function cambio(valores: Valores | null, campo: string): boolean {
   return valores !== null && campo in valores;
 }
 
+/** `usuario.restringido`, `cuenta.suspendida`, `usuario.reactivado`…: el cambio de estado (ADR 0033 §1). */
+function codigoDeEstado(entidad: 'usuario' | 'cuenta', estado: unknown): string {
+  const femenino = entidad === 'cuenta';
+  if (estado === 'restringido') return `${entidad}.${femenino ? 'restringida' : 'restringido'}`;
+  if (estado === 'suspendido') return `${entidad}.${femenino ? 'suspendida' : 'suspendido'}`;
+  return `${entidad}.${femenino ? 'reactivada' : 'reactivado'}`;
+}
+
 /**
  * El tipo de evento: `cuenta.creada`, `suscripcion.plan_cambiado`, `pago.registrado`… Lo que no
  * tiene un nombre propio cae en `<entidad>.<creado|editado|eliminado>`.
@@ -67,6 +75,7 @@ export function clasificarCambio(c: CambioCrudo): string {
     case 'cuentas':
       if (c.accion === 'creado') return 'cuenta.creada';
       if (cambio(c.despues, 'codigo')) return 'cuenta.codigo_cambiado';
+      if (cambio(c.despues, 'estado')) return codigoDeEstado('cuenta', c.despues?.estado);
       break;
     case 'cuenta_datos_empresa':
       if (c.accion === 'actualizado') return 'empresa.editada';
@@ -95,9 +104,12 @@ export function clasificarCambio(c: CambioCrudo): string {
     case 'usuarios':
       if (c.tenantId === null) {
         if (c.accion === 'creado') return 'equipo.agregado';
-        if (c.despues?.activo === 0) return 'equipo.desactivado';
+        if (cambio(c.despues, 'estado')) {
+          return c.despues?.estado === 'activo' ? 'equipo.reactivado' : 'equipo.desactivado';
+        }
         if (cambio(c.despues, 'contrasena_temporal')) return 'equipo.contrasena_cambiada';
       } else if (c.accion !== 'creado') {
+        if (cambio(c.despues, 'estado')) return codigoDeEstado('usuario', c.despues?.estado);
         // Compartir el PIN solo mueve esta fecha; regenerarlo también cambia `pin_generado_at`
         if (cambio(c.despues, 'pin_compartido_at')) return 'usuario.pin_compartido';
         if (cambio(c.despues, 'pin_generado_at')) return 'usuario.pin_regenerado';
@@ -170,6 +182,18 @@ export function detalleDelCambio(
       return { antes: null, despues: soloCampos(c.despues, ['etiqueta', 'username']) };
     case 'equipo.desactivado':
       return { antes: { activo: true }, despues: { activo: false } };
+    case 'usuario.restringido':
+    case 'usuario.suspendido':
+    case 'usuario.reactivado':
+    case 'cuenta.restringida':
+    case 'cuenta.suspendida':
+    case 'cuenta.reactivada':
+    case 'equipo.reactivado':
+      // Qué estado quedó y por qué; quién y cuándo ya vienen en la fila de la bitácora.
+      return {
+        antes: soloCampos(c.antes, ['estado']),
+        despues: soloCampos(c.despues, ['estado', 'estado_motivo']),
+      };
     case 'usuario.creado':
       return { antes: null, despues: soloCampos(c.despues, ['etiqueta']) };
     default: {

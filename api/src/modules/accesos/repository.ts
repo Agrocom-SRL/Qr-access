@@ -120,6 +120,38 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
   }
 
   /**
+   * Anula los QR vigentes (sin usar, sin anular y sin vencer) de esos generadores, o de TODA la cuenta
+   * del contexto si `generadores` es `null`. Lo usa la suspensión de un usuario, de su rama o de la
+   * cuenta, en la transacción de la suspensión (ADR 0031 §1). Cada anulación pasa por `anular`, que
+   * deja su rastro en la bitácora. Devuelve cuántos anuló.
+   */
+  async anularVigentes(
+    tx: Transaccion,
+    generadores: readonly string[] | null,
+    anuladoPor: string,
+    ahora: Date,
+  ): Promise<number> {
+    if (generadores !== null && generadores.length === 0) return 0;
+    const vigentes = await this.seleccionar<QrFila>(
+      {
+        columnas: COLUMNAS_DE_QR,
+        donde:
+          generadores === null
+            ? 't.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ?'
+            : 't.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ? AND t.generado_por IN (?)',
+        params: generadores === null ? [ahora] : [ahora, generadores],
+        bloquear: true,
+      },
+      tx,
+    );
+    let anulados = 0;
+    for (const qr of vigentes) {
+      if (await this.anular(tx, qr.id, anuladoPor, ahora)) anulados += 1;
+    }
+    return anulados;
+  }
+
+  /**
    * Cuántos QR generó cada usuario desde `desde` y cuántos de ellos ya se usaron (estadísticas de uso,
    * ADR 0028). Cuenta también los QR propios. Un usuario sin QR no aparece.
    */

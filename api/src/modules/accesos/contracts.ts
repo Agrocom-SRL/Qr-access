@@ -1,5 +1,6 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
+import type { Transaccion } from '../../platform/db/transaccion.js';
 import { RepositorioDeQr } from './repository.js';
 
 interface AccesosPorDiaFila extends RowDataPacket {
@@ -228,5 +229,27 @@ export function crearServicioDeActividadDeQr(pool: Pool): ServicioDeActividadDeQ
         ]),
       );
     },
+  };
+}
+
+export interface ServicioDeAnulacionDeQr {
+  /**
+   * Anula, dentro de la transacción `tx`, los QR vigentes de esos usuarios de la cuenta del contexto (o
+   * de toda la cuenta con `null`). Es la mitad «QR» de suspender a un usuario, a su rama o a la cuenta
+   * (ADR 0031 §1): se hace en la misma transacción que el cambio de estado. Los anulados no reviven.
+   */
+  anularVigentes(
+    tx: Transaccion,
+    generadores: readonly string[] | null,
+    anuladoPor: string,
+    ahora: Date,
+  ): Promise<number>;
+}
+
+export function crearServicioDeAnulacionDeQr(pool: Pool): ServicioDeAnulacionDeQr {
+  const repositorio = new RepositorioDeQr(pool);
+  return {
+    anularVigentes: (tx, generadores, anuladoPor, ahora) =>
+      repositorio.anularVigentes(tx, generadores, anuladoPor, ahora),
   };
 }

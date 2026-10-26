@@ -37,6 +37,8 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
+  'seguridad.usuario.restringir',
+  'seguridad.usuario.suspender',
   'seguridad.cupo.ver',
   'seguridad.estadistica.ver',
 ];
@@ -67,6 +69,8 @@ export const PERMISOS_DE_TITULAR = [
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
+  'seguridad.usuario.restringir',
+  'seguridad.usuario.suspender',
 ];
 
 export interface Cuenta {
@@ -74,12 +78,26 @@ export interface Cuenta {
   readonly codigo: string;
 }
 
-export async function crearCuenta(pool: Pool, codigo: string, activo = true): Promise<Cuenta> {
-  const id = await insertar(pool, 'INSERT INTO cuentas (nombre, codigo, activo) VALUES (?, ?, ?)', [
-    `Cuenta ${codigo}`,
-    codigo,
-    activo ? 1 : 0,
-  ]);
+export type EstadoDePrueba = 'activo' | 'restringido' | 'suspendido';
+
+/** Las columnas de estado que exige la base (`ck_*_estado_datos`): `activo` las lleva en NULL. */
+function columnasDeEstado(estado: EstadoDePrueba): [string, Date | null, string | null] {
+  return estado === 'activo' ? [estado, null, null] : [estado, new Date(), 'motivo de prueba'];
+}
+
+/** `estado` acepta un booleano por compatibilidad: `false` = suspendida. */
+export async function crearCuenta(
+  pool: Pool,
+  codigo: string,
+  estado: EstadoDePrueba | boolean = 'activo',
+): Promise<Cuenta> {
+  const propio: EstadoDePrueba =
+    typeof estado === 'boolean' ? (estado ? 'activo' : 'suspendido') : estado;
+  const id = await insertar(
+    pool,
+    'INSERT INTO cuentas (nombre, codigo, estado, estado_desde, estado_motivo) VALUES (?, ?, ?, ?, ?)',
+    [`Cuenta ${codigo}`, codigo, ...columnasDeEstado(propio)],
+  );
   return { id, codigo };
 }
 
@@ -114,19 +132,19 @@ export async function crearUsuarioConPin(
   cuenta: Cuenta,
   sufijo: string,
   rolIds: readonly string[],
-  opciones: { activo?: boolean; superiorId?: string } = {},
+  opciones: { activo?: boolean; estado?: EstadoDePrueba; superiorId?: string } = {},
 ): Promise<UsuarioDePrueba> {
   const pin = `${cuenta.codigo}${sufijo}`;
   const id = await insertar(
     pool,
-    'INSERT INTO usuarios (tenant_id, superior_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES (?, ?, ?, ?, ?, NOW(3), ?)',
+    'INSERT INTO usuarios (tenant_id, superior_id, etiqueta, pin_indice, pin_hash, pin_generado_at, estado, estado_desde, estado_motivo) VALUES (?, ?, ?, ?, ?, NOW(3), ?, ?, ?)',
     [
       cuenta.id,
       opciones.superiorId ?? null,
       `Usuario ${pin}`,
       calcularIndiceDePin(cargarConfig().PIN_PIMIENTA, cuenta.id, sufijo),
       await hashear(secretoDePin(cuenta.id, sufijo)),
-      opciones.activo === false ? 0 : 1,
+      ...columnasDeEstado(opciones.estado ?? (opciones.activo === false ? 'suspendido' : 'activo')),
     ],
   );
   for (const rolId of rolIds) {
@@ -339,13 +357,13 @@ export async function crearSuperAdmin(
   const contrasena = opciones.contrasena ?? 'contrasena-de-prueba-1';
   const id = await insertar(
     pool,
-    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES (NULL, ?, ?, ?, ?, ?)',
+    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, estado, estado_desde, estado_motivo) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)',
     [
       opciones.nombre ?? `Admin ${usuario}`,
       usuario,
       await hashear(contrasena),
       opciones.temporal === true ? 1 : 0,
-      opciones.activo === false ? 0 : 1,
+      ...columnasDeEstado(opciones.activo === false ? 'suspendido' : 'activo'),
     ],
   );
   await pool.query(

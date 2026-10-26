@@ -53,6 +53,7 @@ export async function ejecutar(
     nombre: fila.etiqueta,
     usuario: fila.username,
     activo: true,
+    estado: 'activo',
     es_actual: false,
     ultimo_ingreso_at: null,
     created_at: fila.created_at.toISOString(),

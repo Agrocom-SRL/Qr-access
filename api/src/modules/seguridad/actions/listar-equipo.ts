@@ -7,13 +7,16 @@ import {
 } from '../../../platform/http/paginacion.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
 import { aIsoONulo } from '../../../platform/tiempo/fechas.js';
+import type { Estado } from '../domain/estado.js';
 import { RepositorioDeSesionesDeSuperAdmins, RepositorioDeSuperAdmins } from '../repository.js';
 
 export interface MiembroDelEquipo {
   id: string;
   nombre: string | null;
   usuario: string;
+  /** `true` si no está desactivado (compatibilidad); el estado exacto va en `estado`. */
   activo: boolean;
+  estado: Estado;
   /** `true` en la fila de quien consulta (la interfaz dice "Tú"). */
   es_actual: boolean;
   ultimo_ingreso_at: string | null;
@@ -44,7 +47,8 @@ export async function ejecutar(
     id: fila.id,
     nombre: fila.etiqueta,
     usuario: fila.username,
-    activo: fila.activo === 1,
+    activo: fila.estado === 'activo',
+    estado: fila.estado,
     es_actual: fila.id === principal.usuarioId,
     ultimo_ingreso_at: aIsoONulo(ingresos.get(fila.id) ?? null),
     created_at: fila.created_at.toISOString(),

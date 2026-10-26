@@ -8,11 +8,15 @@ import { ejecutar as editarCuenta } from './actions/editar-cuenta.js';
 import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
 import { deCuenta as estadisticasDeCuenta } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
+import { ejecutar as reactivarCuenta } from './actions/reactivar-cuenta.js';
+import { ejecutar as restringirCuenta } from './actions/restringir-cuenta.js';
+import { ejecutar as suspenderCuenta } from './actions/suspender-cuenta.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
 import { ejecutar as verSuscripcionDeCuenta } from './actions/ver-suscripcion-de-cuenta.js';
 import {
   consultaDeCobranza,
+  cuerpoDeCambioDeEstado,
   cuerpoDeBajaDeCuenta,
   cuerpoDeCambioDeCodigo,
   cuerpoDeNuevoAdministrador,
@@ -160,6 +164,47 @@ export const rutasDeCuentas =
           contactoCorreo: cuerpo.contacto_correo,
           maxMiembrosPorTitular: cuerpo.max_miembros_por_titular,
         });
+        return reply.status(204).send();
+      },
+    );
+
+    // Estados de la cuenta (ADR 0031 §0, ADR 0033 §1): restringida no genera QR pero lo ya generado abre;
+    // suspendida cierra todas las sesiones y anula todos los QR vigentes. El motivo es obligatorio.
+    app.post(
+      '/plataforma/cuentas/:id/restriccion',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeCambioDeEstado },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await restringirCuenta(pool, plataformaDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/plataforma/cuentas/:id/suspension',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeCambioDeEstado },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await suspenderCuenta(pool, plataformaDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/plataforma/cuentas/:id/reactivacion',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await reactivarCuenta(pool, plataformaDe(request), request.params.id);
         return reply.status(204).send();
       },
     );

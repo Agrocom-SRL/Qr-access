@@ -17,9 +17,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
   sufijoElegido?: string,
 ): Promise<PinGenerado> {
-  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorId(
-    principal.cuentaId,
-  );
+  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarPorId(principal.cuentaId);
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
   const enLaRama = await new RepositorioDeUsuarios(servicios.pool).buscarEnRama(
     principal.usuarioId,

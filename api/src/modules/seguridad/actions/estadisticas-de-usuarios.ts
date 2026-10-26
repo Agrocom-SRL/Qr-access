@@ -183,7 +183,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
 ): Promise<EstadisticasDeUsuarios> {
   const [cuenta, filas] = await Promise.all([
-    new RepositorioDeCuentas(pool).buscarActivaPorId(principal.cuentaId),
+    new RepositorioDeCuentas(pool).buscarPorId(principal.cuentaId),
     new RepositorioDeUsuarios(pool).todosDeRama(principal.usuarioId),
   ]);
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);

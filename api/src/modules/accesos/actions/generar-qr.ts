@@ -32,6 +32,9 @@ export interface QrGenerado {
  * suscripción no está vigente, si alguna puerta no es de la cuenta o si la vigencia pedida
  * pasa el máximo (el límite del plan o, sin él, 7 días); sin vigencia pedida, vence al fin del día
  * local del sitio.
+ *
+ * Un restringido (él, un superior o su cuenta, ADR 0031 §0) no genera: `qr.generacion_restringida`.
+ * Es lo primero que se mira; lo ya generado por él sigue abriendo hasta vencer.
  */
 export async function ejecutar(
   pool: Pool,
@@ -39,6 +42,11 @@ export async function ejecutar(
   datos: DatosDeGeneracion,
   ahora: Date = new Date(),
 ): Promise<QrGenerado> {
+  if (principal.estado !== 'activo') {
+    throw new ErrorDeDominio('qr.generacion_restringida', 403, {
+      origen: principal.origenDelEstado,
+    });
+  }
   const idsUnicos = [...new Set(datos.puertaIds)];
   const puertas = await crearServicioDeOrganizacion(pool).buscarPuertas(idsUnicos);
   const porId = new Map(puertas.map((puerta) => [puerta.id, puerta]));

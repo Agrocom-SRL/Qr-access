@@ -6,6 +6,16 @@ const esquemaFecha = z.string();
 
 const esquemaRol = z.object({ id: z.string(), nombre: z.string() });
 
+/** Los estados que se guardan (ADR 0033 §1); «eliminado» es el soft delete y no se lista. */
+export const esquemaEstado = z.enum(['activo', 'restringido', 'suspendido']);
+const esquemaOrigenDeEstado = z.enum(['usuario', 'superior', 'cuenta']);
+
+/** Por qué se restringe o se suspende: obligatorio y corto (`estado_motivo` es VARCHAR(200)). */
+export const MAX_MOTIVO_DE_ESTADO = 200;
+export const cuerpoDeCambioDeEstado = z.strictObject({
+  motivo: z.string().trim().min(1).max(MAX_MOTIVO_DE_ESTADO),
+});
+
 export const cuerpoDeIngreso = z.strictObject({ pin: z.string().min(1).max(32) });
 
 export const respuestaDeIngreso = z.object({
@@ -28,6 +38,8 @@ export const respuestaDeSesionActual = z.object({
   rol_activo: esquemaRol.nullable(),
   permisos: z.array(z.string()),
   suscripcion: z.object({ plan: z.string(), hasta: esquemaFecha }).nullable(),
+  estado: z.enum(['activo', 'restringido']),
+  estado_origen: esquemaOrigenDeEstado.nullable(),
 });
 
 /** Largo de `usuarios.etiqueta`. */
@@ -41,6 +53,12 @@ export const esquemaUsuario = z.object({
   id: z.string(),
   etiqueta: z.string().nullable(),
   activo: z.boolean(),
+  estado: esquemaEstado,
+  estado_efectivo: esquemaEstado,
+  estado_origen: esquemaOrigenDeEstado.nullable(),
+  estado_motivo: z.string().nullable(),
+  estado_desde: esquemaFecha.nullable(),
+  estado_impuesto_por: z.string().nullable(),
   roles: z.array(esquemaRol),
   unidad: z.object({ id: z.string(), nombre: z.string(), sitio_id: z.string() }).nullable(),
   pin_generado_at: esquemaFecha.nullable(),
@@ -49,6 +67,16 @@ export const esquemaUsuario = z.object({
 });
 
 export const respuestaListadoDeUsuarios = esquemaListado(esquemaUsuario);
+
+export const respuestaDeEstadoDeUsuario = esquemaUsuario.pick({
+  id: true,
+  estado: true,
+  estado_efectivo: true,
+  estado_origen: true,
+  estado_motivo: true,
+  estado_desde: true,
+  estado_impuesto_por: true,
+});
 
 const esquemaEtiqueta = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUARIO);
 /** Un usuario tiene un solo rol (ADR 0028 §2): la lista se conserva por compatibilidad, con exactamente uno. */
@@ -149,6 +177,7 @@ const esquemaMiembroDelEquipo = z.object({
   nombre: z.string().nullable(),
   usuario: z.string(),
   activo: z.boolean(),
+  estado: esquemaEstado,
   es_actual: z.boolean(),
   ultimo_ingreso_at: esquemaFecha.nullable(),
   created_at: esquemaFecha,
@@ -173,7 +202,12 @@ const esquemaNombreDePersona = z.string().trim().min(1).max(MAX_ETIQUETA_DE_USUA
 
 /** Cambiar el nombre, reactivar (`activo: true`) o desactivar (`activo: false`); al menos una cosa. */
 export const cuerpoDeEdicionDeMiembro = z
-  .strictObject({ nombre: esquemaNombreDePersona.optional(), activo: z.boolean().optional() })
+  .strictObject({
+    nombre: esquemaNombreDePersona.optional(),
+    activo: z.boolean().optional(),
+    /** Por qué se desactiva (con `activo: false`); sin él se guarda un motivo por defecto. */
+    motivo: cuerpoDeCambioDeEstado.shape.motivo.optional(),
+  })
   .refine((cuerpo) => cuerpo.nombre !== undefined || cuerpo.activo !== undefined);
 
 export const cuerpoDeEdicionDePerfil = z.strictObject({ nombre: esquemaNombreDePersona });
@@ -219,6 +253,8 @@ const esquemaCuentaListada = z.object({
   id: z.string(),
   codigo: z.string(),
   nombre: z.string(),
+  /** El estado de la cuenta; `estado` (abajo) es el de su suscripción. */
+  cuenta_estado: esquemaEstado,
   plan: z
     .object({ id: z.string(), nombre: z.string(), cupo_usuarios: z.number().int().nullable() })
     .nullable(),
@@ -315,6 +351,10 @@ export const respuestaDeDetalleDeCuenta = z.object({
     codigo: z.string(),
     nombre: z.string(),
     activa: z.boolean(),
+    estado: esquemaEstado,
+    estado_motivo: z.string().nullable(),
+    estado_desde: esquemaFecha.nullable(),
+    estado_impuesto_por: z.string().nullable(),
     cliente_desde: esquemaFecha,
     max_miembros_por_titular: z.number().int(),
   }),

@@ -163,7 +163,7 @@ export const rutasDePlataforma =
       },
       async (request, reply) => {
         const principal = plataformaDe(request);
-        const { nombre, activo } = request.body;
+        const { nombre, activo, motivo } = request.body;
         const requeridos = [
           ...(nombre !== undefined || activo === true ? ['seguridad.equipo.editar'] : []),
           ...(activo === false ? ['seguridad.equipo.desactivar'] : []),
@@ -173,7 +173,7 @@ export const rutasDePlataforma =
             throw new ErrorDeDominio('permiso.denegado', 403, { permiso: codigo });
           }
         }
-        await editarMiembro(servicios, principal, request.params.id, { nombre, activo });
+        await editarMiembro(servicios, principal, request.params.id, { nombre, activo, motivo });
         return reply.status(204).send();
       },
     );
