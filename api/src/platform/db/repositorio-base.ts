@@ -44,8 +44,12 @@ export interface Consulta {
   readonly orden?: string;
   readonly limite?: number;
   readonly desplazamiento?: number;
-  /** `SELECT … FOR UPDATE`: solo dentro de una transacción. */
-  readonly bloquear?: boolean;
+  /**
+   * Solo dentro de una transacción. `true` = `FOR UPDATE` (quien lo pide va a escribir la fila);
+   * `'compartido'` = `LOCK IN SHARE MODE` (solo impide que otro la cambie mientras dura la transacción:
+   * varios lectores a la vez no se esperan entre sí).
+   */
+  readonly bloquear?: boolean | 'compartido';
 }
 
 export interface CondicionExtra {
@@ -154,6 +158,7 @@ export abstract class RepositorioBase {
         params.push(consulta.limite, consulta.desplazamiento ?? 0);
       }
       if (consulta.bloquear === true) partes.push('FOR UPDATE');
+      else if (consulta.bloquear === 'compartido') partes.push('LOCK IN SHARE MODE');
     }
     return { sql: partes.filter((parte) => parte !== '').join(' '), params };
   }

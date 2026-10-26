@@ -32,6 +32,10 @@ export interface SuscripcionVigente {
   readonly maxUsuarios: number | null;
   /** `null` = el plan no limita la cantidad de dispositivos. */
   readonly maxDispositivos: number | null;
+  /** `null` = el plan no fija la bolsa mensual de QR y rige la general (ADR 0030 §2). */
+  readonly bolsaQrMensual: number | null;
+  /** `null` = el plan no fija las puertas por QR y rige el general (ADR 0031 §9). */
+  readonly maxPuertasPorQr: number | null;
 }
 
 export interface ServicioDeSuscripciones {
@@ -52,6 +56,8 @@ export function crearServicioDeSuscripciones(pool: Pool): ServicioDeSuscripcione
         maxVigenciaQrHoras: fila.max_vigencia_qr_horas,
         maxUsuarios: fila.max_usuarios,
         maxDispositivos: fila.max_dispositivos,
+        bolsaQrMensual: fila.bolsa_qr_mensual,
+        maxPuertasPorQr: fila.max_puertas_por_qr,
       };
     },
   };

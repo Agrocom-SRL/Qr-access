@@ -726,3 +726,79 @@ ALTER TABLE usuarios
 ## permisos: restringir y suspender
 
 Seed `db/seeds/01_catalogo.sql` (sin migración: el catálogo vive en el seed idempotente): `seguridad.usuario.restringir` y `seguridad.usuario.suspender`, ámbito `cuenta`, asignados al Administrador de cada cuenta (todos los de ámbito cuenta) y al rol base Titular.
+
+## Topes de generación de QR (ola W5, ADR 0030 y 0031 §9)
+
+Migraciones `20261027100001` a `20261027100005`. Los valores iniciales de `configuracion_limites` (y los supuestos entre ellos) están en `tablas/25_configuracion_limites.md`.
+
+```sql
+-- 20261027100001_create_configuracion_limites.sql
+CREATE TABLE configuracion_limites (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  clave VARCHAR(60) NOT NULL,
+  valor INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_configuracion_limites_clave (clave, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100002_create_excepciones_de_limite.sql
+CREATE TABLE excepciones_de_limite (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  clave VARCHAR(60) NOT NULL,
+  valor INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  usuario_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(usuario_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_excepciones_de_limite_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_excepciones_de_limite_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_excepciones_de_limite (tenant_id, usuario_clave, clave, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100003_create_eventos_de_limite.sql (solo inserción)
+CREATE TABLE eventos_de_limite (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  tipo VARCHAR(40) NOT NULL,
+  valor INT UNSIGNED NULL,
+  tope INT UNSIGNED NULL,
+  clave_unica VARCHAR(80) NULL,
+  ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_eventos_de_limite_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_eventos_de_limite_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_eventos_de_limite_tipo CHECK (tipo IN (
+    'qr.limite_diario', 'qr.limite_pendientes', 'qr.limite_propios_sin_uso',
+    'qr.reemplazo_sin_uso', 'bolsa.aviso', 'bolsa.superada'
+  )),
+  UNIQUE KEY uq_eventos_de_limite_marca (tenant_id, clave_unica),
+  KEY idx_eventos_de_limite_usuario (tenant_id, usuario_id, tipo, ocurrido_at),
+  KEY idx_eventos_de_limite_tipo (tenant_id, tipo, ocurrido_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100004_add_limites_de_qr_a_planes.sql
+ALTER TABLE planes
+  ADD COLUMN bolsa_qr_mensual INT UNSIGNED NULL AFTER max_vigencia_qr_horas,
+  ADD COLUMN max_puertas_por_qr INT UNSIGNED NULL AFTER bolsa_qr_mensual,
+  ADD CONSTRAINT ck_planes_bolsa_qr CHECK (bolsa_qr_mensual IS NULL OR bolsa_qr_mensual >= 1),
+  ADD CONSTRAINT ck_planes_max_puertas_qr CHECK (max_puertas_por_qr IS NULL OR max_puertas_por_qr >= 1);
+
+-- 20261027100005_add_indice_de_creacion_a_qr_accesos.sql
+ALTER TABLE qr_accesos ADD KEY idx_qr_accesos_creado (tenant_id, created_at);
+```
+
+## permisos: configuración de los topes
+
+Seed `db/seeds/01_catalogo.sql`: `limites.configuracion.ver` y `limites.configuracion.editar`, ámbito `plataforma` (el rol Super admin recibe todos los de plataforma). El mismo seed siembra los valores iniciales de `configuracion_limites` sin pisar los editados.

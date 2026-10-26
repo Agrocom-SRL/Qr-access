@@ -165,16 +165,21 @@ export async function crearSuscripcion(
     maxVigenciaQrHoras?: number | null;
     maxUsuarios?: number | null;
     maxDispositivos?: number | null;
+    /** Lo que el plan fija sobre la generación de QR; sin ello rige la configuración general. */
+    bolsaQrMensual?: number | null;
+    maxPuertasPorQr?: number | null;
   } = {},
 ): Promise<void> {
   const planId = await insertar(
     pool,
-    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios, max_dispositivos) VALUES (?, ?, ?, ?)',
+    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios, max_dispositivos, bolsa_qr_mensual, max_puertas_por_qr) VALUES (?, ?, ?, ?, ?, ?)',
     [
       `Plan ${cuenta.codigo}`,
       opciones.maxVigenciaQrHoras ?? null,
       opciones.maxUsuarios ?? null,
       opciones.maxDispositivos ?? null,
+      opciones.bolsaQrMensual ?? null,
+      opciones.maxPuertasPorQr ?? null,
     ],
   );
   const dia = 86_400_000;

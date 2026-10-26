@@ -7,6 +7,10 @@ export const esquemaPlan = z.object({
   nombre: z.string(),
   cupo_usuarios: z.number().int().nullable(),
   precio_anual: z.number(),
+  /** `null` = el plan no fija la bolsa mensual de QR y rige la general (ADR 0030 §2). */
+  bolsa_qr_mensual: z.number().int().nullable(),
+  /** `null` = el plan no fija las puertas por QR y rige el general (ADR 0031 §9). */
+  max_puertas_por_qr: z.number().int().nullable(),
   cuentas: z.number().int(),
   usuarios_en_uso: z.number().int(),
 });
@@ -105,6 +109,10 @@ export const cuerpoDeEdicionDePlan = z
     nombre: esquemaNombreDePlan.optional(),
     cupo_usuarios: esquemaCupo.optional(),
     precio_anual: esquemaPrecio.optional(),
+    /** `null` devuelve el plan a la bolsa general. */
+    bolsa_qr_mensual: z.number().int().min(1).max(100_000_000).nullable().optional(),
+    /** `null` devuelve el plan al máximo general de puertas por QR. */
+    max_puertas_por_qr: z.number().int().min(1).max(1_000).nullable().optional(),
   })
   .refine((cuerpo) => Object.keys(cuerpo).length > 0);
 

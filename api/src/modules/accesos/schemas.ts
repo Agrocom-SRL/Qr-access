@@ -6,7 +6,11 @@ const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
 const esquemaPuertaCorta = z.object({ id: z.string(), nombre: z.string() });
 
-export const MAX_PUERTAS_POR_QR = 20;
+/**
+ * Techo de la lista que acepta el esquema (no deja pasar una lista descomunal). El máximo REAL de puertas por
+ * QR no es este: sale de la configuración de la plataforma y del plan (`qr.limite_puertas`, ADR 0031 §9).
+ */
+export const MAX_PUERTAS_POR_QR = 1000;
 export const MAX_ETIQUETA = 60;
 
 export const cuerpoDeGeneracion = z.strictObject({
@@ -23,11 +27,19 @@ export const cuerpoDeGeneracion = z.strictObject({
     .nullish(),
   /** QR de "Mi QR de acceso": anula el propio anterior y no aparece en "Mis QR". */
   propio: z.boolean().optional(),
+  /**
+   * Con `propio`: pide otro QR aunque el vigente siga sin usarse y sea para las mismas puertas (la app perdió su
+   * token). El anterior se anula y cuenta como reemplazo sin uso (ADR 0030 §2.1).
+   */
+  reemplazar: z.boolean().optional(),
 });
 
 export const respuestaDeGeneracion = z.object({
   id: z.string(),
-  texto: z.string(),
+  /** `null` si `reutilizado`: el servidor no guarda el token y la app lo muestra desde su copia local. */
+  texto: z.string().nullable(),
+  /** `true` = no se generó nada: ya había un QR propio vigente y sin usar para esas puertas (200, no 201). */
+  reutilizado: z.boolean(),
   vence_at: esquemaFecha,
   etiqueta: z.string().nullable(),
   puertas: z.array(esquemaPuertaCorta),

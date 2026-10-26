@@ -28,6 +28,8 @@ export const TABLAS_RELEVANTES = [
   'sitios',
   'puertas',
   'dispositivos',
+  'configuracion_limites',
+  'excepciones_de_limite',
 ] as const;
 
 const SINGULAR: Readonly<Record<string, string>> = {
@@ -37,6 +39,8 @@ const SINGULAR: Readonly<Record<string, string>> = {
   puertas: 'puerta',
   dispositivos: 'dispositivo',
   usuarios: 'usuario',
+  configuracion_limites: 'limite',
+  excepciones_de_limite: 'excepcion_de_limite',
 };
 
 /** Columnas que no le dicen nada al super admin en un cambio genérico. */

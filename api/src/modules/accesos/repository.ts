@@ -120,6 +120,48 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
   }
 
   /**
+   * El QR propio del usuario que todavía no se usó ni se anuló (aunque haya vencido), bloqueado hasta el
+   * fin de la transacción. Hay a lo sumo uno: lo garantiza el UNIQUE `propio_activo`.
+   */
+  buscarPropioSinUso(tx: Transaccion, usuarioId: string): Promise<QrFila | null> {
+    return this.seleccionarUna<QrFila>(
+      {
+        columnas: COLUMNAS_DE_QR,
+        donde:
+          't.generado_por = ? AND t.es_propio = 1 AND t.anulado_at IS NULL AND t.usado_at IS NULL',
+        params: [usuarioId],
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /** Cuántos QR generó el usuario desde `desde` (de cualquier clase y en cualquier estado): el tope diario. */
+  contarGeneradosPor(usuarioId: string, desde: Date, tx: Transaccion): Promise<number> {
+    return this.contar(
+      { donde: 't.generado_por = ? AND t.created_at >= ?', params: [usuarioId, desde] },
+      tx,
+    );
+  }
+
+  /** Cuántos QR vigentes sin usar tiene el usuario: el tope de pendientes. */
+  contarPendientesDe(usuarioId: string, ahora: Date, tx: Transaccion): Promise<number> {
+    return this.contar(
+      {
+        donde:
+          't.generado_por = ? AND t.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ?',
+        params: [usuarioId, ahora],
+      },
+      tx,
+    );
+  }
+
+  /** Cuántos QR generó la cuenta del contexto desde `desde`: lo que consume de su bolsa mensual. */
+  contarGeneradosDeLaCuenta(desde: Date, tx: Transaccion): Promise<number> {
+    return this.contar({ donde: 't.created_at >= ?', params: [desde] }, tx);
+  }
+
+  /**
    * Anula los QR vigentes (sin usar, sin anular y sin vencer) de esos generadores, o de TODA la cuenta
    * del contexto si `generadores` es `null`. Lo usa la suspensión de un usuario, de su rama o de la
    * cuenta, en la transacción de la suspensión (ADR 0031 §1). Cada anulación pasa por `anular`, que

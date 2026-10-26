@@ -153,6 +153,8 @@ export function rutas({ pool, config }: DependenciasDeModulo): FastifyPluginCall
           nombre: request.body.nombre,
           cupoUsuarios: request.body.cupo_usuarios,
           precioAnual: request.body.precio_anual,
+          bolsaQrMensual: request.body.bolsa_qr_mensual,
+          maxPuertasPorQr: request.body.max_puertas_por_qr,
         });
         return reply.status(204).send();
       },

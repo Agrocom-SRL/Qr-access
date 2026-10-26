@@ -1,5 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
+import type { Transaccion } from '../../platform/db/transaccion.js';
 import {
   estadoEfectivo,
   nodosDeEstado,
@@ -25,6 +26,12 @@ export interface ServicioDeUsuarios {
    */
   estadoEfectivoDe(usuarioId: string): Promise<EstadoEfectivo>;
   /**
+   * El mismo estado efectivo, leído DENTRO de `tx` y con la cuenta (compartido) y la cadena del usuario
+   * bloqueadas hasta que `tx` termine. Es para escribir algo que una suspensión concurrente dejaría vivo
+   * (un QR nuevo, ADR 0031 §1): si la suspensión ya se confirmó se ve acá; si no, espera a `tx`.
+   */
+  estadoEfectivoBloqueando(tx: Transaccion, usuarioId: string): Promise<EstadoEfectivo>;
+  /**
    * ¿El usuario existe y puede operar, es decir, no está suspendido (ni él, ni un superior, ni su
    * cuenta) ni eliminado? Restringido sí puede (RF-06, ADR 0033 §1).
    */
@@ -47,6 +54,13 @@ export function crearServicioDeUsuarios(pool: Pool): ServicioDeUsuarios {
   };
   return {
     estadoEfectivoDe,
+    async estadoEfectivoBloqueando(tx, usuarioId) {
+      // Siempre en este orden (cuenta y luego usuarios): la suspensión de la cuenta bloquea la cuenta primero.
+      const cuenta = await cuentas.buscarPorIdCompartida(tx, ContextoCuenta.cuentaRequerida());
+      if (cuenta === null) return { estado: 'eliminado', origen: null };
+      const cadena = await usuarios.cadenaDeEstadosBloqueada(tx, usuarioId);
+      return estadoEfectivo(usuarioId, nodosDeEstado(cadena), cuenta.estado);
+    },
     async estaActivo(usuarioId) {
       const { estado } = await estadoEfectivoDe(usuarioId);
       return estado === 'activo' || estado === 'restringido';

@@ -60,7 +60,7 @@ export function rutas({
         schema: {
           tags: ['accesos'],
           body: cuerpoDeGeneracion,
-          response: { 201: respuestaDeGeneracion },
+          response: { 200: respuestaDeGeneracion, 201: respuestaDeGeneracion },
         },
         // Ráfagas cortas por minuto, además de los topes diarios de la acción (ADR 0030 §3.2).
         config: { limite: 'generar_qr' },
@@ -77,8 +77,10 @@ export function rutas({
           venceAt: request.body.vence_at ?? null,
           etiqueta: request.body.etiqueta ?? null,
           propio: request.body.propio ?? false,
+          reemplazar: request.body.reemplazar ?? false,
         });
-        return reply.status(201).send(qr);
+        // Reutilizar el QR propio no crea nada: 200. Un QR nuevo: 201.
+        return reply.status(qr.reutilizado ? 200 : 201).send(qr);
       },
     );
 

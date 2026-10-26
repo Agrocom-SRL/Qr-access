@@ -89,6 +89,18 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
       params: [id],
     });
   }
+
+  /**
+   * La cuenta con un bloqueo compartido hasta el fin de la transacción: nadie puede cambiarle el estado
+   * (restringirla o suspenderla escribe esta fila) mientras `tx` siga abierta, y varias transacciones a la
+   * vez no se esperan entre sí. Lo usa `generar-qr` para que una suspensión concurrente no deje un QR vivo.
+   */
+  buscarPorIdCompartida(tx: Transaccion, id: string): Promise<CuentaFila | null> {
+    return this.seleccionarUna<CuentaFila>(
+      { columnas: COLUMNAS_DE_CUENTA, donde: 't.id = ?', params: [id], bloquear: 'compartido' },
+      tx,
+    );
+  }
 }
 
 export interface UsuarioFila extends RowDataPacket {
@@ -197,12 +209,43 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
    * El usuario y todos sus superiores, con lo mínimo para derivar el estado efectivo. Solo de la cuenta
    * del contexto y sin los borrados.
    */
-  cadenaDeEstados(id: string): Promise<UsuarioDeEstadoFila[]> {
-    return this.seleccionar<UsuarioDeEstadoFila>({
-      columnas: 't.id, t.superior_id, t.estado',
-      donde: X_Y_SUS_SUPERIORES,
-      params: [id],
-    });
+  cadenaDeEstados(id: string, tx?: Transaccion): Promise<UsuarioDeEstadoFila[]> {
+    return this.seleccionar<UsuarioDeEstadoFila>(
+      { columnas: 't.id, t.superior_id, t.estado', donde: X_Y_SUS_SUPERIORES, params: [id] },
+      tx,
+    );
+  }
+
+  /**
+   * Como `cadenaDeEstados`, pero BLOQUEA las filas del usuario y de todos sus superiores (`FOR UPDATE`) hasta
+   * el fin de la transacción y devuelve lo que hay AHORA. Suspender o restringir a alguien de la cadena escribe
+   * su fila, así que o bien ya está confirmado y se ve acá, o bien espera a que termine `tx`.
+   *
+   * Sube de un usuario a su superior con una lectura bloqueante cada vez, sin ninguna lectura común antes: la
+   * primera lectura común de una transacción fija la foto que verá el resto, y esa foto tiene que ser POSTERIOR
+   * al bloqueo para que los conteos que siguen vean lo que otra generación confirmó mientras se esperaba. Un
+   * usuario borrado (o un ciclo) corta la cadena: `estadoEfectivo` lo trata como eliminado (falla cerrado).
+   */
+  async cadenaDeEstadosBloqueada(tx: Transaccion, id: string): Promise<UsuarioDeEstadoFila[]> {
+    const cadena: UsuarioDeEstadoFila[] = [];
+    const vistos = new Set<string>();
+    let actual: string | null = id;
+    while (actual !== null && !vistos.has(actual)) {
+      vistos.add(actual);
+      const fila: UsuarioDeEstadoFila | null = await this.seleccionarUna<UsuarioDeEstadoFila>(
+        {
+          columnas: 't.id, t.superior_id, t.estado',
+          donde: 't.id = ?',
+          params: [actual],
+          bloquear: true,
+        },
+        tx,
+      );
+      if (fila === null) break;
+      cadena.push(fila);
+      actual = fila.superior_id;
+    }
+    return cadena;
   }
 
   /** Todos los usuarios de la cuenta con lo mínimo para derivar su estado efectivo (listados). */
