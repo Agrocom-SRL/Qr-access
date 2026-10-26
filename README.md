@@ -6,7 +6,7 @@ Control de acceso a puertas eléctricas con QR — `acceso.agrocom.com.bo`. Plat
 api/        Node.js 22 + TypeScript + Fastify, SQL a mano con mysql2 (sin ORM)
 app/        Flutter (Android, iOS y web): login por PIN, generación de QR, administración
 firmware/   ESP32 (framework Arduino, PlatformIO): lector QR + pulso de cerradura por Ethernet
-db/         Migraciones SQL (dbmate) sobre MariaDB 11.8
+db/         Migraciones SQL (dbmate) sobre MariaDB 10.11
 docs/       Funcional, modelo de datos, ADRs, diseño, hardware y gestión
 ```
 

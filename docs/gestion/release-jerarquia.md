@@ -82,7 +82,7 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
 5. Recrear la base dentro del contenedor `db` (con la misma colación que usa el proyecto):
    ```
    DROP DATABASE acceso;
-   CREATE DATABASE acceso CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+   CREATE DATABASE acceso CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
    Verificar que no quedan tablas y que el usuario `acceso` conserva sus permisos sobre la base.
 

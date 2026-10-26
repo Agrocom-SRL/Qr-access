@@ -4,46 +4,33 @@
 #
 # Los secretos viven en /opt/acceso/.env (fuera del repo, invariante 6); ver docs/gestion/produccion-variables.ejemplo.
 # TLS lo termina NPMplus (CT 107): acá todo es HTTP en la red privada 192.168.100.0/24.
-# Los datos viven en volúmenes con nombre: nunca se baja con -v.
+# La base NO está en este compose: es la MariaDB 10.11 compartida (DB_HOST en el .env, por IP de la red privada).
+# Los archivos viven en un volumen con nombre: nunca se baja con -v.
 
 services:
-  db:
-    image: mariadb:11.8
-    restart: unless-stopped
-    environment:
-      MARIADB_DATABASE: ${MYSQL_DATABASE}
-      MARIADB_USER: ${MYSQL_USER}
-      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      TZ: UTC
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_0900_ai_ci
-      # Las fechas se guardan en UTC (invariante 7).
-      - --default-time-zone=+00:00
-    # Sin `ports`: solo la API (y las herramientas) alcanzan la base, por la red interna de Docker.
-    volumes:
-      - datos-mariadb:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-
   dbmate:
     image: amacneil/dbmate:2
     profiles: ["herramientas"]
     environment:
-      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${DB_HOST}:${DB_PORT}/${MYSQL_DATABASE}
       DBMATE_MIGRATIONS_DIR: /db/migrations
       # No reescribir db/schema.sql en el servidor.
       DBMATE_NO_DUMP_SCHEMA: "true"
       DBMATE_WAIT: "true"
     volumes:
       - ./db:/db:ro
-    depends_on:
-      db:
-        condition: service_healthy
+
+  # Cliente `mariadb` contra la misma base que usa la API (DB_HOST). Lo usa bin/desplegar para los seeds.
+  cliente:
+    image: mariadb:10.11
+    profiles: ["herramientas"]
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    entrypoint: ["sh", "-c", 'exec mariadb -h"$$DB_HOST" -P"$$DB_PORT" -u"$$MYSQL_USER" -p"$$MYSQL_PASSWORD" --default-character-set=utf8mb4 "$$MYSQL_DATABASE"']
 
   api:
     build:
@@ -52,8 +39,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DB_HOST: db
-      DB_PORT: 3306
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
       DB_DATABASE: ${MYSQL_DATABASE}
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
@@ -68,9 +55,6 @@ services:
     volumes:
       - archivos:/archivos
     # Sin `ports`: se llega por el Nginx de `app` y de `panel` (mismo origen, sin CORS).
-    depends_on:
-      db:
-        condition: service_healthy
 
   # Panel del equipo AGROCOM (React): login del super admin. Es la cara de acceso.agrocom.com.bo.
   # NPMplus: acceso.agrocom.com.bo -> http://192.168.100.236:80
@@ -100,15 +84,12 @@ services:
     profiles: ["herramientas"]
     restart: unless-stopped
     environment:
-      PMA_HOST: db
+      PMA_HOST: ${DB_HOST}
+      PMA_PORT: ${DB_PORT}
       # Servidor fijo: nadie puede apuntar phpMyAdmin a otra base.
       PMA_ARBITRARY: 0
     ports:
       - "8082:80"
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
-  datos-mariadb:
   archivos:

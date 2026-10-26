@@ -115,7 +115,7 @@ if coincide '\bdocker([[:space:]]+|-)compose\b[^;&|]*\bdown\b[^;&|]*(-v|--volume
         decidir deny 'docker compose down -v elimina el volumen qr-access-db-data: se pierde la base de desarrollo entera. Solo se permite sobre un proyecto descartable (-p <nombre>-verif).'
 fi
 coincide '\bdocker[[:space:]]+volume[[:space:]]+(rm|prune)\b' &&
-    decidir deny 'Borrado de volumen Docker: se pierde la base de desarrollo.'
+    decidir ask 'Borrado de volumen Docker: se pierden sus datos (p. ej. la base de desarrollo). ¿Confirmas que es el volumen correcto?'
 coincide '\b(DROP[[:space:]]+(DATABASE|TABLE|SCHEMA)|TRUNCATE[[:space:]]+(TABLE[[:space:]]+)?[A-Za-z_`])' &&
     decidir deny 'DDL destructivo suelto. Todo cambio de esquema va en una migración versionada de db/migrations (ADR 0011).'
 

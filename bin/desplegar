@@ -16,15 +16,17 @@ set -a
 . "$ENV_ARCHIVO"
 set +a
 
+[ -n "${DB_HOST:-}" ] && [ -n "${DB_PORT:-}" ] || { echo "Faltan DB_HOST y DB_PORT en $ENV_ARCHIVO (la base es la MariaDB compartida)" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 compose() { docker compose -p acceso --env-file "$ENV_ARCHIVO" -f docker-compose.prod.yml "$@"; }
-mysql_en_db() { compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" --default-character-set=utf8mb4 "$MARIADB_DATABASE"'; }
+# Habla con la MariaDB compartida (DB_HOST del .env) con el usuario de la aplicación, no con root.
+mysql_en_db() { compose --profile herramientas run --rm -T cliente; }
 
 echo "==> Construyendo imágenes (api, app, panel)"
 compose build api app panel
 
-echo "==> Base de datos"
-compose up -d db
+echo "==> Base de datos (MariaDB compartida en $DB_HOST:$DB_PORT)"
 compose --profile herramientas run --rm dbmate up
 
 echo "==> Catálogo de permisos, rol y planes por defecto"
