@@ -28,6 +28,7 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'rol.permisos_excedidos' => l10n.comunErrorRolPermisosExcedidos,
     'plan.limite_usuarios' => l10n.comunErrorPlanLimiteUsuarios,
     'pin.sufijo_en_uso' => l10n.comunErrorPinSufijoEnUso,
+    'idempotencia.conflicto' => l10n.comunErrorIdempotenciaConflicto,
     'sitio.nombre_existente' => l10n.comunErrorSitioNombreExistente,
     'puerta.nombre_existente' => l10n.comunErrorPuertaNombreExistente,
     'sitio.con_puertas' => l10n.comunErrorSitioConPuertas,

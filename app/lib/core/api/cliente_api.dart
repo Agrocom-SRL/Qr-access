@@ -90,12 +90,15 @@ class ClienteApi {
   /// API calcula el fin del día local del sitio (ADR 0008).
   /// [reemplazar] pide otro QR propio aunque el vigente siga sin usar (la app
   /// perdió su token). Solo tiene efecto con [propio] (ADR 0030 §2.1.3).
+  /// [idempotencyKey] va en la cabecera `Idempotency-Key`: un reintento con la
+  /// misma clave y el mismo cuerpo recibe la misma respuesta (ADR 0031 §11).
   Future<QrGeneradoDto> generarQr({
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
     bool propio = false,
     bool reemplazar = false,
+    String? idempotencyKey,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
@@ -107,6 +110,9 @@ class ClienteApi {
           if (propio) 'propio': true,
           if (reemplazar) 'reemplazar': true,
         },
+        options: idempotencyKey == null
+            ? null
+            : Options(headers: {'Idempotency-Key': idempotencyKey}),
       );
       return QrGeneradoDto.desde(r.data!);
     });

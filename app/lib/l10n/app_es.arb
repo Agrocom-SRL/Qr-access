@@ -234,6 +234,10 @@
   "@comunErrorQrPropioEnCurso": {
     "description": "code qr.propio_en_curso (409): dos generaciones del QR propio a la vez"
   },
+  "comunErrorIdempotenciaConflicto": "Esa solicitud ya se envió con otros datos. Genera el QR de nuevo.",
+  "@comunErrorIdempotenciaConflicto": {
+    "description": "code idempotencia.conflicto (409): la clave de idempotencia ya se usó con otro cuerpo; se empieza una generación nueva"
+  },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
   "@comunErrorQrYaUsado": {
     "description": "code qr.ya_usado (409) al anular un QR"
