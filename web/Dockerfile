@@ -13,6 +13,8 @@ RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine AS web
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Cabeceras de seguridad (ADR 0033 §2): el snippet se incluye desde nginx.conf por ruta absoluta.
+COPY nginx/cabeceras-seguridad.conf /etc/nginx/snippets/cabeceras-seguridad.conf
 COPY --from=build /web/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --retries=5 CMD wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1

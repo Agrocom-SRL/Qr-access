@@ -22,6 +22,47 @@ Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y
 3. El push a `master` dispara `deploy.yml` en el runner del CT, que corre `bin/desplegar`.
 4. `bin/desplegar` es idempotente: migra, siembra el catálogo, crea `root` solo si no existe y espera a `/api/v1/salud`.
 
+## Borde: NPMplus, caché y cabeceras (ADR 0033 §2)
+
+Cada capa pone lo suyo, y ninguna repite lo de otra. NPMplus termina TLS y reenvía; el Nginx del CT 120 pone las cabeceras de sus propias respuestas; la API pone las de `/api/`.
+
+| Qué | Dónde | Valor |
+|---|---|---|
+| HSTS | NPMplus, pestaña SSL del host `acceso.agrocom.com.bo` | Activado con `max-age=31536000`. Subdominios: **no**, hasta confirmar que todos los de `agrocom.com.bo` sirven HTTPS (decisión pendiente). Preload: no. |
+| Caché del borde | NPMplus, el mismo host | «Cache Assets» (o la caché equivalente de NPMplus) **desactivado**, sin excepciones. Una ruta `/api/…/x.js` no puede quedar guardada si el borde cachea por extensión. |
+| `/api/` sin caché | API y Nginx del CT | La API responde `Cache-Control: no-store` y `Vary: Authorization`, también en los errores. El Nginx no tiene `proxy_cache`. NPMplus no debe ocultar ni reescribir `Cache-Control` (nada de `proxy_hide_header` ni `add_header` sobre `/api/`). |
+| CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` | Nginx del CT: `web/nginx/cabeceras-seguridad.conf` (panel) y `app/nginx/cabeceras-seguridad.conf` (app) | Por respuesta. NPMplus no las añade, para no duplicarlas. Si alguien añade cabeceras en la pestaña Advanced del host, que no repitan estas. |
+| Caché del panel | Nginx del CT | Solo `/assets/` (nombres con hash): un año, `immutable`, y solo en respuestas 2xx. El resto, `no-cache`. |
+| Límites de borde (`limit_req`, `limit_conn`, tope de cuerpo, timeouts; ADR 0030 §3) | NPMplus | Pendiente (ola W3). Sus valores se documentarán aquí cuando se fijen. |
+
+**Comprobación tras desplegar** (con la versión que incluye W1):
+
+```
+curl -sI https://acceso.agrocom.com.bo/api/v1/salud | grep -iE 'cache-control|strict-transport'   # no-store y HSTS
+curl -sI https://acceso.agrocom.com.bo/api/v1/no-existe.js                                       # sin caché del borde; nunca HTML del panel
+curl -sI https://acceso.agrocom.com.bo/assets/                                                   # sin X-Cache-Status ni Age de NPMplus
+```
+
+### Excepciones de la CSP de la app web
+
+La CSP de la app (`app/nginx/cabeceras-seguridad.conf`) es estricta, pero Flutter web 3.47.4 necesita cinco excepciones. Se probaron con Chrome headless y el build real: sin `wasm-unsafe-eval` o sin el CDN de canvaskit la app no pinta; sin el hash o sin `unsafe-inline` en estilos, el navegador bloquea ese bloque y lo reporta en consola. Las fuentes de respaldo no se probaron (la pantalla de ingreso no las usa).
+
+| Excepción | Motivo | Decisión pendiente |
+|---|---|---|
+| `script-src 'wasm-unsafe-eval'` | El renderer canvaskit compila `canvaskit.wasm`. Solo permite WebAssembly, no `eval` de JavaScript. | Ninguna. |
+| `script-src 'sha256-…'` | Hash del bloque inline `splash-screen-script` de `app/web/index.html`. Si se regenera el splash, cambia el hash: `bin/verificar-nginx app` falla y avisa. | Ninguna. |
+| `https://www.gstatic.com/flutter-canvaskit/` en `script-src` y `connect-src` | El motor carga canvaskit de su CDN por omisión; `flutter build web` no tiene opción para servirlo desde el propio sitio. | Autohospedar canvaskit con un `web/flutter_bootstrap.js` propio (`canvasKitBaseUrl`) y quitar la excepción. |
+| `connect-src https://fonts.gstatic.com/s/` | Fuentes de respaldo del motor para glifos que no están en las fuentes incluidas. Sin ella esos glifos no se ven. | Aceptar, o incluir las fuentes que hagan falta en `assets/`. |
+| `style-src 'unsafe-inline'` | El motor inserta sus propios estilos. Sin ella el navegador los bloquea y lo reporta en consola (la pantalla de ingreso se ve igual). No es excepción de script. | Quitarla si el motor admite nonce o hash para sus estilos. |
+
+### Cómo se prueba
+
+`bin/verificar-nginx panel` y `bin/verificar-nginx app` sirven la configuración real con el build (con Docker, la imagen `nginxinc/nginx-unprivileged` de los Dockerfile; sin Docker, el nginx del host) y comprueban: sintaxis, cabeceras, caché solo en `/assets/` y en 2xx, 404 para archivos inexistentes, fallback SPA solo para rutas sin extensión, la ausencia de script o estilo en línea en el panel y el hash del splash. Corren en `bin/verify` y en la CI (`ci.yml`, jobs `web` y `app`).
+
+### Pendiente: `X-Forwarded-Proto`
+
+El Nginx del CT envía `X-Forwarded-Proto $scheme`. Entre NPMplus y el CT el esquema es `http`, aunque el navegador use `https`. La API va a necesitar el valor público para la cookie `Secure` y la comprobación de `Origin` (ADR 0033 §5). Falta decidir cómo se pasa el valor que pone NPMplus.
+
 ## Primer arranque
 
 El `.env` se crea una vez en el CT (secretos aleatorios, `ADMIN_INICIAL_CLAVE` solo para el primer ingreso):

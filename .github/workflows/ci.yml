@@ -134,8 +134,12 @@ jobs:
         run: flutter analyze --fatal-infos
       - name: Tests (flutter test)
         run: flutter test
+      # --base-href como el Dockerfile: la prueba de nginx mide el mismo build que se publica
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --base-href=/app/
+      - name: Nginx de la app (cabeceras, rutas, hash del splash; ADR 0033 §2)
+        working-directory: .
+        run: bin/verificar-nginx app
 
   firmware:
     name: firmware
@@ -190,6 +194,9 @@ jobs:
         run: npm test
       - name: Build (Vite)
         run: npm run build
+      - name: Nginx del panel (cabeceras, caché, 404; ADR 0033 §2)
+        working-directory: .
+        run: bin/verificar-nginx panel
 
   ci:
     name: ci
