@@ -2,6 +2,7 @@ import rateLimit, { normalizeIP } from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { Config } from '../config.js';
 import { ErrorDeDominio } from '../platform/errores/error-de-dominio.js';
+import type { Principal } from '../platform/seguridad/principal.js';
 
 /**
  * Qué tipo de ruta es, a efectos del rate limit (ADR 0030 §3.2). Se declara por ruta con
@@ -66,6 +67,15 @@ function identidadDe(request: FastifyRequest): string {
   return `ip:${normalizeIP(request.ip)}`;
 }
 
+/** Qué puerta y qué dispositivo hay detrás de una petición del dispositivo, para el log. */
+export function datosDelDispositivo(
+  principal: Principal | undefined,
+): { dispositivoId: string; puertaId: string } | Record<string, never> {
+  return principal?.tipo === 'dispositivo'
+    ? { dispositivoId: principal.dispositivoId, puertaId: principal.puertaId }
+    : {};
+}
+
 /**
  * `@fastify/rate-limit` con la clase de cada ruta y una cuenta por (clase, identidad). Se
  * registra DESPUÉS de la autenticación para ver al principal. El contador vive en memoria:
@@ -94,8 +104,13 @@ export async function registrarLimites(app: FastifyInstance, config: Config): Pr
     keyGenerator: (request: FastifyRequest) => `${claseOSinClase(request)}|${identidadDe(request)}`,
     allowList: (request: FastifyRequest) => claseDe(request) === null,
     onExceeded: (request: FastifyRequest) => {
-      // Sin la clave: lleva la IP o el id del usuario y no hace falta en el log.
-      request.log.warn({ clase: claseDe(request) }, 'límite de uso excedido');
+      // Sin la clave: lleva la IP o el id del usuario y no hace falta en el log. De un dispositivo
+      // sí van su id y su puerta (no son secretos): sin ellos, un 429 en la puerta no deja rastro
+      // de cuál fue (invariante 4: el rechazo no llega a `eventos_acceso`).
+      request.log.warn(
+        { clase: claseDe(request), ...datosDelDispositivo(request.principal) },
+        'límite de uso excedido',
+      );
     },
     errorResponseBuilder: (_request, contexto) =>
       new ErrorDeDominio('limite.excedido', 429, {

@@ -44,4 +44,22 @@ describe('LimitadorDeIntentos', () => {
     expect(limitador.segundosDeBloqueo('otra')).toBeGreaterThan(0);
     expect(limitador.segundosDeBloqueo('k')).toBe(0);
   });
+
+  it('tiene un tope duro de claves: llena, olvida la menos reciente en vez de crecer', () => {
+    const limitador = new LimitadorDeIntentos({
+      maxFallos: 2,
+      bloqueoBaseSegundos: 60,
+      bloqueoMaximoSegundos: 60,
+      maxRegistros: 3,
+      reloj: () => 1_000_000,
+    });
+    for (const clave of ['a', 'b', 'c', 'd', 'e']) {
+      limitador.registrarFallo(clave);
+      limitador.registrarFallo(clave);
+    }
+    // Quedan las 3 más recientes, con su bloqueo; las 2 primeras se olvidaron.
+    expect(limitador.segundosDeBloqueo('a')).toBe(0);
+    expect(limitador.segundosDeBloqueo('b')).toBe(0);
+    for (const clave of ['c', 'd', 'e']) expect(limitador.segundosDeBloqueo(clave)).toBe(60);
+  });
 });

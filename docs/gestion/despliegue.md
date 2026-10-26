@@ -15,6 +15,18 @@ Un solo subdominio y un solo certificado: el panel ocupa la raíz (`/ingreso`) y
 - **Secretos:** `/opt/acceso/.env` en el CT (plantilla: `docs/gestion/produccion-variables.ejemplo`). Nunca en el repo.
 - **Runner:** servicio `actions.runner.Agrocom-SRL-Qr-access.acceso-120` (usuario `runner`, etiqueta `acceso-prod`).
 
+## IP del cliente y `TRUST_PROXY`
+
+La API saca la IP del cliente de `X-Forwarded-For` para el rate limit y los bloqueos por IP (ADR 0030 §3.2). `TRUST_PROXY` es un **número de saltos** (por omisión `1`) o una lista de IP/CIDR; nunca `true`, que la API rechaza al arrancar: confiaría en cualquier cabecera y quien la falsee elegiría su propia IP, evadiendo o agotando el límite de otro.
+
+Con `TRUST_PROXY=1` la API toma como cliente la **última** dirección de `X-Forwarded-For` (la que añadió el proxy inmediato). Por eso el Nginx que reenvía a la API debe **sobrescribir** la cabecera con la IP real, no añadirle:
+
+```
+proxy_set_header X-Forwarded-For $remote_addr;   # nunca $proxy_add_x_forwarded_for
+```
+
+En la cadena actual (NPMplus → Nginx del panel → Nginx de `app` → API) el Nginx del panel y el de `app` recuperan al cliente con `set_real_ip_from` + `real_ip_header X-Forwarded-For` (rangos privados: solo ellos pueden llegar ahí) y lo sobrescriben hacia el siguiente salto (`web/nginx.conf`, `app/nginx.conf`). NPMplus añade la IP del cliente con su comportamiento normal. Si cambias la cadena (otro proxy, otro salto), ajusta `set_real_ip_from` y `TRUST_PROXY` juntos; después comprueba que una petición con un `X-Forwarded-For` falseado no cambia la IP que la API registra para ti. Si la API quedara expuesta sin proxy, usa `TRUST_PROXY=0`.
+
 ## Flujo
 
 1. `git tag -a vX.Y.Z` sobre `develop` y `git push origin vX.Y.Z`.

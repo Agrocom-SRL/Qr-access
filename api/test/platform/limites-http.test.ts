@@ -156,15 +156,15 @@ describe('límites de uso de la API', () => {
   });
 
   it('la validación se protege del flood por credencial de dispositivo, sin consumir el QR y sin afectar a otro dispositivo', async () => {
-    const p = await abrir({ LIMITE_VALIDACION_POR_MINUTO: '3' });
-    const qrs = [];
-    for (let i = 0; i < 5; i += 1) {
-      qrs.push(await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]));
+    // 60 es el mínimo que admite la configuración: un lector que relee cada segundo no lo toca.
+    const p = await abrir({ LIMITE_VALIDACION_POR_MINUTO: '60' });
+    const usado = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+    const intacto = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+    // Las 60 lecturas del lector (la primera abre; las demás son `qr.usado`) pasan todas.
+    for (let i = 0; i < 60; i += 1) {
+      expect((await validar(p, a.dispositivoPrincipal, usado.texto)).statusCode).toBe(200);
     }
-    for (const qr of qrs.slice(0, 3)) {
-      expect((await validar(p, a.dispositivoPrincipal, qr.texto)).statusCode).toBe(200);
-    }
-    const excedido = await validar(p, a.dispositivoPrincipal, qrs[3]?.texto ?? '');
+    const excedido = await validar(p, a.dispositivoPrincipal, intacto.texto);
     expect(excedido.statusCode).toBe(429);
     expect(excedido.json()).toMatchObject({ code: 'limite.excedido' });
     expect(excedido.json()).not.toHaveProperty('abrir');
@@ -173,7 +173,7 @@ describe('límites de uso de la API', () => {
     // Falla segura: el 429 llegó antes de consumir nada ni de dejar un evento.
     const [filas] = await p.pool.query<RowDataPacket[]>(
       'SELECT usado_at FROM qr_accesos WHERE id = ?',
-      [qrs[3]?.id],
+      [intacto.id],
     );
     expect(filas[0]?.usado_at).toBeNull();
 

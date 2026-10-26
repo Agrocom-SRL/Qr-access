@@ -12,6 +12,17 @@ export class PoolSaturado extends Error {
   }
 }
 
+/**
+ * La petición agotó su tiempo máximo antes de confirmar la transacción: se deshizo en vez de
+ * confirmarla (ADR 0032 §2). Si el cliente aún escucha, recibe 503.
+ */
+export class PresupuestoAgotado extends Error {
+  constructor() {
+    super('Presupuesto de la petición agotado');
+    this.name = 'PresupuestoAgotado';
+  }
+}
+
 /** Códigos de mysql2/MariaDB que indican un bloqueo entre transacciones. */
 const CODIGOS_DE_BLOQUEO = new Set(['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT']);
 
@@ -21,8 +32,10 @@ function codigoDe(error: unknown): string | undefined {
 }
 
 /**
- * `ER_LOCK_DEADLOCK` o timeout de bloqueo: la base ya deshizo la transacción y repetirla puede
- * salir bien. Solo se reintenta lo idempotente (ADR 0032 §2).
+ * `ER_LOCK_DEADLOCK` o `ER_LOCK_WAIT_TIMEOUT`: repetir puede salir bien. Un deadlock deshace toda
+ * la transacción; un timeout de bloqueo, por omisión, solo la sentencia (`innodb_rollback_on_timeout`
+ * apagado). Da igual: el reintento siempre parte de un ROLLBACK explícito. Solo se reintenta lo
+ * idempotente (ADR 0032 §2).
  */
 export function esErrorDeBloqueo(error: unknown): boolean {
   const codigo = codigoDe(error);
@@ -39,11 +52,12 @@ function errnoDe(error: unknown): number | undefined {
 
 /**
  * ¿Es un fallo transitorio de capacidad, que se responde 503 con `Retry-After`? Pool saturado,
- * consulta que pasó `max_statement_time`, bloqueo que sobrevivió al reintento o petición que
+ * consulta que pasó `max_statement_time`, transacción sin confirmar por falta de tiempo, bloqueo que sobrevivió al reintento o petición que
  * pasó el tiempo máximo de Fastify.
  */
 export function esServicioNoDisponible(error: unknown): boolean {
-  if (error instanceof PoolSaturado || esErrorDeBloqueo(error)) return true;
+  if (error instanceof PoolSaturado || error instanceof PresupuestoAgotado) return true;
+  if (esErrorDeBloqueo(error)) return true;
   return (
     errnoDe(error) === ERRNO_CONSULTA_EXCEDIDA || codigoDe(error) === 'FST_ERR_HANDLER_TIMEOUT'
   );

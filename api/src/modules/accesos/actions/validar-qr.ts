@@ -31,13 +31,15 @@ export interface LecturaDelDispositivo {
  * un error HTTP de negocio, y deja SIEMPRE un `eventos_acceso` (invariante 4). Solo abre con
  * `abrir: true` cuando el consumo atómico del paso 7 tuvo éxito; ante cualquier duda, rechaza.
  * Las dos transacciones (rechazo y consumo) son idempotentes: ante un deadlock se repiten una
- * vez (ADR 0032 §2); si vuelve a fallar, el error sale como 503 y la puerta no abre.
+ * vez (ADR 0032 §2); si vuelve a fallar, el error sale como 503 y la puerta no abre. `señal` es la
+ * de la petición: vencida, el consumo se deshace en vez de confirmarse.
  */
 export async function ejecutar(
   pool: Pool,
   dispositivo: PrincipalDispositivo,
   lectura: LecturaDelDispositivo,
   ahora: Date = new Date(),
+  señal?: AbortSignal,
 ): Promise<ResultadoDeValidacion> {
   const [puerta] = await crearServicioDeOrganizacion(pool).buscarPuertas([dispositivo.puertaId]);
   // Un dispositivo sin puerta no puede registrar un evento ni abrir: falla segura.
@@ -96,21 +98,28 @@ export async function ejecutar(
   if (motivo !== null) return rechazar(motivo, tokenHash, qr.id);
 
   // 7. Consumo atómico + evento "permitido" en la MISMA transacción: si el evento no queda,
-  // el consumo se deshace y la puerta no abre.
-  const eventoId = await enTransaccionIdempotente(pool, async (tx) => {
-    const consumido = await qrs.consumir(tx, qr.id, dispositivo.dispositivoId, ahora);
-    if (!consumido) return null;
-    return eventos.registrar(tx, {
-      puertaId: dispositivo.puertaId,
-      dispositivoId: dispositivo.dispositivoId,
-      qrAccesoId: qr.id,
-      tokenHash,
-      resultado: 'permitido',
-      motivoCode: MOTIVO_PERMITIDO,
-      ocurridoAt: ahora,
-      leidoEnDispositivoAt: lectura.leidoEn,
-    });
-  });
+  // el consumo se deshace y la puerta no abre. Con la señal de la petición vencida (la placa ya
+  // no espera) no se reintenta ni se hace COMMIT: el QR queda sin consumir y la puerta cerrada.
+  // Riesgo residual: un COMMIT confirmado justo antes del vencimiento cuya respuesta no llega;
+  // lo cubre la ventana de repetición (ADR 0032 §2 y §3).
+  const eventoId = await enTransaccionIdempotente(
+    pool,
+    async (tx) => {
+      const consumido = await qrs.consumir(tx, qr.id, dispositivo.dispositivoId, ahora);
+      if (!consumido) return null;
+      return eventos.registrar(tx, {
+        puertaId: dispositivo.puertaId,
+        dispositivoId: dispositivo.dispositivoId,
+        qrAccesoId: qr.id,
+        tokenHash,
+        resultado: 'permitido',
+        motivoCode: MOTIVO_PERMITIDO,
+        ocurridoAt: ahora,
+        leidoEnDispositivoAt: lectura.leidoEn,
+      });
+    },
+    { ...(señal === undefined ? {} : { señal }) },
+  );
   if (eventoId !== null) {
     return {
       abrir: true,
