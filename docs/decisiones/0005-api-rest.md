@@ -28,3 +28,5 @@ Detalle operativo: skill `api-rest`.
 
 - `api-rest` (agente) revisa todo cambio de esquema antes de que `backend` lo implemente.
 - Un test compara el OpenAPI generado con el último publicado y falla ante un cambio incompatible en `v1` (pendiente de implementar con la primera versión de la API).
+
+**Enmienda 2026-10-26.** Usar `.strictObject` en los cuerpos de entrada (campos de más, 400 `validacion.invalida`) es una excepción aceptada de endurecimiento de la entrada (ADR 0033 §2), no un cambio incompatible: solo rechaza lo que el contrato nunca definió. `cuerpoDeMiPerfil` y `cuerpoDeEdicionDeUsuario` siguen sin `strict` por sus tests de mass-assignment; queda pendiente para una ola posterior. Ampliar un campo para aceptar `null` (p. ej. `tipo_cuenta` en la cuenta de cobro nueva) es una ampliación compatible.

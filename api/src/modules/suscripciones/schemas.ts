@@ -142,7 +142,8 @@ export const cuerpoDeCuentaDeCobroNueva = z.strictObject({
   banco: esquemaBanco,
   titular: textoOpcional(120).optional(),
   numero_cuenta: textoOpcional(40).optional(),
-  tipo_cuenta: esquemaTipoDeCuenta.optional(),
+  // `null` se acepta porque el panel lo envía cuando no hay tipo (ampliación compatible).
+  tipo_cuenta: esquemaTipoDeCuenta.nullable().optional(),
   imagen_id: esquemaId.optional(),
   nota: textoOpcional(200).optional(),
 });

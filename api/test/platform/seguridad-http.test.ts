@@ -1,6 +1,7 @@
 import { Writable } from 'node:stream';
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { LIMITE_BODY_BYTES } from '../../src/platform/http/constantes.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
 import {
@@ -54,6 +55,13 @@ describe('seguridad HTTP de la API (ADR 0033 §2)', () => {
     });
     prueba.app.post('/api/v1/prueba/registra', { config: { acceso: 'publica' } }, (request) => {
       request.log.info({ body: request.body, req: { body: request.body } }, 'cuerpo recibido');
+      return { ok: true };
+    });
+    // Un error de SQL real, con un valor marcador como parámetro y dentro del texto.
+    prueba.app.get('/api/v1/prueba/sql-falla', { config: { acceso: 'publica' } }, async () => {
+      await prueba.pool.query('SELECT columna_inexistente_zz FROM cuentas WHERE codigo = ?', [
+        'MARCADOR-SQL-SECRETO-77',
+      ]);
       return { ok: true };
     });
     await prueba.app.ready();
@@ -131,6 +139,47 @@ describe('seguridad HTTP de la API (ADR 0033 §2)', () => {
         .toLowerCase()
         .split(/\s*,\s*/);
       expect(vary.filter((v) => v === 'authorization')).toHaveLength(1);
+    });
+  });
+
+  describe('cabeceras en errores previos al enrutamiento', () => {
+    it('400: URL mal formada', async () => {
+      const respuesta = await prueba.app.inject({ method: 'GET', url: '/api/v1/%zz' });
+      expect(respuesta.statusCode).toBe(400);
+      exigirCabeceras(respuesta.headers);
+    });
+
+    it('413: cuerpo mayor que el límite', async () => {
+      const respuesta = await prueba.app.inject({
+        method: 'POST',
+        url: '/api/v1/prueba/registra',
+        payload: { relleno: 'x'.repeat(LIMITE_BODY_BYTES + 1) },
+      });
+      expect(respuesta.statusCode).toBe(413);
+      exigirCabeceras(respuesta.headers);
+      expect(respuesta.json()).toMatchObject({ code: 'solicitud.demasiado_grande' });
+    });
+
+    it('400: JSON inválido', async () => {
+      const respuesta = await prueba.app.inject({
+        method: 'POST',
+        url: '/api/v1/prueba/registra',
+        headers: { 'content-type': 'application/json' },
+        payload: '{"a":',
+      });
+      expect(respuesta.statusCode).toBe(400);
+      exigirCabeceras(respuesta.headers);
+    });
+
+    it('415: Content-Type no soportado', async () => {
+      const respuesta = await prueba.app.inject({
+        method: 'POST',
+        url: '/api/v1/prueba/registra',
+        headers: { 'content-type': 'application/x-no-existe' },
+        payload: 'abc',
+      });
+      expect(respuesta.statusCode).toBe(415);
+      exigirCabeceras(respuesta.headers);
     });
   });
 
@@ -370,6 +419,15 @@ describe('seguridad HTTP de la API (ADR 0033 §2)', () => {
         expect(log.texto).not.toContain(secreto);
       }
       expect(log.texto).toContain('[redactado]');
+    });
+
+    it('un error de SQL no deja el SQL, sus parámetros ni el mensaje en el log', async () => {
+      log.texto = '';
+      const respuesta = await prueba.app.inject({ method: 'GET', url: '/api/v1/prueba/sql-falla' });
+      expect(respuesta.statusCode).toBe(500);
+      expect(log.texto).toContain('error no controlado');
+      expect(log.texto).not.toContain('MARCADOR-SQL-SECRETO-77');
+      expect(log.texto).not.toContain('columna_inexistente_zz');
     });
 
     it('la cabecera Authorization no se registra', async () => {

@@ -142,6 +142,7 @@ export abstract class RepositorioBase {
       this.tabla.nombre,
       'AS t',
       consulta.uniones ?? '',
+      // eslint-disable-next-line no-restricted-syntax -- `donde` son fragmentos internos con `?`; los valores van aparte en `params`.
       donde.length > 0 ? `WHERE ${donde.join(' AND ')}` : '',
     ];
     const params = [...base.params, ...(consulta.params ?? [])];
@@ -330,6 +331,7 @@ export abstract class RepositorioBase {
         'UPDATE',
         this.tabla.nombre,
         'SET deleted_at = ?, deleted_by = ?',
+        // eslint-disable-next-line no-restricted-syntax -- `donde` se arma con fragmentos internos del repositorio (alcance de cuenta e `id = ?`); ningún valor del usuario entra en el texto.
         `WHERE ${[...base.sql, 'id = ?'].join(' AND ')}`,
       ].join(' '),
       [new Date(), ContextoCuenta.actual()?.usuarioId ?? null, ...base.params, id],

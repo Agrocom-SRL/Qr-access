@@ -40,6 +40,8 @@ Verificado en el código (2026-10-23).
 | **Aislamiento entre cuentas** | Contexto + repositorio base que falla cerrado; test de aislamiento por endpoint | Un test global que **recorra todas las rutas del OpenAPI** y falle si alguna con datos de cuenta no tiene su prueba cuenta A → B = 404 |
 | **Permisos mínimos en la base** | ADR 0007 lo declara | Verificar que el usuario de la API no tenga `UPDATE`/`DELETE` sobre `eventos_acceso` ni `bitacoras` en producción |
 
+**Enmienda 2026-10-26 (entrada estricta).** Los cuerpos con `.strictObject` (rechazan campos de más con 400) son una excepción aceptada de endurecimiento de la entrada: cierran el mass-assignment sin cambiar el contrato de los campos válidos. `cuerpoDeMiPerfil` y `cuerpoDeEdicionDeUsuario` siguen sin `strict` por sus tests de mass-assignment actuales; pasarlos a estricto queda pendiente para una ola posterior.
+
 ### 3. Autoadministración por cuenta (SaaS)
 
 Cada cuenta administra **todo lo suyo** sin intervención de AGROCOM, siempre dentro de su rama y de su cuenta (invariante 1):

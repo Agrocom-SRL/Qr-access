@@ -14,7 +14,7 @@ const CODIGOS_FASTIFY: Readonly<Record<number, string>> = {
   429: 'solicitud.demasiadas',
 };
 
-function enviarProblema(
+export function enviarProblema(
   reply: FastifyReply,
   status: number,
   code: string,
