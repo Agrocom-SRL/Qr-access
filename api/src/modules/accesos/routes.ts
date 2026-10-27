@@ -4,6 +4,7 @@ import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
+import { presupuestoDePeticion } from '../../platform/http/presupuesto.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as anularMasivo } from './actions/anular-masivo.js';
 import { ejecutar as anularQr } from './actions/anular-qr.js';
@@ -332,14 +333,15 @@ export function rutas({
         config: { acceso: 'dispositivo', limite: 'validacion' },
         handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
-      (request) =>
+      (request, reply) =>
         validarQr(
           poolDispositivos,
           dispositivoDe(request),
           { texto: request.body.token, leidoEn: leerHoraDelDispositivo(request.body.leido_en) },
           new Date(),
-          // Vence con el tiempo máximo de la petición: sin COMMIT si la placa ya no espera.
-          request.signal,
+          // Plazo propio o desconexión real del cliente: sin COMMIT si la placa ya no espera.
+          // Nunca `request.signal` (se aborta al leer el cuerpo en Node 22; ver presupuesto.ts).
+          presupuestoDePeticion(reply, config.PETICION_MS_DISPOSITIVOS),
         ),
     );
 
