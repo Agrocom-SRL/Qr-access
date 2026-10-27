@@ -28,7 +28,11 @@
     "placa_desaparecida": "A board went missing",
     "placa_lector_sin_respuesta": "A board's reader does not respond",
     "placa_recuperada": "A board is reporting again",
-    "apertura_fallida": "A door does not open after several tries"
+    "apertura_fallida": "A door does not open after several tries",
+    "senal_uso": "A QR has unusual use",
+    "bolsa_aviso": "An account's QR quota reached the warning level",
+    "bolsa_superada": "An account exceeded its QR quota for the month",
+    "flujo_atipico": "A day of openings was unusual"
   },
   "detalle": {
     "aperturasFallidas_one": "{{count}} opening not confirmed",
@@ -52,5 +56,22 @@
       "texto": "When a board stops reporting or a door does not open, the alert shows up here."
     }
   },
-  "cuentaDelGrupo": "{{codigo}} · {{nombre}}"
+  "cuentaDelGrupo": "{{codigo}} · {{nombre}}",
+  "senal": {
+    "usuario": "User: {{usuario}}",
+    "usuarioSinNombre": "User without name",
+    "medido": "Measured: {{valor}}; threshold: {{umbral}}",
+    "dia": "Day {{dia}}"
+  },
+  "bolsa": {
+    "usado": "{{usado}} of {{tope}} QR in {{mes}}",
+    "sinCifras": "Quota for {{mes}}: this warning has no figures"
+  },
+  "flujo": {
+    "aperturas": "{{aperturas}} openings with {{usuarios}} active users",
+    "porUsuario": "{{porUsuario}} per user (threshold: {{umbral}})",
+    "base": "Usual baseline: {{base}} openings",
+    "sinBase": "No usual baseline yet",
+    "dia": "Day {{dia}}"
+  }
 }

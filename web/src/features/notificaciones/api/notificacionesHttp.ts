@@ -2,6 +2,9 @@ import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import { paginadoDesde, type ListadoDto } from '../../../shared/api/tipos';
 import {
   CAUSAS_DE_APERTURA,
+  type BolsaDeAviso,
+  type FlujoDeAviso,
+  type SenalDeUso,
   POR_PAGINA_DE_NOTIFICACIONES,
   type CausaDeApertura,
   type Notificacion,
@@ -30,6 +33,25 @@ interface NotificacionDto {
     cuenta: { id: string; codigo: string; nombre: string };
     sitio: { id: string; nombre: string } | null;
     placas: PlacaDto[];
+    senal?: {
+      tipo: SenalDeUso['tipo'];
+      usuario_id: string;
+      usuario_etiqueta: string | null;
+      gravedad: SenalDeUso['gravedad'];
+      incidente_id: string | null;
+      dia: string;
+      valor: number;
+      umbral: number;
+    };
+    bolsa?: { mes: string; dia: string; usado: number | null; tope: number | null };
+    flujo?: {
+      dia: string;
+      aperturas: number;
+      usuarios_activos: number;
+      por_usuario: number;
+      umbral_por_usuario: number;
+      base: number | null;
+    };
   };
   novedad_at: string;
   creada_at: string;
@@ -40,7 +62,23 @@ function causaConocida(texto: string | null | undefined): CausaDeApertura | null
   return CAUSAS_DE_APERTURA.find((causa) => causa === texto) ?? null;
 }
 
+/** Lo que mide una señal de uso, como lo manda la API (sin secretos). */
+function senalDesdeDto(dto: NonNullable<NotificacionDto['datos']['senal']>): SenalDeUso {
+  return {
+    tipo: dto.tipo,
+    usuarioId: dto.usuario_id,
+    usuarioEtiqueta: dto.usuario_etiqueta,
+    gravedad: dto.gravedad,
+    incidenteId: dto.incidente_id,
+    dia: dto.dia,
+    valor: dto.valor,
+    umbral: dto.umbral,
+  };
+}
+
 export function notificacionDesdeDto(dto: NotificacionDto): Notificacion {
+  const bolsa = dto.datos.bolsa;
+  const flujo = dto.datos.flujo;
   return {
     id: dto.id,
     tipo: dto.tipo,
@@ -56,6 +94,25 @@ export function notificacionDesdeDto(dto: NotificacionDto): Notificacion {
       fallos: placa.fallos ?? null,
       causa: causaConocida(placa.causa),
     })),
+    senal: dto.datos.senal ? senalDesdeDto(dto.datos.senal) : undefined,
+    bolsa: bolsa
+      ? ({
+          mes: bolsa.mes,
+          dia: bolsa.dia,
+          usado: bolsa.usado,
+          tope: bolsa.tope,
+        } satisfies BolsaDeAviso)
+      : undefined,
+    flujo: flujo
+      ? ({
+          dia: flujo.dia,
+          aperturas: flujo.aperturas,
+          usuariosActivos: flujo.usuarios_activos,
+          porUsuario: flujo.por_usuario,
+          umbralPorUsuario: flujo.umbral_por_usuario,
+          base: flujo.base,
+        } satisfies FlujoDeAviso)
+      : undefined,
     novedadEn: new Date(dto.novedad_at),
     creadaEn: new Date(dto.creada_at),
   };

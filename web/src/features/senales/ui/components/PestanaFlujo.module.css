@@ -1,0 +1,30 @@
+.pestana {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+}
+
+.ayuda {
+  margin: 0 0 var(--esp8);
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+  line-height: var(--interlineadoCuerpo);
+}
+
+.segmentados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp12);
+  margin-bottom: var(--esp16);
+}
+
+.enlace {
+  color: var(--texto);
+  font-weight: var(--peso600);
+  text-decoration: none;
+}
+
+.enlace:hover {
+  color: var(--primario);
+  text-decoration: underline;
+}

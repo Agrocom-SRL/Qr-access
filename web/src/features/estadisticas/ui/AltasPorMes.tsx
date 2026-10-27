@@ -2,9 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { TarjetaGrafica } from '../../../shared/ui/organisms/TarjetaGrafica';
 import type { Estadisticas } from '../domain/estadisticas';
-import { ALTO_DE_GRAFICA, ESTILO_DE_EJE, sinAnimacion } from './ejes';
+import { ALTO_DE_GRAFICA, ESTILO_DE_EJE, sinAnimacion } from '../../../shared/lib/graficas';
 import { etiquetaDeMes } from './formatoDeSeries';
-import { TooltipGrafica } from './TooltipGrafica';
+import { TooltipGrafica } from '../../../shared/ui/organisms/TooltipGrafica';
 
 /** Cuentas nuevas por mes en el último año. */
 export function AltasPorMes({

@@ -28,7 +28,11 @@
     "placa_desaparecida": "Una placa desapareció",
     "placa_lector_sin_respuesta": "El lector de una placa no responde",
     "placa_recuperada": "Una placa volvió a reportar",
-    "apertura_fallida": "Una puerta no abre tras varios intentos"
+    "apertura_fallida": "Una puerta no abre tras varios intentos",
+    "senal_uso": "Un QR tiene un uso fuera de lo normal",
+    "bolsa_aviso": "La bolsa de QR de una cuenta llegó al aviso",
+    "bolsa_superada": "Una cuenta superó su bolsa de QR del mes",
+    "flujo_atipico": "Un día de accesos fue atípico"
   },
   "detalle": {
     "aperturasFallidas_one": "{{count}} apertura sin confirmar",
@@ -52,5 +56,22 @@
       "texto": "Cuando una placa deje de reportar o una puerta no abra, el aviso aparece aquí."
     }
   },
-  "cuentaDelGrupo": "{{codigo}} · {{nombre}}"
+  "cuentaDelGrupo": "{{codigo}} · {{nombre}}",
+  "senal": {
+    "usuario": "Usuario: {{usuario}}",
+    "usuarioSinNombre": "Usuario sin nombre",
+    "medido": "Medido: {{valor}}; umbral: {{umbral}}",
+    "dia": "Día {{dia}}"
+  },
+  "bolsa": {
+    "usado": "{{usado}} de {{tope}} QR en {{mes}}",
+    "sinCifras": "Cuota de {{mes}}: este aviso no trae las cifras"
+  },
+  "flujo": {
+    "aperturas": "{{aperturas}} aperturas con {{usuarios}} usuarios activos",
+    "porUsuario": "{{porUsuario}} por usuario (umbral: {{umbral}})",
+    "base": "Base habitual: {{base}} aperturas",
+    "sinBase": "Sin base habitual todavía",
+    "dia": "Día {{dia}}"
+  }
 }

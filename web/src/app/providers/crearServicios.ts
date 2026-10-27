@@ -4,6 +4,7 @@ import { crearBitacoraHttp, type BitacoraRepositorio } from '../../features/bita
 import { crearCobroHttp, type CobroRepositorio } from '../../features/cobro';
 import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuentas';
 import { crearEventosHttp, type EventosRepositorio } from '../../features/eventos';
+import { crearLimitesHttp, type LimitesRepositorio } from '../../features/limites';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
 import {
   crearNotificacionesHttp,
@@ -19,6 +20,7 @@ import {
 } from '../../features/suscripciones';
 import { crearResumenHttp, type ResumenRepositorio } from '../../features/resumen';
 import { crearSeguridadHttp, type SeguridadRepositorio } from '../../features/seguridad';
+import { crearSenalesHttp, type SenalesRepositorio } from '../../features/senales';
 
 /** Todo lo inyectable de la aplicación: en producción son las implementaciones HTTP; en tests, mocks. */
 export interface Servicios {
@@ -36,6 +38,8 @@ export interface Servicios {
   notificaciones: NotificacionesRepositorio;
   resumen: ResumenRepositorio;
   estadisticas: EstadisticasRepositorio;
+  limites: LimitesRepositorio;
+  senales: SenalesRepositorio;
 }
 
 /** Compone las implementaciones HTTP sobre un único cliente y almacén de sesión. */
@@ -60,5 +64,7 @@ export function crearServicios(
     notificaciones: crearNotificacionesHttp(cliente),
     resumen: crearResumenHttp(cliente),
     estadisticas: crearEstadisticasHttp(cliente),
+    limites: crearLimitesHttp(cliente),
+    senales: crearSenalesHttp(cliente),
   };
 }

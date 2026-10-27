@@ -16,6 +16,20 @@ import type { CobroRepositorio, CuentaDeCobro } from '@/features/cobro';
 import type { PlanesRepositorio } from '@/features/planes';
 import type { SeguridadRepositorio } from '@/features/seguridad';
 import type { Servicios } from '@/app/providers/crearServicios';
+import type {
+  ConsumoDeCuenta,
+  DetalleDeConsumo,
+  LimitesRepositorio,
+  ListadoDeConsumo,
+} from '@/features/limites';
+import type {
+  SenalesRepositorio,
+  ResumenDeSenales,
+  SenalDeAbuso,
+  DetalleDeFlujo,
+  ListadoDeFlujo,
+} from '@/features/senales';
+import type { Paginado } from '@/shared/api/tipos';
 
 export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
   {
@@ -570,6 +584,173 @@ export const COBRANZA = {
   ],
 };
 
+/** Consumo de la bolsa del mes: una cuenta en aviso, una superada y una sin bolsa. */
+const CONSUMO_AGR: ConsumoDeCuenta = {
+  cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+  plan: '100 usuarios',
+  usado: 92,
+  tope: 100,
+  porcentaje: 92,
+  estado: 'aviso',
+  origenDelTope: 'plan',
+  avisoEn: new Date('2026-10-22T14:00:00Z'),
+  superadaEn: null,
+};
+
+export const CONSUMO: ListadoDeConsumo = {
+  elementos: [
+    {
+      cuenta: { id: '2', codigo: 'FRO', nombre: 'Frigorífico Oriente' },
+      plan: '200 usuarios',
+      usado: 230,
+      tope: 200,
+      porcentaje: 115,
+      estado: 'superada',
+      origenDelTope: 'excepcion',
+      avisoEn: new Date('2026-10-20T14:00:00Z'),
+      superadaEn: new Date('2026-10-25T13:00:00Z'),
+    },
+    CONSUMO_AGR,
+    {
+      cuenta: { id: '3', codigo: 'SDE', nombre: 'Semillas del Este' },
+      plan: null,
+      usado: 12,
+      tope: null,
+      porcentaje: null,
+      estado: 'sin_tope',
+      origenDelTope: null,
+      avisoEn: null,
+      superadaEn: null,
+    },
+  ],
+  pagina: 1,
+  porPagina: 25,
+  total: 3,
+  mes: '2026-10',
+  avisoPorcentaje: 80,
+  porEstado: { normal: 0, aviso: 1, superada: 1, sin_tope: 1 },
+};
+
+export const DETALLE_CONSUMO: DetalleDeConsumo = {
+  ...CONSUMO_AGR,
+  mes: '2026-10',
+  desde: new Date('2026-10-01T04:00:00Z'),
+  avisoPorcentaje: 80,
+  serie: [
+    { dia: '2026-10-01', generados: 4 },
+    { dia: '2026-10-02', generados: 0 },
+    { dia: '2026-10-03', generados: 9 },
+  ],
+};
+
+const CUENTA_AGR = { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' };
+
+/** Dos señales abiertas: un uso masivo y un QR reenviado (los códigos tal como los manda la API). */
+export const SENALES_DE_ABUSO: SenalDeAbuso[] = [
+  {
+    id: '901',
+    cuenta: CUENTA_AGR,
+    usuario: { id: '31', etiqueta: 'Jorge Rivero' },
+    tipo: 'uso_masivo',
+    gravedad: 'media',
+    descripcion: 'aperturas=13;umbral=12',
+    estado: 'sin_resolver',
+    ocurridaEn: new Date('2026-10-26T15:00:00Z'),
+  },
+  {
+    id: '902',
+    cuenta: { id: '2', codigo: 'FRO', nombre: 'Frigorífico Oriente' },
+    usuario: { id: '41', etiqueta: null },
+    tipo: 'qr_reenviado',
+    gravedad: 'alta',
+    descripcion: 'qrs=2;rechazos=5;lectores=3;minimo=3',
+    estado: 'pendiente',
+    ocurridaEn: new Date('2026-10-27T12:00:00Z'),
+  },
+];
+
+export const RESUMEN_DE_SENALES: ResumenDeSenales = {
+  dias: 7,
+  total: 7,
+  abiertas: 5,
+  porTipo: [{ tipo: 'uso_masivo', total: 4, abiertas: 3, altas: 1 }],
+  cuentas: [{ cuenta: CUENTA_AGR, total: 4, abiertas: 3, altas: 1 }],
+};
+
+/** Flujo de hoy: una cuenta atípica (con base) y otra normal sin historia. */
+export const FLUJO: ListadoDeFlujo = {
+  elementos: [
+    {
+      cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+      usuariosActivos: 2,
+      umbrales: { aperturasMinimo: 50, aperturasPorUsuario: 25 },
+      aperturasHoy: 60,
+      porUsuarioHoy: 30,
+      atipicaHoy: true,
+      aperturasPeriodo: 130,
+      diasAtipicos: 2,
+      ultimoDiaAtipico: '2026-10-27',
+      base: 12.5,
+    },
+    {
+      cuenta: { id: '2', codigo: 'FRO', nombre: 'Frigorífico Oriente' },
+      usuariosActivos: 40,
+      umbrales: { aperturasMinimo: 50, aperturasPorUsuario: 25 },
+      aperturasHoy: 9,
+      porUsuarioHoy: 0.2,
+      atipicaHoy: false,
+      aperturasPeriodo: 40,
+      diasAtipicos: 0,
+      ultimoDiaAtipico: null,
+      base: null,
+    },
+  ],
+  pagina: 1,
+  porPagina: 15,
+  total: 2,
+  dias: 7,
+  hoy: '2026-10-27',
+};
+
+export const DETALLE_FLUJO: DetalleDeFlujo = {
+  cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+  usuariosActivos: 2,
+  umbrales: { aperturasMinimo: 50, aperturasPorUsuario: 25 },
+  zonaHoraria: 'America/La_Paz',
+  serie: [
+    {
+      dia: '2026-10-25',
+      aperturas: 10,
+      rechazos: 1,
+      generados: 8,
+      porUsuario: 5,
+      atipico: false,
+      base: 11,
+      vecesLaBase: 0.9,
+    },
+    {
+      dia: '2026-10-26',
+      aperturas: 12,
+      rechazos: 0,
+      generados: 9,
+      porUsuario: 6,
+      atipico: false,
+      base: 11.5,
+      vecesLaBase: 1,
+    },
+    {
+      dia: '2026-10-27',
+      aperturas: 60,
+      rechazos: 2,
+      generados: 40,
+      porUsuario: 30,
+      atipico: true,
+      base: 12.5,
+      vecesLaBase: 4.8,
+    },
+  ],
+};
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
@@ -586,6 +767,8 @@ export function crearServiciosDePrueba(
     bitacora?: Partial<BitacoraRepositorio>;
     resumen?: Partial<ResumenRepositorio>;
     estadisticas?: Partial<EstadisticasRepositorio>;
+    limites?: Partial<LimitesRepositorio>;
+    senales?: Partial<SenalesRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -773,6 +956,25 @@ export function crearServiciosDePrueba(
     obtener: () => Promise.resolve(ESTADISTICAS),
     ...parcial.estadisticas,
   };
+  const limites: LimitesRepositorio = {
+    listarConsumo: () => Promise.resolve(CONSUMO),
+    consumoDeCuenta: () => Promise.resolve(DETALLE_CONSUMO),
+    ...parcial.limites,
+  };
+  const senales: SenalesRepositorio = {
+    listarSenales: () =>
+      Promise.resolve<Paginado<SenalDeAbuso>>({
+        elementos: SENALES_DE_ABUSO,
+        pagina: 1,
+        porPagina: 20,
+        total: SENALES_DE_ABUSO.length,
+      }),
+    resumen: () => Promise.resolve(RESUMEN_DE_SENALES),
+    opcionesDeCuenta: () => Promise.resolve([CUENTA_AGR]),
+    listarFlujo: () => Promise.resolve(FLUJO),
+    flujoDeCuenta: () => Promise.resolve(DETALLE_FLUJO),
+    ...parcial.senales,
+  };
   return {
     almacen,
     seguridad,
@@ -788,6 +990,8 @@ export function crearServiciosDePrueba(
     notificaciones,
     resumen,
     estadisticas,
+    limites,
+    senales,
   };
 }
 

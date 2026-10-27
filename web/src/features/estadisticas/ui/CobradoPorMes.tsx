@@ -3,9 +3,9 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { formatearMonto } from '../../../l10n/formatos';
 import { TarjetaGrafica } from '../../../shared/ui/organisms/TarjetaGrafica';
 import type { Estadisticas } from '../domain/estadisticas';
-import { ALTO_DE_GRAFICA, ESTILO_DE_EJE, sinAnimacion } from './ejes';
+import { ALTO_DE_GRAFICA, ESTILO_DE_EJE, sinAnimacion } from '../../../shared/lib/graficas';
 import { etiquetaDeMes, montoCompacto } from './formatoDeSeries';
-import { TooltipGrafica } from './TooltipGrafica';
+import { TooltipGrafica } from '../../../shared/ui/organisms/TooltipGrafica';
 
 /** Lo cobrado cada mes en el último año: una columna por mes, un solo color (la magnitud es el dato). */
 export function CobradoPorMes({

@@ -99,3 +99,39 @@ export function formatearTranscurrido(
   if (segundos < 86_400) return relativo.format(-Math.floor(segundos / 3600), 'hour');
   return relativo.format(-Math.floor(segundos / 86_400), 'day');
 }
+
+/** Porcentaje con un decimal como máximo (`85,5 %`): el valor ya viene en escala 0–100. */
+export function formatearPorcentaje(valor: number, idioma = idiomaActivo()): string {
+  return new Intl.NumberFormat(localeDe(idioma), {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(valor / 100);
+}
+
+/**
+ * `aaaa-mm-dd` del calendario de la plataforma, como `12/10`. Es una fecha de calendario, no un
+ * instante: se formatea en UTC para que el día 1 no caiga en el mes anterior.
+ */
+export function formatearDiaCalendario(dia: string, idioma = idiomaActivo()): string {
+  const [anio = 0, mes = 1, numero = 1] = dia.split('-').map(Number);
+  return new Intl.DateTimeFormat(localeDe(idioma), {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(anio, mes - 1, numero)));
+}
+
+/** `aaaa-mm` como nombre del mes y año (`octubre de 2026`), en el idioma activo. */
+export function formatearMes(mes: string, idioma = idiomaActivo()): string {
+  const [anio = 0, numero = 1] = mes.split('-').map(Number);
+  return new Intl.DateTimeFormat(localeDe(idioma), {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(anio, numero - 1, 1)));
+}
+
+/** Cifra con hasta un decimal (`3,2`), para promedios como las aperturas por usuario. */
+export function formatearDecimal(valor: number, idioma = idiomaActivo()): string {
+  return new Intl.NumberFormat(localeDe(idioma), { maximumFractionDigits: 1 }).format(valor);
+}

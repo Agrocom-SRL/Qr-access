@@ -9,6 +9,7 @@ import {
   type PlacaDeNotificacion,
   type Severidad,
 } from '../../domain/notificacion';
+import { lineasDeAviso } from '../lineasDeAviso';
 import styles from './TarjetaDeNotificacion.module.css';
 
 /** Tono e ícono de cada severidad; el texto de la severidad siempre va con ellos. */
@@ -47,7 +48,8 @@ export function TarjetaDeNotificacion({
   onLeer,
   onDescartar,
 }: Props) {
-  const { t } = useTranslation(['notificaciones', 'eventos', 'comun']);
+  const { t, i18n } = useTranslation(['notificaciones', 'eventos', 'comun', 'senales']);
+  const lineasDelAviso = lineasDeAviso(notificacion, t, i18n.language);
   const { tono, icono } = ESTILO[notificacion.severidad];
   const etiquetaId = `aviso-${notificacion.id}`;
 
@@ -99,6 +101,15 @@ export function TarjetaDeNotificacion({
                   {linea.texto}
                 </span>
               ))}
+            </li>
+          ))}
+        </ul>
+      )}
+      {lineasDelAviso.length === 0 ? null : (
+        <ul className={styles.placas}>
+          {lineasDelAviso.map((linea, indice) => (
+            <li key={indice} className={styles.placa}>
+              <span className={styles.suave}>{linea}</span>
             </li>
           ))}
         </ul>

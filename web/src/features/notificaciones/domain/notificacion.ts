@@ -9,7 +9,12 @@ export type TipoDeNotificacion =
   | 'placa.desaparecida'
   | 'placa.lector_sin_respuesta'
   | 'placa.recuperada'
-  | 'apertura.fallida';
+  | 'apertura.fallida'
+  // Señales de abuso y consumo de la bolsa (ADR 0030 §4 y §5, ola W12): no cortan nada, solo avisan.
+  | 'senal.uso'
+  | 'bolsa.aviso'
+  | 'bolsa.superada'
+  | 'flujo.atipico';
 
 export type Severidad = 'info' | 'aviso' | 'critica';
 
@@ -36,6 +41,39 @@ export interface PlacaDeNotificacion {
   causa: CausaDeApertura | null;
 }
 
+/** Un usuario con una señal de uso (`senal.uso`). Sin tokens ni IP: ids y cantidades. */
+export interface SenalDeUso {
+  tipo: 'uso_masivo' | 'uso_imposible' | 'qr_reenviado' | 'pin_compartido';
+  usuarioId: string;
+  usuarioEtiqueta: string | null;
+  gravedad: 'baja' | 'media' | 'alta';
+  /** Incidente que abrió la señal; `null` si aún no se conoce. */
+  incidenteId: string | null;
+  /** `aaaa-mm-dd` del día local al que corresponde. */
+  dia: string;
+  valor: number;
+  umbral: number;
+}
+
+/** La bolsa de QR de una cuenta en el aviso de porcentaje o de superación (`bolsa.*`). */
+export interface BolsaDeAviso {
+  /** `aaaa-mm`. */
+  mes: string;
+  dia: string;
+  usado: number | null;
+  tope: number | null;
+}
+
+/** El flujo atípico de un día (`flujo.atipico`). */
+export interface FlujoDeAviso {
+  dia: string;
+  aperturas: number;
+  usuariosActivos: number;
+  porUsuario: number;
+  umbralPorUsuario: number;
+  base: number | null;
+}
+
 export interface Notificacion {
   id: string;
   tipo: TipoDeNotificacion;
@@ -45,6 +83,12 @@ export interface Notificacion {
   sitio: { id: string; nombre: string } | null;
   leida: boolean;
   placas: PlacaDeNotificacion[];
+  /** Solo en `senal.uso`. */
+  senal?: SenalDeUso;
+  /** Solo en `bolsa.aviso` y `bolsa.superada`. */
+  bolsa?: BolsaDeAviso;
+  /** Solo en `flujo.atipico`. */
+  flujo?: FlujoDeAviso;
   novedadEn: Date;
   creadaEn: Date;
 }

@@ -1,0 +1,156 @@
+{
+  "titulo": "Consumo y señales",
+  "subtitulo": "Lo que el sistema marca para revisar. Nada de esto corta el acceso: decide una persona.",
+  "pestanas": "Secciones de consumo y señales",
+  "pestana": {
+    "consumo": "Consumo de bolsa",
+    "senales": "Señales",
+    "flujo": "Flujo"
+  },
+  "dias_one": "{{count}} día",
+  "dias_other": "{{count}} días",
+  "periodo": "Periodo",
+  "flujo": {
+    "subtitulo": "Aperturas por usuario activo. Un día es atípico cuando cruza los dos umbrales a la vez; un pico de un día no es una señal por sí solo.",
+    "filtros": {
+      "soloAtipicas": "Solo cuentas con días atípicos",
+      "buscar": "Buscar por código o nombre",
+      "orden": "Ordenar por",
+      "sentido": "Sentido del orden",
+      "mayorAMenor": "Mayor a menor",
+      "menorAMayor": "Menor a mayor",
+      "atipicas": "Con días atípicos"
+    },
+    "orden": {
+      "por_usuario": "Aperturas por usuario",
+      "aperturas": "Aperturas",
+      "dias_atipicos": "Días atípicos",
+      "nombre": "Nombre"
+    },
+    "columnas": {
+      "cuenta": "Cuenta",
+      "usuarios": "Usuarios activos hoy",
+      "aperturas": "Aperturas hoy",
+      "porUsuario": "Por usuario hoy",
+      "hoy": "Hoy",
+      "diasAtipicos": "Días atípicos",
+      "ultimo": "Último día atípico",
+      "base": "Base habitual",
+      "umbrales": "Umbrales"
+    },
+    "atipico": "Atípico",
+    "normal": "Normal",
+    "sinBase": "Sin historia",
+    "ninguno": "Ninguno",
+    "umbrales": "Umbrales: {{aperturas}} aperturas y {{porUsuario}} por usuario",
+    "vecesLaBase": "{{veces}} veces la base",
+    "vacio": {
+      "titulo": "Sin cuentas con actividad",
+      "texto": "Todavía no hay aperturas que medir."
+    },
+    "sinResultados": {
+      "titulo": "Sin cuentas con estos filtros",
+      "texto": "Quita el filtro de días atípicos o cambia la búsqueda."
+    },
+    "errorCarga": "No pudimos cargar el flujo de las cuentas",
+    "detalle": {
+      "volver": "Flujo de cuentas",
+      "titulo": "Flujo de {{cuenta}}",
+      "usuariosHoy": "Usuarios activos hoy",
+      "aperturasHoy": "Aperturas hoy",
+      "diasAtipicos": "Días atípicos en el periodo",
+      "base": "Base habitual",
+      "sinBase": "Sin historia suficiente",
+      "graficaTitulo": "Aperturas por día",
+      "graficaSubtitulo": "La línea marca la base habitual; las barras en rojo son los días atípicos.",
+      "graficaEtiqueta": "Aperturas por día de {{cuenta}}; {{atipicos}} días atípicos",
+      "dia": "Día",
+      "aperturas": "Aperturas",
+      "rechazos": "Rechazos",
+      "generados": "QR generados",
+      "porUsuario": "Por usuario",
+      "marca": "Marca",
+      "baseDia": "Base",
+      "errorCarga": "No pudimos cargar el flujo de esta cuenta"
+    },
+    "titulo": "Flujo de cuentas",
+    "leyenda": "Leyenda"
+  },
+  "lista": {
+    "resumen": {
+      "titulo": "Señales por tipo",
+      "subtitulo": "Últimos {{dias}}: {{total}} señales, {{abiertas}} sin resolver",
+      "tipo": "Tipo",
+      "total": "Total",
+      "abiertas": "Sin resolver",
+      "altas": "Gravedad alta",
+      "cuentas": "Cuentas con más señales",
+      "cuenta": "Cuenta",
+      "sinSenales": "No hubo señales en este periodo.",
+      "errorCarga": "No pudimos cargar el resumen de señales"
+    },
+    "filtros": {
+      "cuenta": "Cuenta",
+      "cuentaTodas": "Todas las cuentas",
+      "tipo": "Tipo",
+      "tipoTodos": "Todos los tipos",
+      "gravedad": "Gravedad",
+      "todas": "Todas",
+      "estado": "Estado",
+      "usuario": "Id de usuario",
+      "desde": "Desde",
+      "hasta": "Hasta",
+      "limpiar": "Limpiar filtros"
+    },
+    "gravedad": {
+      "baja": "Baja",
+      "media": "Media",
+      "alta": "Alta"
+    },
+    "estado": {
+      "abiertas": "Abiertas",
+      "sin_resolver": "Sin resolver",
+      "pendiente": "Pendiente",
+      "confirmado": "Confirmada",
+      "descartado": "Descartada"
+    },
+    "tipo": {
+      "uso_masivo": "Uso masivo de un QR",
+      "uso_imposible": "Uso imposible",
+      "pin_compartido": "PIN compartido",
+      "qr_reenviado": "QR reenviado",
+      "generacion_ruidosa": "Generación ruidosa",
+      "perdida_o_robo": "Pérdida o robo",
+      "otro": "Otra señal"
+    },
+    "columnas": {
+      "ocurrio": "Ocurrió",
+      "cuenta": "Cuenta",
+      "usuario": "Usuario",
+      "tipo": "Tipo",
+      "gravedad": "Gravedad",
+      "detalle": "Detalle",
+      "estado": "Estado"
+    },
+    "usuarioSinNombre": "Sin nombre",
+    "verCuenta": "Ver la cuenta {{cuenta}}",
+    "descripcion": {
+      "uso_masivo": "{{aperturas}} aperturas en el día; el umbral es {{umbral}}.",
+      "uso_imposible": "{{pares}} pares de usos en lugares distintos en poco tiempo (menos de {{sitios}} min entre sitios).",
+      "uso_imposible_con_puertas": "{{pares}} pares de usos en lugares distintos en poco tiempo (menos de {{sitios}} min entre sitios y {{puertas}} s entre puertas).",
+      "pin_compartido": "{{ips}} IP distintas con {{sesiones}} sesiones activas; el umbral es {{umbral}}.",
+      "qr_reenviado": "{{rechazos}} rechazos de {{qrs}} QR en {{lectores}} lectores; el mínimo es {{minimo}}.",
+      "sinDetalle": "Sin detalle"
+    },
+    "vacio": {
+      "titulo": "Sin señales",
+      "texto": "Cuando el sistema detecte un uso raro, aparece aquí."
+    },
+    "sinResultados": {
+      "titulo": "Sin señales con estos filtros",
+      "texto": "Prueba con otro estado o quita algún filtro."
+    },
+    "errorCarga": "No pudimos cargar las señales",
+    "titulo": "Señales de abuso"
+  }
+}

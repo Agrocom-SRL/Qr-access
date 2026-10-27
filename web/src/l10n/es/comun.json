@@ -36,5 +36,9 @@
   "mesAnterior": "Mes anterior",
   "mesSiguiente": "Mes siguiente",
   "limpiar": "Limpiar",
-  "seleccionado": "Seleccionado"
+  "seleccionado": "Seleccionado",
+  "sinPermiso": {
+    "titulo": "No tienes acceso a esta sección",
+    "texto": "Tu rol no incluye el permiso que hace falta. Si lo necesitas, pide a un super admin que lo revise."
+  }
 }
