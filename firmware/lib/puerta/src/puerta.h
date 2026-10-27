@@ -22,6 +22,12 @@ constexpr uint16_t APERTURA_POR_DEFECTO_S = 5;
 constexpr uint16_t APERTURA_PULSADOR_S = 3;
 constexpr size_t MAX_QR = 256;
 
+// true si un pedido de validación hecho en `pedidoMs` ya está vencido: la máquina lo abandonó a los
+// TIMEOUT_VALIDACION_MS, así que enviarlo tarde solo haría que el servidor consuma el QR (un solo
+// uso) sin que la puerta pueda abrir. La tarea de red lo descarta en vez de enviarlo (invariante 2).
+// Tolera el desborde de uint32_t.
+bool pedidoVencido(uint32_t pedidoMs, uint32_t ahoraMs);
+
 enum class Estado : uint8_t { Reposo, Validando, Abierta };
 
 // Qué mostrar: permitido, denegado (la API dijo que no), sin red (no se pudo

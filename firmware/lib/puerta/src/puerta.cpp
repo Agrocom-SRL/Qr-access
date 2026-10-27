@@ -72,6 +72,10 @@ Acciones Maquina::alPulsarSalida(uint32_t ahoraMs) {
   return abrir(static_cast<uint32_t>(segundos) * 1000U, ahoraMs, Indicacion::Ninguna);
 }
 
+bool pedidoVencido(uint32_t pedidoMs, uint32_t ahoraMs) {
+  return ahoraMs - pedidoMs >= TIMEOUT_VALIDACION_MS;
+}
+
 Acciones Maquina::tick(uint32_t ahoraMs) {
   Acciones acciones;
   const uint32_t pasado = transcurrido(desdeMs_, ahoraMs);

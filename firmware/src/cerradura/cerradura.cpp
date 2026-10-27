@@ -28,14 +28,15 @@ void iniciar() {
   pinMode(PIN_SENSOR_PUERTA, INPUT_PULLUP);
 }
 
-bool puertaAbierta() { return digitalRead(PIN_SENSOR_PUERTA) == SENSOR_PUERTA_NIVEL_ABIERTA; }
+bool sensorEnNivelAlto() { return digitalRead(PIN_SENSOR_PUERTA) == HIGH; }
 
-void activar(uint32_t ms, uint32_t ahoraMs) {
+bool activar(uint32_t ms, uint32_t ahoraMs) {
   duracionMs = ms > TOPE_MS ? TOPE_MS : ms;
-  if (duracionMs == 0) return;
+  if (duracionMs == 0) return false;
   desdeMs = ahoraMs;
   activa = true;
   digitalWrite(PIN_CERRADURA, CERRADURA_NIVEL_ACTIVO);
+  return true;
 }
 
 void desactivar() {

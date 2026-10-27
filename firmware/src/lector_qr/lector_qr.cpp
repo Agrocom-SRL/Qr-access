@@ -22,6 +22,7 @@ char buffer[puerta::MAX_QR + 1];
 size_t largo = 0;
 bool descartando = false;
 uint32_t ultimoByteMs = 0;
+diagnostico::ActividadLector actividad;
 
 bool empiezaOtraLectura() {
   return largo > LARGO_PREFIJO && memcmp(buffer + largo - LARGO_PREFIJO, PREFIJO, LARGO_PREFIJO) == 0;
@@ -38,6 +39,7 @@ void iniciar() {
 bool leer(char (&linea)[puerta::MAX_QR + 1]) {
   while (Serial2.available() > 0) {
     const int c = Serial2.read();
+    actividad.alRecibir(millis());
 #ifdef ACCESO_DESARROLLO
     // Solo mesa de trabajo: cada byte crudo del lector, para averiguar su baud y su formato.
     Serial.printf("[lector] %02X %c\n", c, (c >= 32 && c < 127) ? c : '.');
@@ -78,6 +80,12 @@ bool leer(char (&linea)[puerta::MAX_QR + 1]) {
     return true;
   }
   return false;
+}
+
+diagnostico::EstadoLector estado(uint32_t ahoraMs) { return actividad.estado(ahoraMs); }
+
+bool huboActividadReciente(uint32_t ahoraMs, uint32_t ventanaMs) {
+  return actividad.huboActividadReciente(ahoraMs, ventanaMs);
 }
 
 }  // namespace lector_qr

@@ -209,6 +209,30 @@ void test_desborde_de_millis() {
   TEST_ASSERT_TRUE(m.tick(casiDesborde + 1000).desactivarCerradura);
 }
 
+void test_un_pedido_vence_junto_con_la_validacion() {
+  TEST_ASSERT_FALSE(puerta::pedidoVencido(1000, 1000));
+  TEST_ASSERT_FALSE(puerta::pedidoVencido(1000, 1000 + puerta::TIMEOUT_VALIDACION_MS - 1));
+  TEST_ASSERT_TRUE(puerta::pedidoVencido(1000, 1000 + puerta::TIMEOUT_VALIDACION_MS));
+  TEST_ASSERT_TRUE(puerta::pedidoVencido(1000, 1000 + 60000));
+}
+
+void test_vencimiento_del_pedido_aguanta_el_desborde() {
+  const uint32_t casiDesborde = 0xFFFFFFFFu - 500;
+  TEST_ASSERT_FALSE(puerta::pedidoVencido(casiDesborde, casiDesborde + 2000));
+  TEST_ASSERT_TRUE(puerta::pedidoVencido(casiDesborde, casiDesborde + puerta::TIMEOUT_VALIDACION_MS));
+}
+
+// El pedido vence exactamente cuando la máquina abandona la validación: nunca se envía uno que ella ya descartó.
+void test_el_pedido_vence_cuando_la_maquina_abandona() {
+  auto m = validando(1000);
+  const uint32_t limite = 1000 + puerta::TIMEOUT_VALIDACION_MS;
+  TEST_ASSERT_EQUAL(Estado::Validando, m.estado());
+  TEST_ASSERT_FALSE(puerta::pedidoVencido(1000, limite - 1));
+  m.tick(limite);
+  TEST_ASSERT_EQUAL(Estado::Reposo, m.estado());
+  TEST_ASSERT_TRUE(puerta::pedidoVencido(1000, limite));
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_lectura_pide_validacion_y_no_abre);
@@ -233,5 +257,8 @@ int main() {
   RUN_TEST(test_pulsador_abre_sin_red);
   RUN_TEST(test_pulsador_durante_validacion_descarta_la_respuesta);
   RUN_TEST(test_desborde_de_millis);
+  RUN_TEST(test_un_pedido_vence_junto_con_la_validacion);
+  RUN_TEST(test_vencimiento_del_pedido_aguanta_el_desborde);
+  RUN_TEST(test_el_pedido_vence_cuando_la_maquina_abandona);
   return UNITY_END();
 }
