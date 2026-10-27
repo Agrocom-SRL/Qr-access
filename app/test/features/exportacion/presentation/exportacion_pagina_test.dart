@@ -1,113 +1,88 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
-import 'package:agrocom_acceso/core/plataforma/compartir_archivo.dart';
-import 'package:agrocom_acceso/core/sesion/permisos.dart';
-import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
-import 'package:agrocom_acceso/core/tiempo/reloj.dart';
-import 'package:agrocom_acceso/features/exportacion/data/exportacion_repositorio.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/exportacion_falsa.dart';
-import '../../../helpers/fakes.dart';
 import '../../../helpers/pantalla.dart';
+import 'montaje_exportacion.dart';
 
-final _ahora = DateTime.utc(2026, 10, 27, 14);
-
-Future<({ExportacionRepositorioFalso repo, CompartirArchivoFalso compartir})>
-_montar(WidgetTester tester, {ExportacionRepositorioFalso? repositorio}) async {
-  final repo = repositorio ?? ExportacionRepositorioFalso();
-  final compartir = CompartirArchivoFalso();
-  await montarPantalla(
-    tester,
-    pagina: const ExportacionPagina(),
-    overrides: [
-      sesionControladorProvider.overrideWith(
-        () => SesionFalsa(sesionCon(permisos: {Permisos.exportarDatos})),
-      ),
-      exportacionRepositorioProvider.overrideWithValue(repo),
-      compartirArchivoProvider.overrideWithValue(compartir),
-      relojProvider.overrideWithValue(() => _ahora),
-    ],
-  );
-  await tester.pump();
-  return (repo: repo, compartir: compartir);
-}
+/// El botón de descarga de la tarjeta [indice] (0 Usuarios, 1 Puertas).
+Finder _descargaDe(int indice, String texto) =>
+    find.widgetWithText(AccesoBoton, texto).at(indice);
 
 void main() {
-  testWidgets('ofrece los tres recursos y la primera descarga', (tester) async {
-    await _montar(tester);
+  testWidgets('ofrece tres tarjetas: dos descargas y una a los accesos', (
+    tester,
+  ) async {
+    await montarExportacion(tester, pagina: const ExportacionPagina());
     final textos = textosEn(tester);
 
     expect(find.text(textos.exportacionRecursoUsuarios), findsOneWidget);
     expect(find.text(textos.exportacionRecursoPuertas), findsOneWidget);
     expect(find.text(textos.exportacionRecursoLecturas), findsOneWidget);
-    expect(find.text(textos.exportacionDescargar), findsOneWidget);
+    expect(
+      find.widgetWithText(AccesoBoton, textos.exportacionDescargar),
+      findsNWidgets(2),
+    );
+    expect(
+      find.widgetWithText(AccesoBoton, textos.exportacionElegirFiltros),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('descargar baja la página, la comparte y lo dice', (
+  testWidgets('Usuarios abre la hoja de formatos y el CSV baja directo', (
     tester,
   ) async {
-    final r = await _montar(tester);
+    final r = await montarExportacion(
+      tester,
+      pagina: const ExportacionPagina(),
+    );
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(_descargaDe(0, textos.exportacionDescargar));
     await tester.pumpAndSettle();
+    expect(find.text(textos.exportacionFormatoTitulo), findsOneWidget);
+    await elegirFormato(tester, textos.exportacionFormatoCsv);
 
     expect(r.repo.pedidos.single.recurso, RecursoExportable.usuarios);
     expect(r.repo.pedidos.single.pagina, 1);
     expect(r.compartir.compartidos.single.nombreArchivo, 'usuarios-agr-p1.csv');
+    expect(r.compartir.compartidos.single.mimeType, 'text/csv');
     expect(find.text(textos.exportacionDescargada(1, 1, 2)), findsOneWidget);
-    expect(find.text(textos.exportacionDescargarDeNuevo), findsOneWidget);
   });
 
-  testWidgets('con más páginas, el botón pide la que sigue', (tester) async {
-    final repo = ExportacionRepositorioFalso(
-      paginaEntregada: paginaDePrueba(total: 2500, filas: 1000, hayMas: true),
+  testWidgets('Puertas baja su propio recurso', (tester) async {
+    final r = await montarExportacion(
+      tester,
+      pagina: const ExportacionPagina(),
     );
-    await _montar(tester, repositorio: repo);
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(_descargaDe(1, textos.exportacionDescargar));
     await tester.pumpAndSettle();
-    expect(find.text(textos.exportacionSiguiente(2, 3)), findsOneWidget);
+    await elegirFormato(tester, textos.exportacionFormatoCsv);
 
-    await tester.tap(find.text(textos.exportacionSiguiente(2, 3)));
-    await tester.pumpAndSettle();
-
-    expect(repo.pedidos.map((p) => p.pagina), [1, 2]);
-  });
-
-  testWidgets('si la página llegó al tope, lo avisa y pide acotar', (
-    tester,
-  ) async {
-    final repo = ExportacionRepositorioFalso(
-      paginaEntregada: paginaDePrueba(
-        total: 10000,
-        filas: 1000,
-        truncado: true,
-      ),
-    );
-    await _montar(tester, repositorio: repo);
-    final textos = textosEn(tester);
-
-    await tester.tap(find.text(textos.exportacionDescargar));
-    await tester.pumpAndSettle();
-
-    expect(find.text(textos.exportacionTruncado), findsOneWidget);
+    expect(r.repo.pedidos.single.recurso, RecursoExportable.puertas);
   });
 
   testWidgets('sin filas, lo dice y no abre el menú de compartir', (
     tester,
   ) async {
-    final repo = ExportacionRepositorioFalso(
-      paginaEntregada: paginaDePrueba(total: 0, filas: 0),
+    final r = await montarExportacion(
+      tester,
+      pagina: const ExportacionPagina(),
+      repositorio: ExportacionRepositorioFalso(
+        paginaEntregada: paginaDePrueba(total: 0, filas: 0),
+      ),
     );
-    final r = await _montar(tester, repositorio: repo);
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(_descargaDe(0, textos.exportacionDescargar));
     await tester.pumpAndSettle();
+    await elegirFormato(tester, textos.exportacionFormatoCsv);
 
     expect(r.compartir.compartidos, isEmpty);
     expect(find.text(textos.exportacionSinFilas), findsOneWidget);
@@ -116,31 +91,50 @@ void main() {
   testWidgets('un tope de filas de la API se muestra traducido', (
     tester,
   ) async {
-    final repo = ExportacionRepositorioFalso(
-      error: const ErrorApi(code: 'exportacion.tope_excedido', status: 422),
+    await montarExportacion(
+      tester,
+      pagina: const ExportacionPagina(),
+      repositorio: ExportacionRepositorioFalso(
+        error: const ErrorApi(code: 'exportacion.tope_excedido', status: 422),
+      ),
     );
-    await _montar(tester, repositorio: repo);
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(_descargaDe(0, textos.exportacionDescargar));
     await tester.pumpAndSettle();
+    await elegirFormato(tester, textos.exportacionFormatoCsv);
 
     expect(find.text(textos.comunErrorExportacionTopeExcedido), findsOneWidget);
   });
 
-  testWidgets('elegir lecturas muestra sus filtros de resultado y de fecha', (
-    tester,
-  ) async {
-    await _montar(tester);
+  testWidgets('sin conexión al bajar, lo dice traducido', (tester) async {
+    await montarExportacion(
+      tester,
+      pagina: const ExportacionPagina(),
+      repositorio: ExportacionRepositorioFalso(
+        error: const ErrorApi(code: ErrorApi.sinConexion),
+      ),
+    );
     final textos = textosEn(tester);
 
-    expect(find.text(textos.exportacionResultado), findsNothing);
-    await tester.tap(find.text(textos.exportacionRecursoLecturas));
+    await tester.tap(_descargaDe(0, textos.exportacionDescargar));
+    await tester.pumpAndSettle();
+    await elegirFormato(tester, textos.exportacionFormatoCsv);
+
+    expect(find.text(textos.comunErrorSinConexion), findsOneWidget);
+  });
+
+  testWidgets('Accesos a puertas abre su propia pantalla de filtros', (
+    tester,
+  ) async {
+    await montarExportacion(tester, pagina: const ExportacionPagina());
+    final textos = textosEn(tester);
+
+    await tester.tap(
+      find.widgetWithText(AccesoBoton, textos.exportacionElegirFiltros),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text(textos.exportacionResultado), findsOneWidget);
-    expect(find.text(textos.exportacionDesde), findsOneWidget);
-    expect(find.text(textos.exportacionHasta), findsOneWidget);
-    expect(find.text(textos.exportacionSinLimite), findsNWidgets(2));
+    expect(find.text('destino ${Rutas.exportarAccesos}'), findsOneWidget);
   });
 }

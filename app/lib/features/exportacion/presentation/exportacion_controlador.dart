@@ -4,7 +4,11 @@ import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/features/exportacion/data/exportacion_repositorio.dart';
+import 'package:agrocom_acceso/features/exportacion/data/fuentes_pdf.dart';
 import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
+import 'package:agrocom_acceso/features/exportacion/domain/pdf/tabla_pdf.dart';
+import 'package:agrocom_acceso/features/exportacion/domain/tabla_de_exportacion.dart';
+import 'package:agrocom_acceso/features/exportacion/domain/tabla_xlsx.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -57,11 +61,16 @@ class ExportacionControlador extends Notifier<EstadoExportacion> {
   void _cambiarFiltros(FiltrosDeExportacion filtros) =>
       state = EstadoExportacion(recurso: state.recurso, filtros: filtros);
 
-  /// Baja la página que sigue, la pasa al menú de compartir y guarda su
-  /// resumen.
+  /// Baja la página que sigue, la convierte al [formato] pedido, la pasa al
+  /// menú de compartir y guarda su resumen. [textosDe] arma lo que va escrito
+  /// en el PDF y el Excel (título, fecha, parte) a partir del resumen de la
+  /// página.
   /// Si la persona cierra el menú, la página no cuenta como bajada y la próxima
   /// vez se pide la misma. Un rango al revés no se manda.
-  Future<void> descargarSiguiente() async {
+  Future<void> descargarSiguiente({
+    required TextosDeDocumento Function(ResumenDePagina resumen) textosDe,
+    FormatoDeDescarga formato = FormatoDeDescarga.csv,
+  }) async {
     final recurso = state.recurso;
     final filtros = state.filtros;
     if (state.descargando || !rangoValido(filtros)) return;
@@ -76,7 +85,8 @@ class ExportacionControlador extends Notifier<EstadoExportacion> {
       // salió.
       final cuenta =
           resumen.total == 0 ||
-          await _compartir(recurso, entregada) != ResultadoCompartir.cancelado;
+          await _compartir(recurso, formato, entregada, textosDe(resumen)) !=
+              ResultadoCompartir.cancelado;
       state = _con(ultimo: cuenta ? resumen : null);
     } on ErrorApi catch (error) {
       state = _con(error: error);
@@ -91,18 +101,43 @@ class ExportacionControlador extends Notifier<EstadoExportacion> {
   /// bajar, y el resumen basta para decirlo.
   Future<ResultadoCompartir> _compartir(
     RecursoExportable recurso,
+    FormatoDeDescarga formato,
     PaginaDeExportacion entregada,
-  ) => ref
-      .read(compartirArchivoProvider)
-      .compartir(
-        bytes: conBomDeExcel(entregada.csv),
-        nombreArchivo: nombreDeArchivo(
-          recurso,
-          _codigoDeCuenta(),
-          entregada.resumen.pagina,
-        ),
-        mimeType: 'text/csv',
-      );
+    TextosDeDocumento textos,
+  ) async {
+    final bytes = await _archivo(formato, entregada.csv, textos);
+    final resultado = await ref
+        .read(compartirArchivoProvider)
+        .compartir(
+          bytes: bytes,
+          nombreArchivo: nombreDeArchivo(
+            recurso,
+            _codigoDeCuenta(),
+            entregada.resumen.pagina,
+            formato,
+          ),
+          mimeType: formato.mimeType,
+        );
+    return resultado;
+  }
+
+  /// El archivo de la página en el formato pedido. El CSV sale tal cual (con
+  /// su BOM); el Excel y el PDF se arman con las mismas filas.
+  Future<Uint8List> _archivo(
+    FormatoDeDescarga formato,
+    Uint8List csv,
+    TextosDeDocumento textos,
+  ) async {
+    switch (formato) {
+      case FormatoDeDescarga.csv:
+        return conBomDeExcel(csv);
+      case FormatoDeDescarga.xlsx:
+        return tablaAXlsx(leerCsv(csv), nombreHoja: textos.titulo);
+      case FormatoDeDescarga.pdf:
+        final fuentes = await ref.read(fuentesPdfProvider.future);
+        return tablaAPdf(leerCsv(csv), textos, fuentes);
+    }
+  }
 
   String _codigoDeCuenta() {
     final sesion = ref.read(sesionControladorProvider);
