@@ -14,6 +14,7 @@ import {
   RepositorioDeUnidades,
   type PuertaFila,
 } from './repository.js';
+import { type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export type { PuertaListada } from './actions/listar-puertas.js';
 export type {
@@ -62,12 +63,12 @@ export interface ServicioDeOrganizacion {
   eliminarPuerta(id: string): Promise<void>;
   /**
    * Cuántas puertas (activas o no) dieron de alta esos usuarios en la cuenta del contexto: para la exportación.
-   * `null` = todas las de la cuenta (la exportación que hace AGROCOM, cuyo alcance es la cuenta entera).
+   * `TODA_LA_CUENTA` = todas las de la cuenta (la exportación que hace AGROCOM, cuyo alcance es la cuenta entera).
    */
-  contarPuertas(autores: readonly string[] | null): Promise<number>;
+  contarPuertas(autores: IdsOTodaLaCuenta): Promise<number>;
   /** Una página de esas puertas, por id: para la exportación (`autores` = el alcance de quien exporta). */
   puertasPagina(
-    autores: readonly string[] | null,
+    autores: IdsOTodaLaCuenta,
     limite: number,
     desplazamiento: number,
   ): Promise<PuertaDeCuenta[]>;

@@ -9,6 +9,7 @@ import {
   type PedidoDeAnulacionMasiva,
   type ResultadoDeAnulacionMasiva,
 } from './anular-masivo.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../../platform/db/alcance.js';
 
 /**
  * Anula en bloque los QR VIGENTES de una cuenta, de un usuario suyo o de una rama, para AGROCOM (ADR 0031 §3,
@@ -36,21 +37,26 @@ export async function ejecutar(
   }
   return ContextoCuenta.comoPlataformaEn(cuentaId, principal.usuarioId, async () => {
     const arbol = crearServicioDeArbol(pool);
-    let generadores: string[];
+    let generadores: IdsOTodaLaCuenta;
+    let usuariosAlcanzados: number;
     let objetivo: string | null;
     if (pedido.alcance === 'cuenta') {
-      generadores = await arbol.idsDeLaCuenta();
+      // Toda la cuenta, sin pasar por la lista de usuarios: también los QR de quien ya se dio de baja.
+      generadores = TODA_LA_CUENTA;
+      usuariosAlcanzados = (await arbol.idsDeLaCuenta()).length;
       objetivo = null;
     } else {
       objetivo = pedido.usuarioId;
       if (objetivo === null || (await arbol.estadoPropioDe(objetivo)) === null) {
         throw new ErrorDeDominio('usuario.no_encontrado', 404);
       }
-      generadores = pedido.alcance === 'usuario' ? [objetivo] : await arbol.ramaDe(objetivo);
+      const ids = pedido.alcance === 'usuario' ? [objetivo] : await arbol.ramaDe(objetivo);
+      generadores = ids;
+      usuariosAlcanzados = ids.length;
     }
     return anularEnLotes(
       pool,
-      { generadores, alcance: pedido.alcance, objetivo, motivo: pedido.motivo },
+      { generadores, usuariosAlcanzados, alcance: pedido.alcance, objetivo, motivo: pedido.motivo },
       principal.usuarioId,
       ahora,
       tamanoDeLote,

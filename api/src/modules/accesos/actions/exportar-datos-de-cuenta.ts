@@ -6,6 +6,7 @@ import { crearServicioDeCuentas } from '../../seguridad/contracts.js';
 import type { RecursoExportable } from '../domain/exportacion.js';
 import { exportarPagina, type PaginaExportada } from './exportar-datos.js';
 import type { FiltrosDeLecturas } from './listar-lecturas.js';
+import { TODA_LA_CUENTA } from '../../../platform/db/alcance.js';
 
 /**
  * Una página de datos de UNA cuenta en CSV para AGROCOM (ADR 0033 §3, ola W11): `usuarios`, `puertas` o `lecturas`.
@@ -37,7 +38,7 @@ export async function ejecutar(
     exportarPagina(
       pool,
       {
-        usuariosYPuertas: null,
+        usuariosYPuertas: TODA_LA_CUENTA,
         // Sin `generadoPor` ni `puertaIds`: todas las lecturas de la cuenta (con los filtros pedidos).
         lecturas: () =>
           Promise.resolve({

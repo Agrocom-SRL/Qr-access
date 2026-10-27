@@ -1,6 +1,7 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export interface PuertaFila extends RowDataPacket {
   id: string;
@@ -87,27 +88,27 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
    * rama), por id: para la exportación (ADR 0033 §3). Una puerta no tiene otro dueño que quien la creó.
    */
   listarPaginaDe(
-    autores: readonly string[] | null,
+    autores: IdsOTodaLaCuenta,
     limite: number,
     desplazamiento: number,
   ): Promise<PuertaFila[]> {
-    if (autores !== null && autores.length === 0) return Promise.resolve([]);
+    if (autores !== TODA_LA_CUENTA && autores.length === 0) return Promise.resolve([]);
     return this.seleccionar<PuertaFila>({
       columnas: COLUMNAS,
       uniones: UNION_SITIO,
-      ...(autores === null ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
+      ...(autores === TODA_LA_CUENTA ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
       orden: 't.id',
       limite,
       desplazamiento,
     });
   }
 
-  /** `autores` `null` = todas las puertas de la cuenta (la exportación de AGROCOM); el repositorio ya filtra por ella. */
-  contarDe(autores: readonly string[] | null): Promise<number> {
-    if (autores !== null && autores.length === 0) return Promise.resolve(0);
+  /** `autores` `TODA_LA_CUENTA` = todas las puertas de la cuenta (la exportación de AGROCOM); el repositorio ya filtra por ella. */
+  contarDe(autores: IdsOTodaLaCuenta): Promise<number> {
+    if (autores !== TODA_LA_CUENTA && autores.length === 0) return Promise.resolve(0);
     return this.contar({
       uniones: UNION_SITIO,
-      ...(autores === null ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
+      ...(autores === TODA_LA_CUENTA ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
     });
   }
 

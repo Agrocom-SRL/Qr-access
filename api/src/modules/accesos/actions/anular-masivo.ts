@@ -4,6 +4,7 @@ import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import { crearServicioDeArbol } from '../../seguridad/contracts.js';
 import { RepositorioDeAnulacionesMasivas, RepositorioDeQr } from '../repository.js';
+import type { IdsOTodaLaCuenta } from '../../../platform/db/alcance.js';
 
 /** Cuántos QR anula cada transacción: bloquea pocas filas y por poco tiempo (validación y generación siguen). */
 export const TAMANO_DE_LOTE_DE_ANULACION = 500;
@@ -79,7 +80,13 @@ export async function ejecutar(
 
   return anularEnLotes(
     pool,
-    { generadores, alcance: pedido.alcance, objetivo, motivo: pedido.motivo },
+    {
+      generadores,
+      usuariosAlcanzados: generadores.length,
+      alcance: pedido.alcance,
+      objetivo,
+      motivo: pedido.motivo,
+    },
     principal.usuarioId,
     ahora,
     tamanoDeLote,
@@ -95,7 +102,9 @@ export async function ejecutar(
 export async function anularEnLotes(
   pool: Pool,
   destino: {
-    readonly generadores: readonly string[];
+    readonly generadores: IdsOTodaLaCuenta;
+    /** Cuántos usuarios alcanza el pedido: para la constancia y la respuesta. */
+    readonly usuariosAlcanzados: number;
     readonly alcance: AlcanceDeAnulacion;
     readonly objetivo: string | null;
     readonly motivo: string;
@@ -116,7 +125,7 @@ export async function anularEnLotes(
     cursor = lote.ultimoId;
   }
 
-  const usuariosAlcanzados = destino.generadores.length;
+  const { usuariosAlcanzados } = destino;
   const id = await enTransaccion(pool, (tx) =>
     new RepositorioDeAnulacionesMasivas(pool).registrar(tx, {
       alcance: destino.alcance,

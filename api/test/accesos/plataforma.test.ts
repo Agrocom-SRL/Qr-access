@@ -142,6 +142,20 @@ describe('AGROCOM: anulación masiva y exportación de una cuenta', () => {
       });
     });
 
+    it('con alcance cuenta alcanza también los QR de un usuario ya dado de baja', async () => {
+      const deBaja = await qrDe(a, arbol.miembro1);
+      await prueba.pool.query('UPDATE usuarios SET deleted_at = NOW(3) WHERE id = ?', [
+        arbol.miembro1.id,
+      ]);
+
+      const respuesta = await anular(superAcceso, a.cuenta.id, {
+        alcance: 'cuenta',
+        motivo: MOTIVO,
+      });
+      expect(respuesta.statusCode, respuesta.body).toBe(200);
+      expect(await anuladoDe(deBaja.id)).toBe(true);
+    });
+
     it('con alcance usuario anula solo los de ese usuario; con rama, los de su rama', async () => {
       const uno = await qrDe(a, arbol.miembro1);
       const otro = await qrDe(a, arbol.miembro1b);

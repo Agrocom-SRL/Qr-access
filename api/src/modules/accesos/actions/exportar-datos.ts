@@ -20,6 +20,7 @@ import {
   type FiltroDeLecturas,
 } from '../repository.js';
 import { alcanceDe, presentarLecturas, type FiltrosDeLecturas } from './listar-lecturas.js';
+import { type IdsOTodaLaCuenta } from '../../../platform/db/alcance.js';
 
 export interface PaginaExportada extends ResumenDeExportacion {
   /** El CSV de esta página, con su fila de encabezado. */
@@ -71,7 +72,7 @@ interface Pagina {
 
 async function paginaDeUsuarios(
   pool: Pool,
-  alcance: readonly string[] | null,
+  alcance: IdsOTodaLaCuenta,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
@@ -98,7 +99,7 @@ async function paginaDeUsuarios(
 
 async function paginaDePuertas(
   pool: Pool,
-  alcance: readonly string[] | null,
+  alcance: IdsOTodaLaCuenta,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
@@ -193,7 +194,7 @@ export async function ejecutar(
 /** A qué filas llega quien exporta; lo decide cada llamador (usuario de la cuenta o AGROCOM sobre la cuenta). */
 export interface FuenteDeExportacion {
   /** Los usuarios (y los autores de las puertas) que se exportan; `null` = todos los de la cuenta. */
-  readonly usuariosYPuertas: readonly string[] | null;
+  readonly usuariosYPuertas: IdsOTodaLaCuenta;
   /** El filtro de las lecturas, con los filtros de la petición ya aplicados. */
   readonly lecturas: () => Promise<FiltroDeLecturas>;
 }

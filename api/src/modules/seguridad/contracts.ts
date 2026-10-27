@@ -22,6 +22,7 @@ import {
   RepositorioDeSuperAdmins,
   RepositorioDeUsuarios,
 } from './repository.js';
+import { type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export { crearAutenticadorDePlataforma, crearAutenticadorDeUsuario } from './autenticador.js';
 export type { Estado, EstadoEfectivo, OrigenDeEstado } from './domain/estado.js';
@@ -300,11 +301,11 @@ export interface UsuarioExportable {
 }
 
 export interface ServicioDeUsuariosExportables {
-  /** Cuántos de esos usuarios existen en la cuenta del contexto (`ids` = el alcance de quien exporta; `null` = todos, la exportación de AGROCOM). */
-  total(ids: readonly string[] | null): Promise<number>;
+  /** Cuántos de esos usuarios existen en la cuenta del contexto (`ids` = el alcance de quien exporta; `TODA_LA_CUENTA` = todos, la exportación de AGROCOM). */
+  total(ids: IdsOTodaLaCuenta): Promise<number>;
   /** Una página de esos usuarios de la cuenta del contexto, por id. */
   pagina(
-    ids: readonly string[] | null,
+    ids: IdsOTodaLaCuenta,
     limite: number,
     desplazamiento: number,
   ): Promise<UsuarioExportable[]>;
