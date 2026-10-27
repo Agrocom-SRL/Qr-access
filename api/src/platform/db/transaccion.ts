@@ -6,8 +6,10 @@ export type Transaccion = PoolConnection;
 /** Opciones de una transacción con presupuesto de tiempo. */
 export interface OpcionesDeTransaccion {
   /**
-   * Señal de la petición (`request.signal`): se aborta al vencer su tiempo máximo o al cortarse
-   * la conexión. Ya abortada, la transacción no empieza, no se reintenta y NO hace COMMIT.
+   * Presupuesto de la petición (`presupuestoDePeticion`): se aborta al vencer su plazo propio o
+   * al cortarse la conexión del cliente. NO es `request.signal` de Fastify, que en Node 22 llega
+   * abortada tras leer el cuerpo. Ya abortada, la transacción no empieza, no se reintenta y NO
+   * hace COMMIT.
    */
   readonly señal?: AbortSignal;
   /**
