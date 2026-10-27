@@ -45,8 +45,8 @@ if [ "$existe" = "0" ]; then
   # contrasena_temporal = 1: el panel obliga a cambiarla en el primer ingreso.
   mysql_en_db <<SQL
 SET NAMES utf8mb4;
-INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo)
-  VALUES (NULL, 'Root', 'root', '$hash', 1, 1);
+INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal)
+  VALUES (NULL, 'Root', 'root', '$hash', 1);
 INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id)
   SELECT NULL, u.id, r.id FROM usuarios u
     JOIN roles r ON r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL
