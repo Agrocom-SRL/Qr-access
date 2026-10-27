@@ -1,0 +1,4 @@
+# Datos de prueba generados con preparar-datos.mjs: claves de placas, PIN y tokens de QR. Nunca al repo.
+datos/generados/
+# Resúmenes de corridas (JSON y CSV): dependen del entorno, se guardan fuera de git.
+resultados/
