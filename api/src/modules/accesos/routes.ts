@@ -328,7 +328,8 @@ export function rutas({
             reportadoEn: leerHoraDelDispositivo(leidoEn),
           },
           new Date(),
-          request.signal,
+          // Igual que la validación: plazo propio, nunca `request.signal` (ver presupuesto.ts).
+          presupuestoDePeticion(reply, config.PETICION_MS_DISPOSITIVOS),
         );
         return reply.status(204).send();
       },
