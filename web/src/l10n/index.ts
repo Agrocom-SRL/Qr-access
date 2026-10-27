@@ -1,6 +1,8 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import es_app from './es/app.json';
+import es_anulacion from './es/anulacion.json';
+import es_exportacion from './es/exportacion.json';
 import es_auth from './es/auth.json';
 import es_bitacora from './es/bitacora.json';
 import es_cambiarPlan from './es/cambiarPlan.json';
@@ -29,6 +31,8 @@ import es_planes from './es/planes.json';
 import es_resumen from './es/resumen.json';
 import es_suscripcion from './es/suscripcion.json';
 import en_app from './en/app.json';
+import en_anulacion from './en/anulacion.json';
+import en_exportacion from './en/exportacion.json';
 import en_auth from './en/auth.json';
 import en_bitacora from './en/bitacora.json';
 import en_cambiarPlan from './en/cambiarPlan.json';
@@ -57,6 +61,8 @@ import en_planes from './en/planes.json';
 import en_resumen from './en/resumen.json';
 import en_suscripcion from './en/suscripcion.json';
 import pt_app from './pt/app.json';
+import pt_anulacion from './pt/anulacion.json';
+import pt_exportacion from './pt/exportacion.json';
 import pt_auth from './pt/auth.json';
 import pt_bitacora from './pt/bitacora.json';
 import pt_cambiarPlan from './pt/cambiarPlan.json';
@@ -98,6 +104,8 @@ const CLAVE_IDIOMA = 'acceso.idioma';
 export const recursos = {
   es: {
     app: es_app,
+    anulacion: es_anulacion,
+    exportacion: es_exportacion,
     auth: es_auth,
     bitacora: es_bitacora,
     cambiarPlan: es_cambiarPlan,
@@ -128,6 +136,8 @@ export const recursos = {
   },
   en: {
     app: en_app,
+    anulacion: en_anulacion,
+    exportacion: en_exportacion,
     auth: en_auth,
     bitacora: en_bitacora,
     cambiarPlan: en_cambiarPlan,
@@ -158,6 +168,8 @@ export const recursos = {
   },
   pt: {
     app: pt_app,
+    anulacion: pt_anulacion,
+    exportacion: pt_exportacion,
     auth: pt_auth,
     bitacora: pt_bitacora,
     cambiarPlan: pt_cambiarPlan,

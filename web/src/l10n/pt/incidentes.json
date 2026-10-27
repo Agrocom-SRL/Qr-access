@@ -1,6 +1,6 @@
 {
   "titulo": "Incidentes de uso",
-  "subtitulo": "Casos raros da conta e as evidências. Aqui só são consultados: quem administra o ramo os confirma ou descarta. Nenhum corta o acesso sozinho.",
+  "subtitulo": "Casos raros da conta e as evidências. Quem tiver permissão os confirma ou descarta daqui. Nenhum corta o acesso sozinho.",
   "filtros": {
     "tipo": "Tipo",
     "origen": "Origem",
@@ -49,7 +49,7 @@
   "errorCarga": "Não conseguimos carregar os incidentes",
   "detalle": {
     "titulo": "Incidente de {{usuario}}",
-    "soloLectura": "Só é consultado aqui. Quem administra o ramo da conta o resolve.",
+    "soloLectura": "Você só pode consultá-lo: resolver incidentes exige uma permissão que o seu perfil não tem.",
     "usuario": "Usuário",
     "tipo": "Tipo",
     "origen": "Origem",
@@ -63,5 +63,15 @@
     "sinResolver": "Ninguém o resolveu ainda",
     "resueltoPor": "Por {{persona}}, em {{cuando}}",
     "sinMotivo": "Sem motivo"
+  },
+  "resolucion": {
+    "motivo": "Motivo",
+    "motivoAyuda": "Obrigatório para confirmar. Descartar ou deixar pendente não o exige.",
+    "motivoRequerido": "Escreva o motivo para confirmar o incidente.",
+    "confirmar": "Confirmar",
+    "descartar": "Descartar",
+    "pendiente": "Deixar pendente",
+    "guardado": "Ficou salvo como {{estado}}.",
+    "sinPropuesta": "O limite de reincidência ainda não foi atingido, então o sistema não propõe nada."
   }
 }

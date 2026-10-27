@@ -1,0 +1,26 @@
+{
+  "titulo": "Export data",
+  "subtitulo": "Download the account's data as CSV, one page at a time. If there are more rows than the limit, narrow the date range to get the rest.",
+  "recurso": {
+    "etiqueta": "What to export",
+    "usuarios": "Users",
+    "puertas": "Doors",
+    "lecturas": "Access scans"
+  },
+  "filtros": {
+    "resultado": "Result",
+    "todos": "All",
+    "permitido": "Allowed",
+    "rechazado": "Rejected",
+    "desde": "From",
+    "hasta": "To",
+    "rangoInvalido": "The start date is after the end date."
+  },
+  "descargar": "Download CSV",
+  "descargarDeNuevo": "Download from the first page",
+  "siguiente": "Download page {{pagina}} of {{paginas}}",
+  "descargada_one": "Page {{pagina}} of {{paginas}} downloaded: {{count}} row.",
+  "descargada_other": "Page {{pagina}} of {{paginas}} downloaded: {{count}} rows.",
+  "sinFilas": "There are no rows to export with these filters.",
+  "truncado": "There are more rows than the export limit. Narrow the date range to export the rest."
+}
