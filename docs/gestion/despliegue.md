@@ -65,6 +65,18 @@ docker compose -p acceso --env-file /opt/acceso/.env -f docker-compose.prod.yml 
 
 Escucha en `:8082` de la red privada. Para abrirlo por web, un sitio en NPMplus con HTTPS y Access List; no se expone sin autenticación delante.
 
+## Migraciones sobre `eventos_acceso` poblada
+
+`eventos_acceso` recibe una fila por cada lectura de cada placa, así que una migración que la bloquee corta los registros. Regla: sobre esta tabla, cada `ALTER` va con `ALGORITHM=INPLACE, LOCK=NONE` (si MariaDB no puede cumplirlo, falla en vez de bloquear). Una clave foránea nueva exige `SET foreign_key_checks = 0` en la sesión de la migración (MariaDB 10.11 responde `ERROR 1846: Adding foreign keys needs foreign_key_checks=OFF` y solo ofrece `COPY`); es seguro cuando la columna nace toda en `NULL` y no hay filas que validar.
+
+La migración `20261028100001` (`repetido_de_id`, ADR 0032) va en tres `ALTER`: columna, índices y clave foránea. Verificada en MariaDB 10.11.14 con una base nueva y la tabla con 200 000 filas, con un escritor insertando en paralelo (400 inserciones, una cada ~50 ms):
+
+- subir: 2,1 s en total (incluye el arranque del cliente), sin un solo error de escritura; la inserción más lenta del escritor concurrente tardó 429 ms, que es el arranque del cliente `mysql`, no un bloqueo;
+- bajar y volver a subir: correcto, con las 200 400 filas intactas;
+- el `ALTER` único original (columna + índice + FK) con `LOCK=NONE` falla con el error 1846, por eso se partió.
+
+Ventana de despliegue: ninguna; se puede aplicar con la API en marcha. Para tablas mucho mayores, repite la medición en una copia antes de migrar.
+
 ## Respaldo
 
 La base vive en el servidor de base de datos compartido, no en el CT 120. Respaldo mínimo, desde el CT: `docker run --rm --env-file /opt/acceso/.env mariadb:10.11 sh -c 'mariadb-dump -h"$DB_HOST" -P"$DB_PORT" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --single-transaction "$MYSQL_DATABASE"' | gzip > acceso-$(date +%F).sql.gz`, más el respaldo propio de ese servidor. Nunca `DROP DATABASE` sobre `acceso`.

@@ -133,7 +133,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       (e) => e.resultado === 'permitido' && e.repetido_de_id !== null,
     );
     expect(repetidas.length).toBeLessThanOrEqual(1);
-    for (const repetida of repetidas) expect(String(repetida.dispositivo_id)).toBe(lectorGanador);
+    for (const repetida of repetidas) expect(repetida.dispositivo_id).toBe(lectorGanador);
     const abrieron = resultados.filter((r) => r.abrir);
     expect(abrieron).toHaveLength(1 + repetidas.length);
     for (const resultado of resultados.filter((r) => !r.abrir)) {

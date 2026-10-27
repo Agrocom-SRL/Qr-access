@@ -226,9 +226,9 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
       true,
     );
     expect(respuestas.filter((r) => r.abrir)).toHaveLength(1 + repetidas.length);
-    expect(
-      respuestas.filter((r) => !r.abrir).every((r) => r.motivo_code === 'qr.usado'),
-    ).toBe(true);
+    expect(respuestas.filter((r) => !r.abrir).every((r) => r.motivo_code === 'qr.usado')).toBe(
+      true,
+    );
     expect(await usadoAt(qr.id)).toBeInstanceOf(Date);
   });
 
