@@ -25,6 +25,7 @@ void main() {
       'sesion.usuario_suspendido': (l) => l.comunErrorSesionUsuarioSuspendido,
       'sesion.cuenta_suspendida': (l) => l.comunErrorSesionCuentaSuspendida,
       'idempotencia.conflicto': (l) => l.comunErrorIdempotenciaConflicto,
+      'idempotencia.en_curso': (l) => l.comunErrorIdempotenciaEnCurso,
     };
 
     for (final entrada in casos.entries) {

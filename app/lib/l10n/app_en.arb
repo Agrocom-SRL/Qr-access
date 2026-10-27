@@ -49,7 +49,11 @@
   "comunErrorQrPropioEnCurso": "Your access QR is already being generated. Try again.",
   "comunErrorIdempotenciaConflicto": "That request was already sent with other data. Generate the QR again.",
   "@comunErrorIdempotenciaConflicto": {
-    "description": "code idempotencia.conflicto (409): the idempotency key was already used with another body; a new generation starts"
+    "description": "code idempotencia.conflicto (422): the idempotency key was already used with another body; a new generation starts"
+  },
+  "comunErrorIdempotenciaEnCurso": "That QR is still being generated. Wait a moment and try again.",
+  "@comunErrorIdempotenciaEnCurso": {
+    "description": "code idempotencia.en_curso (409): another request with the same key is still running; it is retried with the same key"
   },
   "comunErrorQrYaUsado": "This QR was already used, so it cannot be revoked.",
   "comunErrorQrLimiteDiario": "You have already generated the maximum number of QR codes for today. You can generate more tomorrow.",

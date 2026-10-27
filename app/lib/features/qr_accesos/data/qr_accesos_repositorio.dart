@@ -64,6 +64,10 @@ class _Generacion {
 /// Códigos HTTP de falla del servidor: un 5xx se reintenta con la misma clave.
 const _estatusServidor = 500;
 
+/// Código de la API (409) cuando otra petición con la misma clave sigue en
+/// marcha.
+const _codigoEnCurso = 'idempotencia.en_curso';
+
 class QrAccesosRepositorioApi implements QrAccesosRepositorio {
   /// [ambito] dice quién genera (un intento no pasa de una persona a otra);
   /// [azar] genera las claves, y [esperasReintento] las esperas entre
@@ -149,10 +153,14 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     if (identical(_actual, generacion)) _actual = null;
   }
 
-  /// Sin respuesta (sin red o tiempo agotado) o con un 5xx: el servidor pudo
-  /// o no procesar la petición, y repetirla con la misma clave es seguro.
+  /// Sin respuesta (sin red o tiempo agotado), con un 5xx o con
+  /// `idempotencia.en_curso` (otra petición con la misma clave sigue en
+  /// marcha): el servidor pudo o no procesar la petición, y repetirla con la
+  /// misma clave es seguro. Descartar la clave aquí generaría un segundo QR.
   bool _esTransitoria(ErrorApi error) =>
-      error.esSinConexion || (error.status ?? 0) >= _estatusServidor;
+      error.esSinConexion ||
+      (error.status ?? 0) >= _estatusServidor ||
+      error.code == _codigoEnCurso;
 
   Future<QrGenerado> _pedirQrGenerado(IntentoGeneracion intento) async {
     final datos = intento.datos;

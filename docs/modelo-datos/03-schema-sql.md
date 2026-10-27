@@ -797,6 +797,25 @@ ALTER TABLE planes
 
 -- 20261027100005_add_indice_de_creacion_a_qr_accesos.sql
 ALTER TABLE qr_accesos ADD KEY idx_qr_accesos_creado (tenant_id, created_at);
+
+-- 20261027100006_create_claves_idempotencia.sql (transitoria: sin soft delete ni autoría; las vencidas se borran)
+CREATE TABLE claves_idempotencia (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  operacion VARCHAR(40) NOT NULL,
+  clave_hash CHAR(64) NOT NULL,
+  huella CHAR(64) NOT NULL,
+  respuesta JSON NOT NULL,
+  con_token TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  vence_at DATETIME(3) NOT NULL,
+  CONSTRAINT fk_claves_idempotencia_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_claves_idempotencia_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_claves_idempotencia_operacion CHECK (operacion IN ('qr.generar')),
+  UNIQUE KEY uq_claves_idempotencia_clave (tenant_id, usuario_id, operacion, clave_hash),
+  KEY idx_claves_idempotencia_vence (vence_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ## permisos: configuración de los topes

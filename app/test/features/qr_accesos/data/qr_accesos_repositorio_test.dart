@@ -326,10 +326,10 @@ void main() {
         final (repositorio, adaptador) = montar((_) async {
           llamadas++;
           return llamadas == 1
-              ? respuestaJson(409, {
+              ? respuestaJson(422, {
                   'type': 'about:blank',
                   'title': 'Conflicto',
-                  'status': 409,
+                  'status': 422,
                   'code': 'idempotencia.conflicto',
                 })
               : respuestaJson(201, _generado());
@@ -350,6 +350,30 @@ void main() {
         final claves = _claves(adaptador);
         expect(claves, hasLength(2));
         expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test(
+      'un 409 idempotencia.en_curso se reintenta con la misma clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((_) async {
+          llamadas++;
+          return llamadas == 1
+              ? respuestaJson(409, {
+                  'type': 'about:blank',
+                  'title': 'En curso',
+                  'status': 409,
+                  'code': 'idempotencia.en_curso',
+                })
+              : respuestaJson(201, _generado());
+        });
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        expect(adaptador.peticiones, hasLength(2));
+        expect(_claves(adaptador).toSet(), hasLength(1));
       },
     );
 

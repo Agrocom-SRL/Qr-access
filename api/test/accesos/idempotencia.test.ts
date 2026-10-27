@@ -49,7 +49,7 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
     sesionB = await iniciarSesion(prueba.app, b.usuario.pin);
   });
 
-  const generar = (sesion: Sesion, payload: object, clave: string | undefined = undefined) =>
+  const generar = (sesion: Sesion, payload: object, clave?: string) =>
     prueba.app.inject({
       method: 'POST',
       url: '/api/v1/qr-accesos',

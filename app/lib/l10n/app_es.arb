@@ -236,7 +236,11 @@
   },
   "comunErrorIdempotenciaConflicto": "Esa solicitud ya se envió con otros datos. Genera el QR de nuevo.",
   "@comunErrorIdempotenciaConflicto": {
-    "description": "code idempotencia.conflicto (409): la clave de idempotencia ya se usó con otro cuerpo; se empieza una generación nueva"
+    "description": "code idempotencia.conflicto (422): la clave de idempotencia ya se usó con otro cuerpo; se empieza una generación nueva"
+  },
+  "comunErrorIdempotenciaEnCurso": "Ese QR ya se está generando. Espera un momento y toca de nuevo.",
+  "@comunErrorIdempotenciaEnCurso": {
+    "description": "code idempotencia.en_curso (409): otra petición con la misma clave aún no terminó; se reintenta con la misma clave"
   },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
   "@comunErrorQrYaUsado": {
