@@ -925,3 +925,259 @@ export class RepositorioDeExportaciones extends RepositorioDeCuenta {
     });
   }
 }
+
+/** Un usuario con muchas aperturas con su QR propio, o con usos imposibles, en una ventana. */
+export interface ActividadSospechosaFila extends RowDataPacket {
+  tenant_id: string;
+  usuario_id: string;
+  total: number | string;
+  /** Los ids de los últimos intentos (más nuevos primero), separados por coma. */
+  ids: string;
+  /** Solo en los usos imposibles: los ids de la otra mitad de cada par. */
+  ids_destino?: string | null;
+}
+
+/** Un QR cuyo rechazo `qr.usado` se repite. */
+export interface QrReenviadoFila extends RowDataPacket {
+  tenant_id: string;
+  usuario_id: string;
+  qr_id: string;
+  rechazos: number | string;
+  lectores: number | string;
+  ids: string;
+}
+
+export interface AperturasDeCuentaFila extends RowDataPacket {
+  tenant_id: string;
+  aperturas: number | string;
+}
+
+export interface ActividadPorDiaFila extends RowDataPacket {
+  tenant_id: string;
+  dia: string;
+  aperturas: number | string;
+  rechazos: number | string;
+}
+
+export interface GeneradosPorDiaFila extends RowDataPacket {
+  tenant_id: string;
+  dia: string;
+  generados: number | string;
+}
+
+/** Solo las aperturas que ordenó el servidor por QR: el pulsador y la llave no cuentan para estas señales. */
+const ES_APERTURA_POR_QR = "t.metodo = 'qr' AND t.resultado = 'permitido'";
+
+/**
+ * Lee `eventos_acceso` de TODAS las cuentas para los detectores de señales y la vista de AGROCOM (ADR 0030 §4 y §5,
+ * ola W12): salto EXPLÍCITO del aislamiento, de solo lectura (la tabla es de solo inserción). Cada hallazgo se trata
+ * luego dentro de su cuenta. Cuenta TODAS las filas, también las repeticiones de un mismo intento (ADR 0032 §4.3).
+ */
+export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'eventos_acceso',
+      columnas: [],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  /** Usuarios con al menos `minimo` aperturas con un QR propio suyo entre `desde` y `hasta` (ambos incl.). */
+  aperturasPropias(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<ActividadSospechosaFila[]> {
+    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
+    return this.seleccionar<ActividadSospechosaFila>({
+      columnas:
+        't.tenant_id, q.generado_por AS usuario_id, COUNT(*) AS total, ' +
+        "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 50) AS ids",
+      uniones:
+        'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id AND q.es_propio = 1',
+      donde:
+        `${ES_APERTURA_POR_QR} AND t.ocurrido_at >= ? AND t.ocurrido_at <= ?` +
+        (despuesDe === null ? '' : ' AND (t.tenant_id, q.generado_por) > (?, ?)'),
+      // El último `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
+      params: [desde, hasta, ...cursor, minimo],
+      agrupar: 't.tenant_id, q.generado_por HAVING COUNT(*) >= ?',
+      orden: 't.tenant_id, q.generado_por',
+      limite,
+    });
+  }
+
+  /**
+   * Usuarios con al menos un par de usos de su QR propio que no alcanzan a recorrerse: en SITIOS distintos con
+   * menos de `entreSitiosSegundos` de diferencia, o en PUERTAS distintas del MISMO sitio con menos de
+   * `entrePuertasSegundos` (0 = no se juzga el mismo sitio). Solo datos que ya existen: no hay distancias entre
+   * sitios, así que el tiempo mínimo es un umbral configurado, no un cálculo de recorrido.
+   */
+  usosImposibles(
+    desde: Date,
+    hasta: Date,
+    entreSitiosSegundos: number,
+    entrePuertasSegundos: number,
+    limite: number,
+    despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<ActividadSospechosaFila[]> {
+    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
+    return this.seleccionar<ActividadSospechosaFila>({
+      columnas:
+        't.tenant_id, q.generado_por AS usuario_id, COUNT(*) AS total, ' +
+        "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 25) AS ids, " +
+        "SUBSTRING_INDEX(GROUP_CONCAT(e2.id ORDER BY e2.id DESC SEPARATOR ','), ',', 25) AS ids_destino",
+      uniones:
+        'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id AND q.es_propio = 1 ' +
+        'JOIN puertas AS p ON p.id = t.puerta_id AND p.tenant_id = t.tenant_id ' +
+        'JOIN eventos_acceso AS e2 ON e2.tenant_id = t.tenant_id AND e2.id > t.id AND e2.puerta_id <> t.puerta_id ' +
+        "AND e2.metodo = 'qr' AND e2.resultado = 'permitido' AND e2.ocurrido_at >= t.ocurrido_at " +
+        'JOIN qr_accesos AS q2 ON q2.id = e2.qr_acceso_id AND q2.tenant_id = e2.tenant_id ' +
+        'AND q2.es_propio = 1 AND q2.generado_por = q.generado_por ' +
+        'JOIN puertas AS p2 ON p2.id = e2.puerta_id AND p2.tenant_id = e2.tenant_id',
+      donde:
+        `${ES_APERTURA_POR_QR} AND t.ocurrido_at >= ? AND t.ocurrido_at <= ? ` +
+        'AND ((p2.sitio_id <> p.sitio_id AND e2.ocurrido_at <= DATE_ADD(t.ocurrido_at, INTERVAL ? SECOND)) ' +
+        'OR (p2.sitio_id = p.sitio_id AND e2.ocurrido_at <= DATE_ADD(t.ocurrido_at, INTERVAL ? SECOND)))' +
+        (despuesDe === null ? '' : ' AND (t.tenant_id, q.generado_por) > (?, ?)'),
+      // Con 0 no se juzga el mismo sitio: `-1` s deja la condición siempre falsa (el segundo uso nunca es anterior).
+      params: [
+        desde,
+        hasta,
+        entreSitiosSegundos,
+        entrePuertasSegundos > 0 ? entrePuertasSegundos : -1,
+        ...cursor,
+      ],
+      agrupar: 't.tenant_id, q.generado_por',
+      orden: 't.tenant_id, q.generado_por',
+      limite,
+    });
+  }
+
+  /**
+   * QR con al menos `minimo` rechazos `qr.usado` (todas las filas, repeticiones incluidas) entre `desde` y `hasta`,
+   * con cuántos lectores distintos los vieron y quién generó el QR. Ordenados por (cuenta, generador, QR).
+   */
+  qrReenviados(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: {
+      readonly cuentaId: string;
+      readonly usuarioId: string;
+      readonly qrId: string;
+    } | null,
+  ): Promise<QrReenviadoFila[]> {
+    const cursor =
+      despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId, despuesDe.qrId];
+    return this.seleccionar<QrReenviadoFila>({
+      columnas:
+        't.tenant_id, q.generado_por AS usuario_id, t.qr_acceso_id AS qr_id, COUNT(*) AS rechazos, ' +
+        'COUNT(DISTINCT t.dispositivo_id) AS lectores, ' +
+        "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 20) AS ids",
+      uniones: 'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id',
+      donde:
+        "t.motivo_code = 'qr.usado' AND t.ocurrido_at >= ? AND t.ocurrido_at <= ?" +
+        (despuesDe === null
+          ? ''
+          : ' AND (t.tenant_id, q.generado_por, t.qr_acceso_id) > (?, ?, ?)'),
+      params: [desde, hasta, ...cursor, minimo],
+      agrupar: 't.tenant_id, q.generado_por, t.qr_acceso_id HAVING COUNT(*) >= ?',
+      orden: 't.tenant_id, q.generado_por, t.qr_acceso_id',
+      limite,
+    });
+  }
+
+  /** Cuentas con al menos `minimo` aperturas por QR entre `desde` y `hasta`, por id, a continuación de `despuesDe`. */
+  cuentasConAperturas(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: string | null,
+  ): Promise<AperturasDeCuentaFila[]> {
+    return this.seleccionar<AperturasDeCuentaFila>({
+      columnas: 't.tenant_id, COUNT(*) AS aperturas',
+      donde:
+        `${ES_APERTURA_POR_QR} AND t.ocurrido_at >= ? AND t.ocurrido_at <= ?` +
+        (despuesDe === null ? '' : ' AND t.tenant_id > ?'),
+      params: [desde, hasta, ...(despuesDe === null ? [] : [despuesDe]), minimo],
+      agrupar: 't.tenant_id HAVING COUNT(*) >= ?',
+      orden: 't.tenant_id',
+      limite,
+    });
+  }
+
+  /**
+   * Aperturas por QR y rechazos por día local de esas cuentas entre `desde` (incl.) y `hasta` (excl.). El día se corta
+   * con `desfaseUtc` (`-04:00`: La Paz), una constante del código que va como parámetro. Los días sin intentos no figuran.
+   */
+  porDia(
+    cuentaIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+    desfaseUtc: string,
+  ): Promise<ActividadPorDiaFila[]> {
+    if (cuentaIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<ActividadPorDiaFila>({
+      columnas:
+        "t.tenant_id, DATE_FORMAT(CONVERT_TZ(t.ocurrido_at, '+00:00', ?), '%Y-%m-%d') AS dia, " +
+        `SUM(${ES_APERTURA_POR_QR}) AS aperturas, SUM(t.resultado = 'rechazado') AS rechazos`,
+      donde: 't.tenant_id IN (?) AND t.ocurrido_at >= ? AND t.ocurrido_at < ?',
+      params: [desfaseUtc, cuentaIds, desde, hasta],
+      agrupar: 't.tenant_id, dia',
+      orden: 't.tenant_id, dia',
+    });
+  }
+}
+
+/** Lee `qr_accesos` de TODAS las cuentas, solo para el consumo de la bolsa y el flujo que ve AGROCOM (ola W12). */
+export class RepositorioDeQrDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'qr_accesos',
+      columnas: [],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  /** `cuentaId -> QR generados` entre `desde` (incl.) y `hasta` (excl.): lo que consume de su bolsa mensual. */
+  async generadosPorCuenta(
+    cuentaIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+  ): Promise<Map<string, number>> {
+    const mapa = new Map<string, number>();
+    if (cuentaIds.length === 0) return mapa;
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.tenant_id, COUNT(*) AS total',
+      donde: 't.tenant_id IN (?) AND t.created_at >= ? AND t.created_at < ?',
+      params: [cuentaIds, desde, hasta],
+      agrupar: 't.tenant_id',
+    });
+    for (const fila of filas) mapa.set(String(fila.tenant_id), Number(fila.total));
+    return mapa;
+  }
+
+  /** QR generados por día local de esas cuentas entre `desde` (incl.) y `hasta` (excl.). */
+  generadosPorDia(
+    cuentaIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+    desfaseUtc: string,
+  ): Promise<GeneradosPorDiaFila[]> {
+    if (cuentaIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<GeneradosPorDiaFila>({
+      columnas:
+        "t.tenant_id, DATE_FORMAT(CONVERT_TZ(t.created_at, '+00:00', ?), '%Y-%m-%d') AS dia, COUNT(*) AS generados",
+      donde: 't.tenant_id IN (?) AND t.created_at >= ? AND t.created_at < ?',
+      params: [desfaseUtc, cuentaIds, desde, hasta],
+      agrupar: 't.tenant_id, dia',
+      orden: 't.tenant_id, dia',
+    });
+  }
+}

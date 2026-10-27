@@ -9,11 +9,20 @@ import {
 } from './domain/confirmacion.js';
 import {
   EJECUCION_EFECTIVA,
+  RepositorioDeActividadDeTodas,
   RepositorioDeConfirmaciones,
   RepositorioDeConfirmacionesDeTodas,
   RepositorioDeEventos,
   RepositorioDeQr,
+  RepositorioDeQrDeTodas,
 } from './repository.js';
+
+export {
+  diaLocal,
+  inicioDelDiaLocal,
+  inicioDelMesLocal,
+  ZONA_DE_LOS_TOPES,
+} from './domain/vencimiento.js';
 
 interface AccesosPorDiaFila extends RowDataPacket {
   dia: string;
@@ -427,5 +436,185 @@ export function crearServicioDeEvidencia(pool: Pool): ServicioDeEvidencia {
       ]);
       return { qrIds: qrs, eventoAccesoIds: intentos };
     },
+  };
+}
+
+/** Un usuario cuya actividad con su QR propio es sospechosa en una ventana (cantidades e ids, nunca un token). */
+export interface UsuarioConActividadSospechosa {
+  readonly cuentaId: string;
+  readonly usuarioId: string;
+  /** Aperturas (uso masivo) o pares de usos imposibles. */
+  readonly total: number;
+  /** Los ids de los últimos intentos de acceso, más nuevos primero. */
+  readonly eventoIds: readonly string[];
+}
+
+/** Un QR cuyo rechazo `qr.usado` se repite: la huella de uno reenviado o compartido. */
+export interface QrConRechazosRepetidos {
+  readonly cuentaId: string;
+  /** Quién generó el QR. */
+  readonly usuarioId: string;
+  readonly qrId: string;
+  /** Rechazos `qr.usado` (todas las filas, repeticiones de un mismo intento incluidas). */
+  readonly rechazos: number;
+  /** Lectores (dispositivos) distintos que los vieron. */
+  readonly lectores: number;
+  readonly eventoIds: readonly string[];
+}
+
+/** Lo que la cuenta hizo un día local. */
+export interface ActividadDeUnDia {
+  /** `aaaa-mm-dd`, en la zona pedida. */
+  readonly dia: string;
+  /** Aperturas ordenadas por QR (el pulsador y la llave no cuentan). */
+  readonly aperturas: number;
+  /** Intentos rechazados. */
+  readonly rechazos: number;
+  /** QR generados ese día. */
+  readonly generados: number;
+}
+
+export interface Cursor {
+  readonly cuentaId: string;
+  readonly usuarioId: string;
+}
+
+const ids = (lista: string | null | undefined): string[] =>
+  lista === null || lista === undefined || lista === '' ? [] : lista.split(',');
+
+/**
+ * Lo que los detectores de señales y la vista de AGROCOM leen de los accesos (ADR 0030 §4 y §5, ola W12). Todo es
+ * SOLO LECTURA y de TODAS las cuentas (salto explícito del aislamiento): el detector trata luego cada hallazgo
+ * DENTRO de su cuenta. Nada de esto toca la validación ni la puerta, y las repeticiones de un mismo intento (ADR 0032
+ * §4.3) cuentan como cualquier otra fila.
+ */
+export interface ServicioDeActividadParaSenales {
+  /** Usuarios con al menos `minimo` aperturas con su QR propio entre `desde` y `hasta` (ambos incl.). */
+  aperturasPropias(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe?: Cursor | null,
+  ): Promise<UsuarioConActividadSospechosa[]>;
+  /** Usuarios con usos de su QR propio en puertas que no alcanzan a recorrerse (ver `usosImposibles` del repositorio). */
+  usosImposibles(
+    desde: Date,
+    hasta: Date,
+    umbrales: { entreSitiosSegundos: number; entrePuertasSegundos: number },
+    limite: number,
+    despuesDe?: Cursor | null,
+  ): Promise<UsuarioConActividadSospechosa[]>;
+  /** QR con al menos `minimo` rechazos `qr.usado` entre `desde` y `hasta`, por (cuenta, generador, QR). */
+  qrReenviados(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe?: (Cursor & { qrId: string }) | null,
+  ): Promise<QrConRechazosRepetidos[]>;
+  /** Cuentas con al menos `minimo` aperturas por QR entre `desde` y `hasta`, por id, a continuación de `despuesDe`. */
+  cuentasConAperturas(
+    desde: Date,
+    hasta: Date,
+    minimo: number,
+    limite: number,
+    despuesDe?: string | null,
+  ): Promise<{ cuentaId: string; aperturas: number }[]>;
+  /**
+   * La actividad de esas cuentas por día local entre `desde` (incl.) y `hasta` (excl.), con `desfaseUtc` (`-04:00`);
+   * una cuenta sin actividad no figura y un día sin actividad tampoco.
+   */
+  porDia(
+    cuentaIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+    desfaseUtc: string,
+  ): Promise<Map<string, ActividadDeUnDia[]>>;
+  /** `cuentaId -> QR generados` entre `desde` (incl.) y `hasta` (excl.): lo que consume cada cuenta de su bolsa. */
+  generadosPorCuenta(
+    cuentaIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+  ): Promise<Map<string, number>>;
+}
+
+export function crearServicioDeActividadParaSenales(pool: Pool): ServicioDeActividadParaSenales {
+  const actividad = new RepositorioDeActividadDeTodas(pool);
+  const qr = new RepositorioDeQrDeTodas(pool);
+  const aUsuarios = (
+    filas: Awaited<ReturnType<typeof actividad.aperturasPropias>>,
+  ): UsuarioConActividadSospechosa[] =>
+    filas.map((fila) => ({
+      cuentaId: fila.tenant_id,
+      usuarioId: fila.usuario_id,
+      total: Number(fila.total),
+      eventoIds: [...new Set([...ids(fila.ids), ...ids(fila.ids_destino)])],
+    }));
+  return {
+    async aperturasPropias(desde, hasta, minimo, limite, despuesDe = null) {
+      return aUsuarios(await actividad.aperturasPropias(desde, hasta, minimo, limite, despuesDe));
+    },
+    async usosImposibles(desde, hasta, umbrales, limite, despuesDe = null) {
+      return aUsuarios(
+        await actividad.usosImposibles(
+          desde,
+          hasta,
+          umbrales.entreSitiosSegundos,
+          umbrales.entrePuertasSegundos,
+          limite,
+          despuesDe,
+        ),
+      );
+    },
+    async qrReenviados(desde, hasta, minimo, limite, despuesDe = null) {
+      const filas = await actividad.qrReenviados(desde, hasta, minimo, limite, despuesDe);
+      return filas.map((fila) => ({
+        cuentaId: fila.tenant_id,
+        usuarioId: fila.usuario_id,
+        qrId: fila.qr_id,
+        rechazos: Number(fila.rechazos),
+        lectores: Number(fila.lectores),
+        eventoIds: ids(fila.ids),
+      }));
+    },
+    async cuentasConAperturas(desde, hasta, minimo, limite, despuesDe = null) {
+      const filas = await actividad.cuentasConAperturas(desde, hasta, minimo, limite, despuesDe);
+      return filas.map((fila) => ({ cuentaId: fila.tenant_id, aperturas: Number(fila.aperturas) }));
+    },
+    async porDia(cuentaIds, desde, hasta, desfaseUtc) {
+      const [eventos, generados] = await Promise.all([
+        actividad.porDia(cuentaIds, desde, hasta, desfaseUtc),
+        qr.generadosPorDia(cuentaIds, desde, hasta, desfaseUtc),
+      ]);
+      interface DatosDelDia {
+        aperturas: number;
+        rechazos: number;
+        generados: number;
+      }
+      const dias = new Map<string, Map<string, DatosDelDia>>();
+      const de = (cuentaId: string, dia: string): DatosDelDia => {
+        const porDia = dias.get(cuentaId) ?? new Map<string, DatosDelDia>();
+        dias.set(cuentaId, porDia);
+        const actual = porDia.get(dia) ?? { aperturas: 0, rechazos: 0, generados: 0 };
+        porDia.set(dia, actual);
+        return actual;
+      };
+      for (const fila of eventos) {
+        const dia = de(fila.tenant_id, fila.dia);
+        dia.aperturas = Number(fila.aperturas);
+        dia.rechazos = Number(fila.rechazos);
+      }
+      for (const fila of generados) de(fila.tenant_id, fila.dia).generados = Number(fila.generados);
+      return new Map(
+        [...dias].map(([cuentaId, porDia]) => [
+          cuentaId,
+          [...porDia]
+            .map(([dia, datos]) => ({ dia, ...datos }))
+            .sort((a, b) => a.dia.localeCompare(b.dia)),
+        ]),
+      );
+    },
+    generadosPorCuenta: (cuentaIds, desde, hasta) => qr.generadosPorCuenta(cuentaIds, desde, hasta),
   };
 }

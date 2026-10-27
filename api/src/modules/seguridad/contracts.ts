@@ -18,6 +18,7 @@ import {
   RepositorioDeCuentasDePlataforma,
   RepositorioDeIdentidades,
   RepositorioDeRolesDeUsuario,
+  RepositorioDeSesionesDePlataforma,
   RepositorioDeSuperAdmins,
   RepositorioDeUsuarios,
 } from './repository.js';
@@ -226,6 +227,8 @@ export interface ServicioDeArbol {
   ramaDe(usuarioId: string): Promise<string[]>;
   /** Los superiores de `usuarioId` (todos los de su cadena, sin orden garantizado), sin él. Vacío si no tiene. */
   superioresDe(usuarioId: string): Promise<string[]>;
+  /** El nivel del usuario en el árbol de la cuenta del contexto; `null` si no existe o su rol no tiene uno. */
+  nivelDe(usuarioId: string): Promise<NivelDeUsuario | null>;
   /** El estado PROPIO del usuario (no el efectivo); `null` si no existe en la cuenta. Con `tx`, dentro de ella. */
   estadoPropioDe(usuarioId: string, tx?: Transaccion): Promise<Estado | null>;
   /**
@@ -258,6 +261,11 @@ export function crearServicioDeArbol(pool: Pool): ServicioDeArbol {
     },
     async ramaDe(usuarioId) {
       return [usuarioId, ...(await usuarios.idsDeRama(usuarioId))];
+    },
+    async nivelDe(usuarioId) {
+      const roles = await new RepositorioDeRolesDeUsuario(pool).rolesDe(usuarioId);
+      const [unico] = roles;
+      return roles.length === 1 && unico !== undefined ? nivelDeRol(unico.nombre) : null;
     },
     async superioresDe(usuarioId) {
       const cadena = await usuarios.cadenaDeEstados(usuarioId);
@@ -313,6 +321,46 @@ export function crearServicioDeUsuariosExportables(pool: Pool): ServicioDeUsuari
         estado: fila.estado,
         estadoMotivo: fila.estado_motivo,
         creadoAt: fila.created_at,
+      }));
+    },
+  };
+}
+
+/** Un usuario con sesiones activas desde varias IP (solo cantidades: la IP nunca sale de acá). */
+export interface UsuarioConVariasIps {
+  readonly cuentaId: string;
+  readonly usuarioId: string;
+  /** IP distintas entre sus sesiones activas. */
+  readonly ips: number;
+  /** Sesiones activas. */
+  readonly sesiones: number;
+}
+
+export interface ServicioDeSesionesParaSenales {
+  /**
+   * Quiénes, en CUALQUIER cuenta, tienen sesiones activas (vivas y con actividad desde `desde`) desde al menos
+   * `minimo` IP distintas. Es para el detector del sistema (salto explícito del aislamiento, solo lectura). Una
+   * página de `limite` ordenada por (cuenta, usuario) a continuación de `despuesDe`. Devuelve cantidades, nunca la IP.
+   */
+  conVariasIps(
+    ahora: Date,
+    desde: Date,
+    minimo: number,
+    limite: number,
+    despuesDe?: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<UsuarioConVariasIps[]>;
+}
+
+export function crearServicioDeSesionesParaSenales(pool: Pool): ServicioDeSesionesParaSenales {
+  const repositorio = new RepositorioDeSesionesDePlataforma(pool);
+  return {
+    async conVariasIps(ahora, desde, minimo, limite, despuesDe = null) {
+      const filas = await repositorio.usuariosConVariasIps(ahora, desde, minimo, limite, despuesDe);
+      return filas.map((fila) => ({
+        cuentaId: fila.tenant_id,
+        usuarioId: fila.usuario_id,
+        ips: Number(fila.ips),
+        sesiones: Number(fila.sesiones),
       }));
     },
   };

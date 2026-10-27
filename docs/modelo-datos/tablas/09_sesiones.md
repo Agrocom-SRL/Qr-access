@@ -24,6 +24,7 @@ Una sesión de un usuario: su refresh token (hasheado), su rol (el único del us
 
 - `uq_sesiones_refresh`
 - `idx_sesiones_usuario`
+- `idx_sesiones_reciente (updated_at)` (ola W12): el detector de PIN compartido busca las sesiones que se movieron en la ventana (el refresco rota la fila y con ella `updated_at`) sin recorrer toda la tabla.
 
 El SQL completo está en `03-schema-sql.md`.
 

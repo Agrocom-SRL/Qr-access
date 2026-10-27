@@ -1052,3 +1052,31 @@ ALTER TABLE notificaciones
     'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
     'apertura.fallida', 'incidente.propuesta'
   ));
+
+-- 20261102100001_add_senales_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida', 'incidente.propuesta',
+    'senal.uso', 'bolsa.aviso', 'bolsa.superada', 'flujo.atipico'
+  ));
+
+-- 20261102100002_create_avisos_de_senal.sql
+CREATE TABLE avisos_de_senal (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(40) NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  clave_unica VARCHAR(120) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_avisos_de_senal_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_avisos_de_senal_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_avisos_de_senal_clave (tenant_id, clave_unica),
+  KEY idx_avisos_de_senal_creado (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261102100003_add_indices_de_senales.sql
+ALTER TABLE eventos_acceso ADD KEY idx_eventos_acceso_global (ocurrido_at), ALGORITHM=INPLACE, LOCK=NONE;
+ALTER TABLE eventos_de_limite ADD KEY idx_eventos_de_limite_global (tipo, ocurrido_at);
+ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);

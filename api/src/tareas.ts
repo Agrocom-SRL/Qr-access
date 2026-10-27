@@ -2,6 +2,7 @@ import type { Pool } from 'mysql2/promise';
 import { crearTareasDeDispositivos } from './modules/dispositivos/contracts.js';
 import { crearTareasDeIncidentes } from './modules/incidentes/contracts.js';
 import { crearTareasDeNotificaciones } from './modules/notificaciones/contracts.js';
+import { crearTareasDeSenales } from './modules/senales/contracts.js';
 
 /** Una tarea que corre sola cada cierto tiempo. */
 export interface Tarea {
@@ -18,6 +19,7 @@ export function crearTareas(pool: Pool): readonly Tarea[] {
   const dispositivos = crearTareasDeDispositivos(pool);
   const notificaciones = crearTareasDeNotificaciones(pool);
   const incidentes = crearTareasDeIncidentes(pool);
+  const senales = crearTareasDeSenales(pool);
   return [
     // Detecta placas caídas, desaparecidas o con el lector mudo y encola los avisos (ADR 0031 §18).
     {
@@ -45,12 +47,49 @@ export function crearTareas(pool: Pool): readonly Tarea[] {
       cadaMs: 3_600_000,
       ejecutar: (ahora, registrarError) => notificaciones.depurar(ahora, registrarError),
     },
-    // Abre incidentes `generacion_ruidosa` para quien repite rechazos por tope (ADR 0033 §4.1; el resto de las señales es W12).
+    // Abre incidentes `generacion_ruidosa` para quien repite rechazos por tope (ADR 0033 §4.1).
     {
       nombre: 'incidentes-de-generacion-ruidosa',
       cadaMs: 300_000,
       ejecutar: (ahora, registrarError) =>
         incidentes.detectarGeneracionRuidosa(ahora, registrarError),
+    },
+    // Señales de abuso (ADR 0030 §4 y §5, ola W12): solo observan y avisan; ninguna limita nada ni toca la validación.
+    // Uso masivo: más aperturas con el QR propio que el N del nivel del usuario en el día.
+    {
+      nombre: 'senal-uso-masivo',
+      cadaMs: 600_000,
+      ejecutar: (ahora, registrarError) => senales.detectarUsoMasivo(ahora, registrarError),
+    },
+    // Uso imposible: el QR propio de un usuario usado en puertas que no alcanzan a recorrerse.
+    {
+      nombre: 'senal-uso-imposible',
+      cadaMs: 600_000,
+      ejecutar: (ahora, registrarError) => senales.detectarUsoImposible(ahora, registrarError),
+    },
+    // QR reenviado: un QR ya usado que sigue llegando a varios lectores.
+    {
+      nombre: 'senal-qr-reenviado',
+      cadaMs: 600_000,
+      ejecutar: (ahora, registrarError) => senales.detectarQrReenviado(ahora, registrarError),
+    },
+    // PIN compartido: sesiones activas de un usuario desde muchas IP distintas.
+    {
+      nombre: 'senal-pin-compartido',
+      cadaMs: 900_000,
+      ejecutar: (ahora, registrarError) => senales.detectarPinCompartido(ahora, registrarError),
+    },
+    // Bolsa mensual al porcentaje de aviso o superada: de la marca de la generación a la bandeja.
+    {
+      nombre: 'senal-bolsa',
+      cadaMs: 300_000,
+      ejecutar: (ahora, registrarError) => senales.avisarBolsa(ahora, registrarError),
+    },
+    // Flujo atípico de la cuenta: aperturas por usuario activo muy por encima de lo habitual.
+    {
+      nombre: 'senal-flujo-atipico',
+      cadaMs: 900_000,
+      ejecutar: (ahora, registrarError) => senales.detectarFlujoAtipico(ahora, registrarError),
     },
   ];
 }

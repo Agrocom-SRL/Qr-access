@@ -6,6 +6,7 @@ import {
   CLAVES_DE_APERTURA,
   CLAVES_DE_INCIDENTE,
   CLAVES_DE_PLACA,
+  CLAVES_DE_SENAL,
   valorEfectivo,
   type ClaveDeLimite,
   type ClaveDeApertura,
@@ -16,6 +17,8 @@ import {
   RepositorioDeEventosDeLimite,
   RepositorioDeEventosDeLimiteDeTodas,
   RepositorioDeExcepciones,
+  RepositorioDeExcepcionesDeTodas,
+  RepositorioDeMarcasDeBolsaDeTodas,
   type TipoDeEventoDeLimite,
 } from './repository.js';
 
@@ -357,6 +360,262 @@ export function crearServicioDeRechazosRepetidos(pool: Pool): ServicioDeRechazos
         total: Number(fila.total),
         eventoIds: fila.ultimos_ids.split(','),
       }));
+    },
+  };
+}
+
+/** El nivel del usuario en el árbol de su cuenta (ADR 0028); el uso masivo tiene un N distinto por nivel. */
+export type NivelParaUmbral = 'administrador' | 'titular' | 'miembro' | 'guardia';
+
+/** Los umbrales con que se juzga si hay una señal de abuso (ADR 0030 §4 y §4.1, ola W12). */
+export interface UmbralesDeSenal {
+  /** Aperturas con QR propio en un día local por encima de las cuales hay uso masivo (más de N), por nivel. */
+  readonly usoMasivo: Readonly<Record<NivelParaUmbral, number>>;
+  /** Dos usos de un QR propio en sitios distintos con menos de estos minutos: uso imposible. */
+  readonly usoImposibleEntreSitiosMinutos: number;
+  /** Igual en dos puertas del MISMO sitio, en segundos; 0 = no se juzga. */
+  readonly usoImposibleEntrePuertasSegundos: number;
+  /** Ventana, en horas, de uso imposible, QR reenviado y PIN compartido. */
+  readonly ventanaHoras: number;
+  /** Rechazos `qr.usado` sobre un mismo QR a partir de los cuales se sospecha que se reenvió. */
+  readonly qrReenviadoRechazosMinimo: number;
+  /** IP distintas entre las sesiones activas de un usuario a partir de las cuales se sospecha PIN compartido. */
+  readonly pinCompartidoIpsMinimo: number;
+  /** Aperturas mínimas en un día para que el flujo de una cuenta pueda ser atípico. */
+  readonly flujoAperturasMinimo: number;
+  /** Aperturas por usuario activo en un día a partir de las cuales el flujo es atípico. */
+  readonly flujoAperturasPorUsuario: number;
+}
+
+/** Valores de partida (supuestos de la ola W12: el ADR dice «N distinto por rol» y «muy por encima», no cuánto). */
+export const UMBRALES_DE_SENAL_POR_DEFECTO: UmbralesDeSenal = {
+  usoMasivo: { administrador: 40, titular: 30, miembro: 20, guardia: 12 },
+  usoImposibleEntreSitiosMinutos: 10,
+  usoImposibleEntrePuertasSegundos: 20,
+  ventanaHoras: 24,
+  qrReenviadoRechazosMinimo: 3,
+  pinCompartidoIpsMinimo: 4,
+  flujoAperturasMinimo: 50,
+  flujoAperturasPorUsuario: 25,
+};
+
+function armarUmbrales(valor: (clave: string, porDefecto: number) => number): UmbralesDeSenal {
+  const base = UMBRALES_DE_SENAL_POR_DEFECTO;
+  return {
+    usoMasivo: {
+      administrador: valor(CLAVES_DE_SENAL.usoMasivoAdministrador, base.usoMasivo.administrador),
+      titular: valor(CLAVES_DE_SENAL.usoMasivoTitular, base.usoMasivo.titular),
+      miembro: valor(CLAVES_DE_SENAL.usoMasivoMiembro, base.usoMasivo.miembro),
+      guardia: valor(CLAVES_DE_SENAL.usoMasivoGuardia, base.usoMasivo.guardia),
+    },
+    usoImposibleEntreSitiosMinutos: valor(
+      CLAVES_DE_SENAL.usoImposibleEntreSitiosMinutos,
+      base.usoImposibleEntreSitiosMinutos,
+    ),
+    usoImposibleEntrePuertasSegundos: valor(
+      CLAVES_DE_SENAL.usoImposibleEntrePuertasSegundos,
+      base.usoImposibleEntrePuertasSegundos,
+    ),
+    ventanaHoras: valor(CLAVES_DE_SENAL.ventanaHoras, base.ventanaHoras),
+    qrReenviadoRechazosMinimo: valor(
+      CLAVES_DE_SENAL.qrReenviadoRechazosMinimo,
+      base.qrReenviadoRechazosMinimo,
+    ),
+    pinCompartidoIpsMinimo: valor(
+      CLAVES_DE_SENAL.pinCompartidoIpsMinimo,
+      base.pinCompartidoIpsMinimo,
+    ),
+    flujoAperturasMinimo: valor(CLAVES_DE_SENAL.flujoAperturasMinimo, base.flujoAperturasMinimo),
+    flujoAperturasPorUsuario: valor(
+      CLAVES_DE_SENAL.flujoAperturasPorUsuario,
+      base.flujoAperturasPorUsuario,
+    ),
+  };
+}
+
+export interface ServicioDeUmbralesDeSenal {
+  /** Los valores generales de la plataforma (sin excepciones). Como los demás umbrales, no fallan cerrado. */
+  generales(): Promise<UmbralesDeSenal>;
+  /**
+   * Para la búsqueda de candidatos en TODAS las cuentas: por cada umbral, el valor más bajo entre el general y
+   * cualquier excepción. Así una excepción que BAJA un umbral no deja a su cuenta sin revisar; cada hallazgo se
+   * juzga luego con el umbral efectivo (`de`).
+   */
+  minimosEnLaPlataforma(): Promise<UmbralesDeSenal>;
+  /**
+   * Los umbrales que rigen en la cuenta del contexto: la excepción del usuario (si se pasa y la tiene), si no la de
+   * la cuenta, si no el valor general.
+   */
+  de(usuarioId: string | null): Promise<UmbralesDeSenal>;
+  /**
+   * Los umbrales del flujo (aperturas mínimas y por usuario) que rigen en cada una de esas cuentas: su excepción si
+   * la tiene, si no el valor general. Solo lectura, para la vista de AGROCOM.
+   */
+  flujoDeCuentas(
+    cuentaIds: readonly string[],
+  ): Promise<
+    Map<string, { readonly aperturasMinimo: number; readonly aperturasPorUsuario: number }>
+  >;
+}
+
+export function crearServicioDeUmbralesDeSenal(pool: Pool): ServicioDeUmbralesDeSenal {
+  const generalesDe = async (): Promise<ReadonlyMap<string, number>> =>
+    new Map((await new RepositorioDeConfiguracion(pool).listar()).map((f) => [f.clave, f.valor]));
+  return {
+    async generales() {
+      const general = await generalesDe();
+      return armarUmbrales((clave, porDefecto) => general.get(clave) ?? porDefecto);
+    },
+    async minimosEnLaPlataforma() {
+      const [general, minimos] = await Promise.all([
+        generalesDe(),
+        new RepositorioDeExcepcionesDeTodas(pool).minimoPorClave(Object.values(CLAVES_DE_SENAL)),
+      ]);
+      return armarUmbrales((clave, porDefecto) => {
+        const base = general.get(clave) ?? porDefecto;
+        return Math.min(base, minimos.get(clave) ?? base);
+      });
+    },
+    async flujoDeCuentas(cuentaIds) {
+      const [general, minimos, porUsuario] = await Promise.all([
+        generalesDe(),
+        new RepositorioDeExcepcionesDeTodas(pool).deCuentas(
+          CLAVES_DE_SENAL.flujoAperturasMinimo,
+          cuentaIds,
+        ),
+        new RepositorioDeExcepcionesDeTodas(pool).deCuentas(
+          CLAVES_DE_SENAL.flujoAperturasPorUsuario,
+          cuentaIds,
+        ),
+      ]);
+      const base = UMBRALES_DE_SENAL_POR_DEFECTO;
+      const minimoGeneral =
+        general.get(CLAVES_DE_SENAL.flujoAperturasMinimo) ?? base.flujoAperturasMinimo;
+      const porUsuarioGeneral =
+        general.get(CLAVES_DE_SENAL.flujoAperturasPorUsuario) ?? base.flujoAperturasPorUsuario;
+      const deMinimo = new Map(minimos.map((fila) => [fila.tenant_id, fila.valor]));
+      const dePorUsuario = new Map(porUsuario.map((fila) => [fila.tenant_id, fila.valor]));
+      return new Map(
+        cuentaIds.map((id) => [
+          id,
+          {
+            aperturasMinimo: deMinimo.get(id) ?? minimoGeneral,
+            aperturasPorUsuario: dePorUsuario.get(id) ?? porUsuarioGeneral,
+          },
+        ]),
+      );
+    },
+    async de(usuarioId) {
+      const [general, excepciones] = await Promise.all([
+        generalesDe(),
+        new RepositorioDeExcepciones(pool).listar(),
+      ]);
+      return armarUmbrales((clave, porDefecto) =>
+        valorEfectivo({
+          deUsuario:
+            usuarioId === null
+              ? null
+              : (excepciones.find((f) => f.clave === clave && f.usuario_id === usuarioId)?.valor ??
+                null),
+          deCuenta:
+            excepciones.find((f) => f.clave === clave && f.usuario_id === null)?.valor ?? null,
+          dePlan: null,
+          global: general.get(clave) ?? porDefecto,
+        }),
+      );
+    },
+  };
+}
+
+/** Una marca de la bolsa mensual (80 % o superada) tal como quedó en `eventos_de_limite`. */
+export interface MarcaDeBolsaRegistrada {
+  readonly id: string;
+  readonly cuentaId: string;
+  readonly usuarioId: string | null;
+  readonly tipo: 'bolsa.aviso' | 'bolsa.superada';
+  /** Cuántos QR llevaba la cuenta en el mes al marcar. */
+  readonly valor: number | null;
+  /** La bolsa que regía. */
+  readonly tope: number | null;
+  /** `bolsa.aviso:<aaaa-mm>` o `bolsa.superada:<aaaa-mm-dd>`. */
+  readonly claveUnica: string | null;
+  readonly ocurridoAt: Date;
+}
+
+export interface ServicioDeMarcasDeBolsa {
+  /**
+   * Las marcas de TODAS las cuentas desde `desde`, por id creciente, a continuación de `despuesDeId` (`null` =
+   * desde el principio), de a `limite`. Solo lectura: es lo que el detector lleva a la bandeja.
+   */
+  desde(desde: Date, despuesDeId: string | null, limite: number): Promise<MarcaDeBolsaRegistrada[]>;
+  /** La última marca de cada tipo desde `desde` por cuenta: cuándo avisó y cuándo se pasó. */
+  ultimasDelMes(
+    cuentaIds: readonly string[],
+    desde: Date,
+  ): Promise<Map<string, { avisoAt: Date | null; superadaAt: Date | null }>>;
+}
+
+export function crearServicioDeMarcasDeBolsa(pool: Pool): ServicioDeMarcasDeBolsa {
+  const repositorio = new RepositorioDeMarcasDeBolsaDeTodas(pool);
+  return {
+    async desde(desde, despuesDeId, limite) {
+      return (await repositorio.desde(desde, despuesDeId, limite)).map((fila) => ({
+        id: fila.id,
+        cuentaId: fila.tenant_id,
+        usuarioId: fila.usuario_id,
+        tipo: fila.tipo,
+        valor: fila.valor,
+        tope: fila.tope,
+        claveUnica: fila.clave_unica,
+        ocurridoAt: fila.ocurrido_at,
+      }));
+    },
+    ultimasDelMes: (cuentaIds, desde) => repositorio.ultimasDelMes(cuentaIds, desde),
+  };
+}
+
+/** De dónde sale la bolsa que rige para una cuenta (precedencia del ADR 0030 §2.1.1). */
+export type OrigenDeLaBolsa = 'excepcion' | 'plan' | 'general';
+
+export interface BolsaDeCuenta {
+  /** QR por mes; `null` solo si ni el plan ni la excepción la fijan y la base no se sembró con la general. */
+  readonly tope: number | null;
+  readonly origen: OrigenDeLaBolsa | null;
+}
+
+export interface ServicioDeBolsaDeCuentas {
+  /**
+   * La bolsa mensual que rige para cada una de esas cuentas, dado lo que fija el plan de cada una (`null` = no la
+   * fija): excepción de la cuenta > plan > valor general. Y el porcentaje en que se avisa. Solo lectura.
+   */
+  de(planPorCuenta: ReadonlyMap<string, number | null>): Promise<{
+    readonly avisoPorcentaje: number;
+    readonly bolsas: Map<string, BolsaDeCuenta>;
+  }>;
+}
+
+export function crearServicioDeBolsaDeCuentas(pool: Pool): ServicioDeBolsaDeCuentas {
+  return {
+    async de(planPorCuenta) {
+      const [generales, excepciones] = await Promise.all([
+        new RepositorioDeConfiguracion(pool).listar(),
+        new RepositorioDeExcepcionesDeTodas(pool).deCuentas(CLAVES.bolsaMensual, [
+          ...planPorCuenta.keys(),
+        ]),
+      ]);
+      const general = new Map(generales.map((fila) => [fila.clave, fila.valor]));
+      const deCuenta = new Map(excepciones.map((fila) => [fila.tenant_id, fila.valor]));
+      const bolsas = new Map<string, BolsaDeCuenta>();
+      for (const [cuentaId, dePlan] of planPorCuenta) {
+        const deExcepcion = deCuenta.get(cuentaId);
+        const base = general.get(CLAVES.bolsaMensual);
+        if (deExcepcion !== undefined)
+          bolsas.set(cuentaId, { tope: deExcepcion, origen: 'excepcion' });
+        else if (dePlan !== null) bolsas.set(cuentaId, { tope: dePlan, origen: 'plan' });
+        else if (base !== undefined) bolsas.set(cuentaId, { tope: base, origen: 'general' });
+        else bolsas.set(cuentaId, { tope: null, origen: null });
+      }
+      return { avisoPorcentaje: general.get(CLAVES.bolsaAvisoPorcentaje) ?? 80, bolsas };
     },
   };
 }

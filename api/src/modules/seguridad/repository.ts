@@ -764,6 +764,41 @@ export class RepositorioDeSesionesDePlataforma extends RepositorioDePlataforma {
       params: [refreshHash],
     });
   }
+
+  /**
+   * Usuarios de cualquier cuenta con sesiones activas (vivas y movidas desde `desde`) desde al menos `minimo` IP
+   * distintas: la señal de un PIN que anda en varias manos (ADR 0030 §4.1, ola W12). Solo lectura y de TODAS las
+   * cuentas (salto explícito del aislamiento, para el detector); cada hallazgo se trata luego dentro de su cuenta. Una
+   * página de `limite`, por (cuenta, usuario), a continuación de `despuesDe`. Cuenta IP, nunca las devuelve.
+   */
+  usuariosConVariasIps(
+    ahora: Date,
+    desde: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<SesionesDeUsuarioFila[]> {
+    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
+    return this.seleccionar<SesionesDeUsuarioFila>({
+      columnas: 't.tenant_id, t.usuario_id, COUNT(DISTINCT t.ip) AS ips, COUNT(*) AS sesiones',
+      donde:
+        't.tenant_id IS NOT NULL AND t.ip IS NOT NULL AND t.revocada_at IS NULL AND t.expira_at > ? ' +
+        'AND t.updated_at >= ?' +
+        (despuesDe === null ? '' : ' AND (t.tenant_id, t.usuario_id) > (?, ?)'),
+      // El último `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
+      params: [ahora, desde, ...cursor, minimo],
+      agrupar: 't.tenant_id, t.usuario_id HAVING COUNT(DISTINCT t.ip) >= ?',
+      orden: 't.tenant_id, t.usuario_id',
+      limite,
+    });
+  }
+}
+
+export interface SesionesDeUsuarioFila extends RowDataPacket {
+  tenant_id: string;
+  usuario_id: string;
+  ips: number | string;
+  sesiones: number | string;
 }
 
 export interface SuperAdminFila extends RowDataPacket {

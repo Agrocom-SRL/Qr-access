@@ -248,3 +248,122 @@ export class RepositorioDeEventosDeLimiteDeTodas extends RepositorioDePlataforma
     });
   }
 }
+
+export interface MarcaDeBolsaFila extends RowDataPacket {
+  id: string;
+  tenant_id: string;
+  usuario_id: string | null;
+  tipo: 'bolsa.aviso' | 'bolsa.superada';
+  valor: number | null;
+  tope: number | null;
+  clave_unica: string | null;
+  ocurrido_at: Date;
+}
+
+interface MarcaDelMesFila extends RowDataPacket {
+  tenant_id: string;
+  tipo: 'bolsa.aviso' | 'bolsa.superada';
+  ultima: Date;
+}
+
+/**
+ * Lee las marcas de la bolsa mensual de TODAS las cuentas (ADR 0030 §2 y §5, ola W12): salto explícito del
+ * aislamiento, de solo lectura, para llevarlas a la bandeja y para el consumo que ve AGROCOM.
+ */
+export class RepositorioDeMarcasDeBolsaDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'eventos_de_limite',
+      columnas: [],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  /** Las marcas desde `desde`, por id creciente, a continuación de `despuesDeId` (cursor), de a `limite`. */
+  desde(desde: Date, despuesDeId: string | null, limite: number): Promise<MarcaDeBolsaFila[]> {
+    return this.seleccionar<MarcaDeBolsaFila>({
+      columnas:
+        't.id, t.tenant_id, t.usuario_id, t.tipo, t.valor, t.tope, t.clave_unica, t.ocurrido_at',
+      donde:
+        "t.tipo IN ('bolsa.aviso', 'bolsa.superada') AND t.ocurrido_at >= ?" +
+        (despuesDeId === null ? '' : ' AND t.id > ?'),
+      params: despuesDeId === null ? [desde] : [desde, despuesDeId],
+      orden: 't.id',
+      limite,
+    });
+  }
+
+  /** La última marca de cada tipo desde `desde` por cuenta (cuándo avisó y cuándo se pasó este mes). */
+  async ultimasDelMes(
+    cuentaIds: readonly string[],
+    desde: Date,
+  ): Promise<Map<string, { avisoAt: Date | null; superadaAt: Date | null }>> {
+    const mapa = new Map<string, { avisoAt: Date | null; superadaAt: Date | null }>();
+    if (cuentaIds.length === 0) return mapa;
+    const filas = await this.seleccionar<MarcaDelMesFila>({
+      columnas: 't.tenant_id, t.tipo, MAX(t.ocurrido_at) AS ultima',
+      donde:
+        "t.tenant_id IN (?) AND t.tipo IN ('bolsa.aviso', 'bolsa.superada') AND t.ocurrido_at >= ?",
+      params: [cuentaIds, desde],
+      agrupar: 't.tenant_id, t.tipo',
+    });
+    for (const fila of filas) {
+      const actual = mapa.get(fila.tenant_id) ?? { avisoAt: null, superadaAt: null };
+      if (fila.tipo === 'bolsa.aviso') actual.avisoAt = fila.ultima;
+      else actual.superadaAt = fila.ultima;
+      mapa.set(fila.tenant_id, actual);
+    }
+    return mapa;
+  }
+}
+
+interface MinimoPorClaveFila extends RowDataPacket {
+  clave: string;
+  minimo: number;
+}
+
+export interface ExcepcionDeCuentaFila extends RowDataPacket {
+  tenant_id: string;
+  clave: string;
+  valor: number;
+}
+
+/**
+ * Lee las excepciones de TODAS las cuentas, solo para los detectores y la vista de plataforma (ola W12): salto
+ * explícito del aislamiento, de solo lectura. La escritura de una excepción sigue pasando por `RepositorioDeExcepciones`.
+ */
+export class RepositorioDeExcepcionesDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'excepciones_de_limite',
+      columnas: [],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  /** El valor más bajo que alguna excepción (de cuenta o de usuario) fija para cada clave. */
+  async minimoPorClave(claves: readonly string[]): Promise<Map<string, number>> {
+    const mapa = new Map<string, number>();
+    if (claves.length === 0) return mapa;
+    const filas = await this.seleccionar<MinimoPorClaveFila>({
+      columnas: 't.clave, MIN(t.valor) AS minimo',
+      donde: 't.clave IN (?)',
+      params: [claves],
+      agrupar: 't.clave',
+    });
+    for (const fila of filas) mapa.set(fila.clave, fila.minimo);
+    return mapa;
+  }
+
+  /** Las excepciones de CUENTA (no las de un usuario) de esa clave en esas cuentas. */
+  deCuentas(clave: string, cuentaIds: readonly string[]): Promise<ExcepcionDeCuentaFila[]> {
+    if (cuentaIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<ExcepcionDeCuentaFila>({
+      columnas: 't.tenant_id, t.clave, t.valor',
+      donde: 't.clave = ? AND t.usuario_id IS NULL AND t.tenant_id IN (?)',
+      params: [clave, cuentaIds],
+    });
+  }
+}

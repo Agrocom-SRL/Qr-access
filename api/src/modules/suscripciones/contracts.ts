@@ -69,6 +69,8 @@ export interface PlanContratado {
   readonly nombre: string;
   /** `null` = el plan no limita los usuarios. */
   readonly cupoUsuarios: number | null;
+  /** `null` = el plan no fija la bolsa mensual de QR y rige la general (ADR 0030 §2). */
+  readonly bolsaQrMensual: number | null;
   readonly precioAnual: number;
 }
 
@@ -92,6 +94,7 @@ function aSuscripcionDeCuenta(fila: SuscripcionActualFila, ahora: Date): Suscrip
       id: fila.plan_id,
       nombre: fila.plan_nombre,
       cupoUsuarios: fila.max_usuarios,
+      bolsaQrMensual: fila.bolsa_qr_mensual,
       precioAnual: Number(fila.precio_anual),
     },
     desde: fila.desde,
@@ -181,6 +184,7 @@ export function crearServicioDeSuscripcionesDePlataforma(
         id: fila.id,
         nombre: fila.nombre,
         cupoUsuarios: fila.max_usuarios,
+        bolsaQrMensual: fila.bolsa_qr_mensual,
         precioAnual: Number(fila.precio_anual),
       };
     },

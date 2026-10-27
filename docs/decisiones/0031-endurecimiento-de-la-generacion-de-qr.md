@@ -68,6 +68,7 @@ El ADR 0030 limita *cuántos* QR se generan. Falta endurecer *cómo* se generan,
     - **Cuánto tiempo queda abierta la puerta:** decisión abierta. Por ahora lo controla una persona (guardia) y el sistema no lo mide; si más adelante se quiere («puerta abierta demasiado tiempo»), el sensor ya aportaría el dato.
     - El firmware sigue sin lógica de negocio: lee pines y reporta; que la apertura sea válida lo decide siempre el servidor.
 19. **[Aceptado] Contador de rechazos por motivo** en las estadísticas de la cuenta (`qr.usado`, `qr.vencido`, `qr.otra_puerta`): muchos `qr.usado` repetidos sugieren QR reenviados o compartidos.
+    - **Implementado en la ola W12 (señal `qr_reenviado`).** La tarea `senal-qr-reenviado` cuenta los rechazos `qr.usado` por QR (todas las filas, repeticiones de la ola W7 incluidas, ADR 0032 §4.3) y los **lectores** distintos que los vieron; abre un incidente `qr_reenviado` del sistema y avisa (ADR 0030, «Implementado (ola W12)»). Un lector que relee un QR usado frente a una persona no dispara: hacen falta lectores distintos, o una insistencia del triple del mínimo (solo constancia baja). No mira IP ni instalaciones (no existen para un rechazo de lector).
 20. **[Aceptado] Reloj único.** La hora que cuenta es la del servidor; el firmware no evalúa vencimientos ni ventanas (el firmware lee, pregunta y obedece).
 
 ## Descartadas

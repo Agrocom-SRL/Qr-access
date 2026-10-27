@@ -12,6 +12,7 @@ import {
   crearAutenticadorDeUsuario,
 } from './modules/seguridad/contracts.js';
 import { rutas as rutasDeResumen } from './modules/resumen/routes.js';
+import { rutas as rutasDeSenales } from './modules/senales/routes.js';
 import { rutas as rutasDeSeguridad } from './modules/seguridad/routes.js';
 import { rutas as rutasDeSuscripciones } from './modules/suscripciones/routes.js';
 import type { DependenciasDeModulo } from './platform/http/dependencias.js';
@@ -36,6 +37,7 @@ export const MODULOS: readonly ModuloRegistrado[] = [
   { nombre: 'notificaciones', rutas: rutasDeNotificaciones },
   { nombre: 'bitacora', rutas: rutasDeBitacora },
   { nombre: 'resumen', rutas: rutasDeResumen },
+  { nombre: 'senales', rutas: rutasDeSenales },
 ];
 
 /** Cómo se autentica un usuario, un super admin y un dispositivo: lo aportan sus módulos, el plugin solo los usa. */

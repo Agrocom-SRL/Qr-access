@@ -1,10 +1,10 @@
 # 28 — `notificaciones`
 
-**Módulo dueño:** `notificaciones` · **Tenant:** mixto (`tenant_id` de la cuenta para el propietario; `NULL` para AGROCOM) · **Migraciones:** `db/migrations/20261030100001_create_notificaciones.sql`, `20261031100003_add_apertura_fallida_a_tipos_de_notificacion.sql` y `20261101100005_add_incidente_propuesta_a_tipos_de_notificacion.sql`
+**Módulo dueño:** `notificaciones` · **Tenant:** mixto (`tenant_id` de la cuenta para el propietario; `NULL` para AGROCOM) · **Migraciones:** `db/migrations/20261030100001_create_notificaciones.sql`, `20261031100003_add_apertura_fallida_a_tipos_de_notificacion.sql` y `20261101100005_add_incidente_propuesta_a_tipos_de_notificacion.sql` y `20261102100001_add_senales_a_tipos_de_notificacion.sql`
 
 ## Propósito
 
-La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. Hoy solo la llenan los estados de placa (caída sostenida, desaparecida, lector sin respuesta y la constancia de recuperación). Un aviso AGRUPADO por sitio es **una** fila mientras el incidente siga abierto.
+La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. La llenan los estados de placa (caída sostenida, desaparecida, lector sin respuesta y la constancia de recuperación), las aperturas que fallan, las propuestas de reincidencia y, desde la ola W12, las señales de abuso: `senal.uso` (uso masivo, uso imposible, QR reenviado o PIN compartido de un usuario; el tipo va en `datos.senal`), `bolsa.aviso` y `bolsa.superada` (la bolsa mensual de QR, `datos.bolsa`) y `flujo.atipico` (`datos.flujo`). Un aviso AGRUPADO por sitio es **una** fila mientras el incidente siga abierto.
 
 ## Columnas
 
@@ -14,7 +14,7 @@ La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. 
 | `tenant_id` | `BIGINT UNSIGNED` | sí | FK a `cuentas`. Cuenta del destinatario; `NULL` = bandeja de AGROCOM |
 | `cuenta_id` | `BIGINT UNSIGNED` | no | FK a `cuentas`: de qué cuenta habla el aviso (con `tenant_id` no nulo son iguales) |
 | `destinatario_id` | `BIGINT UNSIGNED` | no | FK a `usuarios` (un usuario de la cuenta o un integrante de AGROCOM) |
-| `tipo` | `VARCHAR(40)` | no | `placa.caida_sostenida`, `placa.desaparecida`, `placa.lector_sin_respuesta`, `placa.recuperada`, `apertura.fallida`, `incidente.propuesta` (`CHECK`) |
+| `tipo` | `VARCHAR(40)` | no | `placa.caida_sostenida`, `placa.desaparecida`, `placa.lector_sin_respuesta`, `placa.recuperada`, `apertura.fallida`, `incidente.propuesta`, `senal.uso`, `bolsa.aviso`, `bolsa.superada`, `flujo.atipico` (`CHECK`) |
 | `severidad` | `VARCHAR(10)` | no | `info`, `aviso`, `critica` |
 | `sitio_id` | `BIGINT UNSIGNED` | sí | FK a `sitios`: el grupo del aviso |
 | `agrupacion_clave` | `VARCHAR(100)` | no | `<tipo>:sitio:<id>`; un incidente abierto por destinatario y clave |

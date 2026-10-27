@@ -11,6 +11,12 @@ export const TIPOS_DE_AVISO = [
   // El sistema PROPONE restringir, suspender o suspender y anular los QR de un usuario reincidente; una persona
   // decide (ADR 0033 §4.3, ola W11).
   'incidente.propuesta',
+  // Señales de abuso (ADR 0030 §4 y §5, ola W12): una señal de uso sospechoso de un usuario (el tipo exacto va en
+  // `datos.senal`), la bolsa mensual de QR al porcentaje de aviso o superada (no corta nada) y el flujo atípico.
+  'senal.uso',
+  'bolsa.aviso',
+  'bolsa.superada',
+  'flujo.atipico',
 ] as const;
 export type TipoDeAviso = (typeof TIPOS_DE_AVISO)[number];
 
@@ -70,12 +76,66 @@ export interface PropuestaDeAviso {
   readonly aplicada_automaticamente: boolean;
 }
 
+/** Las señales de uso de un usuario que llegan a la bandeja (los tipos de incidente que abre el sistema, W12). */
+export const TIPOS_DE_SENAL_DE_USO = [
+  'uso_masivo',
+  'uso_imposible',
+  'qr_reenviado',
+  'pin_compartido',
+] as const;
+export type TipoDeSenalDeUso = (typeof TIPOS_DE_SENAL_DE_USO)[number];
+
+/** El contenido de un aviso `senal.uso`. Sin secretos: ids y cantidades, nunca un token ni una IP. */
+export interface SenalDeAviso {
+  readonly tipo: TipoDeSenalDeUso;
+  readonly usuario_id: string;
+  readonly usuario_etiqueta: string | null;
+  readonly gravedad: 'baja' | 'media' | 'alta';
+  /** El incidente del sistema que abrió la señal (`GET /incidentes/{id}`); `null` si aún no se conoce. */
+  readonly incidente_id: string | null;
+  /** Día local (`aaaa-mm-dd`) al que corresponde. */
+  readonly dia: string;
+  /** Lo medido (aperturas, pares, rechazos, IP distintas) y el umbral que se cruzó. */
+  readonly valor: number;
+  readonly umbral: number;
+}
+
+/** El contenido de un aviso `bolsa.aviso` o `bolsa.superada`. */
+export interface BolsaDeAviso {
+  /** Mes local (`aaaa-mm`). */
+  readonly mes: string;
+  /** Día local de la marca (`aaaa-mm-dd`). */
+  readonly dia: string;
+  /** QR generados en el mes al marcar, y la bolsa que regía. */
+  readonly usado: number | null;
+  readonly tope: number | null;
+}
+
+/** El contenido de un aviso `flujo.atipico`. */
+export interface FlujoDeAviso {
+  /** Día local (`aaaa-mm-dd`). */
+  readonly dia: string;
+  readonly aperturas: number;
+  readonly usuarios_activos: number;
+  /** Aperturas por usuario activo, con un decimal. */
+  readonly por_usuario: number;
+  readonly umbral_por_usuario: number;
+  /** La mediana de aperturas por día de los 14 días anteriores con actividad; `null` si no hay historia. */
+  readonly base: number | null;
+}
+
 export interface DatosDeAviso {
   readonly cuenta: { readonly id: string; readonly codigo: string; readonly nombre: string };
   readonly sitio: { readonly id: string; readonly nombre: string } | null;
   readonly placas: PlacaDeAviso[];
   /** Solo en `incidente.propuesta`. */
   readonly propuesta?: PropuestaDeAviso;
+  /** Solo en `senal.uso`. */
+  readonly senal?: SenalDeAviso;
+  /** Solo en `bolsa.aviso` y `bolsa.superada`. */
+  readonly bolsa?: BolsaDeAviso;
+  /** Solo en `flujo.atipico`. */
+  readonly flujo?: FlujoDeAviso;
 }
 
 /**

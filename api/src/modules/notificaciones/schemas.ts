@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
-import { ACCIONES_PROPUESTAS, TIPOS_DE_NOTIFICACION } from './domain/aviso.js';
+import {
+  ACCIONES_PROPUESTAS,
+  TIPOS_DE_NOTIFICACION,
+  TIPOS_DE_SENAL_DE_USO,
+} from './domain/aviso.js';
 
 const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaTipo = z.enum(TIPOS_DE_NOTIFICACION as [string, ...string[]]);
@@ -41,12 +45,45 @@ const esquemaPropuesta = z.object({
   aplicada_automaticamente: z.boolean(),
 });
 
+/** Solo en `senal.uso` (ADR 0030 §4, ola W12). */
+const esquemaSenal = z.object({
+  tipo: z.enum(TIPOS_DE_SENAL_DE_USO),
+  usuario_id: z.string(),
+  usuario_etiqueta: z.string().nullable(),
+  gravedad: z.enum(['baja', 'media', 'alta']),
+  incidente_id: z.string().nullable(),
+  dia: z.string(),
+  valor: z.number().int(),
+  umbral: z.number().int(),
+});
+
+/** Solo en `bolsa.aviso` y `bolsa.superada` (ADR 0030 §2 y §5, ola W12). */
+const esquemaBolsa = z.object({
+  mes: z.string(),
+  dia: z.string(),
+  usado: z.number().int().nullable(),
+  tope: z.number().int().nullable(),
+});
+
+/** Solo en `flujo.atipico` (ADR 0030 §4, ola W12). */
+const esquemaFlujo = z.object({
+  dia: z.string(),
+  aperturas: z.number().int(),
+  usuarios_activos: z.number().int(),
+  por_usuario: z.number(),
+  umbral_por_usuario: z.number().int(),
+  base: z.number().nullable(),
+});
+
 /** El contenido de un aviso. Sin secretos: ni claves, ni tokens, ni MAC. */
 const esquemaDatos = z.object({
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
   sitio: z.object({ id: z.string(), nombre: z.string() }).nullable(),
   placas: z.array(esquemaPlaca),
   propuesta: esquemaPropuesta.optional(),
+  senal: esquemaSenal.optional(),
+  bolsa: esquemaBolsa.optional(),
+  flujo: esquemaFlujo.optional(),
 });
 
 export const esquemaNotificacion = z.object({

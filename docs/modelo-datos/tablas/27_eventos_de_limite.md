@@ -32,9 +32,9 @@ Sin autoría ni soft delete: no se edita ni se borra.
 
 ## Índices y restricciones
 
-- `uq_eventos_de_limite_marca (tenant_id, clave_unica)`, `idx_eventos_de_limite_usuario`, `idx_eventos_de_limite_tipo`, `ck_eventos_de_limite_tipo`.
+- `uq_eventos_de_limite_marca (tenant_id, clave_unica)`, `idx_eventos_de_limite_usuario`, `idx_eventos_de_limite_tipo`, `idx_eventos_de_limite_global (tipo, ocurrido_at)` (ola W12: el detector lee las marcas y los rechazos de todas las cuentas por tipo y fecha), `ck_eventos_de_limite_tipo`.
 
 ## Reglas
 
 - Un rechazo se escribe en su propia transacción, después de deshacer la generación rechazada: el rastro sobrevive al rollback.
-- La bandeja de notificaciones de la ola W9 (`30_notificaciones.md`) hoy solo avisa de estados de placa; avisar de estos eventos de límite (ADR 0030 §5) queda para una ola posterior. Estas filas son su fuente.
+- Las marcas `bolsa.aviso` y `bolsa.superada` llegan a la bandeja (ola W12, tarea `senal-bolsa`): una vez por marca, al propietario de la cuenta y a AGROCOM, con la constancia `bolsa:<clave_unica>` en `avisos_de_senal` (ficha 37). Los rechazos por tope alimentan el incidente `generacion_ruidosa` (ficha 33).

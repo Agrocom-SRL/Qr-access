@@ -69,6 +69,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('dispositivos.placa.liberar', 'plataforma'),
   ('limites.configuracion.ver', 'plataforma'),
   ('limites.configuracion.editar', 'plataforma'),
+  ('limites.consumo.ver', 'plataforma'),
+  ('seguridad.senal.ver', 'plataforma'),
   ('notificaciones.aviso_plataforma.ver', 'plataforma'),
   ('notificaciones.aviso_plataforma.gestionar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
@@ -126,6 +128,27 @@ INSERT INTO configuracion_limites (clave, valor) VALUES
   ('incidente.restriccion_automatica', 0),
   ('incidente.rechazos_generacion_minimo', 5),
   ('incidente.rechazos_generacion_ventana_horas', 24)
+ON DUPLICATE KEY UPDATE clave = VALUES(clave);
+
+-- Señales de abuso (ADR 0030 §4 y §5, ola W12; todos son supuestos de partida que AGROCOM ajusta con datos reales y
+-- NINGUNO limita nada: solo decide cuándo se abre un incidente y se avisa). Uso masivo: aperturas con QR propio de un
+-- usuario en un día local, N por rol (el Guardia, el más bajo). Uso imposible: dos usos de un QR propio en sitios
+-- distintos con menos de 10 min de diferencia, o en puertas distintas del mismo sitio con menos de 20 s (0 = no se juzga
+-- el mismo sitio). Ventana de 24 h para uso imposible, QR reenviado y PIN compartido. QR reenviado: 3 rechazos
+-- `qr.usado` sobre un mismo QR. PIN compartido: sesiones activas desde 4 IP distintas. Flujo atípico de la cuenta: al
+-- menos 50 aperturas en el día y 25 por usuario activo. No pisa lo que AGROCOM ya haya editado.
+INSERT INTO configuracion_limites (clave, valor) VALUES
+  ('senal.uso_masivo_administrador', 40),
+  ('senal.uso_masivo_titular', 30),
+  ('senal.uso_masivo_miembro', 20),
+  ('senal.uso_masivo_guardia', 12),
+  ('senal.uso_imposible_entre_sitios_minutos', 10),
+  ('senal.uso_imposible_entre_puertas_segundos', 20),
+  ('senal.ventana_horas', 24),
+  ('senal.qr_reenviado_rechazos_minimo', 3),
+  ('senal.pin_compartido_ips_minimo', 4),
+  ('senal.flujo_aperturas_minimo', 50),
+  ('senal.flujo_aperturas_por_usuario', 25)
 ON DUPLICATE KEY UPDATE clave = VALUES(clave);
 
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).

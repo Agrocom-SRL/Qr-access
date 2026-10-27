@@ -20,6 +20,7 @@ export interface SuscripcionActualFila extends RowDataPacket {
   plan_id: string;
   plan_nombre: string;
   max_usuarios: number | null;
+  bolsa_qr_mensual: number | null;
   precio_anual: string;
   desde: Date;
   hasta: Date;
@@ -35,7 +36,7 @@ export interface NuevaSuscripcion {
 }
 
 const COLUMNAS_ACTUAL =
-  't.id, t.tenant_id, t.plan_id, p.nombre AS plan_nombre, p.max_usuarios, p.precio_anual, t.desde, t.hasta, t.estado';
+  't.id, t.tenant_id, t.plan_id, p.nombre AS plan_nombre, p.max_usuarios, p.bolsa_qr_mensual, p.precio_anual, t.desde, t.hasta, t.estado';
 const UNION_PLAN = 'JOIN planes AS p ON p.id = t.plan_id';
 
 /** Dueño de `suscripciones` (ADR 0003). `planes` es de plataforma y se une por su id. */

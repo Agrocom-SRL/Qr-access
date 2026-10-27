@@ -1,5 +1,6 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type {
   EstadoDeIncidente,
@@ -304,6 +305,140 @@ export class RepositorioDeResoluciones extends RepositorioDeCuenta {
       donde: 't.incidente_id = ?',
       params: [incidenteId],
       orden: 't.id',
+    });
+  }
+}
+
+export interface IncidenteDeTodasFila extends IncidenteFila {
+  tenant_id: string;
+}
+
+export interface FiltroDeSenales {
+  readonly cuentaId: string | null;
+  readonly usuarioId: string | null;
+  readonly tipo: TipoDeIncidente | null;
+  readonly gravedad: Gravedad | null;
+  /** `abiertas` = sin resolver o pendientes (nadie decidió todavía). */
+  readonly estado: EstadoDeIncidente | 'abiertas' | null;
+  readonly desde: Date | null;
+  readonly hasta: Date | null;
+}
+
+function armarFiltroDeSenales(filtro: FiltroDeSenales): { donde: string; params: unknown[] } {
+  // Solo los que abrió el sistema: son las señales de abuso. Los que registra una persona se ven por cuenta.
+  const condiciones: string[] = ["t.origen = 'sistema'"];
+  const params: unknown[] = [];
+  if (filtro.cuentaId !== null) {
+    condiciones.push('t.tenant_id = ?');
+    params.push(filtro.cuentaId);
+  }
+  if (filtro.usuarioId !== null) {
+    condiciones.push('t.usuario_id = ?');
+    params.push(filtro.usuarioId);
+  }
+  if (filtro.tipo !== null) {
+    condiciones.push('t.tipo = ?');
+    params.push(filtro.tipo);
+  }
+  if (filtro.gravedad !== null) {
+    condiciones.push('t.gravedad = ?');
+    params.push(filtro.gravedad);
+  }
+  if (filtro.estado === 'abiertas') {
+    condiciones.push("(r.id IS NULL OR r.resultado = 'pendiente')");
+  } else if (filtro.estado === 'sin_resolver') {
+    condiciones.push('r.id IS NULL');
+  } else if (filtro.estado !== null) {
+    condiciones.push('r.resultado = ?');
+    params.push(filtro.estado);
+  }
+  if (filtro.desde !== null) {
+    condiciones.push('t.ocurrido_at >= ?');
+    params.push(filtro.desde);
+  }
+  if (filtro.hasta !== null) {
+    condiciones.push('t.ocurrido_at < ?');
+    params.push(filtro.hasta);
+  }
+  return { donde: condiciones.join(' AND '), params };
+}
+
+interface ResumenPorTipoFila extends RowDataPacket {
+  tipo: TipoDeIncidente;
+  total: number | string;
+  abiertas: number | string;
+  altas: number | string;
+}
+
+interface ResumenPorCuentaFila extends RowDataPacket {
+  tenant_id: string;
+  total: number | string;
+  abiertas: number | string;
+  altas: number | string;
+}
+
+/**
+ * Lee `incidentes_uso` de TODAS las cuentas, solo para la vista de AGROCOM (ADR 0030 §5, ola W12): salto EXPLÍCITO del
+ * aislamiento, de solo lectura (el incidente es un hecho de solo inserción). Nunca escribe.
+ */
+export class RepositorioDeIncidentesDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'incidentes_uso',
+      columnas: [],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  listarSenales(
+    filtro: FiltroDeSenales,
+    limite: number,
+    desplazamiento: number,
+  ): Promise<IncidenteDeTodasFila[]> {
+    const { donde, params } = armarFiltroDeSenales(filtro);
+    return this.seleccionar<IncidenteDeTodasFila>({
+      columnas: 't.tenant_id, ' + COLUMNAS,
+      uniones: UNION_RESOLUCION,
+      donde,
+      params,
+      orden: 't.ocurrido_at DESC, t.id DESC',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  contarSenales(filtro: FiltroDeSenales): Promise<number> {
+    const { donde, params } = armarFiltroDeSenales(filtro);
+    return this.contar({ uniones: UNION_RESOLUCION, donde, params });
+  }
+
+  /** Cuántas señales hubo de cada tipo en la ventana, y cuántas siguen abiertas o son de gravedad alta. */
+  resumenPorTipo(desde: Date, hasta: Date): Promise<ResumenPorTipoFila[]> {
+    return this.seleccionar<ResumenPorTipoFila>({
+      columnas:
+        "t.tipo, COUNT(*) AS total, SUM(r.id IS NULL OR r.resultado = 'pendiente') AS abiertas, " +
+        "SUM(t.gravedad = 'alta') AS altas",
+      uniones: UNION_RESOLUCION,
+      donde: "t.origen = 'sistema' AND t.ocurrido_at >= ? AND t.ocurrido_at < ?",
+      params: [desde, hasta],
+      agrupar: 't.tipo',
+      orden: 'total DESC, t.tipo',
+    });
+  }
+
+  /** Las cuentas con más señales en la ventana, de mayor a menor (las `limite` primeras). */
+  resumenPorCuenta(desde: Date, hasta: Date, limite: number): Promise<ResumenPorCuentaFila[]> {
+    return this.seleccionar<ResumenPorCuentaFila>({
+      columnas:
+        "t.tenant_id, COUNT(*) AS total, SUM(r.id IS NULL OR r.resultado = 'pendiente') AS abiertas, " +
+        "SUM(t.gravedad = 'alta') AS altas",
+      uniones: UNION_RESOLUCION,
+      donde: "t.origen = 'sistema' AND t.ocurrido_at >= ? AND t.ocurrido_at < ?",
+      params: [desde, hasta],
+      agrupar: 't.tenant_id',
+      orden: 'altas DESC, total DESC, t.tenant_id',
+      limite,
     });
   }
 }

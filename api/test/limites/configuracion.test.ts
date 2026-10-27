@@ -75,7 +75,7 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
     });
 
   describe('valores generales', () => {
-    it('lista los siete topes de QR, los cinco umbrales de placa, los tres de apertura y los cinco de incidentes con su valor inicial sembrado', async () => {
+    it('lista los siete topes de QR, los cinco umbrales de placa, los tres de apertura, los cinco de incidentes y los once de señales de abuso con su valor inicial sembrado', async () => {
       const respuesta = await pedir('GET', '/plataforma/limites');
       expect(respuesta.statusCode).toBe(200);
       const datos = respuesta.json<{ datos: Limite[] }>().datos;
@@ -100,6 +100,17 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
         ['incidente.restriccion_automatica', 0],
         ['incidente.rechazos_generacion_minimo', 5],
         ['incidente.rechazos_generacion_ventana_horas', 24],
+        ['senal.uso_masivo_administrador', 40],
+        ['senal.uso_masivo_titular', 30],
+        ['senal.uso_masivo_miembro', 20],
+        ['senal.uso_masivo_guardia', 12],
+        ['senal.uso_imposible_entre_sitios_minutos', 10],
+        ['senal.uso_imposible_entre_puertas_segundos', 20],
+        ['senal.ventana_horas', 24],
+        ['senal.qr_reenviado_rechazos_minimo', 3],
+        ['senal.pin_compartido_ips_minimo', 4],
+        ['senal.flujo_aperturas_minimo', 50],
+        ['senal.flujo_aperturas_por_usuario', 25],
       ]);
       // La política de reincidencia puede tener excepción por cuenta; la detección de generación ruidosa, no.
       expect(
@@ -112,6 +123,19 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
       expect(
         datos.find((limite) => limite.clave === 'incidente.rechazos_generacion_minimo')?.excepcion,
       ).toBe('global');
+      // Las señales de abuso: N por nivel con excepción por usuario; las ventanas de uso imposible, globales; el resto, por cuenta.
+      expect(datos.find((limite) => limite.clave === 'senal.uso_masivo_guardia')).toMatchObject({
+        excepcion: 'usuario',
+        minimo: 1,
+        maximo: 10_000,
+      });
+      expect(
+        datos.find((limite) => limite.clave === 'senal.uso_imposible_entre_sitios_minutos')
+          ?.excepcion,
+      ).toBe('global');
+      expect(
+        datos.find((limite) => limite.clave === 'senal.flujo_aperturas_por_usuario')?.excepcion,
+      ).toBe('cuenta');
       expect(datos.find((limite) => limite.clave === 'qr.bolsa_mensual')).toMatchObject({
         excepcion: 'cuenta',
         minimo: 1,
@@ -271,6 +295,41 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
         valor: 10,
       });
       expect(deCuenta.statusCode).toBe(200);
+    });
+
+    it('las señales de abuso: el N del uso masivo admite excepción de usuario; el resto, de cuenta o ninguna', async () => {
+      const deUsuario = await pedir('PUT', ruta(a.cuenta.id), {
+        clave: 'senal.uso_masivo_guardia',
+        usuario_id: a.usuario.id,
+        valor: 50,
+      });
+      expect(deUsuario.statusCode).toBe(200);
+      // El PIN compartido y el flujo son de cuenta: no de un usuario.
+      const pinPorUsuario = await pedir('PUT', ruta(a.cuenta.id), {
+        clave: 'senal.pin_compartido_ips_minimo',
+        usuario_id: a.usuario.id,
+        valor: 6,
+      });
+      expect(pinPorUsuario.json<Problema>().code).toBe('limite.excepcion_no_permitida');
+      const pinPorCuenta = await pedir('PUT', ruta(a.cuenta.id), {
+        clave: 'senal.pin_compartido_ips_minimo',
+        valor: 6,
+      });
+      expect(pinPorCuenta.statusCode).toBe(200);
+      // Las ventanas de uso imposible y la de horas valen igual para todos: ninguna excepción.
+      for (const clave of [
+        'senal.uso_imposible_entre_sitios_minutos',
+        'senal.uso_imposible_entre_puertas_segundos',
+        'senal.ventana_horas',
+      ]) {
+        const global = await pedir('PUT', ruta(a.cuenta.id), { clave, valor: 5 });
+        expect(global.json<Problema>().code, clave).toBe('limite.excepcion_no_permitida');
+      }
+      // Fuera de los extremos de la clave.
+      const fuera = await pedir('PUT', '/plataforma/limites/senal.pin_compartido_ips_minimo', {
+        valor: 1,
+      });
+      expect(fuera.json<Problema>().code).toBe('limite.valor_invalido');
     });
 
     it('valida la clave, el valor, la cuenta y el usuario', async () => {

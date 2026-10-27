@@ -59,13 +59,37 @@ export const CLAVES_DE_INCIDENTE = {
 export type ClaveDeIncidente = (typeof CLAVES_DE_INCIDENTE)[keyof typeof CLAVES_DE_INCIDENTE];
 
 /**
+ * Los umbrales de las señales de abuso (ADR 0030 §4 y §4.1, ola W12). Los detectores del sistema los leen; ninguno
+ * limita nada, solo decide cuándo se abre un incidente y se avisa. El N del uso masivo es distinto por rol (para el
+ * Guardia, bajo) y admite excepción por usuario (un portero conocido y legítimo); los de QR reenviado, PIN compartido y
+ * flujo, por cuenta. Las ventanas de uso imposible y la ventana de horas son globales: el detector busca los
+ * candidatos de todas las cuentas con una sola consulta cuya ventana no puede ser distinta por cuenta.
+ * Todos son supuestos de partida que AGROCOM ajusta con datos reales.
+ */
+export const CLAVES_DE_SENAL = {
+  usoMasivoAdministrador: 'senal.uso_masivo_administrador',
+  usoMasivoTitular: 'senal.uso_masivo_titular',
+  usoMasivoMiembro: 'senal.uso_masivo_miembro',
+  usoMasivoGuardia: 'senal.uso_masivo_guardia',
+  usoImposibleEntreSitiosMinutos: 'senal.uso_imposible_entre_sitios_minutos',
+  usoImposibleEntrePuertasSegundos: 'senal.uso_imposible_entre_puertas_segundos',
+  ventanaHoras: 'senal.ventana_horas',
+  qrReenviadoRechazosMinimo: 'senal.qr_reenviado_rechazos_minimo',
+  pinCompartidoIpsMinimo: 'senal.pin_compartido_ips_minimo',
+  flujoAperturasMinimo: 'senal.flujo_aperturas_minimo',
+  flujoAperturasPorUsuario: 'senal.flujo_aperturas_por_usuario',
+} as const;
+
+export type ClaveDeSenal = (typeof CLAVES_DE_SENAL)[keyof typeof CLAVES_DE_SENAL];
+
+/**
  * Dónde puede tener excepción una clave: `usuario` = para una cuenta o para un usuario; `cuenta` = solo para
  * una cuenta entera (la bolsa es de la cuenta); `global` = ninguna, vale igual para todos.
  */
 export type AlcanceDeExcepcion = 'usuario' | 'cuenta' | 'global';
 
 export interface DefinicionDeClave {
-  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura | ClaveDeIncidente;
+  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura | ClaveDeIncidente | ClaveDeSenal;
   readonly minimo: number;
   readonly maximo: number;
   readonly excepcion: AlcanceDeExcepcion;
@@ -129,6 +153,52 @@ const DEFINICIONES_DE_INCIDENTE: readonly DefinicionDeClave[] = [
   },
 ];
 
+const DEFINICIONES_DE_SENAL: readonly DefinicionDeClave[] = [
+  // Aperturas con QR propio de un usuario en un día local por encima de las cuales hay «uso masivo» (más de N).
+  {
+    clave: CLAVES_DE_SENAL.usoMasivoAdministrador,
+    minimo: 1,
+    maximo: 10_000,
+    excepcion: 'usuario',
+  },
+  { clave: CLAVES_DE_SENAL.usoMasivoTitular, minimo: 1, maximo: 10_000, excepcion: 'usuario' },
+  { clave: CLAVES_DE_SENAL.usoMasivoMiembro, minimo: 1, maximo: 10_000, excepcion: 'usuario' },
+  { clave: CLAVES_DE_SENAL.usoMasivoGuardia, minimo: 1, maximo: 10_000, excepcion: 'usuario' },
+  {
+    clave: CLAVES_DE_SENAL.usoImposibleEntreSitiosMinutos,
+    minimo: 1,
+    maximo: 1_440,
+    excepcion: 'global',
+  },
+  // 0 = no se juzgan dos puertas del mismo sitio (solo sitios distintos).
+  {
+    clave: CLAVES_DE_SENAL.usoImposibleEntrePuertasSegundos,
+    minimo: 0,
+    maximo: 3_600,
+    excepcion: 'global',
+  },
+  { clave: CLAVES_DE_SENAL.ventanaHoras, minimo: 1, maximo: 168, excepcion: 'global' },
+  {
+    clave: CLAVES_DE_SENAL.qrReenviadoRechazosMinimo,
+    minimo: 1,
+    maximo: 10_000,
+    excepcion: 'cuenta',
+  },
+  { clave: CLAVES_DE_SENAL.pinCompartidoIpsMinimo, minimo: 2, maximo: 1_000, excepcion: 'cuenta' },
+  {
+    clave: CLAVES_DE_SENAL.flujoAperturasMinimo,
+    minimo: 1,
+    maximo: 100_000_000,
+    excepcion: 'cuenta',
+  },
+  {
+    clave: CLAVES_DE_SENAL.flujoAperturasPorUsuario,
+    minimo: 1,
+    maximo: 1_000_000,
+    excepcion: 'cuenta',
+  },
+];
+
 /** Los topes de generación de QR (no incluye los umbrales de placa). */
 export const CLAVES_DE_LIMITE: readonly ClaveDeLimite[] = Object.values(CLAVES);
 
@@ -143,6 +213,7 @@ export function todasLasDefiniciones(): readonly DefinicionDeClave[] {
     ...DEFINICIONES_DE_PLACA,
     ...DEFINICIONES_DE_APERTURA,
     ...DEFINICIONES_DE_INCIDENTE,
+    ...DEFINICIONES_DE_SENAL,
   ];
 }
 

@@ -729,6 +729,12 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
         'entrega-de-notificaciones',
         'depuracion-de-notificaciones',
         'incidentes-de-generacion-ruidosa',
+        'senal-uso-masivo',
+        'senal-uso-imposible',
+        'senal-qr-reenviado',
+        'senal-pin-compartido',
+        'senal-bolsa',
+        'senal-flujo-atipico',
       ]);
       await latidoA(a.dispositivoPrincipal.id, en(-16));
       const errores: unknown[] = [];

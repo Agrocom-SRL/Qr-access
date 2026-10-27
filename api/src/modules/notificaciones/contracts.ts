@@ -10,9 +10,12 @@ export type {
   AccionPropuesta,
   Audiencia,
   AvisoAgrupado,
+  BolsaDeAviso,
   DatosDeAviso,
+  FlujoDeAviso,
   PlacaDeAviso,
   PropuestaDeAviso,
+  SenalDeAviso,
   Severidad,
   TipoDeAviso,
 } from './domain/aviso.js';

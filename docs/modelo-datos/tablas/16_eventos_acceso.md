@@ -27,6 +27,7 @@ Todo intento de apertura, permitido o rechazado, con su motivo (invariante 4, AD
 - `idx_eventos_acceso_puerta`
 - `idx_eventos_acceso_fecha`
 - `idx_eventos_acceso_qr`
+- `idx_eventos_acceso_global (ocurrido_at)` (ola W12): los detectores de señales buscan los intentos de una ventana de tiempo en TODAS las cuentas, y los demás índices empiezan por `tenant_id`.
 - `ck_eventos_acceso_metodo`
 - `ck_eventos_acceso_resultado`
 
