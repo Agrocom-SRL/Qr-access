@@ -103,6 +103,12 @@ La CSP de la app (`app/nginx/cabeceras-seguridad.conf`) es estricta, pero Flutte
 
 El Nginx del CT envía `X-Forwarded-Proto $scheme`. Entre NPMplus y el CT el esquema es `http`, aunque el navegador use `https`. La API va a necesitar el valor público para la cookie `Secure` y la comprobación de `Origin` (ADR 0033 §5). Falta decidir cómo se pasa el valor que pone NPMplus.
 
+## Hallazgos de seguridad
+
+Un secreto filtrado, una dependencia con aviso alto o un hallazgo de CodeQL tienen su procedimiento
+en `docs/gestion/seguridad-ci.md`. Un secreto real se rota en su origen antes que nada: el
+`PIN_PIMIENTA` no se cambia sin un plan de migración de PIN (ADR 0018).
+
 ## Primer arranque
 
 El `.env` se crea una vez en el CT (secretos aleatorios, `ADMIN_INICIAL_CLAVE` solo para el primer ingreso):

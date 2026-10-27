@@ -1,6 +1,8 @@
 # Actualizaciones de dependencias. Los PR apuntan a develop (ADR 0006) y no los
 # integra auto-merge.yml (solo toma feature/* y bugfix/*): se revisan a mano.
-# Los ecosistemas npm (/api y /web) y pub (/app) se suman cuando hagan falta.
+# npm de /api y /web: `npm audit` de seguridad.yml (ADR 0033 §2) mira esos lockfiles, así que
+# Dependabot los mantiene al día. pub (/app) queda pendiente: Dependabot lo soporta, pero CI
+# aún no audita Dart (ver docs/gestion/seguridad-ci.md).
 # PlatformIO no está soportado por Dependabot: el firmware se actualiza a mano.
 version: 2
 updates:
@@ -16,6 +18,23 @@ updates:
     groups:
       actions:
         patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /api
+    target-branch: develop
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: actualiza
+    # Misma política que /web: un PR semanal agrupado, y las mismas versiones mayores fijadas a mano.
+    groups:
+      api:
+        patterns: ['*']
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: npm
     directory: /web
