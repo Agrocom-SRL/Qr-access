@@ -4,7 +4,8 @@
     "suscripcion": "Subscription",
     "sitios": "Properties and doors",
     "accesos": "Scans",
-    "bitacora": "Audit log"
+    "bitacora": "Audit log",
+    "incidentes": "Incidents"
   },
   "planActual": "Current plan",
   "usuariosActivos": "Active users",

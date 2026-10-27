@@ -1,0 +1,38 @@
+.aviso {
+  margin: 0;
+  color: var(--textoSecundario);
+}
+
+.insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp8);
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--esp12) var(--esp16);
+  margin: 0;
+}
+
+.datos dt {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.suave {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.resolucion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+}

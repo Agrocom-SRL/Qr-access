@@ -16,6 +16,7 @@ import es_estadisticas from './es/estadisticas.json';
 import es_eventos from './es/eventos.json';
 import es_estados from './es/estados.json';
 import es_estructura from './es/estructura.json';
+import es_incidentes from './es/incidentes.json';
 import es_limites from './es/limites.json';
 import es_senales from './es/senales.json';
 import es_sesiones from './es/sesiones.json';
@@ -43,6 +44,7 @@ import en_estadisticas from './en/estadisticas.json';
 import en_eventos from './en/eventos.json';
 import en_estados from './en/estados.json';
 import en_estructura from './en/estructura.json';
+import en_incidentes from './en/incidentes.json';
 import en_limites from './en/limites.json';
 import en_senales from './en/senales.json';
 import en_sesiones from './en/sesiones.json';
@@ -70,6 +72,7 @@ import pt_estadisticas from './pt/estadisticas.json';
 import pt_eventos from './pt/eventos.json';
 import pt_estados from './pt/estados.json';
 import pt_estructura from './pt/estructura.json';
+import pt_incidentes from './pt/incidentes.json';
 import pt_limites from './pt/limites.json';
 import pt_senales from './pt/senales.json';
 import pt_sesiones from './pt/sesiones.json';
@@ -110,6 +113,7 @@ export const recursos = {
     eventos: es_eventos,
     estados: es_estados,
     estructura: es_estructura,
+    incidentes: es_incidentes,
     limites: es_limites,
     senales: es_senales,
     sesiones: es_sesiones,
@@ -139,6 +143,7 @@ export const recursos = {
     eventos: en_eventos,
     estados: en_estados,
     estructura: en_estructura,
+    incidentes: en_incidentes,
     limites: en_limites,
     senales: en_senales,
     sesiones: en_sesiones,
@@ -168,6 +173,7 @@ export const recursos = {
     eventos: pt_eventos,
     estados: pt_estados,
     estructura: pt_estructura,
+    incidentes: pt_incidentes,
     limites: pt_limites,
     senales: pt_senales,
     sesiones: pt_sesiones,

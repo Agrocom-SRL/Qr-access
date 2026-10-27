@@ -15,6 +15,7 @@ import { ProveedorPlanes } from '../../features/planes';
 import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
 import { ProveedorSesiones } from '../../features/sesiones';
+import { ProveedorIncidentes } from '../../features/incidentes';
 import { ProveedorSuscripciones } from '../../features/suscripciones';
 import { ProveedorTema } from '../../theme/ProveedorTema';
 import type { Servicios } from './crearServicios';
@@ -69,7 +70,9 @@ export function ProveedoresApp({
                                     <ProveedorSenales valor={servicios.senales}>
                                       <SesionProvider almacen={servicios.almacen}>
                                         <ProveedorSesiones valor={servicios.sesiones}>
-                                          {children}
+                                          <ProveedorIncidentes valor={servicios.incidentes}>
+                                            {children}
+                                          </ProveedorIncidentes>
                                         </ProveedorSesiones>
                                       </SesionProvider>
                                     </ProveedorSenales>

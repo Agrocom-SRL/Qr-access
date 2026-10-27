@@ -1,0 +1,67 @@
+{
+  "titulo": "Incidentes de uso",
+  "subtitulo": "Casos raros de la cuenta y su evidencia. Aquí solo se consultan: quien administra la rama los confirma o descarta. Ninguno corta el acceso por sí solo.",
+  "filtros": {
+    "tipo": "Tipo",
+    "origen": "Origen",
+    "estado": "Estado",
+    "todos": "Todos"
+  },
+  "tipo": {
+    "uso_masivo": "Uso masivo de un QR",
+    "uso_imposible": "Uso imposible",
+    "pin_compartido": "PIN compartido",
+    "qr_reenviado": "QR reenviado",
+    "generacion_ruidosa": "Generación ruidosa",
+    "perdida_o_robo": "Pérdida o robo",
+    "otro": "Otro"
+  },
+  "origen": {
+    "sistema": "Sistema",
+    "persona": "Persona"
+  },
+  "gravedad": {
+    "baja": "Baja",
+    "media": "Media",
+    "alta": "Alta"
+  },
+  "estado": {
+    "sin_resolver": "Sin resolver",
+    "pendiente": "Pendiente",
+    "confirmado": "Confirmado",
+    "descartado": "Descartado"
+  },
+  "columnas": {
+    "ocurrido": "Ocurrido",
+    "usuario": "Usuario",
+    "tipo": "Tipo",
+    "gravedad": "Gravedad",
+    "origen": "Origen",
+    "estado": "Estado"
+  },
+  "sinUsuario": "Usuario sin nombre",
+  "tabla": "Incidentes de la cuenta",
+  "ver": "Ver el incidente de {{usuario}}",
+  "vacio": {
+    "titulo": "Sin incidentes",
+    "texto": "Esta cuenta no tiene incidentes con estos filtros."
+  },
+  "errorCarga": "No pudimos cargar los incidentes",
+  "detalle": {
+    "titulo": "Incidente de {{usuario}}",
+    "soloLectura": "Solo se consulta desde aquí. La resolución la hace quien administra la rama de la cuenta.",
+    "usuario": "Usuario",
+    "tipo": "Tipo",
+    "origen": "Origen",
+    "registradoPor": "Registrado por {{persona}}",
+    "ocurrido": "Ocurrido",
+    "descripcion": "Descripción",
+    "sinDescripcion": "Sin descripción",
+    "evidencia": "Evidencia",
+    "evidenciaCifras": "{{qr}} QR, {{accesos}} intentos de acceso y {{limites}} rechazos de generación",
+    "resolucion": "Resolución",
+    "sinResolver": "Nadie lo resolvió todavía",
+    "resueltoPor": "Por {{persona}}, el {{cuando}}",
+    "sinMotivo": "Sin motivo"
+  }
+}

@@ -1,0 +1,35 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.subtitulo {
+  margin: var(--esp4) 0 0;
+  color: var(--textoSecundario);
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp12);
+}
+
+.campo {
+  display: flex;
+  flex: 1 1 var(--anchoSelector);
+  flex-direction: column;
+  gap: var(--esp4);
+  min-width: 0;
+}
+
+.etiqueta {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
