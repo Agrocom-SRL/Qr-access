@@ -223,6 +223,11 @@ export interface AlcanceDeUsuarios {
 export interface ServicioDeArbol {
   /** El alcance de `usuarioId` en la cuenta del contexto. */
   alcanceDe(usuarioId: string): Promise<AlcanceDeUsuarios>;
+  /**
+   * Todos los usuarios de la cuenta del contexto, sin árbol de por medio. Solo para quien opera sobre la cuenta
+   * entera: AGROCOM (permiso de plataforma); ningún rol de cuenta llega a «toda la cuenta» (ADR 0028 §4).
+   */
+  idsDeLaCuenta(): Promise<string[]>;
   /** `usuarioId` y todos los que cuelgan de él, a cualquier profundidad (una «rama» completa). */
   ramaDe(usuarioId: string): Promise<string[]>;
   /** Los superiores de `usuarioId` (todos los de su cadena, sin orden garantizado), sin él. Vacío si no tiene. */
@@ -259,6 +264,7 @@ export function crearServicioDeArbol(pool: Pool): ServicioDeArbol {
         ids: new Set([usuarioId, ...(nivel === null ? [] : rama)]),
       };
     },
+    idsDeLaCuenta: () => usuarios.idsDeTodos(),
     async ramaDe(usuarioId) {
       return [usuarioId, ...(await usuarios.idsDeRama(usuarioId))];
     },
@@ -294,11 +300,11 @@ export interface UsuarioExportable {
 }
 
 export interface ServicioDeUsuariosExportables {
-  /** Cuántos de esos usuarios existen en la cuenta del contexto (`ids` = el alcance de quien exporta). */
-  total(ids: readonly string[]): Promise<number>;
+  /** Cuántos de esos usuarios existen en la cuenta del contexto (`ids` = el alcance de quien exporta; `null` = todos, la exportación de AGROCOM). */
+  total(ids: readonly string[] | null): Promise<number>;
   /** Una página de esos usuarios de la cuenta del contexto, por id. */
   pagina(
-    ids: readonly string[],
+    ids: readonly string[] | null,
     limite: number,
     desplazamiento: number,
   ): Promise<UsuarioExportable[]>;

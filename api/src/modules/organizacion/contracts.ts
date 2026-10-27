@@ -60,11 +60,14 @@ export interface ServicioDeOrganizacion {
   crearPuerta(sitioId: string, datos: estructura.DatosDePuerta): Promise<{ id: string }>;
   editarPuerta(id: string, cambios: estructura.CambiosDePuerta): Promise<void>;
   eliminarPuerta(id: string): Promise<void>;
-  /** Cuántas puertas (activas o no) dieron de alta esos usuarios en la cuenta del contexto: para la exportación. */
-  contarPuertas(autores: readonly string[]): Promise<number>;
+  /**
+   * Cuántas puertas (activas o no) dieron de alta esos usuarios en la cuenta del contexto: para la exportación.
+   * `null` = todas las de la cuenta (la exportación que hace AGROCOM, cuyo alcance es la cuenta entera).
+   */
+  contarPuertas(autores: readonly string[] | null): Promise<number>;
   /** Una página de esas puertas, por id: para la exportación (`autores` = el alcance de quien exporta). */
   puertasPagina(
-    autores: readonly string[],
+    autores: readonly string[] | null,
     limite: number,
     desplazamiento: number,
   ): Promise<PuertaDeCuenta[]>;

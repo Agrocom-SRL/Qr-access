@@ -87,28 +87,27 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
    * rama), por id: para la exportación (ADR 0033 §3). Una puerta no tiene otro dueño que quien la creó.
    */
   listarPaginaDe(
-    autores: readonly string[],
+    autores: readonly string[] | null,
     limite: number,
     desplazamiento: number,
   ): Promise<PuertaFila[]> {
-    if (autores.length === 0) return Promise.resolve([]);
+    if (autores !== null && autores.length === 0) return Promise.resolve([]);
     return this.seleccionar<PuertaFila>({
       columnas: COLUMNAS,
       uniones: UNION_SITIO,
-      donde: 't.created_by IN (?)',
-      params: [autores],
+      ...(autores === null ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
       orden: 't.id',
       limite,
       desplazamiento,
     });
   }
 
-  contarDe(autores: readonly string[]): Promise<number> {
-    if (autores.length === 0) return Promise.resolve(0);
+  /** `autores` `null` = todas las puertas de la cuenta (la exportación de AGROCOM); el repositorio ya filtra por ella. */
+  contarDe(autores: readonly string[] | null): Promise<number> {
+    if (autores !== null && autores.length === 0) return Promise.resolve(0);
     return this.contar({
       uniones: UNION_SITIO,
-      donde: 't.created_by IN (?)',
-      params: [autores],
+      ...(autores === null ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
     });
   }
 
