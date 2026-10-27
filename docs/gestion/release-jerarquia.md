@@ -35,7 +35,9 @@ Es un **cambio incompatible para los clientes instalados** (app Android y cualqu
 | `api/src/plugins/openapi.ts` (línea 11) | `version: '1'` | **No cambiar.** Es la versión del contrato `/api/v1` (ADR 0005), no la del release. |
 | Tags en el repo | `v0.5.0`, `v1.0.0`, `v1.0.1`, `v1.0.2` | El último es `v1.0.2`. Se leyó de `.git/packed-refs`. |
 
-**Contradicción a resolver:** ADR 0014 dice que la versión es **única para el monorepo** y que el tag fija la versión de la API, la app y el firmware. Pero los archivos siguen en `1.0.0` aunque existen los tags `v1.0.1` y `v1.0.2`. **[Confirmar]** qué cambió en `v1.0.1` y `v1.0.2`, y si el firmware publicado quedó en `1.0.0`.
+**Nota (2026-10-27):** esta propuesta se escribió cuando el ADR 0014 imponía una versión única para el monorepo. Desde el 2026-10-27 el ADR 0014 usa versión por componente: el tag identifica el lanzamiento y cada componente sube su versión solo si cambió. Donde este documento hable de poner los cuatro archivos en la misma versión (secciones 2 y 3), es histórico y ya no es obligatorio. El release `v1.0.3` fue superado por los tags posteriores (hasta `v1.0.5`).
+
+**Contradicción (histórica):** el ADR 0014 de entonces decía que la versión era **única para el monorepo** y que el tag fijaba la versión de la API, la app y el firmware. Pero los archivos seguían en `1.0.0` aunque existían los tags `v1.0.1` y `v1.0.2`. **[Confirmar]** qué cambió en `v1.0.1` y `v1.0.2`, y si el firmware publicado quedó en `1.0.0`.
 
 Tampoco pude verificar desde esta sesión si el firmware cambió después de `v1.0.2`. El historial indica cambios grandes de firmware en #37-#45 (Ethernet, vinculación, lector RS485), así que hay que suponer que sí.
 
