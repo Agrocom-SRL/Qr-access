@@ -1,0 +1,16 @@
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}
+
+.titulo {
+  margin: 0;
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.texto {
+  margin: 0;
+  color: var(--textoSecundario);
+}
