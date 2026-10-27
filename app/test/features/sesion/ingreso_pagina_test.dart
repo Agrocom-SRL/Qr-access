@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/sesion/data/sesion_repositorio.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/ingreso_pagina.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/widgets/casillas_pin.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -219,6 +220,15 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('la foto se funde hacia el formulario, sin corte seco', (
+      tester,
+    ) async {
+      await _montar(tester, apaisada: true);
+      final foto = tester.widget<AccesoFoto>(find.byType(AccesoFoto));
+
+      expect(foto.fundidoHaciaLado, isTrue);
+    });
+
     testWidgets('título, PIN y botón se ven sin desplazarse', (tester) async {
       await _montar(tester, apaisada: true);
       final textos = textosEn(tester);
@@ -287,6 +297,11 @@ void main() {
 
       expect(cabecera.height, 220);
       expect(casillas.top, greaterThanOrEqualTo(cabecera.bottom));
+      // En vertical el fundido sigue siendo hacia abajo.
+      expect(
+        tester.widget<AccesoFoto>(find.byType(AccesoFoto)).fundidoHaciaLado,
+        isFalse,
+      );
       expect(tester.takeException(), isNull);
     });
 

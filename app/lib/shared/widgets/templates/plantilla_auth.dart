@@ -9,11 +9,7 @@ import 'package:flutter/material.dart';
 /// Teléfono en horizontal: lado corto menor que el breakpoint de teléfono
 /// (600 dp) y más ancho que alto (regla del proyecto). Un tablet o la web de
 /// escritorio no la cumplen y conservan su layout.
-bool esTelefonoApaisado(BuildContext context) {
-  final tamano = MediaQuery.sizeOf(context);
-  return tamano.shortestSide < context.tokens.breakpoint.ladoCorto &&
-      tamano.width > tamano.height;
-}
+bool esTelefonoApaisado(BuildContext context) => context.esTelefonoEnHorizontal;
 
 /// Plantilla de Bienvenida, Ingreso y Elegir rol (handoff): contenido con
 /// ancho máximo 400; en expandido, panel de marca verde a la izquierda (50 %).
@@ -275,7 +271,14 @@ class CabeceraFoto extends StatelessWidget {
     final pila = Stack(
       fit: StackFit.expand,
       children: [
-        AccesoFoto(ruta: ruta, alineacion: alineacion, fundirConFondo: true),
+        AccesoFoto(
+          ruta: ruta,
+          alineacion: alineacion,
+          fundirConFondo: true,
+          // En columna (teléfono horizontal) la foto se funde hacia el
+          // formulario, no hacia abajo.
+          fundidoHaciaLado: llenarAlto,
+        ),
         if (alVolver != null)
           Align(
             alignment: AlignmentDirectional.topStart,

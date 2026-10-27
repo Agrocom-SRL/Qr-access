@@ -9,7 +9,6 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
-import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/qr_rapido_controlador.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/aviso_seguimiento_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/qr_concedido.dart';
@@ -68,79 +67,106 @@ class _QrRapidoPaginaEstado extends ConsumerState<QrRapidoPagina> {
       }
     });
     final estado = ref.watch(qrRapidoControladorProvider);
-    return PlantillaPantallaCompleta(
-      titulo: l10n.qrRapidoTitulo,
-      alCerrar: () => context.go(Rutas.inicio),
-      pie: AccesoBoton(
-        texto: l10n.qrRapidoListo,
-        expandido: true,
-        onPressed: () => context.go(Rutas.inicio),
+    final titulo = l10n.qrRapidoTitulo;
+    void alCerrar() => context.go(Rutas.inicio);
+    final pie = AccesoBoton(
+      texto: l10n.qrRapidoListo,
+      expandido: true,
+      onPressed: alCerrar,
+    );
+    return switch (estado) {
+      AsyncData(:final value) => _QrPropio(
+        qr: value,
+        titulo: titulo,
+        alCerrar: alCerrar,
+        pie: pie,
       ),
-      child: switch (estado) {
-        AsyncData(:final value) => _QrPropio(qr: value),
-        AsyncError(:final error) => _Fallo(
-          error: error,
-          alReintentar: _generar,
-        ),
-        _ => SizedBox(
+      AsyncError(:final error) => PlantillaPantallaCompleta(
+        titulo: titulo,
+        alCerrar: alCerrar,
+        pie: pie,
+        child: _Fallo(error: error, alReintentar: _generar),
+      ),
+      _ => PlantillaPantallaCompleta(
+        titulo: titulo,
+        alCerrar: alCerrar,
+        pie: pie,
+        child: SizedBox(
           height: context.tokens.tamano.qrExpandido,
           child: const AccesoCargando(),
         ),
-      },
-    );
+      ),
+    };
   }
 }
 
+/// El QR propio ya generado. Vigila su seguimiento: si la puerta lo acepta, el
+/// QR se cambia por la confirmación.
 class _QrPropio extends StatelessWidget {
-  const new({required this.qr});
+  const new({
+    required this.qr,
+    required this.titulo,
+    required this.alCerrar,
+    required this.pie,
+  });
 
   final QrGenerado qr;
+  final String titulo;
+  final VoidCallback alCerrar;
+  final Widget pie;
 
   @override
-  Widget build(BuildContext context) =>
-      SeguimientoDeQr(qrId: qr.id, builder: _contenido);
-
-  Widget _contenido(BuildContext context, SeguimientoQr? seguimiento) {
-    final l10n = context.l10n;
-    final tokens = context.tokens;
-    final textos = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Aceptado, el QR ya no sirve: se reemplaza por la confirmación.
-        if (seguimiento?.concedido ?? false)
-          const QrConcedido()
-        else
-          Center(child: QrRevelado(texto: qr.texto)),
-        SizedBox(height: tokens.espacio.xl),
-        Text(
-          qr.etiqueta ?? l10n.qrSinEtiqueta,
-          style: textos.headlineMedium,
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: tokens.espacio.xs),
-        Text(
-          qr.nombresDePuertas,
-          style: textos.bodyLarge?.copyWith(
-            color: tokens.colores.textoSecundario,
+  Widget build(BuildContext context) {
+    return SeguimientoDeQr(
+      qrId: qr.id,
+      builder: (context, seguimiento) {
+        final l10n = context.l10n;
+        final tokens = context.tokens;
+        final textos = Theme.of(context).textTheme;
+        return PlantillaPantallaCompleta(
+          titulo: titulo,
+          alCerrar: alCerrar,
+          pie: pie,
+          visual: (seguimiento?.concedido ?? false)
+              ? const QrConcedido()
+              : QrRevelado(texto: qr.texto),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                qr.etiqueta ?? l10n.qrSinEtiqueta,
+                style: textos.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: tokens.espacio.xs),
+              Text(
+                qr.nombresDePuertas,
+                style: textos.bodyLarge?.copyWith(
+                  color: tokens.colores.textoSecundario,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: tokens.espacio.m),
+              Center(child: TiempoRestante(venceAt: qr.venceAt)),
+              SizedBox(height: tokens.espacio.xl),
+              if (seguimiento != null) ...[
+                AvisoSeguimientoQr(seguimiento: seguimiento),
+                SizedBox(height: tokens.espacio.m),
+              ],
+              if (qr.respaldo)
+                AccesoAviso(
+                  icono: Icons.cloud_off_outlined,
+                  texto: l10n.qrRapidoRespaldoAviso,
+                )
+              else
+                AccesoAviso(
+                  icono: Icons.lock_outline,
+                  texto: l10n.qrRapidoAviso,
+                ),
+            ],
           ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: tokens.espacio.m),
-        Center(child: TiempoRestante(venceAt: qr.venceAt)),
-        SizedBox(height: tokens.espacio.xl),
-        if (seguimiento != null) ...[
-          AvisoSeguimientoQr(seguimiento: seguimiento),
-          SizedBox(height: tokens.espacio.m),
-        ],
-        if (qr.respaldo)
-          AccesoAviso(
-            icono: Icons.cloud_off_outlined,
-            texto: l10n.qrRapidoRespaldoAviso,
-          )
-        else
-          AccesoAviso(icono: Icons.lock_outline, texto: l10n.qrRapidoAviso),
-      ],
+        );
+      },
     );
   }
 }

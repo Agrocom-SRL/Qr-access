@@ -18,6 +18,7 @@ import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimie
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/linea_sincronizacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -40,6 +41,8 @@ class MisQrPagina extends ConsumerWidget {
     final resumen = ref.watch(resumenQrProvider).value;
     final puedeGenerar = sesion.tiene(Permisos.generarQr);
     final expandida = context.esExpandida;
+    final sincronizacion = ref.watch(sincronizacionMisQrProvider);
+    final ahora = ref.read(relojProvider)();
 
     final botonGenerar = AccesoBoton(
       texto: l10n.qrGenerarBoton,
@@ -59,7 +62,9 @@ class MisQrPagina extends ConsumerWidget {
     return PlantillaAdmin(
       destino: DestinoNav.misQr,
       titulo: expandida ? l10n.qrMisQrTitulo : null,
-      accion: puedeGenerar && expandida ? botonGenerar : null,
+      // Sincronizar es tirar de la lista (ver `_ListaQr`): la cabecera no lleva
+      // botón de actualizar.
+      accion: expandida && puedeGenerar ? botonGenerar : null,
       fab: puedeGenerar
           ? FloatingActionButton.extended(
               onPressed: () => context.go(Rutas.qrNuevo),
@@ -93,14 +98,23 @@ class MisQrPagina extends ConsumerWidget {
                     ),
                   ),
                 ),
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
                 Expanded(child: _ListaQr(estado: filtro.estado)),
               ],
             )
-          : PestanasDeslizables<EstadoQr>(
-              segmentos: segmentos,
-              seleccionado: filtro.estado,
-              alElegir: ref.read(filtroQrProvider.notifier).elegirEstado,
-              paginaDe: (context, estado) => _ListaQr(estado: estado),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
+                Expanded(
+                  child: PestanasDeslizables<EstadoQr>(
+                    segmentos: segmentos,
+                    seleccionado: filtro.estado,
+                    alElegir: ref.read(filtroQrProvider.notifier).elegirEstado,
+                    paginaDe: (context, estado) => _ListaQr(estado: estado),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -135,6 +149,8 @@ class _ListaQr extends ConsumerWidget {
         ..invalidate(listadoQrProvider)
         ..invalidate(resumenQrProvider),
       alCambiarPagina: ref.read(filtroQrProvider.notifier).irAPagina,
+      alActualizar: () =>
+          ref.read(sincronizacionMisQrProvider.notifier).refrescar(),
       vacio: VacioMisQr(estado: estado),
       tarjeta: (context, qr) => _TarjetaQrConVer(
         qr: qr,

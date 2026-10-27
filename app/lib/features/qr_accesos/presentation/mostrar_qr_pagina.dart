@@ -57,39 +57,39 @@ class MostrarQrPagina extends ConsumerWidget {
     final titulo = qr.etiqueta ?? l10n.qrSinEtiqueta;
     final puertas = qr.nombresDePuertas;
 
-    return PlantillaPantallaCompleta(
-      titulo: l10n.qrMostrarTitulo,
-      alCerrar: () => _cerrar(context, ref),
-      pie: AccesoBoton(
-        texto: l10n.qrCompartir,
-        textoCargando: l10n.qrPreparando,
-        icono: Icons.share_outlined,
-        cargando: estado.compartiendo,
-        expandido: true,
-        onPressed: () => ref
-            .read(mostrarQrControladorProvider.notifier)
-            .compartir(
-              qr: qr,
-              textos: TextosDeImagenQr(
-                titulo: titulo,
-                puertas: puertas,
-                vencimiento: vence,
+    // Un único seguimiento para el QR y los datos: así una sola consulta
+    // periódica alimenta a los dos.
+    return SeguimientoDeQr(
+      qrId: qr.id,
+      builder: (context, seguimiento) => PlantillaPantallaCompleta(
+        titulo: l10n.qrMostrarTitulo,
+        alCerrar: () => _cerrar(context, ref),
+        pie: AccesoBoton(
+          texto: l10n.qrCompartir,
+          textoCargando: l10n.qrPreparando,
+          icono: Icons.share_outlined,
+          cargando: estado.compartiendo,
+          expandido: true,
+          onPressed: () => ref
+              .read(mostrarQrControladorProvider.notifier)
+              .compartir(
+                qr: qr,
+                textos: TextosDeImagenQr(
+                  titulo: titulo,
+                  puertas: puertas,
+                  vencimiento: vence,
+                ),
+                mensaje: l10n.qrCompartirTexto(puertas, vence),
+                tokens: tokens,
               ),
-              mensaje: l10n.qrCompartirTexto(puertas, vence),
-              tokens: tokens,
-            ),
-      ),
-      child: SeguimientoDeQr(
-        qrId: qr.id,
-        builder: (context, seguimiento) => Column(
+        ),
+        // Aceptado, el QR ya no sirve: se reemplaza por la confirmación.
+        visual: (seguimiento?.concedido ?? false)
+            ? const QrConcedido()
+            : QrRevelado(texto: qr.texto),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Aceptado, el QR ya no sirve: se reemplaza por la confirmación.
-            if (seguimiento?.concedido ?? false)
-              const QrConcedido()
-            else
-              Center(child: QrRevelado(texto: qr.texto)),
-            SizedBox(height: tokens.espacio.xl),
             Text(
               titulo,
               style: texto.headlineMedium,
