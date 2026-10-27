@@ -88,6 +88,12 @@ describe('API con servidor HTTP real', () => {
       expect(await primera.json()).toMatchObject({ abrir: true, motivo_code: 'acceso.permitido' });
       expect(await usadoAt(p, qr.id)).toBeInstanceOf(Date);
 
+      // Dentro de la ventana de repetición (ADR 0032 §3) la relectura del mismo lector reabre; para probar
+      // el rechazo del segundo uso se envejece la apertura más allá de los 15 s (el reloj no espera).
+      await p.pool.query(
+        'UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL 20 SECOND',
+      );
+
       const segunda = await validar(qr.texto);
       expect(segunda.status).toBe(200);
       expect(await segunda.json()).toMatchObject({ abrir: false, motivo_code: 'qr.usado' });
