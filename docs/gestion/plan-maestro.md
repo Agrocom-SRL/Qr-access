@@ -96,7 +96,7 @@ Cerrados sin integrar (no cuentan): #46, #62, #63, #70, #73, #77. Último tag: *
 
 ### 4.2 En curso: olas W1 a W14 en PR (2026-10-27)
 
-Todas las olas están en PR hacia `develop`, **sin merge ni tag** (decisión de Miguel: solo PR y revisión humana). Las ramas se llaman `claude/…` y no `feature/…` a propósito, para que `auto-merge.yml` (que integra solo `feature/*` y `bugfix/*` cuando la CI queda en verde) no las integre sola. Están **apiladas por contenido**: ver `docs/gestion/integracion-de-olas.md` (orden recomendado, conflictos reales, variables nuevas y pasos manuales).
+Todas las olas están en PR hacia `develop`, **sin merge ni tag** (decisión de Miguel: solo PR y revisión humana). **Actualización 2026-10-27:** el repo no admite merge commit; las olas entran por un único PR desde `feature/integracion-olas` (contenido de `claude/w14-lecturas`), y #95 a #109 se cierran como integrados. Ver `prompt-continuacion.md`. Las ramas se llaman `claude/…` y no `feature/…` a propósito, para que `auto-merge.yml` (que integra solo `feature/*` y `bugfix/*` cuando la CI queda en verde) no las integre sola. Están **apiladas por contenido**: ver `docs/gestion/integracion-de-olas.md` (orden recomendado, conflictos reales, variables nuevas y pasos manuales).
 
 | Ola | PR | Rama | Estado |
 |---|---|---|---|

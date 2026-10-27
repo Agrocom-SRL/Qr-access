@@ -100,3 +100,16 @@ CERRAR CADA ITEM
 - NO hagas push a develop/master, ni merge ni tag sin confirmación del usuario. Cierra con: qué quedó
   hecho y verificado, qué no se hizo, qué sigue en el plan y qué decisión esperas del usuario.
 ```
+
+## Avance de la integración (2026-10-27)
+
+Registro de lo que se hizo al seguir el PASO 1 del prompt anterior.
+
+- **Verificado con `gh`/`bin/estado-plan`:** los PR #95 a #109 estaban abiertos contra `develop`, `MERGEABLE`, con `api`, `app`, `firmware`, `web` y `ci` en verde (en #95 `app`, `firmware` y `web` se omiten por el filtro de rutas de `detectar`). Las 14 ramas de ola (`claude/w1-api` … `claude/w13-carga`) tienen **0 commits** que no estén ya en `claude/w14-lecturas`, así que #109 contiene todo.
+- **Merge commit no permitido:** al intentar `gh pr merge 109 --merge`, GitHub respondió «Merge commits are not allowed on this repository». El repo solo admite squash/rebase, así que el plan de «merge commit para que #95 a #108 se marquen solos» no es viable sin cambiar el ajuste del repo.
+- **Decisión de Miguel:** en vez de tocar el ajuste, traer los cambios por una rama `feature/…`, que sí activa `auto-merge.yml` (squash cuando la CI queda en verde). Se creó `feature/integracion-olas` desde `claude/w14-lecturas` y de ella sale un único PR hacia `develop`.
+- **Después de integrar:** cerrar #95 a #109 como «integrados por `feature/integracion-olas`» y, con confirmación de Miguel, borrar las ramas `claude/…`. Al ser squash, `develop` recibe un solo commit; el historial por ola queda en las ramas `claude/…` mientras no se borren.
+
+### Pendiente tras la integración (sin cambios respecto al prompt)
+
+PASO 1b (parche de `ci.yml`, `seguridad.yml`, variables `QR_IDEMPOTENCIA_CLAVE` y `TRUST_PROXY`, NPMplus), PASO 2 (`pio run`, banco con la placa, `bin/verify` completo, imágenes Docker, pruebas de carga en entorno de prueba) y PASO 3 (W1b, pantallas de W8/W9/W11, robustez, señales del ADR 0030 §4, W-REL).
