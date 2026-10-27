@@ -190,3 +190,13 @@ Ninguno rompe a un cliente que respeta el contrato, pero sí hay cambios de comp
 4. **Variables del CT 120:** añadir `QR_IDEMPOTENCIA_CLAVE` y revisar `TRUST_PROXY`; los demás valores tienen por omisión.
 5. **Decisiones a confirmar:** D-25 (restringir arrastra a la rama), D-29 (el Administrador solo ve su rama), D-37 (combinación de instalaciones con uso masivo, pendiente), la polaridad del sensor reed en campo (W10) y el nombre de `W14`.
 6. **Después de integrar:** correr `bin/verify` completo (firmware con `pio` real y las pruebas de nginx incluidas), migrar la base de producción y sembrar el catálogo (`bin/desplegar` lo hace), y actualizar `plan-maestro.md` (estados «Integrado #N»): esta rama no lo toca.
+
+## 10. Corrección del presupuesto de la validación (W3, `presupuestoDePeticion`)
+
+`request.signal` de Fastify llega abortada en Node 22 en cuanto se lee el cuerpo de un POST, así que con un cliente HTTP real la validación de QR respondía 503 siempre (`inject()` no lo reproduce). W3 lo corrige con `api/src/platform/http/presupuesto.ts` y pruebas con servidor real (`api/test/platform/servidor-real.test.ts`).
+
+- **Propagación:** `git merge` de la cadena, sin rebase ni conflictos: w4 ← w3; w5 ← w4; w6, w7, w8, w9 ← w5; w10 ← w9; w11 ← w10; w12 ← w11; w13 ← w12; `claude/integracion-olas` ← w3 y luego todas las ramas actualizadas. Ramas actualizadas y publicadas: `claude/w4-estados`, `w5-topes`, `w6-idempotencia`, `w7-ventana-repeticion`, `w8-sesiones`, `w9-notificaciones`, `w10-confirmaciones`, `w11-incidentes`, `w12-senales`, `w13-carga` y `integracion-olas`.
+- **Misma trampa en W10:** `POST /dispositivos/confirmaciones` pasaba `request.signal` a `confirmarApertura` y respondía 503 con un cliente real. Ahora usa `presupuestoDePeticion(reply, PETICION_MS_DISPOSITIVOS)` (corregido en w10 y propagado a w11, w12, w13).
+- **Prueba de W7 ajustada (w7):** el «segundo uso» de la prueba de servidor real ahora envejece la apertura más allá de los 15 s, porque dentro de la ventana de repetición la relectura del mismo lector reabre.
+- **Pruebas nuevas con servidor real (`servidor-real.test.ts`):** confirmaciones (204 y repetida), `POST /qr-accesos` con `Idempotency-Key` (mismo QR en el reintento), `POST /qr-accesos/anulacion-masiva`, `POST /incidentes` y la relectura a los 5 s (200, `abrir: true`, sin consumir de nuevo). Ninguna responde 503.
+- **Regla:** en `api/src` ya no se pasa `request.signal` a ninguna acción; toda ruta con cuerpo y plazo usa `presupuestoDePeticion`. Las demás rutas con cuerpo no usan señal ni plazo propio.

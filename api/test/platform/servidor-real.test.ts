@@ -218,6 +218,99 @@ describe('API con servidor HTTP real', () => {
     });
   });
 
+  /**
+   * Las demás rutas con cuerpo (olas W6, W7 y W11; la de confirmaciones, W10, tiene su propio bloque). Ninguna debe responder 503 con un cliente
+   * real: la regla es que el presupuesto de la petición sea el propio (`presupuestoDePeticion`) y
+   * nunca la señal de Fastify. La de confirmaciones sí la usaba y se corrigió con el mismo mecanismo.
+   */
+  describe('rutas de las demás olas con cuerpo y cliente real', () => {
+    const iniciar = async (pin: string): Promise<string> => {
+      const sesion = await fetch(`${url}/sesiones`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      expect(sesion.status).toBe(200);
+      return ((await sesion.json()) as { acceso: string }).acceso;
+    };
+    const publicar = (
+      ruta: string,
+      acceso: string,
+      cuerpo: object,
+      extra: Record<string, string> = {},
+    ) =>
+      fetch(`${url}${ruta}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: `Bearer ${acceso}`,
+          ...extra,
+        },
+        body: JSON.stringify(cuerpo),
+      });
+
+    it('POST /qr-accesos con Idempotency-Key: el reintento devuelve el mismo QR', async () => {
+      await abrir();
+      const acceso = await iniciar(a.usuario.pin);
+      const cuerpo = { puerta_ids: [a.puertaPrincipal.id] };
+      const clave = { 'idempotency-key': 'clave-servidor-real-0001' };
+
+      const primera = await publicar('/qr-accesos', acceso, cuerpo, clave);
+      expect(primera.status).toBe(201);
+      const segunda = await publicar('/qr-accesos', acceso, cuerpo, clave);
+      expect(segunda.status).toBe(201);
+      expect(((await segunda.json()) as { id: string }).id).toBe(
+        ((await primera.json()) as { id: string }).id,
+      );
+    });
+
+    it('POST /qr-accesos/anulacion-masiva anula los QR vigentes y no responde 503', async () => {
+      const p = await abrir();
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      const acceso = await iniciar(a.administrador.pin);
+
+      const respuesta = await publicar('/qr-accesos/anulacion-masiva', acceso, {
+        alcance: 'cuenta',
+        motivo: 'prueba con servidor real',
+      });
+      expect(respuesta.status).toBe(200);
+      expect(
+        ((await respuesta.json()) as { qr_anulados: number }).qr_anulados,
+      ).toBeGreaterThanOrEqual(1);
+      const [filas] = await p.pool.query<RowDataPacket[]>(
+        'SELECT anulado_at FROM qr_accesos WHERE id = ?',
+        [qr.id],
+      );
+      expect(filas[0]?.anulado_at).not.toBeNull();
+    });
+
+    it('POST /incidentes registra el incidente y no responde 503', async () => {
+      await abrir();
+      const acceso = await iniciar(a.administrador.pin);
+      const respuesta = await publicar('/incidentes', acceso, {
+        usuario_id: a.usuario.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+      });
+      expect(respuesta.status).toBe(201);
+    });
+
+    it('la relectura del mismo lector a los 5 s responde 200 abrir:true sin consumir otra vez', async () => {
+      const p = await abrir();
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      const primera = (await (await validar(qr.texto)).json()) as Validacion;
+      expect(primera.abrir).toBe(true);
+      const consumo = await usadoAt(p, qr.id);
+
+      // El reloj de la prueba no espera 5 s de verdad: se envejece el evento ya escrito.
+      await p.pool.query('UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL 5 SECOND');
+      const segunda = await validar(qr.texto);
+      expect(segunda.status).toBe(200);
+      expect(((await segunda.json()) as Validacion).abrir).toBe(true);
+      expect(await usadoAt(p, qr.id)).toEqual(consumo);
+    });
+  });
+
   describe('POST /dispositivos/confirmaciones', () => {
     // Usaba `request.signal`: con un cliente real llegaba abortada y respondía 503 (ver presupuesto.ts).
     it('con un cliente real responde 204 (y repetida, 204) y no 503', async () => {
