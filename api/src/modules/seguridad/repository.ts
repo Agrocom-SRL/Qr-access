@@ -638,7 +638,8 @@ const DESCRIPCION_DE_SESIONES = {
     'motivo_cierre',
     'revocada_por',
   ],
-  sensibles: ['refresh_hash'],
+  // El identificador de instalación y la IP no se copian a la bitácora (ADR 0030 §4.1).
+  sensibles: ['refresh_hash', 'instalacion_id', 'ip'],
   perfil: 'transitoria',
   deCuenta: true,
 } as const;
@@ -806,6 +807,14 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
     return cerradas;
   }
 
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeUsuarios(this.pool).bloquear(tx, usuarioId);
+  }
+
   /** Anota la última actividad de una sesión viva. Es telemetría: sin bitácora. */
   registrarActividad(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
     return this.actualizar(
@@ -912,12 +921,16 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
     });
   }
 
-  /** Como `RepositorioDeUsuarios.bloquear`, para los ingresos simultáneos de un super admin. */
-  async bloquear(tx: Transaccion, id: string): Promise<void> {
-    await this.seleccionarUna<RowDataPacket>(
-      { columnas: 't.id', donde: 't.id = ?', params: [id], bloquear: true },
+  /**
+   * Bloquea la fila del super admin (los ingresos simultáneos suyos se esperan) y dice si SIGUE activo: leída
+   * con `FOR UPDATE`, ve lo que una desactivación concurrente ya confirmó.
+   */
+  async bloquearSiActivo(tx: Transaccion, id: string): Promise<boolean> {
+    const fila = await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: "t.id = ? AND t.estado = 'activo'", params: [id], bloquear: true },
       tx,
     );
+    return fila !== null;
   }
 
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
@@ -1105,6 +1118,14 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
       },
       tx,
     );
+  }
+
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeSuperAdmins(this.pool).bloquearSiActivo(tx, usuarioId);
   }
 
   buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null> {

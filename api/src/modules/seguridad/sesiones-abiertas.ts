@@ -1,7 +1,11 @@
 import type { Pool } from 'mysql2/promise';
 import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
 import { armarListado, type Listado } from '../../platform/http/paginacion.js';
-import { enTransaccion, type Transaccion } from '../../platform/db/transaccion.js';
+import {
+  enTransaccion,
+  enTransaccionIdempotente,
+  type Transaccion,
+} from '../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../platform/seguridad/principal.js';
 import type { AlmacenDeSesiones } from './apertura-de-sesion.js';
@@ -21,6 +25,7 @@ import {
 export interface RepositorioDeSesionesAbiertas extends AlmacenDeSesiones {
   vivasDe(usuarioId: string, ahora: Date, tx?: Transaccion): Promise<SesionDetalleFila[]>;
   buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null>;
+  bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void>;
   cerrarVivasDe(
     tx: Transaccion,
     usuarioId: string,
@@ -73,7 +78,10 @@ export function cerrarSesiones(
   ahora: Date,
   opciones: { exceptoId?: string | null; ademas?: (tx: Transaccion) => Promise<void> } = {},
 ): Promise<number> {
-  return enTransaccion(pool, async (tx) => {
+  // Como el ingreso: primero la fila del dueño, luego sus sesiones. Aun así, un cierre y un ingreso de otro
+  // usuario desde la misma instalación pueden cruzarse por rango: se repite una vez y, si vuelve, sale 503.
+  return enTransaccionIdempotente(pool, async (tx) => {
+    await repositorio.bloquearDueno(tx, usuarioId);
     const cerradas = await repositorio.cerrarVivasDe(
       tx,
       usuarioId,
