@@ -93,14 +93,17 @@ final _formatoSufijoDePin = RegExp(r'^[A-Za-z0-9]{4}$');
 bool sufijoDePinValido(String sufijo) => _formatoSufijoDePin.hasMatch(sufijo);
 
 /// Qué está mal en el formulario de usuario.
+///
+/// El orden es el del formulario: el primero que falta es el que se nombra en
+/// el aviso.
 enum ErrorDatosUsuario {
   sinEtiqueta,
   etiquetaLarga,
   sinRol,
-  sufijoInvalido,
   sinPropiedad,
   sinNombreDeUnidad,
   nombreDeUnidadLargo,
+  sufijoInvalido,
 }
 
 /// La unidad que acompaña a un Titular nuevo: en qué propiedad está y cómo se
@@ -152,25 +155,43 @@ class DatosUsuario {
     return null;
   }
 
-  /// El primer error de los datos de un alta. `nivel` es el del rol elegido:
-  /// solo un Titular exige propiedad y nombre de unidad.
-  static ErrorDatosUsuario? errorDe({
+  /// Todos los errores de los datos de un alta, en orden de formulario. `nivel`
+  /// es el del rol elegido: solo un Titular exige propiedad y nombre de unidad.
+  /// Así el formulario puede marcar a la vez cada campo que falta.
+  static List<ErrorDatosUsuario> erroresDe({
     required String etiqueta,
     required String? rolId,
     required NivelUsuario? nivel,
     String? sitioId,
     String unidad = '',
   }) {
-    final deEtiqueta = errorDeEtiqueta(etiqueta);
-    if (deEtiqueta != null) return deEtiqueta;
-    if (rolId == null) return ErrorDatosUsuario.sinRol;
+    final errores = <ErrorDatosUsuario>[
+      ?errorDeEtiqueta(etiqueta),
+      if (rolId == null) ErrorDatosUsuario.sinRol,
+    ];
     if (nivel == NivelUsuario.titular) {
-      if (sitioId == null) return ErrorDatosUsuario.sinPropiedad;
-      if (unidad.trim().isEmpty) return ErrorDatosUsuario.sinNombreDeUnidad;
-      if (unidad.trim().length > DatosUnidad.largoMaximoNombre) {
-        return ErrorDatosUsuario.nombreDeUnidadLargo;
+      if (sitioId == null) errores.add(ErrorDatosUsuario.sinPropiedad);
+      if (unidad.trim().isEmpty) {
+        errores.add(ErrorDatosUsuario.sinNombreDeUnidad);
+      } else if (unidad.trim().length > DatosUnidad.largoMaximoNombre) {
+        errores.add(ErrorDatosUsuario.nombreDeUnidadLargo);
       }
     }
-    return null;
+    return errores;
   }
+
+  /// El primer error de los datos de un alta, o `null` si son válidos.
+  static ErrorDatosUsuario? errorDe({
+    required String etiqueta,
+    required String? rolId,
+    required NivelUsuario? nivel,
+    String? sitioId,
+    String unidad = '',
+  }) => erroresDe(
+    etiqueta: etiqueta,
+    rolId: rolId,
+    nivel: nivel,
+    sitioId: sitioId,
+    unidad: unidad,
+  ).firstOrNull;
 }
