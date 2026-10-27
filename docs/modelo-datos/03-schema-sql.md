@@ -203,7 +203,7 @@ CREATE TABLE usuario_roles (
 
 ## sesiones
 
-Migración: `db/migrations/20261009100009_create_sesiones.sql`
+Migraciones: `db/migrations/20261009100009_create_sesiones.sql` y `db/migrations/20261027100006_add_instalacion_y_plataforma_a_sesiones.sql` (ADR 0030 §4.1)
 
 ```sql
 CREATE TABLE sesiones (
@@ -214,15 +214,27 @@ CREATE TABLE sesiones (
   refresh_hash CHAR(64) NOT NULL,
   agente VARCHAR(255) NULL,
   ip VARCHAR(45) NULL,
+  instalacion_id VARCHAR(64) NULL,
+  plataforma VARCHAR(10) NULL,
+  nombre_dispositivo VARCHAR(60) NULL,
+  ultima_actividad_at DATETIME(3) NULL,
   expira_at DATETIME(3) NOT NULL,
   revocada_at DATETIME(3) NULL,
+  motivo_cierre VARCHAR(24) NULL,
+  revocada_por BIGINT UNSIGNED NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_sesiones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   CONSTRAINT fk_sesiones_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_sesiones_rol_activo FOREIGN KEY (rol_activo_id) REFERENCES roles (id),
+  CONSTRAINT fk_sesiones_revocada_por FOREIGN KEY (revocada_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_sesiones_plataforma CHECK (plataforma IS NULL OR plataforma IN ('android', 'ios', 'web')),
+  CONSTRAINT ck_sesiones_motivo_cierre CHECK (motivo_cierre IS NULL OR motivo_cierre IN
+    ('salida', 'propia', 'superior', 'plataforma', 'misma_instalacion', 'limite_usuario', 'limite_instalacion')),
   UNIQUE KEY uq_sesiones_refresh (refresh_hash),
-  KEY idx_sesiones_usuario (usuario_id)
+  KEY idx_sesiones_usuario (usuario_id),
+  KEY idx_sesiones_instalacion (instalacion_id, revocada_at),
+  KEY idx_sesiones_vivas (usuario_id, revocada_at, expira_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 

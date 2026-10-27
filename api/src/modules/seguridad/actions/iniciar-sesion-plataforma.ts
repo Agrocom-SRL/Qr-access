@@ -1,4 +1,4 @@
-import { enTransaccion } from '../../../platform/db/transaccion.js';
+import { enTransaccionIdempotente } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { verificarContraRelleno, verificarHash } from '../../../platform/seguridad/hash.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
@@ -75,7 +75,8 @@ export async function ejecutar(
 
   const refresco = generarTokenOpaco(32);
   const instalacionId = datos.instalacionId ?? null;
-  const sesionId = await enTransaccion(servicios.pool, async (tx) => {
+  const sesionId = await enTransaccionIdempotente(servicios.pool, async (tx) => {
+    await new RepositorioDeSuperAdmins(servicios.pool).bloquear(tx, admin.id);
     const sesiones = new RepositorioDeSesionesDeSuperAdmins(servicios.pool);
     await cerrarLasQueSobran(
       sesiones,

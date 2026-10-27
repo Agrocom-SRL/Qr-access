@@ -275,6 +275,17 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     );
   }
 
+  /**
+   * Bloquea la fila del usuario hasta el fin de la transacción: serializa sus ingresos simultáneos para que cada
+   * uno vea las sesiones del anterior al aplicar el tope (ADR 0030 §4.1) y no choquen por bloqueos de rango.
+   */
+  async bloquear(tx: Transaccion, id: string): Promise<void> {
+    await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: 't.id = ?', params: [id], bloquear: true },
+      tx,
+    );
+  }
+
   /** Un usuario de la rama de `superiorId` (ADR 0028 §4); uno de otra rama o el propio `superiorId` no existe. */
   buscarEnRama(superiorId: string, id: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
@@ -899,6 +910,14 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
       perfil: 'dominio',
       deCuenta: false,
     });
+  }
+
+  /** Como `RepositorioDeUsuarios.bloquear`, para los ingresos simultáneos de un super admin. */
+  async bloquear(tx: Transaccion, id: string): Promise<void> {
+    await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: 't.id = ?', params: [id], bloquear: true },
+      tx,
+    );
   }
 
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
