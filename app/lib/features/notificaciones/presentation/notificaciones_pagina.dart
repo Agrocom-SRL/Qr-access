@@ -18,6 +18,7 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/linea_sincronizacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -36,12 +37,15 @@ class NotificacionesPagina extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final colores = context.tokens.colores;
+    final tokens = context.tokens;
+    final colores = tokens.colores;
     final sesion = ref.watch(sesionControladorProvider);
     final filtro = ref.watch(filtroNotificacionesProvider);
     final noLeidas = ref.watch(contadorNotificacionesProvider).value ?? 0;
     final marcando = ref.watch(marcarNotificacionesProvider);
     final puedeMarcar = sesion.tiene(Permisos.gestionarNotificaciones);
+    final sincronizacion = ref.watch(sincronizacionNotificacionesProvider);
+    final ahora = ref.read(relojProvider)();
     final marcarTodas = puedeMarcar && noLeidas > 0 && !marcando
         ? () => _marcarTodas(context, ref)
         : null;
@@ -52,6 +56,8 @@ class NotificacionesPagina extends ConsumerWidget {
       rutaAtras: Rutas.inicio,
       salida: SalidaDeCabecera.volver,
       alSalir: () => context.go(Rutas.inicio),
+      // Sincronizar es tirar de la lista (ver `_ListaNotificaciones`): la
+      // cabecera no lleva botón de actualizar.
       accion: puedeMarcar && noLeidas > 0
           ? AccesoBoton(
               texto: l10n.notificacionesLeerTodas,
@@ -69,23 +75,31 @@ class NotificacionesPagina extends ConsumerWidget {
             )
           : null,
       conRelleno: false,
-      child: PestanasDeslizables<bool>(
-        segmentos: [
-          SegmentoDeSelector(
-            valor: false,
-            etiqueta: l10n.notificacionesFiltroTodas,
-          ),
-          SegmentoDeSelector(
-            valor: true,
-            etiqueta: l10n.notificacionesFiltroNoLeidas,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LineaSincronizacion(estado: sincronizacion, ahora: ahora),
+          Expanded(
+            child: PestanasDeslizables<bool>(
+              segmentos: [
+                SegmentoDeSelector(
+                  valor: false,
+                  etiqueta: l10n.notificacionesFiltroTodas,
+                ),
+                SegmentoDeSelector(
+                  valor: true,
+                  etiqueta: l10n.notificacionesFiltroNoLeidas,
+                ),
+              ],
+              seleccionado: filtro.soloNoLeidas,
+              alElegir: (soloNoLeidas) => ref
+                  .read(filtroNotificacionesProvider.notifier)
+                  .elegirSoloNoLeidas(soloNoLeidas: soloNoLeidas),
+              paginaDe: (context, soloNoLeidas) =>
+                  _ListaNotificaciones(soloNoLeidas: soloNoLeidas),
+            ),
           ),
         ],
-        seleccionado: filtro.soloNoLeidas,
-        alElegir: (soloNoLeidas) => ref
-            .read(filtroNotificacionesProvider.notifier)
-            .elegirSoloNoLeidas(soloNoLeidas: soloNoLeidas),
-        paginaDe: (context, soloNoLeidas) =>
-            _ListaNotificaciones(soloNoLeidas: soloNoLeidas),
       ),
     );
   }
@@ -123,6 +137,8 @@ class _ListaNotificaciones extends ConsumerWidget {
           ..invalidate(listadoNotificacionesProvider)
           ..invalidate(contadorNotificacionesProvider);
       },
+      alActualizar: () =>
+          ref.read(sincronizacionNotificacionesProvider.notifier).refrescar(),
       alCambiarPagina: ref
           .read(filtroNotificacionesProvider.notifier)
           .irAPagina,

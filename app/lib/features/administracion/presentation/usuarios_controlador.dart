@@ -1,5 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
@@ -49,6 +51,29 @@ final FutureProvider<EstadisticasDeUsuarios> estadisticasProvider =
     FutureProvider.autoDispose<EstadisticasDeUsuarios>(
       (ref) => ref.watch(usuariosRepositorioProvider).estadisticas(),
     );
+
+/// Sincronización de la actividad de usuarios (ver
+/// `ControladorSincronizacion`): vuelve a pedir las estadísticas con el gesto
+/// de tirar hacia abajo y en segundo plano. Sin botón de actualizar.
+class SincronizacionEstadisticasControlador extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    ref.invalidate(estadisticasProvider);
+    await ref.read(estadisticasProvider.future);
+  }
+}
+
+/// Estado de sincronización de la actividad, que se descarta al salir de la
+/// pantalla (y con él, el refresco en segundo plano).
+final NotifierProvider<
+  SincronizacionEstadisticasControlador,
+  EstadoSincronizacion
+>
+sincronizacionEstadisticasProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionEstadisticasControlador,
+      EstadoSincronizacion
+    >(SincronizacionEstadisticasControlador.new);
 
 /// Acciones sobre un usuario del listado: generar PIN y eliminar. El estado
 /// es el id del usuario con una acción en curso.

@@ -1,4 +1,6 @@
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
 import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:flutter/foundation.dart';
@@ -64,3 +66,22 @@ final FutureProviderFamily<Pagina<Lectura>, ConsultaEventos> eventosProvider =
             porPagina: porPaginaPorDefecto,
           ),
     );
+
+/// Sincronización de Lecturas (ver `ControladorSincronizacion`): vuelve a pedir
+/// la consulta elegida (filtro y página), no las pestañas que no se ven.
+class SincronizacionEventosControlador extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    final consulta = ref.read(consultaEventosProvider);
+    ref.invalidate(eventosProvider(consulta));
+    await ref.read(eventosProvider(consulta).future);
+  }
+}
+
+/// Estado de sincronización de Lecturas; se descarta al salir de la pantalla.
+final NotifierProvider<SincronizacionEventosControlador, EstadoSincronizacion>
+sincronizacionEventosProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionEventosControlador,
+      EstadoSincronizacion
+    >(SincronizacionEventosControlador.new);

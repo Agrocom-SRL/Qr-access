@@ -1,5 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/notificaciones/data/notificaciones_repositorio.dart';
 import 'package:agrocom_acceso/features/notificaciones/domain/notificacion.dart';
 import 'package:flutter/foundation.dart';
@@ -109,3 +111,28 @@ marcarNotificacionesProvider =
     NotifierProvider.autoDispose<MarcarNotificacionesControlador, bool>(
       MarcarNotificacionesControlador.new,
     );
+
+/// Sincronización de la bandeja (ver `ControladorSincronizacion`): vuelve a
+/// pedir la pestaña elegida y el contador del ícono de la cabecera.
+class SincronizacionNotificacionesControlador
+    extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    final filtro = ref.read(filtroNotificacionesProvider);
+    ref
+      ..invalidate(contadorNotificacionesProvider)
+      ..invalidate(listadoNotificacionesProvider(filtro));
+    await ref.read(listadoNotificacionesProvider(filtro).future);
+  }
+}
+
+/// Estado de sincronización de la bandeja; se descarta al salir de la pantalla.
+final NotifierProvider<
+  SincronizacionNotificacionesControlador,
+  EstadoSincronizacion
+>
+sincronizacionNotificacionesProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionNotificacionesControlador,
+      EstadoSincronizacion
+    >(SincronizacionNotificacionesControlador.new);

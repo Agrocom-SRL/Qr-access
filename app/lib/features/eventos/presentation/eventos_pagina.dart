@@ -12,6 +12,7 @@ import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_selector.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/linea_sincronizacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -42,6 +43,8 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
     final puertas = ref.watch(puertasDisponiblesProvider).value ?? const [];
     final expandida = context.esExpandida;
     final conFiltroDePuerta = expandida || _mostrarFiltroDePuerta;
+    final sincronizacion = ref.watch(sincronizacionEventosProvider);
+    final ahora = ref.read(relojProvider)();
     final segmentosDeResultado = [
       SegmentoDeSelector<ResultadoEvento?>(
         valor: null,
@@ -137,6 +140,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 filtros,
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
                 Expanded(
                   child: _ListaEventos(resultado: consulta.filtro.resultado),
                 ),
@@ -155,6 +159,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
                     ),
                     child: selectorDePuerta,
                   ),
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
                 Expanded(
                   child: PestanasDeslizables<ResultadoEvento?>(
                     segmentos: segmentosDeResultado,
@@ -201,6 +206,8 @@ class _ListaEventos extends ConsumerWidget {
       tituloDeError: l10n.lecturasErrorCargar,
       alReintentar: () => ref.invalidate(eventosProvider),
       alCambiarPagina: controlador.irAPagina,
+      alActualizar: () =>
+          ref.read(sincronizacionEventosProvider.notifier).refrescar(),
       vacio: EstadoVacio(
         ilustracion: Multimedia.vacioEventos,
         titulo: hayFiltro
