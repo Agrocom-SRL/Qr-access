@@ -220,6 +220,7 @@ export function PestanaIncidentes({ cuentaId }: { cuentaId: string }) {
       {contenido()}
       {seleccionado ? (
         <DialogoDetalleIncidente
+          cuentaId={cuentaId}
           incidente={seleccionado}
           onCerrar={() => {
             setSeleccionado(null);

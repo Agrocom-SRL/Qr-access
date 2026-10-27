@@ -35,6 +35,46 @@ export type ResultadoDeResolucion = (typeof RESULTADOS_DE_RESOLUCION)[number];
 
 export const POR_PAGINA_DE_INCIDENTES = 20;
 
+/** Permiso de ámbito plataforma para resolver un incidente de una cuenta (`db/seeds/01_catalogo.sql`). */
+export const PERMISO_RESOLVER_INCIDENTE_DE_CUENTA = 'seguridad.incidente.resolver_cuenta';
+
+/** Largo máximo del motivo de una resolución: lo mismo que la API (`MAX_MOTIVO_DE_RESOLUCION`). */
+export const MAX_MOTIVO_DE_RESOLUCION = 200;
+
+/**
+ * Lo que el sistema puede PROPONER ante un reincidente (ADR 0033 §4.3). Nunca lo aplica solo, salvo la
+ * restricción automática. Es la misma lista que la de la API; sus textos viven en `notificaciones:propuesta`.
+ */
+export const ACCIONES_PROPUESTAS = ['restringir', 'suspender', 'suspender_y_anular'] as const;
+export type AccionPropuesta = (typeof ACCIONES_PROPUESTAS)[number];
+
+/** Confirmar exige motivo (422 `incidente.motivo_requerido`); descartar y dejar pendiente, no. */
+export function exigeMotivo(resultado: ResultadoDeResolucion): boolean {
+  return resultado === 'confirmado';
+}
+
+/** El motivo tal como se manda: sin espacios sobrantes; vacío = no se manda (la API lo acepta ausente). */
+export function motivoAEnviar(motivo: string): string | undefined {
+  const limpio = motivo.trim();
+  return limpio === '' ? undefined : limpio;
+}
+
+/** Las cifras de la reincidencia que devuelve una resolución; `null` si no se evaluó (p. ej. repetir el resultado). */
+export interface ReincidenciaDeResolucion {
+  confirmados: number;
+  minimo: number;
+  ventanaDias: number;
+  /** El paso propuesto; `null` si todavía no corresponde ninguno. */
+  propuesta: AccionPropuesta | null;
+  aplicadaAutomaticamente: boolean;
+}
+
+/** Lo que devuelve resolver un incidente: el incidente ya actualizado y, si se evaluó, la reincidencia. */
+export interface RespuestaDeResolucion {
+  incidente: Incidente;
+  reincidencia: ReincidenciaDeResolucion | null;
+}
+
 /** Una persona de la cuenta tal como la muestra la API: id y etiqueta (la etiqueta puede faltar). */
 export interface PersonaDeIncidente {
   id: string;

@@ -36,3 +36,11 @@
   flex-direction: column;
   gap: var(--esp4);
 }
+
+.linea {
+  margin: 0;
+}
+
+.linea + .linea {
+  margin-top: var(--esp4);
+}
