@@ -32,6 +32,8 @@ export const consultaDeIncidentes = esquemaPaginacion.extend({
 export const parametrosDeIncidente = z.object({ id: esquemaId });
 export const parametrosDeCuentaDeIncidentes = z.object({ cuenta_id: esquemaId });
 
+export const parametrosDeIncidenteDeCuenta = z.object({ cuenta_id: esquemaId, id: esquemaId });
+
 /** Registro manual de un incidente. La evidencia son ids, nunca el texto ni el token de un QR. */
 export const cuerpoDeIncidente = z.strictObject({
   usuario_id: esquemaId,

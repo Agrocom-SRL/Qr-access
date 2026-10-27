@@ -14,7 +14,11 @@ import {
   type RecursoExportable,
   type ResumenDeExportacion,
 } from '../domain/exportacion.js';
-import { RepositorioDeLecturas, RepositorioDeExportaciones } from '../repository.js';
+import {
+  RepositorioDeLecturas,
+  RepositorioDeExportaciones,
+  type FiltroDeLecturas,
+} from '../repository.js';
 import { alcanceDe, presentarLecturas, type FiltrosDeLecturas } from './listar-lecturas.js';
 
 export interface PaginaExportada extends ResumenDeExportacion {
@@ -67,7 +71,7 @@ interface Pagina {
 
 async function paginaDeUsuarios(
   pool: Pool,
-  alcance: readonly string[],
+  alcance: readonly string[] | null,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
@@ -94,7 +98,7 @@ async function paginaDeUsuarios(
 
 async function paginaDePuertas(
   pool: Pool,
-  alcance: readonly string[],
+  alcance: readonly string[] | null,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
@@ -120,13 +124,10 @@ async function paginaDePuertas(
 
 async function paginaDeLecturas(
   pool: Pool,
-  principal: PrincipalUsuario,
-  filtros: FiltrosDeLecturas,
+  alcance: FiltroDeLecturas,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
-  // El mismo alcance que el listado de eventos: quien exporta sin `ver_todos` solo se lleva lo suyo.
-  const alcance = await alcanceDe(pool, principal, filtros);
   const eventos = new RepositorioDeLecturas(pool);
   const [total, filas] = await Promise.all([
     eventos.contarVisibles(alcance),
@@ -174,21 +175,49 @@ export async function ejecutar(
   paginacion: { readonly pagina: number; readonly por_pagina: number },
   filtros: FiltrosDeLecturas,
 ): Promise<PaginaExportada> {
-  const tramo = tramoDe(paginacion.pagina, paginacion.por_pagina);
-  if (tramo === null) throw new ErrorDeDominio('exportacion.tope_excedido', 422);
-
   // `usuarios` y `puertas` se limitan al ALCANCE de quien exporta: él y su rama (ADR 0028 §4), también un Administrador.
   // Las `lecturas` ya salen con el alcance del listado de eventos.
   const alcance =
     recurso === 'lecturas'
       ? []
       : [...(await crearServicioDeArbol(pool).alcanceDe(principal.usuarioId)).ids];
+  return exportarPagina(
+    pool,
+    { usuariosYPuertas: alcance, lecturas: () => alcanceDe(pool, principal, filtros) },
+    recurso,
+    paginacion,
+    filtros,
+  );
+}
+
+/** A qué filas llega quien exporta; lo decide cada llamador (usuario de la cuenta o AGROCOM sobre la cuenta). */
+export interface FuenteDeExportacion {
+  /** Los usuarios (y los autores de las puertas) que se exportan; `null` = todos los de la cuenta. */
+  readonly usuariosYPuertas: readonly string[] | null;
+  /** El filtro de las lecturas, con los filtros de la petición ya aplicados. */
+  readonly lecturas: () => Promise<FiltroDeLecturas>;
+}
+
+/**
+ * La mecánica común de una página exportada: tope de filas, lectura por el repositorio de cuenta (el del contexto) y
+ * la constancia en `exportaciones` dentro de una transacción. Los topes y la constancia valen igual para AGROCOM.
+ */
+export async function exportarPagina(
+  pool: Pool,
+  fuente: FuenteDeExportacion,
+  recurso: RecursoExportable,
+  paginacion: { readonly pagina: number; readonly por_pagina: number },
+  filtros: FiltrosDeLecturas,
+): Promise<PaginaExportada> {
+  const tramo = tramoDe(paginacion.pagina, paginacion.por_pagina);
+  if (tramo === null) throw new ErrorDeDominio('exportacion.tope_excedido', 422);
+
   const leida =
     recurso === 'usuarios'
-      ? await paginaDeUsuarios(pool, alcance, tramo.limite, tramo.desplazamiento)
+      ? await paginaDeUsuarios(pool, fuente.usuariosYPuertas, tramo.limite, tramo.desplazamiento)
       : recurso === 'puertas'
-        ? await paginaDePuertas(pool, alcance, tramo.limite, tramo.desplazamiento)
-        : await paginaDeLecturas(pool, principal, filtros, tramo.limite, tramo.desplazamiento);
+        ? await paginaDePuertas(pool, fuente.usuariosYPuertas, tramo.limite, tramo.desplazamiento)
+        : await paginaDeLecturas(pool, await fuente.lecturas(), tramo.limite, tramo.desplazamiento);
 
   await enTransaccion(pool, (tx) =>
     new RepositorioDeExportaciones(pool).registrar(tx, {

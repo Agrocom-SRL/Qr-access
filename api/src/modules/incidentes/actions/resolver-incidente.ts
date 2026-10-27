@@ -154,13 +154,41 @@ export async function ejecutar(
   decision: DecisionSobreIncidente,
   ahora: Date = new Date(),
 ): Promise<ResultadoDeResolucionDeIncidente> {
-  const incidentes = new RepositorioDeIncidentes(pool);
   const alcance = await alcanceDeIncidentes(pool, principal);
+  return resolverIncidente(
+    pool,
+    { usuarioId: principal.usuarioId, puede: (usuarioId) => puedeVer(alcance, usuarioId) },
+    incidenteId,
+    decision,
+    ahora,
+  );
+}
+
+/** Quien resuelve y a quiénes llega: un usuario de la cuenta (su rama) o AGROCOM (toda la cuenta del contexto). */
+export interface QuienResuelve {
+  /** Firma la resolución (`resuelto_por`) y la bitácora; siempre una fila de `usuarios`. */
+  readonly usuarioId: string;
+  /** ¿Puede resolver los incidentes de este usuario? (el repositorio ya filtró por cuenta) */
+  readonly puede: (usuarioId: string) => boolean;
+}
+
+/**
+ * La resolución en sí, con el alcance ya resuelto por el llamador: la comparten el usuario de la cuenta (`ejecutar`) y
+ * AGROCOM sobre una cuenta (`resolver-incidente-de-cuenta.ts`). Corre dentro del `ContextoCuenta` de la cuenta.
+ */
+export async function resolverIncidente(
+  pool: Pool,
+  quien: QuienResuelve,
+  incidenteId: string,
+  decision: DecisionSobreIncidente,
+  ahora: Date,
+): Promise<ResultadoDeResolucionDeIncidente> {
+  const incidentes = new RepositorioDeIncidentes(pool);
   const previa = await incidentes.buscarPorId(incidenteId);
-  if (previa === null || !puedeVer(alcance, previa.usuario_id)) {
+  if (previa === null || !quien.puede(previa.usuario_id)) {
     throw new ErrorDeDominio('incidente.no_encontrado', 404);
   }
-  if (previa.usuario_id === principal.usuarioId) throw new ErrorDeDominio('incidente.propio', 403);
+  if (previa.usuario_id === quien.usuarioId) throw new ErrorDeDominio('incidente.propio', 403);
 
   const motivo = decision.motivo?.trim() ?? '';
   if (decision.resultado === 'confirmado' && motivo === '') {
@@ -194,7 +222,7 @@ export async function ejecutar(
       incidenteId,
       resultado: decision.resultado,
       motivo: motivo === '' ? null : motivo,
-      resueltoPor: principal.usuarioId,
+      resueltoPor: quien.usuarioId,
       resueltaAt: ahora,
     });
     if (decision.resultado !== 'confirmado') return null;

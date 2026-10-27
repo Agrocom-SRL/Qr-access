@@ -77,27 +77,60 @@ export async function ejecutar(
     generadores = pedido.alcance === 'usuario' ? [objetivo] : await arbol.ramaDe(objetivo);
   }
 
+  return anularEnLotes(
+    pool,
+    { generadores, alcance: pedido.alcance, objetivo, motivo: pedido.motivo },
+    principal.usuarioId,
+    ahora,
+    tamanoDeLote,
+  );
+}
+
+/**
+ * El trabajo de anular, ya resuelto el alcance: lo comparten la anulación de un usuario de la cuenta y la de AGROCOM
+ * sobre una cuenta (`anular-masivo-de-cuenta.ts`). Quien decide A QUIÉNES alcanza es cada llamador; esto solo anula
+ * por lotes y deja la constancia. `actorId` es quien firma (`anulado_por` y la autoría de la bitácora): un usuario de
+ * la cuenta o, desde la plataforma, el super admin (existe en `usuarios`, así que la FK se cumple).
+ */
+export async function anularEnLotes(
+  pool: Pool,
+  destino: {
+    readonly generadores: readonly string[];
+    readonly alcance: AlcanceDeAnulacion;
+    readonly objetivo: string | null;
+    readonly motivo: string;
+  },
+  actorId: string,
+  ahora: Date,
+  tamanoDeLote: number,
+): Promise<ResultadoDeAnulacionMasiva> {
   const qr = new RepositorioDeQr(pool);
   let qrAnulados = 0;
   let cursor = '0';
   for (;;) {
     const lote = await enTransaccion(pool, (tx) =>
-      qr.anularLoteDeVigentes(tx, generadores, principal.usuarioId, ahora, cursor, tamanoDeLote),
+      qr.anularLoteDeVigentes(tx, destino.generadores, actorId, ahora, cursor, tamanoDeLote),
     );
     qrAnulados += lote.anulados;
     if (lote.ultimoId === null || lote.leidos < tamanoDeLote) break;
     cursor = lote.ultimoId;
   }
 
-  const usuariosAlcanzados = generadores.length;
+  const usuariosAlcanzados = destino.generadores.length;
   const id = await enTransaccion(pool, (tx) =>
     new RepositorioDeAnulacionesMasivas(pool).registrar(tx, {
-      alcance: pedido.alcance,
-      usuarioObjetivoId: objetivo,
-      motivo: pedido.motivo,
+      alcance: destino.alcance,
+      usuarioObjetivoId: destino.objetivo,
+      motivo: destino.motivo,
       usuariosAlcanzados,
       qrAnulados,
     }),
   );
-  return { id, alcance: pedido.alcance, usuarioId: objetivo, usuariosAlcanzados, qrAnulados };
+  return {
+    id,
+    alcance: destino.alcance,
+    usuarioId: destino.objetivo,
+    usuariosAlcanzados,
+    qrAnulados,
+  };
 }
