@@ -43,6 +43,14 @@ Map<String, Object?> _estado(String estado) => {
   'ultimo_intento': null,
 };
 
+/// Respuesta 409 de la API cuando el QR de la clave ya no está pendiente.
+Map<String, Object?> _qrNoVigente() => {
+  'type': 'about:blank',
+  'title': 'El QR ya no está vigente',
+  'status': 409,
+  'code': 'idempotencia.qr_no_vigente',
+};
+
 DatosGeneracion _datosPropio() => DatosGeneracion(
   puertaIds: const {'p1', 'p2'},
   vigencia: Vigencia.porDefecto,
@@ -401,6 +409,87 @@ void main() {
         expect(claves[1], isNot(claves[0]));
       },
     );
+
+    test(
+      'un 409 idempotencia.qr_no_vigente es definitivo: no reintenta',
+      () async {
+        final (repositorio, adaptador) = montar(
+          (_) async => respuestaJson(409, _qrNoVigente()),
+        );
+
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(
+            isA<ErrorApi>().having(
+              (e) => e.code,
+              'code',
+              'idempotencia.qr_no_vigente',
+            ),
+          ),
+        );
+        expect(adaptador.peticiones, hasLength(1));
+      },
+    );
+
+    test(
+      'tras qr_no_vigente, el siguiente toque pide otro QR con otra clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((_) async {
+          llamadas++;
+          return llamadas == 1
+              ? respuestaJson(409, _qrNoVigente())
+              : respuestaJson(201, _generado());
+        });
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(isA<ErrorApi>()),
+        );
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        final claves = _claves(adaptador);
+        expect(claves, hasLength(2));
+        expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test('con Mi QR, qr_no_vigente olvida el respaldo propio local', () async {
+      await almacen.guardarUltimoPropio(_propioLocal());
+      await almacen.guardar('qr1', 'AQ1.local', _venceAt);
+      final (repositorio, _) = montar(
+        (_) async => respuestaJson(409, _qrNoVigente()),
+      );
+
+      await expectLater(
+        repositorio.generar(_datosPropio(), ahora: _ahora),
+        throwsA(isA<ErrorApi>()),
+      );
+
+      expect(almacen.ultimoPropio, isNull);
+      expect(await almacen.leer('qr1'), isNull);
+    });
+
+    test('sin Mi QR, qr_no_vigente no toca el respaldo propio', () async {
+      await almacen.guardarUltimoPropio(_propioLocal());
+      final (repositorio, _) = montar(
+        (_) async => respuestaJson(409, _qrNoVigente()),
+      );
+      final datos = DatosGeneracion(
+        puertaIds: const {'p1', 'p2'},
+        vigencia: Vigencia.porDefecto,
+        etiqueta: 'Entrada personal',
+        ahora: _ahora,
+      );
+
+      await expectLater(
+        repositorio.generar(datos, ahora: _ahora),
+        throwsA(isA<ErrorApi>()),
+      );
+
+      expect(almacen.ultimoPropio?.id, 'qr1');
+    });
 
     test('otra persona en la misma app no reutiliza la clave', () async {
       var llamadas = 0;

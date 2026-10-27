@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { sha256Hex } from '../../../platform/seguridad/tokens.js';
 
 /**
@@ -7,18 +8,30 @@ import { sha256Hex } from '../../../platform/seguridad/tokens.js';
  */
 export const VIGENCIA_DE_CLAVE_DE_IDEMPOTENCIA_HORAS = 24;
 
-/** Largo mínimo y máximo de la clave que manda la app (un UUID mide 36). Una clave corta sería adivinable. */
-export const LARGO_MINIMO_DE_CLAVE = 16;
+/**
+ * Largo mínimo y máximo de la clave que manda la app. 22 caracteres en base64url son 128 bits (lo que mide un
+ * UUID v4 sin guiones, y la app manda uno de 36): una clave más corta sería adivinable y, como de ella se
+ * deriva el token del QR (ADR 0031 §11), quien la adivine podría repetir la generación de otro.
+ */
+export const LARGO_MINIMO_DE_CLAVE = 22;
 export const LARGO_MAXIMO_DE_CLAVE = 128;
 
-/** Caracteres que admite la clave: los de un UUID, un ULID o un token base64url. */
-export const FORMATO_DE_CLAVE = /^[A-Za-z0-9_.:-]+$/;
+/** Caracteres que admite la clave: los del base64url, que incluyen los de un UUID (hex y guiones). */
+export const FORMATO_DE_CLAVE = /^[A-Za-z0-9_-]+$/;
 
 /** Operación a la que pertenece una clave (una misma clave puede repetirse entre operaciones distintas). */
 export type OperacionIdempotente = 'qr.generar';
 
-/** Lo único que se guarda de la clave: su SHA-256. */
-export const hashDeClave = (clave: string): string => sha256Hex(clave);
+/**
+ * Lo único que se guarda de la clave: su HMAC-SHA256 con una subclave propia de `QR_IDEMPOTENCIA_CLAVE`. No es un
+ * SHA-256 plano: con un volcado de la base no se puede probar claves candidatas sin el secreto del servidor, y la
+ * subclave separa este uso del de la derivación del token (ADR 0031 §11). Rotar el secreto cambia el hash: las
+ * claves aún vigentes dejan de reconocerse y un reintento con ellas se trata como una solicitud nueva.
+ */
+export function hashDeClave(secreto: string, clave: string): string {
+  const subclave = createHmac('sha256', secreto).update('qr-idempotencia-clave-v1').digest();
+  return createHmac('sha256', subclave).update(clave).digest('hex');
+}
 
 /** Lo que define «el mismo cuerpo» de una generación; el orden de las puertas no importa. */
 export interface SolicitudDeGeneracion {

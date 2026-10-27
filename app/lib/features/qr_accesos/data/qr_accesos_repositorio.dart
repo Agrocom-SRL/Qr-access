@@ -68,6 +68,11 @@ const _estatusServidor = 500;
 /// marcha.
 const _codigoEnCurso = 'idempotencia.en_curso';
 
+/// Código de la API (409) cuando el QR de la clave ya no está pendiente: se
+/// usó, se anuló, se reemplazó o venció. Es definitivo: repetir con la misma
+/// clave no genera nada nuevo, así que la clave se descarta.
+const _codigoQrNoVigente = 'idempotencia.qr_no_vigente';
+
 class QrAccesosRepositorioApi implements QrAccesosRepositorio {
   /// [ambito] dice quién genera (un intento no pasa de una persona a otra);
   /// [azar] genera las claves, y [esperasReintento] las esperas entre
@@ -127,7 +132,15 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
       // Una falla transitoria deja el intento pendiente: el siguiente toque
       // reutiliza su clave. Cualquier otra respuesta es definitiva (un 4xx
       // dice que no se generó nada): la clave se descarta.
-      if (!_esTransitoria(error)) _cerrar(generacion);
+      if (!_esTransitoria(error)) {
+        _cerrar(generacion);
+        // Con "Mi QR" el respaldo local puede ser de un QR que ya no sirve:
+        // se olvida, como en reanudarPropio (ADR 0030 §2.1.2).
+        if (error.code == _codigoQrNoVigente &&
+            generacion.intento.datos.propio) {
+          await _descartarUltimoPropio();
+        }
+      }
       rethrow;
     } finally {
       generacion.enVuelo = null;
@@ -271,6 +284,16 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     } on Object {
       // Sin borrar, el token caduca solo al vencer: no bloquea generar otro.
     }
+  }
+
+  /// La API no dice qué QR era el de la clave, así que se olvida el respaldo
+  /// propio local. Es lo conservador: quitar un token nunca abre nada, y el
+  /// servidor no lo considera vigente de todas formas. Sin respaldo, no hay
+  /// nada que hacer.
+  Future<void> _descartarUltimoPropio() async {
+    final ultimo = await _leerPropioLocal(respaldo: false);
+    if (ultimo == null) return;
+    await _descartarPropio(ultimo.id);
   }
 
   @override

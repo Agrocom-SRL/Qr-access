@@ -11,6 +11,7 @@ describe('cargarConfig', () => {
       DB_PASSWORD: 'clave-secreta',
       JWT_SECRETO: SECRETO,
       PIN_PIMIENTA: SECRETO,
+      QR_IDEMPOTENCIA_CLAVE: SECRETO,
     };
     expect(() => cargarConfig(sinHost)).toThrow(ConfiguracionInvalida);
     expect(() => cargarConfig(sinHost)).toThrow(/DB_HOST/);
@@ -30,6 +31,7 @@ describe('cargarConfig', () => {
       DB_PASSWORD: '',
       JWT_SECRETO: SECRETO,
       PIN_PIMIENTA: SECRETO,
+      QR_IDEMPOTENCIA_CLAVE: SECRETO,
     });
     expect(config).toMatchObject({
       API_PORT: 3000,
@@ -49,6 +51,24 @@ describe('cargarConfig', () => {
     expect(() => cargarConfig({ ...base, JWT_SECRETO: SECRETO })).toThrow(/PIN_PIMIENTA/);
   });
 
+  it('exige el secreto propio de la idempotencia de QR, de 32 caracteres o más', () => {
+    const base = {
+      DB_HOST: 'db',
+      DB_DATABASE: 'x',
+      DB_USERNAME: 'u',
+      DB_PASSWORD: '',
+      JWT_SECRETO: SECRETO,
+      PIN_PIMIENTA: SECRETO,
+    };
+    expect(() => cargarConfig(base)).toThrow(/QR_IDEMPOTENCIA_CLAVE/);
+    expect(() => cargarConfig({ ...base, QR_IDEMPOTENCIA_CLAVE: 'corto' })).toThrow(
+      /QR_IDEMPOTENCIA_CLAVE/,
+    );
+    expect(cargarConfig({ ...base, QR_IDEMPOTENCIA_CLAVE: SECRETO }).QR_IDEMPOTENCIA_CLAVE).toBe(
+      SECRETO,
+    );
+  });
+
   describe('límites, pools y tiempos (ADR 0030 §3, ADR 0032 §1)', () => {
     const base = {
       DB_HOST: 'db',
@@ -57,6 +77,7 @@ describe('cargarConfig', () => {
       DB_PASSWORD: '',
       JWT_SECRETO: SECRETO,
       PIN_PIMIENTA: SECRETO,
+      QR_IDEMPOTENCIA_CLAVE: SECRETO,
     };
 
     it('trae los valores por defecto de los ADR', () => {
@@ -134,6 +155,7 @@ describe('cargarConfig', () => {
       DB_PASSWORD: '',
       JWT_SECRETO: SECRETO,
       PIN_PIMIENTA: SECRETO,
+      QR_IDEMPOTENCIA_CLAVE: SECRETO,
     };
     const proxy = (valor: string) => cargarConfig({ ...base, TRUST_PROXY: valor }).TRUST_PROXY;
 

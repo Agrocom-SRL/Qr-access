@@ -55,6 +55,10 @@
   "@comunErrorIdempotenciaEnCurso": {
     "description": "code idempotencia.en_curso (409): outra solicitação com a mesma chave ainda não terminou; tenta-se de novo com a mesma chave"
   },
+  "comunErrorIdempotenciaQrNoVigente": "Esse QR não está mais válido. Toque de novo para gerar outro.",
+  "@comunErrorIdempotenciaQrNoVigente": {
+    "description": "code idempotencia.qr_no_vigente (409): o QR da chave foi usado, anulado, substituído ou venceu; é definitivo, a chave é descartada e o próximo toque gera outro QR"
+  },
   "comunErrorQrYaUsado": "Este QR já foi usado, por isso não pode ser cancelado.",
   "comunErrorQrLimiteDiario": "O máximo de QR de hoje já foi gerado. Mais amanhã.",
   "comunErrorQrLimitePendientes": "Há QR demais sem usar. Use ou cancele algum antes de gerar outro.",

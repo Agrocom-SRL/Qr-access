@@ -33,23 +33,23 @@ export function hashDeToken(token: string): string {
 }
 
 /**
- * Token de una generación idempotente: 128 bits derivados con HMAC-SHA256 de la pimienta del servidor, la cuenta,
+ * Token de una generación idempotente: 128 bits derivados con HMAC-SHA256 del secreto `QR_IDEMPOTENCIA_CLAVE`, la cuenta,
  * el usuario y la clave de idempotencia (ADR 0031 §11). Existe para que un reintento (la respuesta original se
  * perdió) pueda devolver el MISMO texto sin que el servidor guarde nunca el token, ni en claro ni cifrado
  * (ADR 0008): se vuelve a calcular y su hash coincide con el de `qr_accesos`. Sigue siendo impredecible para
- * quien no tenga la pimienta; la derivación incluye cuenta y usuario, así que dos usuarios con la misma clave
+ * quien no tenga el secreto; la derivación incluye cuenta y usuario, así que dos usuarios con la misma clave
  * obtienen tokens distintos, y el instante de creación hace que reusar una clave ya vencida dé otro token
  * (nunca el hash de un QR anterior).
  */
 export function derivarTokenQr(
-  pimienta: string,
+  secreto: string,
   cuentaId: string,
   usuarioId: string,
   claveDeIdempotencia: string,
   creadaAt: Date,
 ): string {
-  // Subclave propia del uso: la pimienta del PIN no se usa directamente para otra cosa.
-  const subclave = createHmac('sha256', pimienta).update('qr-idempotente-v1').digest();
+  // Subclave propia del uso: el secreto no se usa directamente para otra cosa.
+  const subclave = createHmac('sha256', secreto).update('qr-idempotente-v1').digest();
   return createHmac('sha256', subclave)
     .update(JSON.stringify([cuentaId, usuarioId, claveDeIdempotencia, creadaAt.getTime()]))
     .digest()

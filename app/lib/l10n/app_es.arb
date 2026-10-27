@@ -242,6 +242,10 @@
   "@comunErrorIdempotenciaEnCurso": {
     "description": "code idempotencia.en_curso (409): otra petición con la misma clave aún no terminó; se reintenta con la misma clave"
   },
+  "comunErrorIdempotenciaQrNoVigente": "Ese QR ya no está vigente. Toca de nuevo para generar uno nuevo.",
+  "@comunErrorIdempotenciaQrNoVigente": {
+    "description": "code idempotencia.qr_no_vigente (409): el QR de la clave ya se usó, anuló, reemplazó o venció; es definitivo, la clave se descarta y el siguiente toque genera otro QR"
+  },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
   "@comunErrorQrYaUsado": {
     "description": "code qr.ya_usado (409) al anular un QR"

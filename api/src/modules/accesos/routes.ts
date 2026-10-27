@@ -96,7 +96,9 @@ export function rutas({
             'devuelve la misma respuesta (mismo `texto`), con la cabecera `Idempotent-Replayed: true`, sin generar ' +
             'otro QR ni gastar topes; la misma clave con otro cuerpo responde 422 `idempotencia.conflicto`; dos ' +
             'peticiones simultáneas con la misma clave pueden recibir 409 `idempotencia.en_curso` (reintentar). ' +
-            'La clave es por usuario, dura 24 h y una clave mal formada es 400 `validacion.invalida`.',
+            'Si el QR de la clave ya se usó, se anuló, se reemplazó o venció, el reintento responde 409 ' +
+            '`idempotencia.qr_no_vigente`. La clave es por usuario, dura 24 h y debe ser un UUID o un base64url de ' +
+            '22 a 128 caracteres: otra cosa es 400 `validacion.invalida`.',
           headers: cabecerasDeGeneracion,
           body: cuerpoDeGeneracion,
           response: { 200: respuestaDeGeneracion, 201: respuestaDeGeneracion },
@@ -123,7 +125,7 @@ export function rutas({
             : {
                 idempotencia: {
                   clave: request.headers['idempotency-key'],
-                  pimienta: config.PIN_PIMIENTA,
+                  secreto: config.QR_IDEMPOTENCIA_CLAVE,
                 },
               }),
         });

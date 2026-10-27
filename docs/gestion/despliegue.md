@@ -48,6 +48,7 @@ MYSQL_USER=acceso
 MYSQL_PASSWORD=<la clave del usuario `acceso` en el servidor de base de datos>
 JWT_SECRETO=$(openssl rand -hex 32)
 PIN_PIMIENTA=$(openssl rand -base64 32)
+QR_IDEMPOTENCIA_CLAVE=$(openssl rand -base64 32)
 ADMIN_INICIAL_CLAVE=<contraseña temporal>
 EOF
 chown runner:runner /opt/acceso/.env && chmod 600 /opt/acceso/.env

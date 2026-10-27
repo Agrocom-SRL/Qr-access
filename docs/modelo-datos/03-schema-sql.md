@@ -807,7 +807,6 @@ CREATE TABLE claves_idempotencia (
   clave_hash CHAR(64) NOT NULL,
   huella CHAR(64) NOT NULL,
   respuesta JSON NOT NULL,
-  con_token TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   vence_at DATETIME(3) NOT NULL,
   CONSTRAINT fk_claves_idempotencia_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),

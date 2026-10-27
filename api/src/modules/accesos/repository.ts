@@ -14,6 +14,13 @@ export interface QrFila extends RowDataPacket {
   created_at: Date;
 }
 
+export interface QrParaRepetirFila extends RowDataPacket {
+  token_hash: string;
+  vence_at: Date;
+  usado_at: Date | null;
+  anulado_at: Date | null;
+}
+
 const COLUMNAS_DE_QR =
   't.id, t.generado_por, t.etiqueta, t.vence_at, t.usado_at, t.anulado_at, t.created_at';
 
@@ -272,6 +279,21 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
       donde: 't.id = ?',
       params: [id],
     });
+  }
+
+  /**
+   * Lo que hace falta para repetir una generación idempotente: el hash guardado del token (para comprobar que el
+   * derivado es el mismo) y el estado. Aparte de `buscarPorId` para que el hash no viaje con las demás lecturas.
+   */
+  buscarParaRepetir(id: string, tx?: Transaccion): Promise<QrParaRepetirFila | null> {
+    return this.seleccionarUna<QrParaRepetirFila>(
+      {
+        columnas: 't.token_hash, t.vence_at, t.usado_at, t.anulado_at',
+        donde: 't.id = ?',
+        params: [id],
+      },
+      tx,
+    );
   }
 
   listar(filtro: FiltroDeQr, limite: number, desplazamiento: number): Promise<QrFila[]> {
@@ -544,8 +566,6 @@ export interface ClaveDeIdempotencia {
   readonly huella: string;
   /** La respuesta sin el token del QR (nunca se guarda). */
   readonly respuesta: unknown;
-  /** `true` = el QR se creó con un token derivado de la clave: al repetir hay que volver a derivarlo. */
-  readonly conToken: boolean;
   /** Cuándo se creó la clave (ver `NuevaClaveDeIdempotencia.creadaAt`). */
   readonly creadaAt: Date;
 }
@@ -562,7 +582,6 @@ export interface NuevaClaveDeIdempotencia extends Omit<ClaveDeIdempotencia, 'cre
 interface ClaveDeIdempotenciaFila extends RowDataPacket {
   huella: string;
   respuesta: unknown;
-  con_token: number;
   created_at: Date;
 }
 
@@ -580,7 +599,6 @@ export class RepositorioDeClavesDeIdempotencia extends RepositorioDeCuenta {
         'clave_hash',
         'huella',
         'respuesta',
-        'con_token',
         'created_at',
         'vence_at',
       ],
@@ -605,7 +623,7 @@ export class RepositorioDeClavesDeIdempotencia extends RepositorioDeCuenta {
   ): Promise<ClaveDeIdempotencia | null> {
     const fila = await this.seleccionarUna<ClaveDeIdempotenciaFila>(
       {
-        columnas: 't.huella, t.respuesta, t.con_token, t.created_at',
+        columnas: 't.huella, t.respuesta, t.created_at',
         donde: 't.usuario_id = ? AND t.operacion = ? AND t.clave_hash = ? AND t.vence_at > ?',
         params: [usuarioId, operacion, claveHash, ahora],
       },
@@ -616,7 +634,6 @@ export class RepositorioDeClavesDeIdempotencia extends RepositorioDeCuenta {
       huella: fila.huella,
       // MariaDB devuelve el JSON como texto.
       respuesta: typeof fila.respuesta === 'string' ? JSON.parse(fila.respuesta) : fila.respuesta,
-      conToken: fila.con_token === 1,
       creadaAt: fila.created_at,
     };
   }
@@ -640,7 +657,6 @@ export class RepositorioDeClavesDeIdempotencia extends RepositorioDeCuenta {
       clave_hash: clave.claveHash,
       huella: clave.huella,
       respuesta: JSON.stringify(clave.respuesta),
-      con_token: clave.conToken ? 1 : 0,
       created_at: clave.creadaAt,
       vence_at: clave.venceAt,
     });

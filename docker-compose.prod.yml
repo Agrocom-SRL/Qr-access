@@ -46,6 +46,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SECRETO: ${JWT_SECRETO}
       PIN_PIMIENTA: ${PIN_PIMIENTA}
+      QR_IDEMPOTENCIA_CLAVE: ${QR_IDEMPOTENCIA_CLAVE}
       JWT_ACCESO_MINUTOS: 15
       JWT_REFRESH_DIAS: 30
       # Un salto: el Nginx (panel o app) que reenvía a la API sobrescribe X-Forwarded-For con la IP

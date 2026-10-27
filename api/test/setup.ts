@@ -21,6 +21,7 @@ process.env.DB_PASSWORD ??= 'qr_access';
 // Secretos de prueba: solo existen en los tests (el entorno real los trae de .env o del servidor).
 process.env.JWT_SECRETO = 'secreto-de-pruebas-jwt-0123456789abcdef0123456789abcdef';
 process.env.PIN_PIMIENTA = 'cGltaWVudGEtZGUtcHJ1ZWJhcy0wMTIzNDU2Nzg5YWJjZGVm';
+process.env.QR_IDEMPOTENCIA_CLAVE = 'cXItaWRlbXBvdGVuY2lhLWRlLXBydWViYXMtMDEyMzQ1Njc4OQ==';
 // Los comprobantes de los tests van a una carpeta temporal, nunca al almacén de desarrollo.
 process.env.ARCHIVOS_RUTA = join(tmpdir(), 'agrocom-acceso-tests-archivos');
 // Los tests hacen cientos de peticiones desde una misma IP y un mismo usuario: los límites de uso

@@ -2,7 +2,9 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ejecutar as generarQr } from '../../src/modules/accesos/actions/generar-qr.js';
 import { ejecutar as limpiarClavesVencidas } from '../../src/modules/accesos/actions/limpiar-claves-vencidas.js';
+import { hashDeClave } from '../../src/modules/accesos/domain/idempotencia.js';
 import { hashDeToken } from '../../src/modules/accesos/domain/token-qr.js';
+import { sha256Hex } from '../../src/platform/seguridad/tokens.js';
 import { ContextoCuenta } from '../../src/platform/contexto/contexto-cuenta.js';
 import type { PrincipalUsuario } from '../../src/platform/seguridad/principal.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
@@ -123,7 +125,7 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       expect(await contarFilas(prueba.pool, 'qr_accesos')).toBe(2);
     });
 
-    it('el reintento de un QR propio reutilizado devuelve lo mismo (200, sin texto)', async () => {
+    it('un QR propio reutilizado no guarda la clave: ya es idempotente y el reintento contesta igual (200, sin texto)', async () => {
       const primero = await visita(sesionA, [a.puertaPrincipal.id], undefined, { propio: true });
       expect(primero.statusCode).toBe(201);
       const reutilizado = await visita(sesionA, [a.puertaPrincipal.id], CLAVE, { propio: true });
@@ -132,7 +134,9 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       expect(reintento.statusCode).toBe(200);
       expect(reintento.json<Generado>()).toEqual(reutilizado.json<Generado>());
       expect(reintento.json<Generado>().texto).toBeNull();
-      expect(reintento.headers['idempotent-replayed']).toBe('true');
+      expect(reintento.headers['idempotent-replayed']).toBeUndefined();
+      expect(await filasDeClaves()).toHaveLength(0);
+      expect(await contarFilas(prueba.pool, 'qr_accesos')).toBe(1);
     });
 
     it('lo que falla no se recuerda: tras un 429, la misma clave genera cuando hay lugar', async () => {
@@ -250,7 +254,11 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       estado: 'activo',
       origenDelEstado: null,
     });
-    const generarEn = (ahora: Date) =>
+    const generarEn = (
+      ahora: Date,
+      venceAt: Date | null = null,
+      secreto: string = process.env.QR_IDEMPOTENCIA_CLAVE ?? '',
+    ) =>
       ContextoCuenta.ejecutar(
         {
           cuentaId: a.cuenta.id,
@@ -265,9 +273,9 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
             principal(),
             {
               puertaIds: [a.puertaPrincipal.id],
-              venceAt: null,
+              venceAt,
               etiqueta: null,
-              idempotencia: { clave: CLAVE, pimienta: process.env.PIN_PIMIENTA ?? '' },
+              idempotencia: { clave: CLAVE, secreto },
             },
             ahora,
           ),
@@ -275,11 +283,13 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
 
     it('pasadas 24 h la clave ya no cuenta: es una solicitud nueva con otro token', async () => {
       const t0 = new Date();
-      const primero = await generarEn(t0);
-      const dentro = await generarEn(new Date(t0.getTime() + 23 * 3_600_000));
+      const horas = (n: number): Date => new Date(t0.getTime() + n * 3_600_000);
+      // El QR tiene que seguir vigente a las 23 h para que el reintento lo devuelva (si venció, es 409).
+      const primero = await generarEn(t0, horas(23.5));
+      const dentro = await generarEn(horas(23), horas(23.5));
       expect(dentro.repetido).toBe(true);
       expect(dentro.texto).toBe(primero.texto);
-      const despues = await generarEn(new Date(t0.getTime() + 25 * 3_600_000));
+      const despues = await generarEn(horas(25), horas(26));
       expect(despues.repetido).toBeUndefined();
       expect(despues.id).not.toBe(primero.id);
       expect(despues.texto).not.toBe(primero.texto);
@@ -289,7 +299,7 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
 
     it('la limpieza borra solo las vencidas, de todas las cuentas', async () => {
       const t0 = new Date();
-      await generarEn(t0);
+      await generarEn(t0, new Date(t0.getTime() + 3_600_000));
       await visita(sesionB, [b.puertaPrincipal.id], OTRA_CLAVE);
       expect(await filasDeClaves()).toHaveLength(2);
       expect(await limpiarClavesVencidas(prueba.pool, new Date(t0.getTime() + 3_600_000))).toBe(0);
@@ -320,8 +330,12 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
         expect(volcado).not.toContain(token);
         expect(volcado).not.toContain(CLAVE);
       }
-      // Tampoco la clave en claro: solo su hash.
-      expect(String(claves[0]?.clave_hash)).toMatch(/^[0-9a-f]{64}$/);
+      // Tampoco la clave en claro: solo su HMAC con el secreto propio, no un SHA-256 plano.
+      const hashGuardado = String(claves[0]?.clave_hash);
+      expect(hashGuardado).toMatch(/^[0-9a-f]{64}$/);
+      expect(hashGuardado).toBe(hashDeClave(process.env.QR_IDEMPOTENCIA_CLAVE ?? '', CLAVE));
+      expect(hashGuardado).not.toBe(sha256Hex(CLAVE));
+      expect(hashDeClave('otro-secreto-de-al-menos-32-caracteres!', CLAVE)).not.toBe(hashGuardado);
     });
 
     it('el log de la petición no lleva el token ni la clave', async () => {
@@ -353,15 +367,160 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
   });
 
   describe('forma de la clave', () => {
-    it.each(['corta', 'con espacios 0123456789abcdef', 'x'.repeat(129), 'ñandú-0123456789abcdef'])(
-      'rechaza la clave mal formada %#',
-      async (clave) => {
-        const respuesta = await visita(sesionA, [a.puertaPrincipal.id], clave);
-        expect(respuesta.statusCode).toBe(400);
-        expect(respuesta.json<Problema>().code).toBe('validacion.invalida');
-        expect(await contarFilas(prueba.pool, 'qr_accesos')).toBe(0);
-      },
-    );
+    it.each([
+      'corta',
+      'a'.repeat(21),
+      'con espacios 0123456789abcdef',
+      'con.punto.0123456789abcdefghi',
+      'con:dos:puntos:0123456789abcd',
+      'x'.repeat(129),
+      'ñandú-0123456789abcdef-ñandú',
+    ])('rechaza la clave mal formada %#', async (clave) => {
+      const respuesta = await visita(sesionA, [a.puertaPrincipal.id], clave);
+      expect(respuesta.statusCode).toBe(400);
+      expect(respuesta.json<Problema>().code).toBe('validacion.invalida');
+      expect(await contarFilas(prueba.pool, 'qr_accesos')).toBe(0);
+    });
+  });
+
+  describe('forma válida de la clave', () => {
+    it.each([
+      'a'.repeat(22),
+      '6f1c2f1e-5b7c-4d52-9a55-0d3b5c1a7e10',
+      'AbCdEfGhIjKlMnOpQrStUv_-0123456789',
+      'x'.repeat(128),
+    ])('acepta %#', async (clave) => {
+      const respuesta = await visita(sesionA, [a.puertaPrincipal.id], clave);
+      expect(respuesta.statusCode).toBe(201);
+    });
+  });
+
+  describe('el reintento de un QR que ya no vale (idempotencia.qr_no_vigente)', () => {
+    const reintentar = async (): Promise<{ codigo: string; status: number; cuerpo: string }> => {
+      const respuesta = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      return {
+        codigo: respuesta.json<Problema>().code,
+        status: respuesta.statusCode,
+        cuerpo: respuesta.body,
+      };
+    };
+    const esperarNoVigente = async (): Promise<void> => {
+      const resultado = await reintentar();
+      expect(resultado).toMatchObject({ codigo: 'idempotencia.qr_no_vigente', status: 409 });
+      expect(resultado.cuerpo).not.toContain('AQ1.');
+    };
+
+    it('usado: el reintento no devuelve el texto de un QR ya consumido', async () => {
+      const primera = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      const abre = await prueba.app.inject({
+        method: 'POST',
+        url: '/api/v1/dispositivos/validaciones',
+        headers: { authorization: a.dispositivoPrincipal.encabezado },
+        payload: { token: primera.json<Generado>().texto, leido_en: new Date().toISOString() },
+      });
+      expect(abre.json<{ abrir: boolean }>().abrir).toBe(true);
+      await esperarNoVigente();
+    });
+
+    it('anulado', async () => {
+      await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      await prueba.pool.query('UPDATE qr_accesos SET anulado_at = NOW(3)');
+      await esperarNoVigente();
+    });
+
+    it('reemplazado: un QR propio sustituido por otro ya no se repite', async () => {
+      const propio = { propio: true };
+      const primero = await visita(sesionA, [a.puertaPrincipal.id], CLAVE, propio);
+      expect(primero.statusCode).toBe(201);
+      const nuevo = await visita(sesionA, [a.puertaPrincipal.id], undefined, {
+        propio: true,
+        reemplazar: true,
+      });
+      expect(nuevo.statusCode).toBe(201);
+      const reintento = await visita(sesionA, [a.puertaPrincipal.id], CLAVE, propio);
+      expect(reintento.statusCode).toBe(409);
+      expect(reintento.json<Problema>().code).toBe('idempotencia.qr_no_vigente');
+      expect(reintento.body).not.toContain('AQ1.');
+    });
+
+    it('vencido', async () => {
+      await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      await prueba.pool.query(
+        'UPDATE qr_accesos SET vence_at = DATE_SUB(NOW(3), INTERVAL 1 MINUTE)',
+      );
+      await esperarNoVigente();
+    });
+
+    it('vigente: sigue devolviendo el mismo texto (control)', async () => {
+      const primera = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      const segunda = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      expect(segunda.statusCode).toBe(201);
+      expect(segunda.json<Generado>().texto).toBe(primera.json<Generado>().texto);
+    });
+
+    it('la fila de otra cuenta con el mismo id no se ve (aislamiento)', async () => {
+      await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      // B reintenta la misma clave con puerta propia: es una solicitud nueva, no el QR de A.
+      const deB = await visita(sesionB, [b.puertaPrincipal.id], CLAVE);
+      expect(deB.statusCode).toBe(201);
+    });
+  });
+
+  describe('secreto de idempotencia rotado', () => {
+    const SECRETO_VIEJO = 'secreto-viejo-de-idempotencia-0123456789';
+    const SECRETO_NUEVO = 'secreto-nuevo-de-idempotencia-0123456789';
+    const principal = (): PrincipalUsuario => ({
+      tipo: 'usuario',
+      usuarioId: a.usuario.id,
+      cuentaId: a.cuenta.id,
+      sesionId: '0',
+      rolActivoId: a.rolMiembroId,
+      permisos: new Set(PERMISOS_DE_USUARIO),
+      estado: 'activo',
+      origenDelEstado: null,
+    });
+    const generarCon = (secreto: string, log?: { warn(o: object, m: string): void }) =>
+      ContextoCuenta.ejecutar(
+        {
+          cuentaId: a.cuenta.id,
+          usuarioId: a.usuario.id,
+          rolActivoId: null,
+          dispositivoId: null,
+          origen: 'api',
+        },
+        () =>
+          generarQr(prueba.pool, principal(), {
+            puertaIds: [a.puertaPrincipal.id],
+            venceAt: null,
+            etiqueta: null,
+            idempotencia: { clave: CLAVE, secreto },
+            ...(log === undefined ? {} : { log }),
+          }),
+      );
+
+    it('con otro secreto la clave guardada ya no se reconoce: es una solicitud nueva', async () => {
+      const primero = await generarCon(SECRETO_VIEJO);
+      const despues = await generarCon(SECRETO_NUEVO);
+      expect(despues.repetido).toBeUndefined();
+      expect(despues.id).not.toBe(primero.id);
+      expect(despues.texto).not.toBe(primero.texto);
+    });
+
+    it('si la fila sobrevive a la rotación, el token derivado no coincide: error interno sin datos y sin texto', async () => {
+      const primero = await generarCon(SECRETO_VIEJO);
+      // Fila de la misma clave pero con el hash del secreto nuevo: lo que dejaría una rotación a medias.
+      await prueba.pool.query('UPDATE claves_idempotencia SET clave_hash = ?', [
+        hashDeClave(SECRETO_NUEVO, CLAVE),
+      ]);
+      const avisos: { objeto: object; mensaje: string }[] = [];
+      const log = { warn: (objeto: object, mensaje: string) => avisos.push({ objeto, mensaje }) };
+      await expect(generarCon(SECRETO_NUEVO, log)).rejects.toThrow(/no coincide/);
+      expect(await contarFilas(prueba.pool, 'qr_accesos')).toBe(1);
+      expect(avisos).toHaveLength(1);
+      const registro = JSON.stringify(avisos);
+      expect(registro).not.toContain(CLAVE);
+      expect(registro).not.toContain((primero.texto ?? 'x').slice(4));
+    });
   });
 
   describe('validar un QR no usa idempotencia ni se limita', () => {

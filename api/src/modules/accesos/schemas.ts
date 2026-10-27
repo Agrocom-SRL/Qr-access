@@ -39,7 +39,7 @@ export const cuerpoDeGeneracion = z.strictObject({
   reemplazar: z.boolean().optional(),
 });
 
-/** `Idempotency-Key` (opcional, ADR 0031 §11): un identificador al azar por solicitud, p. ej. un UUID. */
+/** `Idempotency-Key` (opcional, ADR 0031 §11): un identificador al azar por solicitud (UUID v4 o base64url de 22 a 128 caracteres). */
 export const cabecerasDeGeneracion = z.object({
   'idempotency-key': z
     .string()
