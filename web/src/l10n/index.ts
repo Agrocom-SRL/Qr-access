@@ -18,6 +18,7 @@ import es_estados from './es/estados.json';
 import es_estructura from './es/estructura.json';
 import es_limites from './es/limites.json';
 import es_senales from './es/senales.json';
+import es_sesiones from './es/sesiones.json';
 import es_nav from './es/nav.json';
 import es_notificaciones from './es/notificaciones.json';
 import es_pago from './es/pago.json';
@@ -44,6 +45,7 @@ import en_estados from './en/estados.json';
 import en_estructura from './en/estructura.json';
 import en_limites from './en/limites.json';
 import en_senales from './en/senales.json';
+import en_sesiones from './en/sesiones.json';
 import en_nav from './en/nav.json';
 import en_notificaciones from './en/notificaciones.json';
 import en_pago from './en/pago.json';
@@ -70,6 +72,7 @@ import pt_estados from './pt/estados.json';
 import pt_estructura from './pt/estructura.json';
 import pt_limites from './pt/limites.json';
 import pt_senales from './pt/senales.json';
+import pt_sesiones from './pt/sesiones.json';
 import pt_nav from './pt/nav.json';
 import pt_notificaciones from './pt/notificaciones.json';
 import pt_pago from './pt/pago.json';
@@ -109,6 +112,7 @@ export const recursos = {
     estructura: es_estructura,
     limites: es_limites,
     senales: es_senales,
+    sesiones: es_sesiones,
     nav: es_nav,
     notificaciones: es_notificaciones,
     pago: es_pago,
@@ -137,6 +141,7 @@ export const recursos = {
     estructura: en_estructura,
     limites: en_limites,
     senales: en_senales,
+    sesiones: en_sesiones,
     nav: en_nav,
     notificaciones: en_notificaciones,
     pago: en_pago,
@@ -165,6 +170,7 @@ export const recursos = {
     estructura: pt_estructura,
     limites: pt_limites,
     senales: pt_senales,
+    sesiones: pt_sesiones,
     nav: pt_nav,
     notificaciones: pt_notificaciones,
     pago: pt_pago,

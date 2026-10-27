@@ -14,6 +14,7 @@ import { ProveedorCobro } from '../../features/cobro';
 import { ProveedorPlanes } from '../../features/planes';
 import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
+import { ProveedorSesiones } from '../../features/sesiones';
 import { ProveedorSuscripciones } from '../../features/suscripciones';
 import { ProveedorTema } from '../../theme/ProveedorTema';
 import type { Servicios } from './crearServicios';
@@ -67,7 +68,9 @@ export function ProveedoresApp({
                                   <ProveedorLimites valor={servicios.limites}>
                                     <ProveedorSenales valor={servicios.senales}>
                                       <SesionProvider almacen={servicios.almacen}>
-                                        {children}
+                                        <ProveedorSesiones valor={servicios.sesiones}>
+                                          {children}
+                                        </ProveedorSesiones>
                                       </SesionProvider>
                                     </ProveedorSenales>
                                   </ProveedorLimites>

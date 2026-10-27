@@ -119,6 +119,8 @@
   "titularDetalle_other": "Titular · {{unidad}} · {{count}} Membros",
   "guardiaDetalle": "Guarda",
   "reasignar": "Reatribuir",
+  "dispositivos": "Dispositivos",
+  "verSesiones": "Ver os dispositivos conectados de {{nombre}}",
   "reasignando": "Reatribuindo",
   "reasignarA": "Reatribuir {{nombre}} a outro administrador",
   "reasignarTitulo": "Reatribuir {{nombre}}",

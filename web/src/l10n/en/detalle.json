@@ -119,6 +119,8 @@
   "titularDetalle_other": "Holder · {{unidad}} · {{count}} Members",
   "guardiaDetalle": "Guard",
   "reasignar": "Reassign",
+  "dispositivos": "Devices",
+  "verSesiones": "See the connected devices of {{nombre}}",
   "reasignando": "Reassigning",
   "reasignarA": "Reassign {{nombre}} to another administrator",
   "reasignarTitulo": "Reassign {{nombre}}",

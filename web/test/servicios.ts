@@ -30,6 +30,7 @@ import type {
   ListadoDeFlujo,
 } from '@/features/senales';
 import type { Paginado } from '@/shared/api/tipos';
+import type { SesionesRepositorio, SesionDeUsuario } from '@/features/sesiones';
 
 export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
   {
@@ -751,6 +752,28 @@ export const DETALLE_FLUJO: DetalleDeFlujo = {
   ],
 };
 
+/** Dispositivos conectados de un usuario de cuenta; el nombre trae HTML a propósito: debe verse como texto. */
+export const SESIONES_DE_USUARIO: SesionDeUsuario[] = [
+  {
+    id: '501',
+    plataforma: 'android',
+    dispositivo: 'Pixel <img src=x onerror=alert(1)>',
+    ip: '190.4.12.9',
+    iniciadaEn: new Date('2026-10-27T11:00:00Z'),
+    ultimaActividadEn: new Date('2026-10-27T12:30:00Z'),
+    expiraEn: new Date('2026-11-03T11:00:00Z'),
+  },
+  {
+    id: '502',
+    plataforma: null,
+    dispositivo: null,
+    ip: null,
+    iniciadaEn: new Date('2026-10-26T09:00:00Z'),
+    ultimaActividadEn: new Date('2026-10-26T09:05:00Z'),
+    expiraEn: new Date('2026-11-02T09:00:00Z'),
+  },
+];
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
@@ -769,6 +792,7 @@ export function crearServiciosDePrueba(
     estadisticas?: Partial<EstadisticasRepositorio>;
     limites?: Partial<LimitesRepositorio>;
     senales?: Partial<SenalesRepositorio>;
+    sesiones?: Partial<SesionesRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -975,6 +999,12 @@ export function crearServiciosDePrueba(
     flujoDeCuenta: () => Promise.resolve(DETALLE_FLUJO),
     ...parcial.senales,
   };
+  const sesiones: SesionesRepositorio = {
+    listar: () => Promise.resolve(SESIONES_DE_USUARIO),
+    cerrar: () => Promise.resolve(),
+    cerrarTodas: () => Promise.resolve(SESIONES_DE_USUARIO.length),
+    ...parcial.sesiones,
+  };
   return {
     almacen,
     seguridad,
@@ -992,6 +1022,7 @@ export function crearServiciosDePrueba(
     estadisticas,
     limites,
     senales,
+    sesiones,
   };
 }
 
