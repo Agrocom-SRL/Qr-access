@@ -22,6 +22,7 @@ const DESCRIPCION_DE_DISPOSITIVOS = {
     'estado_lector',
     'en_observacion',
     'sensor_instalado',
+    'sensor_habilitado_at',
     'sensor_abierto_nivel',
     'sensor_estado',
     'sensor_informado_at',
@@ -191,6 +192,7 @@ export interface EstadoEsperadoDePlaca {
 /** El sensor de puerta de un dispositivo, tal como está configurado. */
 export interface SensorConfiguradoFila extends RowDataPacket {
   sensor_instalado: number;
+  sensor_habilitado_at: Date | null;
   sensor_abierto_nivel: 'alto' | 'bajo';
 }
 
@@ -199,6 +201,8 @@ export interface DispositivoParaAperturasFila extends RowDataPacket {
   id: string;
   puerta_id: string;
   sensor_instalado: number;
+  /** Cuándo se habilitó el sensor; solo se juzgan aperturas ordenadas desde entonces. */
+  sensor_habilitado_at: Date | null;
   apertura_fallida: number;
   en_servicio: number;
 }
@@ -321,7 +325,7 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   /** Cómo está configurado el sensor de puerta de este dispositivo (la placa lo recibe en su configuración). */
   leerSensorConfigurado(id: string): Promise<SensorConfiguradoFila | null> {
     return this.seleccionarUna<SensorConfiguradoFila>({
-      columnas: 't.sensor_instalado, t.sensor_abierto_nivel',
+      columnas: 't.sensor_instalado, t.sensor_habilitado_at, t.sensor_abierto_nivel',
       donde: 't.id = ?',
       params: [id],
     });
@@ -329,15 +333,34 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
 
   /**
    * Configura el sensor de puerta (si está instalado y a qué nivel lee «abierta»). Es un cambio de configuración:
-   * entra a la bitácora con el antes y el después.
+   * entra a la bitácora con el antes y el después. `sensor_habilitado_at` se fija al pasar de sin sensor a con
+   * sensor (hora del servidor, `ahora`) y se conserva si solo cambia la polaridad; al deshabilitarlo vuelve a NULL.
    */
-  configurarSensor(
+  async configurarSensor(
     tx: Transaccion,
     id: string,
     sensor: { readonly instalado: boolean; readonly nivelAbierto: 'alto' | 'bajo' },
+    ahora: Date,
   ): Promise<boolean> {
+    const actual = await this.seleccionarUna<SensorConfiguradoFila>(
+      {
+        columnas: 't.sensor_instalado, t.sensor_habilitado_at, t.sensor_abierto_nivel',
+        donde: 't.id = ?',
+        params: [id],
+        bloquear: true,
+      },
+      tx,
+    );
+    if (actual === null) return false;
+    const yaHabilitado = actual.sensor_instalado === 1 && actual.sensor_habilitado_at !== null;
+    const habilitadoAt = !sensor.instalado
+      ? null
+      : yaHabilitado
+        ? actual.sensor_habilitado_at
+        : ahora;
     return this.actualizar(tx, id, {
       sensor_instalado: sensor.instalado ? 1 : 0,
+      sensor_habilitado_at: habilitadoAt,
       sensor_abierto_nivel: sensor.nivelAbierto,
     });
   }
@@ -350,7 +373,7 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   listarParaEvaluarAperturas(): Promise<DispositivoParaAperturasFila[]> {
     return this.seleccionar<DispositivoParaAperturasFila>({
       columnas:
-        't.id, t.puerta_id, t.sensor_instalado, t.apertura_fallida, (t.revocado_at IS NULL AND t.activo = 1) AS en_servicio',
+        't.id, t.puerta_id, t.sensor_instalado, t.sensor_habilitado_at, t.apertura_fallida, (t.revocado_at IS NULL AND t.activo = 1) AS en_servicio',
       donde:
         '(t.revocado_at IS NULL AND t.activo = 1 AND t.sensor_instalado = 1) OR t.apertura_fallida = 1',
       orden: 't.id',

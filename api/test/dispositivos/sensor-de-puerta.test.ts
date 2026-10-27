@@ -74,7 +74,7 @@ describe('sensor de puerta: latido ampliado y configuración por dispositivo (AD
   const sensorDe = async (id: string) =>
     (
       await prueba.pool.query<RowDataPacket[]>(
-        'SELECT sensor_instalado, sensor_abierto_nivel, sensor_estado, sensor_informado_at FROM dispositivos WHERE id = ?',
+        'SELECT sensor_instalado, sensor_habilitado_at, sensor_abierto_nivel, sensor_estado, sensor_informado_at FROM dispositivos WHERE id = ?',
         [id],
       )
     )[0][0];
@@ -154,6 +154,20 @@ describe('sensor de puerta: latido ampliado y configuración por dispositivo (AD
       expect((await configuracion(b.dispositivoPrincipal.encabezado)).json()).toMatchObject({
         sensor_puerta: { instalado: false, nivel_abierto: 'alto' },
       });
+    });
+
+    it('al habilitar el sensor se guarda cuándo; cambiar solo la polaridad lo conserva y deshabilitar lo borra', async () => {
+      expect((await sensorDe(a.dispositivoPrincipal.id))?.sensor_habilitado_at).toBeNull();
+      const antes = Date.now();
+      await configurar(placaA, { instalado: true, nivel_abierto: 'alto' });
+      const habilitado = (await sensorDe(a.dispositivoPrincipal.id))?.sensor_habilitado_at as Date;
+      expect(Math.abs(habilitado.getTime() - antes)).toBeLessThan(10_000);
+
+      await configurar(placaA, { instalado: true, nivel_abierto: 'bajo' });
+      expect((await sensorDe(a.dispositivoPrincipal.id))?.sensor_habilitado_at).toEqual(habilitado);
+
+      await configurar(placaA, { instalado: false, nivel_abierto: 'bajo' });
+      expect((await sensorDe(a.dispositivoPrincipal.id))?.sensor_habilitado_at).toBeNull();
     });
 
     it('el cambio queda en la bitácora de la cuenta con el antes y el después', async () => {

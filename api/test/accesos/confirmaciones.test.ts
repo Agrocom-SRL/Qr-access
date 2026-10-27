@@ -207,6 +207,20 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
       expect(await contarFilas(prueba.pool, 'confirmaciones_apertura')).toBe(0);
     });
 
+    it('un evento permitido de otro método (pulsador, forzada) no se confirma: 404', async () => {
+      const { eventoId } = await validar(a, a.dispositivoPrincipal, a.puertaPrincipal.id);
+      await prueba.pool.query("UPDATE eventos_acceso SET metodo = 'pulsador' WHERE id = ?", [
+        eventoId,
+      ]);
+      const respuesta = await confirmar(a.dispositivoPrincipal, {
+        evento_id: eventoId,
+        resultado: 'ejecutada',
+      });
+      expect(respuesta.statusCode).toBe(404);
+      expect(respuesta.json<Problema>().code).toBe('evento.no_encontrado');
+      expect(await contarFilas(prueba.pool, 'confirmaciones_apertura')).toBe(0);
+    });
+
     it('otra placa de la MISMA cuenta tampoco confirma por la puerta de al lado', async () => {
       const principal = await validar(a, a.dispositivoPrincipal, a.puertaPrincipal.id);
       const respuesta = await confirmar(a.dispositivoTrasero, {

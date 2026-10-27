@@ -116,8 +116,8 @@ La placa sigue sin lógica de negocio: lee pines y reporta. Lo de abajo es **sol
   "espera_confirmacion_segundos": 11 }
 ```
 
-- `sensor_puerta.instalado` (bool): si el contacto magnético está habilitado para esta puerta. **Vale `false` hasta que AGROCOM lo habilite** (`PUT /plataforma/placas/{id}/sensor`) tras verificar el cableado; una placa no puede saberlo sola. Con `false` la placa no interpreta el pin y informa `sin_sensor`.
-- `sensor_puerta.nivel_abierto` (`"alto"` o `"bajo"`): nivel que lee el pin (`INPUT_PULLUP`) con la puerta ABIERTA. **Polaridad pendiente de confirmar en campo**: por omisión `"alto"` (igual que `SENSOR_PUERTA_NIVEL_ABIERTA HIGH` de `pines.h`); el firmware debe usar este valor y no el de compilación cuando la configuración se haya leído.
+- `sensor_puerta.instalado` (bool): si el contacto magnético está habilitado para esta puerta. **Vale `false` hasta que AGROCOM lo habilite** (`PUT /plataforma/placas/{id}/sensor`) tras verificar el cableado; una placa no puede saberlo sola. Con `false` la placa no interpreta el pin y informa `sin_sensor`. El servidor juzga las aperturas desde que se habilitó el sensor (`sensor_habilitado_at`, no se expone en la API); si con `instalado: true` la placa informa `sin_sensor`, el servidor lo cuenta como falla.
+- `sensor_puerta.nivel_abierto` (`"alto"` o `"bajo"`): nivel que lee el pin (`INPUT_PULLUP`) con la puerta ABIERTA. **Polaridad pendiente de confirmar en campo**: por omisión `"alto"`; el firmware usa el valor del servidor (ya no hay constante de compilación en `pines.h`; el valor por omisión, marcado como pendiente de confirmar, es `NIVEL_ABIERTO_POR_OMISION` en `firmware/lib/confirmacion`). Mientras no haya leído la primera configuración válida la placa **no sabe** si hay sensor: no observa ninguna apertura (no informa nada, el servidor lo toma como «sin respuesta») y el latido omite `sensor_puerta` (manda solo `puerta_abierta: false`, campo obligatorio); nunca afirma `sin_sensor` por no haber leído nada. Con el sensor no instalado el latido manda `puerta_abierta: false`, porque el pin al aire con pull-up leería «abierta».
 - `espera_confirmacion_segundos` (int): cuánto espera la placa ver la puerta abierta, contado desde el inicio del pulso del relé (`segundos_apertura` + 5).
 
 **2. Latido ampliado** — `POST /api/v1/dispositivos/latidos` (sin cambios de ruta, cada 60 s) → `204`. Cuerpo estricto (cualquier campo no listado es `400`):
@@ -147,6 +147,13 @@ Reglas para el firmware:
 - Enviarlo **en segundo plano, después** de haber accionado y atendido la lectura siguiente: nunca debe retrasar una validación ni mantener el relé.
 - Reintentar solo ante falta de red, `429` o `5xx`, con espera creciente, hasta unos 10 minutos desde la orden; con cualquier otro `4xx` se descarta. Perder el informe es aceptable (el servidor lo toma como «sin respuesta»); no hace falta persistirlo.
 - Un solo informe por apertura. Si la puerta se vuelve a abrir con otro QR, es otro `evento_id`.
+- Plazo por omisión de observación (sin `espera_confirmacion_segundos` en la configuración): los segundos reales de apertura vigentes (`segundos_apertura` de la configuración, tope duro 10 s) más 5 s.
+- Segundo plano acotado: latido, informe y configuración usan 1 s por fase (conexión, handshake TLS, lectura) y no se inician hasta 10 s después del último byte del lector, para no retener la tarea de red cuando llega una validación. Un pedido de validación que esperó 3 s o más se descarta sin enviarse (la máquina de estados ya lo abandonó; enviarlo solo consumiría el QR sin abrir).
+
+Limitaciones conocidas del diagnóstico (informativas; el servidor las tolera):
+- **Aperturas solapadas.** Si una apertura ocurre mientras se observa otra, la primera se cierra con lo que se vio hasta entonces; si la puerta aún no se había abierto puede informarse `puerta_no_abrio` aunque el usuario esté entrando (falso negativo). Es raro: el lector se ignora mientras hay una validación o el relé activo.
+- **Apertura física dentro de la ventana.** Si alguien abre la puerta con el pulsador de salida o la llave dentro del plazo de observación, el sensor la ve abrir y la apertura cuenta como `ejecutada`; el sensor no distingue quién la abrió.
+- **`lector_responde` cuenta cualquier byte.** El lector es pasivo; basta un byte por la UART (incluso ruido) para marcarlo como «responde». Sin bytes desde el arranque el campo se omite; pasado un día sin bytes se informa `false` (puede estar caído o solo sin uso).
 
 Qué hace el servidor (para quien consuma el estado): ver la ficha `docs/modelo-datos/tablas/32_confirmaciones_apertura.md` y el ADR 0031 §18.
 

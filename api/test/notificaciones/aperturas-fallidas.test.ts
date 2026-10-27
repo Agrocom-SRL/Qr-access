@@ -62,10 +62,12 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
     superAcceso = (await iniciarSesionDePlataforma(prueba.app, 'lucia.paz', sa.contrasena)).acceso;
   });
 
-  const habilitarSensor = (dispositivo: DispositivoDePrueba) =>
-    prueba.pool.query('UPDATE dispositivos SET sensor_instalado = 1 WHERE id = ?', [
-      dispositivo.id,
-    ]);
+  /** Habilita el sensor «desde siempre» (salvo que el test pida otro instante): se juzga todo lo del escenario. */
+  const habilitarSensor = (dispositivo: DispositivoDePrueba, desde: Date = new Date(0)) =>
+    prueba.pool.query(
+      'UPDATE dispositivos SET sensor_instalado = 1, sensor_habilitado_at = ? WHERE id = ?',
+      [desde, dispositivo.id],
+    );
 
   /** Una apertura que el servidor ordenó a esa hora: el evento permitido, escrito directo. */
   async function apertura(
@@ -218,6 +220,70 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
     });
   });
 
+  describe('habilitar el sensor no juzga el pasado', () => {
+    it('las aperturas anteriores a la habilitación no dejan constancia ni avisan; las posteriores sí', async () => {
+      await aperturaA(en(-30));
+      await aperturaA(en(-20));
+      await habilitarSensor(a.dispositivoPrincipal, en(-10));
+      const antes = await pasada(en(0));
+      expect(antes.evaluacion).toMatchObject({ constancias: 0, avisos: 0 });
+      expect(await contarFilas(prueba.pool, 'confirmaciones_apertura')).toBe(0);
+
+      await aperturaA(en(-5));
+      expect((await pasada(en(0))).evaluacion.constancias).toBe(1);
+    });
+
+    it('un `sin_sensor` informado antes de habilitar el sensor tampoco cuenta como falla', async () => {
+      for (const minuto of [-30, -25, -20]) {
+        await informe(
+          a,
+          a.dispositivoPrincipal,
+          a.puertaPrincipal,
+          await aperturaA(en(minuto)),
+          'sin_confirmacion',
+          'sin_sensor',
+          en(minuto),
+        );
+      }
+      await habilitarSensor(a.dispositivoPrincipal, en(-10));
+      expect((await pasada(en(0))).evaluacion).toMatchObject({ avisos: 0, constancias: 0 });
+      expect(await enGrupo(a.dispositivoPrincipal.id)).toBe(0);
+    });
+
+    it('un evento de otro método (pulsador) no es una apertura ordenada por QR: no se juzga', async () => {
+      await habilitarSensor(a.dispositivoPrincipal);
+      const evento = await aperturaA(en(-5));
+      await prueba.pool.query("UPDATE eventos_acceso SET metodo = 'pulsador' WHERE id = ?", [
+        evento,
+      ]);
+      expect((await pasada(en(0))).evaluacion.constancias).toBe(0);
+    });
+  });
+
+  describe('la constancia se sella con la hora en que venció el plazo', () => {
+    it('tras una caída del detector, la constancia lleva orden + plazo y no corre la ventana de 60 min', async () => {
+      await habilitarSensor(a.dispositivoPrincipal);
+      const primero = await aperturaA(en(-5));
+      await aperturaA(en(-4));
+      // El detector vuelve cinco horas después.
+      const resultado = await pasada(en(300));
+      expect(resultado.evaluacion).toMatchObject({ constancias: 2, avisos: 0 });
+      const [fila] = await filasDe(
+        'SELECT registrada_at, TIMESTAMPDIFF(SECOND, e.ocurrido_at, c.registrada_at) AS despues FROM confirmaciones_apertura AS c JOIN eventos_acceso AS e ON e.id = c.evento_acceso_id WHERE c.evento_acceso_id = ?',
+        [primero],
+      );
+      expect(Number(fila?.despues)).toBe(90);
+      expect(await enGrupo(a.dispositivoPrincipal.id)).toBe(0);
+    });
+
+    it('la misma caída, pero con el detector a tiempo dentro de la ventana, sí avisa', async () => {
+      await habilitarSensor(a.dispositivoPrincipal);
+      await aperturaA(en(-5));
+      await aperturaA(en(-4));
+      expect((await pasada(en(30))).evaluacion).toMatchObject({ constancias: 2, avisos: 2 });
+    });
+  });
+
   describe('aviso `apertura.fallida`', () => {
     it('dos fallas en la ventana abren UN aviso para el administrador y otro para AGROCOM, severidad `aviso`', async () => {
       await habilitarSensor(a.dispositivoPrincipal);
@@ -287,7 +353,7 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
       expect(resultado.evaluacion).toMatchObject({ constancias: 1, avisos: 2 });
     });
 
-    it('`sin_sensor` no cuenta ni como éxito ni como falla', async () => {
+    it('con el sensor habilitado, `sin_sensor` cuenta como falla (la placa no ve su contacto); sin sensor, no', async () => {
       await habilitarSensor(a.dispositivoPrincipal);
       for (const minuto of [-8, -7, -6]) {
         await informe(
@@ -300,7 +366,39 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
           en(minuto),
         );
       }
-      expect((await pasada(en(0))).evaluacion.avisos).toBe(0);
+      const resultado = await pasada(en(0));
+      expect(resultado.evaluacion.avisos).toBe(2);
+      expect((await bandeja(adminA)).datos[0]?.datos.placas[0]).toMatchObject({
+        fallos: 3,
+        causa: 'sin_sensor',
+      });
+      // El informe se guardó tal cual lo dijo la placa: no se reescribe como sin_respuesta.
+      expect(
+        await contarFilas(prueba.pool, 'confirmaciones_apertura', "causa = 'sin_sensor'"),
+      ).toBe(3);
+    });
+
+    it('una placa sin el sensor habilitado no entra al grupo por muchas fallas que tenga registradas', async () => {
+      await fallaA(en(-10));
+      await fallaA(en(-9));
+      const resultado = await pasada(en(0));
+      expect(resultado.evaluacion).toMatchObject({ avisos: 0, dispositivosActualizados: 0 });
+      expect(await enGrupo(a.dispositivoPrincipal.id)).toBe(0);
+    });
+
+    it('si se deshabilita el sensor, la puerta sale del grupo y su aviso se cierra', async () => {
+      await habilitarSensor(a.dispositivoPrincipal);
+      await fallaA(en(-10));
+      await fallaA(en(-9));
+      await pasada(en(-8));
+      expect(await enGrupo(a.dispositivoPrincipal.id)).toBe(1);
+      await prueba.pool.query(
+        'UPDATE dispositivos SET sensor_instalado = 0, sensor_habilitado_at = NULL WHERE id = ?',
+        [a.dispositivoPrincipal.id],
+      );
+      await pasada(en(-7));
+      expect(await enGrupo(a.dispositivoPrincipal.id)).toBe(0);
+      expect((await bandeja(adminA)).datos[0]?.resuelta).toBe(true);
     });
 
     it('una apertura ejecutada después saca a la puerta del grupo y cierra el aviso', async () => {

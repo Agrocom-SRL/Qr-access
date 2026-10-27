@@ -19,11 +19,7 @@ import {
   type FallaDeDispositivo,
   type UmbralesDeApertura,
 } from '../domain/apertura-fallida.js';
-import {
-  RepositorioDeDispositivos,
-  RepositorioDeDispositivosDePlataforma,
-  type DispositivoParaAperturasFila,
-} from '../repository.js';
+import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from '../repository.js';
 
 export interface ResultadoDeEvaluacionDeAperturas {
   /** Cuentas revisadas. */
@@ -46,33 +42,36 @@ function aEjecucion(ejecucion: EjecucionDeApertura): EjecucionParaJuzgar {
   return ejecucion;
 }
 
-/** La constancia que el servidor dejará (o dejó) de una apertura sin informe, vista como ejecución. */
-function comoConstancia(apertura: AperturaSinInforme, ahora: Date): EjecucionParaJuzgar {
+/**
+ * La constancia que el servidor dejará (o dejó) de una apertura sin informe, vista como ejecución. Se sella con el
+ * instante en que venció el plazo (la orden + el plazo), no con «ahora»: si el detector estuvo caído, la falla cae
+ * donde de verdad ocurrió y la ventana de juicio no se corre.
+ */
+function instanteDeConstancia(apertura: AperturaSinInforme, plazoSegundos: number): Date {
+  return new Date(apertura.ocurridoAt.getTime() + plazoSegundos * 1000);
+}
+
+function comoConstancia(apertura: AperturaSinInforme, plazoSegundos: number): EjecucionParaJuzgar {
   return {
     eventoId: apertura.eventoId,
     dispositivoId: apertura.dispositivoId,
     resultado: 'sin_confirmacion',
     causa: 'sin_respuesta',
-    registradaAt: ahora,
+    registradaAt: instanteDeConstancia(apertura, plazoSegundos),
   };
 }
 
 /**
- * Quiénes fallan, dado lo registrado y las constancias: solo cuentan los dispositivos en servicio (uno fuera de
- * servicio ya no se espera que abra).
+ * Quiénes fallan, dado lo registrado y las constancias: solo cuentan los dispositivos en servicio con el sensor
+ * habilitado (uno fuera de servicio ya no se espera que abra; uno sin sensor no puede confirmar nada).
  */
 function quienesFallan(
-  filas: readonly DispositivoParaAperturasFila[],
+  habilitados: ReadonlyMap<string, Date>,
   ejecuciones: readonly EjecucionParaJuzgar[],
   ahora: Date,
   umbrales: UmbralesDeApertura,
 ): Map<string, FallaDeDispositivo> {
-  const enServicio = new Set(filas.filter((fila) => fila.en_servicio === 1).map((fila) => fila.id));
-  return dispositivosQueFallan(
-    ejecuciones.filter((ejecucion) => enServicio.has(ejecucion.dispositivoId)),
-    ahora,
-    umbrales,
-  );
+  return dispositivosQueFallan(ejecuciones, ahora, umbrales, new Set(habilitados.keys()));
 }
 
 /**
@@ -100,13 +99,26 @@ async function evaluarCuenta(
   if (filas.length === 0) return SIN_CAMBIOS;
 
   const confirmaciones = crearServicioDeConfirmaciones(pool);
-  const conSensor = filas.filter((fila) => fila.en_servicio === 1 && fila.sensor_instalado === 1);
-  const [pendientes, registradas] = await Promise.all([
-    // Solo las placas con sensor habilitado deben informar: sin sensor, o con un firmware que aún no informa,
-    // el silencio no es una falla.
+  // Dispositivo -> desde cuándo se habilitó su sensor. Solo las placas con sensor habilitado deben informar: sin
+  // sensor, o con un firmware que aún no informa, el silencio no es una falla; y lo ocurrido ANTES de habilitarlo
+  // tampoco se juzga (la placa aún no podía informar).
+  const habilitados = new Map<string, Date>();
+  for (const fila of filas) {
+    if (
+      fila.en_servicio === 1 &&
+      fila.sensor_instalado === 1 &&
+      fila.sensor_habilitado_at !== null
+    ) {
+      habilitados.set(fila.id, fila.sensor_habilitado_at);
+    }
+  }
+  const limiteDeBusqueda = ahora.getTime() - BUSQUEDA_DE_APERTURAS_SIN_INFORME_HORAS * 3600_000;
+  const [pendientes, leidas] = await Promise.all([
     confirmaciones.aperturasSinInforme(
-      conSensor.map((fila) => fila.id),
-      new Date(ahora.getTime() - BUSQUEDA_DE_APERTURAS_SIN_INFORME_HORAS * 3600_000),
+      [...habilitados].map(([dispositivoId, habilitadoAt]) => ({
+        dispositivoId,
+        desde: new Date(Math.max(habilitadoAt.getTime(), limiteDeBusqueda)),
+      })),
       new Date(ahora.getTime() - plazoSegundos * 1000),
       TOPE_DE_CONSTANCIAS_POR_PASADA,
     ),
@@ -115,10 +127,16 @@ async function evaluarCuenta(
       TOPE_DE_EJECUCIONES_LEIDAS,
     ),
   ]);
+  // Un informe de una apertura ordenada antes de habilitar el sensor (p. ej. un `sin_sensor` de cuando aún no
+  // estaba habilitado) no cuenta.
+  const registradas = leidas.filter((ejecucion) => {
+    const habilitadoAt = habilitados.get(ejecucion.dispositivoId);
+    return habilitadoAt !== undefined && ejecucion.ocurridoAt >= habilitadoAt;
+  });
 
   const previstas = quienesFallan(
-    filas,
-    [...registradas.map(aEjecucion), ...pendientes.map((p) => comoConstancia(p, ahora))],
+    habilitados,
+    [...registradas.map(aEjecucion), ...pendientes.map((p) => comoConstancia(p, plazoSegundos))],
     ahora,
     umbrales,
   );
@@ -136,11 +154,19 @@ async function evaluarCuenta(
       // Las constancias que de verdad se dejaron: si la placa informó entre la lectura y ahora, no se pisa.
       const dejadas: AperturaSinInforme[] = [];
       for (const apertura of pendientes) {
-        if (await confirmaciones.dejarSinRespuesta(tx, apertura, ahora)) dejadas.push(apertura);
+        if (
+          await confirmaciones.dejarSinRespuesta(
+            tx,
+            apertura,
+            instanteDeConstancia(apertura, plazoSegundos),
+          )
+        ) {
+          dejadas.push(apertura);
+        }
       }
       const falla = quienesFallan(
-        filas,
-        [...registradas.map(aEjecucion), ...dejadas.map((d) => comoConstancia(d, ahora))],
+        habilitados,
+        [...registradas.map(aEjecucion), ...dejadas.map((d) => comoConstancia(d, plazoSegundos))],
         ahora,
         umbrales,
       );
@@ -232,7 +258,8 @@ async function evaluarCuenta(
  * El detector de aperturas fallidas (ADR 0031 §18, ola W10). Recorre las cuentas con el reloj `ahora` y los umbrales
  * de la plataforma:
  * - Una apertura ordenada de una puerta CON sensor habilitado a la que la placa no contestó en el plazo queda con
- *   la constancia `sin_confirmacion` / `sin_respuesta` (una fila del servidor; si la placa contesta tarde, su fila manda).
+ *   la constancia `sin_confirmacion` / `sin_respuesta` (una fila del servidor sellada con la orden + el plazo; si la
+ *   placa contesta tarde, su fila manda). Solo se juzgan aperturas posteriores a `sensor_habilitado_at`.
  * - Una puerta con `fallidasMinimo` o más fallas en la ventana (desde su última apertura ejecutada) entra al grupo
  *   «aperturas que fallan» de su sitio; sale cuando vuelve a abrir bien o las fallas salen de la ventana.
  * - Solo si cambia quiénes forman el grupo de un sitio se deja UN aviso `apertura.fallida` (propietario y AGROCOM)

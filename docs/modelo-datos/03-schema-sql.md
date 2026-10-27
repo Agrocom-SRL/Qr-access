@@ -932,7 +932,8 @@ CREATE TABLE confirmaciones_apertura (
 -- 20261031100002_add_sensor_y_apertura_a_dispositivos.sql
 ALTER TABLE dispositivos
   ADD COLUMN sensor_instalado TINYINT(1) NOT NULL DEFAULT 0 AFTER en_observacion,
-  ADD COLUMN sensor_abierto_nivel VARCHAR(5) NOT NULL DEFAULT 'alto' AFTER sensor_instalado,
+  ADD COLUMN sensor_habilitado_at DATETIME(3) NULL AFTER sensor_instalado,
+  ADD COLUMN sensor_abierto_nivel VARCHAR(5) NOT NULL DEFAULT 'alto' AFTER sensor_habilitado_at,
   ADD COLUMN sensor_estado VARCHAR(12) NULL AFTER sensor_abierto_nivel,
   ADD COLUMN sensor_informado_at DATETIME(3) NULL AFTER sensor_estado,
   ADD COLUMN apertura_fallida TINYINT(1) NOT NULL DEFAULT 0 AFTER sensor_informado_at,

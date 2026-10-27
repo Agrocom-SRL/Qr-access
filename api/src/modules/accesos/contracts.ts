@@ -316,6 +316,8 @@ export interface EjecucionDeApertura {
   readonly eventoId: string;
   readonly dispositivoId: string;
   readonly puertaId: string;
+  /** Hora (UTC) de la orden de abrir que esta ejecución confirma. */
+  readonly ocurridoAt: Date;
   readonly resultado: Ejecucion;
   readonly causa: CausaDeEjecucion;
   /** Hora del servidor en que se registró. */
@@ -324,17 +326,24 @@ export interface EjecucionDeApertura {
 
 export interface ServicioDeConfirmaciones {
   /**
-   * Las aperturas de esos dispositivos entre `desde` (incl.) y `hasta` (excl.) sin ningún informe, en la cuenta
-   * del contexto. Lectura sin bloqueo.
+   * Las aperturas por QR de cada dispositivo desde SU `desde` (incl.) hasta `hasta` (excl.) sin ningún informe, en
+   * la cuenta del contexto. Lectura sin bloqueo.
    */
   aperturasSinInforme(
-    dispositivoIds: readonly string[],
-    desde: Date,
+    dispositivos: readonly { readonly dispositivoId: string; readonly desde: Date }[],
     hasta: Date,
     limite: number,
   ): Promise<AperturaSinInforme[]>;
-  /** Deja la constancia `sin_confirmacion` / `sin_respuesta` del servidor dentro de `tx`; `false` si ya había una. */
-  dejarSinRespuesta(tx: Transaccion, apertura: AperturaSinInforme, ahora: Date): Promise<boolean>;
+  /**
+   * Deja la constancia `sin_confirmacion` / `sin_respuesta` del servidor dentro de `tx`; `false` si ya había una.
+   * `registradaAt` es el instante en que venció el plazo (la orden + el plazo), no «ahora»: así una caída del
+   * detector no mueve la constancia dentro de la ventana de juicio.
+   */
+  dejarSinRespuesta(
+    tx: Transaccion,
+    apertura: AperturaSinInforme,
+    registradaAt: Date,
+  ): Promise<boolean>;
   /** El estado efectivo de las aperturas registradas desde `desde`, en la cuenta del contexto. Lectura sin bloqueo. */
   ejecucionesDesde(desde: Date, limite: number): Promise<EjecucionDeApertura[]>;
 }
@@ -343,8 +352,8 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
   const eventos = new RepositorioDeEventos(pool);
   const confirmaciones = new RepositorioDeConfirmaciones(pool);
   return {
-    async aperturasSinInforme(dispositivoIds, desde, hasta, limite) {
-      const filas = await eventos.aperturasSinInforme(dispositivoIds, desde, hasta, limite);
+    async aperturasSinInforme(dispositivos, hasta, limite) {
+      const filas = await eventos.aperturasSinInforme(dispositivos, hasta, limite);
       return filas.map((fila) => ({
         eventoId: fila.id,
         dispositivoId: fila.dispositivo_id,
@@ -352,7 +361,7 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
         ocurridoAt: fila.ocurrido_at,
       }));
     },
-    async dejarSinRespuesta(tx, apertura, ahora) {
+    async dejarSinRespuesta(tx, apertura, registradaAt) {
       const id = await confirmaciones.registrar(tx, {
         eventoId: apertura.eventoId,
         dispositivoId: apertura.dispositivoId,
@@ -360,7 +369,7 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
         origen: 'servidor',
         ...SIN_RESPUESTA,
         reportadoEnDispositivoAt: null,
-        registradaAt: ahora,
+        registradaAt,
       });
       return id !== null;
     },
@@ -382,6 +391,7 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
                 eventoId: efectiva.evento_acceso_id,
                 dispositivoId: efectiva.dispositivo_id,
                 puertaId: efectiva.puerta_id,
+                ocurridoAt: efectiva.ocurrido_at,
                 resultado: efectiva.resultado,
                 causa: efectiva.causa,
                 registradaAt: efectiva.registrada_at,

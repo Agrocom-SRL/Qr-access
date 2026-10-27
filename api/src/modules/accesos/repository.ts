@@ -473,6 +473,12 @@ export interface NuevoEvento {
 const COLUMNAS_DE_EVENTO =
   't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
 
+/** Desde cuándo se juzgan las aperturas de un dispositivo. */
+export interface DesdeDeDispositivo {
+  readonly dispositivoId: string;
+  readonly desde: Date;
+}
+
 /** Una apertura que el servidor ordenó (un evento `permitido`). */
 export interface AperturaOrdenadaFila extends RowDataPacket {
   id: string;
@@ -564,7 +570,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
   ): Promise<AperturaOrdenadaFila | null> {
     return this.seleccionarUna<AperturaOrdenadaFila>({
       columnas: 't.id, t.puerta_id, t.dispositivo_id, t.ocurrido_at',
-      donde: "t.id = ? AND t.dispositivo_id = ? AND t.resultado = 'permitido'",
+      donde: "t.id = ? AND t.dispositivo_id = ? AND t.resultado = 'permitido' AND t.metodo = 'qr'",
       params: [id, dispositivoId],
     });
   }
@@ -581,23 +587,26 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
   }
 
   /**
-   * Las aperturas ordenadas (eventos permitidos) de esos dispositivos entre `desde` (incl.) y `hasta` (excl.) de las
-   * que nadie informó nada: ni la placa ni el servidor. Las más viejas primero; sin bloqueo (lectura del detector).
+   * Las aperturas ordenadas (eventos permitidos por QR) de cada dispositivo desde SU instante `desde` (incl.) y hasta
+   * `hasta` (excl.) de las que nadie informó nada: ni la placa ni el servidor. `desde` es por dispositivo porque cada
+   * uno empieza a juzgarse cuando se le habilitó el sensor. Las más viejas primero; sin bloqueo (lectura del detector).
    */
   aperturasSinInforme(
-    dispositivoIds: readonly string[],
-    desde: Date,
+    dispositivos: readonly DesdeDeDispositivo[],
     hasta: Date,
     limite: number,
   ): Promise<AperturaOrdenadaFila[]> {
-    if (dispositivoIds.length === 0) return Promise.resolve([]);
+    if (dispositivos.length === 0) return Promise.resolve([]);
+    // Un par (dispositivo, desde) por cada uno; solo `?`, nunca un valor en el texto del SQL.
+    const porDispositivo = dispositivos
+      .map(() => '(t.dispositivo_id = ? AND t.ocurrido_at >= ?)')
+      .join(' OR ');
     return this.seleccionar<AperturaOrdenadaFila>({
       columnas: 't.id, t.puerta_id, t.dispositivo_id, t.ocurrido_at',
       uniones:
         'LEFT JOIN confirmaciones_apertura AS c ON c.evento_acceso_id = t.id AND c.tenant_id = t.tenant_id',
-      donde:
-        "t.resultado = 'permitido' AND t.dispositivo_id IN (?) AND t.ocurrido_at >= ? AND t.ocurrido_at < ? AND c.id IS NULL",
-      params: [dispositivoIds, desde, hasta],
+      donde: `t.resultado = 'permitido' AND t.metodo = 'qr' AND t.ocurrido_at < ? AND c.id IS NULL AND (${porDispositivo})`,
+      params: [hasta, ...dispositivos.flatMap((d) => [d.dispositivoId, d.desde])],
       orden: 't.ocurrido_at, t.id',
       limite,
     });
@@ -631,6 +640,11 @@ export interface ConfirmacionFila extends RowDataPacket {
   resultado: Ejecucion;
   causa: CausaDeEjecucion;
   registrada_at: Date;
+}
+
+/** Una fila de confirmación con la hora de la orden de abrir a la que se refiere. */
+export interface ConfirmacionConOrdenFila extends ConfirmacionFila {
+  ocurrido_at: Date;
 }
 
 export interface NuevaConfirmacion {
@@ -722,9 +736,11 @@ export class RepositorioDeConfirmaciones extends RepositorioDeCuenta {
   }
 
   /** Las filas registradas desde `desde`, de la cuenta del contexto, para que el detector juzgue (sin bloqueo). */
-  registradasDesde(desde: Date, limite: number): Promise<ConfirmacionFila[]> {
-    return this.seleccionar<ConfirmacionFila>({
-      columnas: COLUMNAS_DE_CONFIRMACION,
+  registradasDesde(desde: Date, limite: number): Promise<ConfirmacionConOrdenFila[]> {
+    return this.seleccionar<ConfirmacionConOrdenFila>({
+      columnas: COLUMNAS_DE_CONFIRMACION + ', e.ocurrido_at',
+      uniones:
+        'JOIN eventos_acceso AS e ON e.id = t.evento_acceso_id AND e.tenant_id = t.tenant_id',
       donde: 't.registrada_at >= ?',
       params: [desde],
       orden: 't.id',

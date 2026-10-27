@@ -13,6 +13,7 @@ import {
 const AHORA = new Date('2026-11-01T12:00:00.000Z');
 const hace = (minutos: number) => new Date(AHORA.getTime() - minutos * 60_000);
 const umbrales = { fallidasMinimo: 2, ventanaSegundos: 3600 };
+const conSensor = new Set(['1', '2']);
 
 const ejecucion = (
   eventoId: string,
@@ -69,8 +70,12 @@ describe('puertas que fallan al abrir', () => {
 
   it('una falla aislada no alcanza; dos dentro de la ventana sí', () => {
     expect(
-      dispositivosQueFallan([ejecucion('1', 'fallida', 'puerta_no_abrio', 5)], AHORA, umbrales)
-        .size,
+      dispositivosQueFallan(
+        [ejecucion('1', 'fallida', 'puerta_no_abrio', 5)],
+        AHORA,
+        umbrales,
+        conSensor,
+      ).size,
     ).toBe(0);
     const resultado = dispositivosQueFallan(
       [
@@ -79,6 +84,7 @@ describe('puertas que fallan al abrir', () => {
       ],
       AHORA,
       umbrales,
+      conSensor,
     );
     expect(resultado.get('1')).toMatchObject({
       fallos: 2,
@@ -94,12 +100,13 @@ describe('puertas que fallan al abrir', () => {
       ejecucion('3', 'ejecutada', 'puerta_abrio', 10),
       ejecucion('4', 'fallida', 'puerta_no_abrio', 5),
     ];
-    expect(dispositivosQueFallan(ejecuciones, AHORA, umbrales).size).toBe(0);
+    expect(dispositivosQueFallan(ejecuciones, AHORA, umbrales, conSensor).size).toBe(0);
     expect(
       dispositivosQueFallan(
         [...ejecuciones, ejecucion('5', 'fallida', 'puerta_no_abrio', 2)],
         AHORA,
         umbrales,
+        conSensor,
       ).get('1')?.fallos,
     ).toBe(2);
   });
@@ -114,8 +121,31 @@ describe('puertas que fallan al abrir', () => {
       ],
       AHORA,
       umbrales,
+      conSensor,
     );
     expect(resultado.size).toBe(0);
+  });
+
+  it('un dispositivo sin el sensor habilitado no falla, aunque tenga fallas registradas', () => {
+    const fallas = [
+      ejecucion('1', 'fallida', 'puerta_no_abrio', 10, '3'),
+      ejecucion('2', 'sin_confirmacion', 'sin_respuesta', 5, '3'),
+    ];
+    expect(dispositivosQueFallan(fallas, AHORA, umbrales, conSensor).size).toBe(0);
+    expect(dispositivosQueFallan(fallas, AHORA, umbrales, new Set(['3'])).size).toBe(1);
+  });
+
+  it('con el sensor habilitado, un informe `sin_sensor` cuenta como falla (la placa no ve su contacto)', () => {
+    const resultado = dispositivosQueFallan(
+      [
+        ejecucion('1', 'sin_confirmacion', 'sin_sensor', 10),
+        ejecucion('2', 'sin_confirmacion', 'sin_sensor', 5),
+      ],
+      AHORA,
+      umbrales,
+      conSensor,
+    );
+    expect(resultado.get('1')).toMatchObject({ fallos: 2, ultimaCausa: 'sin_sensor' });
   });
 
   it('cada dispositivo se juzga por separado', () => {
@@ -127,6 +157,7 @@ describe('puertas que fallan al abrir', () => {
       ],
       AHORA,
       umbrales,
+      conSensor,
     );
     expect([...resultado.keys()]).toEqual(['1']);
   });
