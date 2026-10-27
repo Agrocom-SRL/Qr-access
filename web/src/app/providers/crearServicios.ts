@@ -5,6 +5,10 @@ import { crearCobroHttp, type CobroRepositorio } from '../../features/cobro';
 import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuentas';
 import { crearEventosHttp, type EventosRepositorio } from '../../features/eventos';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
+import {
+  crearNotificacionesHttp,
+  type NotificacionesRepositorio,
+} from '../../features/notificaciones';
 import { crearEstadisticasHttp, type EstadisticasRepositorio } from '../../features/estadisticas';
 import { crearPagosHttp, type PagosRepositorio } from '../../features/pagos';
 import { crearPlacasHttp, type PlacasRepositorio } from '../../features/placas';
@@ -29,6 +33,7 @@ export interface Servicios {
   pagos: PagosRepositorio;
   bitacora: BitacoraRepositorio;
   eventos: EventosRepositorio;
+  notificaciones: NotificacionesRepositorio;
   resumen: ResumenRepositorio;
   estadisticas: EstadisticasRepositorio;
 }
@@ -52,6 +57,7 @@ export function crearServicios(
     pagos: crearPagosHttp(cliente),
     bitacora: crearBitacoraHttp(cliente),
     eventos: crearEventosHttp(cliente),
+    notificaciones: crearNotificacionesHttp(cliente),
     resumen: crearResumenHttp(cliente),
     estadisticas: crearEstadisticasHttp(cliente),
   };

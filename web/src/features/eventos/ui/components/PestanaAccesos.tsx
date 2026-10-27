@@ -9,7 +9,7 @@ export function PestanaAccesos({ cuentaId }: { cuentaId: string }) {
   const { t } = useTranslation('eventos');
   const [pagina, setPagina] = useState(1);
   const consulta = useEventos(
-    { cuentaId, resultado: 'todos', desde: '', hasta: '', pagina },
+    { cuentaId, resultado: 'todos', ejecucion: 'todas', desde: '', hasta: '', pagina },
     POR_PAGINA_DE_EVENTOS,
   );
   return (

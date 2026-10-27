@@ -17,6 +17,7 @@ import es_eventos from './es/eventos.json';
 import es_estados from './es/estados.json';
 import es_estructura from './es/estructura.json';
 import es_nav from './es/nav.json';
+import es_notificaciones from './es/notificaciones.json';
 import es_pago from './es/pago.json';
 import es_perfil from './es/perfil.json';
 import es_placas from './es/placas.json';
@@ -40,6 +41,7 @@ import en_eventos from './en/eventos.json';
 import en_estados from './en/estados.json';
 import en_estructura from './en/estructura.json';
 import en_nav from './en/nav.json';
+import en_notificaciones from './en/notificaciones.json';
 import en_pago from './en/pago.json';
 import en_perfil from './en/perfil.json';
 import en_placas from './en/placas.json';
@@ -63,6 +65,7 @@ import pt_eventos from './pt/eventos.json';
 import pt_estados from './pt/estados.json';
 import pt_estructura from './pt/estructura.json';
 import pt_nav from './pt/nav.json';
+import pt_notificaciones from './pt/notificaciones.json';
 import pt_pago from './pt/pago.json';
 import pt_perfil from './pt/perfil.json';
 import pt_placas from './pt/placas.json';
@@ -99,6 +102,7 @@ export const recursos = {
     estados: es_estados,
     estructura: es_estructura,
     nav: es_nav,
+    notificaciones: es_notificaciones,
     pago: es_pago,
     perfil: es_perfil,
     placas: es_placas,
@@ -124,6 +128,7 @@ export const recursos = {
     estados: en_estados,
     estructura: en_estructura,
     nav: en_nav,
+    notificaciones: en_notificaciones,
     pago: en_pago,
     perfil: en_perfil,
     placas: en_placas,
@@ -149,6 +154,7 @@ export const recursos = {
     estados: pt_estados,
     estructura: pt_estructura,
     nav: pt_nav,
+    notificaciones: pt_notificaciones,
     pago: pt_pago,
     perfil: pt_perfil,
     placas: pt_placas,

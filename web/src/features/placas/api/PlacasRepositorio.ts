@@ -1,5 +1,5 @@
 import type { Paginado } from '../../../shared/api/tipos';
-import type { FiltrosDePlacas, Placa } from '../domain/placa';
+import type { FiltrosDePlacas, NivelAbierto, Placa } from '../domain/placa';
 
 export interface DatosDeVinculo {
   cuentaId: string;
@@ -20,4 +20,9 @@ export interface PlacasRepositorio {
   /** Revoca el dispositivo y deja la placa lista para otra cuenta. */
   liberar: (placaId: string) => Promise<void>;
   darDeBaja: (placaId: string) => Promise<void>;
+  /** Habilita o no el sensor de la puerta y fija su nivel con la puerta abierta (ADR 0031 §18). */
+  configurarSensor: (
+    placaId: string,
+    sensor: { instalado: boolean; nivelAbierto: NivelAbierto },
+  ) => Promise<void>;
 }

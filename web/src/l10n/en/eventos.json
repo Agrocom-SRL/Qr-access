@@ -10,7 +10,8 @@
     "lector": "Reader",
     "qr": "QR",
     "resultado": "Result",
-    "motivo": "Reason"
+    "motivo": "Reason",
+    "ejecucion": "Opening"
   },
   "resultado": {
     "permitido": "Allowed",
@@ -22,7 +23,8 @@
     "resultado": "Result",
     "todos": "All",
     "permitido": "Allowed",
-    "rechazado": "Rejected"
+    "rechazado": "Rejected",
+    "ejecucionEtiqueta": "What the door did"
   },
   "vacio": {
     "titulo": "No access attempts yet",
@@ -42,5 +44,24 @@
     "qr_usado": "QR already used",
     "suscripcion_vencida": "Subscription expired",
     "desconocido": "Reason unavailable"
+  },
+  "ejecucionFiltro": {
+    "todas": "All",
+    "ejecutada": "Opened",
+    "fallida": "Did not open",
+    "sin_confirmacion": "Unconfirmed"
+  },
+  "ejecucion": {
+    "ejecutada": "Opened",
+    "fallida": "Did not open",
+    "sin_confirmacion": "Unconfirmed"
+  },
+  "ejecucionCausa": {
+    "puerta_abrio": "The door opened",
+    "puerta_no_abrio": "The door did not open",
+    "puerta_no_cerro": "The door did not close again",
+    "rele_no_accionado": "The relay did not trigger",
+    "sin_sensor": "The door has no sensor",
+    "sin_respuesta": "The board did not respond in time"
   }
 }

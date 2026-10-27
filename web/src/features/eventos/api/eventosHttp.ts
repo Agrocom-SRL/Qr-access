@@ -1,6 +1,11 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import { paginadoDesde, type ListadoDto } from '../../../shared/api/tipos';
-import type { EventoDeAcceso, ResultadoDeEvento } from '../domain/evento';
+import {
+  causaDeEjecucion,
+  type EjecucionDeEvento,
+  type EventoDeAcceso,
+  type ResultadoDeEvento,
+} from '../domain/evento';
 import type { EventosRepositorio } from './EventosRepositorio';
 
 interface EventoDto {
@@ -12,6 +17,8 @@ interface EventoDto {
   puerta: { id: string; nombre: string; sitio: string };
   dispositivo: string | null;
   qr_etiqueta: string | null;
+  ejecucion: EjecucionDeEvento | null;
+  ejecucion_causa: string | null;
 }
 
 /** La Paz no cambia de hora: UTC−4 todo el año (igual que las estadísticas de la API). */
@@ -39,6 +46,8 @@ export function eventoDesdeDto(dto: EventoDto): EventoDeAcceso {
     puerta: dto.puerta,
     dispositivo: dto.dispositivo,
     qrEtiqueta: dto.qr_etiqueta,
+    ejecucion: dto.ejecucion,
+    ejecucionCausa: causaDeEjecucion(dto.ejecucion_causa),
   };
 }
 
@@ -52,6 +61,7 @@ export function crearEventosHttp(cliente: ClienteHttp): EventosRepositorio {
         consulta: {
           cuenta_id: filtros.cuentaId ?? undefined,
           resultado: filtros.resultado === 'todos' ? undefined : filtros.resultado,
+          ejecucion: filtros.ejecucion === 'todas' ? undefined : filtros.ejecucion,
           desde: filtros.desde === '' ? undefined : inicioDelDia(filtros.desde),
           hasta: filtros.hasta === '' ? undefined : inicioDelDiaSiguiente(filtros.hasta),
           pagina: filtros.pagina,

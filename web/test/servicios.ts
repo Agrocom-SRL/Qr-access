@@ -4,6 +4,7 @@ import type { EquipoRepositorio } from '@/features/equipo';
 import type { MiembroEquipo } from '@/features/equipo/domain/equipo';
 import type { BitacoraRepositorio, EventoBitacora } from '@/features/bitacora';
 import type { EventosRepositorio } from '@/features/eventos';
+import type { NotificacionesRepositorio, Notificacion } from '@/features/notificaciones';
 import type { ResumenRepositorio } from '@/features/resumen';
 import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisticas';
 import type { PagosRepositorio } from '@/features/pagos';
@@ -77,6 +78,8 @@ export const SUPER_ADMIN = {
     'dispositivos.placa.registrar',
     'dispositivos.placa.vincular',
     'dispositivos.placa.liberar',
+    'notificaciones.aviso_plataforma.ver',
+    'notificaciones.aviso_plataforma.gestionar',
   ],
 } as const;
 
@@ -276,6 +279,49 @@ export const ESTADISTICAS_DE_USUARIOS: EstadisticasDeUsuarios = {
   ],
 };
 
+export const NOTIFICACIONES: Notificacion[] = [
+  {
+    id: '101',
+    tipo: 'apertura.fallida',
+    severidad: 'critica',
+    cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+    sitio: { id: '1', nombre: 'Planta Warnes' },
+    leida: false,
+    placas: [
+      {
+        dispositivoId: '7',
+        puertaId: '1',
+        puertaNombre: 'Portón vehicular',
+        desde: new Date('2026-10-27T12:30:00Z'),
+        fallos: 3,
+        causa: 'puerta_no_abrio',
+      },
+    ],
+    novedadEn: new Date('2026-10-27T12:35:00Z'),
+    creadaEn: new Date('2026-10-27T12:30:00Z'),
+  },
+  {
+    id: '102',
+    tipo: 'placa.caida_sostenida',
+    severidad: 'aviso',
+    cuenta: { id: '2', codigo: 'FRO', nombre: 'Frigorífico Oriente' },
+    sitio: null,
+    leida: true,
+    placas: [
+      {
+        dispositivoId: '9',
+        puertaId: '5',
+        puertaNombre: 'Depósito 2',
+        desde: null,
+        fallos: null,
+        causa: null,
+      },
+    ],
+    novedadEn: new Date('2026-10-26T10:00:00Z'),
+    creadaEn: new Date('2026-10-26T09:45:00Z'),
+  },
+];
+
 export const PLACAS: Placa[] = [
   {
     id: '1',
@@ -285,6 +331,12 @@ export const PLACAS: Placa[] = [
     ip: '192.168.1.40',
     ultimoContactoEn: new Date(),
     enLinea: true,
+    estadoConexion: 'en_linea' as const,
+    lectorResponde: true,
+    enObservacion: false,
+    sensorPuerta: 'cerrada' as const,
+    sensorConfigurado: { instalado: true, nivelAbierto: 'alto' as const },
+    aperturaFallida: true,
     porConfirmarHasta: null,
     dispositivo: { id: '7', nombre: 'Portón vehicular' },
     cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
@@ -298,6 +350,12 @@ export const PLACAS: Placa[] = [
     ip: '192.168.1.41',
     ultimoContactoEn: new Date(),
     enLinea: true,
+    estadoConexion: null,
+    lectorResponde: null,
+    enObservacion: false,
+    sensorPuerta: null,
+    sensorConfigurado: null,
+    aperturaFallida: false,
     porConfirmarHasta: null,
     dispositivo: null,
     cuenta: null,
@@ -311,6 +369,12 @@ export const PLACAS: Placa[] = [
     ip: '192.168.1.42',
     ultimoContactoEn: new Date(),
     enLinea: true,
+    estadoConexion: null,
+    lectorResponde: null,
+    enObservacion: false,
+    sensorPuerta: null,
+    sensorConfigurado: null,
+    aperturaFallida: false,
     porConfirmarHasta: new Date(Date.now() + 5 * 60_000),
     dispositivo: null,
     cuenta: null,
@@ -515,6 +579,7 @@ export function crearServiciosDePrueba(
     cobro?: Partial<CobroRepositorio>;
     placas?: Partial<PlacasRepositorio>;
     eventos?: Partial<EventosRepositorio>;
+    notificaciones?: Partial<NotificacionesRepositorio>;
     cuentas?: Partial<CuentasRepositorio>;
     suscripciones?: Partial<SuscripcionesRepositorio>;
     pagos?: Partial<PagosRepositorio>;
@@ -590,6 +655,7 @@ export function crearServiciosDePrueba(
     cancelarVinculo: () => Promise.resolve(),
     liberar: () => Promise.resolve(),
     darDeBaja: () => Promise.resolve(),
+    configurarSensor: () => Promise.resolve(),
     ...parcial.placas,
   };
   const cuentas: CuentasRepositorio = {
@@ -680,6 +746,20 @@ export function crearServiciosDePrueba(
     cuentas: () => Promise.resolve([{ id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' }]),
     ...parcial.bitacora,
   };
+  const notificaciones: NotificacionesRepositorio = {
+    listar: () =>
+      Promise.resolve({
+        elementos: NOTIFICACIONES,
+        pagina: 1,
+        porPagina: 10,
+        total: NOTIFICACIONES.length,
+      }),
+    noLeidas: () => Promise.resolve(NOTIFICACIONES.filter((n) => !n.leida).length),
+    leer: () => Promise.resolve(),
+    descartar: () => Promise.resolve(),
+    leerTodas: () => Promise.resolve(NOTIFICACIONES.filter((n) => !n.leida).length),
+    ...parcial.notificaciones,
+  };
   const eventos: EventosRepositorio = {
     listar: () => Promise.resolve({ elementos: [], pagina: 1, porPagina: 15, total: 0 }),
     cuentas: () => Promise.resolve([{ id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' }]),
@@ -705,6 +785,7 @@ export function crearServiciosDePrueba(
     pagos,
     bitacora,
     eventos,
+    notificaciones,
     resumen,
     estadisticas,
   };

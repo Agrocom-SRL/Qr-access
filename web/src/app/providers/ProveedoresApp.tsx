@@ -6,6 +6,7 @@ import { ProveedorEquipo } from '../../features/equipo';
 import { ProveedorEstadisticas } from '../../features/estadisticas';
 import { ProveedorPagos } from '../../features/pagos';
 import { ProveedorEventos } from '../../features/eventos';
+import { ProveedorNotificaciones } from '../../features/notificaciones';
 import { ProveedorPlacas } from '../../features/placas';
 import { ProveedorCobro } from '../../features/cobro';
 import { ProveedorPlanes } from '../../features/planes';
@@ -60,9 +61,11 @@ export function ProveedoresApp({
                           <ProveedorEventos valor={servicios.eventos}>
                             <ProveedorResumen valor={servicios.resumen}>
                               <ProveedorEstadisticas valor={servicios.estadisticas}>
-                                <SesionProvider almacen={servicios.almacen}>
-                                  {children}
-                                </SesionProvider>
+                                <ProveedorNotificaciones valor={servicios.notificaciones}>
+                                  <SesionProvider almacen={servicios.almacen}>
+                                    {children}
+                                  </SesionProvider>
+                                </ProveedorNotificaciones>
                               </ProveedorEstadisticas>
                             </ProveedorResumen>
                           </ProveedorEventos>

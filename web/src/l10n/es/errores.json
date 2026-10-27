@@ -55,5 +55,6 @@
   "cuenta_de_cobro_existente": "Ya hay una cuenta con ese banco y número.",
   "cuenta_de_cobro_datos_incompletos": "Faltan datos: una cuenta bancaria pide titular y número, y un QR pide su imagen.",
   "cuenta_de_cobro_imagen_invalida": "El QR tiene que ser una imagen, no un PDF.",
-  "comprobante_no_encontrado": "No encontramos el archivo subido. Vuelve a subirlo."
+  "comprobante_no_encontrado": "No encontramos el archivo subido. Vuelve a subirlo.",
+  "notificacion_no_encontrada": "No encontramos ese aviso."
 }

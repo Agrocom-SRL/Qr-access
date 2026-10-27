@@ -8,6 +8,7 @@ import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
 import type { EventoDeAcceso } from '../../domain/evento';
+import { EjecucionDeAcceso } from './EjecucionDeAcceso';
 import styles from './TablaEventos.module.css';
 
 interface Props {
@@ -97,6 +98,11 @@ export function TablaEventos({
             {t('eventos:resultado.rechazado')}
           </AccesoBadge>
         ),
+    },
+    {
+      id: 'ejecucion',
+      encabezado: t('eventos:columna.ejecucion'),
+      celda: (e) => <EjecucionDeAcceso ejecucion={e.ejecucion} causa={e.ejecucionCausa} />,
     },
     {
       id: 'motivo',

@@ -1,0 +1,9 @@
+.apilado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}

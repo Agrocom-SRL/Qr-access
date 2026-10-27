@@ -1,5 +1,6 @@
 .tarjeta {
-  overflow: hidden;
+  /* En pantallas angostas la tabla se desplaza dentro de la tarjeta en vez de cortarse (responsive). */
+  overflow-x: auto;
   background: var(--superficie);
   border-radius: var(--radio20);
   box-shadow: var(--elevacion1);
