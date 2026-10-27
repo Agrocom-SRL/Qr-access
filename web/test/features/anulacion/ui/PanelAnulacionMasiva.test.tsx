@@ -9,7 +9,11 @@ import { ErrorApi, SUPER_ADMIN, crearServiciosDePrueba } from '../../../servicio
 const CUENTA = { id: '7', nombre: 'Agroindustrial Norte', codigo: 'AGR' };
 
 /** Entra con una sesión restaurada que tiene solo los permisos dados y monta el panel. */
-function montar(permisos: readonly string[], anulacion: Partial<AnulacionRepositorio> = {}) {
+function montar(
+  permisos: readonly string[],
+  anulacion: Partial<AnulacionRepositorio> = {},
+  cuenta = CUENTA,
+) {
   const restaurar = vi.fn(() =>
     Promise.resolve({
       usuario: SUPER_ADMIN.usuario,
@@ -22,7 +26,7 @@ function montar(permisos: readonly string[], anulacion: Partial<AnulacionReposit
   render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>
-        <PanelAnulacionMasiva cuenta={CUENTA} />
+        <PanelAnulacionMasiva cuenta={cuenta} />
       </MemoryRouter>
     </ProveedoresApp>,
   );
@@ -56,6 +60,15 @@ describe('anular los QR de una cuenta (pantalla de AGROCOM)', () => {
     expect(confirmar).toBeDisabled();
     await userEvent.type(within(dialogo).getByRole('textbox', { name: /Escribe AGR/ }), 'R');
     expect(confirmar).toBeEnabled();
+  });
+
+  it('el campo del código admite exactamente el largo del código de la cuenta', async () => {
+    montar(PERMISO, {}, { ...CUENTA, codigo: 'AGRO5' });
+    await userEvent.click(await screen.findByRole('button', { name: 'Anular QR de la cuenta' }));
+    const dialogo = await screen.findByRole('dialog');
+    const campo = within(dialogo).getByRole('textbox', { name: /Escribe AGRO5/ });
+    await userEvent.type(campo, 'AGRO5X');
+    expect(campo).toHaveValue('AGRO5');
   });
 
   it('cancelar cierra la confirmación sin llamar a la API', async () => {
