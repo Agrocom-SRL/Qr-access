@@ -8,6 +8,45 @@
   "@bienvenidaNombreApp": {
     "description": "Nombre de la app en el hero de bienvenida (C01), siempre en dos líneas"
   },
+  "comunSincronizacionActualizando": "Actualizando…",
+  "@comunSincronizacionActualizando": {
+    "description": "Línea de sincronización mientras se pide la lista a la API"
+  },
+  "comunSincronizacionMomento": "Actualizado hace un momento",
+  "@comunSincronizacionMomento": {
+    "description": "Línea de sincronización: la última respuesta llegó hace menos de un minuto"
+  },
+  "comunSincronizacionMinutos": "{minutos, plural, =1{Actualizado hace 1 min} other{Actualizado hace {minutos} min}}",
+  "@comunSincronizacionMinutos": {
+    "description": "Línea de sincronización: la última respuesta llegó hace unos minutos",
+    "placeholders": {
+      "minutos": {
+        "type": "int"
+      }
+    }
+  },
+  "comunSincronizacionHoras": "{horas, plural, =1{Actualizado hace 1 h} other{Actualizado hace {horas} h}}",
+  "@comunSincronizacionHoras": {
+    "description": "Línea de sincronización: la última respuesta llegó hace unas horas",
+    "placeholders": {
+      "horas": {
+        "type": "int"
+      }
+    }
+  },
+  "comunSincronizacionFecha": "Actualizado el {fecha}",
+  "@comunSincronizacionFecha": {
+    "description": "Línea de sincronización: la última respuesta llegó hace más de un día; {fecha} va en dd/MM/yyyy HH:mm",
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
+  "comunSincronizacionSinConexion": "Sin conexión, mostrando lo último guardado",
+  "@comunSincronizacionSinConexion": {
+    "description": "Línea de sincronización cuando la última petición no llegó y se muestra lo guardado en el dispositivo"
+  },
   "comunCargando": "Cargando",
   "@comunCargando": {
     "description": "Etiqueta para lectores de pantalla mientras algo carga"
@@ -1388,7 +1427,7 @@
   "@usuariosCampoPropiedadPlaceholder": {
     "description": "Placeholder del selector de propiedad"
   },
-  "usuariosCampoUnidad": "Nombre de la unidad",
+  "usuariosCampoUnidad": "Nombre de la unidad (casa, departamento, etc.)",
   "@usuariosCampoUnidad": {
     "description": "Etiqueta del nombre de la unidad"
   },
@@ -2327,11 +2366,11 @@
   "@qrAnulacionMiRamaTitulo": {
     "description": "Título del diálogo de anulación masiva (ADR 0033 §3)"
   },
-  "qrAnulacionMiRamaMensaje": "Se anularán los QR vigentes de tus usuarios y de quienes dependen de ti. Un QR anulado deja de funcionar: quien lo tenga deberá pedir uno nuevo.",
+  "qrAnulacionMiRamaMensaje": "Se anularán los QR vigentes de tus usuarios. Quien lo tenga deberá pedir uno nuevo.",
   "@qrAnulacionMiRamaMensaje": {
     "description": "Qué se anula en el diálogo de anulación masiva"
   },
-  "qrAnulacionMiRamaIrreversible": "Esta acción no se puede deshacer.",
+  "qrAnulacionMiRamaIrreversible": "No se puede deshacer.",
   "@qrAnulacionMiRamaIrreversible": {
     "description": "Aviso de irreversibilidad de la anulación masiva"
   },
@@ -2391,6 +2430,14 @@
   "incidentesFiltroTodos": "Todos",
   "@incidentesFiltroTodos": {
     "description": "Opción de los filtros que no filtra nada"
+  },
+  "incidentesFiltroTodosTipos": "Todos los tipos",
+  "@incidentesFiltroTodosTipos": {
+    "description": "Opción del filtro de tipo que no filtra nada"
+  },
+  "incidentesFiltroTodosEstados": "Todos los estados",
+  "@incidentesFiltroTodosEstados": {
+    "description": "Opción del filtro de estado que no filtra nada"
   },
   "incidentesTipoUsoMasivo": "Uso masivo de un QR",
   "@incidentesTipoUsoMasivo": {
@@ -2745,13 +2792,29 @@
   "@exportacionTitulo": {
     "description": "Título de la pantalla de exportación en CSV"
   },
-  "exportacionSubtitulo": "Descarga los datos de tus usuarios y de quienes dependen de ti, en CSV y una página a la vez. Si hay más filas que el límite, elige fechas más cortas para bajar el resto.",
+  "exportacionSubtitulo": "Si hay muchas filas, se bajan por partes.",
   "@exportacionSubtitulo": {
     "description": "Ayuda de la exportación (ADR 0033 §3)"
   },
-  "exportacionRecurso": "Qué exportar",
-  "@exportacionRecurso": {
-    "description": "Selector del recurso a exportar"
+  "exportacionDescUsuarios": "Nombre y rol de cada usuario.",
+  "@exportacionDescUsuarios": {
+    "description": "Línea de la tarjeta Usuarios en Exportar datos"
+  },
+  "exportacionDescPuertas": "Nombre y estado de cada puerta.",
+  "@exportacionDescPuertas": {
+    "description": "Línea de la tarjeta Puertas en Exportar datos"
+  },
+  "exportacionDescLecturas": "Quién entró o intentó entrar, y cuándo.",
+  "@exportacionDescLecturas": {
+    "description": "Línea de la tarjeta Accesos a puertas en Exportar datos"
+  },
+  "exportacionElegirFiltros": "Elegir filtros",
+  "@exportacionElegirFiltros": {
+    "description": "Botón que abre la pantalla de accesos para filtrarlos"
+  },
+  "exportacionAccesosTitulo": "Exportar accesos",
+  "@exportacionAccesosTitulo": {
+    "description": "Título de la pantalla de accesos a puertas en CSV"
   },
   "exportacionRecursoUsuarios": "Usuarios",
   "@exportacionRecursoUsuarios": {
@@ -2797,15 +2860,15 @@
   "@exportacionRangoInvalido": {
     "description": "Validación local del rango de fechas"
   },
-  "exportacionDescargar": "Descargar CSV",
+  "exportacionDescargar": "Descargar",
   "@exportacionDescargar": {
-    "description": "Botón que baja la primera página de la exportación"
+    "description": "Botón que abre la elección de formato y baja la primera parte de la exportación"
   },
   "exportacionDescargarDeNuevo": "Volver a descargar desde el inicio",
   "@exportacionDescargarDeNuevo": {
     "description": "Botón que vuelve a empezar la exportación"
   },
-  "exportacionSiguiente": "Descargar la página {pagina} de {paginas}",
+  "exportacionSiguiente": "Descargar la parte {pagina} de {paginas}",
   "@exportacionSiguiente": {
     "description": "Botón que baja la página que sigue",
     "placeholders": {
@@ -2817,7 +2880,7 @@
       }
     }
   },
-  "exportacionDescargada": "Ya bajaste la página {pagina} de {paginas}: {filas, plural, =1{1 fila.} other{{filas} filas.}}",
+  "exportacionDescargada": "Ya bajaste la parte {pagina} de {paginas}: {filas, plural, =1{1 fila.} other{{filas} filas.}}",
   "@exportacionDescargada": {
     "description": "Resumen tras bajar una página, con sus filas de datos",
     "placeholders": {
@@ -2844,13 +2907,128 @@
   "@exportacionDescargando": {
     "description": "Gerundio del botón de descarga mientras se baja una página"
   },
-  "exportacionQuitarFecha": "Quitar fecha",
-  "@exportacionQuitarFecha": {
-    "description": "Tooltip del botón que vuelve a dejar la fecha sin límite"
-  },
-  "exportacionTruncado": "Hay más datos de los que caben en una exportación. Elige fechas más cortas para bajar el resto.",
+  "exportacionTruncado": "Hay más filas de las que caben. Elige fechas más cortas.",
   "@exportacionTruncado": {
     "description": "Aviso de que la exportación llegó al tope de 10 000 filas"
+  },
+  "exportacionFormatoTitulo": "Elige el formato",
+  "@exportacionFormatoTitulo": {
+    "description": "Título de la hoja para elegir el formato de la descarga"
+  },
+  "exportacionFormatoCsv": "CSV",
+  "@exportacionFormatoCsv": {
+    "description": "Formato CSV: texto con comas, para hojas de cálculo"
+  },
+  "exportacionFormatoCsvAyuda": "Texto simple. Lo abre cualquier hoja de cálculo.",
+  "@exportacionFormatoCsvAyuda": {
+    "description": "Una línea que explica el formato CSV"
+  },
+  "exportacionFormatoPdf": "PDF",
+  "@exportacionFormatoPdf": {
+    "description": "Formato PDF: para leer o imprimir"
+  },
+  "exportacionFormatoPdfAyuda": "Para leer o imprimir. No se puede editar.",
+  "@exportacionFormatoPdfAyuda": {
+    "description": "Una línea que explica el formato PDF"
+  },
+  "exportacionFormatoExcel": "Excel",
+  "@exportacionFormatoExcel": {
+    "description": "Formato de Excel (.xlsx)"
+  },
+  "exportacionFormatoExcelAyuda": "Hoja de cálculo para editar y ordenar.",
+  "@exportacionFormatoExcelAyuda": {
+    "description": "Una línea que explica el formato de Excel"
+  },
+  "exportacionDocGenerado": "Generado el {fecha}",
+  "@exportacionDocGenerado": {
+    "description": "Línea de fecha del PDF y del Excel; la fecha ya va en la zona del usuario",
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
+  "exportacionDocParte": "Parte {pagina} de {paginas}",
+  "@exportacionDocParte": {
+    "description": "Qué parte de la exportación es el documento (solo si hay más de una)",
+    "placeholders": {
+      "pagina": {
+        "type": "int"
+      },
+      "paginas": {
+        "type": "int"
+      }
+    }
+  },
+  "exportacionDocPagina": "Página {pagina} de {paginas}",
+  "@exportacionDocPagina": {
+    "description": "Pie de cada hoja del PDF",
+    "placeholders": {
+      "pagina": {
+        "type": "int"
+      },
+      "paginas": {
+        "type": "int"
+      }
+    }
+  },
+  "exportacionFechasTitulo": "Elige las fechas",
+  "@exportacionFechasTitulo": {
+    "description": "Título de la hoja de fechas de Exportar accesos"
+  },
+  "exportacionFechasTooltip": "Elegir fechas",
+  "@exportacionFechasTooltip": {
+    "description": "Tooltip del botón de fechas en la barra superior de Exportar accesos"
+  },
+  "exportacionRangoAmbas": "Del {desde} al {hasta}",
+  "@exportacionRangoAmbas": {
+    "description": "Chip con el rango de fechas elegido (las dos)",
+    "placeholders": {
+      "desde": {
+        "type": "String"
+      },
+      "hasta": {
+        "type": "String"
+      }
+    }
+  },
+  "exportacionRangoDesde": "Desde el {fecha}",
+  "@exportacionRangoDesde": {
+    "description": "Chip del rango cuando solo hay fecha de inicio",
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
+  "exportacionRangoHasta": "Hasta el {fecha}",
+  "@exportacionRangoHasta": {
+    "description": "Chip del rango cuando solo hay fecha de fin",
+    "placeholders": {
+      "fecha": {
+        "type": "String"
+      }
+    }
+  },
+  "exportacionQuitarFechas": "Quitar fechas",
+  "@exportacionQuitarFechas": {
+    "description": "Botón que deja las fechas sin límite"
+  },
+  "exportacionListo": "Listo",
+  "@exportacionListo": {
+    "description": "Botón que cierra la hoja de fechas"
+  },
+  "exportacionResultadoTodosAyuda": "Se bajan los accesos permitidos y los rechazados.",
+  "@exportacionResultadoTodosAyuda": {
+    "description": "Explicación de la pestaña Todos en Exportar accesos"
+  },
+  "exportacionResultadoPermitidoAyuda": "Solo los accesos que se dejaron pasar.",
+  "@exportacionResultadoPermitidoAyuda": {
+    "description": "Explicación de la pestaña Permitido en Exportar accesos"
+  },
+  "exportacionResultadoRechazadoAyuda": "Solo los intentos que no se dejaron pasar.",
+  "@exportacionResultadoRechazadoAyuda": {
+    "description": "Explicación de la pestaña Rechazado en Exportar accesos"
   },
   "comunErrorIncidenteNoEncontrado": "No encontramos ese incidente.",
   "@comunErrorIncidenteNoEncontrado": {
