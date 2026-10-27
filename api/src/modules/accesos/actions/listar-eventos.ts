@@ -32,6 +32,12 @@ export interface EventoListado {
     etiqueta: string | null;
     generador: { id: string; etiqueta: string | null };
   } | null;
+  /** Relecturas enlazadas a este intento dentro de la ventana (ADR 0032 §4); el listado no las repite. */
+  repeticiones: number;
+  /** De ellas, las que volvieron a abrir la puerta por respuesta perdida (ADR 0032 §3). */
+  repeticiones_permitidas: number;
+  /** De ellas, las que se rechazaron de nuevo (ADR 0032 §4.2). */
+  repeticiones_rechazadas: number;
 }
 
 export interface FiltrosDeEventos {
@@ -74,7 +80,7 @@ export async function presentarEventos(
   pool: Pool,
   filas: readonly EventoFila[],
 ): Promise<EventoListado[]> {
-  const [puertas, etiquetas, ejecuciones] = await Promise.all([
+  const [puertas, etiquetas, ejecuciones, repeticiones] = await Promise.all([
     puertasPorId(
       pool,
       filas.map((fila) => fila.puerta_id),
@@ -88,6 +94,7 @@ export async function presentarEventos(
       pool,
       filas.map((fila) => fila.id),
     ),
+    new RepositorioDeEventos(pool).contarRepeticiones(filas.map((fila) => fila.id)),
   ]);
   return filas.map((fila) => {
     const puerta = puertas.get(fila.puerta_id);
@@ -103,6 +110,10 @@ export async function presentarEventos(
       },
       qr_id: fila.qr_acceso_id,
       ejecucion: ejecuciones.get(fila.id) ?? null,
+      repeticiones:
+        (repeticiones.get(fila.id)?.permitidas ?? 0) + (repeticiones.get(fila.id)?.rechazadas ?? 0),
+      repeticiones_permitidas: repeticiones.get(fila.id)?.permitidas ?? 0,
+      repeticiones_rechazadas: repeticiones.get(fila.id)?.rechazadas ?? 0,
       qr:
         fila.qr_acceso_id === null || fila.qr_generado_por === null
           ? null

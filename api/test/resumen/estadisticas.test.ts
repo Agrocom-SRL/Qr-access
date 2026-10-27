@@ -1,3 +1,4 @@
+import type { ResultSetHeader } from 'mysql2/promise';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
@@ -9,7 +10,13 @@ interface Estadisticas {
   altas_por_mes: { mes: string; cuentas: number }[];
   cuentas_por_estado: Record<string, number>;
   cuentas_por_plan: { plan: string; cuentas: number }[];
-  accesos_por_dia: { dia: string; permitidos: number; rechazados: number }[];
+  accesos_por_dia: {
+    dia: string;
+    permitidos: number;
+    rechazados: number;
+    repeticiones_permitidas: number;
+    repeticiones_rechazadas: number;
+  }[];
 }
 
 const hoyLocal = () =>
@@ -93,6 +100,27 @@ describe('plataforma: estadísticas del panel (A02, A08)', () => {
       dia: hoyLocal(),
       permitidos: 2,
       rechazados: 1,
+      repeticiones_permitidas: 0,
+      repeticiones_rechazadas: 0,
+    });
+  });
+
+  it('cuenta aparte las repeticiones (ADR 0032): no suman a permitidos pero no quedan invisibles', async () => {
+    const [original] = await prueba.pool.query<ResultSetHeader>(
+      'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
+      [a.cuenta.id, a.puertaPrincipal.id, 'permitido', 'acceso.permitido'],
+    );
+    for (const resultado of ['permitido', 'rechazado']) {
+      await prueba.pool.query(
+        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
+        [a.cuenta.id, a.puertaPrincipal.id, resultado, 'prueba', original.insertId],
+      );
+    }
+    expect((await pedir()).accesos_por_dia.at(-1)).toMatchObject({
+      permitidos: 1,
+      rechazados: 0,
+      repeticiones_permitidas: 1,
+      repeticiones_rechazadas: 1,
     });
   });
 

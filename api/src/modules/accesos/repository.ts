@@ -493,8 +493,14 @@ export const EJECUCION_EFECTIVA =
   '(SELECT c.resultado FROM confirmaciones_apertura AS c WHERE c.evento_acceso_id = t.id AND c.tenant_id = t.tenant_id ' +
   "ORDER BY (c.origen = 'placa') DESC, c.id DESC LIMIT 1)";
 
-function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
-  const condiciones: string[] = [];
+function armarFiltroDeEventos(
+  filtro: FiltroDeEventos,
+  repeticiones = false,
+): { donde?: string; params: unknown[] } {
+  // Por omisión solo el primer intento; las repeticiones se cuentan aparte («×N», ADR 0032 §4.2).
+  const condiciones: string[] = [
+    repeticiones ? 't.repetido_de_id IS NOT NULL' : 't.repetido_de_id IS NULL',
+  ];
   const params: unknown[] = [];
   if (filtro.generadoPor !== null) {
     condiciones.push('q.generado_por = ?');
@@ -540,6 +546,13 @@ export interface NuevoEvento {
   readonly motivoCode: string;
   readonly ocurridoAt: Date;
   readonly leidoEnDispositivoAt: Date | null;
+  /** Id del intento original cuando este es una repetición dentro de la ventana (ADR 0032 §3 y §4). */
+  readonly repetidoDeId?: string | null;
+}
+
+/** El intento original que enlaza una repetición. */
+export interface OriginalFila extends RowDataPacket {
+  id: string;
 }
 
 const COLUMNAS_DE_EVENTO =
@@ -577,6 +590,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
         'motivo_code',
         'ocurrido_at',
         'leido_en_dispositivo_at',
+        'repetido_de_id',
       ],
       perfil: 'solo_insercion',
       deCuenta: true,
@@ -594,7 +608,74 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       motivo_code: evento.motivoCode,
       ocurrido_at: evento.ocurridoAt,
       leido_en_dispositivo_at: evento.leidoEnDispositivoAt,
+      repetido_de_id: evento.repetidoDeId ?? null,
     });
+  }
+
+  /**
+   * El primer intento (nunca una repetición) del MISMO dispositivo, con el MISMO hash de token,
+   * resultado y motivo, ocurrido desde `desde`. Es el original al que se enlaza una repetición
+   * (ADR 0032 §3 y §4). Solo de la cuenta del contexto; compara por hash, nunca por texto.
+   */
+  buscarOriginal(
+    dispositivoId: string,
+    tokenHash: string,
+    resultado: 'permitido' | 'rechazado',
+    motivoCode: string,
+    desde: Date,
+  ): Promise<OriginalFila | null> {
+    return this.seleccionarUna<OriginalFila>({
+      columnas: 't.id',
+      donde:
+        't.dispositivo_id = ? AND t.token_hash = ? AND t.resultado = ? AND t.motivo_code = ? AND t.repetido_de_id IS NULL AND t.ocurrido_at >= ?',
+      params: [dispositivoId, tokenHash, resultado, motivoCode, desde],
+      orden: 't.ocurrido_at ASC, t.id ASC',
+    });
+  }
+
+  /**
+   * Cuántas repeticiones tiene cada intento original (ADR 0032 §4.2), separadas por resultado: las
+   * `permitidas` abrieron de nuevo la puerta (respuesta perdida) y no deben confundirse con las
+   * `rechazadas`. Los originales sin repeticiones no aparecen.
+   */
+  async contarRepeticiones(
+    originalIds: readonly string[],
+  ): Promise<Map<string, { permitidas: number; rechazadas: number }>> {
+    const mapa = new Map<string, { permitidas: number; rechazadas: number }>();
+    if (originalIds.length === 0) return mapa;
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.repetido_de_id AS original_id, t.resultado, COUNT(*) AS total',
+      donde: 't.repetido_de_id IN (?)',
+      params: [originalIds],
+      agrupar: 't.repetido_de_id, t.resultado',
+    });
+    for (const fila of filas) {
+      const id = String(fila.original_id);
+      const actual = mapa.get(id) ?? { permitidas: 0, rechazadas: 0 };
+      if (fila.resultado === 'permitido') actual.permitidas += Number(fila.total);
+      else actual.rechazadas += Number(fila.total);
+      mapa.set(id, actual);
+    }
+    return mapa;
+  }
+
+  /**
+   * Bloquea la fila del original hasta el fin de la transacción y cuenta las repeticiones PERMITIDAS que
+   * ya tiene. El bloqueo serializa las relecturas simultáneas: solo una ve cero y repite la apertura
+   * (ADR 0032 §3, una repetición por original).
+   */
+  async contarRepeticionesPermitidasBloqueando(
+    tx: Transaccion,
+    originalId: string,
+  ): Promise<number> {
+    await this.seleccionarUna<OriginalFila>(
+      { columnas: 't.id', donde: 't.id = ?', params: [originalId], bloquear: true },
+      tx,
+    );
+    return this.contar(
+      { donde: "t.repetido_de_id = ? AND t.resultado = 'permitido'", params: [originalId] },
+      tx,
+    );
   }
 
   listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {
@@ -726,7 +807,11 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     return this.contar({ uniones: UNION_QR, ...(donde === undefined ? {} : { donde }), params });
   }
 
-  /** Cuántos intentos hubo por resultado y motivo dentro del filtro (indicadores del tablero). */
+  /**
+   * Cuántos intentos hubo por resultado y motivo dentro del filtro (indicadores del tablero). Los
+   * originales cuentan una vez; las repeticiones se suman aparte (`repeticiones_*`): las permitidas
+   * son aperturas repetidas por respuesta perdida y no son invisibles.
+   */
   resumir(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<ResumenDeEventosFila>({
@@ -736,6 +821,21 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       params,
       agrupar: 't.resultado, t.motivo_code',
       orden: 't.resultado, t.motivo_code',
+    });
+  }
+
+  /**
+   * Cuántas repeticiones (filas con `repetido_de_id`) hubo por resultado dentro del filtro: las
+   * `permitido` son aperturas repetidas por respuesta perdida (ADR 0032 §3) y no deben quedar invisibles.
+   */
+  resumirRepeticiones(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
+    const { donde, params } = armarFiltroDeEventos(filtro, true);
+    return this.seleccionar<ResumenDeEventosFila>({
+      columnas: "t.resultado, '' AS motivo_code, COUNT(*) AS total",
+      uniones: UNION_QR,
+      ...(donde === undefined ? {} : { donde }),
+      params,
+      agrupar: 't.resultado',
     });
   }
 }

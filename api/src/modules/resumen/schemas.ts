@@ -68,6 +68,8 @@ export const respuestaDeEstadisticas = z.object({
       dia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       permitidos: z.number().int(),
       rechazados: z.number().int(),
+      repeticiones_permitidas: z.number().int(),
+      repeticiones_rechazadas: z.number().int(),
     }),
   ),
 });
@@ -101,5 +103,7 @@ export const respuestaDeEventosDePlataforma = esquemaListado(
     ejecucion: z.enum(['ejecutada', 'fallida', 'sin_confirmacion']).nullable(),
     /** Por qué (`puerta_abrio`, `puerta_no_abrio`, `puerta_no_cerro`, `rele_no_accionado`, `sin_sensor`, `sin_respuesta`). */
     ejecucion_causa: z.string().nullable(),
+    repeticiones_permitidas: z.number().int(),
+    repeticiones_rechazadas: z.number().int(),
   }),
 );

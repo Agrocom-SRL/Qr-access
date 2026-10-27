@@ -46,6 +46,18 @@ export interface FiltroDeEventosDePlataforma {
   readonly hasta: Date | null;
 }
 
+interface RepeticionesPorDiaFila extends RowDataPacket {
+  dia: string;
+  resultado: 'permitido' | 'rechazado';
+  total: string;
+}
+
+interface RepeticionesPorEventoFila extends RowDataPacket {
+  original_id: string;
+  resultado: 'permitido' | 'rechazado';
+  total: string;
+}
+
 interface EventoDePlataformaFila extends RowDataPacket {
   id: string;
   ocurrido_at: Date;
@@ -63,7 +75,8 @@ interface EventoDePlataformaFila extends RowDataPacket {
 
 /** El `WHERE` de los filtros presentes; los valores van siempre como parámetros. */
 function armarFiltro(filtro: FiltroDeEventosDePlataforma): { donde?: string; params: unknown[] } {
-  const condiciones: string[] = [];
+  // Solo el primer intento; las repeticiones se cuentan aparte (`repeticiones*`, ADR 0032 §4.2).
+  const condiciones: string[] = ['t.repetido_de_id IS NULL'];
   const params: unknown[] = [];
   if (filtro.cuentaId !== null) {
     condiciones.push('t.tenant_id = ?');
@@ -137,11 +150,37 @@ class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
     });
   }
 
+  /**
+   * Las repeticiones por día y resultado (las filas con `repetido_de_id`, que el resto de consultas
+   * excluye). Las `permitidas` son aperturas repetidas por respuesta perdida (ADR 0032 §3): se
+   * cuentan aparte para que no sean invisibles.
+   */
+  repeticionesPorDia(desde: Date, hasta: Date, zona: string): Promise<RepeticionesPorDiaFila[]> {
+    return this.seleccionar<RepeticionesPorDiaFila>({
+      columnas:
+        "DATE_FORMAT(CONVERT_TZ(t.ocurrido_at, '+00:00', ?), '%Y-%m-%d') AS dia, t.resultado, COUNT(*) AS total",
+      donde: 't.repetido_de_id IS NOT NULL AND t.ocurrido_at >= ? AND t.ocurrido_at < ?',
+      agrupar: 'dia, t.resultado',
+      params: [zona, desde, hasta],
+    });
+  }
+
+  /** Las repeticiones de esos intentos originales, por resultado. */
+  repeticionesDe(originalIds: readonly string[]): Promise<RepeticionesPorEventoFila[]> {
+    if (originalIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<RepeticionesPorEventoFila>({
+      columnas: 't.repetido_de_id AS original_id, t.resultado, COUNT(*) AS total',
+      donde: 't.repetido_de_id IN (?)',
+      params: [originalIds],
+      agrupar: 't.repetido_de_id, t.resultado',
+    });
+  }
+
   contarPorDia(desde: Date, hasta: Date, zona: string): Promise<AccesosPorDiaFila[]> {
     return this.seleccionar<AccesosPorDiaFila>({
       columnas:
         "DATE_FORMAT(CONVERT_TZ(t.ocurrido_at, '+00:00', ?), '%Y-%m-%d') AS dia, t.resultado, COUNT(*) AS total",
-      donde: 't.ocurrido_at >= ? AND t.ocurrido_at < ?',
+      donde: 't.repetido_de_id IS NULL AND t.ocurrido_at >= ? AND t.ocurrido_at < ?',
       agrupar: 'dia, t.resultado',
       params: [zona, desde, hasta],
       orden: 'dia',
@@ -154,6 +193,10 @@ export interface AccesosDelDia {
   readonly dia: string;
   readonly permitidos: number;
   readonly rechazados: number;
+  /** Aperturas repetidas (ADR 0032 §3): no suman a `permitidos`, pero no quedan invisibles. */
+  readonly repeticionesPermitidas: number;
+  /** Relecturas rechazadas enlazadas a un primer intento rechazado (ADR 0032 §4.2). */
+  readonly repeticionesRechazadas: number;
 }
 
 export interface EventoDePlataforma {
@@ -169,6 +212,10 @@ export interface EventoDePlataforma {
   readonly ejecucion: Ejecucion | null;
   /** La causa del resultado de la ejecución (`puerta_no_abrio`, `sin_respuesta`...); `null` si no hay ejecución. */
   readonly ejecucionCausa: CausaDeEjecucion | null;
+  /** Aperturas repetidas enlazadas a este intento (respuesta perdida, ADR 0032 §3). */
+  readonly repeticionesPermitidas: number;
+  /** Relecturas rechazadas enlazadas a este intento (ADR 0032 §4.2). */
+  readonly repeticionesRechazadas: number;
 }
 
 export interface ServicioDeAccesosDePlataforma {
@@ -205,6 +252,13 @@ export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAcceso
           efectivas.set(eventoId, { ejecucion: efectiva.resultado, causa: efectiva.causa });
         }
       }
+      const repeticiones = new Map<string, { permitidas: number; rechazadas: number }>();
+      for (const fila of await repositorio.repeticionesDe(filas.map((f) => f.id))) {
+        const cuenta = repeticiones.get(fila.original_id) ?? { permitidas: 0, rechazadas: 0 };
+        if (fila.resultado === 'permitido') cuenta.permitidas += Number(fila.total);
+        else cuenta.rechazadas += Number(fila.total);
+        repeticiones.set(fila.original_id, cuenta);
+      }
       return {
         total,
         eventos: filas.map((fila) => ({
@@ -218,16 +272,44 @@ export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAcceso
           qrEtiqueta: fila.qr_etiqueta,
           ejecucion: efectivas.get(fila.id)?.ejecucion ?? null,
           ejecucionCausa: efectivas.get(fila.id)?.causa ?? null,
+          repeticionesPermitidas: repeticiones.get(fila.id)?.permitidas ?? 0,
+          repeticionesRechazadas: repeticiones.get(fila.id)?.rechazadas ?? 0,
         })),
       };
     },
     async porDia(desde, hasta, desfaseUtc) {
-      const dias = new Map<string, { permitidos: number; rechazados: number }>();
-      for (const fila of await repositorio.contarPorDia(desde, hasta, desfaseUtc)) {
-        const dia = dias.get(fila.dia) ?? { permitidos: 0, rechazados: 0 };
+      const dias = new Map<
+        string,
+        {
+          permitidos: number;
+          rechazados: number;
+          repeticionesPermitidas: number;
+          repeticionesRechazadas: number;
+        }
+      >();
+      const delDia = (clave: string) => {
+        const dia = dias.get(clave) ?? {
+          permitidos: 0,
+          rechazados: 0,
+          repeticionesPermitidas: 0,
+          repeticionesRechazadas: 0,
+        };
+        dias.set(clave, dia);
+        return dia;
+      };
+      const [originales, repetidos] = await Promise.all([
+        repositorio.contarPorDia(desde, hasta, desfaseUtc),
+        repositorio.repeticionesPorDia(desde, hasta, desfaseUtc),
+      ]);
+      for (const fila of originales) {
+        const dia = delDia(fila.dia);
         if (fila.resultado === 'permitido') dia.permitidos += Number(fila.total);
         else dia.rechazados += Number(fila.total);
-        dias.set(fila.dia, dia);
+      }
+      for (const fila of repetidos) {
+        const dia = delDia(fila.dia);
+        if (fila.resultado === 'permitido') dia.repeticionesPermitidas += Number(fila.total);
+        else dia.repeticionesRechazadas += Number(fila.total);
       }
       return [...dias.entries()].map(([dia, cuenta]) => ({ dia, ...cuenta }));
     },

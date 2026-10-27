@@ -26,6 +26,7 @@ interface EventoFila extends RowDataPacket {
   dispositivo_id: string;
   qr_acceso_id: string | null;
   token_hash: string | null;
+  repetido_de_id: string | null;
 }
 
 describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
@@ -89,10 +90,13 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     expect(String(qrFila?.usado_dispositivo_id)).toBe(a.dispositivoPrincipal.id);
   });
 
-  it('un QR sirve una sola vez: la segunda lectura se rechaza con qr.usado', async () => {
-    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+  it('un QR sirve una sola vez: la lectura de otro lector se rechaza con qr.usado', async () => {
+    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [
+      a.puertaPrincipal.id,
+      a.puertaTrasera.id,
+    ]);
     expect((await validar(a.dispositivoPrincipal, qr.texto)).json<Validacion>().abrir).toBe(true);
-    const segunda = (await validar(a.dispositivoPrincipal, qr.texto)).json<Validacion>();
+    const segunda = (await validar(a.dispositivoTrasero, qr.texto)).json<Validacion>();
     expect(segunda).toEqual({
       abrir: false,
       evento_id: cualquierTexto(),
@@ -116,14 +120,25 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     ]);
     const resultados = respuestas.map((r) => r.json<Validacion>());
     expect(respuestas.every((r) => r.statusCode === 200)).toBe(true);
-    expect(resultados.filter((r) => r.abrir)).toHaveLength(1);
-    expect(resultados.filter((r) => !r.abrir).every((r) => r.motivo_code === 'qr.usado')).toBe(
-      true,
-    );
-
+    // Un solo consumo y un solo lector abre; ese lector tiene a lo sumo UNA repetición (ADR 0032 §3);
+    // el resto, incluido el otro lector, recibe qr.usado.
     const registrados = await eventos();
     expect(registrados).toHaveLength(6);
-    expect(registrados.filter((e) => e.resultado === 'permitido')).toHaveLength(1);
+    const originales = registrados.filter(
+      (e) => e.resultado === 'permitido' && e.repetido_de_id === null,
+    );
+    expect(originales).toHaveLength(1);
+    const lectorGanador = String(originales[0]?.dispositivo_id);
+    const repetidas = registrados.filter(
+      (e) => e.resultado === 'permitido' && e.repetido_de_id !== null,
+    );
+    expect(repetidas.length).toBeLessThanOrEqual(1);
+    for (const repetida of repetidas) expect(repetida.dispositivo_id).toBe(lectorGanador);
+    const abrieron = resultados.filter((r) => r.abrir);
+    expect(abrieron).toHaveLength(1 + repetidas.length);
+    for (const resultado of resultados.filter((r) => !r.abrir)) {
+      expect(resultado).toMatchObject({ motivo_code: 'qr.usado' });
+    }
     const [usos] = await prueba.pool.query<RowDataPacket[]>(
       'SELECT usado_at FROM qr_accesos WHERE id = ?',
       [qr.id],
@@ -281,7 +296,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     expect(registrados.map((e) => String(e.id))).toEqual(respuestas.map((r) => r.evento_id));
     expect(registrados.map((e) => e.motivo_code)).toEqual([
       'acceso.permitido',
-      'qr.usado',
+      'acceso.permitido', // relectura del mismo lector dentro de la ventana (ADR 0032 §3)
       'qr.formato_invalido',
       'qr.desconocido',
     ]);
@@ -424,6 +439,9 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         // Campo aditivo (ADR 0031 §18): un rechazo no ordenó abrir, no tiene ejecución.
         ejecucion: null,
         qr: null,
+        repeticiones: 0,
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect(cuerpo.datos.at(-1)).toMatchObject({
         resultado: 'permitido',
@@ -512,11 +530,15 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         permitidos: 2,
         rechazados: 1,
         rechazados_por_motivo: [{ motivo_code: 'qr.formato_invalido', total: 1 }],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(a.usuario.pin)).json()).toEqual({
         permitidos: 1,
         rechazados: 0,
         rechazados_por_motivo: [],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(b.administrador.pin)).json()).toMatchObject({
         permitidos: 0,

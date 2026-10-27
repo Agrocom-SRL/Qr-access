@@ -24,6 +24,9 @@ export interface EventoDeAccesoDePlataforma {
   ejecucion: 'ejecutada' | 'fallida' | 'sin_confirmacion' | null;
   /** Por qué: `puerta_abrio`, `puerta_no_abrio`, `sin_sensor`, `sin_respuesta`...; `null` si no hay ejecución. */
   ejecucion_causa: string | null;
+  /** Aperturas repetidas enlazadas a este intento (ADR 0032 §3). */
+  repeticiones_permitidas: number;
+  repeticiones_rechazadas: number;
 }
 
 /**
@@ -53,6 +56,8 @@ export async function ejecutar(
       qr_etiqueta: evento.qrEtiqueta,
       ejecucion: evento.ejecucion,
       ejecucion_causa: evento.ejecucionCausa,
+      repeticiones_permitidas: evento.repeticionesPermitidas,
+      repeticiones_rechazadas: evento.repeticionesRechazadas,
     })),
     paginacion,
     total,
