@@ -48,4 +48,17 @@ abstract final class Rutas {
   static const adminPinGenerado = '/admin/usuarios/pin';
 
   static String adminUsuario(String id) => '/admin/usuarios/$id';
+
+  /// Incidentes de uso de mi rama (ADR 0033 §4), desde Perfil.
+  static const incidentes = '/incidentes';
+
+  /// Un incidente con su historial: `/incidentes/:id`. Se abre también desde
+  /// un aviso de propuesta de la bandeja.
+  static const incidenteDetalle = '/incidentes/:id';
+
+  /// Exportar en CSV los datos de mi rama, desde Perfil (solo el
+  /// Administrador).
+  static const exportar = '/exportar';
+
+  static String incidente(String id) => '/incidentes/$id';
 }

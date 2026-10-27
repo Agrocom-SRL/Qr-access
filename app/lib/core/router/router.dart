@@ -7,6 +7,8 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/administracion.dart';
 import 'package:agrocom_acceso/features/dispositivos/dispositivos.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
+import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
+import 'package:agrocom_acceso/features/incidentes/incidentes.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
 import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
@@ -113,6 +115,31 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Rutas.notificaciones,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const NotificacionesPagina()),
+      ),
+      GoRoute(
+        path: Rutas.incidentes,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const IncidentesPagina()),
+        routes: [
+          GoRoute(
+            path: ':id',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              IncidenteDetallePagina(id: state.pathParameters['id']!),
+              transicion: Transicion.flujo,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Rutas.exportar,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const ExportacionPagina(),
+          transicion: Transicion.flujo,
+        ),
       ),
       GoRoute(
         path: Rutas.admin,

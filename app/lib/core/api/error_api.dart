@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 /// Error de la API ya leído. Lleva el `code` estable del formato RFC 9457
@@ -41,16 +43,29 @@ class ErrorApi implements Exception {
 String _codigoDe(DioException e) {
   final respuesta = e.response;
   if (respuesta == null) return ErrorApi.sinConexion;
-  final cuerpo = respuesta.data;
-  final code = cuerpo is Map<String, dynamic> ? cuerpo['code'] : null;
+  final code = _cuerpoDeProblema(respuesta.data)?['code'];
   return code is String && code.isNotEmpty ? code : ErrorApi.desconocido;
 }
 
 Map<String, Object?> _detallesDe(DioException e) {
-  final cuerpo = e.response?.data;
-  if (cuerpo is! Map<String, dynamic>) return const {};
+  final cuerpo = _cuerpoDeProblema(e.response?.data);
+  if (cuerpo == null) return const {};
   return {
     for (final MapEntry(:key, :value) in cuerpo.entries)
       if (!const {'type', 'title', 'status', 'code'}.contains(key)) key: value,
   };
+}
+
+/// El cuerpo del problema como mapa. Las peticiones que piden texto (el CSV de
+/// la exportación) reciben el error como texto JSON; aquí se lee igual. Lo que
+/// no sea un objeto JSON no tiene `code`.
+Map<String, dynamic>? _cuerpoDeProblema(Object? cuerpo) {
+  if (cuerpo is Map<String, dynamic>) return cuerpo;
+  if (cuerpo is! String) return null;
+  try {
+    final decodificado = jsonDecode(cuerpo);
+    return decodificado is Map<String, dynamic> ? decodificado : null;
+  } on FormatException {
+    return null;
+  }
 }

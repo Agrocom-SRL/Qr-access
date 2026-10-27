@@ -1,6 +1,9 @@
+import 'package:agrocom_acceso/core/api/contratos/anulacion_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
 import 'package:agrocom_acceso/core/api/contratos/estructura_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/eventos_contratos.dart';
+import 'package:agrocom_acceso/core/api/contratos/exportacion_contratos.dart';
+import 'package:agrocom_acceso/core/api/contratos/incidentes_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/notificaciones_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
@@ -41,11 +44,13 @@ class ClienteApi {
   static final _sinSesion = Options(extra: {claveSinSesion: true});
 
   /// [instalacionId] y [plataforma] dicen desde dónde entra (ADR 0030 §4.1).
-  /// Son opcionales para la API: un valor nulo no se envía.
+  /// [dispositivo] es el nombre automático del aparato (dispositivos
+  /// conectados). Son opcionales para la API: un valor nulo no se envía.
   Future<RespuestaInicioDto> iniciarSesion(
     String pin, {
     String? instalacionId,
     String? plataforma,
+    String? dispositivo,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
@@ -54,6 +59,7 @@ class ClienteApi {
           'pin': pin,
           'instalacion_id': ?instalacionId,
           'plataforma': ?plataforma,
+          'dispositivo': ?dispositivo,
         },
         options: _sinSesion,
       );
@@ -432,6 +438,19 @@ class ClienteApi {
     });
   }
 
+  /// Pone el nombre de este aparato (la sesión actual). PENDIENTE DE BACKEND:
+  /// `PATCH /sesiones/actual` con `{dispositivo}` todavía no existe en la API
+  /// (ADR 0030 §4.1 solo nombra la sesión al entrar). Hasta que exista, la
+  /// petición responde 404 y la pantalla lo muestra como error.
+  Future<void> renombrarMiSesionActual(String dispositivo) {
+    return _ejecutar(() async {
+      await _dio.patch<void>(
+        '/sesiones/actual',
+        data: {'dispositivo': dispositivo},
+      );
+    });
+  }
+
   /// Cierra todas mis sesiones menos la actual. No anula mis QR vigentes
   /// (ADR 0031 §3). Devuelve cuántas cerró.
   Future<int> cerrarMisOtrasSesiones() {
@@ -486,6 +505,112 @@ class ClienteApi {
       return (r.data!['marcadas'] as num).toInt();
     });
   }
+
+  /// Incidentes de uso de mi rama (ADR 0033 §4). Los filtros van solo si se
+  /// pidieron; `estado` puede ser `sin_resolver`.
+  Future<PaginaDto<IncidenteDto>> incidentes({
+    required int pagina,
+    required int porPagina,
+    String? tipo,
+    String? estado,
+  }) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/incidentes',
+        queryParameters: {
+          'pagina': pagina,
+          'por_pagina': porPagina,
+          'tipo': ?tipo,
+          'estado': ?estado,
+        },
+      );
+      return paginaDeApi(r.data!, IncidenteDto.desde);
+    });
+  }
+
+  Future<IncidenteDto> incidente(String id) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/incidentes/$id');
+      return IncidenteDto.desde(r.data!);
+    });
+  }
+
+  Future<PoliticaDto> politicaDeIncidentes() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/incidentes/politica');
+      return PoliticaDto.desde(r.data!);
+    });
+  }
+
+  /// Descarta, confirma o deja pendiente un incidente. Confirmar exige
+  /// [motivo] (422 `incidente.motivo_requerido` si falta).
+  Future<RespuestaResolucionDto> resolverIncidente(
+    String id, {
+    required String resultado,
+    String? motivo,
+  }) {
+    return _ejecutar(() async {
+      final r = await _dio.post<Map<String, dynamic>>(
+        '/incidentes/$id/resolucion',
+        data: {'resultado': resultado, 'motivo': ?motivo},
+      );
+      return RespuestaResolucionDto.desde(r.data!);
+    });
+  }
+
+  /// Anula en bloque los QR vigentes de mi rama (ADR 0033 §3). El alcance es
+  /// `rama` sin `usuario_id`: la API toma la rama de quien pide, que para el
+  /// Administrador es su rama entera y para los demás, lo que les toca.
+  Future<AnulacionMasivaDto> anularQrDeMiRama({required String motivo}) {
+    return _ejecutar(() async {
+      final r = await _dio.post<Map<String, dynamic>>(
+        '/qr-accesos/anulacion-masiva',
+        data: {'alcance': 'rama', 'motivo': motivo},
+      );
+      return AnulacionMasivaDto.desde(r.data!);
+    });
+  }
+
+  /// Una página de la exportación de mi rama en CSV (ADR 0033 §3). Se pide
+  /// como texto para que el CSV no entre en la caché de lecturas (que solo
+  /// guarda JSON). Los filtros de fecha son instantes; solo valen para
+  /// `lecturas`.
+  Future<PaginaExportadaDto> exportar({
+    required String recurso,
+    required int pagina,
+    required int porPagina,
+    String? resultado,
+    DateTime? desde,
+    DateTime? hasta,
+  }) {
+    return _ejecutar(() async {
+      final r = await _dio.get<String>(
+        '/exportaciones/$recurso',
+        queryParameters: {
+          'pagina': pagina,
+          'por_pagina': porPagina,
+          'resultado': ?resultado,
+          'desde': ?desde?.toUtc().toIso8601String(),
+          'hasta': ?hasta?.toUtc().toIso8601String(),
+        },
+        options: Options(responseType: ResponseType.plain),
+      );
+      final cabeceras = r.headers;
+      return PaginaExportadaDto(
+        csv: r.data ?? '',
+        pagina: _entero(cabeceras, 'x-pagina', pagina),
+        porPagina: _entero(cabeceras, 'x-por-pagina', porPagina),
+        total: _entero(cabeceras, 'x-total-filas', 0),
+        filas: _entero(cabeceras, 'x-filas', 0),
+        hayMas: cabeceras.value('x-hay-mas') == 'true',
+        truncado: cabeceras.value('x-truncado') == 'true',
+      );
+    });
+  }
+
+  /// Un entero de una cabecera; si falta o no es número, el de respaldo.
+  static int _entero(Headers cabeceras, String nombre, int respaldo) =>
+      int.tryParse(cabeceras.value(nombre) ?? '') ?? respaldo;
 
   /// Traduce cualquier fallo de dio a [ErrorApi] para que nadie fuera de
   /// `core/api` vea excepciones de la librería.
