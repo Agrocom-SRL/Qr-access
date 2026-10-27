@@ -51,3 +51,40 @@ export async function armarArbol(pool: Pool, escenario: Escenario): Promise<Arbo
     rolGuardiaId,
   };
 }
+
+/**
+ * La rama de un SEGUNDO Administrador de la misma cuenta (ADR 0028 §4: cada Administrador ve solo su rama):
+ *
+ *     administrador2 ─┬─ titular3 ──── miembro3
+ *                     └─ guardia2
+ */
+export interface SegundaRama {
+  readonly administrador2: UsuarioDePrueba;
+  readonly titular3: UsuarioDePrueba;
+  readonly miembro3: UsuarioDePrueba;
+  readonly guardia2: UsuarioDePrueba;
+}
+
+export async function armarSegundaRama(
+  pool: Pool,
+  escenario: Escenario,
+  arbol: Arbol,
+): Promise<SegundaRama> {
+  const { cuenta } = escenario;
+  const administrador2 = await crearUsuarioConPin(pool, cuenta, 'AD02', [
+    escenario.rolAdministradorId,
+  ]);
+  const titular3 = await crearUsuarioConPin(pool, cuenta, 'TI03', [escenario.rolTitularId], {
+    superiorId: administrador2.id,
+  });
+  return {
+    administrador2,
+    titular3,
+    miembro3: await crearUsuarioConPin(pool, cuenta, 'ME03', [escenario.rolMiembroId], {
+      superiorId: titular3.id,
+    }),
+    guardia2: await crearUsuarioConPin(pool, cuenta, 'GU02', [arbol.rolGuardiaId], {
+      superiorId: administrador2.id,
+    }),
+  };
+}

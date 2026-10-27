@@ -17,7 +17,7 @@ import {
 import { alcanceDeIncidentes, puedeVer } from '../alcance.js';
 import {
   agrupacionDePropuesta,
-  MOTIVO_DE_RESTRICCION_AUTOMATICA,
+  motivoDeRestriccionAutomatica,
   proponerAccion,
   puedeAplicarseSola,
   type ResultadoDeResolucion,
@@ -68,11 +68,9 @@ async function evaluarYProponer(
   aviso: ContextoDeAviso,
   ahora: Date,
 ): Promise<ReincidenciaEvaluada> {
-  const confirmados = await new RepositorioDeIncidentes(pool).contarConfirmados(
-    fila.usuario_id,
-    sumarDias(ahora, -politica.reincidenciaVentanaDias),
-    tx,
-  );
+  const { total: confirmados, deUnaSolaPersona } = await new RepositorioDeIncidentes(
+    pool,
+  ).resumirConfirmados(fila.usuario_id, sumarDias(ahora, -politica.reincidenciaVentanaDias), tx);
   const arbol = crearServicioDeArbol(pool);
   const estadoPropio = (await arbol.estadoPropioDe(fila.usuario_id, tx)) ?? 'suspendido';
   const accion = proponerAccion({
@@ -90,11 +88,11 @@ async function evaluarYProponer(
 
   // El nivel leve puede aplicarse solo SI la cuenta lo habilitó; el crítico (suspender) nunca (ADR 0033 §4.4).
   const aplicadaAutomaticamente =
-    puedeAplicarseSola(accion, politica.restriccionAutomatica, aviso.nivel) &&
+    puedeAplicarseSola(accion, politica.restriccionAutomatica, aviso.nivel, deUnaSolaPersona) &&
     (await arbol.restringirComoSistema(
       tx,
       fila.usuario_id,
-      MOTIVO_DE_RESTRICCION_AUTOMATICA,
+      motivoDeRestriccionAutomatica(fila.id),
       ahora,
     )) === 'aplicada';
 

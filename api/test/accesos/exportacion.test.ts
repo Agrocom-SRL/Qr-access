@@ -2,9 +2,15 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { hashDeToken } from '../../src/modules/accesos/domain/token-qr.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
-import { armarArbol, type Arbol } from '../helpers/arbol.js';
+import { armarArbol, armarSegundaRama, type Arbol } from '../helpers/arbol.js';
 import { reiniciarBase } from '../helpers/base.js';
-import { contarFilas, crearEscenario, crearQr, type Escenario } from '../helpers/fixtures.js';
+import {
+  contarFilas,
+  crearEscenario,
+  crearPuerta,
+  crearQr,
+  type Escenario,
+} from '../helpers/fixtures.js';
 import { conUsuario, iniciarSesion, type Problema, type Sesion } from '../helpers/http.js';
 
 /** Un lector de CSV (RFC 4180) para comprobar lo que se exporta celda por celda. */
@@ -424,6 +430,48 @@ describe('GET /exportaciones/:recurso: CSV de la cuenta (ADR 0033 §3)', () => {
       expect(await contarFilas(prueba.pool, 'exportaciones', 'tenant_id = ?', [b.cuenta.id])).toBe(
         1,
       );
+    });
+
+    it('usuarios y puertas se limitan al alcance de quien exporta: un Administrador no se lleva la rama de otro (ADR 0028 §4)', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const sitio2 = await crearPuerta(
+        prueba.pool,
+        a.cuenta,
+        a.sitioId,
+        'De la segunda rama',
+        5,
+        segunda.administrador2.id,
+      );
+      const admin2 = await iniciarSesion(prueba.app, segunda.administrador2.pin);
+      const ids = async (sesion: Sesion, recurso: string) =>
+        leerCsv((await exportar(sesion, recurso)).body)
+          .slice(1)
+          .map((f) => f[0]);
+
+      const usuarios1 = await ids(admin, 'usuarios');
+      expect(usuarios1).toHaveLength(8);
+      for (const ajeno of [
+        segunda.administrador2,
+        segunda.titular3,
+        segunda.miembro3,
+        segunda.guardia2,
+      ]) {
+        expect(usuarios1).not.toContain(ajeno.id);
+      }
+      expect(await ids(admin, 'puertas')).toEqual([a.puertaPrincipal.id, a.puertaTrasera.id]);
+
+      expect((await ids(admin2, 'usuarios')).sort()).toEqual(
+        [
+          segunda.administrador2.id,
+          segunda.titular3.id,
+          segunda.miembro3.id,
+          segunda.guardia2.id,
+        ].sort(),
+      );
+      expect(await ids(admin2, 'puertas')).toEqual([sitio2.id]);
+      // El total que anuncia (y la constancia) es el del alcance, no el de la cuenta.
+      const pagina = await exportar(admin2, 'usuarios');
+      expect(pagina.headers['x-total-filas']).toBe('4');
     });
 
     it('solo el Administrador exporta: el Titular, el Miembro y el Guardia reciben 403', async () => {

@@ -1,7 +1,10 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ejecutar as anularMasivo } from '../../src/modules/accesos/actions/anular-masivo.js';
+import { ContextoCuenta } from '../../src/platform/contexto/contexto-cuenta.js';
+import type { PrincipalUsuario } from '../../src/platform/seguridad/principal.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
-import { armarArbol, type Arbol } from '../helpers/arbol.js';
+import { armarArbol, armarSegundaRama, type Arbol } from '../helpers/arbol.js';
 import { reiniciarBase } from '../helpers/base.js';
 import {
   contarFilas,
@@ -127,13 +130,15 @@ describe('POST /qr-accesos/anulacion-masiva (ADR 0031 §3, ADR 0033 §3)', () =>
       expect(await anuladoDe(delMiembro.id)).toBe(true);
     });
 
-    it('anula todos los QR vigentes de la cuenta', async () => {
+    it('el alcance cuenta es SU rama completa: anula la suya y no toca la de otro Administrador', async () => {
       const qrs = [
         await qrDe(a.administrador),
         await qrDe(arbol.titular2),
         await qrDe(arbol.miembro1),
         await qrDe(arbol.guardia),
       ];
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const deLaOtraRama = [await qrDe(segunda.administrador2), await qrDe(segunda.miembro3)];
       const respuesta = await anular(admin, { alcance: 'cuenta', motivo: MOTIVO });
       expect(respuesta.statusCode, respuesta.body).toBe(200);
       expect(respuesta.json<Resultado>()).toMatchObject({
@@ -142,6 +147,7 @@ describe('POST /qr-accesos/anulacion-masiva (ADR 0031 §3, ADR 0033 §3)', () =>
         qr_anulados: 4,
       });
       for (const qr of qrs) expect(await anuladoDe(qr.id)).toBe(true);
+      for (const qr of deLaOtraRama) expect(await anuladoDe(qr.id)).toBe(false);
     });
 
     it('deja el motivo y el alcance en la bitácora, y la anulación de cada QR también', async () => {
@@ -215,6 +221,132 @@ describe('POST /qr-accesos/anulacion-masiva (ADR 0031 §3, ADR 0033 §3)', () =>
       });
       expect(respuesta.statusCode).toBe(404);
       expect(respuesta.json<Problema>().code).toBe('usuario.no_encontrado');
+    });
+  });
+
+  describe('cada Administrador llega solo a su rama (ADR 0028 §4, D-29)', () => {
+    it('un Administrador no anula a un usuario, una rama ni un QR de la rama de otro Administrador (404) y nada cambia', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const delTitular3 = await qrDe(segunda.titular3);
+      const delMiembro3 = await qrDe(segunda.miembro3);
+      const delAdmin2 = await qrDe(segunda.administrador2);
+      const antes = await contarFilas(prueba.pool, 'anulaciones_masivas');
+
+      for (const cuerpo of [
+        { alcance: 'usuario', usuario_id: segunda.miembro3.id, motivo: MOTIVO },
+        { alcance: 'usuario', usuario_id: segunda.administrador2.id, motivo: MOTIVO },
+        { alcance: 'rama', usuario_id: segunda.titular3.id, motivo: MOTIVO },
+        { alcance: 'rama', usuario_id: segunda.administrador2.id, motivo: MOTIVO },
+      ]) {
+        const respuesta = await anular(admin, cuerpo);
+        expect(respuesta.statusCode, respuesta.body).toBe(404);
+        expect(respuesta.json<Problema>().code).toBe('usuario.no_encontrado');
+      }
+      for (const qr of [delTitular3, delMiembro3, delAdmin2]) {
+        expect(await anuladoDe(qr.id)).toBe(false);
+      }
+      expect(await contarFilas(prueba.pool, 'anulaciones_masivas')).toBe(antes);
+    });
+
+    it('el segundo Administrador anula su rama y no llega a la del primero (simétrico)', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const admin2 = await iniciarSesion(prueba.app, segunda.administrador2.pin);
+      const suyo = await qrDe(segunda.miembro3);
+      const delPrimero = await qrDe(arbol.miembro1);
+
+      expect(
+        (await anular(admin2, { alcance: 'cuenta', motivo: MOTIVO })).json<Resultado>(),
+      ).toMatchObject({
+        qr_anulados: 1,
+        usuarios_alcanzados: 4,
+      });
+      expect(await anuladoDe(suyo.id)).toBe(true);
+      expect(await anuladoDe(delPrimero.id)).toBe(false);
+      const respuesta = await anular(admin2, {
+        alcance: 'usuario',
+        usuario_id: arbol.miembro1.id,
+        motivo: MOTIVO,
+      });
+      expect(respuesta.statusCode).toBe(404);
+    });
+  });
+
+  describe('por lotes (MEDIA-5): no retiene los bloqueos de una sola transacción larga', () => {
+    const comoAdmin = (): PrincipalUsuario => ({
+      tipo: 'usuario',
+      usuarioId: a.administrador.id,
+      cuentaId: a.cuenta.id,
+      sesionId: '0',
+      rolActivoId: a.rolAdministradorId,
+      permisos: new Set(['accesos.qr.anular_masivo']),
+      estado: 'activo',
+      origenDelEstado: null,
+    });
+
+    it('con más QR que el lote anula todos, en varias transacciones, y reporta el total', async () => {
+      const qrs = [];
+      for (let i = 0; i < 7; i++)
+        qrs.push(await qrDe(i % 2 === 0 ? arbol.miembro1 : arbol.miembro2));
+      const vencido = await qrDe(arbol.miembro1, { venceAt: new Date(Date.now() - HORA) });
+      await qrDe(arbol.miembro1, { anuladoAt: new Date() });
+      const ajeno = await crearQr(prueba.pool, b.cuenta, b.administrador.id, [
+        b.puertaPrincipal.id,
+      ]);
+
+      const principal = comoAdmin();
+      const resultado = await ContextoCuenta.ejecutar(
+        {
+          cuentaId: a.cuenta.id,
+          usuarioId: principal.usuarioId,
+          rolActivoId: null,
+          dispositivoId: null,
+          origen: 'api',
+        },
+        // Lote de 3: 7 vigentes = 3 lotes (3 + 3 + 1).
+        () =>
+          anularMasivo(
+            prueba.pool,
+            principal,
+            { alcance: 'cuenta', usuarioId: null, motivo: MOTIVO },
+            new Date(),
+            3,
+          ),
+      );
+      expect(resultado.qrAnulados).toBe(7);
+      for (const qr of qrs) expect(await anuladoDe(qr.id)).toBe(true);
+      expect(await anuladoDe(vencido.id)).toBe(false);
+      expect(await anuladoDe(ajeno.id)).toBe(false);
+      // Un solo pedido registrado, con el total; y cada QR dejó su rastro en la bitácora.
+      expect(await contarFilas(prueba.pool, 'anulaciones_masivas')).toBe(1);
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT COUNT(*) AS n FROM bitacoras WHERE tabla = 'qr_accesos' AND JSON_EXTRACT(despues, '$.anulado_at') IS NOT NULL",
+      );
+      expect(Number(filas[0]?.n)).toBeGreaterThanOrEqual(7);
+    });
+
+    it('un lote exacto no deja nada atrás y repetirlo anula 0', async () => {
+      for (let i = 0; i < 6; i++) await qrDe(arbol.miembro1);
+      const principal = comoAdmin();
+      const correr = () =>
+        ContextoCuenta.ejecutar(
+          {
+            cuentaId: a.cuenta.id,
+            usuarioId: principal.usuarioId,
+            rolActivoId: null,
+            dispositivoId: null,
+            origen: 'api',
+          },
+          () =>
+            anularMasivo(
+              prueba.pool,
+              principal,
+              { alcance: 'rama', usuarioId: null, motivo: MOTIVO },
+              new Date(),
+              3,
+            ),
+        );
+      expect((await correr()).qrAnulados).toBe(6);
+      expect((await correr()).qrAnulados).toBe(0);
     });
   });
 

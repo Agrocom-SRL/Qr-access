@@ -143,6 +143,11 @@ export class RepositorioDeIncidentes extends RepositorioDeCuenta {
     }
   }
 
+  /** ¿Ya existe un incidente con esa clave de idempotencia en la cuenta del contexto? */
+  async existeClave(claveUnica: string): Promise<boolean> {
+    return (await this.contar({ donde: 't.clave_unica = ?', params: [claveUnica] })) > 0;
+  }
+
   buscarPorId(id: string, tx?: Transaccion): Promise<IncidenteFila | null> {
     return this.seleccionarUna<IncidenteFila>(
       { columnas: COLUMNAS, uniones: UNION_RESOLUCION, donde: 't.id = ?', params: [id] },
@@ -189,20 +194,55 @@ export class RepositorioDeIncidentes extends RepositorioDeCuenta {
     });
   }
 
-  /**
-   * Cuántos incidentes del usuario están CONFIRMADOS (su última resolución lo dice) y ocurrieron desde `desde`. Es el
-   * conteo de la reincidencia: los pendientes y los descartados no cuentan.
-   */
-  contarConfirmados(usuarioId: string, desde: Date, tx: Transaccion): Promise<number> {
+  /** Cuántos incidentes registró una PERSONA sobre el usuario desde `desde` (para el tope diario). */
+  contarRegistradosPorPersonasDesde(
+    usuarioId: string,
+    desde: Date,
+    tx: Transaccion,
+  ): Promise<number> {
     return this.contar(
       {
+        donde: "t.usuario_id = ? AND t.origen = 'persona' AND t.created_at >= ?",
+        params: [usuarioId, desde],
+      },
+      tx,
+    );
+  }
+
+  /**
+   * Los incidentes del usuario CONFIRMADOS (su última resolución lo dice) que ocurrieron desde `desde`: cuántos son
+   * (el conteo de la reincidencia: los pendientes y los descartados no cuentan) y si TODOS los registró una misma
+   * persona. Los del sistema (`registrado_por` nulo) no son de ninguna persona.
+   */
+  async resumirConfirmados(
+    usuarioId: string,
+    desde: Date,
+    tx: Transaccion,
+  ): Promise<{ total: number; deUnaSolaPersona: boolean }> {
+    const fila = await this.seleccionarUna<ResumenDeConfirmadosFila>(
+      {
+        columnas:
+          'COUNT(*) AS total, COUNT(DISTINCT t.registrado_por) AS personas, ' +
+          'COALESCE(SUM(t.registrado_por IS NULL), 0) AS del_sistema',
         uniones: UNION_RESOLUCION,
         donde: "t.usuario_id = ? AND t.ocurrido_at >= ? AND r.resultado = 'confirmado'",
         params: [usuarioId, desde],
       },
       tx,
     );
+    const total = Number(fila?.total ?? 0);
+    return {
+      total,
+      deUnaSolaPersona:
+        total > 0 && Number(fila?.del_sistema ?? 0) === 0 && Number(fila?.personas ?? 0) === 1,
+    };
   }
+}
+
+interface ResumenDeConfirmadosFila extends RowDataPacket {
+  total: string | number;
+  personas: string | number;
+  del_sistema: string | number | null;
 }
 
 export interface ResolucionFila extends RowDataPacket {

@@ -333,14 +333,30 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     return filas.map((fila) => fila.id);
   }
 
-  /** Una página de todos los usuarios de la cuenta, por id: para la exportación (ADR 0033 §3). */
-  listarPagina(limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
+  /**
+   * Una página de los usuarios de `ids` (el alcance de quien exporta: él y su rama), por id: para la exportación
+   * (ADR 0033 §3). Sin ids no hay nada.
+   */
+  listarPaginaDe(
+    ids: readonly string[],
+    limite: number,
+    desplazamiento: number,
+  ): Promise<UsuarioFila[]> {
+    if (ids.length === 0) return Promise.resolve([]);
     return this.seleccionar<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
+      donde: 't.id IN (?)',
+      params: [ids],
       orden: 't.id',
       limite,
       desplazamiento,
     });
+  }
+
+  /** Cuántos de esos usuarios existen en la cuenta (los no borrados). */
+  async contarDe(ids: readonly string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    return this.contar({ donde: 't.id IN (?)', params: [ids] });
   }
 
   /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */

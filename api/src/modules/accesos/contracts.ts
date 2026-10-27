@@ -404,13 +404,15 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
 
 export interface ServicioDeEvidencia {
   /**
-   * Cuáles de esos QR y esos intentos de acceso existen en la cuenta del contexto. Un id de otra cuenta o inventado
-   * no vuelve: así la evidencia de un incidente nunca apunta fuera de la cuenta (invariante 1). Solo ids: jamás el
-   * token ni su hash.
+   * Cuáles de esos QR y esos intentos de acceso existen en la cuenta del contexto Y pertenecen a `generadores` (el
+   * usuario del incidente y su rama: el QR lo generó uno de ellos; el intento leyó un QR de ellos). Un id de otra
+   * cuenta, de otra rama o inventado no vuelve: así la evidencia de un incidente nunca apunta fuera de la cuenta
+   * (invariante 1) ni a la actividad de quien no tiene nada que ver. Solo ids: jamás el token ni su hash.
    */
   existentes(ids: {
     readonly qrIds: readonly string[];
     readonly eventoAccesoIds: readonly string[];
+    readonly generadores: readonly string[];
   }): Promise<{ qrIds: Set<string>; eventoAccesoIds: Set<string> }>;
 }
 
@@ -418,10 +420,10 @@ export function crearServicioDeEvidencia(pool: Pool): ServicioDeEvidencia {
   const qr = new RepositorioDeQr(pool);
   const eventos = new RepositorioDeEventos(pool);
   return {
-    async existentes({ qrIds, eventoAccesoIds }) {
+    async existentes({ qrIds, eventoAccesoIds, generadores }) {
       const [qrs, intentos] = await Promise.all([
-        qr.existentes(qrIds),
-        eventos.existentes(eventoAccesoIds),
+        qr.existentes(qrIds, generadores),
+        eventos.existentes(eventoAccesoIds, generadores),
       ]);
       return { qrIds: qrs, eventoAccesoIds: intentos };
     },

@@ -323,8 +323,15 @@ export interface ServicioDeRechazosRepetidos {
   /**
    * Quiénes, en CUALQUIER cuenta, tuvieron al menos `minimo` rechazos por tope desde `desde`. Es para el detector
    * del sistema (salto explícito del aislamiento, solo lectura): cada hallazgo se trata luego dentro de su cuenta.
+   * Una página de `limite` hallazgos, ordenados por (cuenta, usuario), a continuación de `despuesDe` (`null` = desde
+   * el principio): para recorrerlos todos con un cursor.
    */
-  usuarios(desde: Date, minimo: number, limite: number): Promise<UsuarioConRechazosRepetidos[]>;
+  usuarios(
+    desde: Date,
+    minimo: number,
+    limite: number,
+    despuesDe?: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<UsuarioConRechazosRepetidos[]>;
 }
 
 export function crearServicioDeRechazosRepetidos(pool: Pool): ServicioDeRechazosRepetidos {
@@ -337,11 +344,12 @@ export function crearServicioDeRechazosRepetidos(pool: Pool): ServicioDeRechazos
         ventanaHoras: general.get(CLAVES_DE_INCIDENTE.rechazosGeneracionVentanaHoras) ?? 24,
       };
     },
-    async usuarios(desde, minimo, limite) {
+    async usuarios(desde, minimo, limite, despuesDe = null) {
       const filas = await new RepositorioDeEventosDeLimiteDeTodas(pool).rechazosRepetidos(
         desde,
         minimo,
         limite,
+        despuesDe,
       );
       return filas.map((fila) => ({
         cuentaId: fila.tenant_id,

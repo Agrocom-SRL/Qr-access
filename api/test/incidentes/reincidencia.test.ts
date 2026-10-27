@@ -4,7 +4,9 @@ import { ejecutar as resolverIncidente } from '../../src/modules/incidentes/acti
 import type { ResultadoDeResolucionDeIncidente } from '../../src/modules/incidentes/actions/resolver-incidente.js';
 import type { TipoDeIncidente } from '../../src/modules/incidentes/domain/incidente.js';
 import { ejecutar as entregar } from '../../src/modules/notificaciones/actions/entregar-pendientes.js';
+import { crearServicioDeArbol } from '../../src/modules/seguridad/contracts.js';
 import { ContextoCuenta } from '../../src/platform/contexto/contexto-cuenta.js';
+import { enTransaccion } from '../../src/platform/db/transaccion.js';
 import type { PrincipalUsuario } from '../../src/platform/seguridad/principal.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { armarArbol, type Arbol } from '../helpers/arbol.js';
@@ -13,6 +15,7 @@ import {
   contarFilas,
   crearEscenario,
   crearQr,
+  crearRol,
   crearSuperAdmin,
   crearUsuarioConPin,
   PERMISOS_DE_ADMINISTRADOR,
@@ -83,12 +86,31 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
     ocurridoAt: Date,
     tipo: TipoDeIncidente = 'uso_masivo',
     escenario: Escenario = a,
+    registradoPor: string | null = escenario.administrador.id,
   ): Promise<string> {
     const [resultado] = await prueba.pool.query<RowDataPacket[] & { insertId: number }>(
-      "INSERT INTO incidentes_uso (tenant_id, usuario_id, tipo, gravedad, origen, registrado_por, evidencia, ocurrido_at) VALUES (?, ?, ?, 'media', 'persona', ?, '{}', ?)",
-      [escenario.cuenta.id, usuario.id, tipo, escenario.administrador.id, ocurridoAt],
+      "INSERT INTO incidentes_uso (tenant_id, usuario_id, tipo, gravedad, origen, registrado_por, evidencia, ocurrido_at) VALUES (?, ?, ?, 'media', ?, ?, '{}', ?)",
+      [
+        escenario.cuenta.id,
+        usuario.id,
+        tipo,
+        registradoPor === null ? 'sistema' : 'persona',
+        registradoPor,
+        ocurridoAt,
+      ],
     );
     return String((resultado as unknown as { insertId: number }).insertId);
+  }
+
+  /** Tres confirmados de `usuario` que NO registró una sola persona: el contraste que pide la restricción automática. */
+  async function confirmarConContraste(usuario: UsuarioDePrueba): Promise<void> {
+    for (const [dias, registrador] of [
+      [2, arbol.titular1.id],
+      [1, a.administrador.id],
+      [0, a.administrador.id],
+    ] as const) {
+      await confirmar(await incidente(usuario, hace(dias), 'uso_masivo', a, registrador));
+    }
   }
 
   const comoApi = <T>(principal: PrincipalUsuario, fn: () => Promise<T>): Promise<T> =>
@@ -457,17 +479,16 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
       expect(texto).not.toMatch(/token|hash|pin/i);
     });
 
-    it('si el reincidente es un Administrador no hay quien lo administre en la cuenta: solo AGROCOM', async () => {
+    it('el incidente de un Administrador no lo resuelve otro Administrador (404): cada uno ve solo su rama (ADR 0028 §4)', async () => {
       const segundoAdmin = await crearUsuarioConPin(prueba.pool, a.cuenta, 'AD02', [
         a.rolAdministradorId,
       ]);
-      await confirmarTres(segundoAdmin);
-      const cola = await propuestasEnCola();
-      expect(cola.map((fila) => fila.audiencia)).toEqual(
-        ['plataforma', 'plataforma', 'plataforma'].slice(0, cola.length),
-      );
-      expect(cola.length).toBeGreaterThan(0);
-      expect(cola.every((fila) => fila.audiencia === 'plataforma')).toBe(true);
+      const id = await incidente(segundoAdmin, hace(0));
+      await expect(confirmar(id)).rejects.toMatchObject({
+        code: 'incidente.no_encontrado',
+        status: 404,
+      });
+      expect(await propuestasEnCola()).toEqual([]);
     });
 
     it('un Titular que confirma el incidente de su Miembro propone al Administrador, no a sí mismo', async () => {
@@ -494,9 +515,17 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
       await fijarExcepcion(a, 'incidente.restriccion_automatica', 1);
       const sesion = await iniciarSesion(prueba.app, arbol.miembro1.pin);
       const qr = await crearQr(prueba.pool, a.cuenta, arbol.miembro1.id, [a.puertaPrincipal.id]);
+      // Contraste: no los registró una sola persona (el Titular y el Administrador).
       let ultimo: ResultadoDeResolucionDeIncidente | null = null;
-      for (const dias of [2, 1, 0])
-        ultimo = await confirmar(await incidente(arbol.miembro1, hace(dias)));
+      let ultimoId = '';
+      for (const [dias, registrador] of [
+        [2, arbol.titular1.id],
+        [1, a.administrador.id],
+        [0, a.administrador.id],
+      ] as const) {
+        ultimoId = await incidente(arbol.miembro1, hace(dias), 'uso_masivo', a, registrador);
+        ultimo = await confirmar(ultimoId);
+      }
       expect(ultimo?.reincidencia).toMatchObject({
         propuesta: 'restringir',
         aplicadaAutomaticamente: true,
@@ -506,13 +535,15 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
         estado: 'restringido',
         // Queda a nombre de su superior directo: él (o quien esté sobre él) puede levantarlo.
         estado_impuesto_por: arbol.titular1.id,
-        estado_motivo: 'incidente.reincidencia',
+        // La bitácora dice QUÉ incidente la provocó (MEDIA-1 de la auditoría de W11).
+        estado_motivo: `incidente.reincidencia:${ultimoId}`,
       });
       const [bitacora] = await prueba.pool.query<RowDataPacket[]>(
-        "SELECT usuario_id, origen FROM bitacoras WHERE tabla = 'usuarios' AND registro_id = ? AND JSON_EXTRACT(despues, '$.estado') = 'restringido'",
+        "SELECT usuario_id, origen, despues FROM bitacoras WHERE tabla = 'usuarios' AND registro_id = ? AND JSON_EXTRACT(despues, '$.estado') = 'restringido'",
         [arbol.miembro1.id],
       );
       expect(bitacora).toEqual([expect.objectContaining({ usuario_id: null, origen: 'sistema' })]);
+      expect(JSON.stringify(bitacora[0]?.despues)).toContain(`incidente.reincidencia:${ultimoId}`);
 
       // Nivel leve: la sesión sigue abierta, consulta, y su QR vigente sigue vivo; pero ya no genera.
       expect(
@@ -541,7 +572,7 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
 
     it('su superior directo y el Administrador pueden levantar la restricción que puso el sistema; un par no', async () => {
       await fijarExcepcion(a, 'incidente.restriccion_automatica', 1);
-      for (const dias of [2, 1, 0]) await confirmar(await incidente(arbol.miembro1, hace(dias)));
+      await confirmarConContraste(arbol.miembro1);
       const reactivar = (sesion: Sesion) =>
         prueba.app.inject({
           method: 'POST',
@@ -581,19 +612,76 @@ describe('reincidencia: de «caso raro» a baja (ADR 0033 §4.3 y §4.4)', () =>
       expect((await estadoDe(arbol.miembro1)).estado).toBe('activo');
     });
 
-    it('nunca restringe a un Administrador: arrastraría a toda su rama', async () => {
+    it('si todos los confirmados los registró una MISMA persona, solo propone: la restricción automática pide contraste', async () => {
       await fijarExcepcion(a, 'incidente.restriccion_automatica', 1);
-      const segundoAdmin = await crearUsuarioConPin(prueba.pool, a.cuenta, 'AD02', [
-        a.rolAdministradorId,
-      ]);
       let ultimo: ResultadoDeResolucionDeIncidente | null = null;
+      // `incidente()` registra siempre a nombre del Administrador: una sola persona.
       for (const dias of [2, 1, 0])
-        ultimo = await confirmar(await incidente(segundoAdmin, hace(dias)));
+        ultimo = await confirmar(await incidente(arbol.miembro1, hace(dias)));
       expect(ultimo?.reincidencia).toMatchObject({
         propuesta: 'restringir',
         aplicadaAutomaticamente: false,
       });
-      expect((await estadoDe(segundoAdmin)).estado).toBe('activo');
+      expect((await estadoDe(arbol.miembro1)).estado).toBe('activo');
+    });
+
+    it('los confirmados del sistema (sin autor) no cuentan como «una sola persona»', async () => {
+      await fijarExcepcion(a, 'incidente.restriccion_automatica', 1);
+      let ultimo: ResultadoDeResolucionDeIncidente | null = null;
+      for (const dias of [2, 1, 0])
+        ultimo = await confirmar(
+          await incidente(arbol.miembro1, hace(dias), 'uso_masivo', a, null),
+        );
+      expect(ultimo?.reincidencia).toMatchObject({ aplicadaAutomaticamente: true });
+      expect((await estadoDe(arbol.miembro1)).estado).toBe('restringido');
+    });
+
+    it('nunca restringe a un Titular: arrastraría a toda su rama (aunque la cuenta lo habilite y haya contraste)', async () => {
+      await fijarExcepcion(a, 'incidente.restriccion_automatica', 1);
+      let ultimo: ResultadoDeResolucionDeIncidente | null = null;
+      for (const [dias, registrador] of [
+        [2, a.administrador.id],
+        [1, null],
+        [0, null],
+      ] as const)
+        ultimo = await confirmar(
+          await incidente(arbol.titular1, hace(dias), 'uso_masivo', a, registrador),
+        );
+      expect(ultimo?.reincidencia).toMatchObject({
+        propuesta: 'restringir',
+        aplicadaAutomaticamente: false,
+      });
+      expect((await estadoDe(arbol.titular1)).estado).toBe('activo');
+      expect((await estadoDe(arbol.miembro1)).estado).toBe('activo');
+    });
+
+    it('defensa en profundidad: restringirComoSistema se niega por sí sola con un Administrador o un Titular, y también con un rol sin nivel', async () => {
+      const sinNivel = await crearUsuarioConPin(
+        prueba.pool,
+        a.cuenta,
+        'RX01',
+        [await crearRol(prueba.pool, a.cuenta, 'Auditor', ['accesos.qr.ver'])],
+        { superiorId: a.administrador.id },
+      );
+      const intentar = async (usuario: UsuarioDePrueba) =>
+        ContextoCuenta.ejecutarEn(a.cuenta.id, () =>
+          enTransaccion(prueba.pool, (tx) =>
+            crearServicioDeArbol(prueba.pool).restringirComoSistema(
+              tx,
+              usuario.id,
+              'incidente.reincidencia:1',
+              AHORA,
+            ),
+          ),
+        );
+      expect(await intentar(a.administrador)).toBe('sin_cambio');
+      expect(await intentar(arbol.titular1)).toBe('sin_cambio');
+      expect(await intentar(sinNivel)).toBe('sin_cambio');
+      expect(await intentar(arbol.guardia)).toBe('aplicada');
+      expect(await intentar(arbol.miembro1)).toBe('aplicada');
+      expect((await estadoDe(a.administrador)).estado).toBe('activo');
+      expect((await estadoDe(arbol.titular1)).estado).toBe('activo');
+      expect((await estadoDe(sinNivel)).estado).toBe('activo');
     });
 
     it('encenderla en la cuenta A no la enciende en la cuenta B', async () => {

@@ -33,8 +33,8 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         schema: {
           tags: ETIQUETA,
           description:
-            'Incidentes de uso a la vista de quien pregunta: el Administrador ve los de la cuenta; el Titular, los de sus ' +
-            'Miembros y los suyos; el Miembro y el Guardia, los propios. `estado` filtra por la última resolución (`sin_resolver` ' +
+            'Incidentes de uso a la vista de quien pregunta: el Administrador y el Titular ven los de su rama (el ' +
+            'Administrador no ve la de otro Administrador) y los suyos; el Miembro y el Guardia, los propios. `estado` filtra por la última resolución (`sin_resolver` ' +
             'si no hay ninguna).',
           querystring: consultaDeIncidentes,
           response: { 200: respuestaListadoDeIncidentes },
@@ -105,8 +105,9 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           description:
             'Registra a mano un incidente de uso (origen `persona`) de alguien de la rama de quien lo registra. 404 ' +
             '`usuario.no_encontrado` fuera del alcance o de otra cuenta; 403 `incidente.propio` sobre uno mismo; 422 ' +
-            '`incidente.evidencia_invalida` si un id de QR o de intento no existe en la cuenta; 422 ' +
-            '`incidente.fecha_futura`. Nace sin resolver.',
+            '`incidente.evidencia_invalida` si un id de QR o de intento no es del usuario o de su rama; 422 ' +
+            '`incidente.fecha_futura` o `incidente.fecha_antigua` (más de un año); 429 `incidente.tope_diario` (20 a mano ' +
+            'por usuario en 24 horas). Nace sin resolver.',
           body: cuerpoDeIncidente,
           response: { 201: esquemaIncidenteDetallado },
         },

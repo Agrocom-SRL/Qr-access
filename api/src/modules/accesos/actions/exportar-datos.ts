@@ -3,7 +3,10 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
-import { crearServicioDeUsuariosExportables } from '../../seguridad/contracts.js';
+import {
+  crearServicioDeArbol,
+  crearServicioDeUsuariosExportables,
+} from '../../seguridad/contracts.js';
 import { armarCsv, type Celda } from '../domain/csv.js';
 import {
   resumirExportacion,
@@ -64,13 +67,14 @@ interface Pagina {
 
 async function paginaDeUsuarios(
   pool: Pool,
+  alcance: readonly string[],
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
   const servicio = crearServicioDeUsuariosExportables(pool);
   const [total, usuarios] = await Promise.all([
-    servicio.total(),
-    servicio.pagina(limite, desplazamiento),
+    servicio.total(alcance),
+    servicio.pagina(alcance, limite, desplazamiento),
   ]);
   return {
     total,
@@ -90,13 +94,14 @@ async function paginaDeUsuarios(
 
 async function paginaDePuertas(
   pool: Pool,
+  alcance: readonly string[],
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
   const servicio = crearServicioDeOrganizacion(pool);
   const [total, puertas] = await Promise.all([
-    servicio.contarPuertas(),
-    servicio.puertasPagina(limite, desplazamiento),
+    servicio.contarPuertas(alcance),
+    servicio.puertasPagina(alcance, limite, desplazamiento),
   ]);
   return {
     total,
@@ -158,7 +163,9 @@ async function paginaDeLecturas(
  *   cuántas filas, con qué filtros) en una transacción. Si la constancia no se puede guardar, no se entrega nada.
  * - **Sin secretos:** ni tokens, ni hashes, ni PIN, ni credenciales (las columnas están escritas a mano, no son
  *   `SELECT *`). Todo texto de una persona sale neutralizado contra la inyección de fórmulas (`domain/csv.ts`).
- * - **De la cuenta del contexto**, por el repositorio de cuenta: la cuenta A nunca recibe filas de la B.
+ * - **De la cuenta del contexto**, por el repositorio de cuenta: la cuenta A nunca recibe filas de la B. Dentro de
+ *   ella, `usuarios` son quien exporta y su rama, y `puertas` las que dieron de alta ellos: un Administrador no
+ *   exporta lo de otro Administrador de la misma cuenta (ADR 0028 §4, D-29).
  */
 export async function ejecutar(
   pool: Pool,
@@ -170,11 +177,17 @@ export async function ejecutar(
   const tramo = tramoDe(paginacion.pagina, paginacion.por_pagina);
   if (tramo === null) throw new ErrorDeDominio('exportacion.tope_excedido', 422);
 
+  // `usuarios` y `puertas` se limitan al ALCANCE de quien exporta: él y su rama (ADR 0028 §4), también un Administrador.
+  // Las `lecturas` ya salen con el alcance del listado de eventos.
+  const alcance =
+    recurso === 'lecturas'
+      ? []
+      : [...(await crearServicioDeArbol(pool).alcanceDe(principal.usuarioId)).ids];
   const leida =
     recurso === 'usuarios'
-      ? await paginaDeUsuarios(pool, tramo.limite, tramo.desplazamiento)
+      ? await paginaDeUsuarios(pool, alcance, tramo.limite, tramo.desplazamiento)
       : recurso === 'puertas'
-        ? await paginaDePuertas(pool, tramo.limite, tramo.desplazamiento)
+        ? await paginaDePuertas(pool, alcance, tramo.limite, tramo.desplazamiento)
         : await paginaDeLecturas(pool, principal, filtros, tramo.limite, tramo.desplazamiento);
 
   await enTransaccion(pool, (tx) =>

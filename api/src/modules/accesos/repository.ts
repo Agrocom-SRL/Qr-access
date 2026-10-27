@@ -196,6 +196,41 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
   }
 
   /**
+   * UN LOTE de la anulación masiva: anula hasta `tamano` QR vigentes de esos generadores con id mayor que `despuesDe`
+   * (un cursor por id, así un QR que no se pudo anular no se vuelve a pedir y el ciclo siempre termina). Va en la
+   * transacción `tx` de quien lo llama, que debe ser corta: bloquea solo esas filas (y su índice único) hasta el
+   * COMMIT, no todos los QR del alcance. Devuelve cuántos anuló, cuántos leyó y el último id leído (`null` si no
+   * había ninguno).
+   */
+  async anularLoteDeVigentes(
+    tx: Transaccion,
+    generadores: readonly string[],
+    anuladoPor: string,
+    ahora: Date,
+    despuesDe: string,
+    tamano: number,
+  ): Promise<{ anulados: number; leidos: number; ultimoId: string | null }> {
+    if (generadores.length === 0) return { anulados: 0, leidos: 0, ultimoId: null };
+    const lote = await this.seleccionar<QrFila>(
+      {
+        columnas: COLUMNAS_DE_QR,
+        donde:
+          't.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ? AND t.generado_por IN (?) AND t.id > ?',
+        params: [ahora, generadores, despuesDe],
+        orden: 't.id',
+        limite: tamano,
+        bloquear: true,
+      },
+      tx,
+    );
+    let anulados = 0;
+    for (const qr of lote) {
+      if (await this.anular(tx, qr.id, anuladoPor, ahora)) anulados += 1;
+    }
+    return { anulados, leidos: lote.length, ultimoId: lote.at(-1)?.id ?? null };
+  }
+
+  /**
    * Cuántos QR generó cada usuario desde `desde` y cuántos de ellos ya se usaron (estadísticas de uso,
    * ADR 0028). Cuenta también los QR propios. Un usuario sin QR no aparece.
    */
@@ -275,13 +310,16 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     });
   }
 
-  /** Cuáles de esos ids existen en la cuenta del contexto (evidencia de un incidente, ADR 0033 §4). */
-  async existentes(ids: readonly string[]): Promise<Set<string>> {
-    if (ids.length === 0) return new Set();
+  /**
+   * Cuáles de esos ids existen en la cuenta del contexto Y los generó alguno de `generadores` (evidencia de un
+   * incidente: tiene que ser del usuario o de su rama, ADR 0033 §4).
+   */
+  async existentes(ids: readonly string[], generadores: readonly string[]): Promise<Set<string>> {
+    if (ids.length === 0 || generadores.length === 0) return new Set();
     const filas = await this.seleccionar<RowDataPacket>({
       columnas: 't.id',
-      donde: 't.id IN (?)',
-      params: [ids],
+      donde: 't.id IN (?) AND t.generado_por IN (?)',
+      params: [ids, generadores],
     });
     return new Set(filas.map((fila) => String(fila.id)));
   }
@@ -571,13 +609,17 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
-  /** Cuáles de esos ids existen en la cuenta del contexto (evidencia de un incidente, ADR 0033 §4). */
-  async existentes(ids: readonly string[]): Promise<Set<string>> {
-    if (ids.length === 0) return new Set();
+  /**
+   * Cuáles de esos intentos existen en la cuenta del contexto Y leyeron un QR que generó alguno de `generadores`
+   * (evidencia de un incidente: del usuario o de su rama). Un intento sin QR no se puede atribuir a nadie: no sirve.
+   */
+  async existentes(ids: readonly string[], generadores: readonly string[]): Promise<Set<string>> {
+    if (ids.length === 0 || generadores.length === 0) return new Set();
     const filas = await this.seleccionar<RowDataPacket>({
       columnas: 't.id',
-      donde: 't.id IN (?)',
-      params: [ids],
+      uniones: UNION_QR,
+      donde: 't.id IN (?) AND q.generado_por IN (?)',
+      params: [ids, generadores],
     });
     return new Set(filas.map((fila) => String(fila.id)));
   }

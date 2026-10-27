@@ -63,20 +63,26 @@ describe('proponerAccion: de «caso raro» a baja (ADR 0033 §4.3)', () => {
   });
 });
 
-describe('puedeAplicarseSola: solo el nivel leve, y solo si la cuenta lo habilitó', () => {
+describe('puedeAplicarseSola: solo el nivel leve, a un Miembro o un Guardia, con contraste, y solo si la cuenta lo habilitó', () => {
   it('con la restricción automática apagada nada se aplica solo', () => {
-    expect(puedeAplicarseSola('restringir', false, 'miembro')).toBe(false);
+    expect(puedeAplicarseSola('restringir', false, 'miembro', false)).toBe(false);
   });
 
   it('encendida, solo restringir', () => {
-    expect(puedeAplicarseSola('restringir', true, 'miembro')).toBe(true);
-    expect(puedeAplicarseSola('restringir', true, 'titular')).toBe(true);
-    expect(puedeAplicarseSola('suspender', true, 'miembro')).toBe(false);
-    expect(puedeAplicarseSola('suspender_y_anular', true, 'miembro')).toBe(false);
+    expect(puedeAplicarseSola('restringir', true, 'miembro', false)).toBe(true);
+    expect(puedeAplicarseSola('restringir', true, 'guardia', false)).toBe(true);
+    expect(puedeAplicarseSola('suspender', true, 'miembro', false)).toBe(false);
+    expect(puedeAplicarseSola('suspender_y_anular', true, 'miembro', false)).toBe(false);
   });
 
-  it('nunca a un Administrador: arrastraría a toda su rama', () => {
-    expect(puedeAplicarseSola('restringir', true, 'administrador')).toBe(false);
+  it('nunca a un Administrador ni a un Titular: arrastrarían a toda su rama; un nivel desconocido falla cerrado', () => {
+    expect(puedeAplicarseSola('restringir', true, 'administrador', false)).toBe(false);
+    expect(puedeAplicarseSola('restringir', true, 'titular', false)).toBe(false);
+    expect(puedeAplicarseSola('restringir', true, null, false)).toBe(false);
+  });
+
+  it('no si todos los confirmados los registró una misma persona', () => {
+    expect(puedeAplicarseSola('restringir', true, 'miembro', true)).toBe(false);
   });
 });
 

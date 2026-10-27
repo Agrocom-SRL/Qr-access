@@ -224,15 +224,24 @@ export class RepositorioDeEventosDeLimiteDeTodas extends RepositorioDePlataforma
    * Usuarios con al menos `minimo` rechazos por tope de generación desde `desde`. Los marcadores informativos
    * (reemplazos y bolsa) no son rechazos y no cuentan.
    */
-  rechazosRepetidos(desde: Date, minimo: number, limite: number): Promise<RechazosRepetidosFila[]> {
+  rechazosRepetidos(
+    desde: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<RechazosRepetidosFila[]> {
+    // Paginación por cursor sobre (cuenta, usuario): el detector recorre TODOS los hallazgos, página a página, sin que
+    // los primeros (ya tratados) tapen a los demás.
+    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
     return this.seleccionar<RechazosRepetidosFila>({
       columnas:
         't.tenant_id, t.usuario_id, COUNT(*) AS total, ' +
         "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 20) AS ultimos_ids",
       donde:
-        "t.usuario_id IS NOT NULL AND t.ocurrido_at >= ? AND t.tipo IN ('qr.limite_diario', 'qr.limite_pendientes', 'qr.limite_propios_sin_uso')",
-      // El segundo `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
-      params: [desde, minimo],
+        "t.usuario_id IS NOT NULL AND t.ocurrido_at >= ? AND t.tipo IN ('qr.limite_diario', 'qr.limite_pendientes', 'qr.limite_propios_sin_uso')" +
+        (despuesDe === null ? '' : ' AND (t.tenant_id, t.usuario_id) > (?, ?)'),
+      // El último `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
+      params: [desde, ...cursor, minimo],
       agrupar: 't.tenant_id, t.usuario_id HAVING COUNT(*) >= ?',
       orden: 't.tenant_id, t.usuario_id',
       limite,

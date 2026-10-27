@@ -159,8 +159,9 @@ export function rutas({
         schema: {
           tags: ['accesos'],
           description:
-            'Anula en bloque los QR VIGENTES de un usuario, de una rama o de toda la cuenta (ADR 0031 §3, ADR 0033 §3). ' +
-            'El alcance sale del árbol: el Administrador llega a todo; el Titular, a sus Miembros y a lo suyo; el Miembro y ' +
+            'Anula en bloque los QR VIGENTES de un usuario o de una rama (ADR 0031 §3, ADR 0033 §3). ' +
+            'El alcance sale del árbol: el Administrador llega a su rama (`cuenta` = su rama completa; nunca la de otro ' +
+            'Administrador); el Titular, a sus Miembros y a lo suyo; el Miembro y ' +
             'el Guardia, a lo propio. 404 `usuario.no_encontrado` si el usuario no está en el alcance (o es de otra cuenta); ' +
             '403 `anulacion.alcance_no_permitido` si pide `cuenta` sin ser Administrador. Los anulados no reviven.',
           body: cuerpoDeAnulacionMasiva,
@@ -191,6 +192,8 @@ export function rutas({
           tags: ['accesos'],
           description:
             'Una página de datos de la cuenta en CSV (`text/csv; charset=utf-8`): `usuarios`, `puertas` o `lecturas`. ' +
+            '`usuarios` y `puertas` se limitan a quien exporta y su rama (las puertas que ellos dieron de alta); un ' +
+            'Administrador no exporta lo de otro Administrador. ' +
             'Paginada (`pagina`, `por_pagina` hasta 1000) y con un tope de 10000 filas por recurso (422 ' +
             '`exportacion.tope_excedido` más allá). Cada página trae su fila de encabezado y las cabeceras ' +
             '`X-Total-Filas`, `X-Pagina`, `X-Por-Pagina`, `X-Filas`, `X-Hay-Mas` y `X-Truncado`. Los filtros ' +

@@ -21,5 +21,5 @@ La constancia de cada página de datos que una cuenta descargó en CSV (ADR 0033
 
 ## Reglas
 
-- `GET /api/v1/exportaciones/{recurso}` (`accesos.evento.exportar`, solo el Administrador por omisión). Una fila por página entregada; si la constancia no se puede guardar, no se entrega nada.
+- `GET /api/v1/exportaciones/{recurso}` (`accesos.evento.exportar`, solo el Administrador por omisión; `usuarios` y `puertas` se limitan a quien exporta y su rama, D-29). Una fila por página entregada; si la constancia no se puede guardar, no se entrega nada.
 - Tope de 10 000 filas por recurso (supuesto W11) y rate limit propio (`LIMITE_EXPORTACION_POR_MINUTO`, 10 por minuto y usuario).

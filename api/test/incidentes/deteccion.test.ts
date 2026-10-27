@@ -1,5 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { ejecutar as detectarGeneracionRuidosa } from '../../src/modules/incidentes/actions/detectar-generacion-ruidosa.js';
 import { crearServicioDeIncidentes } from '../../src/modules/incidentes/contracts.js';
 import { ContextoCuenta } from '../../src/platform/contexto/contexto-cuenta.js';
 import { enTransaccion, type Transaccion } from '../../src/platform/db/transaccion.js';
@@ -78,7 +79,12 @@ describe('incidentes del sistema: contrato y detector de generación ruidosa (AD
       ?.ejecutar(ahora, (e) => errores.push(e))
       .then((resultado) => {
         expect(errores).toEqual([]);
-        return resultado as { revisados: number; incidentes: number; errores: number };
+        return resultado as {
+          revisados: number;
+          incidentes: number;
+          omitidos: number;
+          errores: number;
+        };
       });
   };
 
@@ -91,7 +97,7 @@ describe('incidentes del sistema: contrato y detector de generación ruidosa (AD
 
   it('abre un incidente generacion_ruidosa a quien repite rechazos por tope, con sus ids como evidencia', async () => {
     await rechazos(a, arbol.miembro1.id, 5);
-    expect(await detectar()).toEqual({ revisados: 1, incidentes: 1, errores: 0 });
+    expect(await detectar()).toEqual({ revisados: 1, incidentes: 1, omitidos: 0, errores: 0 });
 
     const [fila] = await incidentes();
     expect(fila).toMatchObject({
@@ -116,6 +122,7 @@ describe('incidentes del sistema: contrato y detector de generación ruidosa (AD
     expect(await detectar(new Date(AHORA.getTime() + 5 * 60_000))).toMatchObject({
       revisados: 1,
       incidentes: 0,
+      omitidos: 1,
     });
     expect(await incidentes()).toHaveLength(1);
     // Al día siguiente, mientras siga repitiendo, se abre otro.
@@ -130,8 +137,72 @@ describe('incidentes del sistema: contrato y detector de generación ruidosa (AD
     await rechazos(a, arbol.miembro1b.id, 9, { desde: hace(30) });
     await rechazos(a, arbol.titular1.id, 9, { tipo: 'qr.reemplazo_sin_uso' });
     await rechazos(a, arbol.titular2.id, 9, { tipo: 'bolsa.aviso' });
-    expect(await detectar()).toEqual({ revisados: 0, incidentes: 0, errores: 0 });
+    expect(await detectar()).toEqual({ revisados: 0, incidentes: 0, omitidos: 0, errores: 0 });
     expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(0);
+  });
+
+  describe('no insiste con quien ya no opera ni con quien ya tiene su incidente del día (MEDIA-4)', () => {
+    const darDeBaja = (usuarioId: string) =>
+      prueba.pool.query('UPDATE usuarios SET deleted_at = NOW(3) WHERE id = ?', [usuarioId]);
+    const suspender = (usuarioId: string, impuestoPor: string) =>
+      prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba', estado_impuesto_por = ? WHERE id = ?",
+        [impuestoPor, usuarioId],
+      );
+
+    it('un usuario dado de baja o suspendido se omite sin error en cada pasada, y los demás siguen', async () => {
+      await rechazos(a, arbol.miembro1.id, 5);
+      await rechazos(a, arbol.miembro1b.id, 5);
+      await rechazos(a, arbol.miembro2.id, 5);
+      await rechazos(a, arbol.guardia.id, 5);
+      await darDeBaja(arbol.miembro1.id);
+      await suspender(arbol.miembro1b.id, arbol.titular1.id);
+      // `detectar` falla el test si hubo un solo error.
+      expect(await detectar()).toEqual({ revisados: 4, incidentes: 2, omitidos: 2, errores: 0 });
+      expect(await detectar()).toEqual({ revisados: 4, incidentes: 0, omitidos: 4, errores: 0 });
+      const abiertos = (await incidentes()).map((fila) => fila.usuario_id).sort();
+      expect(abiertos).toEqual([arbol.miembro2.id, arbol.guardia.id].sort());
+    });
+
+    it('si su cuenta está suspendida no se abre nada, y la otra cuenta sigue su curso', async () => {
+      await rechazos(a, arbol.miembro1.id, 5);
+      await rechazos(b, arbolB.miembro1.id, 5);
+      await prueba.pool.query(
+        "UPDATE cuentas SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+        [a.cuenta.id],
+      );
+      expect(await detectar()).toEqual({ revisados: 2, incidentes: 1, omitidos: 1, errores: 0 });
+      expect((await incidentes()).map((fila) => fila.tenant_id)).toEqual([b.cuenta.id]);
+    });
+
+    it('recorre TODOS los hallazgos con un cursor, aunque sean más que una página', async () => {
+      const usuarios = [
+        arbol.miembro1,
+        arbol.miembro1b,
+        arbol.miembro2,
+        arbol.guardia,
+        arbol.titular1,
+      ];
+      for (const usuario of usuarios) await rechazos(a, usuario.id, 5);
+      await rechazos(b, arbolB.miembro1.id, 5);
+      const errores: unknown[] = [];
+      const resultado = await detectarGeneracionRuidosa(
+        prueba.pool,
+        AHORA,
+        (e) => errores.push(e),
+        2,
+      );
+      expect(errores).toEqual([]);
+      expect(resultado).toEqual({ revisados: 6, incidentes: 6, omitidos: 0, errores: 0 });
+      // Una segunda pasada con páginas chicas ve a los mismos 6 y no repite ninguno.
+      expect(await detectarGeneracionRuidosa(prueba.pool, AHORA, undefined, 2)).toEqual({
+        revisados: 6,
+        incidentes: 0,
+        omitidos: 6,
+        errores: 0,
+      });
+      expect(await incidentes()).toHaveLength(6);
+    });
   });
 
   it('cuenta los tres tipos de rechazo por tope juntos', async () => {

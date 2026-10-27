@@ -4,7 +4,7 @@
 
 ## Propósito
 
-El pedido de anular en bloque los QR vigentes de un usuario, de una rama o de toda la cuenta (ADR 0031 §3, ADR 0033 §3): una fila por pedido, con el alcance, el **motivo** y cuántos QR se anularon. Cada QR anulado deja además su propia fila de bitácora (`qr_accesos.anulado_at` y `anulado_por`); esta tabla es la que lleva el motivo del lote. Se escribe con el repositorio de dominio, así que su creación también entra a la bitácora (invariante 9), en la misma transacción que las anulaciones.
+El pedido de anular en bloque los QR vigentes de un usuario o de una rama (el alcance `cuenta` es la rama completa de quien pide; nunca la de otro Administrador, ADR 0028 §4, D-29) (ADR 0031 §3, ADR 0033 §3): una fila por pedido, con el alcance, el **motivo** y cuántos QR se anularon. Cada QR anulado deja además su propia fila de bitácora (`qr_accesos.anulado_at` y `anulado_por`); esta tabla es la que lleva el motivo del lote. Se escribe con el repositorio de dominio, así que su creación también entra a la bitácora (invariante 9), al terminar el pedido. Las anulaciones van por lotes de 500, cada uno en su transacción, y esta fila lleva el total (no hay aún un vínculo lote → QR: pendiente).
 
 ## Columnas
 

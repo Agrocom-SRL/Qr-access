@@ -5,8 +5,10 @@ import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma, PrincipalUsuario } from '../../platform/seguridad/principal.js';
 import { crearServicioDeAnulacionDeQr } from '../accesos/contracts.js';
 import { esAlivio, puedeCambiarEstado, type Estado } from './domain/estado.js';
+import { nivelDeRol } from './domain/jerarquia.js';
 import {
   RepositorioDeCuentasDePlataforma,
+  RepositorioDeRolesDeUsuario,
   RepositorioDeSesiones,
   RepositorioDeUsuarios,
   SIN_ESTADO,
@@ -159,7 +161,9 @@ export type ResultadoDeRestriccionDelSistema = 'aplicada' | 'sin_cambio';
 /**
  * Restringe a un usuario COMO SISTEMA (ADR 0033 §4.4, ola W11): lo usa la reincidencia cuando la cuenta activó la
  * restricción automática. Solo el nivel LEVE: no cierra sesiones ni anula QR, y nunca suspende (eso lo decide una
- * persona). Va DENTRO de la transacción `tx` de quien la pide, para que la restricción y su aviso se guarden juntos.
+ * persona). Solo a un Miembro o un Guardia: un Administrador o un Titular restringido arrastraría a toda su rama
+ * (un falso positivo dejaría a la cuenta sin funcionar), y un rol sin nivel falla cerrado. El chequeo vive AQUÍ,
+ * no solo en quien llama (defensa en profundidad: ninguna otra acción puede saltárselo). Va DENTRO de la transacción `tx` de quien la pide, para que la restricción y su aviso se guarden juntos.
  *
  * - La bitácora firma con origen `sistema` y sin usuario (nadie «hizo» el cambio).
  * - `estado_impuesto_por` queda en el SUPERIOR directo del usuario: así él y quienes están sobre él pueden levantarla
@@ -177,6 +181,10 @@ export async function restringirComoSistema(
   const usuarios = new RepositorioDeUsuarios(pool);
   const [usuario] = await usuarios.buscarPorIds([usuarioId], tx);
   if (usuario?.estado !== 'activo') return 'sin_cambio';
+  const roles = await new RepositorioDeRolesDeUsuario(pool).rolesDe(usuarioId);
+  const [unico] = roles;
+  const nivel = roles.length === 1 && unico !== undefined ? nivelDeRol(unico.nombre) : null;
+  if (nivel !== 'miembro' && nivel !== 'guardia') return 'sin_cambio';
   const cambiado = await ContextoCuenta.ejecutar(
     {
       cuentaId: ContextoCuenta.cuentaRequerida(),

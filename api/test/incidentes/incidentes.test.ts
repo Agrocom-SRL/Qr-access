@@ -2,7 +2,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { hashDeToken } from '../../src/modules/accesos/domain/token-qr.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
-import { armarArbol, type Arbol } from '../helpers/arbol.js';
+import { armarArbol, armarSegundaRama, type Arbol } from '../helpers/arbol.js';
 import { reiniciarBase } from '../helpers/base.js';
 import {
   contarFilas,
@@ -245,6 +245,116 @@ describe('incidentes de uso: registro, lectura y resolución (ADR 0033 §3 y §4
       expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(1);
     });
 
+    it('un Administrador no registra sobre un usuario de la rama de otro Administrador (404) y no se crea nada', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      for (const usuario of [segunda.administrador2, segunda.titular3, segunda.miembro3]) {
+        const respuesta = await registrar(admin, {
+          usuario_id: usuario.id,
+          tipo: 'otro',
+          gravedad: 'baja',
+        });
+        expect(respuesta.statusCode, respuesta.body).toBe(404);
+        expect(respuesta.json<Problema>().code).toBe('usuario.no_encontrado');
+      }
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(0);
+    });
+
+    it('la evidencia tiene que ser del usuario del incidente o de su rama (422 igual de opaco)', async () => {
+      const deOtroMiembro = await crearQr(prueba.pool, a.cuenta, arbol.miembro2.id, [
+        a.puertaPrincipal.id,
+      ]);
+      const eventoAjeno = await prueba.app
+        .inject({
+          method: 'POST',
+          url: '/api/v1/dispositivos/validaciones',
+          headers: { authorization: a.dispositivoPrincipal.encabezado },
+          payload: { token: deOtroMiembro.texto },
+        })
+        .then((r) => r.json<{ evento_id: string }>().evento_id);
+      const delTitular = await crearQr(prueba.pool, a.cuenta, arbol.titular1.id, [
+        a.puertaPrincipal.id,
+      ]);
+      const delSuMiembro = await crearQr(prueba.pool, a.cuenta, arbol.miembro1.id, [
+        a.puertaPrincipal.id,
+      ]);
+
+      // Del Miembro 1: ni el QR ni el intento del Miembro 2, ni el QR de su superior.
+      const inexistente = await registrar(admin, {
+        usuario_id: arbol.miembro1.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+        evidencia: { qr_ids: ['999999'] },
+      });
+      for (const evidencia of [
+        { qr_ids: [deOtroMiembro.id] },
+        { evento_acceso_ids: [eventoAjeno] },
+        { qr_ids: [delTitular.id] },
+        { qr_ids: [delSuMiembro.id, deOtroMiembro.id] },
+      ]) {
+        const respuesta = await registrar(admin, {
+          usuario_id: arbol.miembro1.id,
+          tipo: 'otro',
+          gravedad: 'baja',
+          evidencia,
+        });
+        expect(respuesta.statusCode, JSON.stringify(evidencia)).toBe(422);
+        // La misma respuesta que para un id que no existe: no revela que el recurso existe.
+        expect(respuesta.json<Problema>()).toEqual(inexistente.json<Problema>());
+      }
+      // El Titular sí puede citar el QR de un Miembro de su rama.
+      const permitida = await registrar(admin, {
+        usuario_id: arbol.titular1.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+        evidencia: { qr_ids: [delSuMiembro.id, delTitular.id] },
+      });
+      expect(permitida.statusCode, permitida.body).toBe(201);
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(1);
+    });
+
+    it('ocurrido_at no puede ser de hace más de un año (422 incidente.fecha_antigua)', async () => {
+      const remoto = await registrar(admin, {
+        usuario_id: arbol.miembro1.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+        ocurrido_at: new Date(Date.now() - 400 * 86_400_000).toISOString(),
+      });
+      expect(remoto.statusCode, remoto.body).toBe(422);
+      expect(remoto.json<Problema>().code).toBe('incidente.fecha_antigua');
+      const reciente = await registrar(admin, {
+        usuario_id: arbol.miembro1.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+        ocurrido_at: new Date(Date.now() - 300 * 86_400_000).toISOString(),
+      });
+      expect(reciente.statusCode, reciente.body).toBe(201);
+    });
+
+    it('hay un tope diario de incidentes a mano por usuario (429 incidente.tope_diario) y no frena a los demás', async () => {
+      for (let i = 0; i < 20; i++) {
+        const ok = await registrar(admin, {
+          usuario_id: arbol.miembro1.id,
+          tipo: 'otro',
+          gravedad: 'baja',
+        });
+        expect(ok.statusCode, `${i}: ${ok.body}`).toBe(201);
+      }
+      const excedido = await registrar(admin, {
+        usuario_id: arbol.miembro1.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+      });
+      expect(excedido.statusCode).toBe(429);
+      expect(excedido.json<Problema>().code).toBe('incidente.tope_diario');
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(20);
+      const otro = await registrar(admin, {
+        usuario_id: arbol.miembro2.id,
+        tipo: 'otro',
+        gravedad: 'baja',
+      });
+      expect(otro.statusCode).toBe(201);
+    });
+
     it('nadie registra sobre sí mismo (403 incidente.propio)', async () => {
       for (const [sesion, usuario] of [
         [admin, a.administrador],
@@ -319,13 +429,35 @@ describe('incidentes de uso: registro, lectura y resolución (ADR 0033 §3 y §4
 
     const ids = (listado: Listado) => listado.datos.map((i) => i.id).sort();
 
-    it('el Administrador ve los de toda la cuenta', async () => {
+    it('el Administrador ve los de su rama, y no los de la rama de otro Administrador de la cuenta', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const admin2 = await iniciarSesion(prueba.app, segunda.administrador2.pin);
+      const deSuRama = await crear(segunda.miembro3, {}, admin2);
+
       const respuesta = await listar(admin);
       expect(respuesta.statusCode).toBe(200);
       expect(ids(respuesta.json<Listado>())).toEqual(
         [delMiembro1, delMiembro2, delTitular1, delGuardia].map((i) => i.id).sort(),
       );
       expect(respuesta.json<Listado>().meta.total).toBe(4);
+      expect(ids((await listar(admin2)).json<Listado>())).toEqual([deSuRama.id]);
+    });
+
+    it('un Administrador pidiendo el incidente de la rama de otro Administrador: 404 al ver, listar por usuario y resolver', async () => {
+      const segunda = await armarSegundaRama(prueba.pool, a, arbol);
+      const admin2 = await iniciarSesion(prueba.app, segunda.administrador2.pin);
+      const ajeno = await crear(segunda.miembro3, {}, admin2);
+      const delAdmin2 = await crear(segunda.titular3, {}, admin2);
+
+      for (const id of [ajeno.id, delAdmin2.id]) {
+        expect((await ver(admin, id)).statusCode).toBe(404);
+        const resolucion = await resolver(admin, id, { resultado: 'confirmado', motivo: 'x' });
+        expect(resolucion.statusCode).toBe(404);
+        expect(resolucion.json<Problema>().code).toBe('incidente.no_encontrado');
+      }
+      const filtrado = await listar(admin, `?usuario_id=${segunda.miembro3.id}`);
+      expect(filtrado.json<Listado>().datos).toEqual([]);
+      expect(await contarFilas(prueba.pool, 'resoluciones_de_incidente')).toBe(0);
     });
 
     it('el Titular ve los de sus Miembros y los suyos, no los de otra rama ni el del Guardia', async () => {

@@ -212,11 +212,10 @@ export interface AlcanceDeUsuarios {
   /** Su nivel; `null` si su rol no tiene uno (falla cerrado: alcanza solo a sí mismo). */
   readonly nivel: NivelDeUsuario | null;
   /**
-   * `true` para el Administrador de la cuenta: «todo» (ADR 0033 §3). Para él `ids` no es el límite; para los
-   * demás niveles sí.
+   * Él mismo y toda su RAMA (los que cuelgan de él, a cualquier profundidad). También para el Administrador: cada
+   * Administrador llega solo a su rama, nunca a la de otro de la misma cuenta (ADR 0028 §4). No hay un «toda la
+   * cuenta»: `ids` es siempre el límite.
    */
-  readonly todaLaCuenta: boolean;
-  /** Él mismo y toda su rama (los que cuelgan de él, a cualquier profundidad). */
   readonly ids: ReadonlySet<string>;
 }
 
@@ -230,7 +229,8 @@ export interface ServicioDeArbol {
   /** El estado PROPIO del usuario (no el efectivo); `null` si no existe en la cuenta. Con `tx`, dentro de ella. */
   estadoPropioDe(usuarioId: string, tx?: Transaccion): Promise<Estado | null>;
   /**
-   * Restringe como sistema (solo el nivel leve) dentro de `tx`; ver `restringirComoSistema`. Nunca suspende.
+   * Restringe como sistema (solo el nivel leve, y solo a un Miembro o un Guardia) dentro de `tx`; ver
+   * `restringirComoSistema`. Nunca suspende.
    */
   restringirComoSistema(
     tx: Transaccion,
@@ -252,7 +252,6 @@ export function crearServicioDeArbol(pool: Pool): ServicioDeArbol {
       const nivel = roles.length === 1 && unico !== undefined ? nivelDeRol(unico.nombre) : null;
       return {
         nivel,
-        todaLaCuenta: nivel === 'administrador',
         // Sin nivel no hay rama que valga: solo él (falla cerrado).
         ids: new Set([usuarioId, ...(nivel === null ? [] : rama)]),
       };
@@ -287,18 +286,22 @@ export interface UsuarioExportable {
 }
 
 export interface ServicioDeUsuariosExportables {
-  /** Cuántos usuarios tiene la cuenta del contexto. */
-  total(): Promise<number>;
-  /** Una página de usuarios de la cuenta del contexto, por id. */
-  pagina(limite: number, desplazamiento: number): Promise<UsuarioExportable[]>;
+  /** Cuántos de esos usuarios existen en la cuenta del contexto (`ids` = el alcance de quien exporta). */
+  total(ids: readonly string[]): Promise<number>;
+  /** Una página de esos usuarios de la cuenta del contexto, por id. */
+  pagina(
+    ids: readonly string[],
+    limite: number,
+    desplazamiento: number,
+  ): Promise<UsuarioExportable[]>;
 }
 
 export function crearServicioDeUsuariosExportables(pool: Pool): ServicioDeUsuariosExportables {
   const usuarios = new RepositorioDeUsuarios(pool);
   return {
-    total: () => usuarios.contarTodos(),
-    async pagina(limite, desplazamiento) {
-      const filas = await usuarios.listarPagina(limite, desplazamiento);
+    total: (ids) => usuarios.contarDe(ids),
+    async pagina(ids, limite, desplazamiento) {
+      const filas = await usuarios.listarPaginaDe(ids, limite, desplazamiento);
       const roles = await new RepositorioDeRolesDeUsuario(pool).rolesDeVarios(
         filas.map((fila) => fila.id),
       );

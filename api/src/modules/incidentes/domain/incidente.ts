@@ -29,6 +29,12 @@ export type ResultadoDeResolucion = (typeof RESULTADOS)[number];
 /** El estado de un incidente: sin resolver todavía o el resultado de su última resolución. */
 export type EstadoDeIncidente = 'sin_resolver' | ResultadoDeResolucion;
 
+/** Un incidente registrado a mano no puede ser de hace más de esto (BAJA-2 de la auditoría de W11). */
+export const MAX_ANTIGUEDAD_DE_INCIDENTE_DIAS = 365;
+
+/** Cuántos incidentes a mano se registran sobre un mismo usuario en 24 horas: frena el hostigamiento y el spam. */
+export const MAX_INCIDENTES_REGISTRADOS_POR_USUARIO_Y_DIA = 20;
+
 /** Cuántos ids de cada clase puede llevar la evidencia: acota el JSON que se guarda. */
 export const MAX_IDS_DE_EVIDENCIA = 50;
 
@@ -97,14 +103,25 @@ export function proponerAccion(entrada: EntradaDeReincidencia): AccionPropuesta 
   return entrada.estadoPropio === 'restringido' ? 'suspender' : 'restringir';
 }
 
-/** ¿La cuenta puede dejar que el sistema aplique esta acción sin una persona? Solo el nivel leve, y si lo habilitó. */
+/** ¿La cuenta puede dejar que el sistema aplique esta acción sin una persona? Solo el nivel leve, si lo habilitó. */
 export function puedeAplicarseSola(
   accion: AccionPropuesta,
   restriccionAutomatica: boolean,
   nivelDelUsuario: string | null,
+  confirmadosDeUnaSolaPersona: boolean,
 ): boolean {
-  // Un Administrador restringido arrastraría a toda su rama: un falso positivo dejaría a la cuenta sin funcionar.
-  return restriccionAutomatica && accion === 'restringir' && nivelDelUsuario !== 'administrador';
+  // Solo a un Miembro o un Guardia: un Administrador o un Titular restringido arrastraría a toda su rama y un falso
+  // positivo dejaría a la cuenta sin funcionar. Un nivel desconocido falla cerrado. (`restringirComoSistema` vuelve a
+  // comprobarlo: defensa en profundidad.)
+  // Tampoco si todos los confirmados los registró una MISMA persona: con el permiso de registrar y resolver, una sola
+  // persona podría restringir a alguien sola, sin contraste (la propuesta a una persona sí sigue su curso). Los del
+  // sistema no son de ninguna persona y no cuentan como «una sola».
+  return (
+    restriccionAutomatica &&
+    accion === 'restringir' &&
+    (nivelDelUsuario === 'miembro' || nivelDelUsuario === 'guardia') &&
+    !confirmadosDeUnaSolaPersona
+  );
 }
 
 /** Clave de agrupación del aviso de una propuesta: una abierta por usuario y paso. */
@@ -114,6 +131,15 @@ export function agrupacionDePropuesta(usuarioId: string, accion: AccionPropuesta
 
 /** Motivo que lleva el estado que el sistema impone (un código estable, que la app traduce; no es texto de nadie). */
 export const MOTIVO_DE_RESTRICCION_AUTOMATICA = 'incidente.reincidencia';
+
+/**
+ * El motivo con el incidente que la provocó (`incidente.reincidencia:<id>`): así la bitácora del usuario (cuyo
+ * `estado_motivo` es lo único que cambia) dice CUÁL incidente disparó la restricción. El prefijo es el código estable
+ * que la app traduce.
+ */
+export function motivoDeRestriccionAutomatica(incidenteId: string): string {
+  return `${MOTIVO_DE_RESTRICCION_AUTOMATICA}:${incidenteId}`;
+}
 
 /** Clave de idempotencia de un incidente `generacion_ruidosa` del sistema: uno por usuario y día (UTC). */
 export function claveDeGeneracionRuidosa(usuarioId: string, ahora: Date): string {

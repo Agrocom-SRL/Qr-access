@@ -33,6 +33,6 @@ Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `evento
 
 ## Reglas
 
-- Persona: `POST /api/v1/incidentes` (`seguridad.incidente.resolver`), solo sobre alguien de su rama y nunca sobre sí misma; la evidencia (ids de QR y de intentos) se valida contra la cuenta. Sistema: el contrato `crearServicioDeIncidentes(pool).registrarDelSistema(...)` (módulo `incidentes`), idempotente por `clave_unica`; comprueba que el usuario sea de la cuenta del contexto. El primer detector que lo usa es `generacion_ruidosa` (tarea cada 5 min sobre `eventos_de_limite`); el resto de las señales es la ola W12.
-- Lo lee `seguridad.incidente.ver`: el Administrador ve los de la cuenta, el Titular los de su rama y los suyos, el Miembro y el Guardia los propios.
+- Persona: `POST /api/v1/incidentes` (`seguridad.incidente.resolver`), solo sobre alguien de su rama y nunca sobre sí misma; la evidencia (ids de QR y de intentos) tiene que ser del usuario o de su rama; `ocurrido_at` no puede ser futuro ni de hace más de un año; hasta 20 incidentes a mano por usuario en 24 horas. Sistema: el contrato `crearServicioDeIncidentes(pool).registrarDelSistema(...)` (módulo `incidentes`), idempotente por `clave_unica`; comprueba que el usuario sea de la cuenta del contexto. El primer detector que lo usa es `generacion_ruidosa` (tarea cada 5 min sobre `eventos_de_limite`); el resto de las señales es la ola W12.
+- Lo lee `seguridad.incidente.ver`: el Administrador y el Titular ven los de su rama y los suyos (el Administrador no ve la de otro Administrador, D-29), el Miembro y el Guardia los propios.
 - Retención: pendiente (como `eventos_acceso`, D-06).

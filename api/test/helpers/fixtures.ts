@@ -227,11 +227,12 @@ export async function crearPuerta(
   sitioId: string,
   nombre: string,
   segundosApertura = 5,
+  creadaPor: string | null = null,
 ): Promise<PuertaDePrueba> {
   const id = await insertar(
     pool,
-    'INSERT INTO puertas (tenant_id, sitio_id, nombre, segundos_apertura) VALUES (?, ?, ?, ?)',
-    [cuenta.id, sitioId, nombre, segundosApertura],
+    'INSERT INTO puertas (tenant_id, sitio_id, nombre, segundos_apertura, created_by) VALUES (?, ?, ?, ?, ?)',
+    [cuenta.id, sitioId, nombre, segundosApertura, creadaPor],
   );
   return { id, nombre, sitioId };
 }
@@ -327,8 +328,22 @@ export async function crearEscenario(pool: Pool, codigo: string): Promise<Escena
   });
   await crearSuscripcion(pool, cuenta);
   const sitioId = await crearSitio(pool, cuenta, `Sitio ${codigo}`);
-  const puertaPrincipal = await crearPuerta(pool, cuenta, sitioId, `Principal ${codigo}`, 6);
-  const puertaTrasera = await crearPuerta(pool, cuenta, sitioId, `Trasera ${codigo}`);
+  const puertaPrincipal = await crearPuerta(
+    pool,
+    cuenta,
+    sitioId,
+    `Principal ${codigo}`,
+    6,
+    administrador.id,
+  );
+  const puertaTrasera = await crearPuerta(
+    pool,
+    cuenta,
+    sitioId,
+    `Trasera ${codigo}`,
+    5,
+    administrador.id,
+  );
   return {
     cuenta,
     rolAdministradorId,
