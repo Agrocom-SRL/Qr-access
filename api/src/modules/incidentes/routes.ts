@@ -4,6 +4,7 @@ import { permiso, permisoDePlataforma, plataformaDe, usuarioDe } from '../../plu
 import { ejecutar as listarIncidentes } from './actions/listar-incidentes.js';
 import { ejecutar as listarIncidentesDeCuenta } from './actions/listar-incidentes-de-cuenta.js';
 import { ejecutar as registrarIncidente } from './actions/registrar-incidente.js';
+import { ejecutar as resolverIncidenteDeCuenta } from './actions/resolver-incidente-de-cuenta.js';
 import { ejecutar as resolverIncidente } from './actions/resolver-incidente.js';
 import { ejecutar as verIncidente } from './actions/ver-incidente.js';
 import { ejecutar as verPolitica } from './actions/ver-politica.js';
@@ -14,6 +15,7 @@ import {
   esquemaIncidenteDetallado,
   parametrosDeCuentaDeIncidentes,
   parametrosDeIncidente,
+  parametrosDeIncidenteDeCuenta,
   respuestaDePolitica,
   respuestaDeResolucionDeIncidente,
   respuestaListadoDeIncidentes,
@@ -195,6 +197,48 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
           },
           { pagina, por_pagina },
         );
+      },
+    );
+
+    app.post(
+      '/plataforma/cuentas/:cuenta_id/incidentes/:id/resolucion',
+      {
+        schema: {
+          tags: ['plataforma'],
+          description:
+            'AGROCOM descarta, confirma o deja pendiente un incidente de uso de una cuenta. Mismas reglas que ' +
+            '`/incidentes/{id}/resolucion` (confirmar exige `motivo`; al confirmar se evalúa la reincidencia y se ' +
+            'propone, sin aplicar nada salvo la restricción automática de la cuenta), pero sobre cualquier usuario de la ' +
+            'cuenta. 404 `cuenta.no_encontrada` si la cuenta no existe; 404 `incidente.no_encontrado` si el incidente ' +
+            'no es de esa cuenta.',
+          params: parametrosDeIncidenteDeCuenta,
+          body: cuerpoDeResolucion,
+          response: { 200: respuestaDeResolucionDeIncidente },
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('seguridad.incidente.resolver_cuenta'),
+      },
+      async (request) => {
+        const { incidente, reincidencia } = await resolverIncidenteDeCuenta(
+          pool,
+          plataformaDe(request),
+          request.params.cuenta_id,
+          request.params.id,
+          { resultado: request.body.resultado, motivo: request.body.motivo ?? null },
+        );
+        return {
+          incidente,
+          reincidencia:
+            reincidencia === null
+              ? null
+              : {
+                  confirmados: reincidencia.confirmados,
+                  minimo: reincidencia.minimo,
+                  ventana_dias: reincidencia.ventanaDias,
+                  propuesta: reincidencia.propuesta,
+                  aplicada_automaticamente: reincidencia.aplicadaAutomaticamente,
+                },
+        };
       },
     );
 

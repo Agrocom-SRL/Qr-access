@@ -229,6 +229,32 @@ export const respuestaDeAnulacionMasiva = z.object({
 
 export const parametrosDeExportacion = z.object({ recurso: z.enum(RECURSOS_EXPORTABLES) });
 
+/** La cuenta del path de las rutas de plataforma (AGROCOM opera sobre ella). */
+export const parametrosDeCuentaDePlataforma = z.object({ cuenta_id: esquemaId });
+
+export const parametrosDeExportacionDeCuenta = parametrosDeExportacion.extend({
+  cuenta_id: esquemaId,
+});
+
+/**
+ * Anulación masiva de AGROCOM sobre una cuenta. Sin árbol que lo deduzca, `usuario` y `rama` exigen `usuario_id`
+ * (el usuario o la raíz de la rama); `cuenta` es toda la cuenta y no lleva `usuario_id`.
+ */
+export const cuerpoDeAnulacionMasivaDePlataforma = z
+  .strictObject({
+    alcance: z.enum(['usuario', 'rama', 'cuenta']),
+    usuario_id: esquemaId.nullish(),
+    motivo: z.string().trim().min(1).max(MAX_MOTIVO_DE_ANULACION),
+  })
+  .refine((cuerpo) => cuerpo.alcance !== 'cuenta' || cuerpo.usuario_id == null, {
+    path: ['usuario_id'],
+    message: 'usuario_id no va con el alcance cuenta',
+  })
+  .refine((cuerpo) => cuerpo.alcance === 'cuenta' || cuerpo.usuario_id != null, {
+    path: ['usuario_id'],
+    message: 'usuario_id es obligatorio con el alcance usuario o rama',
+  });
+
 /**
  * Página de una exportación. Los filtros solo valen para `lecturas`; con otro recurso se ignoran.
  */

@@ -5,6 +5,7 @@ import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { CausaDeEjecucion, Ejecucion, OrigenDeConfirmacion } from './domain/confirmacion.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
 import type { OperacionIdempotente } from './domain/idempotencia.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export interface QrFila extends RowDataPacket {
   id: string;
@@ -212,19 +213,27 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
    */
   async anularLoteDeVigentes(
     tx: Transaccion,
-    generadores: readonly string[],
+    generadores: IdsOTodaLaCuenta,
     anuladoPor: string,
     ahora: Date,
     despuesDe: string,
     tamano: number,
   ): Promise<{ anulados: number; leidos: number; ultimoId: string | null }> {
-    if (generadores.length === 0) return { anulados: 0, leidos: 0, ultimoId: null };
+    if (generadores !== TODA_LA_CUENTA && generadores.length === 0) {
+      return { anulados: 0, leidos: 0, ultimoId: null };
+    }
+    const vigentes = 't.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ?';
     const lote = await this.seleccionar<QrFila>(
       {
         columnas: COLUMNAS_DE_QR,
+        // `TODA_LA_CUENTA` no filtra por generador: alcanza también los QR de un usuario ya dado de baja
+        // (la lista de generadores solo trae a los no borrados). El repositorio sigue filtrando por la cuenta.
         donde:
-          't.anulado_at IS NULL AND t.usado_at IS NULL AND t.vence_at > ? AND t.generado_por IN (?) AND t.id > ?',
-        params: [ahora, generadores, despuesDe],
+          generadores === TODA_LA_CUENTA
+            ? `${vigentes} AND t.id > ?`
+            : `${vigentes} AND t.generado_por IN (?) AND t.id > ?`,
+        params:
+          generadores === TODA_LA_CUENTA ? [ahora, despuesDe] : [ahora, generadores, despuesDe],
         orden: 't.id',
         limite: tamano,
         bloquear: true,

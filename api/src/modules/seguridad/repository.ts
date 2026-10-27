@@ -5,6 +5,7 @@ import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataf
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { Estado } from './domain/estado.js';
 import type { MotivoDeCierre, Plataforma } from './domain/sesion.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export interface CuentaFila extends RowDataPacket {
   id: string;
@@ -350,15 +351,14 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
    * (ADR 0033 §3). Sin ids no hay nada.
    */
   listarPaginaDe(
-    ids: readonly string[],
+    ids: IdsOTodaLaCuenta,
     limite: number,
     desplazamiento: number,
   ): Promise<UsuarioFila[]> {
-    if (ids.length === 0) return Promise.resolve([]);
+    if (ids !== TODA_LA_CUENTA && ids.length === 0) return Promise.resolve([]);
     return this.seleccionar<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.id IN (?)',
-      params: [ids],
+      ...(ids === TODA_LA_CUENTA ? {} : { donde: 't.id IN (?)', params: [ids] }),
       orden: 't.id',
       limite,
       desplazamiento,
@@ -366,7 +366,8 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   }
 
   /** Cuántos de esos usuarios existen en la cuenta (los no borrados). */
-  async contarDe(ids: readonly string[]): Promise<number> {
+  async contarDe(ids: IdsOTodaLaCuenta): Promise<number> {
+    if (ids === TODA_LA_CUENTA) return this.contar({});
     if (ids.length === 0) return 0;
     return this.contar({ donde: 't.id IN (?)', params: [ids] });
   }
@@ -384,6 +385,15 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
       params: [superiorId],
       orden: 't.etiqueta, t.id',
     });
+  }
+
+  /** Los ids de todos los usuarios de la cuenta (sin filtro de rama): solo para lo que hace AGROCOM sobre la cuenta entera. */
+  async idsDeTodos(): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
+      columnas: 't.id',
+      orden: 't.id',
+    });
+    return filas.map((fila) => fila.id);
   }
 
   /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */

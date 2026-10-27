@@ -4,7 +4,8 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
-import { crearEscenario, crearQr, type Escenario } from '../helpers/fixtures.js';
+import { crearEscenario, crearQr, crearSuperAdmin, type Escenario } from '../helpers/fixtures.js';
+import { iniciarSesionDePlataforma } from '../helpers/http.js';
 
 /**
  * Tests con un servidor REAL (`app.listen` + `fetch`/`http`), no `app.inject()`.
@@ -334,6 +335,60 @@ describe('API con servidor HTTP real', () => {
         'SELECT COUNT(*) AS total FROM confirmaciones_apertura',
       );
       expect(Number(filas[0]?.total)).toBe(1);
+    });
+  });
+  describe('rutas de plataforma con cuerpo (W11)', () => {
+    // Las rutas con cuerpo JSON ya fallaron con un cliente real y no con `inject()` (ver arriba): se prueban igual.
+    it('AGROCOM anula en masa los QR de una cuenta y resuelve un incidente, por un socket real', async () => {
+      const p = await abrir();
+      const sa = await crearSuperAdmin(p.pool, 'lucia.paz');
+      const { acceso } = await iniciarSesionDePlataforma(p.app, 'lucia.paz', sa.contrasena);
+      const cabeceras = { authorization: `Bearer ${acceso}`, 'content-type': 'application/json' };
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+
+      const anulacion = await fetch(
+        `${url}/plataforma/cuentas/${a.cuenta.id}/qr-accesos/anulacion-masiva`,
+        {
+          method: 'POST',
+          headers: cabeceras,
+          body: JSON.stringify({ alcance: 'cuenta', motivo: 'incidente' }),
+        },
+      );
+      expect(anulacion.status).toBe(200);
+      expect(((await anulacion.json()) as { qr_anulados: number }).qr_anulados).toBe(1);
+      const [filas] = await p.pool.query<RowDataPacket[]>(
+        'SELECT anulado_por FROM qr_accesos WHERE id = ?',
+        [qr.id],
+      );
+      expect(filas[0]?.anulado_por).toBe(sa.id);
+
+      const [incidente] = await p.pool.query<RowDataPacket[] & { insertId: number }>(
+        "INSERT INTO incidentes_uso (tenant_id, usuario_id, tipo, gravedad, origen, registrado_por, evidencia, ocurrido_at) VALUES (?, ?, 'uso_masivo', 'media', 'sistema', NULL, '{}', ?)",
+        [a.cuenta.id, a.usuario.id, new Date()],
+      );
+      const incidenteId = String((incidente as unknown as { insertId: number }).insertId);
+      const resolucion = await fetch(
+        `${url}/plataforma/cuentas/${a.cuenta.id}/incidentes/${incidenteId}/resolucion`,
+        {
+          method: 'POST',
+          headers: cabeceras,
+          body: JSON.stringify({ resultado: 'confirmado', motivo: 'revisado' }),
+        },
+      );
+      expect(resolucion.status).toBe(200);
+      expect(
+        ((await resolucion.json()) as { incidente: { estado: string } }).incidente.estado,
+      ).toBe('confirmado');
+
+      const exportacion = await fetch(
+        `${url}/plataforma/cuentas/${a.cuenta.id}/exportaciones/usuarios`,
+        {
+          headers: cabeceras,
+        },
+      );
+      expect(exportacion.status).toBe(200);
+      expect(exportacion.headers.get('content-type')).toContain('text/csv');
+      expect(exportacion.headers.get('cache-control')).toBe('no-store');
     });
   });
 });
