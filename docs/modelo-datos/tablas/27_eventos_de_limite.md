@@ -37,4 +37,4 @@ Sin autoría ni soft delete: no se edita ni se borra.
 ## Reglas
 
 - Un rechazo se escribe en su propia transacción, después de deshacer la generación rechazada: el rastro sobrevive al rollback.
-- Lo que aún no existe: la notificación al propietario y a AGROCOM (ola W9); estas filas son su fuente.
+- La bandeja de notificaciones de la ola W9 (`30_notificaciones.md`) hoy solo avisa de estados de placa; avisar de estos eventos de límite (ADR 0030 §5) queda para una ola posterior. Estas filas son su fuente.

@@ -802,3 +802,97 @@ ALTER TABLE qr_accesos ADD KEY idx_qr_accesos_creado (tenant_id, created_at);
 ## permisos: configuración de los topes
 
 Seed `db/seeds/01_catalogo.sql`: `limites.configuracion.ver` y `limites.configuracion.editar`, ámbito `plataforma` (el rol Super admin recibe todos los de plataforma). El mismo seed siembra los valores iniciales de `configuracion_limites` sin pisar los editados.
+
+## Estados de placa y bandeja de notificaciones (ola W9, ADR 0030 §6 y ADR 0031 §18)
+
+Migraciones `20261030100001`, `20261030100002` y `20261030100003`. Seed: permisos `notificaciones.aviso.ver` y `notificaciones.aviso.gestionar` (cuenta; los recibe el Administrador), `notificaciones.aviso_plataforma.ver` y `notificaciones.aviso_plataforma.gestionar` (plataforma; los recibe el Super admin) y las claves `placa.*` de `configuracion_limites`.
+
+```sql
+-- 20261030100001_create_notificaciones.sql
+CREATE TABLE notificaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  cuenta_id BIGINT UNSIGNED NOT NULL,
+  destinatario_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(40) NOT NULL,
+  severidad VARCHAR(10) NOT NULL,
+  sitio_id BIGINT UNSIGNED NULL,
+  agrupacion_clave VARCHAR(100) NOT NULL,
+  clave_unica VARCHAR(120) NULL,
+  abierta TINYINT(1) NOT NULL DEFAULT 0,
+  cantidad INT UNSIGNED NOT NULL DEFAULT 1,
+  miembros JSON NOT NULL,
+  datos JSON NOT NULL,
+  novedad_at DATETIME(3) NOT NULL,
+  resuelta_at DATETIME(3) NULL,
+  leida_at DATETIME(3) NULL,
+  descartada_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  incidente_abierto TINYINT GENERATED ALWAYS AS (IF(abierta = 1 AND deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_notificaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_notificaciones_cuenta FOREIGN KEY (cuenta_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_notificaciones_destinatario FOREIGN KEY (destinatario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_notificaciones_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
+  CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada'
+  )),
+  CONSTRAINT ck_notificaciones_severidad CHECK (severidad IN ('info', 'aviso', 'critica')),
+  CONSTRAINT ck_notificaciones_abierta CHECK (abierta IN (0, 1)),
+  CONSTRAINT ck_notificaciones_ambito CHECK (tenant_id IS NULL OR tenant_id = cuenta_id),
+  UNIQUE KEY uq_notificaciones_incidente (destinatario_id, agrupacion_clave, incidente_abierto),
+  UNIQUE KEY uq_notificaciones_clave (destinatario_id, clave_unica),
+  KEY idx_notificaciones_bandeja (destinatario_id, descartada_at, leida_at, novedad_at),
+  KEY idx_notificaciones_cuenta (cuenta_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261030100002_create_cola_de_notificaciones.sql
+CREATE TABLE cola_de_notificaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  audiencia VARCHAR(12) NOT NULL,
+  canal VARCHAR(10) NOT NULL DEFAULT 'app',
+  agrupacion_clave VARCHAR(100) NOT NULL,
+  carga JSON NOT NULL,
+  estado VARCHAR(12) NOT NULL DEFAULT 'pendiente',
+  intentos SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  proximo_intento_at DATETIME(3) NOT NULL,
+  ultimo_error VARCHAR(60) NULL,
+  entregada_at DATETIME(3) NULL,
+  clave_unica VARCHAR(160) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_cola_de_notificaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT ck_cola_de_notificaciones_audiencia CHECK (audiencia IN ('cuenta', 'plataforma')),
+  CONSTRAINT ck_cola_de_notificaciones_canal CHECK (canal IN ('app', 'push', 'correo')),
+  CONSTRAINT ck_cola_de_notificaciones_estado CHECK (estado IN ('pendiente', 'entregada', 'fallida', 'omitida')),
+  UNIQUE KEY uq_cola_de_notificaciones_clave (tenant_id, clave_unica),
+  KEY idx_cola_de_notificaciones_pendientes (estado, proximo_intento_at, id),
+  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261030100003_add_estado_de_placa_a_dispositivos.sql
+ALTER TABLE dispositivos
+  ADD COLUMN estado_conexion VARCHAR(20) NULL AFTER ultima_puerta_abierta,
+  ADD COLUMN en_linea_desde DATETIME(3) NULL AFTER estado_conexion,
+  ADD COLUMN lector_responde TINYINT(1) NULL AFTER en_linea_desde,
+  ADD COLUMN lector_cambio_at DATETIME(3) NULL AFTER lector_responde,
+  ADD COLUMN estado_lector VARCHAR(20) NULL AFTER lector_cambio_at,
+  ADD COLUMN en_observacion TINYINT(1) NOT NULL DEFAULT 0 AFTER estado_lector,
+  ADD CONSTRAINT ck_dispositivos_estado_conexion CHECK (
+    estado_conexion IS NULL OR estado_conexion IN ('en_linea', 'sin_conexion', 'caida_sostenida', 'desaparecida')
+  ),
+  ADD CONSTRAINT ck_dispositivos_estado_lector CHECK (
+    estado_lector IS NULL OR estado_lector IN ('responde', 'sin_respuesta')
+  );
+```

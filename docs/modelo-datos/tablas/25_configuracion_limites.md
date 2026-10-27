@@ -29,6 +29,13 @@ Los siembran la migración y `db/seeds/01_catalogo.sql` (idempotente: no pisa un
 | `qr.max_puertas_por_qr` | 10 | ADR 0031 §9 («por ejemplo, 10») | cuenta o usuario; también lo puede fijar el plan |
 | `qr.bolsa_mensual` | 5000 | **Supuesto** (el ADR solo dice «número fijo por plan al inicio») | solo cuenta; también lo puede fijar el plan |
 | `qr.bolsa_aviso_porcentaje` | 80 | ADR 0030 §5 | ninguna |
+| `placa.caida_minutos` | 15 | ADR 0031 §18 | ninguna (global) |
+| `placa.desaparecida_minutos` | 120 | ADR 0031 §18 | ninguna (global) |
+| `placa.recuperacion_minutos` | 3 | **Supuesto W9** (histéresis: racha de latidos para dar la placa por recuperada) | ninguna (global) |
+| `placa.lector_minutos` | 5 | **Supuesto W9** (lector sin respuesta; «unos minutos», no 24 h) | ninguna (global) |
+| `placa.observacion_horas` | 24 | **Supuesto W9** (en observación: sin lecturas en la puerta) | ninguna (global) |
+
+Las claves `placa.*` son umbrales del detector de estados de placa (ola W9); no son topes de generación de QR y la generación no las lee. Se editan por la misma ruta. Si faltan, el detector usa los valores de partida (no falla cerrado: un aviso de más o de menos no abre ninguna puerta).
 
 ## Reglas
 
