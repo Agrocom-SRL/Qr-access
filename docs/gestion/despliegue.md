@@ -162,7 +162,7 @@ Verificado en MariaDB 10.11.14 con una base nueva (todas las migraciones, seed d
 - el esquema tras `down` es idéntico al anterior al `up`;
 - los `CHECK` conservan su nombre: añadirlos con otro nombre fuerza `ALGORITHM=COPY` (4 s con 200 000 filas y bloquea escrituras).
 
-**Ventana de despliegue.** El código y la tabla cambian de nombre a la vez, y no hay un instante común: el código anterior falla en `eventos_acceso` apenas corre la migración (el escritor de prueba vio exactamente un error `ER_NO_SUCH_TABLE`), y el nuevo falla en `lecturas` si se despliega antes. Orden: detener la API (o sacarla del balanceador), `dbmate up`, arrancar la versión nueva. Mientras tanto la validación no responde y, por la falla segura, ninguna puerta abre con QR (los pulsadores y la llave siguen funcionando). Si una migración posterior falla y hay que volver atrás: `dbmate rollback` y la versión anterior de la API.
+**Ventana de despliegue.** El código y la tabla cambian de nombre a la vez, y no hay un instante común: el código anterior falla en `eventos_acceso` apenas corre la migración (el escritor de prueba vio exactamente un error `ER_NO_SUCH_TABLE`), y el nuevo falla en `lecturas` si se despliega antes. Orden: detener la API (o sacarla del balanceador), `dbmate up`, arrancar la versión nueva. `bin/desplegar` lo hace solo: construye las imágenes, detiene `api`, migra, siembra y vuelve a levantar todo (la ventana dura lo que tarden la migración, el seed y el arranque de la API). Mientras tanto la validación no responde y, por la falla segura, ninguna puerta abre con QR (los pulsadores y la llave siguen funcionando). Si una migración posterior falla y hay que volver atrás: `dbmate rollback` y la versión anterior de la API.
 
 ## Respaldo
 

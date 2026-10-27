@@ -26,6 +26,12 @@ mysql_en_db() { compose --profile herramientas run --rm -T cliente; }
 echo "==> Construyendo imágenes (api, app, panel)"
 compose build api app panel
 
+# Se detiene la API antes de migrar: algunas migraciones cambian el nombre de una tabla (p. ej. el renombre
+# a `lecturas`, ADR 0032 §5) y el código anterior fallaría contra el esquema nuevo. Mientras la API está
+# detenida ninguna puerta abre con QR (falla segura, invariante 2); el pulsador y la llave siguen sirviendo.
+echo "==> Deteniendo la API antes de migrar"
+compose stop api
+
 echo "==> Base de datos (MariaDB compartida en $DB_HOST:$DB_PORT)"
 compose --profile herramientas run --rm dbmate up
 
