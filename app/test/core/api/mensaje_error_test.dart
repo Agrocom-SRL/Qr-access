@@ -27,6 +27,8 @@ void main() {
       'idempotencia.conflicto': (l) => l.comunErrorIdempotenciaConflicto,
       'idempotencia.en_curso': (l) => l.comunErrorIdempotenciaEnCurso,
       'idempotencia.qr_no_vigente': (l) => l.comunErrorIdempotenciaQrNoVigente,
+      'sesion.no_encontrada': (l) => l.comunErrorSesionNoEncontrada,
+      'notificacion.no_encontrada': (l) => l.comunErrorNotificacionNoEncontrada,
     };
 
     for (final entrada in casos.entries) {

@@ -37,6 +37,8 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'puerta.con_dispositivo' => l10n.comunErrorPuertaConDispositivo,
     'sitio.no_encontrado' => l10n.comunErrorSitioNoEncontrado,
     'sesion.sin_rol' => l10n.comunErrorSesionSinRol,
+    'sesion.no_encontrada' => l10n.comunErrorSesionNoEncontrada,
+    'notificacion.no_encontrada' => l10n.comunErrorNotificacionNoEncontrada,
     'unidad.requerida' => l10n.comunErrorUnidadRequerida,
     'unidad.no_corresponde' => l10n.comunErrorUnidadNoCorresponde,
     'unidad.nombre_existente' => l10n.comunErrorUnidadNombreExistente,
