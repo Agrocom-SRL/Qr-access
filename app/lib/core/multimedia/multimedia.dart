@@ -24,6 +24,7 @@ abstract final class Multimedia {
   static const error = 'assets/ilustraciones/error.svg';
   static const sinConexion = 'assets/ilustraciones/sin_conexion.svg';
   static const bloqueo = 'assets/ilustraciones/bloqueo.svg';
+  static const anulacion = 'assets/ilustraciones/anular_qr.svg';
 
   static const List<String> ilustraciones = [
     vacioQr,
@@ -32,6 +33,7 @@ abstract final class Multimedia {
     error,
     sinConexion,
     bloqueo,
+    anulacion,
   ];
 
   /// Deja las ilustraciones ya parseadas en la caché de `flutter_svg` para
