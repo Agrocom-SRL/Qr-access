@@ -11,6 +11,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/seccion_seguridad.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -75,6 +76,7 @@ class PerfilPagina extends ConsumerWidget {
 
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
+      titulo: l10n.perfilTitulo,
       anchoMaximo: tokens.tamano.maxFormulario,
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
@@ -125,6 +127,8 @@ class PerfilPagina extends ConsumerWidget {
             ),
             SizedBox(height: tokens.espacio.xl),
             _TarjetaCuenta(sesion: sesion),
+            SizedBox(height: tokens.espacio.l),
+            const SeccionSeguridad(),
             SizedBox(height: tokens.espacio.l),
             AccesoTarjeta(
               relleno: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
