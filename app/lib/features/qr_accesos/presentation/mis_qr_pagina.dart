@@ -1,6 +1,5 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
-import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -14,11 +13,11 @@ import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/estado_qr_vista.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/mis_qr_controlador.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/tarjeta_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vacio_mis_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/vencimiento_texto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -127,7 +126,6 @@ class _ListaQr extends ConsumerWidget {
     final listado = ref.watch(listadoQrProvider(filtro));
     final anulando = ref.watch(anularQrControladorProvider);
     final ahora = ref.read(relojProvider)();
-    final puedeGenerar = sesion.tiene(Permisos.generarQr);
     final puedeAnular = sesion.tiene(Permisos.anularQr);
 
     return ListadoPaginado<QrAcceso>(
@@ -137,16 +135,7 @@ class _ListaQr extends ConsumerWidget {
         ..invalidate(listadoQrProvider)
         ..invalidate(resumenQrProvider),
       alCambiarPagina: ref.read(filtroQrProvider.notifier).irAPagina,
-      vacio: EstadoVacio(
-        ilustracion: Multimedia.vacioQr,
-        titulo: estado == EstadoQr.vigente
-            ? l10n.qrMisQrSinVigentes
-            : l10n.qrMisQrSinResultados,
-        ayuda: l10n.qrMisQrSinResultadosAyuda,
-        textoAccion: puedeGenerar ? l10n.qrGenerarBoton : null,
-        iconoAccion: Icons.add,
-        alAccionar: puedeGenerar ? () => context.go(Rutas.qrNuevo) : null,
-      ),
+      vacio: VacioMisQr(estado: estado),
       tarjeta: (context, qr) => _TarjetaQrConVer(
         qr: qr,
         ahora: ahora,
