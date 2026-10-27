@@ -509,6 +509,21 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
+  /**
+   * `puertaId -> instante de la última lectura del lector` (aceptada o rechazada) de esas puertas, en la cuenta
+   * del contexto. Una puerta sin lecturas no figura. Es lo que distingue una placa en línea pero sin tráfico.
+   */
+  async ultimaLecturaPorPuertas(puertaIds: readonly string[]): Promise<Map<string, Date>> {
+    if (puertaIds.length === 0) return new Map();
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.puerta_id, MAX(t.ocurrido_at) AS ultima',
+      donde: "t.puerta_id IN (?) AND t.metodo = 'qr'",
+      params: [puertaIds],
+      agrupar: 't.puerta_id',
+    });
+    return new Map(filas.map((fila) => [String(fila.puerta_id), fila.ultima as Date]));
+  }
+
   /** El intento más reciente sobre un QR (aceptado o rechazado), o `null` si nadie lo leyó. */
   ultimoDeQr(qrId: string): Promise<IntentoFila | null> {
     return this.seleccionarUna<IntentoFila>({

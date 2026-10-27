@@ -50,6 +50,10 @@ export interface PlacaListada extends RowDataPacket {
   dispositivo_nombre: string | null;
   ultimo_latido_at: Date | null;
   firmware_del_dispositivo: string | null;
+  en_linea_desde: Date | null;
+  estado_conexion: 'en_linea' | 'sin_conexion' | 'caida_sostenida' | 'desaparecida' | null;
+  lector_responde: number | null;
+  en_observacion: number | null;
   puerta_id: string | null;
   puerta_nombre: string | null;
   cuenta_id: string | null;
@@ -215,6 +219,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
           't.id, t.mac, t.firmware_version, t.ultimo_anuncio_at, t.por_confirmar_hasta, t.ultima_ip, ' +
           'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.ultimo_latido_at, ' +
           'd.firmware_version AS firmware_del_dispositivo, ' +
+          'd.en_linea_desde, d.estado_conexion, d.lector_responde, d.en_observacion, ' +
           'p.id AS puerta_id, p.nombre AS puerta_nombre, ' +
           'c.id AS cuenta_id, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre',
         orden: 't.id DESC',

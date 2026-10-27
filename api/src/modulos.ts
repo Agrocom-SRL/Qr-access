@@ -4,6 +4,7 @@ import { rutas as rutasDeBitacora } from './modules/bitacora/routes.js';
 import { crearAutenticadorDeDispositivo } from './modules/dispositivos/contracts.js';
 import { rutas as rutasDeDispositivos } from './modules/dispositivos/routes.js';
 import { rutas as rutasDeLimites } from './modules/limites/routes.js';
+import { rutas as rutasDeNotificaciones } from './modules/notificaciones/routes.js';
 import { rutas as rutasDeOrganizacion } from './modules/organizacion/routes.js';
 import {
   crearAutenticadorDePlataforma,
@@ -30,6 +31,7 @@ export const MODULOS: readonly ModuloRegistrado[] = [
   { nombre: 'dispositivos', rutas: rutasDeDispositivos },
   { nombre: 'suscripciones', rutas: rutasDeSuscripciones },
   { nombre: 'limites', rutas: rutasDeLimites },
+  { nombre: 'notificaciones', rutas: rutasDeNotificaciones },
   { nombre: 'bitacora', rutas: rutasDeBitacora },
   { nombre: 'resumen', rutas: rutasDeResumen },
 ];

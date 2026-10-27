@@ -12,6 +12,7 @@ import {
   RepositorioDeCuentas,
   RepositorioDeCuentasDePlataforma,
   RepositorioDeIdentidades,
+  RepositorioDeSuperAdmins,
   RepositorioDeUsuarios,
 } from './repository.js';
 
@@ -169,5 +170,23 @@ export function crearServicioDeIdentidades(pool: Pool): ServicioDeIdentidades {
     async todasLasCuentas() {
       return (await repositorio.listarTodas()).map(aCuenta);
     },
+  };
+}
+
+export interface ServicioDeDestinatarios {
+  /**
+   * Los usuarios de la cuenta del contexto a quienes llega un aviso: los que pueden operar y cuyo rol tiene el
+   * permiso. Es lo que hace que el aviso vaya al propietario (el Administrador) y no a un Titular o un Miembro
+   * (ADR 0030 §5).
+   */
+  deLaCuenta(permiso: string): Promise<string[]>;
+  /** Los integrantes del equipo AGROCOM a quienes llega un aviso: los que pueden operar y tienen el permiso. */
+  deLaPlataforma(permiso: string): Promise<string[]>;
+}
+
+export function crearServicioDeDestinatarios(pool: Pool): ServicioDeDestinatarios {
+  return {
+    deLaCuenta: (permiso) => new RepositorioDeUsuarios(pool).idsConPermiso(permiso),
+    deLaPlataforma: (permiso) => new RepositorioDeSuperAdmins(pool).idsConPermiso(permiso),
   };
 }

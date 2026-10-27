@@ -1,7 +1,13 @@
 import type { Pool } from 'mysql2/promise';
 import { enTransaccion, type Transaccion } from '../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
-import { CLAVES, valorEfectivo, type ClaveDeLimite } from './domain/claves.js';
+import {
+  CLAVES,
+  CLAVES_DE_PLACA,
+  valorEfectivo,
+  type ClaveDeLimite,
+  type ClaveDePlaca,
+} from './domain/claves.js';
 import {
   RepositorioDeConfiguracion,
   RepositorioDeEventosDeLimite,
@@ -142,5 +148,60 @@ export function crearServicioDeLimites(pool: Pool): ServicioDeLimites {
         claveUnica: marca.claveUnica,
         ocurridoAt: marca.ahora,
       }),
+  };
+}
+
+/** Los umbrales con que se juzga si una placa dejó de reportar (ADR 0031 §18). */
+export interface UmbralesDePlacaConfigurados {
+  /** Sin latido por este tiempo: caída sostenida (aviso a AGROCOM y al propietario). */
+  readonly caidaMinutos: number;
+  /** Sin latido por este tiempo: desaparecida (aviso a AGROCOM). */
+  readonly desaparecidaMinutos: number;
+  /** Cuánto debe sostenerse la racha de latidos (o de lector respondiendo) para dar por recuperada una placa. */
+  readonly recuperacionMinutos: number;
+  /** Cuánto debe llevar el lector sin responder para avisar. */
+  readonly lectorMinutos: number;
+  /** Sin lecturas en la puerta por este tiempo, estando la placa en línea: en observación. */
+  readonly observacionHoras: number;
+}
+
+/** Valores de partida (ADR 0031 §18 fija los 15 min y las 2 h; el resto son supuestos de la ola W9). */
+export const UMBRALES_DE_PLACA_POR_DEFECTO: UmbralesDePlacaConfigurados = {
+  caidaMinutos: 15,
+  desaparecidaMinutos: 120,
+  recuperacionMinutos: 3,
+  lectorMinutos: 5,
+  observacionHoras: 24,
+};
+
+export interface ServicioDeUmbralesDePlaca {
+  /**
+   * Los umbrales vigentes. A diferencia de los topes de QR, NO falla cerrado si falta una clave: sin umbral
+   * rige el valor de partida (un aviso de más o de menos no abre ni cierra ninguna puerta). Si
+   * «desaparecida» no es mayor que «caída», se corrige a caída + 1 minuto para que los escalones sigan en orden.
+   */
+  umbrales(): Promise<UmbralesDePlacaConfigurados>;
+}
+
+export function crearServicioDeUmbralesDePlaca(pool: Pool): ServicioDeUmbralesDePlaca {
+  return {
+    async umbrales() {
+      const filas = await new RepositorioDeConfiguracion(pool).listar();
+      const general = new Map(filas.map((fila) => [fila.clave, fila.valor]));
+      const valor = (clave: ClaveDePlaca, porDefecto: number): number =>
+        general.get(clave) ?? porDefecto;
+      const base = UMBRALES_DE_PLACA_POR_DEFECTO;
+      const caidaMinutos = valor(CLAVES_DE_PLACA.caidaMinutos, base.caidaMinutos);
+      return {
+        caidaMinutos,
+        desaparecidaMinutos: Math.max(
+          valor(CLAVES_DE_PLACA.desaparecidaMinutos, base.desaparecidaMinutos),
+          caidaMinutos + 1,
+        ),
+        recuperacionMinutos: valor(CLAVES_DE_PLACA.recuperacionMinutos, base.recuperacionMinutos),
+        lectorMinutos: valor(CLAVES_DE_PLACA.lectorMinutos, base.lectorMinutos),
+        observacionHoras: valor(CLAVES_DE_PLACA.observacionHoras, base.observacionHoras),
+      };
+    },
   };
 }

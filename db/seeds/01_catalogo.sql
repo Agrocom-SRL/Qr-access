@@ -29,6 +29,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.suspender', 'cuenta'),
   ('seguridad.cupo.ver', 'cuenta'),
   ('seguridad.estadistica.ver', 'cuenta'),
+  ('notificaciones.aviso.ver', 'cuenta'),
+  ('notificaciones.aviso.gestionar', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
   ('seguridad.equipo.crear', 'plataforma'),
   ('seguridad.equipo.editar', 'plataforma'),
@@ -62,7 +64,9 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('dispositivos.placa.vincular', 'plataforma'),
   ('dispositivos.placa.liberar', 'plataforma'),
   ('limites.configuracion.ver', 'plataforma'),
-  ('limites.configuracion.editar', 'plataforma')
+  ('limites.configuracion.editar', 'plataforma'),
+  ('notificaciones.aviso_plataforma.ver', 'plataforma'),
+  ('notificaciones.aviso_plataforma.gestionar', 'plataforma')
 ON DUPLICATE KEY UPDATE ambito = VALUES(ambito);
 
 -- Rol de plataforma (tenant_id NULL). Sus permisos de ámbito plataforma se asignan al final de este archivo.
@@ -86,6 +90,17 @@ INSERT INTO configuracion_limites (clave, valor) VALUES
   ('qr.max_puertas_por_qr', 10),
   ('qr.bolsa_mensual', 5000),
   ('qr.bolsa_aviso_porcentaje', 80)
+ON DUPLICATE KEY UPDATE clave = VALUES(clave);
+
+-- Umbrales de los estados de placa (ADR 0031 §18; los 15 min y las 2 h los fija el ADR, el resto son supuestos de la
+-- ola W9: recuperación sostenida de 3 min, lector sin respuesta tras 5 min y observación a las 24 h). No pisa lo
+-- que AGROCOM ya haya editado.
+INSERT INTO configuracion_limites (clave, valor) VALUES
+  ('placa.caida_minutos', 15),
+  ('placa.desaparecida_minutos', 120),
+  ('placa.recuperacion_minutos', 3),
+  ('placa.lector_minutos', 5),
+  ('placa.observacion_horas', 24)
 ON DUPLICATE KEY UPDATE clave = VALUES(clave);
 
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).

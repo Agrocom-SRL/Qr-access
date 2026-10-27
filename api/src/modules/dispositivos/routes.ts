@@ -107,6 +107,9 @@ export function rutas({
           firmware: request.body.firmware,
           rssi: request.body.rssi,
           puertaAbierta: request.body.puerta_abierta,
+          ...(request.body.lector_responde === undefined
+            ? {}
+            : { lectorResponde: request.body.lector_responde }),
         });
         return reply.status(204).send();
       },

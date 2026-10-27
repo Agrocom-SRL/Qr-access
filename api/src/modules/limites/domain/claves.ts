@@ -18,13 +18,27 @@ export const CLAVES = {
 export type ClaveDeLimite = (typeof CLAVES)[keyof typeof CLAVES];
 
 /**
+ * Los umbrales de los estados de placa (ADR 0031 §18). Viven en la misma tabla y se editan por la misma ruta que los
+ * topes de QR, pero son globales (sin excepción por cuenta) y no entran en los topes de generación.
+ */
+export const CLAVES_DE_PLACA = {
+  caidaMinutos: 'placa.caida_minutos',
+  desaparecidaMinutos: 'placa.desaparecida_minutos',
+  recuperacionMinutos: 'placa.recuperacion_minutos',
+  lectorMinutos: 'placa.lector_minutos',
+  observacionHoras: 'placa.observacion_horas',
+} as const;
+
+export type ClaveDePlaca = (typeof CLAVES_DE_PLACA)[keyof typeof CLAVES_DE_PLACA];
+
+/**
  * Dónde puede tener excepción una clave: `usuario` = para una cuenta o para un usuario; `cuenta` = solo para
  * una cuenta entera (la bolsa es de la cuenta); `global` = ninguna, vale igual para todos.
  */
 export type AlcanceDeExcepcion = 'usuario' | 'cuenta' | 'global';
 
 export interface DefinicionDeClave {
-  readonly clave: ClaveDeLimite;
+  readonly clave: ClaveDeLimite | ClaveDePlaca;
   readonly minimo: number;
   readonly maximo: number;
   readonly excepcion: AlcanceDeExcepcion;
@@ -40,15 +54,24 @@ const DEFINICIONES: readonly DefinicionDeClave[] = [
   { clave: CLAVES.bolsaAvisoPorcentaje, minimo: 1, maximo: 100, excepcion: 'global' },
 ];
 
-export const CLAVES_DE_LIMITE: readonly ClaveDeLimite[] = DEFINICIONES.map((d) => d.clave);
+const DEFINICIONES_DE_PLACA: readonly DefinicionDeClave[] = [
+  { clave: CLAVES_DE_PLACA.caidaMinutos, minimo: 1, maximo: 1_440, excepcion: 'global' },
+  { clave: CLAVES_DE_PLACA.desaparecidaMinutos, minimo: 2, maximo: 10_080, excepcion: 'global' },
+  { clave: CLAVES_DE_PLACA.recuperacionMinutos, minimo: 1, maximo: 60, excepcion: 'global' },
+  { clave: CLAVES_DE_PLACA.lectorMinutos, minimo: 1, maximo: 1_440, excepcion: 'global' },
+  { clave: CLAVES_DE_PLACA.observacionHoras, minimo: 1, maximo: 720, excepcion: 'global' },
+];
+
+/** Los topes de generación de QR (no incluye los umbrales de placa). */
+export const CLAVES_DE_LIMITE: readonly ClaveDeLimite[] = Object.values(CLAVES);
 
 /** La definición de una clave, o `null` si no existe (un texto cualquiera que llegó por la API). */
 export function definicionDe(clave: string): DefinicionDeClave | null {
-  return DEFINICIONES.find((definicion) => definicion.clave === clave) ?? null;
+  return todasLasDefiniciones().find((definicion) => definicion.clave === clave) ?? null;
 }
 
 export function todasLasDefiniciones(): readonly DefinicionDeClave[] {
-  return DEFINICIONES;
+  return [...DEFINICIONES, ...DEFINICIONES_DE_PLACA];
 }
 
 /** ¿`valor` es un entero dentro de los extremos de la clave? */

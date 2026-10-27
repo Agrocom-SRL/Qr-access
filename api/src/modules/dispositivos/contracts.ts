@@ -1,4 +1,8 @@
 import type { Pool } from 'mysql2/promise';
+import {
+  ejecutar as evaluarEstadoDePlacas,
+  type ResultadoDeEvaluacion,
+} from './actions/evaluar-estado-de-placas.js';
 import { estaEnLinea } from './domain/en-linea.js';
 import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from './repository.js';
 
@@ -78,5 +82,26 @@ export function crearServicioDeDispositivosDePlataforma(
         ultimoLatidoAt: fila.ultimo_latido_at,
       }));
     },
+  };
+}
+
+export type { ResultadoDeEvaluacion } from './actions/evaluar-estado-de-placas.js';
+
+/** Tareas periódicas del módulo (`tareas.ts`). */
+export interface TareasDeDispositivos {
+  /**
+   * Evalúa el estado de las placas de todas las cuentas y encola los avisos agrupados por sitio
+   * (ADR 0031 §18). El reloj se inyecta: los tests no esperan.
+   */
+  evaluarEstadoDePlacas(
+    ahora: Date,
+    registrarError?: (error: unknown) => void,
+  ): Promise<ResultadoDeEvaluacion>;
+}
+
+export function crearTareasDeDispositivos(pool: Pool): TareasDeDispositivos {
+  return {
+    evaluarEstadoDePlacas: (ahora, registrarError) =>
+      evaluarEstadoDePlacas(pool, ahora, registrarError),
   };
 }

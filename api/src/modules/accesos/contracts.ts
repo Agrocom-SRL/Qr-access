@@ -1,7 +1,7 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
-import { RepositorioDeQr } from './repository.js';
+import { RepositorioDeEventos, RepositorioDeQr } from './repository.js';
 
 interface AccesosPorDiaFila extends RowDataPacket {
   dia: string;
@@ -252,4 +252,14 @@ export function crearServicioDeAnulacionDeQr(pool: Pool): ServicioDeAnulacionDeQ
     anularVigentes: (tx, generadores, anuladoPor, ahora) =>
       repositorio.anularVigentes(tx, generadores, anuladoPor, ahora),
   };
+}
+
+export interface ServicioDeLecturas {
+  /** `puertaId -> última lectura del lector` de la cuenta del contexto; una puerta sin lecturas no figura. */
+  ultimaLecturaPorPuertas(puertaIds: readonly string[]): Promise<Map<string, Date>>;
+}
+
+export function crearServicioDeLecturas(pool: Pool): ServicioDeLecturas {
+  const eventos = new RepositorioDeEventos(pool);
+  return { ultimaLecturaPorPuertas: (puertaIds) => eventos.ultimaLecturaPorPuertas(puertaIds) };
 }

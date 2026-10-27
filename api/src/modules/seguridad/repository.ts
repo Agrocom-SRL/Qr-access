@@ -196,6 +196,26 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
+  /**
+   * Los usuarios de la cuenta del contexto que pueden operar (no suspendidos) y cuyo rol tiene el permiso de
+   * ámbito cuenta `codigo`. Para decidir a quién va un aviso (ADR 0030 §5): el destinatario sale del permiso,
+   * no de un nombre de rol.
+   */
+  async idsConPermiso(codigo: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 'DISTINCT t.id',
+      uniones:
+        'JOIN usuario_roles AS ur ON ur.usuario_id = t.id AND ur.tenant_id = t.tenant_id AND ur.deleted_at IS NULL ' +
+        'JOIN roles AS r ON r.id = ur.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.activo = 1 ' +
+        'JOIN rol_permisos AS rp ON rp.rol_id = r.id ' +
+        "JOIN permisos AS p ON p.id = rp.permiso_id AND p.ambito = 'cuenta'",
+      donde: "p.codigo = ? AND t.estado <> 'suspendido'",
+      params: [codigo],
+      orden: 't.id',
+    });
+    return filas.map((fila) => String(fila.id));
+  }
+
   /** El usuario del PIN en cualquier estado: el login decide después qué hacer con uno suspendido. */
   buscarPorIndiceDePin(indice: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
@@ -759,6 +779,22 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
       perfil: 'dominio',
       deCuenta: false,
     });
+  }
+
+  /** Los integrantes del equipo AGROCOM que pueden operar y cuyo rol tiene el permiso de plataforma `codigo`. */
+  async idsConPermiso(codigo: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 'DISTINCT t.id',
+      uniones:
+        'JOIN usuario_roles AS ur ON ur.usuario_id = t.id AND ur.tenant_id IS NULL AND ur.deleted_at IS NULL ' +
+        'JOIN roles AS r ON r.id = ur.rol_id AND r.tenant_id IS NULL AND r.deleted_at IS NULL AND r.activo = 1 ' +
+        'JOIN rol_permisos AS rp ON rp.rol_id = r.id ' +
+        "JOIN permisos AS p ON p.id = rp.permiso_id AND p.ambito = 'plataforma'",
+      donde: "p.codigo = ? AND t.estado <> 'suspendido'",
+      params: [codigo],
+      orden: 't.id',
+    });
+    return filas.map((fila) => String(fila.id));
   }
 
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {

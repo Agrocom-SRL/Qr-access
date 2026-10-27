@@ -5,6 +5,8 @@ export const cuerpoDeLatido = z.strictObject({
   firmware: z.string().min(1).max(20),
   rssi: z.number().int().min(-200).max(100),
   puerta_abierta: z.boolean(),
+  /** Si el lector QR responde por UART. Opcional: el firmware anterior no lo manda (ADR 0031 §18). */
+  lector_responde: z.boolean().optional(),
 });
 
 export const respuestaDeConfiguracion = z.object({
@@ -64,6 +66,18 @@ export const respuestaDePlacas = esquemaListado(
     ip: z.string().nullable(),
     ultimo_contacto_at: z.string().nullable(),
     en_linea: z.boolean(),
+    /**
+     * Estado de la placa vinculada derivado del latido (ADR 0031 §18): `en_linea`, `sin_conexion` (entre 3 y 15
+     * min, sin aviso), `caida_sostenida` (15 min) o `desaparecida` (2 h). `null` si no está vinculada o nunca
+     * envió un latido. Campo aditivo: `en_linea` sigue valiendo igual.
+     */
+    estado_conexion: z
+      .enum(['en_linea', 'sin_conexion', 'caida_sostenida', 'desaparecida'])
+      .nullable(),
+    /** Lo que informó el último latido sobre el lector QR; `null` si el firmware no lo informa. */
+    lector_responde: z.boolean().nullable(),
+    /** En línea pero sin ninguna lectura en la puerta en las últimas 24 h (marca informativa, sin aviso). */
+    en_observacion: z.boolean(),
     por_confirmar_hasta: z.string().nullable(),
     dispositivo: z.object({ id: z.string(), nombre: z.string() }).nullable(),
     cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }).nullable(),
