@@ -203,7 +203,7 @@ CREATE TABLE usuario_roles (
 
 ## sesiones
 
-Migraciones: `db/migrations/20261009100009_create_sesiones.sql` y `db/migrations/20261027100006_add_instalacion_y_plataforma_a_sesiones.sql` (ADR 0030 §4.1)
+Migraciones: `db/migrations/20261009100009_create_sesiones.sql` y `db/migrations/20261029100001_add_instalacion_y_plataforma_a_sesiones.sql` (ADR 0030 §4.1)
 
 ```sql
 CREATE TABLE sesiones (

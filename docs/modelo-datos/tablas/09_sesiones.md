@@ -1,6 +1,6 @@
 # 09 — `sesiones`
 
-**Módulo dueño:** `seguridad` · **Tenant:** sí · **Migración:** `db/migrations/20261009100009_create_sesiones.sql` y `20261027100006_add_instalacion_y_plataforma_a_sesiones.sql`
+**Módulo dueño:** `seguridad` · **Tenant:** sí · **Migración:** `db/migrations/20261009100009_create_sesiones.sql` y `20261029100001_add_instalacion_y_plataforma_a_sesiones.sql`
 
 ## Propósito
 
