@@ -1,6 +1,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { ejecutar as entregar } from '../../src/modules/notificaciones/actions/entregar-pendientes.js';
+import { ejecutar as detectarUsoMasivo } from '../../src/modules/senales/actions/detectar-uso-masivo.js';
 import { crearTareas } from '../../src/tareas.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { armarArbol, type Arbol } from '../helpers/arbol.js';
@@ -290,9 +291,46 @@ describe('señales de abuso: detectores con reloj inyectado (ADR 0030 §4 y §5,
       expect(deAdmin[0]?.datos.senal?.dia).toBe('2026-11-11');
     });
 
-    it('lo de ayer no cuenta hoy', async () => {
-      await aperturasDe(arbol.guardia.id, 13, hace(DIA));
+    it('lo de antier no cuenta hoy', async () => {
+      await aperturasDe(arbol.guardia.id, 13, hace(2 * DIA));
       expect(await tarea('senal-uso-masivo')).toMatchObject({ revisados: 0, senales: 0 });
+    });
+
+    it('revisa también AYER: lo que cruzó el N justo antes de medianoche no se pierde', async () => {
+      // 23:55 del 9-nov en La Paz (03:55 UTC del 10): las 13 aperturas son de ayer; la pasada corre a las 00:05 locales.
+      await aperturasDe(arbol.guardia.id, 13, new Date('2026-11-10T03:55:00.000Z'));
+      const pasada = new Date('2026-11-10T04:05:00.000Z');
+      expect(await tarea('senal-uso-masivo', pasada)).toMatchObject({ revisados: 1, senales: 1 });
+      expect((await primerIncidente()).clave_unica).toBe(
+        `uso_masivo:${arbol.guardia.id}:2026-11-09`,
+      );
+      // Idempotente: otra pasada no lo repite.
+      expect(await tarea('senal-uso-masivo', new Date(pasada.getTime() + 5 * MIN))).toMatchObject({
+        senales: 0,
+        omitidos: 1,
+      });
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(1);
+    });
+
+    it('tope por pasada: en una avalancha corta la pasada y la siguiente sigue con el resto', async () => {
+      await aperturasDe(arbol.guardia.id, 13);
+      await aperturasDe(arbol.titular1.id, 31);
+      const errores: unknown[] = [];
+      const pasar = (ahora: Date) =>
+        detectarUsoMasivo(prueba.pool, ahora, (e) => errores.push(e), 500, 1);
+      // Con tope de 1 señal por pasada: la primera abre una; la segunda omite esa y abre la otra.
+      expect(await pasar(AHORA)).toMatchObject({ senales: 1 });
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(1);
+      expect(await pasar(new Date(AHORA.getTime() + MIN))).toMatchObject({
+        senales: 1,
+        omitidos: 1,
+      });
+      expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(2);
+      expect(await pasar(new Date(AHORA.getTime() + 2 * MIN))).toMatchObject({
+        senales: 0,
+        omitidos: 2,
+      });
+      expect(errores).toEqual([]);
     });
 
     it('cuenta TODAS las filas, también las repeticiones de un mismo intento (ADR 0032 §4.3)', async () => {
@@ -383,6 +421,26 @@ describe('señales de abuso: detectores con reloj inyectado (ADR 0030 §4 y §5,
       });
       expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(1);
       expect(await contarFilas(prueba.pool, 'cola_de_notificaciones')).toBe(2);
+    });
+
+    it('si la pasada cayó entre el incidente y el aviso, el aviso de la siguiente pasada lleva el enlace al incidente', async () => {
+      await aperturasDe(arbol.guardia.id, 13);
+      const otra = await prueba.pool.getConnection();
+      try {
+        await otra.query('SELECT GET_LOCK(?, 0)', [`senales:${a.cuenta.id}`]);
+        await tarea('senal-uso-masivo');
+      } finally {
+        await otra.query('DO RELEASE_LOCK(?)', [`senales:${a.cuenta.id}`]);
+        otra.release();
+      }
+      // Quedó el incidente, sin aviso: la siguiente pasada recibe `null` al registrarlo de nuevo y debe recuperar su id.
+      const incidente = await primerIncidente();
+      expect(await contarFilas(prueba.pool, 'cola_de_notificaciones')).toBe(0);
+      await tarea('senal-uso-masivo', new Date(AHORA.getTime() + MIN));
+      await entregarTodo(new Date(AHORA.getTime() + MIN));
+      const avisos = await bandeja(superAcceso, '/plataforma/notificaciones');
+      expect(avisos).toHaveLength(1);
+      expect(avisos[0]?.datos.senal?.incidente_id).toBe(incidente.id);
     });
 
     it('dos pasadas a la vez (dos instancias) no duplican incidente, constancia ni aviso', async () => {

@@ -4,7 +4,11 @@ import {
   type ResultadoDeDeteccion,
 } from './actions/detectar-generacion-ruidosa.js';
 import { aIso } from '../../platform/tiempo/fechas.js';
-import { RepositorioDeIncidentesDeTodas, type FiltroDeSenales } from './repository.js';
+import {
+  RepositorioDeIncidentes,
+  RepositorioDeIncidentesDeTodas,
+  type FiltroDeSenales,
+} from './repository.js';
 import { normalizarEvidencia, type EvidenciaParcial } from './domain/incidente.js';
 import type {
   EstadoDeIncidente,
@@ -28,10 +32,18 @@ export interface ServicioDeIncidentes {
    * autor; no limita a nadie hasta que una persona lo confirme.
    */
   registrarDelSistema(incidente: IncidenteDelSistema): Promise<string | null>;
+  /**
+   * El id del incidente de la cuenta del contexto con esa `claveUnica`, o `null`. Para quien recibió `null` de
+   * `registrarDelSistema` (ya existía) y necesita enlazarlo.
+   */
+  idPorClaveUnica(claveUnica: string): Promise<string | null>;
 }
 
 export function crearServicioDeIncidentes(pool: Pool): ServicioDeIncidentes {
-  return { registrarDelSistema: (incidente) => registrarDelSistema(pool, incidente) };
+  return {
+    registrarDelSistema: (incidente) => registrarDelSistema(pool, incidente),
+    idPorClaveUnica: (claveUnica) => new RepositorioDeIncidentes(pool).idPorClave(claveUnica),
+  };
 }
 
 /** Tareas periódicas del módulo (`tareas.ts`). */

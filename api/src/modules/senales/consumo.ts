@@ -14,6 +14,13 @@ import type { CuentaDePlataforma } from '../seguridad/contracts.js';
 import { crearServicioDeSuscripcionesDePlataforma } from '../suscripciones/contracts.js';
 import { estadoDeBolsa, porcentajeDeBolsa, type EstadoDeBolsa } from './domain/reglas.js';
 
+/**
+ * Cuánto se reutiliza el cálculo de las vistas de plataforma que recorren todas las cuentas (lista de consumo y de
+ * flujo): el panel las vuelve a pedir al ordenar, filtrar o paginar y recalcularlas en cada clic cuesta una lectura de
+ * todas las cuentas. Son cifras para mirar, no para decidir: unos segundos de atraso no cambian nada (ADR 0030 §5).
+ */
+export const VIGENCIA_DE_VISTAS_DE_PLATAFORMA_MS = 45_000;
+
 /** El consumo de la bolsa mensual de QR de una cuenta en el mes en curso (ADR 0030 §2 y §5). */
 export interface ConsumoDeCuenta {
   readonly cuenta: CuentaDePlataforma;

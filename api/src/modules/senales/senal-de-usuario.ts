@@ -44,7 +44,8 @@ export async function tratarSenalDeUsuario(
 ): Promise<ResultadoDeSenal> {
   if (!(await crearServicioDeUsuarios(pool).estaActivo(hallazgo.usuarioId))) return 'omitida';
 
-  const incidenteId = await crearServicioDeIncidentes(pool).registrarDelSistema({
+  const incidentes = crearServicioDeIncidentes(pool);
+  const nuevo = await incidentes.registrarDelSistema({
     usuarioId: hallazgo.usuarioId,
     tipo: hallazgo.tipo,
     gravedad: hallazgo.gravedad,
@@ -53,6 +54,9 @@ export async function tratarSenalDeUsuario(
     claveUnica: hallazgo.claveUnica,
     ocurridoAt: hallazgo.ahora,
   });
+  // `null` = ya existía (una pasada anterior cayó entre el incidente y el aviso): se recupera su id para que el aviso
+  // lleve el enlace al incidente en vez de salir sin él.
+  const incidenteId = nuevo ?? (await incidentes.idPorClaveUnica(hallazgo.claveUnica));
 
   const [cuenta, etiquetas, superiores] = await Promise.all([
     crearServicioDeCuentas(pool).identificar(cuentaId),

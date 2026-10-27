@@ -11,6 +11,8 @@ import { crearServicioDeCuentas } from '../../seguridad/contracts.js';
 import { llevarABandeja } from '../bandeja.js';
 import { claveDeAvisoDeBolsa, RETROCESO_DE_MARCAS_DE_BOLSA_DIAS } from '../domain/reglas.js';
 import {
+  MAXIMO_DE_SENALES_POR_PASADA,
+  pasadaAgotada,
   TAMANO_DE_PAGINA,
   type ResultadoDePasada,
   pasadaVacia,
@@ -67,6 +69,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
   registrarError: (error: unknown) => void = () => undefined,
   tamanoDePagina: number = TAMANO_DE_PAGINA,
+  maximoDeSenales: number = MAXIMO_DE_SENALES_POR_PASADA,
 ): Promise<ResultadoDePasada> {
   const marcas = crearServicioDeMarcasDeBolsa(pool);
   const desde = sumarDias(ahora, -RETROCESO_DE_MARCAS_DE_BOLSA_DIAS);
@@ -78,6 +81,7 @@ export async function ejecutar(
     tamanoDePagina,
   );
   for await (const marca of hallazgos) {
+    if (pasadaAgotada(resultado, maximoDeSenales)) break;
     await tratar(resultado, registrarError, () =>
       ContextoCuenta.ejecutarEn(marca.cuentaId, async () => {
         const claveUnica = claveDeAvisoDeBolsa(marca.claveUnica, marca.id);

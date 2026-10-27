@@ -31,3 +31,10 @@ Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`.
 - Una señal de gravedad **baja** deja su constancia pero no encola ningún aviso (ADR 0030 §4.1: «se ve en su ficha, no se avisa»).
 - Retención: pendiente (crece como mucho una fila por señal y día; se decide junto con D-06 y D-35).
 - Lo escribe solo el módulo `senales` (`llevarABandeja`); lo lee el mismo módulo para saltar lo ya avisado.
+
+## Limitaciones conocidas de las señales (ADR 0030, ola W12)
+
+- **QR de visita:** `uso_masivo` y `uso_imposible` solo miran QR propios (`es_propio = 1`); repartir QR de visita no las dispara (sí el flujo atípico de la cuenta y los topes de generación).
+- **CGNAT y redes compartidas:** `pin_compartido` cuenta IP públicas: muchos usuarios tras una IP cuentan como una; un solo usuario con datos móviles que rota de IP puede sumar de más.
+- **Esclusas y dobles puertas:** `uso_imposible` usa un tiempo mínimo global entre puertas del mismo sitio (20 s), no una distancia; una esclusa más rápida que eso la dispara. Con el umbral en 0 no se juzga el mismo sitio.
+- **Repeticiones de lectura (W7) e instalaciones (W8):** cuando se integren, hay que contar aperturas e intentos DISTINTOS y sumar instalaciones; la lista de tareas está en ADR 0030, «Implementado (ola W12)», y en D-37/D-40.

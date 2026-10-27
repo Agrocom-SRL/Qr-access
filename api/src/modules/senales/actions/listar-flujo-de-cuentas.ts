@@ -1,11 +1,16 @@
 import type { Pool } from 'mysql2/promise';
+import { CacheCorta } from '../../../platform/cache/cache-corta.js';
 import { armarListado, limiteDe, type Paginacion } from '../../../platform/http/paginacion.js';
 import { crearServicioDeUmbralesDeSenal } from '../../limites/contracts.js';
 import {
   crearServicioDeConteoDeUsuarios,
   crearServicioDeIdentidades,
 } from '../../seguridad/contracts.js';
-import { coincideConLaBusqueda, presentarCuenta } from '../consumo.js';
+import {
+  coincideConLaBusqueda,
+  presentarCuenta,
+  VIGENCIA_DE_VISTAS_DE_PLATAFORMA_MS,
+} from '../consumo.js';
 import type { DiaDeFlujo } from '../domain/reglas.js';
 import { seriesDeFlujo } from '../flujo.js';
 
@@ -15,6 +20,22 @@ export interface FiltroDeFlujo {
   readonly buscar: string | null;
   readonly orden: 'por_usuario' | 'aperturas' | 'dias_atipicos' | 'nombre';
   readonly sentido: 'asc' | 'desc';
+}
+
+/** Las series de flujo de TODAS las cuentas por cantidad de días (vista de plataforma: nada que separar por cuenta). */
+const flujoDeTodas = new CacheCorta<Awaited<ReturnType<typeof calcularFlujoDeTodas>>>(
+  VIGENCIA_DE_VISTAS_DE_PLATAFORMA_MS,
+);
+
+async function calcularFlujoDeTodas(pool: Pool, dias: number, ahora: Date) {
+  const cuentas = await crearServicioDeIdentidades(pool).todasLasCuentas();
+  const ids = cuentas.map((cuenta) => cuenta.id);
+  const [umbrales, activos] = await Promise.all([
+    crearServicioDeUmbralesDeSenal(pool).flujoDeCuentas(ids),
+    crearServicioDeConteoDeUsuarios(pool).activosPorCuenta(ids),
+  ]);
+  const { hoy, series } = await seriesDeFlujo(pool, ids, dias, activos, umbrales, ahora);
+  return { cuentas, umbrales, activos, hoy, series };
 }
 
 /**
@@ -28,15 +49,12 @@ export async function ejecutar(
   paginacion: Paginacion,
   ahora: Date = new Date(),
 ) {
-  const cuentas = (await crearServicioDeIdentidades(pool).todasLasCuentas()).filter((cuenta) =>
-    coincideConLaBusqueda(cuenta, filtro.buscar),
+  // El cálculo cubre todas las cuentas y no depende de la búsqueda: se reutiliza unos segundos entre clics del panel.
+  const todas = await flujoDeTodas.obtener(`dias:${String(filtro.dias)}`, ahora.getTime(), () =>
+    calcularFlujoDeTodas(pool, filtro.dias, ahora),
   );
-  const ids = cuentas.map((cuenta) => cuenta.id);
-  const [umbrales, activos] = await Promise.all([
-    crearServicioDeUmbralesDeSenal(pool).flujoDeCuentas(ids),
-    crearServicioDeConteoDeUsuarios(pool).activosPorCuenta(ids),
-  ]);
-  const { hoy, series } = await seriesDeFlujo(pool, ids, filtro.dias, activos, umbrales, ahora);
+  const { umbrales, activos, hoy, series } = todas;
+  const cuentas = todas.cuentas.filter((cuenta) => coincideConLaBusqueda(cuenta, filtro.buscar));
 
   const filas = cuentas.map((cuenta) => {
     const serie: DiaDeFlujo[] = series.get(cuenta.id) ?? [];

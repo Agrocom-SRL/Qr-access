@@ -84,3 +84,12 @@ La base vive en el servidor de base de datos compartido, no en el CT 120. Respal
 El servidor ya escucha en `0.0.0.0`; el puerto 3306 solo debe estar abierto para la IP del CT 120.
 
 Si había datos en la base MySQL vieja del contenedor `acceso_datos-db`, se vuelcan con `mysqldump --no-create-info --complete-insert` y se restauran sobre la base ya migrada antes de abrir al público; ese volumen no se borra hasta confirmar el uso estable.
+
+## Migraciones que tocan tablas grandes (`eventos_acceso`, `sesiones`)
+
+La placa escribe un `eventos_acceso` por cada lectura de QR: un `ALTER` que bloquee esa tabla deja las puertas sin registrar intentos (y, por falla segura, sin abrir). Por eso la migración `20261102100003_add_indices_de_senales` (ola W12):
+
+- declara `ALGORITHM=INPLACE, LOCK=NONE` en cada `ALTER`: si MariaDB no puede cumplirlo, el paso **falla** en vez de bloquear escrituras;
+- fija `SET SESSION lock_wait_timeout = 5` antes: el `ALTER` necesita un bloqueo de metadatos breve al empezar y al terminar, y si hay una transacción larga abierta sobre la tabla se queda en cola **bloqueando a todas las demás**. Con 5 s falla pronto y no deja la cola formada.
+
+Antes de migrar en producción: busca transacciones largas (`SELECT * FROM information_schema.innodb_trx ORDER BY trx_started`), aplica fuera de la hora pico y, si falla por el tiempo de espera, reintenta. Cualquier índice o columna nueva sobre estas tablas sigue la misma regla.

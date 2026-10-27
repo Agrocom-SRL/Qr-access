@@ -149,6 +149,16 @@ export class RepositorioDeIncidentes extends RepositorioDeCuenta {
     return (await this.contar({ donde: 't.clave_unica = ?', params: [claveUnica] })) > 0;
   }
 
+  /** El id del incidente con esa clave de idempotencia en la cuenta del contexto, o `null`. */
+  async idPorClave(claveUnica: string): Promise<string | null> {
+    const fila = await this.seleccionarUna<RowDataPacket>({
+      columnas: 't.id',
+      donde: 't.clave_unica = ?',
+      params: [claveUnica],
+    });
+    return fila === null ? null : String(fila.id);
+  }
+
   buscarPorId(id: string, tx?: Transaccion): Promise<IncidenteFila | null> {
     return this.seleccionarUna<IncidenteFila>(
       { columnas: COLUMNAS, uniones: UNION_RESOLUCION, donde: 't.id = ?', params: [id] },

@@ -4,6 +4,20 @@ import type { ResultadoDeSenal } from './senal-de-usuario.js';
 /** Cuántos hallazgos lee de una vez cada detector; la pasada recorre TODOS, página a página, con un cursor. */
 export const TAMANO_DE_PAGINA = 500;
 
+/**
+ * Tope de trabajo por detector y por pasada: señales abiertas, hallazgos ocupados y errores (lo que cuesta escribir).
+ * En una avalancha (miles de usuarios cruzando el umbral a la vez) una pasada no puede ocupar para siempre uno de los
+ * cupos de tareas simultáneas (`tareas.ts`): al llegar al tope se corta y la siguiente pasada sigue, porque lo ya
+ * tratado queda como «omitido» (idempotente por clave) y no vuelve a gastar cupo. Los omitidos no cuentan: son una
+ * lectura. Cambia aquí si hace falta ajustarlo.
+ */
+export const MAXIMO_DE_SENALES_POR_PASADA = 500;
+
+/** ¿Ya hizo la pasada todo el trabajo que le toca esta vez? */
+export function pasadaAgotada(resultado: ResultadoDePasada, maximo: number): boolean {
+  return resultado.senales + resultado.ocupadas + resultado.errores >= maximo;
+}
+
 /** El cursor de los detectores por usuario: la página siguiente empieza después de (cuenta, usuario). */
 export interface CursorDeUsuario {
   readonly cuentaId: string;

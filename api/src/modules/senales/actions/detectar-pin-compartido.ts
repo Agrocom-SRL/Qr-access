@@ -9,6 +9,8 @@ import {
   pasadaVacia,
   recorrer,
   type CursorDeUsuario,
+  MAXIMO_DE_SENALES_POR_PASADA,
+  pasadaAgotada,
   TAMANO_DE_PAGINA,
   tratar,
   type ResultadoDePasada,
@@ -34,6 +36,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
   registrarError: (error: unknown) => void = () => undefined,
   tamanoDePagina: number = TAMANO_DE_PAGINA,
+  maximoDeSenales: number = MAXIMO_DE_SENALES_POR_PASADA,
 ): Promise<ResultadoDePasada> {
   const sesiones = crearServicioDeSesionesParaSenales(pool);
   const umbrales = crearServicioDeUmbralesDeSenal(pool);
@@ -49,6 +52,7 @@ export async function ejecutar(
     tamanoDePagina,
   );
   for await (const hallazgo of hallazgos) {
+    if (pasadaAgotada(resultado, maximoDeSenales)) break;
     await tratar(resultado, registrarError, () =>
       ContextoCuenta.ejecutarEn(hallazgo.cuentaId, async () => {
         const claveUnica = claveDeSenal('pin_compartido', hallazgo.usuarioId, dia);

@@ -13,6 +13,8 @@ import {
   pasadaVacia,
   recorrer,
   type CursorDeUsuario,
+  MAXIMO_DE_SENALES_POR_PASADA,
+  pasadaAgotada,
   TAMANO_DE_PAGINA,
   tratar,
   type ResultadoDePasada,
@@ -55,6 +57,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
   registrarError: (error: unknown) => void = () => undefined,
   tamanoDePagina: number = TAMANO_DE_PAGINA,
+  maximoDeSenales: number = MAXIMO_DE_SENALES_POR_PASADA,
 ): Promise<ResultadoDePasada> {
   const actividad = crearServicioDeActividadParaSenales(pool);
   const umbrales = crearServicioDeUmbralesDeSenal(pool);
@@ -105,6 +108,7 @@ export async function ejecutar(
   );
   let actual: QrDelGenerador | null = null;
   for await (const qr of hallazgos) {
+    if (pasadaAgotada(resultado, maximoDeSenales)) break;
     if (actual !== null && actual.cuentaId === qr.cuentaId && actual.usuarioId === qr.usuarioId) {
       actual.qrs.push(qr);
       continue;

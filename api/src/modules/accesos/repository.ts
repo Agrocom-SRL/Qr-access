@@ -965,6 +965,66 @@ export interface GeneradosPorDiaFila extends RowDataPacket {
   generados: number | string;
 }
 
+/** Una apertura por QR propio, como la lee el emparejador de usos imposibles. */
+interface AperturaPropiaFila extends RowDataPacket {
+  id: string;
+  usuario_id: string;
+  puerta_id: string;
+  sitio_id: string;
+  ocurrido_at: Date;
+}
+
+/**
+ * Cuenta los pares imposibles de UN usuario. `aperturas` viene ordenada por (hora, id). Dos aperturas A y B forman un
+ * par si B es posterior (`id` mayor y hora no anterior), en otra puerta, y la diferencia cabe en el umbral de sitios
+ * (sitios distintos) o de puertas (mismo sitio; 0 = no se juzga). Como el orden es por hora, se corta en cuanto la
+ * diferencia pasa del mayor umbral. Devuelve `null` si no hay ningún par.
+ */
+function emparejarUsosImposibles(
+  cuentaId: string,
+  usuarioId: string,
+  aperturas: readonly AperturaPropiaFila[],
+  entreSitiosSegundos: number,
+  entrePuertasSegundos: number,
+  maximoDeIds: number,
+): ActividadSospechosaFila | null {
+  const cotaMs = Math.max(entreSitiosSegundos, entrePuertasSegundos, 0) * 1000;
+  let total = 0;
+  const origenes = new Set<bigint>();
+  const destinos = new Set<bigint>();
+  aperturas.forEach((a, i) => {
+    const horaA = a.ocurrido_at.getTime();
+    for (let j = i + 1; j < aperturas.length; j++) {
+      const b = aperturas[j];
+      if (b === undefined) break;
+      const diferenciaMs = b.ocurrido_at.getTime() - horaA;
+      if (diferenciaMs > cotaMs) break;
+      if (b.puerta_id === a.puerta_id || BigInt(b.id) <= BigInt(a.id)) continue;
+      const mismoSitio = b.sitio_id === a.sitio_id;
+      const umbralMs = (mismoSitio ? entrePuertasSegundos : entreSitiosSegundos) * 1000;
+      // Con 0 en el mismo sitio no se juzga: el umbral queda en 0 y solo una diferencia exacta de 0 s contaría.
+      if (mismoSitio && entrePuertasSegundos <= 0) continue;
+      if (diferenciaMs > umbralMs) continue;
+      total++;
+      origenes.add(BigInt(a.id));
+      destinos.add(BigInt(b.id));
+    }
+  });
+  if (total === 0) return null;
+  const masNuevos = (ids: Set<bigint>) =>
+    [...ids]
+      .sort((x, y) => (x < y ? 1 : x > y ? -1 : 0))
+      .slice(0, maximoDeIds)
+      .join(',');
+  return {
+    tenant_id: cuentaId,
+    usuario_id: usuarioId,
+    total,
+    ids: masNuevos(origenes),
+    ids_destino: masNuevos(destinos),
+  } as ActividadSospechosaFila;
+}
+
 /** Solo las aperturas que ordenó el servidor por QR: el pulsador y la llave no cuentan para estas señales. */
 const ES_APERTURA_POR_QR = "t.metodo = 'qr' AND t.resultado = 'permitido'";
 
@@ -1014,8 +1074,14 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
    * menos de `entreSitiosSegundos` de diferencia, o en PUERTAS distintas del MISMO sitio con menos de
    * `entrePuertasSegundos` (0 = no se juzga el mismo sitio). Solo datos que ya existen: no hay distancias entre
    * sitios, así que el tiempo mínimo es un umbral configurado, no un cálculo de recorrido.
+   *
+   * Se evalúa CUENTA POR CUENTA y los pares se emparejan en memoria, ordenados por hora: un self-join de
+   * `eventos_acceso` (MariaDB no logra acotar su rango por fila con `(tenant_id, ocurrido_at)`) era cuadrático en los
+   * eventos de la cuenta. Aquí cada cuenta cuesta una lectura por índice de su ventana y, por usuario, solo se
+   * comparan las aperturas a menos de `max(umbrales)` segundos; ninguna página rehace las cuentas ya recorridas.
+   * Un par es (A, B) con B posterior a A (`id` y hora), en otra puerta, y ambos dentro de `desde`..`hasta`.
    */
-  usosImposibles(
+  async usosImposibles(
     desde: Date,
     hasta: Date,
     entreSitiosSegundos: number,
@@ -1023,37 +1089,58 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
     limite: number,
     despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
   ): Promise<ActividadSospechosaFila[]> {
-    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
-    return this.seleccionar<ActividadSospechosaFila>({
-      columnas:
-        't.tenant_id, q.generado_por AS usuario_id, COUNT(*) AS total, ' +
-        "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 25) AS ids, " +
-        "SUBSTRING_INDEX(GROUP_CONCAT(e2.id ORDER BY e2.id DESC SEPARATOR ','), ',', 25) AS ids_destino",
+    const MAXIMO_DE_IDS = 25;
+    // Cuentas con al menos dos aperturas por QR propio en la ventana (sin dos no hay par), desde la del cursor.
+    const cuentas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.tenant_id',
       uniones:
-        'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id AND q.es_propio = 1 ' +
-        'JOIN puertas AS p ON p.id = t.puerta_id AND p.tenant_id = t.tenant_id ' +
-        'JOIN eventos_acceso AS e2 ON e2.tenant_id = t.tenant_id AND e2.id > t.id AND e2.puerta_id <> t.puerta_id ' +
-        "AND e2.metodo = 'qr' AND e2.resultado = 'permitido' AND e2.ocurrido_at >= t.ocurrido_at " +
-        'JOIN qr_accesos AS q2 ON q2.id = e2.qr_acceso_id AND q2.tenant_id = e2.tenant_id ' +
-        'AND q2.es_propio = 1 AND q2.generado_por = q.generado_por ' +
-        'JOIN puertas AS p2 ON p2.id = e2.puerta_id AND p2.tenant_id = e2.tenant_id',
+        'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id AND q.es_propio = 1',
       donde:
-        `${ES_APERTURA_POR_QR} AND t.ocurrido_at >= ? AND t.ocurrido_at <= ? ` +
-        'AND ((p2.sitio_id <> p.sitio_id AND e2.ocurrido_at <= DATE_ADD(t.ocurrido_at, INTERVAL ? SECOND)) ' +
-        'OR (p2.sitio_id = p.sitio_id AND e2.ocurrido_at <= DATE_ADD(t.ocurrido_at, INTERVAL ? SECOND)))' +
-        (despuesDe === null ? '' : ' AND (t.tenant_id, q.generado_por) > (?, ?)'),
-      // Con 0 no se juzga el mismo sitio: `-1` s deja la condición siempre falsa (el segundo uso nunca es anterior).
-      params: [
-        desde,
-        hasta,
-        entreSitiosSegundos,
-        entrePuertasSegundos > 0 ? entrePuertasSegundos : -1,
-        ...cursor,
-      ],
-      agrupar: 't.tenant_id, q.generado_por',
-      orden: 't.tenant_id, q.generado_por',
-      limite,
+        `${ES_APERTURA_POR_QR} AND t.ocurrido_at >= ? AND t.ocurrido_at <= ?` +
+        (despuesDe === null ? '' : ' AND t.tenant_id >= ?'),
+      params: [desde, hasta, ...(despuesDe === null ? [] : [despuesDe.cuentaId]), 2],
+      agrupar: 't.tenant_id HAVING COUNT(*) >= ?',
+      orden: 't.tenant_id',
     });
+
+    const hallazgos: ActividadSospechosaFila[] = [];
+    for (const { tenant_id: cuentaId } of cuentas as { tenant_id: string }[]) {
+      const aperturas = await this.seleccionar<AperturaPropiaFila>({
+        columnas:
+          't.id, q.generado_por AS usuario_id, t.puerta_id, p.sitio_id, ' +
+          't.ocurrido_at AS ocurrido_at',
+        uniones:
+          'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id AND q.es_propio = 1 ' +
+          'JOIN puertas AS p ON p.id = t.puerta_id AND p.tenant_id = t.tenant_id',
+        donde: `${ES_APERTURA_POR_QR} AND t.tenant_id = ? AND t.ocurrido_at >= ? AND t.ocurrido_at <= ?`,
+        params: [cuentaId, desde, hasta],
+        orden: 'q.generado_por, t.ocurrido_at, t.id',
+      });
+      let inicio = 0;
+      while (inicio < aperturas.length) {
+        const usuarioId = String(aperturas[inicio]?.usuario_id);
+        let fin = inicio;
+        while (fin < aperturas.length && String(aperturas[fin]?.usuario_id) === usuarioId) fin++;
+        const esDespues =
+          despuesDe === null ||
+          BigInt(cuentaId) > BigInt(despuesDe.cuentaId) ||
+          BigInt(usuarioId) > BigInt(despuesDe.usuarioId);
+        if (esDespues) {
+          const hallazgo = emparejarUsosImposibles(
+            cuentaId,
+            usuarioId,
+            aperturas.slice(inicio, fin),
+            entreSitiosSegundos,
+            entrePuertasSegundos,
+            MAXIMO_DE_IDS,
+          );
+          if (hallazgo !== null) hallazgos.push(hallazgo);
+          if (hallazgos.length >= limite) return hallazgos;
+        }
+        inicio = fin;
+      }
+    }
+    return hallazgos;
   }
 
   /**

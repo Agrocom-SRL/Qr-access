@@ -1,9 +1,11 @@
 import type { Pool } from 'mysql2/promise';
 import { armarListado, limiteDe, type Paginacion } from '../../../platform/http/paginacion.js';
+import { CacheCorta } from '../../../platform/cache/cache-corta.js';
 import { aIso } from '../../../platform/tiempo/fechas.js';
 import { crearServicioDeIdentidades } from '../../seguridad/contracts.js';
 import {
   calcularConsumo,
+  VIGENCIA_DE_VISTAS_DE_PLATAFORMA_MS,
   coincideConLaBusqueda,
   presentarConsumo,
   type ConsumoDeCuenta,
@@ -16,6 +18,11 @@ export interface FiltroDeConsumo {
   readonly orden: 'porcentaje' | 'usado' | 'tope' | 'nombre';
   readonly sentido: 'asc' | 'desc';
 }
+
+/** El consumo de TODAS las cuentas del mes (es una vista de plataforma: no hay datos que separar por cuenta). */
+const consumoDelMes = new CacheCorta<Awaited<ReturnType<typeof calcularConsumo>>>(
+  VIGENCIA_DE_VISTAS_DE_PLATAFORMA_MS,
+);
 
 type Presentado = ReturnType<typeof presentarConsumo>;
 
@@ -54,7 +61,7 @@ function comparar(a: ConsumoDeCuenta, b: ConsumoDeCuenta, filtro: FiltroDeConsum
 /**
  * El consumo de la bolsa mensual de QR de todas las cuentas, para el panel de AGROCOM (ADR 0030 §5: «una lista de
  * cuentas ordenable por consumo de la bolsa»). Por omisión, de mayor a menor porcentaje: el ranking de quienes más
- * consumen. Solo lectura; no corta ni limita nada. Se calcula para todas las cuentas y se pagina en memoria (son las
+ * consumen. Solo lectura; no corta ni limita nada. Se calcula (y se guarda unos segundos, `consumoDelMes`) para todas las cuentas y se pagina en memoria (son las
  * cuentas clientes, no los eventos), de modo que `total` y `por_estado` no dependen de la página.
  */
 export async function ejecutar(
@@ -63,8 +70,10 @@ export async function ejecutar(
   paginacion: Paginacion,
   ahora: Date = new Date(),
 ) {
-  const cuentas = await crearServicioDeIdentidades(pool).todasLasCuentas();
-  const mes = await calcularConsumo(pool, cuentas, ahora);
+  // El cálculo cubre todas las cuentas y no depende del filtro: se reutiliza unos segundos entre clics del panel.
+  const mes = await consumoDelMes.obtener('consumo', ahora.getTime(), async () =>
+    calcularConsumo(pool, await crearServicioDeIdentidades(pool).todasLasCuentas(), ahora),
+  );
   const busqueda = mes.consumos.filter((c) => coincideConLaBusqueda(c.cuenta, filtro.buscar));
   const porEstado = { normal: 0, aviso: 0, superada: 0, sin_tope: 0 };
   for (const consumo of busqueda) porEstado[consumo.estado] += 1;
