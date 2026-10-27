@@ -5,7 +5,8 @@
     "sitios": "Properties and doors",
     "accesos": "Scans",
     "bitacora": "Audit log",
-    "incidentes": "Incidents"
+    "incidentes": "Incidents",
+    "operaciones": "QR and data"
   },
   "planActual": "Current plan",
   "usuariosActivos": "Active users",

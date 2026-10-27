@@ -11,7 +11,7 @@ import {
   formatearNumero,
   relacionDeDia,
 } from '@/l10n/formatos';
-import { traducirError } from '@/l10n/traducirError';
+import { traducirError, traducirMotivoDeEstado } from '@/l10n/traducirError';
 
 describe('formatos', () => {
   it('monto en bolivianos sin decimales y con punto de miles', () => {
@@ -121,5 +121,44 @@ describe('formatos de consumo y señales', () => {
   it('decimal con coma en español, para las aperturas por usuario', () => {
     expect(formatearDecimal(12.5, 'es')).toBe('12,5');
     expect(formatearDecimal(0.2, 'es')).toBe('0,2');
+  });
+});
+
+describe('códigos de incidente y motivos de estado', () => {
+  const t = i18next.t.bind(i18next);
+
+  it('los códigos de incidente de la API tienen su texto', () => {
+    expect(traducirError(t, 'incidente.fecha_antigua')).toBe(
+      'La fecha del incidente es de hace más de un año.',
+    );
+    expect(traducirError(t, 'incidente.tope_diario')).toContain('Ya registraste muchos incidentes');
+    expect(traducirError(t, 'incidente.no_encontrado')).toBe('No encontramos ese incidente.');
+  });
+
+  it('el motivo de reincidencia lleva el id del incidente como parámetro', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia:412')).toBe(
+      'Restringido por reincidencia en el incidente 412.',
+    );
+  });
+
+  it('sin id, el motivo de reincidencia usa el texto genérico', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia')).toBe(
+      'Restringido por reincidencia.',
+    );
+  });
+
+  it('un id que no son solo dígitos no entra al texto', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia:<b>x</b>')).toBe(
+      'Restringido por reincidencia.',
+    );
+  });
+
+  it('cualquier otro motivo se traduce como un código de la API', () => {
+    expect(traducirMotivoDeEstado(t, 'sesion.bloqueada')).toBe(
+      'Demasiados intentos, espera unos minutos.',
+    );
+    expect(traducirMotivoDeEstado(t, 'codigo.nuevo')).toBe(
+      'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.',
+    );
   });
 });

@@ -12,7 +12,11 @@ export interface SolicitudHttp {
   /** Un archivo como cuerpo crudo (su `type` es el `Content-Type`); no se combina con `cuerpo`. */
   archivo?: Blob;
   /** `blob` devuelve el contenido tal cual (un comprobante) en vez de leerlo como JSON. */
-  formato?: 'json' | 'blob';
+  formato?: 'json' | 'blob' | 'respuesta';
+  /**
+   * `respuesta` devuelve la `Response` completa para leer sus cabeceras (las `X-*` de una exportación
+   * paginada). El llamador decide el tipo; la autenticación y el refresco siguen igual.
+   */
   senal?: AbortSignal;
 }
 
@@ -111,6 +115,7 @@ export function crearClienteFetch({
       }
       if (!respuesta.ok) throw await leerError(respuesta);
       if (respuesta.status === 204) return undefined as T;
+      if (solicitud.formato === 'respuesta') return respuesta as T;
       if (solicitud.formato === 'blob') return (await respuesta.blob()) as T;
       return (await respuesta.json()) as T;
     },

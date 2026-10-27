@@ -1,6 +1,6 @@
 {
   "titulo": "Incidentes de uso",
-  "subtitulo": "Casos raros de la cuenta y su evidencia. Aquí solo se consultan: quien administra la rama los confirma o descarta. Ninguno corta el acceso por sí solo.",
+  "subtitulo": "Casos raros de la cuenta y su evidencia. Quien tenga permiso los confirma o descarta desde aquí. Ninguno corta el acceso por sí solo.",
   "filtros": {
     "tipo": "Tipo",
     "origen": "Origen",
@@ -49,7 +49,7 @@
   "errorCarga": "No pudimos cargar los incidentes",
   "detalle": {
     "titulo": "Incidente de {{usuario}}",
-    "soloLectura": "Solo se consulta desde aquí. La resolución la hace quien administra la rama de la cuenta.",
+    "soloLectura": "Solo puedes consultarlo: resolver incidentes requiere un permiso que tu rol no tiene.",
     "usuario": "Usuario",
     "tipo": "Tipo",
     "origen": "Origen",
@@ -63,5 +63,15 @@
     "sinResolver": "Nadie lo resolvió todavía",
     "resueltoPor": "Por {{persona}}, el {{cuando}}",
     "sinMotivo": "Sin motivo"
+  },
+  "resolucion": {
+    "motivo": "Motivo",
+    "motivoAyuda": "Obligatorio para confirmar. Descartar o dejarlo pendiente no lo necesita.",
+    "motivoRequerido": "Escribe el motivo para confirmar el incidente.",
+    "confirmar": "Confirmar",
+    "descartar": "Descartar",
+    "pendiente": "Dejar pendiente",
+    "guardado": "Quedó guardado como {{estado}}.",
+    "sinPropuesta": "Todavía no se cruza el umbral de reincidencia, así que el sistema no propone nada."
   }
 }

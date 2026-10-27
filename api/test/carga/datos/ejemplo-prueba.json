@@ -1,5 +1,5 @@
 {
-  "_aviso": "EJEMPLO con valores falsos para leer el formato. No es un entorno real: preparar-datos.mjs genera el de verdad en carga/datos/generados/ (ignorado por git).",
+  "_aviso": "EJEMPLO con valores falsos para leer el formato. No es un entorno real: preparar-datos.mjs genera el de verdad en api/test/carga/datos/generados/ (ignorado por git).",
   "version": 1,
   "generado_at": "2026-01-01T00:00:00.000Z",
   "api": "http://127.0.0.1:3000/api/v1",

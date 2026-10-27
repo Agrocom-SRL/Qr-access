@@ -2,10 +2,13 @@ import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import { paginadoDesde, type ListadoDto } from '../../../shared/api/tipos';
 import {
   POR_PAGINA_DE_INCIDENTES,
+  type AccionPropuesta,
   type Incidente,
   type PersonaDeIncidente,
+  type ReincidenciaDeResolucion,
+  type RespuestaDeResolucion,
 } from '../domain/incidente';
-import type { IncidentesRepositorio } from './IncidentesRepositorio';
+import type { IncidentesRepositorio, PedidoDeResolucion } from './IncidentesRepositorio';
 
 interface PersonaDto {
   id: string;
@@ -34,6 +37,19 @@ interface IncidenteDto {
   } | null;
   ocurrido_at: string;
   created_at: string;
+}
+
+interface ReincidenciaDto {
+  confirmados: number;
+  minimo: number;
+  ventana_dias: number;
+  propuesta: AccionPropuesta | null;
+  aplicada_automaticamente: boolean;
+}
+
+interface RespuestaDeResolucionDto {
+  incidente: IncidenteDto;
+  reincidencia: ReincidenciaDto | null;
 }
 
 function personaDesdeDto(dto: PersonaDto): PersonaDeIncidente {
@@ -69,6 +85,17 @@ export function incidenteDesdeDto(dto: IncidenteDto): Incidente {
   };
 }
 
+export function reincidenciaDesdeDto(dto: ReincidenciaDto | null): ReincidenciaDeResolucion | null {
+  if (dto === null) return null;
+  return {
+    confirmados: dto.confirmados,
+    minimo: dto.minimo,
+    ventanaDias: dto.ventana_dias,
+    propuesta: dto.propuesta,
+    aplicadaAutomaticamente: dto.aplicada_automaticamente,
+  };
+}
+
 /** Los endpoints de AGROCOM para los incidentes de una cuenta (`/plataforma/cuentas/{id}/incidentes`). */
 export function crearIncidentesHttp(cliente: ClienteHttp): IncidentesRepositorio {
   return {
@@ -86,6 +113,19 @@ export function crearIncidentesHttp(cliente: ClienteHttp): IncidentesRepositorio
         },
       });
       return paginadoDesde(dto, incidenteDesdeDto);
+    },
+    async resolver(cuentaId, incidenteId, pedido: PedidoDeResolucion) {
+      const dto = await cliente.solicitar<RespuestaDeResolucionDto>({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${encodeURIComponent(cuentaId)}/incidentes/${encodeURIComponent(incidenteId)}/resolucion`,
+        // Sin motivo no se manda la clave: la API la acepta ausente.
+        cuerpo: { resultado: pedido.resultado, motivo: pedido.motivo },
+      });
+      const respuesta: RespuestaDeResolucion = {
+        incidente: incidenteDesdeDto(dto.incidente),
+        reincidencia: reincidenciaDesdeDto(dto.reincidencia),
+      };
+      return respuesta;
     },
   };
 }

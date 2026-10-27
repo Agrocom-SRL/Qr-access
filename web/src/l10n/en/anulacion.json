@@ -1,0 +1,20 @@
+{
+  "titulo": "Revoke the account's QR codes",
+  "explicacion": "Revokes at once every valid QR code of the account, from all its users. Use it against suspicious use the account can't stop by itself.",
+  "boton": "Revoke the account's QR codes",
+  "dialogo": {
+    "titulo": "Revoke all the QR codes of {{cuenta}}",
+    "resumen": "All valid QR codes of {{cuenta}} ({{codigo}}) will be revoked, from all its users. Revoked QR codes stop working: whoever holds one will have to ask for a new one.",
+    "irreversible": "This action can't be undone.",
+    "motivo": "Reason",
+    "motivoAyuda": "It is recorded in the account's audit log.",
+    "codigo": "Type {{codigo}} to confirm",
+    "confirmar": "Revoke all QR codes",
+    "anulando": "Revoking"
+  },
+  "resultado": {
+    "ninguno": "There were no valid QR codes: nothing was revoked.",
+    "anulados_one": "Revoked {{count}} valid QR code.",
+    "anulados_other": "Revoked {{count}} valid QR codes."
+  }
+}

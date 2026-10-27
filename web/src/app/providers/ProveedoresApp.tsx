@@ -16,6 +16,8 @@ import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
 import { ProveedorSesiones } from '../../features/sesiones';
 import { ProveedorIncidentes } from '../../features/incidentes';
+import { ProveedorAnulacion } from '../../features/anulacion';
+import { ProveedorExportaciones } from '../../features/exportacion';
 import { ProveedorSuscripciones } from '../../features/suscripciones';
 import { ProveedorTema } from '../../theme/ProveedorTema';
 import type { Servicios } from './crearServicios';
@@ -71,7 +73,13 @@ export function ProveedoresApp({
                                       <SesionProvider almacen={servicios.almacen}>
                                         <ProveedorSesiones valor={servicios.sesiones}>
                                           <ProveedorIncidentes valor={servicios.incidentes}>
-                                            {children}
+                                            <ProveedorAnulacion valor={servicios.anulacion}>
+                                              <ProveedorExportaciones
+                                                valor={servicios.exportaciones}
+                                              >
+                                                {children}
+                                              </ProveedorExportaciones>
+                                            </ProveedorAnulacion>
                                           </ProveedorIncidentes>
                                         </ProveedorSesiones>
                                       </SesionProvider>

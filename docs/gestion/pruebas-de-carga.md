@@ -1,7 +1,7 @@
 # Pruebas de carga (k6): cómo montarlas, correrlas y leerlas
 
 **Ola:** W13 (`docs/gestion/plan-maestro.md` §4.3). **Decisiones:** ADR 0030 §3 (protección contra estrés) y ADR 0032
-(concurrencia, prioridad de las puertas y registro de lecturas). **Código:** `carga/` (ver `carga/README.md`) y
+(concurrencia, prioridad de las puertas y registro de lecturas). **Código:** `api/test/carga/` (ver `api/test/carga/README.md`) y
 `bin/carga`.
 
 **Estado de este documento:** la carga está escrita y se validó contra una API levantada en un sandbox, con cifras
@@ -32,11 +32,11 @@ Lo que **no** responde está en §12.
 
 ## 2. Reglas de seguridad de la prueba
 
-- **Nunca contra producción.** Cada corrida exige `CARGA_ENTORNO=prueba`. `carga/lib/guarda.mjs` rechaza cualquier host
+- **Nunca contra producción.** Cada corrida exige `CARGA_ENTORNO=prueba`. `api/test/carga/lib/guarda.mjs` rechaza cualquier host
   del dominio `agrocom.com.bo` (incluido `acceso.agrocom.com.bo`) y cualquier host que no sea local ni esté declarado
   en `CARGA_HOSTS_DE_PRUEBA`. El preparador y k6 aplican la misma regla.
 - **Sin secretos en el repo.** `preparar-datos.mjs` toma la clave del super admin de `CARGA_ROOT_CLAVE`. Los datos
-  generados (claves de placas, PIN, tokens de QR de prueba) van a `carga/datos/generados/`, con permisos 0600 y
+  generados (claves de placas, PIN, tokens de QR de prueba) van a `api/test/carga/datos/generados/`, con permisos 0600 y
   ignorados por git. `bin/carga` no pasa `CARGA_ROOT_CLAVE` a k6.
 - **Sin acceso a la base.** Todo entra por la API, como lo haría la placa o la app.
 - **`X-Forwarded-For` simulado** (`CARGA_IP_SIMULADAS=1`): solo en el entorno de prueba, sin proxy delante y con
@@ -47,7 +47,7 @@ Lo que **no** responde está en §12.
 
 ## 3. Umbrales: qué se exige y por qué
 
-Los umbrales están en `carga/lib/umbrales.js` y se separan en dos clases.
+Los umbrales están en `api/test/carga/lib/umbrales.js` y se separan en dos clases.
 
 **Compuertas** (si fallan, la corrida falla). Son el objetivo de W13 y las garantías de seguridad:
 
@@ -208,10 +208,10 @@ Ejemplo, la corrida (a) completa:
 ```bash
 export CARGA_ENTORNO=prueba CARGA_URL=http://127.0.0.1:3010
 bin/carga preparar --usuarios 60 --puertas 5 --qr 1450 --qr-repeticion 5   # pide CARGA_ROOT_CLAVE
-CARGA_DATOS="$PWD/carga/datos/generados/prueba.json" CARGA_ETAPAS=10:30,30:30,10:30 bin/carga validacion-qr
+CARGA_DATOS="$PWD/api/test/carga/datos/generados/prueba.json" CARGA_ETAPAS=10:30,30:30,10:30 bin/carga validacion-qr
 ```
 
-`bin/carga preparar` escribe `carga/datos/generados/prueba.json`; para varias corridas, usa `--salida` para no pisar el
+`bin/carga preparar` escribe `api/test/carga/datos/generados/prueba.json`; para varias corridas, usa `--salida` para no pisar el
 anterior. `CARGA_DATOS` apunta al que corresponda.
 
 Orden recomendado: preparar → (a) → preparar → (d) → preparar → línea base de (d) → preparar → (e) → (b) → (c) → preparar
@@ -225,7 +225,7 @@ límite de ADR 0030 §3.2. Es esperable: es el límite trabajando, no un fallo d
 
 ```bash
 k6 inspect -e CARGA_ENTORNO=prueba -e CARGA_URL=http://127.0.0.1:3010 -e CARGA_DATOS=/ruta/absoluta.json \
-  carga/escenarios/validacion-qr.js
+  api/test/carga/escenarios/validacion-qr.js
 ```
 
 ### 5.4 Cómo se compara (d) con (a)
@@ -241,7 +241,7 @@ no está haciendo su trabajo: se reporta, no se ajusta el umbral.
 
 ### 6.1 Dónde están
 
-`carga/resultados/<escenario>-<sello>.json` (todas las métricas, con sus umbrales) y `.csv` (una fila por métrica y
+`api/test/carga/resultados/<escenario>-<sello>.json` (todas las métricas, con sus umbrales) y `.csv` (una fila por métrica y
 estadística, más el resultado de cada umbral). Ambos quedan fuera de git. La consola muestra un resumen corto y la
 lista de umbrales que **no** se cumplen. Con `CARGA_SALIDA` se cambia la carpeta.
 
@@ -319,7 +319,7 @@ Campos de la tabla de límites (§7) y del punto de quiebre (f1): añade una tab
 
 ### 9.2 Cifras (campaña del 27 de octubre de 2026)
 
-Se rellenan con el resumen de cada corrida en `carga/resultados/` (copiado de la carpeta de trabajo del sandbox).
+Se rellenan con el resumen de cada corrida en `api/test/carga/resultados/` (copiado de la carpeta de trabajo del sandbox).
 
 Todas las cifras son de una sola ejecución por fila (no hay repeticiones ni desviación). Los n son pequeños: son
 suficientes para ver el orden de magnitud, no para afirmar un p99.

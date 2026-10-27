@@ -46,7 +46,7 @@ function textoDe(nombre, datos) {
 
 /**
  * Crea el `handleSummary` de un escenario. Escribe `<salida>/<nombre>-<sello>.json` y `.csv`; la ruta sale de
- * CARGA_SALIDA (carga/resultados por omisión, dentro del repo y excluida de git).
+ * CARGA_SALIDA (api/test/carga/resultados por omisión, dentro del repo y excluida de git).
  */
 export function resumenDe(nombre) {
   return function handleSummary(datos) {

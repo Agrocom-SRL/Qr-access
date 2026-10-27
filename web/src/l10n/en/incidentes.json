@@ -1,6 +1,6 @@
 {
   "titulo": "Usage incidents",
-  "subtitulo": "Rare cases in the account and their evidence. They are only viewed here: whoever manages the branch confirms or dismisses them. None of them cuts access by itself.",
+  "subtitulo": "Rare cases in the account and their evidence. Whoever has permission confirms or dismisses them from here. None of them cuts access by itself.",
   "filtros": {
     "tipo": "Type",
     "origen": "Origin",
@@ -49,7 +49,7 @@
   "errorCarga": "We couldn't load the incidents",
   "detalle": {
     "titulo": "Incident of {{usuario}}",
-    "soloLectura": "You can only view it here. Whoever manages the account's branch resolves it.",
+    "soloLectura": "You can only view it: resolving incidents needs a permission your role doesn't have.",
     "usuario": "User",
     "tipo": "Type",
     "origen": "Origin",
@@ -63,5 +63,15 @@
     "sinResolver": "Nobody has resolved it yet",
     "resueltoPor": "By {{persona}}, on {{cuando}}",
     "sinMotivo": "No reason given"
+  },
+  "resolucion": {
+    "motivo": "Reason",
+    "motivoAyuda": "Required to confirm. Dismissing or leaving it pending doesn't need one.",
+    "motivoRequerido": "Write the reason to confirm the incident.",
+    "confirmar": "Confirm",
+    "descartar": "Dismiss",
+    "pendiente": "Leave pending",
+    "guardado": "Saved as {{estado}}.",
+    "sinPropuesta": "The reincidence threshold hasn't been crossed yet, so the system proposes nothing."
   }
 }

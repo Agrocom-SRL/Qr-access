@@ -23,6 +23,8 @@ import { crearSeguridadHttp, type SeguridadRepositorio } from '../../features/se
 import { crearSenalesHttp, type SenalesRepositorio } from '../../features/senales';
 import { crearSesionesHttp, type SesionesRepositorio } from '../../features/sesiones';
 import { crearIncidentesHttp, type IncidentesRepositorio } from '../../features/incidentes';
+import { crearAnulacionHttp, type AnulacionRepositorio } from '../../features/anulacion';
+import { crearExportacionesHttp, type ExportacionesRepositorio } from '../../features/exportacion';
 
 /** Todo lo inyectable de la aplicación: en producción son las implementaciones HTTP; en tests, mocks. */
 export interface Servicios {
@@ -44,6 +46,8 @@ export interface Servicios {
   senales: SenalesRepositorio;
   sesiones: SesionesRepositorio;
   incidentes: IncidentesRepositorio;
+  anulacion: AnulacionRepositorio;
+  exportaciones: ExportacionesRepositorio;
 }
 
 /** Compone las implementaciones HTTP sobre un único cliente y almacén de sesión. */
@@ -72,5 +76,7 @@ export function crearServicios(
     senales: crearSenalesHttp(cliente),
     sesiones: crearSesionesHttp(cliente),
     incidentes: crearIncidentesHttp(cliente),
+    anulacion: crearAnulacionHttp(cliente),
+    exportaciones: crearExportacionesHttp(cliente),
   };
 }

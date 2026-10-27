@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Deja la base de DESARROLLO como queda la de producción tras su reinicio (jerarquia-de-usuarios.md §13):
-# respaldo previo, base recreada, migraciones, catálogo de permisos y solo el super admin de desarrollo
+# base recreada, migraciones, catálogo de permisos y solo el super admin de desarrollo
 # `root` (contraseña temporal 0000, que el panel obliga a cambiar). Sin cuentas ni datos demo.
 #
 # Solo toca `qr_access` del contenedor `db` local; nunca `qr_access_testing` ni volúmenes (-v).
-# Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--si]
+# NO hace respaldo: si lo necesitas, hazlo a mano antes. Pide confirmación escribiendo REINICIAR (o `--si` para saltarla). Uso: bin/reiniciar-local [--si]
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -20,17 +20,10 @@ mysql_root() { docker compose exec -T db sh -c 'mariadb -uroot -p"$MARIADB_ROOT_
 base=qr_access
 
 if [ "$confirmado" -ne 1 ]; then
-  echo "Esto borra TODOS los datos de la base local '$base' (se hace un respaldo antes)."
+  echo "Esto borra TODOS los datos de la base local '$base'."
   read -r -p "Escribe REINICIAR para continuar: " respuesta
   [ "$respuesta" = "REINICIAR" ] || { echo "Cancelado."; exit 1; }
 fi
-
-echo "==> Respaldo"
-mkdir -p respaldos
-respaldo="respaldos/${base}-$(date +%Y%m%d-%H%M%S).sql"
-docker compose exec -T db sh -c 'mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --routines --default-character-set=utf8mb4 '"$base" > "$respaldo" 2>/dev/null
-[ -s "$respaldo" ] || { echo "El respaldo quedó vacío: no se toca la base." >&2; rm -f "$respaldo"; exit 1; }
-echo "Guardado en $respaldo"
 
 echo "==> Deteniendo la API"
 docker compose stop api >/dev/null

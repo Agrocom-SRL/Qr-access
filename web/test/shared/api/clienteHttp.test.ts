@@ -72,6 +72,19 @@ describe('clienteHttp', () => {
     expect(alSesionVencida).toHaveBeenCalledOnce();
   });
 
+  it('formato respuesta devuelve la Response completa para leer sus cabeceras', async () => {
+    const { cliente } = armar([
+      new Response('a,b', { status: 200, headers: { 'x-total-filas': '2' } }),
+    ]);
+    const respuesta = await cliente.solicitar<Response>({
+      metodo: 'GET',
+      ruta: '/exportacion',
+      formato: 'respuesta',
+    });
+    expect(respuesta.headers.get('x-total-filas')).toBe('2');
+    expect(await respuesta.text()).toBe('a,b');
+  });
+
   it('sin red lanza red.sin_conexion', async () => {
     const { cliente } = armar([]);
     await expect(cliente.solicitar({ metodo: 'GET', ruta: '/cuentas' })).rejects.toMatchObject({

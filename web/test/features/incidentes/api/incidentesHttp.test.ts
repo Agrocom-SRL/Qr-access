@@ -85,4 +85,42 @@ describe('incidentes de una cuenta por HTTP (ADR 0033 §4, solo lectura)', () =>
       estado: 'sin_resolver',
     });
   });
+
+  it('resolver manda el resultado y el motivo a la resolución de la cuenta, y devuelve la reincidencia', async () => {
+    const { solicitar, cliente } = clienteFalso({
+      incidente: DTO,
+      reincidencia: {
+        confirmados: 2,
+        minimo: 3,
+        ventana_dias: 30,
+        propuesta: 'restringir',
+        aplicada_automaticamente: false,
+      },
+    });
+    const respuesta = await crearIncidentesHttp(cliente).resolver('7', '901', {
+      resultado: 'confirmado',
+      motivo: 'Dos QR a nombre de un mismo Titular',
+    });
+    expect(solicitar).toHaveBeenCalledWith({
+      metodo: 'POST',
+      ruta: '/plataforma/cuentas/7/incidentes/901/resolucion',
+      cuerpo: { resultado: 'confirmado', motivo: 'Dos QR a nombre de un mismo Titular' },
+    });
+    expect(respuesta.incidente.estado).toBe('confirmado');
+    expect(respuesta.reincidencia).toEqual({
+      confirmados: 2,
+      minimo: 3,
+      ventanaDias: 30,
+      propuesta: 'restringir',
+      aplicadaAutomaticamente: false,
+    });
+  });
+
+  it('sin reincidencia evaluada (repetir el resultado) la devuelve en null', async () => {
+    const { cliente } = clienteFalso({ incidente: DTO, reincidencia: null });
+    const respuesta = await crearIncidentesHttp(cliente).resolver('7', '901', {
+      resultado: 'descartado',
+    });
+    expect(respuesta.reincidencia).toBeNull();
+  });
 });

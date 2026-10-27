@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Prepara un entorno de prueba para las pruebas de carga, solo por la API (nunca por la base de datos):
 // una cuenta con su Administrador, un sitio, N puertas, N placas vinculadas, U Titulares de prueba y los QR
-// pregenerados que consumen los escenarios. Escribe un JSON en carga/datos/generados/ (excluido de git).
+// pregenerados que consumen los escenarios. Escribe un JSON en api/test/carga/datos/generados/ (excluido de git).
 //
 // Guardarraíles: exige CARGA_ENTORNO=prueba, un host de prueba declarado y rechaza cualquier dominio de AGROCOM.
 // Las credenciales salen de variables de entorno (CARGA_ROOT_CLAVE, obligatoria). Nunca se imprimen claves,
@@ -9,27 +9,27 @@
 //
 // Uso (desde la raíz del repo):
 //   CARGA_ENTORNO=prueba CARGA_URL=http://127.0.0.1:3000 CARGA_ROOT_CLAVE=... \
-//     node carga/preparar-datos.mjs --puertas 5 --usuarios 10 --qr 200 --qr-confirmacion 20 --qr-repeticion 5
+//     node api/test/carga/preparar-datos.mjs --puertas 5 --usuarios 10 --qr 200 --qr-confirmacion 20 --qr-repeticion 5
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { configuracionDeCarga, exigirEntornoDePrueba } from './lib/guarda.mjs';
 
-const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const SALIDA_POR_OMISION = resolve(RAIZ, 'carga/datos/generados/prueba.json');
+const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const SALIDA_POR_OMISION = resolve(RAIZ, 'api/test/carga/datos/generados/prueba.json');
 const ESPERA_MAXIMA_S = 310;
 /** Tope de pendientes y de QR diarios por usuario en el plan (configuracion_limites, ADR 0030 §2). */
 const QR_POR_USUARIO_MAXIMO = 50;
 
-const AYUDA = `Uso: node carga/preparar-datos.mjs [opciones]
+const AYUDA = `Uso: node api/test/carga/preparar-datos.mjs [opciones]
 
   --puertas N          puertas (y placas vinculadas, una por puerta). Por omisión 5.
   --usuarios N         Titulares de prueba que generan QR. Por omisión 10 (máximo 90).
   --qr N               QR de primer uso para la validación (escenarios a, d, f1). Por omisión 100.
   --qr-confirmacion N  QR de primer uso para las confirmaciones (escenario e). Por omisión 0.
   --qr-repeticion N    QR que se consumen aquí y se reusan en la prueba de repetición. Por omisión 5.
-  --salida RUTA        JSON de salida. Por omisión carga/datos/generados/prueba.json.
+  --salida RUTA        JSON de salida. Por omisión api/test/carga/datos/generados/prueba.json.
 
 Variables: CARGA_ENTORNO=prueba (obligatoria), CARGA_URL (origen, p. ej. http://127.0.0.1:3000),
 CARGA_HOSTS_DE_PRUEBA (hosts no locales permitidos), CARGA_ROOT_CLAVE (obligatoria),

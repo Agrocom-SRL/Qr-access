@@ -1,0 +1,26 @@
+{
+  "titulo": "Exportar dados",
+  "subtitulo": "Baixe os dados da conta em CSV, uma página de cada vez. Se houver mais linhas que o limite, reduza o intervalo de datas para baixar o restante.",
+  "recurso": {
+    "etiqueta": "O que exportar",
+    "usuarios": "Usuários",
+    "puertas": "Portas",
+    "lecturas": "Leituras de acesso"
+  },
+  "filtros": {
+    "resultado": "Resultado",
+    "todos": "Todos",
+    "permitido": "Permitido",
+    "rechazado": "Recusado",
+    "desde": "De",
+    "hasta": "Até",
+    "rangoInvalido": "A data inicial é posterior à data final."
+  },
+  "descargar": "Baixar CSV",
+  "descargarDeNuevo": "Baixar a partir da primeira página",
+  "siguiente": "Baixar página {{pagina}} de {{paginas}}",
+  "descargada_one": "Página {{pagina}} de {{paginas}} baixada: {{count}} linha.",
+  "descargada_other": "Página {{pagina}} de {{paginas}} baixada: {{count}} linhas.",
+  "sinFilas": "Não há linhas para exportar com estes filtros.",
+  "truncado": "Há mais linhas que o limite da exportação. Reduza o intervalo de datas para exportar o restante."
+}

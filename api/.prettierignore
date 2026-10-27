@@ -2,3 +2,5 @@ node_modules/
 dist/
 coverage/
 package-lock.json
+# Scripts de k6 en JavaScript (runtime de k6), no TypeScript de la API.
+test/carga/

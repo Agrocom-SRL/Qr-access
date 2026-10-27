@@ -5,7 +5,8 @@
     "sitios": "Propriedades e portas",
     "accesos": "Leituras",
     "bitacora": "Registro de atividades",
-    "incidentes": "Incidentes"
+    "incidentes": "Incidentes",
+    "operaciones": "QR e dados"
   },
   "planActual": "Plano atual",
   "usuariosActivos": "Usuários ativos",

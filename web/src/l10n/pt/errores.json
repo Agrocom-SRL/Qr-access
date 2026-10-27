@@ -58,5 +58,15 @@
   "comprobante_no_encontrado": "Não encontramos o arquivo enviado. Envie-o novamente.",
   "notificacion_no_encontrada": "Não encontramos esse aviso.",
   "sesion_no_encontrada": "Essa sessão já não está aberta.",
-  "limite_excedido": "Você fez muitos pedidos seguidos. Espere um momento e tente novamente."
+  "limite_excedido": "Você fez muitos pedidos seguidos. Espere um momento e tente novamente.",
+  "incidente_no_encontrado": "Não encontramos esse incidente.",
+  "incidente_motivo_requerido": "Escreva o motivo para confirmar o incidente.",
+  "incidente_propio": "Você não pode resolver um incidente próprio.",
+  "incidente_fecha_antigua": "A data do incidente é de há mais de um ano.",
+  "incidente_fecha_futura": "A data do incidente não pode ser futura.",
+  "incidente_tope_diario": "Você já registrou muitos incidentes manualmente para esta pessoa hoje. Tente amanhã.",
+  "incidente_evidencia_invalida": "Alguma evidência não é dessa pessoa nem do seu ramo.",
+  "incidente_reincidencia": "Restringido por reincidência no incidente {{incidente}}.",
+  "incidente_reincidencia_sin_id": "Restringido por reincidência.",
+  "exportacion_tope_excedido": "Essa página fica fora do limite da exportação. Reduza o intervalo de datas."
 }
