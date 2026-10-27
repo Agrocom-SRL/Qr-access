@@ -47,6 +47,8 @@ export const REDACCION_DE_LOGS: readonly string[] = [
   'req.headers.authorization',
   'req.headers.cookie',
   'req.headers["x-api-key"]',
+  // De ella se deriva el token de un QR (ADR 0031 §11): no es un secreto en sí, pero no hay por qué registrarla.
+  'req.headers["idempotency-key"]',
   'res.headers["set-cookie"]',
   ...CAMPOS_SECRETOS.flatMap((campo) => [
     `req.body.${campo}`,

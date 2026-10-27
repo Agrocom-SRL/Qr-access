@@ -67,6 +67,9 @@ const esquema = z.object({
   ARCHIVOS_RUTA: z.string().min(1).default('./archivos'),
   // Pimienta del índice de PIN (ADR 0018): 32 bytes en base64; nunca en la base
   PIN_PIMIENTA: z.string().min(32),
+  // Secreto de la idempotencia de `POST /qr-accesos` (ADR 0031 §11): deriva el token del QR y el hash de la clave.
+  // Propio, distinto de la pimienta del PIN. Rotarlo invalida los tokens derivados de claves aún vigentes (24 h).
+  QR_IDEMPOTENCIA_CLAVE: z.string().min(32),
 
   // Dos pools de MariaDB (ADR 0032 §1): uno reservado a las rutas del dispositivo y otro para la
   // app y el panel, de modo que una avalancha de listados no deje a una puerta esperando. Los

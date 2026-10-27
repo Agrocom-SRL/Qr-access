@@ -47,6 +47,18 @@
   "comunErrorQrVigenciaInvalida": "The chosen validity is not valid. Pick another one.",
   "comunErrorQrVigenciaExcedida": "That validity exceeds what your plan allows. Pick a shorter one.",
   "comunErrorQrPropioEnCurso": "Your access QR is already being generated. Try again.",
+  "comunErrorIdempotenciaConflicto": "That request was already sent with other data. Generate the QR again.",
+  "@comunErrorIdempotenciaConflicto": {
+    "description": "code idempotencia.conflicto (422): the idempotency key was already used with another body; a new generation starts"
+  },
+  "comunErrorIdempotenciaEnCurso": "That QR is still being generated. Wait a moment and try again.",
+  "@comunErrorIdempotenciaEnCurso": {
+    "description": "code idempotencia.en_curso (409): another request with the same key is still running; it is retried with the same key"
+  },
+  "comunErrorIdempotenciaQrNoVigente": "That QR is no longer valid. Tap again to generate a new one.",
+  "@comunErrorIdempotenciaQrNoVigente": {
+    "description": "code idempotencia.qr_no_vigente (409): the key's QR was used, revoked, replaced or expired; it is final, the key is discarded and the next tap generates another QR"
+  },
   "comunErrorQrYaUsado": "This QR was already used, so it cannot be revoked.",
   "comunErrorQrLimiteDiario": "You have already generated the maximum number of QR codes for today. You can generate more tomorrow.",
   "comunErrorQrLimitePendientes": "You have too many unused QR codes. Use or cancel one before generating another.",

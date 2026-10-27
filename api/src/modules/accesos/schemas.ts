@@ -7,6 +7,11 @@ import {
   FILAS_POR_PAGINA_POR_OMISION,
   RECURSOS_EXPORTABLES,
 } from './domain/exportacion.js';
+import {
+  FORMATO_DE_CLAVE,
+  LARGO_MAXIMO_DE_CLAVE,
+  LARGO_MINIMO_DE_CLAVE,
+} from './domain/idempotencia.js';
 
 const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
@@ -38,6 +43,16 @@ export const cuerpoDeGeneracion = z.strictObject({
    * token). El anterior se anula y cuenta como reemplazo sin uso (ADR 0030 §2.1).
    */
   reemplazar: z.boolean().optional(),
+});
+
+/** `Idempotency-Key` (opcional, ADR 0031 §11): un identificador al azar por solicitud (UUID v4 o base64url de 22 a 128 caracteres). */
+export const cabecerasDeGeneracion = z.object({
+  'idempotency-key': z
+    .string()
+    .min(LARGO_MINIMO_DE_CLAVE)
+    .max(LARGO_MAXIMO_DE_CLAVE)
+    .regex(FORMATO_DE_CLAVE)
+    .optional(),
 });
 
 export const respuestaDeGeneracion = z.object({

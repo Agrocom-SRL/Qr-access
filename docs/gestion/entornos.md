@@ -41,11 +41,11 @@
 Preparar o reiniciar la base de desarrollo:
 
 ```
-cp .env.example .env                    # trae JWT_SECRETO y PIN_PIMIENTA de desarrollo; si ya tenías un .env, copia esas variables
+cp .env.example .env                    # trae JWT_SECRETO, PIN_PIMIENTA y QR_IDEMPOTENCIA_CLAVE de desarrollo; si ya tenías un .env, copia esas variables
 bin/reiniciar-local                     # respaldo, base nueva, migraciones, catálogo y el super admin root
 ```
 
-`bin/reiniciar-local` hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes. La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA`.
+`bin/reiniciar-local` hace un respaldo en `respaldos/` antes de recrear `qr_access`, pide escribir REINICIAR y nunca toca `qr_access_testing` ni los volúmenes. La API no arranca sin `JWT_SECRETO` (32 caracteres o más) ni `PIN_PIMIENTA` ni `QR_IDEMPOTENCIA_CLAVE`.
 
 | Qué | Valor |
 |---|---|

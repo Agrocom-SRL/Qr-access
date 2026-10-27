@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr_contrato.dart';
@@ -40,6 +43,14 @@ Map<String, Object?> _estado(String estado) => {
   'ultimo_intento': null,
 };
 
+/// Respuesta 409 de la API cuando el QR de la clave ya no está pendiente.
+Map<String, Object?> _qrNoVigente() => {
+  'type': 'about:blank',
+  'title': 'El QR ya no está vigente',
+  'status': 409,
+  'code': 'idempotencia.qr_no_vigente',
+};
+
 DatosGeneracion _datosPropio() => DatosGeneracion(
   puertaIds: const {'p1', 'p2'},
   vigencia: Vigencia.porDefecto,
@@ -59,18 +70,47 @@ QrPropioGuardado _propioLocal() => QrPropioGuardado(
 Map<String, dynamic> _cuerpo(RequestOptions options) =>
     options.data as Map<String, dynamic>;
 
+/// UUID v4 (RFC 4122), el formato de `Idempotency-Key` que genera la app.
+final _formatoUuidV4 = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+);
+
+/// Falla de red: la petición no llegó a una respuesta (ADR 0031 §11).
+DioException _sinRed(RequestOptions options) => DioException(
+  requestOptions: options,
+  type: DioExceptionType.connectionError,
+);
+
+/// Valores de `Idempotency-Key` de cada petición, en orden.
+List<String?> _claves(AdaptadorHttpFalso adaptador) => [
+  for (final p in adaptador.peticiones) p.headers['Idempotency-Key'] as String?,
+];
+
 void main() {
   late AlmacenQrEnMemoria almacen;
 
   /// Repositorio real sobre un adaptador HTTP de prueba: `responder` decide
   /// cada respuesta y las peticiones quedan en `adaptador.peticiones`.
+  ///
+  /// Los reintentos no esperan (`esperasReintento` a cero) y el azar tiene
+  /// semilla, así que las claves de idempotencia son predecibles en el test.
   (QrAccesosRepositorioApi, AdaptadorHttpFalso) montar(
-    Future<ResponseBody> Function(RequestOptions options) responder,
-  ) {
+    Future<ResponseBody> Function(RequestOptions options) responder, {
+    String? Function()? ambito,
+  }) {
     final adaptador = AdaptadorHttpFalso(responder);
     final dio = Dio(BaseOptions(baseUrl: 'http://api.test/api/v1'))
       ..httpClientAdapter = adaptador;
-    return (QrAccesosRepositorioApi(ClienteApi(dio), almacen), adaptador);
+    return (
+      QrAccesosRepositorioApi(
+        ClienteApi(dio),
+        almacen,
+        ambito: ambito,
+        azar: Random(7),
+        esperasReintento: const [Duration.zero, Duration.zero],
+      ),
+      adaptador,
+    );
   }
 
   setUp(() => almacen = AlmacenQrEnMemoria());
@@ -148,6 +188,327 @@ void main() {
               .having((e) => e.reintentarEnSegundos, 'espera', 95),
         ),
       );
+    });
+  });
+
+  group('idempotencia de la generación (ADR 0031 §11)', () {
+    test(
+      'un reintento tras sin red manda la misma clave y el mismo cuerpo',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((options) async {
+          llamadas++;
+          if (llamadas == 1) throw _sinRed(options);
+          return respuestaJson(201, _generado());
+        });
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        expect(adaptador.peticiones, hasLength(2));
+        final claves = _claves(adaptador);
+        expect(claves.first, matches(_formatoUuidV4));
+        expect(claves.last, claves.first);
+        expect(
+          _cuerpo(adaptador.peticiones.last),
+          _cuerpo(adaptador.peticiones.first),
+        );
+      },
+    );
+
+    test('un 5xx se reintenta con la misma clave', () async {
+      var llamadas = 0;
+      final (repositorio, adaptador) = montar((_) async {
+        llamadas++;
+        return llamadas == 1
+            ? respuestaJson(503, {
+                'type': 'about:blank',
+                'title': 'Servicio no disponible',
+                'status': 503,
+                'code': 'servidor.no_disponible',
+              })
+            : respuestaJson(201, _generado());
+      });
+
+      await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+      expect(adaptador.peticiones, hasLength(2));
+      expect(_claves(adaptador).toSet(), hasLength(1));
+    });
+
+    test('un toque posterior reutiliza la clave y el vencimiento', () async {
+      var llamadas = 0;
+      final (repositorio, adaptador) = montar((options) async {
+        llamadas++;
+        // Agota la generación y sus dos reintentos; la cuarta llega bien.
+        if (llamadas <= 3) throw _sinRed(options);
+        return respuestaJson(201, _generado());
+      });
+      DatosGeneracion datosA(DateTime ahora) => DatosGeneracion(
+        puertaIds: const {'p1', 'p2'},
+        vigencia: const Vigencia(OpcionVigencia.dosHoras),
+        etiqueta: 'Entrada personal',
+        ahora: ahora,
+        propio: true,
+      );
+
+      await expectLater(
+        repositorio.generar(datosA(_ahora), ahora: _ahora),
+        throwsA(
+          isA<ErrorApi>().having((e) => e.esSinConexion, 'sin red', isTrue),
+        ),
+      );
+      final masTarde = _ahora.add(const Duration(minutes: 5));
+      await repositorio.generar(datosA(masTarde), ahora: masTarde);
+
+      expect(adaptador.peticiones, hasLength(4));
+      expect(_claves(adaptador).toSet(), hasLength(1));
+      expect(
+        {for (final p in adaptador.peticiones) _cuerpo(p)['vence_at']},
+        {_ahora.add(const Duration(hours: 2)).toIso8601String()},
+      );
+    });
+
+    test(
+      'una acción nueva tras una respuesta definitiva usa otra clave',
+      () async {
+        final (repositorio, adaptador) = montar(
+          (_) async => respuestaJson(201, _generado()),
+        );
+
+        await repositorio.generar(_datosPropio(), ahora: _ahora);
+        await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        final claves = _claves(adaptador);
+        expect(claves, hasLength(2));
+        expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test(
+      'cambiar las puertas tras una falla transitoria empieza otra clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((options) async {
+          llamadas++;
+          if (llamadas <= 3) throw _sinRed(options);
+          return respuestaJson(201, _generado());
+        });
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(isA<ErrorApi>()),
+        );
+
+        final otras = DatosGeneracion(
+          puertaIds: const {'p1'},
+          vigencia: Vigencia.porDefecto,
+          etiqueta: 'Entrada personal',
+          ahora: _ahora,
+          propio: true,
+        );
+        await repositorio.generar(otras, ahora: _ahora);
+
+        final claves = _claves(adaptador);
+        expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test('un doble toque en vuelo no genera un segundo QR', () async {
+      final respuesta = Completer<ResponseBody>();
+      final (repositorio, adaptador) = montar((_) => respuesta.future);
+
+      final primero = repositorio.generar(_datosPropio(), ahora: _ahora);
+      final segundo = repositorio.generar(_datosPropio(), ahora: _ahora);
+      respuesta.complete(respuestaJson(201, _generado()));
+      final qrs = await Future.wait([primero, segundo]);
+
+      expect(adaptador.peticiones, hasLength(1));
+      expect(qrs.map((qr) => qr.id), everyElement('qr1'));
+      expect(qrs.map((qr) => qr.texto), everyElement('AQ1.nuevo'));
+    });
+
+    test(
+      'un 409 idempotencia.conflicto llega con su código; luego, otra clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((_) async {
+          llamadas++;
+          return llamadas == 1
+              ? respuestaJson(422, {
+                  'type': 'about:blank',
+                  'title': 'Conflicto',
+                  'status': 422,
+                  'code': 'idempotencia.conflicto',
+                })
+              : respuestaJson(201, _generado());
+        });
+
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(
+            isA<ErrorApi>().having(
+              (e) => e.code,
+              'code',
+              'idempotencia.conflicto',
+            ),
+          ),
+        );
+        await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        final claves = _claves(adaptador);
+        expect(claves, hasLength(2));
+        expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test(
+      'un 409 idempotencia.en_curso se reintenta con la misma clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((_) async {
+          llamadas++;
+          return llamadas == 1
+              ? respuestaJson(409, {
+                  'type': 'about:blank',
+                  'title': 'En curso',
+                  'status': 409,
+                  'code': 'idempotencia.en_curso',
+                })
+              : respuestaJson(201, _generado());
+        });
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        expect(adaptador.peticiones, hasLength(2));
+        expect(_claves(adaptador).toSet(), hasLength(1));
+      },
+    );
+
+    test(
+      'el reemplazo lleva su propia clave y la conserva al reintentar',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((options) async {
+          llamadas++;
+          // 1: sin token. 2: sin red al pedir el reemplazo.
+          // 3: la generación se repite con su clave.
+          // 4: el reemplazo llega con su clave.
+          if (llamadas == 2) throw _sinRed(options);
+          if (llamadas == 4) return respuestaJson(201, _generado());
+          return respuestaJson(200, _reutilizado());
+        });
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        final claves = _claves(adaptador);
+        expect(claves, hasLength(4));
+        expect(claves[2], claves[0]);
+        expect(claves[3], claves[1]);
+        expect(claves[1], isNot(claves[0]));
+      },
+    );
+
+    test(
+      'un 409 idempotencia.qr_no_vigente es definitivo: no reintenta',
+      () async {
+        final (repositorio, adaptador) = montar(
+          (_) async => respuestaJson(409, _qrNoVigente()),
+        );
+
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(
+            isA<ErrorApi>().having(
+              (e) => e.code,
+              'code',
+              'idempotencia.qr_no_vigente',
+            ),
+          ),
+        );
+        expect(adaptador.peticiones, hasLength(1));
+      },
+    );
+
+    test(
+      'tras qr_no_vigente, el siguiente toque pide otro QR con otra clave',
+      () async {
+        var llamadas = 0;
+        final (repositorio, adaptador) = montar((_) async {
+          llamadas++;
+          return llamadas == 1
+              ? respuestaJson(409, _qrNoVigente())
+              : respuestaJson(201, _generado());
+        });
+        await expectLater(
+          repositorio.generar(_datosPropio(), ahora: _ahora),
+          throwsA(isA<ErrorApi>()),
+        );
+
+        final qr = await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+        expect(qr.texto, 'AQ1.nuevo');
+        final claves = _claves(adaptador);
+        expect(claves, hasLength(2));
+        expect(claves.last, isNot(claves.first));
+      },
+    );
+
+    test('con Mi QR, qr_no_vigente olvida el respaldo propio local', () async {
+      await almacen.guardarUltimoPropio(_propioLocal());
+      await almacen.guardar('qr1', 'AQ1.local', _venceAt);
+      final (repositorio, _) = montar(
+        (_) async => respuestaJson(409, _qrNoVigente()),
+      );
+
+      await expectLater(
+        repositorio.generar(_datosPropio(), ahora: _ahora),
+        throwsA(isA<ErrorApi>()),
+      );
+
+      expect(almacen.ultimoPropio, isNull);
+      expect(await almacen.leer('qr1'), isNull);
+    });
+
+    test('sin Mi QR, qr_no_vigente no toca el respaldo propio', () async {
+      await almacen.guardarUltimoPropio(_propioLocal());
+      final (repositorio, _) = montar(
+        (_) async => respuestaJson(409, _qrNoVigente()),
+      );
+      final datos = DatosGeneracion(
+        puertaIds: const {'p1', 'p2'},
+        vigencia: Vigencia.porDefecto,
+        etiqueta: 'Entrada personal',
+        ahora: _ahora,
+      );
+
+      await expectLater(
+        repositorio.generar(datos, ahora: _ahora),
+        throwsA(isA<ErrorApi>()),
+      );
+
+      expect(almacen.ultimoPropio?.id, 'qr1');
+    });
+
+    test('otra persona en la misma app no reutiliza la clave', () async {
+      var llamadas = 0;
+      var quien = 'u1';
+      final (repositorio, adaptador) = montar((options) async {
+        llamadas++;
+        if (llamadas <= 3) throw _sinRed(options);
+        return respuestaJson(201, _generado());
+      }, ambito: () => quien);
+      await expectLater(
+        repositorio.generar(_datosPropio(), ahora: _ahora),
+        throwsA(isA<ErrorApi>()),
+      );
+
+      quien = 'u2';
+      await repositorio.generar(_datosPropio(), ahora: _ahora);
+
+      final claves = _claves(adaptador);
+      expect(claves.last, isNot(claves.first));
     });
   });
 

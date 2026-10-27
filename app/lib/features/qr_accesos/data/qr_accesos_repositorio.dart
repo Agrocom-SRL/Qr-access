@@ -1,12 +1,16 @@
+import 'dart:math';
+
 import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
+import 'package:agrocom_acceso/core/api/interceptor_cache.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
+import 'package:agrocom_acceso/features/qr_accesos/domain/intento_generacion.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/seguimiento_qr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,23 +49,150 @@ abstract interface class QrAccesosRepositorio {
   Future<void> anular(String id);
 }
 
+/// Un intento y su petición en vuelo. Vive solo en memoria del repositorio.
+class _Generacion {
+  new(this.ambito, this.intento);
+
+  /// Quién generaba al empezar: un intento de otra persona no se reutiliza.
+  final String? ambito;
+  final IntentoGeneracion intento;
+
+  /// La petición que está en curso; un doble toque espera a esta misma.
+  Future<QrGenerado>? enVuelo;
+}
+
+/// Códigos HTTP de falla del servidor: un 5xx se reintenta con la misma clave.
+const _estatusServidor = 500;
+
+/// Código de la API (409) cuando otra petición con la misma clave sigue en
+/// marcha.
+const _codigoEnCurso = 'idempotencia.en_curso';
+
+/// Código de la API (409) cuando el QR de la clave ya no está pendiente: se
+/// usó, se anuló, se reemplazó o venció. Es definitivo: repetir con la misma
+/// clave no genera nada nuevo, así que la clave se descarta.
+const _codigoQrNoVigente = 'idempotencia.qr_no_vigente';
+
 class QrAccesosRepositorioApi implements QrAccesosRepositorio {
-  const new(this._api, this._almacenQr);
+  /// [ambito] dice quién genera (un intento no pasa de una persona a otra);
+  /// [azar] genera las claves, y [esperasReintento] las esperas entre
+  /// reintentos. Los tests los fijan; en la app usan sus valores por defecto.
+  new(
+    this._api,
+    this._almacenQr, {
+    AmbitoDeCache? ambito,
+    Random? azar,
+    List<Duration>? esperasReintento,
+  }) : _ambito = ambito ?? (() => null),
+       _azar = azar ?? Random.secure(),
+       _esperasReintento =
+           esperasReintento ??
+           [
+             for (final segundos in segundosEsperasReintentoGeneracion)
+               Duration(seconds: segundos),
+           ];
 
   final ClienteApi _api;
   final AlmacenQr _almacenQr;
+  final AmbitoDeCache _ambito;
+  final Random _azar;
+  final List<Duration> _esperasReintento;
+
+  /// La generación más reciente sin respuesta definitiva. Mientras exista, un
+  /// reintento o un doble toque de la misma acción reutiliza su clave (ADR
+  /// 0031 §11). Se descarta al recibir la respuesta o al vencer.
+  _Generacion? _actual;
 
   @override
-  Future<QrGenerado> generar(
-    DatosGeneracion datos, {
-    required DateTime ahora,
-  }) async {
-    var dto = await _pedirQr(datos, ahora: ahora);
+  Future<QrGenerado> generar(DatosGeneracion datos, {required DateTime ahora}) {
+    final actual = _actual;
+    if (actual != null &&
+        actual.ambito == _ambito() &&
+        actual.intento.corresponde(datos) &&
+        !actual.intento.haVencido(ahora)) {
+      // Misma acción: si ya hay una petición en vuelo se espera a esa; si no,
+      // se reenvía con la misma clave, así la API no genera un segundo QR.
+      return actual.enVuelo ??= _enviar(actual);
+    }
+    final nueva = _Generacion(
+      _ambito(),
+      IntentoGeneracion.nuevo(datos: datos, ahora: ahora, azar: _azar),
+    );
+    _actual = nueva;
+    return nueva.enVuelo = _enviar(nueva);
+  }
+
+  /// Envía el intento y decide qué pasa con su clave según la respuesta.
+  Future<QrGenerado> _enviar(_Generacion generacion) async {
+    try {
+      final qr = await _conReintentos(generacion.intento);
+      _cerrar(generacion);
+      return qr;
+    } on ErrorApi catch (error) {
+      // Una falla transitoria deja el intento pendiente: el siguiente toque
+      // reutiliza su clave. Cualquier otra respuesta es definitiva (un 4xx
+      // dice que no se generó nada): la clave se descarta.
+      if (!_esTransitoria(error)) {
+        _cerrar(generacion);
+        // Con "Mi QR" el respaldo local puede ser de un QR que ya no sirve:
+        // se olvida, como en reanudarPropio (ADR 0030 §2.1.2).
+        if (error.code == _codigoQrNoVigente &&
+            generacion.intento.datos.propio) {
+          await _descartarUltimoPropio();
+        }
+      }
+      rethrow;
+    } finally {
+      generacion.enVuelo = null;
+    }
+  }
+
+  /// Reintenta solo ante fallas transitorias, con la misma clave y el mismo
+  /// cuerpo. Un error de negocio no se repite: la API ya contestó.
+  Future<QrGenerado> _conReintentos(IntentoGeneracion intento) async {
+    for (var reintento = 0; ; reintento++) {
+      try {
+        return await _pedirQrGenerado(intento);
+      } on ErrorApi catch (error) {
+        if (!_esTransitoria(error) || reintento >= _esperasReintento.length) {
+          rethrow;
+        }
+        await Future<void>.delayed(_esperasReintento[reintento]);
+      }
+    }
+  }
+
+  void _cerrar(_Generacion generacion) {
+    if (identical(_actual, generacion)) _actual = null;
+  }
+
+  /// Sin respuesta (sin red o tiempo agotado), con un 5xx o con
+  /// `idempotencia.en_curso` (otra petición con la misma clave sigue en
+  /// marcha): el servidor pudo o no procesar la petición, y repetirla con la
+  /// misma clave es seguro. Descartar la clave aquí generaría un segundo QR.
+  bool _esTransitoria(ErrorApi error) =>
+      error.esSinConexion ||
+      (error.status ?? 0) >= _estatusServidor ||
+      error.code == _codigoEnCurso;
+
+  Future<QrGenerado> _pedirQrGenerado(IntentoGeneracion intento) async {
+    final datos = intento.datos;
+    var dto = await _pedirQr(
+      datos,
+      venceAt: intento.venceAt,
+      clave: intento.clave,
+    );
     if (dto.reutilizado && dto.texto == null) {
       // Hay un QR propio vigente para estas puertas, pero su token no está en
       // este dispositivo (reinstalación u otro teléfono). Se pide reemplazarlo
-      // una sola vez: el anterior queda anulado (ADR 0030 §2.1.3).
-      dto = await _pedirQr(datos, ahora: ahora, reemplazar: true);
+      // una sola vez: el anterior queda anulado (ADR 0030 §2.1.3). Es otro
+      // cuerpo, así que lleva su propia clave.
+      dto = await _pedirQr(
+        datos,
+        venceAt: intento.venceAt,
+        clave: intento.claveReemplazo,
+        reemplazar: true,
+      );
     }
     final texto = dto.texto;
     // Con `reemplazar` la API siempre genera; si no lo hace, el contrato
@@ -83,14 +214,16 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
 
   Future<QrGeneradoDto> _pedirQr(
     DatosGeneracion datos, {
-    required DateTime ahora,
+    required DateTime? venceAt,
+    required String clave,
     bool reemplazar = false,
   }) => _api.generarQr(
     puertaIds: datos.puertaIds,
-    venceAt: datos.vigencia.venceAtPara(ahora),
+    venceAt: venceAt,
     etiqueta: datos.etiqueta,
     propio: datos.propio,
     reemplazar: reemplazar,
+    idempotencyKey: clave,
   );
 
   @override
@@ -151,6 +284,16 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     } on Object {
       // Sin borrar, el token caduca solo al vencer: no bloquea generar otro.
     }
+  }
+
+  /// La API no dice qué QR era el de la clave, así que se olvida el respaldo
+  /// propio local. Es lo conservador: quitar un token nunca abre nada, y el
+  /// servidor no lo considera vigente de todas formas. Sin respaldo, no hay
+  /// nada que hacer.
+  Future<void> _descartarUltimoPropio() async {
+    final ultimo = await _leerPropioLocal(respaldo: false);
+    if (ultimo == null) return;
+    await _descartarPropio(ultimo.id);
   }
 
   @override
@@ -254,6 +397,7 @@ final qrAccesosRepositorioProvider = Provider<QrAccesosRepositorio>(
   (ref) => QrAccesosRepositorioApi(
     ref.watch(clienteApiProvider),
     ref.watch(almacenQrProvider),
+    ambito: ref.watch(ambitoCacheProvider),
   ),
 );
 

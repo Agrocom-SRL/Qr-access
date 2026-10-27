@@ -1,9 +1,10 @@
-import type { Pool, RowDataPacket } from 'mysql2/promise';
+import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { CausaDeEjecucion, Ejecucion, OrigenDeConfirmacion } from './domain/confirmacion.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
+import type { OperacionIdempotente } from './domain/idempotencia.js';
 
 export interface QrFila extends RowDataPacket {
   id: string;
@@ -13,6 +14,13 @@ export interface QrFila extends RowDataPacket {
   usado_at: Date | null;
   anulado_at: Date | null;
   created_at: Date;
+}
+
+export interface QrParaRepetirFila extends RowDataPacket {
+  token_hash: string;
+  vence_at: Date;
+  usado_at: Date | null;
+  anulado_at: Date | null;
 }
 
 const COLUMNAS_DE_QR =
@@ -322,6 +330,21 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
       params: [ids, generadores],
     });
     return new Set(filas.map((fila) => String(fila.id)));
+  }
+
+  /**
+   * Lo que hace falta para repetir una generación idempotente: el hash guardado del token (para comprobar que el
+   * derivado es el mismo) y el estado. Aparte de `buscarPorId` para que el hash no viaje con las demás lecturas.
+   */
+  buscarParaRepetir(id: string, tx?: Transaccion): Promise<QrParaRepetirFila | null> {
+    return this.seleccionarUna<QrParaRepetirFila>(
+      {
+        columnas: 't.token_hash, t.vence_at, t.usado_at, t.anulado_at',
+        donde: 't.id = ?',
+        params: [id],
+      },
+      tx,
+    );
   }
 
   listar(filtro: FiltroDeQr, limite: number, desplazamiento: number): Promise<QrFila[]> {
@@ -1266,5 +1289,128 @@ export class RepositorioDeQrDeTodas extends RepositorioDePlataforma {
       agrupar: 't.tenant_id, dia',
       orden: 't.tenant_id, dia',
     });
+  }
+}
+
+/** Una clave de idempotencia vigente y la respuesta que se dio la primera vez. */
+export interface ClaveDeIdempotencia {
+  readonly huella: string;
+  /** La respuesta sin el token del QR (nunca se guarda). */
+  readonly respuesta: unknown;
+  /** Cuándo se creó la clave (ver `NuevaClaveDeIdempotencia.creadaAt`). */
+  readonly creadaAt: Date;
+}
+
+export interface NuevaClaveDeIdempotencia extends Omit<ClaveDeIdempotencia, 'creadaAt'> {
+  readonly usuarioId: string;
+  readonly operacion: OperacionIdempotente;
+  readonly claveHash: string;
+  /** Cuándo se creó: entra en la derivación del token, así una clave reusada tras vencer da otro token. */
+  readonly creadaAt: Date;
+  readonly venceAt: Date;
+}
+
+interface ClaveDeIdempotenciaFila extends RowDataPacket {
+  huella: string;
+  respuesta: unknown;
+  created_at: Date;
+}
+
+/**
+ * Dueño de `claves_idempotencia` (ADR 0031 §11). Tabla transitoria de una cuenta: toda lectura y escritura
+ * lleva la cuenta del contexto y el usuario, de modo que una clave nunca cruza usuarios ni cuentas.
+ */
+export class RepositorioDeClavesDeIdempotencia extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'claves_idempotencia',
+      columnas: [
+        'usuario_id',
+        'operacion',
+        'clave_hash',
+        'huella',
+        'respuesta',
+        'created_at',
+        'vence_at',
+      ],
+      sensibles: ['clave_hash'],
+      perfil: 'transitoria',
+      deCuenta: true,
+    });
+  }
+
+  /**
+   * La clave vigente (no vencida) del usuario, o `null`. Dentro de la transacción de la generación se llama
+   * ya con el usuario bloqueado (`estadoEfectivoBloqueando`): otra generación suya con la misma clave espera
+   * ese bloqueo y, al seguir, esta lectura ya ve su fila confirmada. Sin bloqueo propio a propósito: un
+   * `FOR UPDATE` sobre una fila inexistente toma bloqueos de hueco que se estorban entre usuarios.
+   */
+  async buscar(
+    usuarioId: string,
+    operacion: OperacionIdempotente,
+    claveHash: string,
+    ahora: Date,
+    tx?: Transaccion,
+  ): Promise<ClaveDeIdempotencia | null> {
+    const fila = await this.seleccionarUna<ClaveDeIdempotenciaFila>(
+      {
+        columnas: 't.huella, t.respuesta, t.created_at',
+        donde: 't.usuario_id = ? AND t.operacion = ? AND t.clave_hash = ? AND t.vence_at > ?',
+        params: [usuarioId, operacion, claveHash, ahora],
+      },
+      tx,
+    );
+    if (fila === null) return null;
+    return {
+      huella: fila.huella,
+      // MariaDB devuelve el JSON como texto.
+      respuesta: typeof fila.respuesta === 'string' ? JSON.parse(fila.respuesta) : fila.respuesta,
+      creadaAt: fila.created_at,
+    };
+  }
+
+  /**
+   * Guarda la clave en la misma transacción que el QR (o ambos o ninguno). Antes borra las claves vencidas del
+   * usuario: es la limpieza que acompaña a cada escritura (el resto lo barre `purgarVencidas`) y deja libre la
+   * fila de la misma clave si había vencido. Excepción a la invariante 8 (DELETE físico): es un caché con
+   * vencimiento, no un dato de dominio.
+   */
+  async guardar(tx: Transaccion, clave: NuevaClaveDeIdempotencia, ahora: Date): Promise<void> {
+    const alcance = this.alcance().condicion(null);
+    await tx.query(
+      // eslint-disable-next-line no-restricted-syntax -- el alcance de cuenta es un fragmento interno con `?`; los valores van aparte.
+      `DELETE FROM claves_idempotencia WHERE ${alcance.sql} AND usuario_id = ? AND vence_at <= ?`,
+      [...alcance.params, clave.usuarioId, ahora],
+    );
+    await this.insertar(tx, {
+      usuario_id: clave.usuarioId,
+      operacion: clave.operacion,
+      clave_hash: clave.claveHash,
+      huella: clave.huella,
+      respuesta: JSON.stringify(clave.respuesta),
+      created_at: clave.creadaAt,
+      vence_at: clave.venceAt,
+    });
+  }
+}
+
+/**
+ * Barrido de mantenimiento de TODAS las cuentas: borra las claves vencidas, en lotes. Es el único acceso a una
+ * tabla de cuenta sin su contexto, y es legítimo porque no lee ni devuelve ningún dato de una cuenta: solo
+ * descarta filas cuyo vencimiento ya pasó (revisar línea por línea, invariante 1).
+ */
+export async function purgarClavesDeIdempotenciaVencidas(
+  pool: Pool,
+  ahora: Date,
+  lote = 1000,
+): Promise<number> {
+  let total = 0;
+  for (;;) {
+    const [resultado] = await pool.query<ResultSetHeader>(
+      'DELETE FROM claves_idempotencia WHERE vence_at <= ? LIMIT ?',
+      [ahora, lote],
+    );
+    total += resultado.affectedRows;
+    if (resultado.affectedRows < lote) return total;
   }
 }

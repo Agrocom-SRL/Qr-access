@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { Pool } from 'mysql2/promise';
 import {
   enTransaccion,
@@ -16,7 +17,12 @@ import {
 import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
 import { crearServicioDeUsuarios, type EstadoEfectivo } from '../../seguridad/contracts.js';
 import { crearServicioDeSuscripciones } from '../../suscripciones/contracts.js';
-import { generarTokenQr, hashDeToken, textoDeQr } from '../domain/token-qr.js';
+import {
+  hashDeClave,
+  huellaDeGeneracion,
+  VIGENCIA_DE_CLAVE_DE_IDEMPOTENCIA_HORAS,
+} from '../domain/idempotencia.js';
+import { derivarTokenQr, generarTokenQr, hashDeToken, textoDeQr } from '../domain/token-qr.js';
 import {
   diaLocal,
   finDelDiaLocal,
@@ -26,7 +32,12 @@ import {
   vencimientoPorDefecto,
   ZONA_DE_LOS_TOPES,
 } from '../domain/vencimiento.js';
-import { RepositorioDePuertasDeQr, RepositorioDeQr } from '../repository.js';
+import {
+  RepositorioDeClavesDeIdempotencia,
+  RepositorioDePuertasDeQr,
+  RepositorioDeQr,
+  type ClaveDeIdempotencia,
+} from '../repository.js';
 
 export interface DatosDeGeneracion {
   readonly puertaIds: readonly string[];
@@ -40,6 +51,12 @@ export interface DatosDeGeneracion {
    * ya no tiene su token, ADR 0030 §2.1.3). El anterior queda anulado y cuenta como reemplazo sin uso.
    */
   readonly reemplazar?: boolean;
+  /**
+   * `Idempotency-Key` del reintento (ADR 0031 §11) y el secreto (`QR_IDEMPOTENCIA_CLAVE`) con que se deriva el
+   * token y se hashea la clave. Sin ella, la generación es la de siempre. Misma clave y mismo cuerpo del mismo usuario devuelven el mismo QR (`repetido`)
+   * sin generar otro ni gastar topes; la misma clave con otro cuerpo es `idempotencia.conflicto`.
+   */
+  readonly idempotencia?: { readonly clave: string; readonly secreto: string };
   /** Dónde dejar rastro de lo que no debe tumbar la respuesta (nunca lleva PIN, token ni texto de QR). */
   readonly log?: { warn(objeto: object, mensaje: string): void };
 }
@@ -56,6 +73,8 @@ export interface QrGenerado {
   vence_at: string;
   etiqueta: string | null;
   puertas: { id: string; nombre: string }[];
+  /** Solo en un reintento idempotente: es la respuesta guardada, no se creó nada. La ruta lo manda en una cabecera. */
+  repetido?: true;
 }
 
 type CodigoDeTope = RechazoDeGeneracion['tipo'];
@@ -89,6 +108,81 @@ function errorPorEstado(efectivo: EstadoEfectivo): ErrorDeDominio {
       : 'qr.generador_suspendido',
     403,
   );
+}
+
+interface Idempotencia {
+  readonly clave: string;
+  readonly secreto: string;
+  readonly claveHash: string;
+  readonly huella: string;
+  readonly claves: RepositorioDeClavesDeIdempotencia;
+}
+
+function prepararIdempotencia(pool: Pool, datos: DatosDeGeneracion): Idempotencia | null {
+  if (datos.idempotencia === undefined) return null;
+  return {
+    ...datos.idempotencia,
+    claveHash: hashDeClave(datos.idempotencia.secreto, datos.idempotencia.clave),
+    huella: huellaDeGeneracion({
+      puertaIds: datos.puertaIds,
+      venceAt: datos.venceAt,
+      etiqueta: datos.etiqueta,
+      propio: datos.propio === true,
+      reemplazar: datos.reemplazar === true,
+    }),
+    claves: new RepositorioDeClavesDeIdempotencia(pool),
+  };
+}
+
+/**
+ * La respuesta de un reintento: la guardada la primera vez, con el mismo token (se vuelve a derivar; el servidor
+ * nunca lo guardó). La misma clave con otro cuerpo no es un reintento: `idempotencia.conflicto`.
+ *
+ * Antes de devolver el texto se comprueba contra `qr_accesos` (ADR 0031 §11): el hash del token derivado tiene
+ * que ser el del QR guardado (si no, el secreto cambió o la fila no corresponde: error interno, sin datos) y el
+ * QR tiene que seguir pendiente. Un QR ya usado, anulado, reemplazado o vencido no se vuelve a entregar:
+ * `idempotencia.qr_no_vigente`. Corre dentro del contexto de la cuenta, así que solo ve QR de ella.
+ */
+async function repetir(
+  pool: Pool,
+  previa: ClaveDeIdempotencia,
+  idem: Idempotencia,
+  principal: PrincipalUsuario,
+  ahora: Date,
+  log: DatosDeGeneracion['log'],
+  tx?: Transaccion,
+): Promise<QrGenerado> {
+  if (previa.huella !== idem.huella) throw new ErrorDeDominio('idempotencia.conflicto', 422);
+  // Es lo que escribió `terminar` (sin el token): se confía en su forma.
+  const guardada = previa.respuesta as Omit<QrGenerado, 'texto' | 'repetido'>;
+  const qr = await new RepositorioDeQr(pool).buscarParaRepetir(guardada.id, tx);
+  if (qr === null) {
+    log?.warn({ evento: 'idempotencia.qr_inexistente' }, 'la clave apunta a un QR que no existe');
+    throw new Error('idempotencia: la clave apunta a un QR que no existe');
+  }
+  const token = derivarTokenQr(
+    idem.secreto,
+    principal.cuentaId,
+    principal.usuarioId,
+    idem.clave,
+    previa.creadaAt,
+  );
+  if (!mismoHash(hashDeToken(token), qr.token_hash)) {
+    // Típico de un secreto rotado a medias. Sin datos: ni la clave, ni el token ni el hash.
+    log?.warn({ evento: 'idempotencia.token_no_coincide' }, 'el token derivado no es el del QR');
+    throw new Error('idempotencia: el token derivado no coincide con el del QR guardado');
+  }
+  if (qr.usado_at !== null || qr.anulado_at !== null || qr.vence_at <= ahora) {
+    throw new ErrorDeDominio('idempotencia.qr_no_vigente', 409);
+  }
+  return { ...guardada, texto: textoDeQr(token), repetido: true };
+}
+
+/** Comparación de hashes en tiempo constante (ambos son SHA-256 en hex, del mismo largo). */
+function mismoHash(a: string, b: string): boolean {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
 }
 
 const mismoConjunto = (a: readonly string[], b: readonly string[]): boolean =>
@@ -126,6 +220,17 @@ export async function ejecutar(
     });
   }
   const idsUnicos = [...new Set(datos.puertaIds)];
+  const idem = prepararIdempotencia(pool, datos);
+  if (idem !== null) {
+    // Un reintento no gasta nada: se contesta con lo guardado antes de mirar puertas, suscripción ni topes.
+    const previa = await idem.claves.buscar(
+      principal.usuarioId,
+      'qr.generar',
+      idem.claveHash,
+      ahora,
+    );
+    if (previa !== null) return repetir(pool, previa, idem, principal, ahora, datos.log);
+  }
   const puertas = await crearServicioDeOrganizacion(pool).buscarPuertas(idsUnicos);
   const porId = new Map(puertas.map((puerta) => [puerta.id, puerta]));
   // Una puerta ajena, borrada o inactiva no existe para esta cuenta: 404.
@@ -158,7 +263,11 @@ export async function ejecutar(
   }
   const venceAt = datos.venceAt ?? vencimientoPorDefecto(limites);
 
-  const token = generarTokenQr();
+  // Con clave de idempotencia el token se deriva (nunca se guarda) para poder repetirlo; sin ella, es al azar.
+  const token =
+    idem === null
+      ? generarTokenQr()
+      : derivarTokenQr(idem.secreto, principal.cuentaId, principal.usuarioId, idem.clave, ahora);
   const propio = datos.propio === true;
   const nombreDe = (puertaId: string): string => porId.get(puertaId)?.nombre ?? '';
 
@@ -173,6 +282,48 @@ export async function ejecutar(
       );
       if (efectivo.estado !== 'activo') throw errorPorEstado(efectivo);
 
+      if (idem !== null) {
+        // Con el usuario ya bloqueado: una generación suya con la misma clave que esperaba acá ya confirmó.
+        const previa = await idem.claves.buscar(
+          principal.usuarioId,
+          'qr.generar',
+          idem.claveHash,
+          ahora,
+          tx,
+        );
+        if (previa !== null) return repetir(pool, previa, idem, principal, ahora, datos.log);
+      }
+      /** La clave se guarda en la misma transacción que el QR: o quedan los dos o ninguno. */
+      const terminar = async (respuesta: QrGenerado): Promise<QrGenerado> => {
+        // Un QR propio reutilizado no guarda clave: su respuesta ya es idempotente por sí sola (mismo QR, sin texto).
+        if (idem !== null && !respuesta.reutilizado) {
+          // Todo menos el token: ese nunca se guarda (ADR 0008).
+          const sinToken = {
+            id: respuesta.id,
+            reutilizado: respuesta.reutilizado,
+            vence_at: respuesta.vence_at,
+            etiqueta: respuesta.etiqueta,
+            puertas: respuesta.puertas,
+          };
+          await idem.claves.guardar(
+            tx,
+            {
+              usuarioId: principal.usuarioId,
+              operacion: 'qr.generar',
+              claveHash: idem.claveHash,
+              huella: idem.huella,
+              respuesta: sinToken,
+              creadaAt: ahora,
+              venceAt: new Date(
+                ahora.getTime() + VIGENCIA_DE_CLAVE_DE_IDEMPOTENCIA_HORAS * 3_600_000,
+              ),
+            },
+            ahora,
+          );
+        }
+        return respuesta;
+      };
+
       const repositorio = new RepositorioDeQr(pool);
       const puertasDeQr = new RepositorioDePuertasDeQr(pool);
       const inicioDelDia = inicioDelDiaLocal(ahora, ZONA_DE_LOS_TOPES);
@@ -182,14 +333,14 @@ export async function ejecutar(
         if (anterior !== null && anterior.vence_at > ahora) {
           const actuales = (await puertasDeQr.puertasDe([anterior.id], tx)).get(anterior.id) ?? [];
           if (datos.reemplazar !== true && mismoConjunto(actuales, idsUnicos)) {
-            return {
+            return terminar({
               id: anterior.id,
               texto: null,
               reutilizado: true,
               vence_at: aIso(anterior.vence_at),
               etiqueta: anterior.etiqueta,
               puertas: actuales.map((id) => ({ id, nombre: nombreDe(id) })),
-            };
+            });
           }
           await comprobarReemplazo(
             tx,
@@ -234,18 +385,18 @@ export async function ejecutar(
       });
       await puertasDeQr.asociar(tx, qrId, idsUnicos);
 
-      return {
+      return terminar({
         id: qrId,
         texto: textoDeQr(token),
         reutilizado: false,
         vence_at: aIso(venceAt),
         etiqueta: datos.etiqueta,
         puertas: idsUnicos.map((puertaId) => ({ id: puertaId, nombre: nombreDe(puertaId) })),
-      };
+      });
     });
     // Fuera de la transacción: la bolsa nunca corta, así que su conteo no tiene por qué alargar el tiempo en
     // que la cadena de superiores está bloqueada (ADR 0030 §2, «Serialización por rama»).
-    if (!generado.reutilizado) {
+    if (!generado.reutilizado && generado.repetido !== true) {
       await marcarBolsaTrasElInsert(
         pool,
         limitesDeUso,
@@ -279,6 +430,14 @@ export async function ejecutar(
     }
     // Dos generaciones propias simultáneas no deberían llegar acá (se esperan en el bloqueo del usuario);
     // si el UNIQUE igual choca, se avisa en vez de duplicar.
+    // Mismo caso para la clave de idempotencia: dos con la misma clave a la vez no deberían llegar al índice único.
+    if (
+      idem !== null &&
+      (error as { code?: string }).code === 'ER_DUP_ENTRY' &&
+      String((error as { message?: unknown }).message).includes('uq_claves_idempotencia_clave')
+    ) {
+      throw new ErrorDeDominio('idempotencia.en_curso', 409);
+    }
     if (propio && (error as { code?: string }).code === 'ER_DUP_ENTRY') {
       throw new ErrorDeDominio('qr.propio_en_curso', 409);
     }

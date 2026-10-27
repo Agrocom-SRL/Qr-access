@@ -1,3 +1,5 @@
+import type { FastifyInstance } from 'fastify';
+import type { Pool } from 'mysql2/promise';
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
@@ -9,6 +11,7 @@ import { ejecutar as confirmarApertura } from './actions/confirmar-apertura.js';
 import { ejecutar as consultarEstadoQr } from './actions/consultar-estado-qr.js';
 import { ejecutar as exportarDatos } from './actions/exportar-datos.js';
 import { ejecutar as generarQr } from './actions/generar-qr.js';
+import { ejecutar as limpiarClavesVencidas } from './actions/limpiar-claves-vencidas.js';
 import { ejecutar as listarEventos } from './actions/listar-eventos.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
 import { ejecutar as resumirEventos } from './actions/resumir-eventos.js';
@@ -24,6 +27,7 @@ import {
   cuerpoDeConfirmacionDeApertura,
   cuerpoDeGeneracion,
   cuerpoDeValidacion,
+  cabecerasDeGeneracion,
   esquemaQr,
   parametrosDeEvento,
   parametrosDeExportacion,
@@ -60,12 +64,36 @@ function leerHoraDelDispositivo(texto: string | undefined): Date | null {
   return Number.isNaN(fecha.getTime()) || anio < 2020 || anio > 2100 ? null : fecha;
 }
 
+/** Cada cuánto se barren las claves de idempotencia vencidas (el resto lo limpia cada escritura). */
+const CADA_CUANTO_LIMPIAR_MS = 60 * 60 * 1000;
+
+/**
+ * Barre cada hora las claves de idempotencia vencidas de todas las cuentas. En tests no corre (los tests llaman
+ * a la acción). El temporizador no mantiene vivo el proceso y se detiene al cerrar la app.
+ */
+function programarLimpiezaDeClaves(app: FastifyInstance, pool: Pool): void {
+  if (process.env.NODE_ENV === 'test') return;
+  const temporizador = setInterval(() => {
+    limpiarClavesVencidas(pool).catch((falla: unknown) => {
+      app.log.warn(
+        { evento: 'idempotencia.limpieza_fallida', codigo: (falla as { code?: string }).code },
+        'no se pudieron limpiar las claves de idempotencia vencidas',
+      );
+    });
+  }, CADA_CUANTO_LIMPIAR_MS);
+  temporizador.unref();
+  app.addHook('onClose', () => {
+    clearInterval(temporizador);
+  });
+}
+
 export function rutas({
   pool,
   poolDispositivos,
   config,
 }: DependenciasDeModulo): FastifyPluginCallbackZod {
   return (app, _opciones, listo) => {
+    programarLimpiezaDeClaves(app, pool);
     app.post(
       '/qr-accesos',
       {
@@ -75,7 +103,15 @@ export function rutas({
             'Genera un QR de un solo uso. 201 con el QR nuevo y su `texto`. 200 con `reutilizado: true` cuando ' +
             'el QR propio (`propio: true`) sigue vigente y sin usar para las mismas puertas: no se crea nada y ' +
             '`texto` es `null` (el servidor solo guarda el hash; la app conserva el token). Se ignoran ' +
-            '`vence_at` y `etiqueta` al reutilizar, salvo `reemplazar: true`. 429 con `qr.limite_*` al superar un tope.',
+            '`vence_at` y `etiqueta` al reutilizar, salvo `reemplazar: true`. 429 con `qr.limite_*` al superar un tope. ' +
+            'Cabecera opcional `Idempotency-Key` (ADR 0031 §11): un reintento con la misma clave y el mismo cuerpo ' +
+            'devuelve la misma respuesta (mismo `texto`), con la cabecera `Idempotent-Replayed: true`, sin generar ' +
+            'otro QR ni gastar topes; la misma clave con otro cuerpo responde 422 `idempotencia.conflicto`; dos ' +
+            'peticiones simultáneas con la misma clave pueden recibir 409 `idempotencia.en_curso` (reintentar). ' +
+            'Si el QR de la clave ya se usó, se anuló, se reemplazó o venció, el reintento responde 409 ' +
+            '`idempotencia.qr_no_vigente`. La clave es por usuario, dura 24 h y debe ser un UUID o un base64url de ' +
+            '22 a 128 caracteres: otra cosa es 400 `validacion.invalida`.',
+          headers: cabecerasDeGeneracion,
           body: cuerpoDeGeneracion,
           response: { 200: respuestaDeGeneracion, 201: respuestaDeGeneracion },
         },
@@ -96,7 +132,16 @@ export function rutas({
           propio: request.body.propio ?? false,
           reemplazar: request.body.reemplazar ?? false,
           log: request.log,
+          ...(request.headers['idempotency-key'] === undefined
+            ? {}
+            : {
+                idempotencia: {
+                  clave: request.headers['idempotency-key'],
+                  secreto: config.QR_IDEMPOTENCIA_CLAVE,
+                },
+              }),
         });
+        if (qr.repetido === true) void reply.header('Idempotent-Replayed', 'true');
         // Reutilizar el QR propio no crea nada: 200. Un QR nuevo: 201.
         return reply.status(qr.reutilizado ? 200 : 201).send(qr);
       },
