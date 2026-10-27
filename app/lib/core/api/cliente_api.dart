@@ -1,9 +1,11 @@
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
 import 'package:agrocom_acceso/core/api/contratos/estructura_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/eventos_contratos.dart';
+import 'package:agrocom_acceso/core/api/contratos/notificaciones_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
+import 'package:agrocom_acceso/core/api/contratos/sesiones_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/usuarios_contratos.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
@@ -38,11 +40,21 @@ class ClienteApi {
   /// Opciones de las peticiones que no llevan acceso (login y refresco).
   static final _sinSesion = Options(extra: {claveSinSesion: true});
 
-  Future<RespuestaInicioDto> iniciarSesion(String pin) {
+  /// [instalacionId] y [plataforma] dicen desde dónde entra (ADR 0030 §4.1).
+  /// Son opcionales para la API: un valor nulo no se envía.
+  Future<RespuestaInicioDto> iniciarSesion(
+    String pin, {
+    String? instalacionId,
+    String? plataforma,
+  }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/sesiones',
-        data: {'pin': pin},
+        data: {
+          'pin': pin,
+          'instalacion_id': ?instalacionId,
+          'plataforma': ?plataforma,
+        },
         options: _sinSesion,
       );
       return RespuestaInicioDto.desde(r.data!);
@@ -400,6 +412,78 @@ class ClienteApi {
   Future<void> editarPerfil({required String etiqueta}) {
     return _ejecutar(() async {
       await _dio.patch<void>('/perfil', data: {'etiqueta': etiqueta});
+    });
+  }
+
+  /// Mis dispositivos conectados: mis sesiones vivas, con la actual marcada
+  /// (ADR 0030 §4.1). La lista no se pagina: es corta.
+  Future<PaginaDto<SesionAbiertaDto>> misSesiones() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>('/sesiones');
+      return paginaDeApi(r.data!, SesionAbiertaDto.desde);
+    });
+  }
+
+  /// Cierra una sesión propia. Cerrar la actual equivale a salir; la pantalla
+  /// no la ofrece.
+  Future<void> cerrarMiSesion(String id) {
+    return _ejecutar(() async {
+      await _dio.delete<void>('/sesiones/$id');
+    });
+  }
+
+  /// Cierra todas mis sesiones menos la actual. No anula mis QR vigentes
+  /// (ADR 0031 §3). Devuelve cuántas cerró.
+  Future<int> cerrarMisOtrasSesiones() {
+    return _ejecutar(() async {
+      final r = await _dio.delete<Map<String, dynamic>>('/sesiones/otras');
+      return (r.data!['cerradas'] as num).toInt();
+    });
+  }
+
+  /// Mi bandeja de notificaciones de la cuenta (ADR 0030 §6), de la más
+  /// reciente a la más antigua.
+  Future<PaginaDto<NotificacionDto>> notificaciones({
+    required int pagina,
+    required int porPagina,
+    required bool soloNoLeidas,
+  }) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/notificaciones',
+        queryParameters: {
+          'pagina': pagina,
+          'por_pagina': porPagina,
+          'estado': soloNoLeidas ? 'no_leidas' : 'todas',
+        },
+      );
+      return paginaDeApi(r.data!, NotificacionDto.desde);
+    });
+  }
+
+  /// Cuántas de mis notificaciones siguen sin leer (el contador del ícono).
+  Future<int> contadorNotificaciones() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/notificaciones/contador',
+      );
+      return (r.data!['no_leidas'] as num).toInt();
+    });
+  }
+
+  Future<void> marcarNotificacionLeida(String id) {
+    return _ejecutar(() async {
+      await _dio.post<void>('/notificaciones/$id/leer');
+    });
+  }
+
+  /// Marca como leídas todas mis notificaciones. Devuelve cuántas marcó.
+  Future<int> marcarTodasNotificacionesLeidas() {
+    return _ejecutar(() async {
+      final r = await _dio.post<Map<String, dynamic>>(
+        '/notificaciones/leer-todas',
+      );
+      return (r.data!['marcadas'] as num).toInt();
     });
   }
 

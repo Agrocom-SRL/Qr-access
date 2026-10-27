@@ -9,7 +9,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
-import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
@@ -171,9 +171,12 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                // Solo el QR propio: Mis QR es una pestaña y "Generar QR" es
-                // el botón flotante de la página.
-                accion: puedeQrPropio ? const BotonQrPropio() : null,
+                // Solo el QR propio y la bandeja: Mis QR es una pestaña y
+                // "Generar QR" es el botón flotante de la página.
+                accion: accionesDeCabecera(
+                  widget.sesion,
+                  qrPropio: puedeQrPropio,
+                ),
               ),
               SizedBox(height: tokens.espacio.xl),
               Row(

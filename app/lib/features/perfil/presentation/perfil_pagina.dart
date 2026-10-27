@@ -3,6 +3,7 @@ import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
@@ -21,6 +22,7 @@ import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
@@ -133,6 +135,14 @@ class PerfilPagina extends ConsumerWidget {
                     valor: sesion.rolActivo.nombre,
                     icono: Icons.badge_outlined,
                     invertida: true,
+                  ),
+                  FilaClaveValor(
+                    clave: l10n.perfilDispositivos,
+                    valor: l10n.perfilDispositivosAyuda,
+                    icono: Icons.devices_outlined,
+                    invertida: true,
+                    claveEnfatizada: true,
+                    alTocar: () => context.go(Rutas.dispositivos),
                   ),
                   FilaClaveValor(
                     clave: l10n.perfilSuscripcion,

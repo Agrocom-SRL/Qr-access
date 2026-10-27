@@ -40,6 +40,11 @@ abstract final class Permisos {
   /// Asignar guardias a puertas.
   static const asignarGuardias = 'organizacion.guardia.asignar';
 
+  /// Ver mi bandeja de notificaciones de la cuenta, y marcarlas leídas (ADR
+  /// 0030 §6). Son permisos de la cuenta, nunca de plataforma.
+  static const verNotificaciones = 'notificaciones.aviso.ver';
+  static const gestionarNotificaciones = 'notificaciones.aviso.gestionar';
+
   static const verUsuarios = 'seguridad.usuario.ver';
   static const crearUsuarios = 'seguridad.usuario.crear';
   static const editarUsuarios = 'seguridad.usuario.editar';

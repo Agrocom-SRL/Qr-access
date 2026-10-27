@@ -22,6 +22,13 @@ abstract final class Rutas {
   static const eventos = '/eventos';
   static const perfil = '/perfil';
 
+  /// Dispositivos conectados (ADR 0030 §4.1): desde Perfil. Sin permiso, es de
+  /// quien la abre.
+  static const dispositivos = '/dispositivos';
+
+  /// Bandeja de notificaciones de la cuenta (ADR 0030 §6), desde el Inicio.
+  static const notificaciones = '/notificaciones';
+
   /// Administración en compacto: Puertas y Usuarios en pestañas.
   static const admin = '/admin';
   static const adminPuertas = '/admin/puertas';

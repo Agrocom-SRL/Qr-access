@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
@@ -74,6 +75,7 @@ void main() {
   testWidgets('el interruptor de tema guarda la preferencia', (tester) async {
     final (sesion: _, :preferencias) = await _montar(tester);
 
+    await tester.ensureVisible(find.byType(Switch));
     await tester.tap(find.byType(Switch));
     await tester.pump();
 
@@ -116,5 +118,17 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
     await tester.pumpAndSettle();
     expect(perfil.nombres, hasLength(1));
+  });
+
+  testWidgets('Dispositivos conectados lleva a su pantalla', (tester) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    final fila = find.text(textos.perfilDispositivos);
+    await tester.ensureVisible(fila);
+    await tester.tap(fila);
+    await tester.pumpAndSettle();
+
+    expect(find.text('destino ${Rutas.dispositivos}'), findsOneWidget);
   });
 }

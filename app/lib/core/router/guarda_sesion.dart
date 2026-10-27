@@ -10,6 +10,7 @@ const permisoPorRuta = <String, String>{
   Rutas.qrGenerado: Permisos.generarQr,
   Rutas.qrRapido: Permisos.generarQrPropio,
   Rutas.eventos: Permisos.verEventos,
+  Rutas.notificaciones: Permisos.verNotificaciones,
   Rutas.adminPuertas: Permisos.supervisarPuertas,
   Rutas.adminEstructura: Permisos.administrarPuertas,
   Rutas.adminUsuarios: Permisos.verUsuarios,
