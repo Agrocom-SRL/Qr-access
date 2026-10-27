@@ -35,6 +35,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.estadistica.ver', 'cuenta'),
   ('notificaciones.aviso.ver', 'cuenta'),
   ('notificaciones.aviso.gestionar', 'cuenta'),
+  ('seguridad.sesion.ver', 'cuenta'),
+  ('seguridad.sesion.cerrar', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
   ('seguridad.equipo.crear', 'plataforma'),
   ('seguridad.equipo.editar', 'plataforma'),
@@ -67,6 +69,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('dispositivos.placa.registrar', 'plataforma'),
   ('dispositivos.placa.vincular', 'plataforma'),
   ('dispositivos.placa.liberar', 'plataforma'),
+  ('seguridad.sesion_cuenta.ver', 'plataforma'),
+  ('seguridad.sesion_cuenta.cerrar', 'plataforma'),
   ('limites.configuracion.ver', 'plataforma'),
   ('limites.configuracion.editar', 'plataforma'),
   ('limites.consumo.ver', 'plataforma'),
@@ -188,7 +192,8 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   JOIN permisos AS p ON p.codigo IN (
     'organizacion.puerta.ver', 'accesos.qr.generar', 'accesos.qr.ver', 'accesos.qr.anular', 'accesos.evento.ver',
     'seguridad.usuario.ver', 'seguridad.usuario.crear', 'seguridad.usuario.editar', 'seguridad.usuario.eliminar',
-    'seguridad.usuario.restringir', 'seguridad.usuario.suspender'
+    'seguridad.usuario.restringir', 'seguridad.usuario.suspender',
+    'seguridad.sesion.ver', 'seguridad.sesion.cerrar'
   )
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
 

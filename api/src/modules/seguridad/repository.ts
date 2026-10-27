@@ -4,6 +4,7 @@ import { RepositorioDeFilasDePlataforma } from '../../platform/db/repositorio-de
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { Estado } from './domain/estado.js';
+import type { MotivoDeCierre, Plataforma } from './domain/sesion.js';
 
 export interface CuentaFila extends RowDataPacket {
   id: string;
@@ -290,6 +291,17 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         donde: 't.id IN (?)',
         params: [ids],
       },
+      tx,
+    );
+  }
+
+  /**
+   * Bloquea la fila del usuario hasta el fin de la transacción: serializa sus ingresos simultáneos para que cada
+   * uno vea las sesiones del anterior al aplicar el tope (ADR 0030 §4.1) y no choquen por bloqueos de rango.
+   */
+  async bloquear(tx: Transaccion, id: string): Promise<void> {
+    await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: 't.id = ?', params: [id], bloquear: true },
       tx,
     );
   }
@@ -626,10 +638,35 @@ export interface SesionFila extends RowDataPacket {
   rol_activo_id: string | null;
   expira_at: Date;
   revocada_at: Date | null;
+  ultima_actividad_at: Date | null;
+}
+
+/** Una sesión viva tal como se lista (ADR 0030 §4.1). Nunca lleva el refresh. */
+export interface SesionDetalleFila extends RowDataPacket {
+  id: string;
+  usuario_id: string;
+  instalacion_id: string | null;
+  plataforma: Plataforma | null;
+  nombre_dispositivo: string | null;
+  ip: string | null;
+  ultima_actividad_at: Date | null;
+  created_at: Date;
+  expira_at: Date;
 }
 
 const COLUMNAS_DE_SESION =
-  't.id, t.tenant_id, t.usuario_id, t.rol_activo_id, t.expira_at, t.revocada_at';
+  't.id, t.tenant_id, t.usuario_id, t.rol_activo_id, t.expira_at, t.revocada_at, t.ultima_actividad_at';
+const COLUMNAS_DE_DETALLE =
+  't.id, t.usuario_id, t.instalacion_id, t.plataforma, t.nombre_dispositivo, t.ip, t.ultima_actividad_at, t.created_at, t.expira_at';
+/** Viva = sin revocar y sin vencer; el `?` es el instante de la consulta. */
+const SESION_VIVA = 't.revocada_at IS NULL AND t.expira_at > ?';
+const MAS_RECIENTE_PRIMERO = 't.ultima_actividad_at DESC, t.id DESC';
+
+/** Quién y por qué cierra una sesión: queda en la sesión y en la bitácora. */
+export interface CierreSolicitado {
+  readonly motivo: MotivoDeCierre;
+  readonly porUsuarioId: string | null;
+}
 const DESCRIPCION_DE_SESIONES = {
   nombre: 'sesiones',
   columnas: [
@@ -638,10 +675,17 @@ const DESCRIPCION_DE_SESIONES = {
     'refresh_hash',
     'agente',
     'ip',
+    'instalacion_id',
+    'plataforma',
+    'nombre_dispositivo',
+    'ultima_actividad_at',
     'expira_at',
     'revocada_at',
+    'motivo_cierre',
+    'revocada_por',
   ],
-  sensibles: ['refresh_hash'],
+  // El identificador de instalación y la IP no se copian a la bitácora (ADR 0030 §4.1).
+  sensibles: ['refresh_hash', 'instalacion_id', 'ip'],
   perfil: 'transitoria',
   deCuenta: true,
 } as const;
@@ -653,6 +697,26 @@ export interface NuevaSesion {
   readonly agente: string | null;
   readonly ip: string | null;
   readonly expiraAt: Date;
+  /** Identificador aleatorio de la instalación (la app lo genera); `null` en clientes que no lo mandan. */
+  readonly instalacionId: string | null;
+  readonly plataforma: Plataforma | null;
+  readonly nombreDeDispositivo: string | null;
+  readonly ahora: Date;
+}
+
+/** Los valores que se escriben al abrir una sesión, comunes a las de cuenta y a las de plataforma. */
+function valoresDeSesionNueva(sesion: NuevaSesion): Record<string, unknown> {
+  return {
+    usuario_id: sesion.usuarioId,
+    refresh_hash: sesion.refreshHash,
+    agente: sesion.agente,
+    ip: sesion.ip,
+    instalacion_id: sesion.instalacionId,
+    plataforma: sesion.plataforma,
+    nombre_dispositivo: sesion.nombreDeDispositivo,
+    ultima_actividad_at: sesion.ahora,
+    expira_at: sesion.expiraAt,
+  };
 }
 
 /** Dueño de `sesiones`. Con tenant: solo las de la cuenta del contexto. */
@@ -663,12 +727,8 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
 
   crear(tx: Transaccion, sesion: NuevaSesion): Promise<string> {
     return this.insertar(tx, {
-      usuario_id: sesion.usuarioId,
+      ...valoresDeSesionNueva(sesion),
       rol_activo_id: sesion.rolActivoId,
-      refresh_hash: sesion.refreshHash,
-      agente: sesion.agente,
-      ip: sesion.ip,
-      expira_at: sesion.expiraAt,
     });
   }
 
@@ -688,11 +748,17 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
     refreshNuevo: string,
     expiraAt: Date,
     ahora: Date,
+    ip: string | null = null,
   ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { refresh_hash: refreshNuevo, expira_at: expiraAt },
+      {
+        refresh_hash: refreshNuevo,
+        expira_at: expiraAt,
+        ultima_actividad_at: ahora,
+        ...(ip === null ? {} : { ip }),
+      },
       {
         cuando: {
           sql: 'refresh_hash = ? AND revocada_at IS NULL AND expira_at > ?',
@@ -702,11 +768,105 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
     );
   }
 
-  revocar(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+  /**
+   * Revoca una sesión sin bitácora, como todo cambio rutinario de `sesiones`: salir (`motivo` 'salida') o
+   * cortar las del usuario por un PIN nuevo, una baja o una suspensión (sin motivo).
+   */
+  revocar(
+    tx: Transaccion,
+    id: string,
+    ahora: Date,
+    motivo: MotivoDeCierre | null = null,
+  ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { revocada_at: ahora },
+      { revocada_at: ahora, ...(motivo === null ? {} : { motivo_cierre: motivo }) },
+      { cuando: { sql: 'revocada_at IS NULL' } },
+    );
+  }
+
+  /** Las sesiones vivas de un usuario de la cuenta, la de actividad más reciente primero. Con `tx`, las bloquea. */
+  vivasDe(usuarioId: string, ahora: Date, tx?: Transaccion): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.usuario_id = ? AND ${SESION_VIVA}`,
+        params: [usuarioId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        ...(tx === undefined ? {} : { bloquear: true }),
+      },
+      tx,
+    );
+  }
+
+  /** Las sesiones vivas de una instalación (de cualquier usuario de la cuenta), para el tope por instalación. */
+  vivasDeInstalacion(
+    instalacionId: string,
+    ahora: Date,
+    tx: Transaccion,
+  ): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.instalacion_id = ? AND ${SESION_VIVA}`,
+        params: [instalacionId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /** Una sesión viva de ese usuario; de otro usuario, de otra cuenta, cerrada o vencida no existe. */
+  buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null> {
+    return this.seleccionarUna<SesionDetalleFila>({
+      columnas: COLUMNAS_DE_DETALLE,
+      donde: `t.id = ? AND t.usuario_id = ? AND ${SESION_VIVA}`,
+      params: [id, usuarioId, ahora],
+    });
+  }
+
+  /** Cierra una sesión dejando quién y por qué, y una fila en la bitácora (ADR 0007). */
+  cerrar(tx: Transaccion, id: string, ahora: Date, cierre: CierreSolicitado): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { revocada_at: ahora, motivo_cierre: cierre.motivo, revocada_por: cierre.porUsuarioId },
+      { cuando: { sql: 'revocada_at IS NULL' }, auditar: true },
+    );
+  }
+
+  /** Cierra las sesiones vivas de un usuario, salvo `exceptoId`; devuelve cuántas cerró. */
+  async cerrarVivasDe(
+    tx: Transaccion,
+    usuarioId: string,
+    ahora: Date,
+    cierre: CierreSolicitado,
+    exceptoId: string | null = null,
+  ): Promise<number> {
+    let cerradas = 0;
+    for (const sesion of await this.vivasDe(usuarioId, ahora, tx)) {
+      if (sesion.id === exceptoId) continue;
+      if (await this.cerrar(tx, sesion.id, ahora, cierre)) cerradas += 1;
+    }
+    return cerradas;
+  }
+
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeUsuarios(this.pool).bloquear(tx, usuarioId);
+  }
+
+  /** Anota la última actividad de una sesión viva. Es telemetría: sin bitácora. */
+  registrarActividad(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { ultima_actividad_at: ahora },
       { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }
@@ -858,6 +1018,18 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
     return filas.map((fila) => String(fila.id));
   }
 
+  /**
+   * Bloquea la fila del super admin (los ingresos simultáneos suyos se esperan) y dice si SIGUE activo: leída
+   * con `FOR UPDATE`, ve lo que una desactivación concurrente ya confirmó.
+   */
+  async bloquearSiActivo(tx: Transaccion, id: string): Promise<boolean> {
+    const fila = await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: "t.id = ? AND t.estado = 'activo'", params: [id], bloquear: true },
+      tx,
+    );
+    return fila !== null;
+  }
+
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
     return this.seleccionarUna<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
@@ -958,12 +1130,8 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
 
   crear(tx: Transaccion, sesion: Omit<NuevaSesion, 'rolActivoId'>): Promise<string> {
     return this.insertar(tx, {
-      usuario_id: sesion.usuarioId,
+      ...valoresDeSesionNueva({ ...sesion, rolActivoId: null }),
       rol_activo_id: null,
-      refresh_hash: sesion.refreshHash,
-      agente: sesion.agente,
-      ip: sesion.ip,
-      expira_at: sesion.expiraAt,
     });
   }
 
@@ -982,11 +1150,17 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
     refreshNuevo: string,
     expiraAt: Date,
     ahora: Date,
+    ip: string | null = null,
   ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { refresh_hash: refreshNuevo, expira_at: expiraAt },
+      {
+        refresh_hash: refreshNuevo,
+        expira_at: expiraAt,
+        ultima_actividad_at: ahora,
+        ...(ip === null ? {} : { ip }),
+      },
       {
         cuando: {
           sql: 'refresh_hash = ? AND revocada_at IS NULL AND expira_at > ?',
@@ -996,11 +1170,98 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
     );
   }
 
-  revocar(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+  /** Revoca sin bitácora: salir (`motivo` 'salida') o cortar las del super admin al desactivarlo (sin motivo). */
+  revocar(
+    tx: Transaccion,
+    id: string,
+    ahora: Date,
+    motivo: MotivoDeCierre | null = null,
+  ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { revocada_at: ahora },
+      { revocada_at: ahora, ...(motivo === null ? {} : { motivo_cierre: motivo }) },
+      { cuando: { sql: 'revocada_at IS NULL' } },
+    );
+  }
+
+  /** Las sesiones vivas de un super admin, la de actividad más reciente primero. Con `tx`, las bloquea. */
+  vivasDe(usuarioId: string, ahora: Date, tx?: Transaccion): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.usuario_id = ? AND ${SESION_VIVA}`,
+        params: [usuarioId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        ...(tx === undefined ? {} : { bloquear: true }),
+      },
+      tx,
+    );
+  }
+
+  /** Las sesiones vivas de una instalación entre los super admin, para el tope por instalación. */
+  vivasDeInstalacion(
+    instalacionId: string,
+    ahora: Date,
+    tx: Transaccion,
+  ): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.instalacion_id = ? AND ${SESION_VIVA}`,
+        params: [instalacionId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeSuperAdmins(this.pool).bloquearSiActivo(tx, usuarioId);
+  }
+
+  buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null> {
+    return this.seleccionarUna<SesionDetalleFila>({
+      columnas: COLUMNAS_DE_DETALLE,
+      donde: `t.id = ? AND t.usuario_id = ? AND ${SESION_VIVA}`,
+      params: [id, usuarioId, ahora],
+    });
+  }
+
+  cerrar(tx: Transaccion, id: string, ahora: Date, cierre: CierreSolicitado): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { revocada_at: ahora, motivo_cierre: cierre.motivo, revocada_por: cierre.porUsuarioId },
+      { cuando: { sql: 'revocada_at IS NULL' }, auditar: true },
+    );
+  }
+
+  async cerrarVivasDe(
+    tx: Transaccion,
+    usuarioId: string,
+    ahora: Date,
+    cierre: CierreSolicitado,
+    exceptoId: string | null = null,
+  ): Promise<number> {
+    let cerradas = 0;
+    for (const sesion of await this.vivasDe(usuarioId, ahora, tx)) {
+      if (sesion.id === exceptoId) continue;
+      if (await this.cerrar(tx, sesion.id, ahora, cierre)) cerradas += 1;
+    }
+    return cerradas;
+  }
+
+  registrarActividad(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { ultima_actividad_at: ahora },
       { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }

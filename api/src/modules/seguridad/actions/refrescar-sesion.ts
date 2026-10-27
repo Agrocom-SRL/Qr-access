@@ -25,6 +25,7 @@ export async function ejecutar(
   servicios: ServiciosDeSeguridad,
   refrescoPresentado: string,
   ahora: Date = new Date(),
+  ip: string | null = null,
 ): Promise<SesionRefrescada> {
   const invalido = new ErrorDeDominio('sesion.refresco_invalido', 401);
   const hashActual = sha256Hex(refrescoPresentado);
@@ -37,7 +38,7 @@ export async function ejecutar(
 
   // Sesión de un super admin (sin cuenta): su propio camino, que nunca toca datos de cuentas.
   if (sesion.tenant_id === null) {
-    return refrescarDePlataforma(servicios, sesion.id, sesion.usuario_id, hashActual, ahora);
+    return refrescarDePlataforma(servicios, sesion.id, sesion.usuario_id, hashActual, ahora, ip);
   }
   const cuentaId = sesion.tenant_id;
 
@@ -65,6 +66,7 @@ export async function ejecutar(
         sha256Hex(refresco),
         sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
         ahora,
+        ip,
       ),
     );
     // Dos refrescos simultáneos con el mismo token: solo uno rota.

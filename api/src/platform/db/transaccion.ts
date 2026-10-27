@@ -125,3 +125,33 @@ export async function enTransaccionIdempotente<T>(
     return enTransaccion(pool, fn, opciones);
   }
 }
+
+/** Reintentos del ingreso: con 3 más el intento inicial, dos ingresos que se pisan no se rechazan en la práctica. */
+export const REINTENTOS_DE_INGRESO = 3;
+
+const esperar = (ms: number): Promise<void> => new Promise((resolver) => setTimeout(resolver, ms));
+
+/**
+ * Como `enTransaccionIdempotente`, pero repite hasta `reintentos` veces, con una pausa aleatoria creciente
+ * entre intentos (jitter: sin ella, dos transacciones que se pisaron vuelven a chocar al mismo tiempo). Para
+ * el ingreso (ADR 0030 §4.1): ahí los topes de sesión leen bloqueando por rango (`FOR UPDATE` sobre las
+ * sesiones de una instalación), y dos usuarios distintos desde un mismo aparato pueden cruzar sus bloqueos
+ * y dar deadlock. Iniciar sesión nunca debe rechazarse por eso. Es más simple y segura que serializar con
+ * un `GET_LOCK` por instalación (un bloqueo atado a la conexión, con su timeout y su liberación a mano).
+ * Mismas condiciones que la idempotente: `fn` solo toca la base y cada intento parte de un ROLLBACK.
+ */
+export async function enTransaccionConReintentos<T>(
+  pool: Pool,
+  fn: (tx: Transaccion) => Promise<T>,
+  opciones: OpcionesDeTransaccion & { readonly reintentos?: number } = {},
+): Promise<T> {
+  const { reintentos = REINTENTOS_DE_INGRESO, ...base } = opciones;
+  for (let intento = 0; ; intento += 1) {
+    try {
+      return await enTransaccion(pool, fn, base);
+    } catch (error) {
+      if (!esErrorDeBloqueo(error) || vencida(base.señal) || intento >= reintentos) throw error;
+      await esperar(Math.random() * 20 * (intento + 1));
+    }
+  }
+}

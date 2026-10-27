@@ -4,11 +4,14 @@ import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as agregarMiembro } from './actions/agregar-miembro-equipo.js';
 import { ejecutar as cambiarContrasena } from './actions/cambiar-contrasena.js';
+import { ejecutar as cerrarMiSesion } from './actions/cerrar-mi-sesion-plataforma.js';
+import { ejecutar as cerrarMisOtrasSesiones } from './actions/cerrar-mis-otras-sesiones-plataforma.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion-plataforma.js';
 import { ejecutar as editarMiembro } from './actions/editar-miembro-equipo.js';
 import { ejecutar as editarPerfil } from './actions/editar-perfil-plataforma.js';
 import { ejecutar as iniciarSesion } from './actions/iniciar-sesion-plataforma.js';
 import { ejecutar as listarEquipo } from './actions/listar-equipo.js';
+import { ejecutar as listarMisSesiones } from './actions/listar-mis-sesiones-plataforma.js';
 import { ejecutar as usuarioDisponible } from './actions/usuario-disponible.js';
 import { ejecutar as verPerfil } from './actions/ver-perfil-plataforma.js';
 import {
@@ -18,7 +21,10 @@ import {
   cuerpoDeEdicionDePerfil,
   cuerpoDeIngresoDePlataforma,
   cuerpoDeNuevoMiembro,
+  parametrosDeSesion,
   parametrosDeUsuario,
+  respuestaDeSesionesCerradas,
+  respuestaListadoDeSesiones,
   respuestaDelEquipo,
   respuestaDeIngresoDePlataforma,
   respuestaDeMiembroCreado,
@@ -53,6 +59,9 @@ export const rutasDePlataforma =
         iniciarSesion(servicios, {
           usuario: request.body.usuario,
           contrasena: request.body.contrasena,
+          instalacionId: request.body.instalacion_id ?? null,
+          plataforma: request.body.plataforma ?? null,
+          dispositivo: request.body.dispositivo ?? null,
           ip: request.ip,
           agente: request.headers['user-agent']?.slice(0, LARGO_MAXIMO_DEL_AGENTE) ?? null,
           log: request.log,
@@ -64,6 +73,35 @@ export const rutasDePlataforma =
       { schema: { tags: ETIQUETA }, config: { acceso: 'plataforma' } },
       async (request, reply) => {
         await cerrarSesion(servicios, plataformaDe(request));
+        return reply.status(204).send();
+      },
+    );
+
+    // Dispositivos conectados del super admin (ADR 0030 §4.1): solo los propios, sin permiso aparte.
+    app.get(
+      '/plataforma/sesiones',
+      {
+        schema: { tags: ETIQUETA, response: { 200: respuestaListadoDeSesiones } },
+        config: { acceso: 'plataforma' },
+      },
+      (request) => listarMisSesiones(pool, plataformaDe(request)),
+    );
+
+    // Antes de `/plataforma/sesiones/:id`: "otras" no es un id.
+    app.delete(
+      '/plataforma/sesiones/otras',
+      {
+        schema: { tags: ETIQUETA, response: { 200: respuestaDeSesionesCerradas } },
+        config: { acceso: 'plataforma' },
+      },
+      async (request) => ({ cerradas: await cerrarMisOtrasSesiones(pool, plataformaDe(request)) }),
+    );
+
+    app.delete(
+      '/plataforma/sesiones/:id',
+      { schema: { tags: ETIQUETA, params: parametrosDeSesion }, config: { acceso: 'plataforma' } },
+      async (request, reply) => {
+        await cerrarMiSesion(pool, plataformaDe(request), request.params.id);
         return reply.status(204).send();
       },
     );

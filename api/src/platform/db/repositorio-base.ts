@@ -62,6 +62,11 @@ export interface OpcionesDeActualizacion {
   readonly cuando?: CondicionExtra;
   /** Solo para telemetría que no es un cambio relevante (latido del dispositivo). */
   readonly sinBitacora?: boolean;
+  /**
+   * Fuerza la bitácora en una tabla `transitoria`, cuyos cambios rutinarios no se auditan: sirve para el
+   * que sí es relevante (cerrar la sesión de otra persona). Quién, de dónde y cuándo salen del contexto.
+   */
+  readonly auditar?: boolean;
 }
 
 export class UsoIndebidoDeRepositorio extends Error {
@@ -304,7 +309,8 @@ export abstract class RepositorioBase {
     );
     if (resultado.affectedRows !== 1) return false;
 
-    if (this.conBitacora && opciones.sinBitacora !== true) {
+    const auditaEstaTransitoria = this.tabla.perfil === 'transitoria' && opciones.auditar === true;
+    if ((this.conBitacora && opciones.sinBitacora !== true) || auditaEstaTransitoria) {
       const sensibles = this.tabla.sensibles ?? [];
       await registrarCambio(tx, {
         tenantId: this.tabla.deCuenta ? this.alcance().tenantId : null,

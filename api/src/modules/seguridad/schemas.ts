@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
+import { PLATAFORMAS } from './domain/sesion.js';
 
 export const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
@@ -16,7 +17,45 @@ export const cuerpoDeCambioDeEstado = z.strictObject({
   motivo: z.string().trim().min(1).max(MAX_MOTIVO_DE_ESTADO),
 });
 
-export const cuerpoDeIngreso = z.strictObject({ pin: z.string().min(1).max(32) });
+/**
+ * De dónde entra quien inicia sesión (ADR 0030 §4.1), todo opcional (un cliente anterior sigue entrando).
+ * `instalacion_id` es un identificador ALEATORIO que la app genera y guarda localmente (16 a 64 caracteres
+ * URL-safe, por ejemplo un UUID): nunca el IMEI, el identificador de publicidad ni otra huella del aparato.
+ */
+const camposDeOrigenDeSesion = {
+  instalacion_id: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{16,64}$/)
+    .optional(),
+  plataforma: z.enum(PLATAFORMAS).optional(),
+  /** Nombre corto del aparato o navegador; no es dato personal ni sensible. */
+  dispositivo: z.string().trim().min(1).max(60).optional(),
+};
+
+export const cuerpoDeIngreso = z.strictObject({
+  pin: z.string().min(1).max(32),
+  ...camposDeOrigenDeSesion,
+});
+
+export const esquemaSesionAbierta = z.object({
+  id: z.string(),
+  plataforma: z.enum(PLATAFORMAS).nullable(),
+  dispositivo: z.string().nullable(),
+  ip: z.string().nullable(),
+  iniciada_at: esquemaFecha,
+  ultima_actividad_at: esquemaFecha,
+  expira_at: esquemaFecha,
+  actual: z.boolean(),
+});
+export const respuestaListadoDeSesiones = esquemaListado(esquemaSesionAbierta);
+export const respuestaDeSesionesCerradas = z.object({ cerradas: z.number().int() });
+export const parametrosDeSesion = z.object({ id: esquemaId });
+export const parametrosDeSesionDeUsuario = z.object({ id: esquemaId, sesionId: esquemaId });
+export const parametrosDeSesionDeUsuarioDeCuenta = z.object({
+  id: esquemaId,
+  usuarioId: esquemaId,
+  sesionId: esquemaId,
+});
 
 export const respuestaDeIngreso = z.object({
   acceso: z.string(),
@@ -147,6 +186,7 @@ export const respuestaListadoDeRoles = z.object({ datos: z.array(esquemaRol) });
 export const cuerpoDeIngresoDePlataforma = z.strictObject({
   usuario: z.string().min(1).max(60),
   contrasena: z.string().min(1).max(128),
+  ...camposDeOrigenDeSesion,
 });
 
 export const respuestaDeIngresoDePlataforma = z.object({

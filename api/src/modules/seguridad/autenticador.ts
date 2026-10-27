@@ -12,7 +12,20 @@ import {
   RepositorioDeUsuarios,
 } from './repository.js';
 import { estadoEfectivo, nodosDeEstado } from './domain/estado.js';
-import { sesionVigente } from './domain/sesion.js';
+import { debeRegistrarActividad, sesionVigente } from './domain/sesion.js';
+import { enTransaccion } from '../../platform/db/transaccion.js';
+
+/**
+ * Anota la última actividad de la sesión como mucho cada 5 minutos (ADR 0030 §4.1). Es telemetría para la lista
+ * de dispositivos conectados: si falla, la petición NO falla (la autenticación ya se decidió).
+ */
+async function anotarActividad(anotar: () => Promise<unknown>): Promise<void> {
+  try {
+    await anotar();
+  } catch {
+    // La próxima petición lo reintenta.
+  }
+}
 
 /**
  * Valida un JWT de acceso Y su vigencia real en la base (ADR 0004 §6): sesión sin revocar ni
@@ -59,6 +72,13 @@ export function crearAutenticadorDeUsuario({ pool, config }: DependenciasDeModul
           permisos = await rolesRepositorio.permisosDe(rolActivoId);
         }
       }
+      if (debeRegistrarActividad(sesion.ultima_actividad_at, ahora)) {
+        await anotarActividad(() =>
+          enTransaccion(pool, (tx) =>
+            new RepositorioDeSesiones(pool).registrarActividad(tx, sesion.id, ahora),
+          ),
+        );
+      }
       return {
         tipo: 'usuario',
         usuarioId: usuario.id,
@@ -98,6 +118,13 @@ export function crearAutenticadorDePlataforma({ pool, config }: DependenciasDeMo
     if (admin === null) return null;
 
     const permisos = await new RepositorioDeRolesDeSuperAdmin(pool).permisosDe(admin.id);
+    if (debeRegistrarActividad(sesion.ultima_actividad_at, ahora)) {
+      await anotarActividad(() =>
+        enTransaccion(pool, (tx) =>
+          new RepositorioDeSesionesDeSuperAdmins(pool).registrarActividad(tx, sesion.id, ahora),
+        ),
+      );
+    }
     return {
       tipo: 'plataforma',
       usuarioId: admin.id,

@@ -42,6 +42,9 @@ export const ROLES_BASE: readonly RolBase[] = [
       'seguridad.usuario.suspender',
       // Registra, descarta o confirma los incidentes de uso de sus Miembros (ADR 0033 §3 y §4).
       'seguridad.incidente.resolver',
+      // Ve y cierra las sesiones de sus Miembros (ADR 0030 §4.1), y solo las de ellos.
+      'seguridad.sesion.ver',
+      'seguridad.sesion.cerrar',
     ],
   },
   { nombre: 'Miembro', protegido: false, permisos: PERMISOS_DE_MIEMBRO },

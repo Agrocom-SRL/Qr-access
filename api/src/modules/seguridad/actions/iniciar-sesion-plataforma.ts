@@ -1,9 +1,12 @@
-import { enTransaccion } from '../../../platform/db/transaccion.js';
+import { ContextoCuenta } from '../../../platform/contexto/contexto-cuenta.js';
+import { enTransaccionConReintentos } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { verificarContraRelleno, verificarHash } from '../../../platform/seguridad/hash.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
+import { nombreDeDispositivoLimpio, type OrigenDeSesion } from '../domain/sesion.js';
 import { normalizarUsername } from '../domain/super-admin.js';
+import { cerrarLasQueSobran } from '../apertura-de-sesion.js';
 import {
   RepositorioDeRolesDeSuperAdmin,
   RepositorioDeSesionesDeSuperAdmins,
@@ -11,7 +14,7 @@ import {
 } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
 
-export interface DatosDeIngresoDePlataforma {
+export interface DatosDeIngresoDePlataforma extends OrigenDeSesion {
   readonly usuario: string;
   readonly contrasena: string;
   readonly ip: string;
@@ -72,14 +75,41 @@ export async function ejecutar(
   servicios.limitadorPorIp.registrarExito(claves.ip);
 
   const refresco = generarTokenOpaco(32);
-  const sesionId = await enTransaccion(servicios.pool, (tx) =>
-    new RepositorioDeSesionesDeSuperAdmins(servicios.pool).crear(tx, {
-      usuarioId: admin.id,
-      refreshHash: sha256Hex(refresco),
-      agente: datos.agente,
-      ip: datos.ip,
-      expiraAt: sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
-    }),
+  const instalacionId = datos.instalacionId ?? null;
+  // Con la contraseña verificada el autor de lo que sigue es este super admin (bitácora de los cierres por tope).
+  const sesionId = await ContextoCuenta.ejecutar(
+    { cuentaId: null, usuarioId: admin.id, rolActivoId: null, dispositivoId: null, origen: 'api' },
+    () =>
+      enTransaccionConReintentos(servicios.pool, async (tx) => {
+        // Bloquea y relee: si lo desactivaron entre la lectura previa y acá, no nace una sesión viva.
+        const sigueActivo = await new RepositorioDeSuperAdmins(servicios.pool).bloquearSiActivo(
+          tx,
+          admin.id,
+        );
+        if (!sigueActivo) return rechazar();
+        const sesiones = new RepositorioDeSesionesDeSuperAdmins(servicios.pool);
+        await cerrarLasQueSobran(
+          sesiones,
+          tx,
+          { usuarioId: admin.id, instalacionId },
+          {
+            maxPorUsuario: servicios.config.SESIONES_MAX_POR_USUARIO,
+            maxPorInstalacion: servicios.config.SESIONES_MAX_POR_INSTALACION,
+          },
+          ahora,
+        );
+        return sesiones.crear(tx, {
+          usuarioId: admin.id,
+          refreshHash: sha256Hex(refresco),
+          agente: datos.agente,
+          ip: datos.ip,
+          expiraAt: sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
+          instalacionId,
+          plataforma: datos.plataforma ?? null,
+          nombreDeDispositivo: nombreDeDispositivoLimpio(datos.dispositivo),
+          ahora,
+        });
+      }),
   );
   const acceso = await servicios.jwt.firmar({
     usuarioId: admin.id,

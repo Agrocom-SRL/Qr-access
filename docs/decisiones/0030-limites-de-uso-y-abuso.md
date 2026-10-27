@@ -126,6 +126,12 @@ La relación entre sesión y QR es lo que separa a quien usa dos aparatos de qui
 - **Cerrar una sesión** concreta, o todas las de un usuario, y **regenerar su PIN** (ya existe). Es la respuesta al PIN filtrado: el usuario legítimo vuelve a entrar con el nuevo.
 - **Aviso al propietario y a AGROCOM** cuando se cumple una combinación de gravedad media o alta, con el mismo criterio del §5 (una vez por evento y día).
 
+**Riesgos aceptados y reglas de presentación de las sesiones (enmienda W8).**
+
+- **Cierre cruzado por el tope de instalación.** El tope por instalación cuenta las sesiones de todos los usuarios de un mismo aparato y cierra la más antigua, aunque sea de otro usuario: quien conoce un `instalacion_id` ajeno (es un valor aleatorio que no se muestra) o comparte aparato puede desplazar sesiones de otros. Se acepta: el cierre es acotado a la cuenta, queda en la bitácora con su autor y quien lo sufre vuelve a entrar sin bloqueo. Iniciar sesión nunca se rechaza por un tope; los ingresos que se pisan en la base se reintentan (hasta 3 veces, con pausa aleatoria) solo en el login.
+- **Bucle con un PIN válido.** Quien tiene un PIN válido puede iniciar sesión en bucle y cerrar así sus propias sesiones más antiguas, o generar bitácora. Se acepta: el límite por IP y por cuenta frena los fallos, no los aciertos, y cada ingreso queda registrado. Es una señal para las estadísticas del W12 (muchas aperturas de sesión en poco tiempo), no un bloqueo.
+- **El nombre del dispositivo es texto plano.** `dispositivo` lo manda el cliente (texto libre acotado): la web y la app deben mostrarlo siempre como texto plano, nunca como HTML ni con formato interpretado.
+
 **Debilidad que se asume.** Un PIN compartido es un punto débil del modelo de negocio: nada técnico impide que dos personas conozcan el mismo PIN. Se mitiga con detección y con la vía comercial (§5), no con bloqueo. Si en la práctica el compartir PIN entre turnos de guardias es habitual, se evalúa en su momento una regla propia (por ejemplo, un usuario por turno).
 
 **Implementado (ola W12, API).** Las señales de la tabla anterior que tienen datos hoy: «Varias instalaciones activas» **no** (la columna `sesiones.instalacion_id` es de la ola W8 y no está en este esquema: vacío documentado en D-37); «Muchas… IP distintas a la vez» sí (PIN compartido, solo por IP, media); «Uso imposible» sí (alta); «combinación con uso masivo» queda pendiente de W8. Ver la sección «Implementado (ola W12)» al final del §5.
