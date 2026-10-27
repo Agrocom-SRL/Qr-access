@@ -68,6 +68,10 @@
   "@comunQuitarFiltros": {
     "description": "Acción del estado vacío cuando un filtro no deja resultados"
   },
+  "comunMarcaObligatorio": " *",
+  "@comunMarcaObligatorio": {
+    "description": "Marca que va tras el rótulo de un campo obligatorio"
+  },
   "comunOpcional": "(opcional)",
   "@comunOpcional": {
     "description": "Sufijo del rótulo de un campo que no es obligatorio"
@@ -729,17 +733,37 @@
   "@qrMisQrTitulo": {
     "description": "Título del listado de QR generados"
   },
-  "qrMisQrSinVigentes": "No tienes QR vigentes",
-  "@qrMisQrSinVigentes": {
-    "description": "Estado vacío del filtro Vigentes"
+  "qrVacioVigentesTitulo": "No tienes QR vigentes",
+  "@qrVacioVigentesTitulo": {
+    "description": "Estado vacío de Mis QR, filtro Vigentes: título"
   },
-  "qrMisQrSinResultados": "No hay QR en este estado",
-  "@qrMisQrSinResultados": {
-    "description": "Estado vacío del listado para otro filtro"
+  "qrVacioVigentesAyuda": "Los QR que generes y aún no se usen aparecerán aquí.",
+  "@qrVacioVigentesAyuda": {
+    "description": "Estado vacío de Mis QR, filtro Vigentes: ayuda"
   },
-  "qrMisQrSinResultadosAyuda": "Los QR que generes aparecerán aquí.",
-  "@qrMisQrSinResultadosAyuda": {
-    "description": "Ayuda del estado vacío del listado"
+  "qrVacioUsadosTitulo": "No hay QR usados",
+  "@qrVacioUsadosTitulo": {
+    "description": "Estado vacío de Mis QR, filtro Usados: título. Dice que no hay en este filtro, no que el usuario no tenga QR"
+  },
+  "qrVacioUsadosAyuda": "Aquí aparecen los QR que ya abrieron una puerta.",
+  "@qrVacioUsadosAyuda": {
+    "description": "Estado vacío de Mis QR, filtro Usados: ayuda"
+  },
+  "qrVacioVencidosTitulo": "No hay QR vencidos",
+  "@qrVacioVencidosTitulo": {
+    "description": "Estado vacío de Mis QR, filtro Vencidos: título"
+  },
+  "qrVacioVencidosAyuda": "Aquí aparecen los QR que pasaron su fecha límite sin usarse.",
+  "@qrVacioVencidosAyuda": {
+    "description": "Estado vacío de Mis QR, filtro Vencidos: ayuda"
+  },
+  "qrVacioAnuladosTitulo": "No hay QR anulados",
+  "@qrVacioAnuladosTitulo": {
+    "description": "Estado vacío de Mis QR, filtro Anulados: título"
+  },
+  "qrVacioAnuladosAyuda": "Aquí aparecen los QR que se anularon antes de usarse.",
+  "@qrVacioAnuladosAyuda": {
+    "description": "Estado vacío de Mis QR, filtro Anulados: ayuda"
   },
   "qrMisQrErrorCargar": "No pudimos cargar tus QR",
   "@qrMisQrErrorCargar": {
@@ -1273,6 +1297,28 @@
   "@adminTitulo": {
     "description": "Título de la pestaña Admin del compacto"
   },
+  "usuariosFaltaCampo": "Te falta completar: {campo}.",
+  "@usuariosFaltaCampo": {
+    "description": "Aviso al intentar generar o guardar con un campo obligatorio vacío; {campo} es el nombre del campo",
+    "placeholders": {
+      "campo": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosRevisaCampo": "Revisa: {campo}.",
+  "@usuariosRevisaCampo": {
+    "description": "Aviso al intentar guardar con un campo que no cumple el formato o el largo; {campo} es el nombre del campo",
+    "placeholders": {
+      "campo": {
+        "type": "String"
+      }
+    }
+  },
+  "usuariosPuertasErrorCargar": "No pudimos leer las puertas de este usuario. Si guardas, no cambiaremos sus puertas.",
+  "@usuariosPuertasErrorCargar": {
+    "description": "Aviso cuando no se leen las puertas asignadas al editar un usuario"
+  },
   "usuariosNuevo": "Nuevo usuario",
   "@usuariosNuevo": {
     "description": "Botón de alta y título del formulario de alta"
@@ -1289,11 +1335,11 @@
   "@usuariosSeccionRoles": {
     "description": "Título de la sección de roles del formulario"
   },
-  "usuariosCampoEtiqueta": "Etiqueta",
+  "usuariosCampoEtiqueta": "Quién usa el PIN",
   "@usuariosCampoEtiqueta": {
     "description": "Rótulo del campo: a quién se le entrega el PIN"
   },
-  "usuariosCampoEtiquetaAyuda": "A quién le entregas el PIN: una persona, un turno o un área.",
+  "usuariosCampoEtiquetaAyuda": "Pon el nombre de la persona, el turno o el área a quien entregas este PIN. Así lo reconoces en la lista.",
   "@usuariosCampoEtiquetaAyuda": {
     "description": "Ayuda del campo etiqueta"
   },
@@ -1346,7 +1392,7 @@
   "@usuariosCampoUnidad": {
     "description": "Etiqueta del nombre de la unidad"
   },
-  "usuariosCampoUnidadAyuda": "Cómo se llama la casa, el departamento o el puesto de este Titular.",
+  "usuariosCampoUnidadAyuda": "La casa, el departamento o el puesto de este Titular, por ejemplo Casa 12. No puede repetirse en la misma propiedad.",
   "@usuariosCampoUnidadAyuda": {
     "description": "Ayuda del nombre de la unidad"
   },
@@ -1430,7 +1476,7 @@
       }
     }
   },
-  "estadisticasTitulo": "Uso de los usuarios",
+  "estadisticasTitulo": "Actividad de usuarios",
   "@estadisticasTitulo": {
     "description": "Título de las estadísticas de uso"
   },
@@ -1537,7 +1583,7 @@
       }
     }
   },
-  "usuariosNuevoAviso": "Al generar el PIN lo verás una sola vez. Entrégalo en persona o por un canal privado.",
+  "usuariosNuevoAviso": "Los campos con * son obligatorios. Al generar el PIN lo verás una sola vez. Entrégalo en persona o por un canal privado.",
   "@usuariosNuevoAviso": {
     "description": "Aviso del formulario de alta"
   },
@@ -1666,7 +1712,7 @@
   "@usuariosNuncaIngreso": {
     "description": "Último ingreso de un usuario que nunca entró"
   },
-  "usuariosColumnaEtiqueta": "Etiqueta",
+  "usuariosColumnaEtiqueta": "Quién usa el PIN",
   "@usuariosColumnaEtiqueta": {
     "description": "Encabezado de la tabla de usuarios"
   },
@@ -1949,7 +1995,31 @@
   },
   "dispositivosAyuda": "Los aparatos donde tienes tu sesión abierta. Cierra los que no reconozcas.",
   "@dispositivosAyuda": {
-    "description": "Subtítulo de la pantalla de dispositivos conectados"
+    "description": "Aviso al inicio de la lista de dispositivos conectados"
+  },
+  "dispositivosRenombrar": "Cambiar nombre",
+  "@dispositivosRenombrar": {
+    "description": "Acción de este dispositivo para ponerle o cambiarle el nombre"
+  },
+  "dispositivosRenombrarTitulo": "Nombre de este dispositivo",
+  "@dispositivosRenombrarTitulo": {
+    "description": "Título del diálogo para nombrar el dispositivo actual"
+  },
+  "dispositivosRenombrarCampo": "Nombre",
+  "@dispositivosRenombrarCampo": {
+    "description": "Etiqueta del campo de nombre del dispositivo"
+  },
+  "dispositivosRenombrarAyuda": "Así lo verás en tu lista de dispositivos.",
+  "@dispositivosRenombrarAyuda": {
+    "description": "Ayuda del campo de nombre del dispositivo"
+  },
+  "dispositivosRenombrarVacio": "Escribe un nombre.",
+  "@dispositivosRenombrarVacio": {
+    "description": "Error cuando el nombre del dispositivo queda vacío"
+  },
+  "dispositivosRenombrado": "Nombre guardado.",
+  "@dispositivosRenombrado": {
+    "description": "Aviso tras cambiar el nombre del dispositivo"
   },
   "dispositivosEsteAparato": "Este dispositivo",
   "@dispositivosEsteAparato": {
@@ -1982,6 +2052,14 @@
   "dispositivosPlataformaOtra": "Otro aparato",
   "@dispositivosPlataformaOtra": {
     "description": "Plataforma que la app no reconoce"
+  },
+  "dispositivoNombreNavegadorWeb": "Navegador web",
+  "@dispositivoNombreNavegadorWeb": {
+    "description": "Nombre automático que la app web manda al iniciar sesión (se guarda en la API)"
+  },
+  "dispositivoNombreOtro": "Otro dispositivo",
+  "@dispositivoNombreOtro": {
+    "description": "Nombre automático neutro cuando la app no reconoce el aparato (se guarda en la API)"
   },
   "dispositivosCerrarUna": "Cerrar sesión",
   "@dispositivosCerrarUna": {
@@ -2216,5 +2294,615 @@
   "notificacionTipoDesconocido": "Aviso del sistema",
   "@notificacionTipoDesconocido": {
     "description": "Texto genérico para un tipo de aviso que la app no conoce"
+  },
+  "perfilSeguridadTitulo": "Seguridad y datos",
+  "@perfilSeguridadTitulo": {
+    "description": "Título de la sección de seguridad en Perfil (ADR 0033)"
+  },
+  "perfilIncidentes": "Incidentes de uso",
+  "@perfilIncidentes": {
+    "description": "Fila de Perfil que abre los incidentes de uso de la rama"
+  },
+  "perfilIncidentesAyuda": "Casos raros de tus usuarios y sus pruebas",
+  "@perfilIncidentesAyuda": {
+    "description": "Ayuda de la fila de incidentes de uso"
+  },
+  "perfilAnularMiRama": "Anular QR de tus usuarios",
+  "@perfilAnularMiRama": {
+    "description": "Fila de Perfil que anula en bloque los QR vigentes de la rama"
+  },
+  "perfilAnularMiRamaAyuda": "Anula los QR vigentes de tus usuarios y de quienes dependen de ti",
+  "@perfilAnularMiRamaAyuda": {
+    "description": "Ayuda de la fila de anulación masiva"
+  },
+  "perfilExportar": "Exportar datos",
+  "@perfilExportar": {
+    "description": "Fila de Perfil que abre la exportación en CSV (solo el Administrador)"
+  },
+  "perfilExportarAyuda": "Descarga usuarios, puertas o accesos en CSV",
+  "@perfilExportarAyuda": {
+    "description": "Ayuda de la fila de exportación"
+  },
+  "qrAnulacionMiRamaTitulo": "Anular QR de tus usuarios",
+  "@qrAnulacionMiRamaTitulo": {
+    "description": "Título del diálogo de anulación masiva (ADR 0033 §3)"
+  },
+  "qrAnulacionMiRamaMensaje": "Se anularán los QR vigentes de tus usuarios y de quienes dependen de ti. Un QR anulado deja de funcionar: quien lo tenga deberá pedir uno nuevo.",
+  "@qrAnulacionMiRamaMensaje": {
+    "description": "Qué se anula en el diálogo de anulación masiva"
+  },
+  "qrAnulacionMiRamaIrreversible": "Esta acción no se puede deshacer.",
+  "@qrAnulacionMiRamaIrreversible": {
+    "description": "Aviso de irreversibilidad de la anulación masiva"
+  },
+  "qrAnulacionMiRamaMotivo": "Motivo",
+  "@qrAnulacionMiRamaMotivo": {
+    "description": "Etiqueta del campo de motivo de la anulación masiva"
+  },
+  "qrAnulacionMiRamaMotivoAyuda": "Obligatorio. Queda guardado en el registro de cambios.",
+  "@qrAnulacionMiRamaMotivoAyuda": {
+    "description": "Ayuda del campo de motivo de la anulación masiva"
+  },
+  "qrAnulacionMiRamaConfirmar": "Anular QR vigentes",
+  "@qrAnulacionMiRamaConfirmar": {
+    "description": "Botón que confirma la anulación masiva"
+  },
+  "qrAnulacionMiRamaAnulando": "Anulando",
+  "@qrAnulacionMiRamaAnulando": {
+    "description": "Gerundio del botón de anulación masiva mientras se envía"
+  },
+  "qrAnulacionMiRamaResultado": "{cantidad, plural, =0{No había QR vigentes: no se anuló nada.} =1{Se anuló 1 QR vigente.} other{Se anularon {cantidad} QR vigentes.}}",
+  "@qrAnulacionMiRamaResultado": {
+    "description": "Aviso tras anular en bloque, con cuántos QR se anularon",
+    "placeholders": {
+      "cantidad": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentesTitulo": "Incidentes de uso",
+  "@incidentesTitulo": {
+    "description": "Título de la pantalla de incidentes de uso"
+  },
+  "incidentesPolitica": "Si una persona tiene {minimo} incidentes confirmados en {ventana} días, el sistema te sugiere una medida para ella. Un solo incidente no cambia su acceso.",
+  "@incidentesPolitica": {
+    "description": "Umbral de reincidencia de la cuenta, de la política que expone la API",
+    "placeholders": {
+      "minimo": {
+        "type": "int"
+      },
+      "ventana": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentesPoliticaRestriccion": "Tu cuenta limita el acceso de forma automática en los casos leves.",
+  "@incidentesPoliticaRestriccion": {
+    "description": "Aviso cuando la cuenta tiene la restricción automática encendida"
+  },
+  "incidentesFiltroTipo": "Tipo",
+  "@incidentesFiltroTipo": {
+    "description": "Filtro de incidentes por tipo"
+  },
+  "incidentesFiltroEstado": "Estado",
+  "@incidentesFiltroEstado": {
+    "description": "Filtro de incidentes por estado de la última resolución"
+  },
+  "incidentesFiltroTodos": "Todos",
+  "@incidentesFiltroTodos": {
+    "description": "Opción de los filtros que no filtra nada"
+  },
+  "incidentesTipoUsoMasivo": "Uso masivo de un QR",
+  "@incidentesTipoUsoMasivo": {
+    "description": "Tipo de incidente uso_masivo"
+  },
+  "incidentesTipoUsoImposible": "Uso imposible",
+  "@incidentesTipoUsoImposible": {
+    "description": "Tipo de incidente uso_imposible"
+  },
+  "incidentesTipoPinCompartido": "PIN compartido",
+  "@incidentesTipoPinCompartido": {
+    "description": "Tipo de incidente pin_compartido"
+  },
+  "incidentesTipoQrReenviado": "QR reenviado",
+  "@incidentesTipoQrReenviado": {
+    "description": "Tipo de incidente qr_reenviado"
+  },
+  "incidentesTipoGeneracionRuidosa": "Demasiados QR pedidos",
+  "@incidentesTipoGeneracionRuidosa": {
+    "description": "Tipo de incidente generacion_ruidosa"
+  },
+  "incidentesTipoPerdidaORobo": "Pérdida o robo",
+  "@incidentesTipoPerdidaORobo": {
+    "description": "Tipo de incidente perdida_o_robo"
+  },
+  "incidentesTipoOtro": "Otro",
+  "@incidentesTipoOtro": {
+    "description": "Tipo de incidente otro"
+  },
+  "incidentesOrigenSistema": "Sistema",
+  "@incidentesOrigenSistema": {
+    "description": "Origen de un incidente abierto por el sistema"
+  },
+  "incidentesOrigenPersona": "Persona",
+  "@incidentesOrigenPersona": {
+    "description": "Origen de un incidente registrado a mano"
+  },
+  "incidentesGravedadBaja": "Baja",
+  "@incidentesGravedadBaja": {
+    "description": "Gravedad baja de un incidente"
+  },
+  "incidentesGravedadMedia": "Media",
+  "@incidentesGravedadMedia": {
+    "description": "Gravedad media de un incidente"
+  },
+  "incidentesGravedadAlta": "Alta",
+  "@incidentesGravedadAlta": {
+    "description": "Gravedad alta de un incidente"
+  },
+  "incidentesEstadoSinResolver": "Sin revisar",
+  "@incidentesEstadoSinResolver": {
+    "description": "Estado de un incidente que nadie resolvió todavía"
+  },
+  "incidentesEstadoPendiente": "Pendiente",
+  "@incidentesEstadoPendiente": {
+    "description": "Estado de un incidente dejado pendiente"
+  },
+  "incidentesEstadoConfirmado": "Confirmado",
+  "@incidentesEstadoConfirmado": {
+    "description": "Estado de un incidente confirmado (cuenta para la reincidencia)"
+  },
+  "incidentesEstadoDescartado": "Descartado",
+  "@incidentesEstadoDescartado": {
+    "description": "Estado de un incidente descartado (no cuenta)"
+  },
+  "incidentesUsuarioSinNombre": "Usuario sin nombre",
+  "@incidentesUsuarioSinNombre": {
+    "description": "Nombre que se muestra cuando el usuario no tiene etiqueta"
+  },
+  "incidentesColumnaOcurrido": "Cuándo",
+  "@incidentesColumnaOcurrido": {
+    "description": "Columna de la fecha en que pasó el incidente"
+  },
+  "incidentesColumnaUsuario": "Usuario",
+  "@incidentesColumnaUsuario": {
+    "description": "Columna del usuario del incidente"
+  },
+  "incidentesColumnaTipo": "Tipo",
+  "@incidentesColumnaTipo": {
+    "description": "Columna del tipo del incidente"
+  },
+  "incidentesColumnaGravedad": "Gravedad",
+  "@incidentesColumnaGravedad": {
+    "description": "Columna de la gravedad del incidente"
+  },
+  "incidentesColumnaOrigen": "Origen",
+  "@incidentesColumnaOrigen": {
+    "description": "Columna del origen del incidente"
+  },
+  "incidentesVer": "Ver el incidente de {usuario}",
+  "@incidentesVer": {
+    "description": "Texto de la acción Ver de una fila de incidentes",
+    "placeholders": {
+      "usuario": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentesVacioTitulo": "Sin incidentes",
+  "@incidentesVacioTitulo": {
+    "description": "Estado vacío de incidentes"
+  },
+  "incidentesVacioAyuda": "No hay incidentes con estos filtros.",
+  "@incidentesVacioAyuda": {
+    "description": "Ayuda del estado vacío de incidentes"
+  },
+  "incidentesErrorCargar": "No pudimos cargar los incidentes",
+  "@incidentesErrorCargar": {
+    "description": "Título del error al cargar incidentes"
+  },
+  "incidenteDetalleTitulo": "Incidente de {usuario}",
+  "@incidenteDetalleTitulo": {
+    "description": "Título del detalle de un incidente",
+    "placeholders": {
+      "usuario": {
+        "type": "String"
+      }
+    }
+  },
+  "incidenteDetalleSoloLectura": "Solo puedes verlo. Tu rol no permite decidir sobre incidentes.",
+  "@incidenteDetalleSoloLectura": {
+    "description": "Aviso del detalle para quien solo puede consultar"
+  },
+  "incidenteDetallePropio": "Es un incidente tuyo, así que lo revisa otra persona.",
+  "@incidenteDetallePropio": {
+    "description": "Aviso del detalle de un incidente propio (403 incidente.propio)"
+  },
+  "incidenteDetalleUsuario": "Usuario",
+  "@incidenteDetalleUsuario": {
+    "description": "Campo del detalle: a quién se refiere"
+  },
+  "incidenteDetalleTipo": "Tipo",
+  "@incidenteDetalleTipo": {
+    "description": "Campo del detalle: tipo de incidente"
+  },
+  "incidenteDetalleOrigen": "Origen",
+  "@incidenteDetalleOrigen": {
+    "description": "Campo del detalle: quién lo abrió"
+  },
+  "incidenteDetalleOcurrido": "Ocurrido",
+  "@incidenteDetalleOcurrido": {
+    "description": "Campo del detalle: cuándo pasó"
+  },
+  "incidenteDetalleOrigenYPersona": "{origen}, registrado por {persona}",
+  "@incidenteDetalleOrigenYPersona": {
+    "description": "Origen de un incidente registrado a mano, con quién lo registró",
+    "placeholders": {
+      "origen": {
+        "type": "String"
+      },
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
+  "incidenteDetalleDescripcion": "Descripción",
+  "@incidenteDetalleDescripcion": {
+    "description": "Campo del detalle: texto libre de quien lo registró"
+  },
+  "incidenteDetalleSinDescripcion": "Sin descripción",
+  "@incidenteDetalleSinDescripcion": {
+    "description": "Descripción vacía de un incidente"
+  },
+  "incidenteDetalleEvidencia": "Pruebas",
+  "@incidenteDetalleEvidencia": {
+    "description": "Sección de la evidencia del incidente (solo ids)"
+  },
+  "incidenteDetalleEvidenciaCifras": "{qr} QR, {accesos} accesos y {limites} pedidos de QR rechazados",
+  "@incidenteDetalleEvidenciaCifras": {
+    "description": "Cuántos ids de cada clase tiene la evidencia",
+    "placeholders": {
+      "qr": {
+        "type": "int"
+      },
+      "accesos": {
+        "type": "int"
+      },
+      "limites": {
+        "type": "int"
+      }
+    }
+  },
+  "incidenteDetalleResolucion": "Decisión",
+  "@incidenteDetalleResolucion": {
+    "description": "Sección de la última resolución"
+  },
+  "incidenteDetalleSinResolver": "Nadie lo ha revisado todavía",
+  "@incidenteDetalleSinResolver": {
+    "description": "Resolución de un incidente sin resolver"
+  },
+  "incidenteDetalleResueltoPor": "Por {persona}, el {cuando}",
+  "@incidenteDetalleResueltoPor": {
+    "description": "Quién resolvió y cuándo",
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      },
+      "cuando": {
+        "type": "String"
+      }
+    }
+  },
+  "incidenteDetalleSinMotivo": "Sin motivo",
+  "@incidenteDetalleSinMotivo": {
+    "description": "Resolución sin motivo (descartar o dejar pendiente)"
+  },
+  "incidenteDetalleHistorial": "Historial",
+  "@incidenteDetalleHistorial": {
+    "description": "Sección con todas las resoluciones del incidente"
+  },
+  "incidenteResolverTitulo": "Decidir",
+  "@incidenteResolverTitulo": {
+    "description": "Sección del formulario de resolución"
+  },
+  "incidenteResolverDecision": "Decisión",
+  "@incidenteResolverDecision": {
+    "description": "Campo de la decisión sobre el incidente"
+  },
+  "incidenteResolverMotivo": "Motivo",
+  "@incidenteResolverMotivo": {
+    "description": "Campo del motivo de la resolución"
+  },
+  "incidenteResolverMotivoAyuda": "Obligatorio para confirmar. Para descartarlo o dejarlo para después no hace falta.",
+  "@incidenteResolverMotivoAyuda": {
+    "description": "Ayuda del campo de motivo"
+  },
+  "incidenteResolverMotivoRequerido": "Escribe el motivo para confirmar el incidente.",
+  "@incidenteResolverMotivoRequerido": {
+    "description": "Validación local del motivo al confirmar"
+  },
+  "incidenteResolverConfirmar": "Confirmar",
+  "@incidenteResolverConfirmar": {
+    "description": "Decisión: confirmar el incidente"
+  },
+  "incidenteResolverDescartar": "Descartar",
+  "@incidenteResolverDescartar": {
+    "description": "Decisión: descartar el incidente"
+  },
+  "incidenteResolverPendiente": "Dejar para después",
+  "@incidenteResolverPendiente": {
+    "description": "Decisión: dejar el incidente pendiente"
+  },
+  "incidenteResolverGuardar": "Guardar decisión",
+  "@incidenteResolverGuardar": {
+    "description": "Botón que guarda la resolución"
+  },
+  "incidenteResolverGuardando": "Guardando",
+  "@incidenteResolverGuardando": {
+    "description": "Gerundio del botón de guardar la resolución"
+  },
+  "incidenteResolverConfirmarTitulo": "Confirmar el incidente",
+  "@incidenteResolverConfirmarTitulo": {
+    "description": "Título del diálogo al confirmar"
+  },
+  "incidenteResolverConfirmarMensaje": "Cuenta como caso confirmado. Si la persona llega al número de casos de la cuenta, el sistema te sugiere una medida y tú decides.",
+  "@incidenteResolverConfirmarMensaje": {
+    "description": "Qué pasa al confirmar un incidente"
+  },
+  "incidenteResolverDescartarTitulo": "Descartar el incidente",
+  "@incidenteResolverDescartarTitulo": {
+    "description": "Título del diálogo al descartar"
+  },
+  "incidenteResolverDescartarMensaje": "No cuenta para las medidas. Queda en el historial.",
+  "@incidenteResolverDescartarMensaje": {
+    "description": "Qué pasa al descartar un incidente"
+  },
+  "incidenteResolverPendienteTitulo": "Dejar pendiente",
+  "@incidenteResolverPendienteTitulo": {
+    "description": "Título del diálogo al dejar pendiente"
+  },
+  "incidenteResolverPendienteMensaje": "Queda sin decidir por ahora, así que no cuenta.",
+  "@incidenteResolverPendienteMensaje": {
+    "description": "Qué pasa al dejar pendiente un incidente"
+  },
+  "incidenteResolucionGuardada": "Quedó guardado como {estado}.",
+  "@incidenteResolucionGuardada": {
+    "description": "Aviso tras guardar la resolución",
+    "placeholders": {
+      "estado": {
+        "type": "String"
+      }
+    }
+  },
+  "incidenteReincidenciaPropuesta": "El sistema sugiere {accion} para {usuario}: {confirmados} de {minimo} incidentes confirmados en {ventana} días. La decisión es tuya.",
+  "@incidenteReincidenciaPropuesta": {
+    "description": "Propuesta que llega tras confirmar un incidente que cruza el umbral (ADR 0033 §4.3)",
+    "placeholders": {
+      "accion": {
+        "type": "String"
+      },
+      "usuario": {
+        "type": "String"
+      },
+      "confirmados": {
+        "type": "int"
+      },
+      "minimo": {
+        "type": "int"
+      },
+      "ventana": {
+        "type": "int"
+      }
+    }
+  },
+  "incidenteReincidenciaAplicada": "El sistema ya limitó el acceso de {usuario} por repetir incidentes.",
+  "@incidenteReincidenciaAplicada": {
+    "description": "Aviso de la restricción automática que ya se aplicó (ADR 0033 §4.4)",
+    "placeholders": {
+      "usuario": {
+        "type": "String"
+      }
+    }
+  },
+  "incidenteReincidenciaSinPropuesta": "Todavía no llega al número de incidentes que activa una medida, así que el sistema no sugiere nada.",
+  "@incidenteReincidenciaSinPropuesta": {
+    "description": "Confirmación sin propuesta de reincidencia"
+  },
+  "incidenteAccionRestringir": "Limitar acceso",
+  "@incidenteAccionRestringir": {
+    "description": "Paso propuesto: restringir (nivel leve)"
+  },
+  "incidenteAccionSuspender": "Suspender usuario",
+  "@incidenteAccionSuspender": {
+    "description": "Paso propuesto: suspender (nivel crítico)"
+  },
+  "incidenteAccionSuspenderYAnular": "Suspender y anular sus QR",
+  "@incidenteAccionSuspenderYAnular": {
+    "description": "Paso propuesto: suspender y anular los QR vigentes"
+  },
+  "notificacionDetallePropuesta": "{usuario}: {accion}. {confirmados} de {minimo} incidentes confirmados en {ventana} días.",
+  "@notificacionDetallePropuesta": {
+    "description": "Detalle de un aviso de propuesta de incidente (ADR 0033 §4.3)",
+    "placeholders": {
+      "usuario": {
+        "type": "String"
+      },
+      "accion": {
+        "type": "String"
+      },
+      "confirmados": {
+        "type": "int"
+      },
+      "minimo": {
+        "type": "int"
+      },
+      "ventana": {
+        "type": "int"
+      }
+    }
+  },
+  "exportacionTitulo": "Exportar datos",
+  "@exportacionTitulo": {
+    "description": "Título de la pantalla de exportación en CSV"
+  },
+  "exportacionSubtitulo": "Descarga los datos de tus usuarios y de quienes dependen de ti, en CSV y una página a la vez. Si hay más filas que el límite, elige fechas más cortas para bajar el resto.",
+  "@exportacionSubtitulo": {
+    "description": "Ayuda de la exportación (ADR 0033 §3)"
+  },
+  "exportacionRecurso": "Qué exportar",
+  "@exportacionRecurso": {
+    "description": "Selector del recurso a exportar"
+  },
+  "exportacionRecursoUsuarios": "Usuarios",
+  "@exportacionRecursoUsuarios": {
+    "description": "Recurso usuarios de la exportación"
+  },
+  "exportacionRecursoPuertas": "Puertas",
+  "@exportacionRecursoPuertas": {
+    "description": "Recurso puertas de la exportación"
+  },
+  "exportacionRecursoLecturas": "Accesos a puertas",
+  "@exportacionRecursoLecturas": {
+    "description": "Recurso lecturas de la exportación"
+  },
+  "exportacionResultado": "Resultado",
+  "@exportacionResultado": {
+    "description": "Filtro de resultado de las lecturas"
+  },
+  "exportacionTodos": "Todos",
+  "@exportacionTodos": {
+    "description": "Resultado: todas las lecturas"
+  },
+  "exportacionPermitido": "Permitido",
+  "@exportacionPermitido": {
+    "description": "Resultado: solo las lecturas permitidas"
+  },
+  "exportacionRechazado": "Rechazado",
+  "@exportacionRechazado": {
+    "description": "Resultado: solo las lecturas rechazadas"
+  },
+  "exportacionDesde": "Desde",
+  "@exportacionDesde": {
+    "description": "Filtro de fecha de inicio"
+  },
+  "exportacionHasta": "Hasta",
+  "@exportacionHasta": {
+    "description": "Filtro de fecha de fin"
+  },
+  "exportacionSinLimite": "Sin límite",
+  "@exportacionSinLimite": {
+    "description": "Fecha sin elegir: el rango queda abierto"
+  },
+  "exportacionRangoInvalido": "La fecha de inicio es posterior a la de fin.",
+  "@exportacionRangoInvalido": {
+    "description": "Validación local del rango de fechas"
+  },
+  "exportacionDescargar": "Descargar CSV",
+  "@exportacionDescargar": {
+    "description": "Botón que baja la primera página de la exportación"
+  },
+  "exportacionDescargarDeNuevo": "Volver a descargar desde el inicio",
+  "@exportacionDescargarDeNuevo": {
+    "description": "Botón que vuelve a empezar la exportación"
+  },
+  "exportacionSiguiente": "Descargar la página {pagina} de {paginas}",
+  "@exportacionSiguiente": {
+    "description": "Botón que baja la página que sigue",
+    "placeholders": {
+      "pagina": {
+        "type": "int"
+      },
+      "paginas": {
+        "type": "int"
+      }
+    }
+  },
+  "exportacionDescargada": "Ya bajaste la página {pagina} de {paginas}: {filas, plural, =1{1 fila.} other{{filas} filas.}}",
+  "@exportacionDescargada": {
+    "description": "Resumen tras bajar una página, con sus filas de datos",
+    "placeholders": {
+      "pagina": {
+        "type": "int"
+      },
+      "paginas": {
+        "type": "int"
+      },
+      "filas": {
+        "type": "int"
+      }
+    }
+  },
+  "exportacionSinFilasAyuda": "Prueba con otro resultado o con otras fechas.",
+  "@exportacionSinFilasAyuda": {
+    "description": "Ayuda del estado vacío de la exportación cuando no hay filas"
+  },
+  "exportacionSinFilas": "No hay datos con estos filtros.",
+  "@exportacionSinFilas": {
+    "description": "La exportación no tiene filas con esos filtros"
+  },
+  "exportacionDescargando": "Descargando",
+  "@exportacionDescargando": {
+    "description": "Gerundio del botón de descarga mientras se baja una página"
+  },
+  "exportacionQuitarFecha": "Quitar fecha",
+  "@exportacionQuitarFecha": {
+    "description": "Tooltip del botón que vuelve a dejar la fecha sin límite"
+  },
+  "exportacionTruncado": "Hay más datos de los que caben en una exportación. Elige fechas más cortas para bajar el resto.",
+  "@exportacionTruncado": {
+    "description": "Aviso de que la exportación llegó al tope de 10 000 filas"
+  },
+  "comunErrorIncidenteNoEncontrado": "No encontramos ese incidente.",
+  "@comunErrorIncidenteNoEncontrado": {
+    "description": "code incidente.no_encontrado (404)"
+  },
+  "comunErrorIncidentePropio": "No puedes decidir sobre un incidente tuyo.",
+  "@comunErrorIncidentePropio": {
+    "description": "code incidente.propio (403)"
+  },
+  "comunErrorIncidenteMotivoRequerido": "Escribe el motivo para confirmar el incidente.",
+  "@comunErrorIncidenteMotivoRequerido": {
+    "description": "code incidente.motivo_requerido (422)"
+  },
+  "comunErrorIncidenteEvidenciaInvalida": "Alguna prueba no es de esa persona ni de sus usuarios.",
+  "@comunErrorIncidenteEvidenciaInvalida": {
+    "description": "code incidente.evidencia_invalida (422)"
+  },
+  "comunErrorIncidenteFechaFutura": "La fecha del incidente no puede ser futura.",
+  "@comunErrorIncidenteFechaFutura": {
+    "description": "code incidente.fecha_futura (422)"
+  },
+  "comunErrorIncidenteFechaAntigua": "La fecha del incidente es de hace más de un año.",
+  "@comunErrorIncidenteFechaAntigua": {
+    "description": "code incidente.fecha_antigua (422)"
+  },
+  "comunErrorIncidenteTopeDiario": "Ya registraste muchos incidentes a mano para esta persona hoy. Intenta mañana.",
+  "@comunErrorIncidenteTopeDiario": {
+    "description": "code incidente.tope_diario (429)"
+  },
+  "comunErrorAnulacionAlcanceNoPermitido": "No puedes anular QR de personas que no dependen de ti.",
+  "@comunErrorAnulacionAlcanceNoPermitido": {
+    "description": "code anulacion.alcance_no_permitido (403)"
+  },
+  "comunErrorExportacionTopeExcedido": "Esa parte supera el límite de la exportación. Elige fechas más cortas.",
+  "@comunErrorExportacionTopeExcedido": {
+    "description": "code exportacion.tope_excedido (422)"
+  },
+  "comunErrorLimiteExcedido": "Hiciste demasiadas peticiones seguidas. Espera un minuto y vuelve a intentar.",
+  "@comunErrorLimiteExcedido": {
+    "description": "code limite.excedido (429): tope por minuto de la API (ADR 0030)"
+  },
+  "comunMotivoIncidenteReincidencia": "Acceso limitado por repetir incidentes (incidente {incidente}).",
+  "@comunMotivoIncidenteReincidencia": {
+    "description": "Motivo de estado incidente.reincidencia:<id> (ADR 0033 §4.4); el id va como parámetro",
+    "placeholders": {
+      "incidente": {
+        "type": "String"
+      }
+    }
+  },
+  "comunMotivoIncidenteReincidenciaSinId": "Acceso limitado por repetir incidentes.",
+  "@comunMotivoIncidenteReincidenciaSinId": {
+    "description": "Motivo de reincidencia sin un id válido"
   }
 }
