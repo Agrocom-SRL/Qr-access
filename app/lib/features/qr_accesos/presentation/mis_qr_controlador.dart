@@ -1,5 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
@@ -87,3 +89,26 @@ final NotifierProvider<AnularQrControlador, bool> anularQrControladorProvider =
     NotifierProvider.autoDispose<AnularQrControlador, bool>(
       AnularQrControlador.new,
     );
+
+/// Sincronización de Mis QR (ver `ControladorSincronizacion`): vuelve a pedir
+/// la pestaña elegida y el resumen de las pastillas. Solo esa pestaña, para no
+/// pedir a la API las demás mientras no se ven.
+class SincronizacionMisQrControlador extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    final filtro = ref.read(filtroQrProvider);
+    ref
+      ..invalidate(resumenQrProvider)
+      ..invalidate(listadoQrProvider(filtro));
+    await ref.read(listadoQrProvider(filtro).future);
+  }
+}
+
+/// Estado de sincronización de Mis QR, que se descarta al salir de la pantalla
+/// (y con él, el refresco en segundo plano).
+final NotifierProvider<SincronizacionMisQrControlador, EstadoSincronizacion>
+sincronizacionMisQrProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionMisQrControlador,
+      EstadoSincronizacion
+    >(SincronizacionMisQrControlador.new);

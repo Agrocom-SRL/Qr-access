@@ -221,6 +221,11 @@ class Duraciones {
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 
+  /// Refresco en segundo plano de un listado (Mis QR, Lecturas, Notificaciones)
+  /// mientras la pantalla está abierta y la app en primer plano. Un minuto
+  /// basta para la bitácora y deja holgura al rate limit (limites-y-abuso).
+  Duration get refrescoListado => const Duration(seconds: 60);
+
   /// `duracion` o cero si la persona pidió reducir el movimiento.
   Duration efectiva(BuildContext context, Duration duracion) =>
       MediaQuery.disableAnimationsOf(context) ? Duration.zero : duracion;
@@ -276,6 +281,12 @@ class Tamanos {
   /// Resumen fijo a la derecha del stepper en expandido.
   double get resumenLateral => 360;
 
+  /// Columna de resumen (cupo, estadísticas, foto) junto a la lista en un
+  /// teléfono en horizontal, y la altura de su foto. Lo justo para que las
+  /// tarjetas se lean sin dejar sin alto a la lista.
+  double get columnaApaisada => 300;
+  double get fotoApaisada => 96;
+
   /// Lado mínimo del QR: 240 dp (320 en expandido) + 16 dp de silencio.
   /// Lienzo del Lottie del splash y ancho del logo que lleva encima.
   double get splash => 200;
@@ -288,6 +299,10 @@ class Tamanos {
   /// Ilustración de un estado vacío, de error, sin conexión o de bloqueo.
   double get ilustracion => 160;
   double get ilustracionExpandida => 200;
+
+  /// Ilustración cuando la altura es poca (teléfono en horizontal): el estado
+  /// vacío entra junto al título y la barra inferior sin desbordar.
+  double get ilustracionAlturaCorta => 88;
   double get qrMinimo => 240;
   double get qrExpandido => 320;
   double get qrZonaSilencio => 16;
@@ -429,6 +444,14 @@ extension ClasePantallaContexto on BuildContext {
         plataforma == TargetPlatform.android ||
         plataforma == TargetPlatform.iOS;
     return esMovil && ladoCorto < tokens.breakpoint.ladoCorto;
+  }
+
+  /// Teléfono en horizontal (852×393 en un iPhone): compacto por el lado corto,
+  /// con ancho de sobra para una pestaña más en la barra inferior. Tablet y
+  /// web no entran: su compacto es de ventana angosta, no de teléfono.
+  bool get esTelefonoEnHorizontal {
+    final tamano = MediaQuery.sizeOf(this);
+    return esTelefono(tamano.shortestSide) && tamano.width > tamano.height;
   }
 
   bool get esExpandida => clasePantalla == ClasePantalla.expandida;

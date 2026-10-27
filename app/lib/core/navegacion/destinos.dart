@@ -21,35 +21,50 @@ enum DestinoNav {
   final String ruta;
 }
 
-/// Máximo de destinos en la `NavigationBar` del compacto.
+/// Máximo de destinos en la `NavigationBar` del compacto (vertical).
 const maxDestinosCompactos = 4;
+
+/// Máximo en el compacto en horizontal de teléfono: el ancho sobra y cabe una
+/// pestaña más (Generar QR para quien genera, Eventos para quien administra).
+const maxDestinosCompactosApaisado = 5;
 
 /// Qué destinos ve el rol activo, según sus permisos y el ancho:
 ///
-/// | Rol | Compacto | Rail |
-/// |---|---|---|
-/// | Usuario | Inicio · Mis QR · Eventos · Perfil | + Generar QR |
-/// | Guardia | Inicio · Eventos · Puertas · Perfil | igual |
-/// | Administrador | Inicio · Mis QR · Admin · Perfil | Inicio · Generar QR ·
-///   Eventos · Puertas · Usuarios · Perfil |
+/// - Usuario: compacto Inicio · Mis QR · Eventos · Perfil; en horizontal suma
+///   Generar QR; el rail lo lleva igual (Inicio · Generar QR · Mis QR ·
+///   Eventos · Perfil).
+/// - Guardia: Inicio · Eventos · Puertas · Perfil, igual en todos lados.
+/// - Administrador: compacto Inicio · Mis QR · Admin · Perfil; en horizontal
+///   suma Eventos; el rail muestra Puertas y Usuarios por separado.
 ///
 /// En compacto caben cuatro: si sobran, Eventos cede el lugar (los ve desde
-/// el tablero) antes que Mis QR o Admin, que son de uso diario.
+/// el tablero) antes que Mis QR o Admin, que son de uso diario. En horizontal
+/// de teléfono ([apaisado]) caben cinco: se suma Generar QR al usuario, que es
+/// lo único que le falta respecto del rail, y Eventos al administrador.
 ///
 /// No se mira el nombre del rol sino lo que puede hacer (ADR 0004): un rol a
 /// medida cae en la combinación que le corresponda.
-List<DestinoNav> destinosPara(SesionEstado sesion, ClasePantalla clase) {
+List<DestinoNav> destinosPara(
+  SesionEstado sesion,
+  ClasePantalla clase, {
+  bool apaisado = false,
+}) {
   final administra = sesion.tiene(Permisos.verUsuarios);
   final supervisa = sesion.tiene(Permisos.supervisarPuertas);
   if (clase == ClasePantalla.compacta) {
-    // Por prioridad: lo primero que se queda si no caben todos.
+    final cupo =
+        (apaisado ? maxDestinosCompactosApaisado : maxDestinosCompactos) - 2;
+    // Por prioridad: lo primero que se queda si no caben todos. Generar QR
+    // solo entra en horizontal, así que en vertical no cambia nada.
     final porPrioridad = [
       if (sesion.tiene(Permisos.verQr)) DestinoNav.misQr,
       if (administra) DestinoNav.admin else if (supervisa) DestinoNav.puertas,
       if (sesion.tiene(Permisos.verEventos)) DestinoNav.eventos,
-    ].take(maxDestinosCompactos - 2).toSet();
+      if (apaisado && sesion.tiene(Permisos.generarQr)) DestinoNav.generarQr,
+    ].take(cupo).toSet();
     // Y se muestran en el orden de siempre.
     const ordenVisible = [
+      DestinoNav.generarQr,
       DestinoNav.misQr,
       DestinoNav.eventos,
       DestinoNav.admin,

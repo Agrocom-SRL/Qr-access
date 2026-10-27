@@ -32,19 +32,12 @@ class VacioMisQr extends StatelessWidget {
         l10n.qrVacioAnuladosAyuda,
       ),
     };
-    // Con poca altura (horizontal de teléfono) el contenido no cabe: se puede
-    // desplazar, y en pantalla alta se centra con el mínimo de la altura.
-    return LayoutBuilder(
-      builder: (context, restricciones) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: restricciones.maxHeight),
-          child: EstadoVacio(
-            ilustracion: Multimedia.vacioQr,
-            titulo: titulo,
-            ayuda: ayuda,
-          ),
-        ),
-      ),
+    // Centrado y desplazable lo pone `ListadoPaginado`, así que aquí solo va el
+    // contenido.
+    return EstadoVacio(
+      ilustracion: Multimedia.vacioQr,
+      titulo: titulo,
+      ayuda: ayuda,
     );
   }
 }

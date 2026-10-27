@@ -31,6 +31,25 @@ enum ResultadoFiltro {
   };
 }
 
+/// En qué formato se baja una página. La API solo entrega CSV: el PDF y el
+/// Excel se arman en la app a partir de esas mismas filas (ver `tabla_*.dart`).
+enum FormatoDeDescarga {
+  csv('csv', 'text/csv'),
+  pdf('pdf', 'application/pdf'),
+  xlsx(
+    'xlsx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  );
+
+  new(this.extension, this.mimeType);
+
+  /// La extensión del archivo, sin punto.
+  final String extension;
+
+  /// El tipo MIME que se pasa al menú de compartir o a la descarga.
+  final String mimeType;
+}
+
 /// Filas por página: el máximo que acepta la API (`FILAS_POR_PAGINA_MAXIMAS`),
 /// para que el tope de filas pese lo menos posible.
 const porPaginaDeExportacion = 1000;
@@ -141,19 +160,20 @@ int paginaSiguiente(ResumenDePagina? ultimo) =>
     ultimo != null && ultimo.hayMas ? ultimo.pagina + 1 : 1;
 
 /// Nombre del archivo: el recurso, el código de la cuenta y la página, como
-/// `lecturas-agr-p2.csv`. El código viene de la API: se limita a letras,
+/// `lecturas-agr-p2.xlsx`. El código viene de la API: se limita a letras,
 /// cifras, guion y guion bajo para que el nombre sea siempre predecible.
 String nombreDeArchivo(
   RecursoExportable recurso,
   String codigoCuenta,
   int pagina,
+  FormatoDeDescarga formato,
 ) {
   final codigo = codigoCuenta.toLowerCase().replaceAll(
     RegExp('[^a-z0-9_-]'),
     '',
   );
   final base = codigo.isEmpty ? 'cuenta' : codigo;
-  return '${recurso.api}-$base-p$pagina.csv';
+  return '${recurso.api}-$base-p$pagina.${formato.extension}';
 }
 
 /// La marca de orden de bytes de UTF-8. Excel lee las tildes y las eñes de un

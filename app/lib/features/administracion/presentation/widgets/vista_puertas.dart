@@ -8,6 +8,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_apaisada.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -128,6 +129,20 @@ class VistaPuertas extends ConsumerWidget {
             ),
           )
         : null;
+    // Horizontal de teléfono: "Gestionar" y la foto a la izquierda, la lista a
+    // la derecha con toda la altura.
+    if (estaApaisada(context)) {
+      return VistaApaisada(
+        resumen: [
+          ?gestionar,
+          const FotoApaisada(
+            ruta: Multimedia.fotoIntercomunicador,
+            alineacion: Alignment(0.6, 0),
+          ),
+        ],
+        listado: listado,
+      );
+    }
     // En compacto, una banda de foto sobre el listado; en medio y expandido
     // la tabla ya llena la pantalla.
     if (context.clasePantalla != ClasePantalla.compacta) {

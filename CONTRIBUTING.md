@@ -44,6 +44,8 @@ git tag -a v0.1.0 -m "v0.1.0"
 git push origin v0.1.0
 ```
 
+El tag `vX.Y.Z` identifica el lanzamiento a producción como conjunto. **No fija la versión de los componentes** (ADR 0014, modificado el 2026-10-27): cada uno lleva la suya (`api/package.json`, `web/package.json`, `app/pubspec.yaml` y `FIRMWARE_VERSION` en `firmware/include/version.h`) y la sube solo cuando ese componente cambia. Al publicar, añade la fila del tag al registro de versiones del ADR 0014.
+
 `release.yml` vuelve a correr la CI sobre el commit etiquetado, lo integra en `master` con merge commit y publica el GitHub Release con los artefactos (APK, web y binario del firmware) cuando existan.
 
 ## Un PR = una HU

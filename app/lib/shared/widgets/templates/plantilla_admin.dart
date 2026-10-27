@@ -76,7 +76,11 @@ class PlantillaAdmin extends ConsumerWidget {
     final tokens = context.tokens;
     final sesion = ref.watch(sesionControladorProvider);
     final clase = context.clasePantalla;
-    final destinos = destinosPara(sesion, clase);
+    final destinos = destinosPara(
+      sesion,
+      clase,
+      apaisado: context.esTelefonoEnHorizontal,
+    );
     final indice = destinos.indexOf(destino);
 
     final cabecera = titulo == null

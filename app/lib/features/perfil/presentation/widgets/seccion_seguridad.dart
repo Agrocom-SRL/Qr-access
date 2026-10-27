@@ -61,7 +61,7 @@ class SeccionSeguridad extends ConsumerWidget {
                   claveEnfatizada: true,
                   alTocar: anulando
                       ? null
-                      : () => abrirAnulacionMasiva(context, ref),
+                      : () => context.go(Rutas.anularQrDeRama),
                 ),
               if (exportar)
                 FilaClaveValor(

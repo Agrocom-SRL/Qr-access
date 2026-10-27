@@ -5,13 +5,21 @@ import 'package:agrocom_acceso/core/plataforma/compartir_archivo.dart';
 import 'package:agrocom_acceso/core/plataforma/compartir_imagen.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/exportacion/data/exportacion_repositorio.dart';
+import 'package:agrocom_acceso/features/exportacion/data/fuentes_pdf.dart';
 import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
+import 'package:agrocom_acceso/features/exportacion/domain/tabla_de_exportacion.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/exportacion_controlador.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/exportacion_falsa.dart';
 import '../../../helpers/fakes.dart';
+import '../../../helpers/fuentes_pdf_de_prueba.dart';
+
+/// Los textos del documento: el controlador no conoce el ARB.
+TextosDeDocumento _textosDe(ResumenDePagina resumen) => textosDePrueba(
+  parte: resumen.paginas > 1 ? 'Parte ${resumen.pagina}' : null,
+);
 
 ProviderContainer _contenedor({
   required ExportacionRepositorioFalso repositorio,
@@ -20,6 +28,7 @@ ProviderContainer _contenedor({
   final contenedor = ProviderContainer(
     overrides: [
       exportacionRepositorioProvider.overrideWithValue(repositorio),
+      fuentesPdfProvider.overrideWith((ref) async => fuentesDePrueba()),
       compartirArchivoProvider.overrideWithValue(compartir),
       sesionControladorProvider.overrideWith(() => SesionFalsa(sesionCon())),
     ],
@@ -36,7 +45,7 @@ void main() {
 
     await contenedor
         .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente();
+        .descargarSiguiente(textosDe: _textosDe);
 
     final compartido = compartir.compartidos.single;
     expect(compartido.nombreArchivo, 'usuarios-agr-p1.csv');
@@ -58,8 +67,8 @@ void main() {
     );
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
 
-    await notifier.descargarSiguiente();
-    await notifier.descargarSiguiente();
+    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(textosDe: _textosDe);
 
     expect(repo.pedidos.map((p) => p.pagina), [1, 2]);
   });
@@ -73,7 +82,7 @@ void main() {
 
     await contenedor
         .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente();
+        .descargarSiguiente(textosDe: _textosDe);
 
     expect(compartir.compartidos, isEmpty);
     expect(contenedor.read(exportacionControladorProvider).ultimo?.total, 0);
@@ -89,8 +98,8 @@ void main() {
     final contenedor = _contenedor(repositorio: repo, compartir: compartir);
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
 
-    await notifier.descargarSiguiente();
-    await notifier.descargarSiguiente();
+    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(textosDe: _textosDe);
 
     expect(contenedor.read(exportacionControladorProvider).ultimo, isNull);
     expect(repo.pedidos.map((p) => p.pagina), [1, 1]);
@@ -107,7 +116,7 @@ void main() {
 
     await contenedor
         .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente();
+        .descargarSiguiente(textosDe: _textosDe);
 
     final estado = contenedor.read(exportacionControladorProvider);
     expect(estado.error?.code, 'limite.excedido');
@@ -124,7 +133,7 @@ void main() {
     await expectLater(
       contenedor
           .read(exportacionControladorProvider.notifier)
-          .descargarSiguiente(),
+          .descargarSiguiente(textosDe: _textosDe),
       throwsA(isA<StateError>()),
     );
 
@@ -145,7 +154,7 @@ void main() {
       ..elegirDesde(instanteDeDia(DateTime.utc(2026, 10, 5)))
       ..elegirHasta(instanteDeDia(DateTime.utc(2026, 10)));
 
-    await notifier.descargarSiguiente();
+    await notifier.descargarSiguiente(textosDe: _textosDe);
 
     expect(repo.pedidos, isEmpty);
   });
@@ -159,7 +168,7 @@ void main() {
       compartir: CompartirArchivoFalso(),
     );
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
-    await notifier.descargarSiguiente();
+    await notifier.descargarSiguiente(textosDe: _textosDe);
 
     notifier.elegirRecurso(RecursoExportable.puertas);
 
@@ -178,13 +187,48 @@ void main() {
       ..elegirResultado(ResultadoFiltro.permitido)
       ..elegirDesde(dia);
 
-    await notifier.descargarSiguiente();
+    await notifier.descargarSiguiente(textosDe: _textosDe);
 
     final pedido = repo.pedidos.single;
     expect(pedido.recurso, RecursoExportable.lecturas);
     expect(pedido.filtros.resultado, ResultadoFiltro.permitido);
     expect(pedido.filtros.desde, dia);
     expect(pedido.filtros.hasta, isNull);
+  });
+
+  test('en PDF, la página sale como %PDF con el nombre .pdf', () async {
+    final repo = ExportacionRepositorioFalso(paginaEntregada: paginaDePrueba());
+    final compartir = CompartirArchivoFalso();
+    final contenedor = _contenedor(repositorio: repo, compartir: compartir);
+
+    await contenedor
+        .read(exportacionControladorProvider.notifier)
+        .descargarSiguiente(
+          formato: FormatoDeDescarga.pdf,
+          textosDe: _textosDe,
+        );
+
+    final compartido = compartir.compartidos.single;
+    expect(compartido.nombreArchivo, 'usuarios-agr-p1.pdf');
+    expect(compartido.mimeType, 'application/pdf');
+    expect(String.fromCharCodes(compartido.bytes.sublist(0, 4)), '%PDF');
+  });
+
+  test('en Excel, la página sale como .xlsx (ZIP) con su tipo MIME', () async {
+    final repo = ExportacionRepositorioFalso(paginaEntregada: paginaDePrueba());
+    final compartir = CompartirArchivoFalso();
+    final contenedor = _contenedor(repositorio: repo, compartir: compartir);
+
+    await contenedor
+        .read(exportacionControladorProvider.notifier)
+        .descargarSiguiente(
+          formato: FormatoDeDescarga.xlsx,
+          textosDe: _textosDe,
+        );
+
+    final compartido = compartir.compartidos.single;
+    expect(compartido.nombreArchivo, 'usuarios-agr-p1.xlsx');
+    expect(compartido.bytes.sublist(0, 2), [0x50, 0x4B]);
   });
 }
 

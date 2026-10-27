@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
@@ -42,6 +43,7 @@ Future<QrAccesosRepositorioFalso> _montar(
   QrGenerado? respaldo,
   QrGenerado? reanudado,
   Exception? errorReanudar,
+  bool apaisada = false,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(
     generado: _generado,
@@ -53,6 +55,7 @@ Future<QrAccesosRepositorioFalso> _montar(
   await montarPantalla(
     tester,
     pagina: const QrRapidoPagina(),
+    apaisada: apaisada,
     overrides: [
       qrAccesosRepositorioProvider.overrideWithValue(repositorio),
       puertasRepositorioProvider.overrideWithValue(
@@ -155,6 +158,37 @@ void main() {
     );
 
     expect(find.byType(VisorQr), findsNothing);
+  });
+
+  testWidgets('en horizontal de teléfono (852×393) el QR entero queda a la '
+      'izquierda y "Listo" no lo tapa', (tester) async {
+    await _montar(tester, apaisada: true);
+    final textos = textosEn(tester);
+    final tokens = tester.element(find.byType(VisorQr)).tokens;
+
+    final qr = tester.getRect(find.byType(VisorQr));
+    final listo = tester.getRect(find.text(textos.qrRapidoListo));
+    final aviso = tester.getRect(find.text(textos.qrRapidoAviso));
+
+    expect(
+      qr.height,
+      tokens.tamano.qrMinimo + 2 * tokens.tamano.qrZonaSilencio,
+    );
+    expect(qr.bottom, lessThanOrEqualTo(tamanoApaisado.height));
+    expect(qr.right, lessThanOrEqualTo(aviso.left));
+    expect(listo.overlaps(qr), isFalse);
+    expect(listo.bottom, lessThanOrEqualTo(tamanoApaisado.height));
+  });
+
+  testWidgets('en vertical de teléfono (360×800) el QR va encima del aviso', (
+    tester,
+  ) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    final qr = tester.getRect(find.byType(VisorQr));
+    final aviso = tester.getRect(find.text(textos.qrRapidoAviso));
+    expect(aviso.top, greaterThanOrEqualTo(qr.bottom));
   });
 
   group('reabrir Mi QR', () {

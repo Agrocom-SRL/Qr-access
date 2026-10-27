@@ -15,6 +15,7 @@ import 'package:agrocom_acceso/features/administracion/presentation/widgets/bann
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/dialogo_regenerar_pin.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/pin_generado_dialogo.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/tarjeta_estadisticas.dart';
+import 'package:agrocom_acceso/features/administracion/presentation/widgets/vista_apaisada.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -30,7 +31,11 @@ import 'package:go_router/go_router.dart';
 /// Usuarios de la cuenta con sus roles (handoff C10b/E10b, HU-06): "Generar
 /// PIN" muestra el PIN una sola vez; editar y eliminar según permisos.
 class VistaUsuarios extends ConsumerWidget {
-  const new({super.key});
+  const new({this.conBotonFlotante = false, super.key});
+
+  /// Quien la muestra pone el botón flotante "Nuevo usuario" (compacto, también
+  /// en horizontal). La lista y su estado vacío dejan ese espacio al pie.
+  final bool conBotonFlotante;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -180,6 +185,33 @@ class VistaUsuarios extends ConsumerWidget {
     );
     final verCupo = sesion.tiene(Permisos.verCupo);
     final verEstadisticas = sesion.tiene(Permisos.verEstadisticas);
+    // El botón flotante deja su alto al pie de la lista (margen del Scaffold y
+    // una separación), para que el último usuario y el estado vacío no queden
+    // debajo de él.
+    final lista = conBotonFlotante
+        ? Padding(
+            padding: EdgeInsets.only(
+              bottom: tokens.tamano.fab + tokens.espacio.xl,
+            ),
+            child: listado,
+          )
+        : listado;
+    // Orden del resumen, de arriba abajo: foto, cupo y actividad de usuarios.
+    // Horizontal de teléfono: ese resumen a la izquierda y la lista a la
+    // derecha; "Nuevo usuario" es el botón flotante, no va en el resumen.
+    if (estaApaisada(context)) {
+      return VistaApaisada(
+        resumen: [
+          const FotoApaisada(
+            ruta: Multimedia.fotoCerradura,
+            alineacion: Alignment(0.2, -0.2),
+          ),
+          if (verCupo) const BannerCupo(),
+          if (verEstadisticas) const TarjetaEstadisticas(),
+        ],
+        listado: lista,
+      );
+    }
     // En compacto, una banda de foto sobre el listado, como en Puertas; en
     // medio y expandido la tabla ya llena la pantalla.
     if (context.clasePantalla != ClasePantalla.compacta) {
@@ -194,8 +226,6 @@ class VistaUsuarios extends ConsumerWidget {
     }
     return Column(
       children: [
-        if (verCupo) const BannerCupo(),
-        if (verEstadisticas) const TarjetaEstadisticas(),
         Padding(
           padding: EdgeInsets.all(tokens.espacio.l),
           child: ClipRRect(
@@ -212,7 +242,9 @@ class VistaUsuarios extends ConsumerWidget {
             ),
           ),
         ),
-        Expanded(child: listado),
+        if (verCupo) const BannerCupo(),
+        if (verEstadisticas) const TarjetaEstadisticas(),
+        Expanded(child: lista),
       ],
     );
   }

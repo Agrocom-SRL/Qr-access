@@ -22,6 +22,7 @@ class AccesoCampoTexto extends StatelessWidget {
     this.alCambiar,
     this.alEnviar,
     this.autofoco = false,
+    this.scrollPadding,
     super.key,
   });
 
@@ -44,6 +45,12 @@ class AccesoCampoTexto extends StatelessWidget {
   final ValueChanged<String>? alEnviar;
   final bool autofoco;
 
+  /// Margen que deja el desplazamiento al mostrar el campo con el foco (el
+  /// teclado lo tapa): dentro de un diálogo o un formulario con scroll, el
+  /// campo queda entero a la vista y no pegado al borde. Por defecto, el de
+  /// `espacio.xl`.
+  final EdgeInsets? scrollPadding;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -57,6 +64,7 @@ class AccesoCampoTexto extends StatelessWidget {
       keyboardType: teclado,
       inputFormatters: formateadores,
       textInputAction: accionTeclado,
+      scrollPadding: scrollPadding ?? EdgeInsets.all(tokens.espacio.xl),
       maxLength: maxLargo,
       onChanged: alCambiar,
       onSubmitted: alEnviar,

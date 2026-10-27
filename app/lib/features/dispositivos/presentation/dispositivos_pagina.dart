@@ -86,11 +86,9 @@ class DispositivosPagina extends ConsumerWidget {
               alReintentar: () => ref.invalidate(misSesionesProvider),
               // Una sola página: el control de paginar nunca se muestra.
               alCambiarPagina: (_) {},
-              vacio: SingleChildScrollView(
-                child: EstadoVacio(
-                  ilustracion: Multimedia.vacioEventos,
-                  titulo: l10n.dispositivosSinSesiones,
-                ),
+              vacio: EstadoVacio(
+                ilustracion: Multimedia.vacioEventos,
+                titulo: l10n.dispositivosSinSesiones,
               ),
               tarjeta: (context, sesion) => TarjetaSesion(
                 sesion: sesion,

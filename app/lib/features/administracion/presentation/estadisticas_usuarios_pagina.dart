@@ -8,6 +8,7 @@ import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/usuarios_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/presentation/widgets/baja_de_usuario.dart';
@@ -18,6 +19,7 @@ import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/linea_sincronizacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
@@ -49,7 +51,13 @@ class _EstadisticasUsuariosPaginaEstado
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final estadisticas = ref.watch(estadisticasProvider);
+    final sincronizacion = ref.watch(sincronizacionEstadisticasProvider);
+    final ahora = ref.read(relojProvider)();
     final rutaLista = context.esCompacta ? Rutas.admin : Rutas.adminUsuarios;
+    // Con datos ya cargados, un refresco que falla no los borra: se muestran
+    // con la línea de sincronización ("Sin conexión"). El error de pantalla
+    // solo aparece cuando no hay nada que mostrar.
+    final datos = estadisticas.value;
 
     return PlantillaAdmin(
       destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
@@ -58,49 +66,53 @@ class _EstadisticasUsuariosPaginaEstado
       alSalir: () => context.go(rutaLista),
       titulo: l10n.estadisticasTitulo,
       conRelleno: false,
-      // Riverpod reintenta solo: mientras, el error previo sigue visible.
-      child: estadisticas.hasError && !estadisticas.hasValue
+      child: datos != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
+                Expanded(
+                  child: PestanasDeslizables<_Vista>(
+                    segmentos: [
+                      SegmentoDeSelector(
+                        valor: _Vista.inactivos,
+                        etiqueta: l10n.estadisticasInactivos,
+                        conteo: datos.inactivos.length,
+                      ),
+                      SegmentoDeSelector(
+                        valor: _Vista.ruidosos,
+                        etiqueta: l10n.estadisticasRuidosos,
+                        conteo: datos.ruidosos.length,
+                      ),
+                      SegmentoDeSelector(
+                        valor: _Vista.titulares,
+                        etiqueta: l10n.estadisticasTitulares,
+                        conteo: datos.titularesCercaDelTope.length,
+                      ),
+                    ],
+                    seleccionado: _vista,
+                    alElegir: (vista) => setState(() => _vista = vista),
+                    paginaDe: (context, vista) => _pagina(datos, vista),
+                  ),
+                ),
+              ],
+            )
+          : estadisticas.hasError
           ? EstadoVacio.error(
               titulo: textoDeError(l10n, estadisticas.error!),
               alReintentar: () => ref.invalidate(estadisticasProvider),
             )
-          : estadisticas.when(
-              loading: () => const AccesoCargando(),
-              error: (error, _) => EstadoVacio.error(
-                titulo: textoDeError(l10n, error),
-                alReintentar: () => ref.invalidate(estadisticasProvider),
-              ),
-              data: (datos) => PestanasDeslizables<_Vista>(
-                segmentos: [
-                  SegmentoDeSelector(
-                    valor: _Vista.inactivos,
-                    etiqueta: l10n.estadisticasInactivos,
-                    conteo: datos.inactivos.length,
-                  ),
-                  SegmentoDeSelector(
-                    valor: _Vista.ruidosos,
-                    etiqueta: l10n.estadisticasRuidosos,
-                    conteo: datos.ruidosos.length,
-                  ),
-                  SegmentoDeSelector(
-                    valor: _Vista.titulares,
-                    etiqueta: l10n.estadisticasTitulares,
-                    conteo: datos.titularesCercaDelTope.length,
-                  ),
-                ],
-                seleccionado: _vista,
-                alElegir: (vista) => setState(() => _vista = vista),
-                paginaDe: (context, vista) => _pagina(datos, vista),
-              ),
-            ),
+          : const AccesoCargando(),
     );
   }
 
   /// La lista de una vista con el aviso informativo: arriba cuando hay filas
   /// y debajo de la ilustración cuando la lista está vacía, para que no
-  /// compita con ella.
+  /// compita con ella. Tirar hacia abajo pide las estadísticas de nuevo,
+  /// también con la lista vacía (`AlwaysScrollableScrollPhysics`).
   Widget _pagina(EstadisticasDeUsuarios datos, _Vista vista) {
     final tokens = context.tokens;
+    final colores = tokens.colores;
     final filas = _filas(datos, vista);
     final vacia = filas.length == 1 && filas.first is EstadoVacio;
     final aviso = AccesoAviso(
@@ -111,11 +123,18 @@ class _EstadisticasUsuariosPaginaEstado
       ),
     );
     final separacion = SizedBox(height: tokens.espacio.l);
-    return ListView(
-      padding: EdgeInsets.all(tokens.espacio.l),
-      children: vacia
-          ? [...filas, separacion, aviso]
-          : [aviso, separacion, ...filas],
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(sincronizacionEstadisticasProvider.notifier).refrescar(),
+      color: colores.primario,
+      backgroundColor: colores.superficie,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(tokens.espacio.l),
+        children: vacia
+            ? [...filas, separacion, aviso]
+            : [aviso, separacion, ...filas],
+      ),
     );
   }
 

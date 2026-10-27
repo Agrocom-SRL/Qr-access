@@ -8,6 +8,7 @@ import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio
 import 'package:agrocom_acceso/features/dispositivos/data/sesiones_repositorio.dart';
 import 'package:agrocom_acceso/features/dispositivos/dispositivos.dart';
 import 'package:agrocom_acceso/features/exportacion/data/exportacion_repositorio.dart';
+import 'package:agrocom_acceso/features/exportacion/data/fuentes_pdf.dart';
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
 import 'package:agrocom_acceso/features/incidentes/data/incidentes_repositorio.dart';
 import 'package:agrocom_acceso/features/incidentes/incidentes.dart';
@@ -24,6 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/exportacion_falsa.dart';
 import '../../helpers/fakes.dart';
+import '../../helpers/fuentes_pdf_de_prueba.dart';
 import '../../helpers/incidentes_falsos.dart';
 import '../../helpers/notificaciones_falsas.dart';
 import '../../helpers/pantalla.dart';
@@ -140,6 +142,23 @@ final _casos = <_Caso>[
     ],
     salida: SalidaDeCabecera.volver,
     tooltip: (textos) => textos.comunVolver,
+  ),
+  (
+    nombre: 'Exportar accesos (tercer nivel, desde Exportar datos)',
+    pagina: () => const ExportarAccesosPagina(),
+    overrides: () => [
+      exportacionRepositorioProvider.overrideWithValue(
+        ExportacionRepositorioFalso(),
+      ),
+      compartirArchivoProvider.overrideWithValue(CompartirArchivoFalso()),
+      relojProvider.overrideWithValue(() => _ahora),
+      fuentesPdfProvider.overrideWith((ref) async => fuentesDePrueba()),
+      sesionControladorProvider.overrideWith(
+        () => SesionFalsa(sesionCon(permisos: {Permisos.exportarDatos})),
+      ),
+    ],
+    salida: SalidaDeCabecera.cerrar,
+    tooltip: (textos) => textos.comunCerrar,
   ),
   (
     nombre: 'Exportar datos (subpágina de Perfil)',

@@ -21,6 +21,8 @@ const permisoPorRuta = <String, String>{
   Rutas.incidentes: Permisos.verIncidentes,
   Rutas.incidenteDetalle: Permisos.verIncidentes,
   Rutas.exportar: Permisos.exportarDatos,
+  Rutas.exportarAccesos: Permisos.exportarDatos,
+  Rutas.anularQrDeRama: Permisos.anularQrDeRama,
 };
 
 /// La pestaña Admin del compacto la abre quien supervisa puertas o ve usuarios.

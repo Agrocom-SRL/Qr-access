@@ -100,18 +100,33 @@ void main() {
   group('archivo', () {
     test('el nombre lleva el recurso, el código de la cuenta y la página', () {
       expect(
-        nombreDeArchivo(RecursoExportable.lecturas, 'AGR', 2),
+        nombreDeArchivo(
+          RecursoExportable.lecturas,
+          'AGR',
+          2,
+          FormatoDeDescarga.csv,
+        ),
         'lecturas-agr-p2.csv',
       );
     });
 
     test('el código de la cuenta se limpia y sin código queda cuenta', () {
       expect(
-        nombreDeArchivo(RecursoExportable.usuarios, 'a/b c', 1),
+        nombreDeArchivo(
+          RecursoExportable.usuarios,
+          'a/b c',
+          1,
+          FormatoDeDescarga.csv,
+        ),
         'usuarios-abc-p1.csv',
       );
       expect(
-        nombreDeArchivo(RecursoExportable.puertas, '../', 1),
+        nombreDeArchivo(
+          RecursoExportable.puertas,
+          '../',
+          1,
+          FormatoDeDescarga.csv,
+        ),
         'puertas-cuenta-p1.csv',
       );
     });

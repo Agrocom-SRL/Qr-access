@@ -140,6 +140,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           const ExportacionPagina(),
           transicion: Transicion.flujo,
         ),
+        routes: [
+          GoRoute(
+            path: 'accesos',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              const ExportarAccesosPagina(),
+              transicion: Transicion.flujo,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Rutas.anularQrDeRama,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const AnularQrPagina(),
+          transicion: Transicion.flujo,
+        ),
       ),
       GoRoute(
         path: Rutas.admin,

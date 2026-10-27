@@ -786,6 +786,23 @@ void main() {
       );
     });
 
+    testWidgets('el nombre de la unidad da ejemplos entre paréntesis', (
+      tester,
+    ) async {
+      await _montar(tester, pagina: const UsuarioFormularioPagina());
+      final textos = textosEn(tester);
+
+      await tocar(tester, find.text('Titular'));
+
+      expect(
+        find.text(
+          'Nombre de la unidad (casa, departamento, etc.)'
+          '${textos.comunMarcaObligatorio}',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('un alta nuevo llega con todas las puertas marcadas', (
       tester,
     ) async {

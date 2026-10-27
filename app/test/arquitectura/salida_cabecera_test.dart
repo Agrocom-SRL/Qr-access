@@ -14,10 +14,8 @@ void main() {
       r'Icons\.(arrow_back|close)\b|\bBackButton\b|\bCloseButton\b|'
       r'Icons\.arrow_back_ios',
     );
-    // La X de exportación quita una fecha del filtro: no cierra la pantalla.
     final excepciones = {
       'lib/shared/widgets/molecules/boton_salida_cabecera.dart',
-      'lib/features/exportacion/presentation/exportacion_pagina.dart',
     };
     final hallazgos = <String>[
       for (final File f in fuentesDart())

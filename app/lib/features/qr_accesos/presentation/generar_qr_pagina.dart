@@ -23,6 +23,7 @@ import 'package:agrocom_acceso/shared/widgets/molecules/indicador_pasos.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
+import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -83,6 +84,9 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
     final puertas = ref.watch(puertasDisponiblesProvider);
     final ahora = ref.read(relojProvider)();
     final expandida = context.esExpandida;
+    // En teléfono horizontal el resumen va a la derecha, siempre visible, como
+    // en expandido; el paso 3 no lo repite.
+    final apaisada = !expandida && esTelefonoApaisado(context);
     final errorDatos = estado.errorDatos;
     final errorApi = estado.errorApi;
     final pasos = [
@@ -145,7 +149,7 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
                 ?.copyWith(color: tokens.colores.textoSecundario),
           ),
           SizedBox(height: tokens.espacio.l),
-          if (!expandida)
+          if (!expandida && !apaisada)
             ResumenGeneracion(
               puertas: puertas.value ?? const [],
               seleccionadas: estado.puertaIds,
@@ -180,7 +184,7 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
       texto: esUltimo ? l10n.qrGenerarBoton : l10n.comunSiguiente,
       textoCargando: l10n.qrGenerando,
       cargando: estado.enviando,
-      expandido: expandida,
+      expandido: expandida || apaisada,
       onPressed: esUltimo ? _generar : controlador.siguiente,
     );
     final botonAtras = AccesoBoton(
@@ -249,6 +253,50 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
       );
     }
 
+    // Teléfono en horizontal: los pasos a la izquierda, el resumen y la acción
+    // a la derecha. Es la misma información que en vertical, sin apilarla.
+    final cuerpoApaisado = Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.espacio.l,
+        tokens.espacio.s,
+        tokens.espacio.l,
+        tokens.espacio.l,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(flex: 3, child: cuerpo),
+          SizedBox(width: tokens.espacio.xl),
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: ResumenGeneracion(
+                      titulo: l10n.qrResumenTitulo,
+                      puertas: puertas.value ?? const [],
+                      seleccionadas: estado.puertaIds,
+                      vigencia: estado.vigencia,
+                      etiqueta: estado.etiqueta,
+                      ahora: ahora,
+                    ),
+                  ),
+                ),
+                SizedBox(height: tokens.espacio.l),
+                botonPrincipal,
+                if (estado.paso != PasoGeneracion.puertas) ...[
+                  SizedBox(height: tokens.espacio.s),
+                  botonAtras,
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
     final cantidad = estado.puertaIds.length;
     return PopScope(
       // "Atrás" retrocede un paso; en el primero, cierra el flujo.
@@ -279,41 +327,45 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
           ),
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    tokens.espacio.l,
-                    tokens.espacio.s,
-                    tokens.espacio.l,
-                    0,
-                  ),
-                  child: cuerpo,
-                ),
-              ),
-              BarraDeAcciones(
-                inicio: estado.paso == PasoGeneracion.puertas
-                    ? Text.rich(
-                        TextSpan(
-                          text: '$cantidad ',
-                          style: Theme.of(context).textTheme.titleMedium,
-                          children: [
-                            TextSpan(
-                              text: l10n.qrGenerarPuertasContadas(cantidad),
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(
-                                    color: tokens.colores.textoSecundario,
-                                  ),
-                            ),
-                          ],
+          child: apaisada
+              ? cuerpoApaisado
+              : Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          tokens.espacio.l,
+                          tokens.espacio.s,
+                          tokens.espacio.l,
+                          0,
                         ),
-                      )
-                    : botonAtras,
-                acciones: [botonPrincipal],
-              ),
-            ],
-          ),
+                        child: cuerpo,
+                      ),
+                    ),
+                    BarraDeAcciones(
+                      inicio: estado.paso == PasoGeneracion.puertas
+                          ? Text.rich(
+                              TextSpan(
+                                text: '$cantidad ',
+                                style: Theme.of(context).textTheme.titleMedium,
+                                children: [
+                                  TextSpan(
+                                    text: l10n.qrGenerarPuertasContadas(
+                                      cantidad,
+                                    ),
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          color: tokens.colores.textoSecundario,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : botonAtras,
+                      acciones: [botonPrincipal],
+                    ),
+                  ],
+                ),
         ),
       ),
     );
