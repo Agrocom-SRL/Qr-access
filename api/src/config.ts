@@ -98,6 +98,8 @@ const esquema = z.object({
   LIMITE_GENERAR_QR_POR_MINUTO: entero(10),
   LIMITE_ESCRITURA_POR_MINUTO: entero(60),
   LIMITE_LECTURA_POR_MINUTO: entero(240),
+  // Descargar datos de la cuenta en CSV (ADR 0033 §3): pocas por minuto, son consultas grandes.
+  LIMITE_EXPORTACION_POR_MINUTO: entero(10),
   // Mínimo 60: un lector que relee su QR una vez por segundo no debe toparse nunca con el límite.
   LIMITE_VALIDACION_POR_MINUTO: entero(600, 60),
   LIMITE_DISPOSITIVO_POR_MINUTO: entero(120),

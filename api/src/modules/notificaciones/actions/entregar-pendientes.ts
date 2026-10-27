@@ -222,7 +222,10 @@ async function entregarUno(
       mensaje.audiencia === 'cuenta'
         ? new RepositorioDeNotificaciones(pool).bandeja
         : new RepositorioDeNotificacionesDePlataforma(pool).bandeja;
+    // Un aviso dirigido (`soloPara`) llega solo a esos, y solo si ya eran destinatarios por su permiso.
+    const dirigidos = aviso.soloPara === undefined ? null : new Set(aviso.soloPara);
     for (const destinatarioId of destinatarios) {
+      if (dirigidos !== null && !dirigidos.has(destinatarioId)) continue;
       await aplicarA(bandeja, tx, destinatarioId, aviso, ahora);
     }
     await cola.marcarEntregada(tx, id, ahora);

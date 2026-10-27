@@ -950,3 +950,105 @@ ALTER TABLE notificaciones
     'apertura.fallida'
   ));
 ```
+
+-- 20261101100001_create_incidentes_uso.sql
+CREATE TABLE incidentes_uso (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(30) NOT NULL,
+  gravedad VARCHAR(10) NOT NULL,
+  origen VARCHAR(10) NOT NULL,
+  registrado_por BIGINT UNSIGNED NULL,
+  descripcion VARCHAR(300) NULL,
+  evidencia JSON NOT NULL,
+  clave_unica VARCHAR(100) NULL,
+  ocurrido_at DATETIME(3) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_incidentes_uso_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_incidentes_uso_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_incidentes_uso_registrado_por FOREIGN KEY (registrado_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_incidentes_uso_tipo CHECK (tipo IN (
+    'uso_masivo', 'uso_imposible', 'pin_compartido', 'qr_reenviado', 'generacion_ruidosa', 'perdida_o_robo', 'otro'
+  )),
+  CONSTRAINT ck_incidentes_uso_gravedad CHECK (gravedad IN ('baja', 'media', 'alta')),
+  CONSTRAINT ck_incidentes_uso_origen CHECK (
+    (origen = 'sistema' AND registrado_por IS NULL) OR (origen = 'persona' AND registrado_por IS NOT NULL)
+  ),
+  UNIQUE KEY uq_incidentes_uso_clave (tenant_id, clave_unica),
+  KEY idx_incidentes_uso_usuario (tenant_id, usuario_id, ocurrido_at),
+  KEY idx_incidentes_uso_reciente (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100002_create_resoluciones_de_incidente.sql
+CREATE TABLE resoluciones_de_incidente (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  incidente_id BIGINT UNSIGNED NOT NULL,
+  resultado VARCHAR(12) NOT NULL,
+  motivo VARCHAR(200) NULL,
+  resuelto_por BIGINT UNSIGNED NOT NULL,
+  resuelta_at DATETIME(3) NOT NULL,
+  CONSTRAINT fk_resoluciones_de_incidente_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_resoluciones_de_incidente_incidente FOREIGN KEY (incidente_id) REFERENCES incidentes_uso (id),
+  CONSTRAINT fk_resoluciones_de_incidente_resuelto_por FOREIGN KEY (resuelto_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_resoluciones_de_incidente_resultado CHECK (resultado IN ('descartado', 'confirmado', 'pendiente')),
+  CONSTRAINT ck_resoluciones_de_incidente_motivo CHECK (
+    resultado <> 'confirmado' OR (motivo IS NOT NULL AND CHAR_LENGTH(TRIM(motivo)) > 0)
+  ),
+  KEY idx_resoluciones_de_incidente_incidente (incidente_id, id),
+  KEY idx_resoluciones_de_incidente_tenant (tenant_id, resuelta_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100003_create_anulaciones_masivas.sql
+CREATE TABLE anulaciones_masivas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  alcance VARCHAR(10) NOT NULL,
+  usuario_objetivo_id BIGINT UNSIGNED NULL,
+  motivo VARCHAR(200) NOT NULL,
+  usuarios_alcanzados INT UNSIGNED NOT NULL,
+  qr_anulados INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_anulaciones_masivas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_anulaciones_masivas_objetivo FOREIGN KEY (usuario_objetivo_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_anulaciones_masivas_alcance CHECK (alcance IN ('usuario', 'rama', 'cuenta')),
+  CONSTRAINT ck_anulaciones_masivas_objetivo CHECK (
+    (alcance = 'cuenta' AND usuario_objetivo_id IS NULL) OR (alcance <> 'cuenta' AND usuario_objetivo_id IS NOT NULL)
+  ),
+  CONSTRAINT ck_anulaciones_masivas_motivo CHECK (CHAR_LENGTH(TRIM(motivo)) > 0),
+  KEY idx_anulaciones_masivas_tenant (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100004_create_exportaciones.sql
+CREATE TABLE exportaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  recurso VARCHAR(10) NOT NULL,
+  pagina INT UNSIGNED NOT NULL,
+  por_pagina INT UNSIGNED NOT NULL,
+  filas INT UNSIGNED NOT NULL,
+  filtros JSON NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_exportaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT ck_exportaciones_recurso CHECK (recurso IN ('usuarios', 'puertas', 'lecturas')),
+  KEY idx_exportaciones_tenant (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100005_add_incidente_propuesta_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida', 'incidente.propuesta'
+  ));

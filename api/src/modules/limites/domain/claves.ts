@@ -44,13 +44,28 @@ export const CLAVES_DE_APERTURA = {
 export type ClaveDeApertura = (typeof CLAVES_DE_APERTURA)[keyof typeof CLAVES_DE_APERTURA];
 
 /**
+ * La política de incidentes de uso y de reincidencia (ADR 0033 §4, ola W11). Los umbrales de reincidencia y la
+ * restricción automática pueden tener excepción por cuenta (cada cuenta «ve la política que le aplica»); los de la
+ * detección de generación ruidosa son globales.
+ */
+export const CLAVES_DE_INCIDENTE = {
+  reincidenciaMinimo: 'incidente.reincidencia_minimo',
+  reincidenciaVentanaDias: 'incidente.reincidencia_ventana_dias',
+  restriccionAutomatica: 'incidente.restriccion_automatica',
+  rechazosGeneracionMinimo: 'incidente.rechazos_generacion_minimo',
+  rechazosGeneracionVentanaHoras: 'incidente.rechazos_generacion_ventana_horas',
+} as const;
+
+export type ClaveDeIncidente = (typeof CLAVES_DE_INCIDENTE)[keyof typeof CLAVES_DE_INCIDENTE];
+
+/**
  * Dónde puede tener excepción una clave: `usuario` = para una cuenta o para un usuario; `cuenta` = solo para
  * una cuenta entera (la bolsa es de la cuenta); `global` = ninguna, vale igual para todos.
  */
 export type AlcanceDeExcepcion = 'usuario' | 'cuenta' | 'global';
 
 export interface DefinicionDeClave {
-  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura;
+  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura | ClaveDeIncidente;
   readonly minimo: number;
   readonly maximo: number;
   readonly excepcion: AlcanceDeExcepcion;
@@ -90,6 +105,30 @@ const DEFINICIONES_DE_APERTURA: readonly DefinicionDeClave[] = [
   },
 ];
 
+const DEFINICIONES_DE_INCIDENTE: readonly DefinicionDeClave[] = [
+  { clave: CLAVES_DE_INCIDENTE.reincidenciaMinimo, minimo: 1, maximo: 100, excepcion: 'cuenta' },
+  {
+    clave: CLAVES_DE_INCIDENTE.reincidenciaVentanaDias,
+    minimo: 1,
+    maximo: 365,
+    excepcion: 'cuenta',
+  },
+  // 0 = apagada (por omisión), 1 = encendida: solo restringe (nivel leve) y solo por cuenta.
+  { clave: CLAVES_DE_INCIDENTE.restriccionAutomatica, minimo: 0, maximo: 1, excepcion: 'cuenta' },
+  {
+    clave: CLAVES_DE_INCIDENTE.rechazosGeneracionMinimo,
+    minimo: 1,
+    maximo: 10_000,
+    excepcion: 'global',
+  },
+  {
+    clave: CLAVES_DE_INCIDENTE.rechazosGeneracionVentanaHoras,
+    minimo: 1,
+    maximo: 720,
+    excepcion: 'global',
+  },
+];
+
 /** Los topes de generación de QR (no incluye los umbrales de placa). */
 export const CLAVES_DE_LIMITE: readonly ClaveDeLimite[] = Object.values(CLAVES);
 
@@ -99,7 +138,12 @@ export function definicionDe(clave: string): DefinicionDeClave | null {
 }
 
 export function todasLasDefiniciones(): readonly DefinicionDeClave[] {
-  return [...DEFINICIONES, ...DEFINICIONES_DE_PLACA, ...DEFINICIONES_DE_APERTURA];
+  return [
+    ...DEFINICIONES,
+    ...DEFINICIONES_DE_PLACA,
+    ...DEFINICIONES_DE_APERTURA,
+    ...DEFINICIONES_DE_INCIDENTE,
+  ];
 }
 
 /** ¿`valor` es un entero dentro de los extremos de la clave? */

@@ -37,6 +37,13 @@ Los siembran la migración y `db/seeds/01_catalogo.sql` (idempotente: no pisa un
 | `apertura.plazo_confirmacion_segundos` | 90 | **Supuesto W10** (cuánto se espera el informe de la placa antes de dejar `sin_respuesta`) | ninguna (global) |
 | `apertura.fallidas_minimo` | 2 | **Supuesto W10** (el ADR dice «repetirse»; con 1 avisaría de cada falla) | ninguna (global) |
 | `apertura.fallidas_ventana_minutos` | 60 | **Supuesto W10** | ninguna (global) |
+| `incidente.reincidencia_minimo` | 3 | ADR 0033 §4.3 («por ejemplo, 3 en 30 días»); valor **supuesto W11** | solo cuenta |
+| `incidente.reincidencia_ventana_dias` | 30 | ADR 0033 §4.3; **supuesto W11** | solo cuenta |
+| `incidente.restriccion_automatica` | 0 | ADR 0033 §4.4 (apagada por omisión); 0 = apagada, 1 = encendida | solo cuenta (la enciende AGROCOM con una excepción de valor 1) |
+| `incidente.rechazos_generacion_minimo` | 5 | **Supuesto W11** (rechazos por tope de generación que abren un incidente `generacion_ruidosa`) | ninguna (global) |
+| `incidente.rechazos_generacion_ventana_horas` | 24 | **Supuesto W11** | ninguna (global) |
+
+Las claves `incidente.*` son la política de incidentes de uso (ola W11, ADR 0033 §4): la reincidencia cuenta los incidentes CONFIRMADOS de un usuario cuyo `ocurrido_at` cae dentro de la ventana móvil (límite inclusivo). Si faltan, rigen los valores de partida (3 en 30 días, restricción automática apagada: no fallan cerrado ni restringen solas). Los extremos son 1 a 100 (mínimo), 1 a 365 (ventana en días), 0 a 1 (automática), 1 a 10000 y 1 a 720 (detección).
 
 Las claves `apertura.*` son los umbrales del detector de aperturas fallidas (ola W10) y se tratan igual. Las claves `placa.*` son umbrales del detector de estados de placa (ola W9); no son topes de generación de QR y la generación no las lee. Se editan por la misma ruta. Si faltan, el detector usa los valores de partida (no falla cerrado: un aviso de más o de menos no abre ninguna puerta).
 

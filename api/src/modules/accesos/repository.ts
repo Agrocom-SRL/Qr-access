@@ -275,6 +275,17 @@ export class RepositorioDeQr extends RepositorioDeCuenta {
     });
   }
 
+  /** Cuáles de esos ids existen en la cuenta del contexto (evidencia de un incidente, ADR 0033 §4). */
+  async existentes(ids: readonly string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.id',
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+    return new Set(filas.map((fila) => String(fila.id)));
+  }
+
   listar(filtro: FiltroDeQr, limite: number, desplazamiento: number): Promise<QrFila[]> {
     const { donde, params } = armarFiltro(filtro);
     return this.seleccionar<QrFila>({
@@ -539,6 +550,39 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
   }
 
   /**
+   * Una página para exportar: por id ASCENDENTE, no por fecha. Con el orden del listado (lo más nuevo primero), un
+   * intento que llega mientras se descargan las páginas desplaza las filas y se repiten o se pierden; por id
+   * creciente, lo nuevo cae siempre al final.
+   */
+  listarParaExportar(
+    filtro: FiltroDeEventos,
+    limite: number,
+    desplazamiento: number,
+  ): Promise<EventoFila[]> {
+    const { donde, params } = armarFiltroDeEventos(filtro);
+    return this.seleccionar<EventoFila>({
+      columnas: COLUMNAS_DE_EVENTO,
+      uniones: UNION_QR,
+      ...(donde === undefined ? {} : { donde }),
+      params,
+      orden: 't.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  /** Cuáles de esos ids existen en la cuenta del contexto (evidencia de un incidente, ADR 0033 §4). */
+  async existentes(ids: readonly string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 't.id',
+      donde: 't.id IN (?)',
+      params: [ids],
+    });
+    return new Set(filas.map((fila) => String(fila.id)));
+  }
+
+  /**
    * `puertaId -> instante de la última lectura del lector` (aceptada o rechazada) de esas puertas, en la cuenta
    * del contexto. Una puerta sin lecturas no figura. Es lo que distingue una placa en línea pero sin tráfico.
    */
@@ -774,6 +818,68 @@ export class RepositorioDeConfirmacionesDeTodas extends RepositorioDePlataforma 
       donde: 't.evento_acceso_id IN (?)',
       params: [eventoIds],
       orden: 't.id',
+    });
+  }
+}
+
+/** Dueño de `anulaciones_masivas`: el motivo y el alcance de cada anulación en bloque (ADR 0031 §3). */
+export class RepositorioDeAnulacionesMasivas extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'anulaciones_masivas',
+      columnas: ['alcance', 'usuario_objetivo_id', 'motivo', 'usuarios_alcanzados', 'qr_anulados'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  registrar(
+    tx: Transaccion,
+    anulacion: {
+      readonly alcance: 'usuario' | 'rama' | 'cuenta';
+      readonly usuarioObjetivoId: string | null;
+      readonly motivo: string;
+      readonly usuariosAlcanzados: number;
+      readonly qrAnulados: number;
+    },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      alcance: anulacion.alcance,
+      usuario_objetivo_id: anulacion.usuarioObjetivoId,
+      motivo: anulacion.motivo,
+      usuarios_alcanzados: anulacion.usuariosAlcanzados,
+      qr_anulados: anulacion.qrAnulados,
+    });
+  }
+}
+
+/** Dueño de `exportaciones`: la constancia de cada página de datos que la cuenta descargó (ADR 0033 §3). */
+export class RepositorioDeExportaciones extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'exportaciones',
+      columnas: ['recurso', 'pagina', 'por_pagina', 'filas', 'filtros'],
+      perfil: 'dominio',
+      deCuenta: true,
+    });
+  }
+
+  registrar(
+    tx: Transaccion,
+    exportacion: {
+      readonly recurso: 'usuarios' | 'puertas' | 'lecturas';
+      readonly pagina: number;
+      readonly porPagina: number;
+      readonly filas: number;
+      readonly filtros: Readonly<Record<string, unknown>> | null;
+    },
+  ): Promise<string> {
+    return this.insertar(tx, {
+      recurso: exportacion.recurso,
+      pagina: exportacion.pagina,
+      por_pagina: exportacion.porPagina,
+      filas: exportacion.filas,
+      filtros: exportacion.filtros === null ? null : JSON.stringify(exportacion.filtros),
     });
   }
 }

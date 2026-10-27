@@ -3,9 +3,11 @@ import type { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
+import { ejecutar as anularMasivo } from './actions/anular-masivo.js';
 import { ejecutar as anularQr } from './actions/anular-qr.js';
 import { ejecutar as confirmarApertura } from './actions/confirmar-apertura.js';
 import { ejecutar as consultarEstadoQr } from './actions/consultar-estado-qr.js';
+import { ejecutar as exportarDatos } from './actions/exportar-datos.js';
 import { ejecutar as generarQr } from './actions/generar-qr.js';
 import { ejecutar as listarEventos } from './actions/listar-eventos.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
@@ -16,13 +18,17 @@ import { ejecutar as verEvento } from './actions/ver-evento.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
 import {
   consultaDeEventos,
+  consultaDeExportacion,
   consultaDeQr,
+  cuerpoDeAnulacionMasiva,
   cuerpoDeConfirmacionDeApertura,
   cuerpoDeGeneracion,
   cuerpoDeValidacion,
   esquemaQr,
   parametrosDeEvento,
+  parametrosDeExportacion,
   parametrosDeQr,
+  respuestaDeAnulacionMasiva,
   respuestaDeEventoDetallado,
   respuestaDeGeneracion,
   respuestaDeEstadoDeQr,
@@ -144,6 +150,79 @@ export function rutas({
         preHandler: permiso('accesos.qr.anular'),
       },
       (request) => anularQr(pool, usuarioDe(request), request.params.id),
+    );
+
+    // `/qr-accesos/anulacion-masiva` no choca con `/qr-accesos/:id/anulacion`: el segmento fijo gana y tiene otra forma.
+    app.post(
+      '/qr-accesos/anulacion-masiva',
+      {
+        schema: {
+          tags: ['accesos'],
+          description:
+            'Anula en bloque los QR VIGENTES de un usuario, de una rama o de toda la cuenta (ADR 0031 §3, ADR 0033 §3). ' +
+            'El alcance sale del árbol: el Administrador llega a todo; el Titular, a sus Miembros y a lo suyo; el Miembro y ' +
+            'el Guardia, a lo propio. 404 `usuario.no_encontrado` si el usuario no está en el alcance (o es de otra cuenta); ' +
+            '403 `anulacion.alcance_no_permitido` si pide `cuenta` sin ser Administrador. Los anulados no reviven.',
+          body: cuerpoDeAnulacionMasiva,
+          response: { 200: respuestaDeAnulacionMasiva },
+        },
+        preHandler: permiso('accesos.qr.anular_masivo'),
+      },
+      async (request) => {
+        const resultado = await anularMasivo(pool, usuarioDe(request), {
+          alcance: request.body.alcance,
+          usuarioId: request.body.usuario_id ?? null,
+          motivo: request.body.motivo,
+        });
+        return {
+          id: resultado.id,
+          alcance: resultado.alcance,
+          usuario_id: resultado.usuarioId,
+          usuarios_alcanzados: resultado.usuariosAlcanzados,
+          qr_anulados: resultado.qrAnulados,
+        };
+      },
+    );
+
+    app.get(
+      '/exportaciones/:recurso',
+      {
+        schema: {
+          tags: ['accesos'],
+          description:
+            'Una página de datos de la cuenta en CSV (`text/csv; charset=utf-8`): `usuarios`, `puertas` o `lecturas`. ' +
+            'Paginada (`pagina`, `por_pagina` hasta 1000) y con un tope de 10000 filas por recurso (422 ' +
+            '`exportacion.tope_excedido` más allá). Cada página trae su fila de encabezado y las cabeceras ' +
+            '`X-Total-Filas`, `X-Pagina`, `X-Por-Pagina`, `X-Filas`, `X-Hay-Mas` y `X-Truncado`. Los filtros ' +
+            '(`resultado`, `ejecucion`, `puerta_id`, `desde`, `hasta`) valen solo para `lecturas`. Queda en la ' +
+            'bitácora y cuenta contra el límite de exportación. Sin tokens, hashes ni PIN.',
+          params: parametrosDeExportacion,
+          querystring: consultaDeExportacion,
+        },
+        config: { limite: 'exportacion' },
+        preHandler: permiso('accesos.evento.exportar'),
+      },
+      async (request, reply) => {
+        const { pagina, por_pagina, ...filtros } = request.query;
+        const { recurso } = request.params;
+        const resultado = await exportarDatos(
+          pool,
+          usuarioDe(request),
+          recurso,
+          { pagina, por_pagina },
+          filtrosDe(filtros),
+        );
+        return reply
+          .header('content-type', 'text/csv; charset=utf-8')
+          .header('content-disposition', `attachment; filename="${recurso}-p${pagina}.csv"`)
+          .header('x-total-filas', String(resultado.total))
+          .header('x-pagina', String(resultado.pagina))
+          .header('x-por-pagina', String(resultado.porPagina))
+          .header('x-filas', String(resultado.filas))
+          .header('x-hay-mas', String(resultado.hayMas))
+          .header('x-truncado', String(resultado.truncado))
+          .send(resultado.csv);
+      },
     );
 
     app.get(

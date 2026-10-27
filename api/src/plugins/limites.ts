@@ -16,6 +16,7 @@ export type ClaseDeLimite =
   | 'generar_qr'
   | 'escritura'
   | 'lectura'
+  | 'exportacion'
   | 'validacion'
   | 'dispositivo';
 
@@ -39,6 +40,7 @@ function maximosDe(config: Config): Readonly<Record<ClaseDeLimite, number>> {
     generar_qr: config.LIMITE_GENERAR_QR_POR_MINUTO,
     escritura: config.LIMITE_ESCRITURA_POR_MINUTO,
     lectura: config.LIMITE_LECTURA_POR_MINUTO,
+    exportacion: config.LIMITE_EXPORTACION_POR_MINUTO,
     validacion: config.LIMITE_VALIDACION_POR_MINUTO,
     dispositivo: config.LIMITE_DISPOSITIVO_POR_MINUTO,
   };

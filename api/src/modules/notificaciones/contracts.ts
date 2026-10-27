@@ -7,10 +7,12 @@ import { ejecutar as entregar, type ResultadoDeEntrega } from './actions/entrega
 import type { AvisoAgrupado } from './domain/aviso.js';
 
 export type {
+  AccionPropuesta,
   Audiencia,
   AvisoAgrupado,
   DatosDeAviso,
   PlacaDeAviso,
+  PropuestaDeAviso,
   Severidad,
   TipoDeAviso,
 } from './domain/aviso.js';

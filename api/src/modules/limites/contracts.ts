@@ -4,6 +4,7 @@ import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import {
   CLAVES,
   CLAVES_DE_APERTURA,
+  CLAVES_DE_INCIDENTE,
   CLAVES_DE_PLACA,
   valorEfectivo,
   type ClaveDeLimite,
@@ -13,6 +14,7 @@ import {
 import {
   RepositorioDeConfiguracion,
   RepositorioDeEventosDeLimite,
+  RepositorioDeEventosDeLimiteDeTodas,
   RepositorioDeExcepciones,
   type TipoDeEventoDeLimite,
 } from './repository.js';
@@ -249,6 +251,104 @@ export function crearServicioDeUmbralesDeApertura(pool: Pool): ServicioDeUmbrale
           base.fallidasVentanaMinutos,
         ),
       };
+    },
+  };
+}
+
+/** La política de incidentes de uso que rige para una cuenta (ADR 0033 §4, ola W11). */
+export interface PoliticaDeIncidentes {
+  /** Incidentes CONFIRMADOS de un usuario, dentro de la ventana, a partir de los cuales hay reincidencia. */
+  readonly reincidenciaMinimo: number;
+  /** Ventana móvil, en días, en que se cuentan los confirmados. */
+  readonly reincidenciaVentanaDias: number;
+  /** Si el sistema restringe solo (nivel leve) al cruzar el umbral. Apagada por omisión; el nivel crítico nunca. */
+  readonly restriccionAutomatica: boolean;
+}
+
+/** Valores de partida (supuestos de la ola W11: el ADR 0033 §4 da «por ejemplo, 3 en 30 días»). */
+export const POLITICA_DE_INCIDENTES_POR_DEFECTO: PoliticaDeIncidentes = {
+  reincidenciaMinimo: 3,
+  reincidenciaVentanaDias: 30,
+  restriccionAutomatica: false,
+};
+
+export interface ServicioDePoliticaDeIncidentes {
+  /**
+   * La política que rige para la cuenta del contexto: la excepción de la cuenta si la tiene y, si no, el valor
+   * general. Como los demás umbrales, NO falla cerrado: sin clave rige el valor de partida (que no restringe solo).
+   */
+  politica(): Promise<PoliticaDeIncidentes>;
+}
+
+export function crearServicioDePoliticaDeIncidentes(pool: Pool): ServicioDePoliticaDeIncidentes {
+  return {
+    async politica() {
+      const [generales, excepciones] = await Promise.all([
+        new RepositorioDeConfiguracion(pool).listar(),
+        new RepositorioDeExcepciones(pool).listar(),
+      ]);
+      const general = new Map(generales.map((fila) => [fila.clave, fila.valor]));
+      const deLaCuenta = new Map(
+        excepciones
+          .filter((fila) => fila.usuario_id === null)
+          .map((fila) => [fila.clave, fila.valor]),
+      );
+      const valor = (clave: string, porDefecto: number): number =>
+        deLaCuenta.get(clave) ?? general.get(clave) ?? porDefecto;
+      const base = POLITICA_DE_INCIDENTES_POR_DEFECTO;
+      return {
+        reincidenciaMinimo: valor(CLAVES_DE_INCIDENTE.reincidenciaMinimo, base.reincidenciaMinimo),
+        reincidenciaVentanaDias: valor(
+          CLAVES_DE_INCIDENTE.reincidenciaVentanaDias,
+          base.reincidenciaVentanaDias,
+        ),
+        restriccionAutomatica: valor(CLAVES_DE_INCIDENTE.restriccionAutomatica, 0) === 1,
+      };
+    },
+  };
+}
+
+/** Un usuario cuyos rechazos de generación por tope se repiten (señal de `generacion_ruidosa`). */
+export interface UsuarioConRechazosRepetidos {
+  readonly cuentaId: string;
+  readonly usuarioId: string;
+  readonly total: number;
+  /** Los ids de los últimos rechazos (`eventos_de_limite`), más nuevos primero. */
+  readonly eventoIds: readonly string[];
+}
+
+export interface ServicioDeRechazosRepetidos {
+  /** Los umbrales de la detección (globales): cuántos rechazos y en cuántas horas. */
+  umbrales(): Promise<{ readonly minimo: number; readonly ventanaHoras: number }>;
+  /**
+   * Quiénes, en CUALQUIER cuenta, tuvieron al menos `minimo` rechazos por tope desde `desde`. Es para el detector
+   * del sistema (salto explícito del aislamiento, solo lectura): cada hallazgo se trata luego dentro de su cuenta.
+   */
+  usuarios(desde: Date, minimo: number, limite: number): Promise<UsuarioConRechazosRepetidos[]>;
+}
+
+export function crearServicioDeRechazosRepetidos(pool: Pool): ServicioDeRechazosRepetidos {
+  return {
+    async umbrales() {
+      const filas = await new RepositorioDeConfiguracion(pool).listar();
+      const general = new Map(filas.map((fila) => [fila.clave, fila.valor]));
+      return {
+        minimo: general.get(CLAVES_DE_INCIDENTE.rechazosGeneracionMinimo) ?? 5,
+        ventanaHoras: general.get(CLAVES_DE_INCIDENTE.rechazosGeneracionVentanaHoras) ?? 24,
+      };
+    },
+    async usuarios(desde, minimo, limite) {
+      const filas = await new RepositorioDeEventosDeLimiteDeTodas(pool).rechazosRepetidos(
+        desde,
+        minimo,
+        limite,
+      );
+      return filas.map((fila) => ({
+        cuentaId: fila.tenant_id,
+        usuarioId: fila.usuario_id,
+        total: Number(fila.total),
+        eventoIds: fila.ultimos_ids.split(','),
+      }));
     },
   };
 }

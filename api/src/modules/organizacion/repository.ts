@@ -82,6 +82,21 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
     return this.contar({ uniones: UNION_SITIO, donde: 't.activo = 1 AND s.activo = 1' });
   }
 
+  /** Una página de TODAS las puertas de la cuenta, activas o no, por id: para la exportación (ADR 0033 §3). */
+  listarPagina(limite: number, desplazamiento: number): Promise<PuertaFila[]> {
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      orden: 't.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  contarTodas(): Promise<number> {
+    return this.contar({ uniones: UNION_SITIO });
+  }
+
   /** Las puertas de la cuenta del contexto con esos ids; las que no existan o sean de otra cuenta no vuelven. */
   buscarPorIds(ids: readonly string[]): Promise<PuertaFila[]> {
     if (ids.length === 0) return Promise.resolve([]);

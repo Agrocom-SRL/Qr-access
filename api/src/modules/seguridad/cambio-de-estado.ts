@@ -1,6 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
-import { enTransaccion } from '../../platform/db/transaccion.js';
+import { enTransaccion, type Transaccion } from '../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma, PrincipalUsuario } from '../../platform/seguridad/principal.js';
 import { crearServicioDeAnulacionDeQr } from '../accesos/contracts.js';
@@ -151,4 +151,47 @@ export async function cambiarEstadoDeCuenta(
       }
     }),
   );
+}
+
+/** Qué pasó cuando el sistema intentó restringir a un usuario. */
+export type ResultadoDeRestriccionDelSistema = 'aplicada' | 'sin_cambio';
+
+/**
+ * Restringe a un usuario COMO SISTEMA (ADR 0033 §4.4, ola W11): lo usa la reincidencia cuando la cuenta activó la
+ * restricción automática. Solo el nivel LEVE: no cierra sesiones ni anula QR, y nunca suspende (eso lo decide una
+ * persona). Va DENTRO de la transacción `tx` de quien la pide, para que la restricción y su aviso se guarden juntos.
+ *
+ * - La bitácora firma con origen `sistema` y sin usuario (nadie «hizo» el cambio).
+ * - `estado_impuesto_por` queda en el SUPERIOR directo del usuario: así él y quienes están sobre él pueden levantarla
+ *   (`puedeCambiarEstado`); si no tiene superior queda sin dueño y solo AGROCOM la levanta.
+ * - Solo actúa sobre alguien `activo`: quien ya está restringido o suspendido (por una persona) no se toca, y el
+ *   «compare-and-set» del repositorio evita pisar un cambio concurrente. `sin_cambio` es inofensivo.
+ */
+export async function restringirComoSistema(
+  pool: Pool,
+  tx: Transaccion,
+  usuarioId: string,
+  motivo: string,
+  ahora: Date,
+): Promise<ResultadoDeRestriccionDelSistema> {
+  const usuarios = new RepositorioDeUsuarios(pool);
+  const [usuario] = await usuarios.buscarPorIds([usuarioId], tx);
+  if (usuario?.estado !== 'activo') return 'sin_cambio';
+  const cambiado = await ContextoCuenta.ejecutar(
+    {
+      cuentaId: ContextoCuenta.cuentaRequerida(),
+      usuarioId: null,
+      rolActivoId: null,
+      dispositivoId: null,
+      origen: 'sistema',
+    },
+    () =>
+      usuarios.cambiarEstado(
+        tx,
+        usuarioId,
+        { estado: 'activo', impuestoPor: null },
+        { estado: 'restringido', impuestoPor: usuario.superior_id, desde: ahora, motivo },
+      ),
+  );
+  return cambiado ? 'aplicada' : 'sin_cambio';
 }

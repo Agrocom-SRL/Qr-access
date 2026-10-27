@@ -75,7 +75,7 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
     });
 
   describe('valores generales', () => {
-    it('lista los siete topes de QR, los cinco umbrales de placa y los tres de apertura con su valor inicial sembrado', async () => {
+    it('lista los siete topes de QR, los cinco umbrales de placa, los tres de apertura y los cinco de incidentes con su valor inicial sembrado', async () => {
       const respuesta = await pedir('GET', '/plataforma/limites');
       expect(respuesta.statusCode).toBe(200);
       const datos = respuesta.json<{ datos: Limite[] }>().datos;
@@ -95,7 +95,23 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
         ['apertura.plazo_confirmacion_segundos', 90],
         ['apertura.fallidas_minimo', 2],
         ['apertura.fallidas_ventana_minutos', 60],
+        ['incidente.reincidencia_minimo', 3],
+        ['incidente.reincidencia_ventana_dias', 30],
+        ['incidente.restriccion_automatica', 0],
+        ['incidente.rechazos_generacion_minimo', 5],
+        ['incidente.rechazos_generacion_ventana_horas', 24],
       ]);
+      // La política de reincidencia puede tener excepción por cuenta; la detección de generación ruidosa, no.
+      expect(
+        datos.find((limite) => limite.clave === 'incidente.restriccion_automatica'),
+      ).toMatchObject({
+        excepcion: 'cuenta',
+        minimo: 0,
+        maximo: 1,
+      });
+      expect(
+        datos.find((limite) => limite.clave === 'incidente.rechazos_generacion_minimo')?.excepcion,
+      ).toBe('global');
       expect(datos.find((limite) => limite.clave === 'qr.bolsa_mensual')).toMatchObject({
         excepcion: 'cuenta',
         minimo: 1,

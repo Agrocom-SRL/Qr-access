@@ -1,5 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { crearTareasDeDispositivos } from './modules/dispositivos/contracts.js';
+import { crearTareasDeIncidentes } from './modules/incidentes/contracts.js';
 import { crearTareasDeNotificaciones } from './modules/notificaciones/contracts.js';
 
 /** Una tarea que corre sola cada cierto tiempo. */
@@ -16,6 +17,7 @@ export interface Tarea {
 export function crearTareas(pool: Pool): readonly Tarea[] {
   const dispositivos = crearTareasDeDispositivos(pool);
   const notificaciones = crearTareasDeNotificaciones(pool);
+  const incidentes = crearTareasDeIncidentes(pool);
   return [
     // Detecta placas caídas, desaparecidas o con el lector mudo y encola los avisos (ADR 0031 §18).
     {
@@ -42,6 +44,13 @@ export function crearTareas(pool: Pool): readonly Tarea[] {
       nombre: 'depuracion-de-notificaciones',
       cadaMs: 3_600_000,
       ejecutar: (ahora, registrarError) => notificaciones.depurar(ahora, registrarError),
+    },
+    // Abre incidentes `generacion_ruidosa` para quien repite rechazos por tope (ADR 0033 §4.1; el resto de las señales es W12).
+    {
+      nombre: 'incidentes-de-generacion-ruidosa',
+      cadaMs: 300_000,
+      ejecutar: (ahora, registrarError) =>
+        incidentes.detectarGeneracionRuidosa(ahora, registrarError),
     },
   ];
 }

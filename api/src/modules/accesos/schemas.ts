@@ -2,6 +2,11 @@ import { z } from 'zod';
 import { esquemaListado } from '../../platform/http/paginacion.js';
 import { CAUSAS_DE_FALLA, EJECUCIONES } from './domain/confirmacion.js';
 import { ESTADOS_DE_QR } from './domain/estado-qr.js';
+import {
+  FILAS_POR_PAGINA_MAXIMAS,
+  FILAS_POR_PAGINA_POR_OMISION,
+  RECURSOS_EXPORTABLES,
+} from './domain/exportacion.js';
 
 const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaFecha = z.string();
@@ -171,3 +176,46 @@ export const cuerpoDeConfirmacionDeApertura = z.discriminatedUnion('resultado', 
     leido_en: z.string().max(40).optional(),
   }),
 ]);
+
+/** Por qué se anula en bloque: obligatorio y corto; entra a la bitácora (`anulaciones_masivas.motivo` es VARCHAR(200)). */
+export const MAX_MOTIVO_DE_ANULACION = 200;
+
+/**
+ * Anulación masiva (ADR 0031 §3, ADR 0033 §3). `usuario_id` es el usuario (`alcance: usuario`) o la raíz de la rama
+ * (`alcance: rama`); sin él, el propio actor. Con `alcance: cuenta` no se manda (422 si viene).
+ */
+export const cuerpoDeAnulacionMasiva = z
+  .strictObject({
+    alcance: z.enum(['usuario', 'rama', 'cuenta']),
+    usuario_id: esquemaId.nullish(),
+    motivo: z.string().trim().min(1).max(MAX_MOTIVO_DE_ANULACION),
+  })
+  .refine((cuerpo) => cuerpo.alcance !== 'cuenta' || cuerpo.usuario_id == null, {
+    path: ['usuario_id'],
+    message: 'usuario_id no va con el alcance cuenta',
+  });
+
+export const respuestaDeAnulacionMasiva = z.object({
+  id: z.string(),
+  alcance: z.enum(['usuario', 'rama', 'cuenta']),
+  /** El usuario o la raíz de la rama; `null` con `alcance: cuenta`. */
+  usuario_id: z.string().nullable(),
+  usuarios_alcanzados: z.number().int(),
+  /** Cuántos QR vigentes se anularon (0 si no había ninguno). */
+  qr_anulados: z.number().int(),
+});
+
+export const parametrosDeExportacion = z.object({ recurso: z.enum(RECURSOS_EXPORTABLES) });
+
+/**
+ * Página de una exportación. Los filtros solo valen para `lecturas`; con otro recurso se ignoran.
+ */
+export const consultaDeExportacion = consultaDeEventos.extend({
+  pagina: z.coerce.number().int().min(1).default(1),
+  por_pagina: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(FILAS_POR_PAGINA_MAXIMAS)
+    .default(FILAS_POR_PAGINA_POR_OMISION),
+});

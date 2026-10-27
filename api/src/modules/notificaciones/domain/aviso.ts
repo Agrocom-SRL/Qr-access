@@ -8,6 +8,9 @@ export const TIPOS_DE_AVISO = [
   'placa.lector_sin_respuesta',
   // La puerta recibió la orden de abrir y no se abrió, varias veces (ADR 0031 §18, ola W10).
   'apertura.fallida',
+  // El sistema PROPONE restringir, suspender o suspender y anular los QR de un usuario reincidente; una persona
+  // decide (ADR 0033 §4.3, ola W11).
+  'incidente.propuesta',
 ] as const;
 export type TipoDeAviso = (typeof TIPOS_DE_AVISO)[number];
 
@@ -44,10 +47,35 @@ export interface PlacaDeAviso {
   readonly causa?: string | null;
 }
 
+/** Lo que se propone hacer con un usuario reincidente. `suspender_y_anular` = suspender y anular sus QR vigentes. */
+export const ACCIONES_PROPUESTAS = ['restringir', 'suspender', 'suspender_y_anular'] as const;
+export type AccionPropuesta = (typeof ACCIONES_PROPUESTAS)[number];
+
+/** El contenido de un aviso `incidente.propuesta`. Sin secretos: ids y recuentos, nunca un token. */
+export interface PropuestaDeAviso {
+  readonly accion: AccionPropuesta;
+  readonly usuario_id: string;
+  readonly usuario_etiqueta: string | null;
+  /** El incidente cuya confirmación disparó la propuesta. */
+  readonly incidente_id: string;
+  readonly incidente_tipo: string;
+  /** Incidentes confirmados del usuario dentro de la ventana, y el umbral y la ventana que rigen. */
+  readonly confirmados: number;
+  readonly minimo: number;
+  readonly ventana_dias: number;
+  /**
+   * `true` si la cuenta tiene la restricción automática encendida y el sistema YA restringió al usuario (solo
+   * ocurre con `accion = restringir`; el nivel crítico nunca se aplica solo). Entonces el aviso es informativo.
+   */
+  readonly aplicada_automaticamente: boolean;
+}
+
 export interface DatosDeAviso {
   readonly cuenta: { readonly id: string; readonly codigo: string; readonly nombre: string };
   readonly sitio: { readonly id: string; readonly nombre: string } | null;
   readonly placas: PlacaDeAviso[];
+  /** Solo en `incidente.propuesta`. */
+  readonly propuesta?: PropuestaDeAviso;
 }
 
 /**
@@ -64,6 +92,12 @@ export interface AvisoAgrupado {
   readonly sitioId: string | null;
   /** Ids de quienes forman el grupo ahora (para saber si llegó alguien nuevo). Vacío = resuelto. */
   readonly miembros: readonly string[];
+  /**
+   * Si viene, el aviso llega SOLO a estos usuarios (los que además tengan el permiso de destinatario): p. ej. la
+   * propuesta sobre un reincidente llega a quienes lo administran, no a todos los Administradores de la cuenta.
+   * Sin él, llega a todos los destinatarios de la audiencia.
+   */
+  readonly soloPara?: readonly string[];
   readonly datos: DatosDeAviso;
   /** Al resolverse el incidente, deja además esta constancia informativa. */
   readonly alResolver: {

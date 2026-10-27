@@ -196,3 +196,46 @@ export class RepositorioDeEventosDeLimite extends RepositorioDeCuenta {
     return { total: Number(fila?.total ?? 0), ultimo: fila?.ultimo ?? null };
   }
 }
+
+/** Un usuario con rechazos de generación repetidos, visto desde la plataforma. */
+export interface RechazosRepetidosFila extends RowDataPacket {
+  tenant_id: string;
+  usuario_id: string;
+  total: number | string;
+  /** Los ids de los últimos rechazos (más nuevos primero), separados por coma. */
+  ultimos_ids: string;
+}
+
+/**
+ * Lee `eventos_de_limite` de TODAS las cuentas, solo para el detector de señales (ADR 0033 §4, W11): salto
+ * explícito del aislamiento, de solo lectura. Cada hallazgo se procesa después DENTRO de su cuenta.
+ */
+export class RepositorioDeEventosDeLimiteDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'eventos_de_limite',
+      columnas: [],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  /**
+   * Usuarios con al menos `minimo` rechazos por tope de generación desde `desde`. Los marcadores informativos
+   * (reemplazos y bolsa) no son rechazos y no cuentan.
+   */
+  rechazosRepetidos(desde: Date, minimo: number, limite: number): Promise<RechazosRepetidosFila[]> {
+    return this.seleccionar<RechazosRepetidosFila>({
+      columnas:
+        't.tenant_id, t.usuario_id, COUNT(*) AS total, ' +
+        "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 20) AS ultimos_ids",
+      donde:
+        "t.usuario_id IS NOT NULL AND t.ocurrido_at >= ? AND t.tipo IN ('qr.limite_diario', 'qr.limite_pendientes', 'qr.limite_propios_sin_uso')",
+      // El segundo `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
+      params: [desde, minimo],
+      agrupar: 't.tenant_id, t.usuario_id HAVING COUNT(*) >= ?',
+      orden: 't.tenant_id, t.usuario_id',
+      limite,
+    });
+  }
+}

@@ -401,3 +401,29 @@ export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmacio
     },
   };
 }
+
+export interface ServicioDeEvidencia {
+  /**
+   * Cuáles de esos QR y esos intentos de acceso existen en la cuenta del contexto. Un id de otra cuenta o inventado
+   * no vuelve: así la evidencia de un incidente nunca apunta fuera de la cuenta (invariante 1). Solo ids: jamás el
+   * token ni su hash.
+   */
+  existentes(ids: {
+    readonly qrIds: readonly string[];
+    readonly eventoAccesoIds: readonly string[];
+  }): Promise<{ qrIds: Set<string>; eventoAccesoIds: Set<string> }>;
+}
+
+export function crearServicioDeEvidencia(pool: Pool): ServicioDeEvidencia {
+  const qr = new RepositorioDeQr(pool);
+  const eventos = new RepositorioDeEventos(pool);
+  return {
+    async existentes({ qrIds, eventoAccesoIds }) {
+      const [qrs, intentos] = await Promise.all([
+        qr.existentes(qrIds),
+        eventos.existentes(eventoAccesoIds),
+      ]);
+      return { qrIds: qrs, eventoAccesoIds: intentos };
+    },
+  };
+}

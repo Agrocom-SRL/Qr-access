@@ -81,6 +81,8 @@ En capas, de la más barata a la más fina:
 
 La validación nunca usa el límite de un usuario; su tope es anti-flood por credencial. Un `429` en ella llega antes de consumir el QR y el firmware lo trata como "sin respuesta" (no abre). Queda pendiente el limitador compartido para más de una instancia (punto 3).
 
+**Clase `exportacion` (ola W11).** `GET /exportaciones/{recurso}` (CSV de la cuenta, ADR 0033 §3) cuenta aparte de las lecturas: por usuario, `LIMITE_EXPORTACION_POR_MINUTO` (10 por omisión), con el mismo `429` `limite.excedido` y `Retry-After`.
+
 **IP del cliente y autenticaciones fallidas (auditoría W3).** La IP sale de `X-Forwarded-For` solo con `TRUST_PROXY` como número de saltos (por omisión 1) o lista de IP/CIDR, nunca `true`; el Nginx de delante sobrescribe la cabecera (`docs/gestion/despliegue.md`). Las autenticaciones fallidas (JWT o credencial de dispositivo inválidos) se cuentan por IP (`LIMITE_FALLOS_AUTENTICACION_POR_MINUTO`, 30 por omisión): pasado el tope, esa IP recibe `429` durante el resto de la ventana sin que se verifique su credencial. Los aciertos no consumen, y un dispositivo que autenticó bien desde esa IP en los últimos 15 minutos se sigue verificando (IP compartida de un sitio). Todo en memoria y acotado (una instancia).
 
 ### 4. Estadísticas: qué se considera sospechoso

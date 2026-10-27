@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
-import { TIPOS_DE_NOTIFICACION } from './domain/aviso.js';
+import { ACCIONES_PROPUESTAS, TIPOS_DE_NOTIFICACION } from './domain/aviso.js';
 
 const esquemaId = z.string().regex(/^\d{1,19}$/);
 const esquemaTipo = z.enum(TIPOS_DE_NOTIFICACION as [string, ...string[]]);
@@ -28,11 +28,25 @@ const esquemaPlaca = z.object({
   causa: z.string().nullable().optional(),
 });
 
+/** Solo en `incidente.propuesta` (ADR 0033 §4.3). */
+const esquemaPropuesta = z.object({
+  accion: z.enum(ACCIONES_PROPUESTAS),
+  usuario_id: z.string(),
+  usuario_etiqueta: z.string().nullable(),
+  incidente_id: z.string(),
+  incidente_tipo: z.string(),
+  confirmados: z.number().int(),
+  minimo: z.number().int(),
+  ventana_dias: z.number().int(),
+  aplicada_automaticamente: z.boolean(),
+});
+
 /** El contenido de un aviso. Sin secretos: ni claves, ni tokens, ni MAC. */
 const esquemaDatos = z.object({
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
   sitio: z.object({ id: z.string(), nombre: z.string() }).nullable(),
   placas: z.array(esquemaPlaca),
+  propuesta: esquemaPropuesta.optional(),
 });
 
 export const esquemaNotificacion = z.object({

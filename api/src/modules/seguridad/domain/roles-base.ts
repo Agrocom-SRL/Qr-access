@@ -18,7 +18,11 @@ const PERMISOS_DE_MIEMBRO = [
   'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
+  // Anula en bloque los QR vigentes que le toquen según su nivel (el Miembro, solo los propios; ADR 0033 §3).
+  'accesos.qr.anular_masivo',
   'accesos.evento.ver',
+  // Ve los incidentes de uso que lo alcanzan (los propios; ADR 0033 §3).
+  'seguridad.incidente.ver',
 ] as const;
 
 export const ROLES_BASE: readonly RolBase[] = [
@@ -36,6 +40,8 @@ export const ROLES_BASE: readonly RolBase[] = [
       // Restringe y suspende a sus Miembros, y solo a ellos (ADR 0033 §3, D-25).
       'seguridad.usuario.restringir',
       'seguridad.usuario.suspender',
+      // Registra, descarta o confirma los incidentes de uso de sus Miembros (ADR 0033 §3 y §4).
+      'seguridad.incidente.resolver',
     ],
   },
   { nombre: 'Miembro', protegido: false, permisos: PERMISOS_DE_MIEMBRO },
@@ -47,6 +53,9 @@ export const ROLES_BASE: readonly RolBase[] = [
       'organizacion.puerta.supervisar',
       // Solo su QR propio: el de visitas (`accesos.qr.generar`) no es de su nivel (ADR 0028 §5).
       'accesos.qr.generar_propio',
+      // Solo sus propios QR (ADR 0033 §3): anula en bloque lo suyo y ve los incidentes que lo alcanzan.
+      'accesos.qr.anular_masivo',
+      'seguridad.incidente.ver',
       'accesos.evento.ver',
       'accesos.evento.ver_asignadas',
     ],

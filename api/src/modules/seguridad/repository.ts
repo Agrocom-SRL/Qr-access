@@ -333,6 +333,16 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     return filas.map((fila) => fila.id);
   }
 
+  /** Una página de todos los usuarios de la cuenta, por id: para la exportación (ADR 0033 §3). */
+  listarPagina(limite: number, desplazamiento: number): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      orden: 't.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
   /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */
   contarDirectos(id: string): Promise<number> {
     return this.contar({ donde: 't.superior_id = ?', params: [id] });

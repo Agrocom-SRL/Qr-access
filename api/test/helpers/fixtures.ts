@@ -31,8 +31,12 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'accesos.qr.ver_todos',
   'accesos.qr.anular',
   'accesos.qr.anular_todos',
+  'accesos.qr.anular_masivo',
   'accesos.evento.ver',
   'accesos.evento.ver_todos',
+  'accesos.evento.exportar',
+  'seguridad.incidente.ver',
+  'seguridad.incidente.resolver',
   'seguridad.usuario.ver',
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
@@ -52,7 +56,9 @@ export const PERMISOS_DE_USUARIO = [
   'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
+  'accesos.qr.anular_masivo',
   'accesos.evento.ver',
+  'seguridad.incidente.ver',
 ];
 
 /** Lo que tiene un Guardia (ADR 0028 §5): su QR propio, no los de visitas. */
@@ -60,6 +66,8 @@ export const PERMISOS_DE_GUARDIA = [
   'organizacion.puerta.ver',
   'organizacion.puerta.supervisar',
   'accesos.qr.generar_propio',
+  'accesos.qr.anular_masivo',
+  'seguridad.incidente.ver',
   'accesos.evento.ver',
   'accesos.evento.ver_asignadas',
 ];
@@ -73,6 +81,7 @@ export const PERMISOS_DE_TITULAR = [
   'seguridad.usuario.eliminar',
   'seguridad.usuario.restringir',
   'seguridad.usuario.suspender',
+  'seguridad.incidente.resolver',
 ];
 
 export interface Cuenta {

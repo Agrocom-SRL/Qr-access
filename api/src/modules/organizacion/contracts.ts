@@ -60,6 +60,10 @@ export interface ServicioDeOrganizacion {
   crearPuerta(sitioId: string, datos: estructura.DatosDePuerta): Promise<{ id: string }>;
   editarPuerta(id: string, cambios: estructura.CambiosDePuerta): Promise<void>;
   eliminarPuerta(id: string): Promise<void>;
+  /** Cuántas puertas tiene la cuenta del contexto (activas o no): para la exportación. */
+  contarPuertas(): Promise<number>;
+  /** Una página de las puertas de la cuenta del contexto, por id: para la exportación. */
+  puertasPagina(limite: number, desplazamiento: number): Promise<PuertaDeCuenta[]>;
   /** Puertas a las que está asignado el usuario (guardia) de la cuenta del contexto. */
   puertasAsignadasA(usuarioId: string): Promise<asignaciones.PuertasAsignadas>;
   asignarPuertas(usuarioId: string, puertas: asignaciones.PuertasAsignadas): Promise<void>;
@@ -104,6 +108,10 @@ export function crearServicioDeOrganizacion(pool: Pool): ServicioDeOrganizacion 
         puertas.contarActivas(),
       ]);
       return { sitios, puertas: cantidad };
+    },
+    contarPuertas: () => puertas.contarTodas(),
+    async puertasPagina(limite, desplazamiento) {
+      return (await puertas.listarPagina(limite, desplazamiento)).map(aPuerta);
     },
     listarPuertasConEstado: (paginacion, ahora) => listarPuertasDeLaCuenta(pool, paginacion, ahora),
     async buscarPuertas(ids) {

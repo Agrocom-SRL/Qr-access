@@ -8,16 +8,24 @@ import {
   type EstadoEfectivo,
 } from './domain/estado.js';
 import {
+  restringirComoSistema,
+  type ResultadoDeRestriccionDelSistema,
+} from './cambio-de-estado.js';
+import { nivelDeRol, type NivelDeUsuario } from './domain/jerarquia.js';
+import {
   RepositorioDeConteoDeUsuarios,
   RepositorioDeCuentas,
   RepositorioDeCuentasDePlataforma,
   RepositorioDeIdentidades,
+  RepositorioDeRolesDeUsuario,
   RepositorioDeSuperAdmins,
   RepositorioDeUsuarios,
 } from './repository.js';
 
 export { crearAutenticadorDePlataforma, crearAutenticadorDeUsuario } from './autenticador.js';
 export type { Estado, EstadoEfectivo, OrigenDeEstado } from './domain/estado.js';
+export type { NivelDeUsuario } from './domain/jerarquia.js';
+export type { ResultadoDeRestriccionDelSistema } from './cambio-de-estado.js';
 
 export interface ServicioDeUsuarios {
   /**
@@ -81,6 +89,8 @@ export interface ServicioDeCuentas {
    * QR: ADR 0031 §0). Es lo que se pide para vincular una placa nueva.
    */
   estaActiva(cuentaId: string): Promise<boolean>;
+  /** Cómo se identifica la cuenta en un aviso (id, código y nombre); `null` si no existe. */
+  identificar(cuentaId: string): Promise<{ id: string; codigo: string; nombre: string } | null>;
 }
 
 export function crearServicioDeCuentas(pool: Pool): ServicioDeCuentas {
@@ -92,6 +102,12 @@ export function crearServicioDeCuentas(pool: Pool): ServicioDeCuentas {
     async estaActiva(cuentaId) {
       const cuenta = await cuentas.buscarPorId(cuentaId);
       return cuenta !== null && cuenta.estado !== 'suspendido';
+    },
+    async identificar(cuentaId) {
+      const cuenta = await cuentas.buscarPorId(cuentaId);
+      return cuenta === null
+        ? null
+        : { id: cuenta.id, codigo: cuenta.codigo, nombre: cuenta.nombre };
     },
   };
 }
@@ -188,5 +204,113 @@ export function crearServicioDeDestinatarios(pool: Pool): ServicioDeDestinatario
   return {
     deLaCuenta: (permiso) => new RepositorioDeUsuarios(pool).idsConPermiso(permiso),
     deLaPlataforma: (permiso) => new RepositorioDeSuperAdmins(pool).idsConPermiso(permiso),
+  };
+}
+
+/** A quiénes alcanza un usuario según su nivel en el árbol (ADR 0028 §4, ADR 0033 §3). */
+export interface AlcanceDeUsuarios {
+  /** Su nivel; `null` si su rol no tiene uno (falla cerrado: alcanza solo a sí mismo). */
+  readonly nivel: NivelDeUsuario | null;
+  /**
+   * `true` para el Administrador de la cuenta: «todo» (ADR 0033 §3). Para él `ids` no es el límite; para los
+   * demás niveles sí.
+   */
+  readonly todaLaCuenta: boolean;
+  /** Él mismo y toda su rama (los que cuelgan de él, a cualquier profundidad). */
+  readonly ids: ReadonlySet<string>;
+}
+
+export interface ServicioDeArbol {
+  /** El alcance de `usuarioId` en la cuenta del contexto. */
+  alcanceDe(usuarioId: string): Promise<AlcanceDeUsuarios>;
+  /** `usuarioId` y todos los que cuelgan de él, a cualquier profundidad (una «rama» completa). */
+  ramaDe(usuarioId: string): Promise<string[]>;
+  /** Los superiores de `usuarioId` (todos los de su cadena, sin orden garantizado), sin él. Vacío si no tiene. */
+  superioresDe(usuarioId: string): Promise<string[]>;
+  /** El estado PROPIO del usuario (no el efectivo); `null` si no existe en la cuenta. Con `tx`, dentro de ella. */
+  estadoPropioDe(usuarioId: string, tx?: Transaccion): Promise<Estado | null>;
+  /**
+   * Restringe como sistema (solo el nivel leve) dentro de `tx`; ver `restringirComoSistema`. Nunca suspende.
+   */
+  restringirComoSistema(
+    tx: Transaccion,
+    usuarioId: string,
+    motivo: string,
+    ahora: Date,
+  ): Promise<ResultadoDeRestriccionDelSistema>;
+}
+
+export function crearServicioDeArbol(pool: Pool): ServicioDeArbol {
+  const usuarios = new RepositorioDeUsuarios(pool);
+  return {
+    async alcanceDe(usuarioId) {
+      const [roles, rama] = await Promise.all([
+        new RepositorioDeRolesDeUsuario(pool).rolesDe(usuarioId),
+        usuarios.idsDeRama(usuarioId),
+      ]);
+      const [unico] = roles;
+      const nivel = roles.length === 1 && unico !== undefined ? nivelDeRol(unico.nombre) : null;
+      return {
+        nivel,
+        todaLaCuenta: nivel === 'administrador',
+        // Sin nivel no hay rama que valga: solo él (falla cerrado).
+        ids: new Set([usuarioId, ...(nivel === null ? [] : rama)]),
+      };
+    },
+    async ramaDe(usuarioId) {
+      return [usuarioId, ...(await usuarios.idsDeRama(usuarioId))];
+    },
+    async superioresDe(usuarioId) {
+      const cadena = await usuarios.cadenaDeEstados(usuarioId);
+      return cadena.map((fila) => fila.id).filter((id) => id !== usuarioId);
+    },
+    async estadoPropioDe(usuarioId, tx) {
+      const [usuario] = await usuarios.buscarPorIds([usuarioId], tx);
+      return usuario?.estado ?? null;
+    },
+    restringirComoSistema: (tx, usuarioId, motivo, ahora) =>
+      restringirComoSistema(pool, tx, usuarioId, motivo, ahora),
+  };
+}
+
+/** Un usuario tal como se exporta: nada del PIN, de la contraseña ni de las sesiones (invariante 6). */
+export interface UsuarioExportable {
+  readonly id: string;
+  readonly etiqueta: string | null;
+  /** Nombre de su rol (uno solo, ADR 0028); `null` si no tiene. */
+  readonly rol: string | null;
+  readonly superiorId: string | null;
+  /** Su estado propio. */
+  readonly estado: Estado;
+  readonly estadoMotivo: string | null;
+  readonly creadoAt: Date;
+}
+
+export interface ServicioDeUsuariosExportables {
+  /** Cuántos usuarios tiene la cuenta del contexto. */
+  total(): Promise<number>;
+  /** Una página de usuarios de la cuenta del contexto, por id. */
+  pagina(limite: number, desplazamiento: number): Promise<UsuarioExportable[]>;
+}
+
+export function crearServicioDeUsuariosExportables(pool: Pool): ServicioDeUsuariosExportables {
+  const usuarios = new RepositorioDeUsuarios(pool);
+  return {
+    total: () => usuarios.contarTodos(),
+    async pagina(limite, desplazamiento) {
+      const filas = await usuarios.listarPagina(limite, desplazamiento);
+      const roles = await new RepositorioDeRolesDeUsuario(pool).rolesDeVarios(
+        filas.map((fila) => fila.id),
+      );
+      return filas.map((fila) => ({
+        id: fila.id,
+        etiqueta: fila.etiqueta,
+        rol: roles.get(fila.id)?.[0]?.nombre ?? null,
+        superiorId: fila.superior_id,
+        estado: fila.estado,
+        estadoMotivo: fila.estado_motivo,
+        creadoAt: fila.created_at,
+      }));
+    },
   };
 }

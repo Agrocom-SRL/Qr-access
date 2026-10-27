@@ -27,6 +27,10 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('seguridad.usuario.eliminar', 'cuenta'),
   ('seguridad.usuario.restringir', 'cuenta'),
   ('seguridad.usuario.suspender', 'cuenta'),
+  ('accesos.qr.anular_masivo', 'cuenta'),
+  ('accesos.evento.exportar', 'cuenta'),
+  ('seguridad.incidente.ver', 'cuenta'),
+  ('seguridad.incidente.resolver', 'cuenta'),
   ('seguridad.cupo.ver', 'cuenta'),
   ('seguridad.estadistica.ver', 'cuenta'),
   ('notificaciones.aviso.ver', 'cuenta'),
@@ -112,6 +116,18 @@ INSERT INTO configuracion_limites (clave, valor) VALUES
   ('apertura.fallidas_ventana_minutos', 60)
 ON DUPLICATE KEY UPDATE clave = VALUES(clave);
 
+-- Incidentes de uso, reincidencia y política de la cuenta (ADR 0033 §4, ola W11; todos son supuestos de partida, los
+-- ajusta AGROCOM): 3 incidentes CONFIRMADOS en 30 días es reincidencia; la restricción automática (nivel leve) viene
+-- APAGADA (0) y se enciende por cuenta con una excepción de `incidente.restriccion_automatica` = 1. Cinco rechazos de
+-- generación por tope en 24 h abren un incidente `generacion_ruidosa` del sistema. No pisa lo que AGROCOM ya editó.
+INSERT INTO configuracion_limites (clave, valor) VALUES
+  ('incidente.reincidencia_minimo', 3),
+  ('incidente.reincidencia_ventana_dias', 30),
+  ('incidente.restriccion_automatica', 0),
+  ('incidente.rechazos_generacion_minimo', 5),
+  ('incidente.rechazos_generacion_ventana_horas', 24)
+ON DUPLICATE KEY UPDATE clave = VALUES(clave);
+
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'
@@ -163,3 +179,16 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
 DELETE rp FROM rol_permisos AS rp
   JOIN roles AS r ON r.id = rp.rol_id AND r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Guardia'
   JOIN permisos AS p ON p.id = rp.permiso_id AND p.codigo = 'accesos.qr.generar';
+
+-- Anulación masiva e incidentes (ADR 0033 §3, ola W11). Cada nivel actúa solo dentro de su rama (el alcance lo impone
+-- la API con el árbol del ADR 0028, no el permiso): `anular_masivo` lo tienen los cuatro roles base (el Miembro y el
+-- Guardia, solo sobre lo propio), `incidente.ver` también (cada uno ve los de su alcance) y `incidente.resolver` el
+-- Titular (los de sus Miembros). El Administrador recibe todos arriba. Exportar es solo del Administrador.
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r
+  JOIN permisos AS p ON p.codigo IN ('accesos.qr.anular_masivo', 'seguridad.incidente.ver')
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre IN ('Titular', 'Miembro', 'Guardia')
+    AND r.deleted_at IS NULL;
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo = 'seguridad.incidente.resolver'
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
