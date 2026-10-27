@@ -1934,5 +1934,287 @@
   "seguimientoRechazoGenerico": "No se pudo validar el QR. Avisa al administrador.",
   "@seguimientoRechazoGenerico": {
     "description": "Explicación de un rechazo sin texto propio"
+  },
+  "perfilDispositivos": "Dispositivos conectados",
+  "@perfilDispositivos": {
+    "description": "Fila de Perfil que lleva a la lista de aparatos con la sesión abierta (ADR 0030 §4.1)"
+  },
+  "perfilDispositivosAyuda": "Dónde tienes abierta tu sesión",
+  "@perfilDispositivosAyuda": {
+    "description": "Ayuda de la fila de dispositivos conectados en Perfil"
+  },
+  "dispositivosTitulo": "Dispositivos conectados",
+  "@dispositivosTitulo": {
+    "description": "Título de la pantalla de sesiones abiertas del propio usuario"
+  },
+  "dispositivosAyuda": "Los aparatos donde tienes tu sesión abierta. Cierra los que no reconozcas.",
+  "@dispositivosAyuda": {
+    "description": "Subtítulo de la pantalla de dispositivos conectados"
+  },
+  "dispositivosEsteAparato": "Este dispositivo",
+  "@dispositivosEsteAparato": {
+    "description": "Marca la sesión de este aparato en la lista (no se puede cerrar desde aquí)"
+  },
+  "dispositivosSinNombre": "Dispositivo sin nombre",
+  "@dispositivosSinNombre": {
+    "description": "Nombre de un dispositivo que no mandó el suyo"
+  },
+  "dispositivosPlataformaYActividad": "{plataforma} · Última actividad {hora}",
+  "@dispositivosPlataformaYActividad": {
+    "description": "Línea de una sesión: plataforma y hora de la última actividad",
+    "placeholders": {
+      "plataforma": { "type": "String" },
+      "hora": { "type": "String" }
+    }
+  },
+  "dispositivosPlataformaAndroid": "Android",
+  "@dispositivosPlataformaAndroid": {
+    "description": "Plataforma de una sesión: app Android"
+  },
+  "dispositivosPlataformaIos": "iOS",
+  "@dispositivosPlataformaIos": {
+    "description": "Plataforma de una sesión: app iOS"
+  },
+  "dispositivosPlataformaWeb": "Navegador",
+  "@dispositivosPlataformaWeb": {
+    "description": "Plataforma de una sesión: la app web en un navegador"
+  },
+  "dispositivosPlataformaOtra": "Otro aparato",
+  "@dispositivosPlataformaOtra": {
+    "description": "Plataforma que la app no reconoce"
+  },
+  "dispositivosCerrarUna": "Cerrar sesión",
+  "@dispositivosCerrarUna": {
+    "description": "Acción para cerrar una sesión de otro aparato (color de peligro)"
+  },
+  "dispositivosCerrarUnaTitulo": "¿Cerrar esta sesión?",
+  "@dispositivosCerrarUnaTitulo": {
+    "description": "Título del diálogo de confirmación de cerrar una sesión"
+  },
+  "dispositivosCerrarUnaMensaje": "Ese aparato deja de tener acceso con tu usuario y tendrá que volver a entrar con su PIN. Tus QR vigentes no se anulan.",
+  "@dispositivosCerrarUnaMensaje": {
+    "description": "Qué pasa al cerrar una sesión: no anula los QR (ADR 0031 §3)"
+  },
+  "dispositivosCerrarUnaConfirmar": "Cerrar sesión",
+  "@dispositivosCerrarUnaConfirmar": {
+    "description": "Botón que confirma cerrar una sesión"
+  },
+  "dispositivosCerrarTodas": "Cerrar las demás",
+  "@dispositivosCerrarTodas": {
+    "description": "Acción para cerrar todas las sesiones propias menos la actual"
+  },
+  "dispositivosCerrarTodasTitulo": "¿Cerrar las demás sesiones?",
+  "@dispositivosCerrarTodasTitulo": {
+    "description": "Título del diálogo de confirmación de cerrar todas las demás sesiones"
+  },
+  "dispositivosCerrarTodasMensaje": "Todos los demás aparatos dejan de tener acceso con tu usuario y tendrán que volver a entrar con su PIN. Tus QR vigentes no se anulan: si quieres anularlos, hazlo en Mis QR.",
+  "@dispositivosCerrarTodasMensaje": {
+    "description": "Qué pasa al cerrar las demás sesiones: no anula los QR; para anularlos, Mis QR (ADR 0031 §3)"
+  },
+  "dispositivosCerrarTodasConfirmar": "Cerrar las demás",
+  "@dispositivosCerrarTodasConfirmar": {
+    "description": "Botón que confirma cerrar las demás sesiones"
+  },
+  "dispositivosCerradaUna": "Sesión cerrada.",
+  "@dispositivosCerradaUna": {
+    "description": "Aviso tras cerrar una sesión"
+  },
+  "dispositivosCerradas": "{cantidad, plural, =0{No había otras sesiones abiertas.} =1{Se cerró 1 sesión.} other{Se cerraron {cantidad} sesiones.}}",
+  "@dispositivosCerradas": {
+    "description": "Aviso tras cerrar las demás sesiones, con cuántas se cerraron",
+    "placeholders": {
+      "cantidad": { "type": "int" }
+    }
+  },
+  "dispositivosSinSesiones": "No hay sesiones abiertas.",
+  "@dispositivosSinSesiones": {
+    "description": "Lista vacía de dispositivos conectados"
+  },
+  "dispositivosErrorCargar": "No pudimos cargar tus dispositivos.",
+  "@dispositivosErrorCargar": {
+    "description": "Título del estado de error de la lista de dispositivos"
+  },
+  "dispositivosColumnaDispositivo": "Dispositivo",
+  "@dispositivosColumnaDispositivo": {
+    "description": "Encabezado de la columna del nombre del dispositivo (tabla)"
+  },
+  "dispositivosColumnaPlataforma": "Plataforma",
+  "@dispositivosColumnaPlataforma": {
+    "description": "Encabezado de la columna de plataforma (tabla)"
+  },
+  "dispositivosColumnaActividad": "Última actividad",
+  "@dispositivosColumnaActividad": {
+    "description": "Encabezado de la columna de última actividad (tabla)"
+  },
+  "comunErrorSesionNoEncontrada": "Esa sesión ya no está abierta.",
+  "@comunErrorSesionNoEncontrada": {
+    "description": "Error sesion.no_encontrada (404): la sesión ya se cerró"
+  },
+  "comunErrorNotificacionNoEncontrada": "Esa notificación ya no existe.",
+  "@comunErrorNotificacionNoEncontrada": {
+    "description": "Error notificacion.no_encontrada (404)"
+  },
+  "notificacionesTitulo": "Notificaciones",
+  "@notificacionesTitulo": {
+    "description": "Título de la bandeja de notificaciones de la cuenta"
+  },
+  "notificacionesAbrir": "Ver notificaciones",
+  "@notificacionesAbrir": {
+    "description": "Tooltip del ícono de la bandeja en la cabecera del inicio"
+  },
+  "notificacionesFiltroTodas": "Todas",
+  "@notificacionesFiltroTodas": {
+    "description": "Filtro de la bandeja: todas las notificaciones"
+  },
+  "notificacionesFiltroNoLeidas": "No leídas",
+  "@notificacionesFiltroNoLeidas": {
+    "description": "Filtro de la bandeja: solo las que no se leyeron"
+  },
+  "notificacionesLeida": "Leída",
+  "@notificacionesLeida": {
+    "description": "Estado de una notificación ya leída"
+  },
+  "notificacionesNoLeida": "No leída",
+  "@notificacionesNoLeida": {
+    "description": "Estado de una notificación sin leer"
+  },
+  "notificacionesMarcarLeida": "Marcar leída",
+  "@notificacionesMarcarLeida": {
+    "description": "Acción para marcar una notificación como leída"
+  },
+  "notificacionesLeerTodas": "Marcar todas como leídas",
+  "@notificacionesLeerTodas": {
+    "description": "Acción para marcar todas las notificaciones como leídas"
+  },
+  "notificacionesMarcadas": "{cantidad, plural, =0{No había notificaciones sin leer.} =1{Marcaste 1 notificación como leída.} other{Marcaste {cantidad} notificaciones como leídas.}}",
+  "@notificacionesMarcadas": {
+    "description": "Aviso tras marcar notificaciones como leídas, con cuántas",
+    "placeholders": {
+      "cantidad": { "type": "int" }
+    }
+  },
+  "notificacionesSinNotificaciones": "No tienes notificaciones.",
+  "@notificacionesSinNotificaciones": {
+    "description": "Bandeja vacía"
+  },
+  "notificacionesSinNoLeidas": "No tienes notificaciones sin leer.",
+  "@notificacionesSinNoLeidas": {
+    "description": "Bandeja vacía con el filtro de no leídas"
+  },
+  "notificacionesErrorCargar": "No pudimos cargar tus notificaciones.",
+  "@notificacionesErrorCargar": {
+    "description": "Título del estado de error de la bandeja"
+  },
+  "notificacionesColumnaAviso": "Aviso",
+  "@notificacionesColumnaAviso": {
+    "description": "Encabezado de la columna del tipo de aviso (tabla)"
+  },
+  "notificacionesColumnaDetalle": "Detalle",
+  "@notificacionesColumnaDetalle": {
+    "description": "Encabezado de la columna de detalle (tabla)"
+  },
+  "notificacionesColumnaSeveridad": "Severidad",
+  "@notificacionesColumnaSeveridad": {
+    "description": "Encabezado de la columna de severidad (tabla)"
+  },
+  "notificacionesColumnaRecibida": "Recibida",
+  "@notificacionesColumnaRecibida": {
+    "description": "Encabezado de la columna de fecha (tabla)"
+  },
+  "notificacionRecibida": "Recibida {fecha}",
+  "@notificacionRecibida": {
+    "description": "Fecha de un aviso, en hora de Bolivia",
+    "placeholders": {
+      "fecha": { "type": "String" }
+    }
+  },
+  "notificacionDetallePuertas": "En {puertas}",
+  "@notificacionDetallePuertas": {
+    "description": "Detalle de un aviso con puertas: sus nombres, separados por comas",
+    "placeholders": {
+      "puertas": { "type": "String" }
+    }
+  },
+  "notificacionDetalleUsuario": "Usuario {usuario}",
+  "@notificacionDetalleUsuario": {
+    "description": "Detalle de un aviso sobre un usuario",
+    "placeholders": {
+      "usuario": { "type": "String" }
+    }
+  },
+  "notificacionDetalleSitio": "En el sitio {sitio}",
+  "@notificacionDetalleSitio": {
+    "description": "Detalle de un aviso sobre un sitio",
+    "placeholders": {
+      "sitio": { "type": "String" }
+    }
+  },
+  "notificacionSeveridadInfo": "Informativa",
+  "@notificacionSeveridadInfo": {
+    "description": "Severidad info de un aviso"
+  },
+  "notificacionSeveridadAviso": "Aviso",
+  "@notificacionSeveridadAviso": {
+    "description": "Severidad aviso de un aviso"
+  },
+  "notificacionSeveridadCritica": "Crítica",
+  "@notificacionSeveridadCritica": {
+    "description": "Severidad crítica de un aviso"
+  },
+  "notificacionTipoPlacaCaidaSostenida": "Puerta sin conexión",
+  "@notificacionTipoPlacaCaidaSostenida": {
+    "description": "Tipo de aviso placa.caida_sostenida"
+  },
+  "notificacionTipoPlacaDesaparecida": "Placa de puerta sin respuesta",
+  "@notificacionTipoPlacaDesaparecida": {
+    "description": "Tipo de aviso placa.desaparecida"
+  },
+  "notificacionTipoPlacaLectorSinRespuesta": "El lector QR no responde",
+  "@notificacionTipoPlacaLectorSinRespuesta": {
+    "description": "Tipo de aviso placa.lector_sin_respuesta"
+  },
+  "notificacionTipoPlacaRecuperada": "Puerta de nuevo en línea",
+  "@notificacionTipoPlacaRecuperada": {
+    "description": "Tipo de aviso placa.recuperada"
+  },
+  "notificacionTipoAperturaFallida": "Una puerta no se abrió varias veces",
+  "@notificacionTipoAperturaFallida": {
+    "description": "Tipo de aviso apertura.fallida (ADR 0031 §18)"
+  },
+  "notificacionTipoPropuestaIncidente": "Propuesta sobre un usuario",
+  "@notificacionTipoPropuestaIncidente": {
+    "description": "Tipo de aviso incidente.propuesta (ADR 0033 §4.3)"
+  },
+  "notificacionTipoSenalUsoMasivo": "Uso masivo de un usuario",
+  "@notificacionTipoSenalUsoMasivo": {
+    "description": "Señal de uso uso_masivo (ADR 0030 §4)"
+  },
+  "notificacionTipoSenalUsoImposible": "Uso imposible de un usuario",
+  "@notificacionTipoSenalUsoImposible": {
+    "description": "Señal de uso uso_imposible (ADR 0030 §4)"
+  },
+  "notificacionTipoSenalQrReenviado": "QR posiblemente reenviado",
+  "@notificacionTipoSenalQrReenviado": {
+    "description": "Señal de uso qr_reenviado (ADR 0030 §4)"
+  },
+  "notificacionTipoSenalPinCompartido": "PIN posiblemente compartido",
+  "@notificacionTipoSenalPinCompartido": {
+    "description": "Señal de uso pin_compartido (ADR 0030 §4)"
+  },
+  "notificacionTipoBolsaAviso": "La bolsa de QR está por llegar a su tope",
+  "@notificacionTipoBolsaAviso": {
+    "description": "Tipo de aviso bolsa.aviso (ADR 0030 §2 y §5)"
+  },
+  "notificacionTipoBolsaSuperada": "Se superó la bolsa de QR del mes",
+  "@notificacionTipoBolsaSuperada": {
+    "description": "Tipo de aviso bolsa.superada (ADR 0030 §2 y §5)"
+  },
+  "notificacionTipoFlujoAtipico": "Movimiento de accesos fuera de lo normal",
+  "@notificacionTipoFlujoAtipico": {
+    "description": "Tipo de aviso flujo.atipico (ADR 0030 §4)"
+  },
+  "notificacionTipoDesconocido": "Aviso del sistema",
+  "@notificacionTipoDesconocido": {
+    "description": "Texto genérico para un tipo de aviso que la app no conoce"
   }
 }
