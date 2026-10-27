@@ -61,7 +61,20 @@ class NotificacionesRepositorioApi implements NotificacionesRepositorio {
     sitio: dto.sitio,
     usuario: dto.usuarioEtiqueta,
     novedadAt: dto.novedadAt,
+    propuesta: _propuestaDe(dto.propuesta),
   );
+
+  PropuestaDeIncidente? _propuestaDe(PropuestaDeIncidenteDto? dto) =>
+      dto == null
+      ? null
+      : PropuestaDeIncidente(
+          accion: dto.accion,
+          incidenteId: dto.incidenteId,
+          confirmados: dto.confirmados,
+          minimo: dto.minimo,
+          ventanaDias: dto.ventanaDias,
+          aplicadaAutomaticamente: dto.aplicadaAutomaticamente,
+        );
 }
 
 final notificacionesRepositorioProvider = Provider<NotificacionesRepositorio>(

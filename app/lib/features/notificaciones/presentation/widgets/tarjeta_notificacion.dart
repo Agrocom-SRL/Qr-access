@@ -18,6 +18,7 @@ class TarjetaNotificacion extends StatelessWidget {
     required this.puedeMarcar,
     required this.marcando,
     this.alMarcarLeida,
+    this.alAbrir,
     super.key,
   });
 
@@ -27,6 +28,10 @@ class TarjetaNotificacion extends StatelessWidget {
   final bool puedeMarcar;
   final bool marcando;
   final VoidCallback? alMarcarLeida;
+
+  /// Abre lo que avisa la tarjeta (el incidente de una propuesta); `null` si no
+  /// lleva a ningún lado.
+  final VoidCallback? alAbrir;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +82,7 @@ class TarjetaNotificacion extends StatelessWidget {
           ),
         ],
       ),
+      alTocar: alAbrir,
       pie: mostrarBoton
           ? Align(
               alignment: AlignmentDirectional.centerEnd,

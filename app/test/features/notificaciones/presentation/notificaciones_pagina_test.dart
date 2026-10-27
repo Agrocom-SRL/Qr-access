@@ -5,7 +5,10 @@ import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/notificaciones/data/notificaciones_repositorio.dart';
 import 'package:agrocom_acceso/features/notificaciones/domain/notificacion.dart';
 import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/fakes.dart';
@@ -51,6 +54,7 @@ Future<NotificacionesRepositorioFalso> _montar(
   Set<String> permisos = _permisosDeBandeja,
   NotificacionesRepositorioFalso? repositorio,
   bool expandida = false,
+  bool apaisada = false,
 }) async {
   final repo =
       repositorio ??
@@ -62,6 +66,7 @@ Future<NotificacionesRepositorioFalso> _montar(
     tester,
     pagina: const NotificacionesPagina(),
     expandida: expandida,
+    apaisada: apaisada,
     overrides: [
       sesionControladorProvider.overrideWith(
         () => SesionFalsa(sesionCon(permisos: permisos)),
@@ -163,15 +168,11 @@ void main() {
     final textos = textosEn(tester);
 
     await tester.tap(find.text(textos.notificacionesFiltroNoLeidas));
-    await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(repo.filtrosPedidos.last, isTrue);
-    expect(find.text(textos.notificacionTipoSenalUsoImposible), findsNothing);
-    expect(
-      find.text(textos.notificacionTipoPlacaCaidaSostenida),
-      findsOneWidget,
-    );
+    // Cada pestaña pide su propia lista: la de no leídas se pidió a la API.
+    expect(repo.filtrosPedidos, contains(true));
+    expect(find.text(textos.notificacionTipoPlacaCaidaSostenida), findsWidgets);
   });
 
   testWidgets('marcar todas avisa cuántas marcó', (tester) async {
@@ -266,5 +267,28 @@ void main() {
 
     // Marcar leída no borra nada: no pide confirmación.
     expect(find.byType(ConfirmarDialogo), findsNothing);
+  });
+
+  testWidgets('las pestañas son deslizables, como en Lecturas', (tester) async {
+    await _montar(tester, avisos: _avisos, noLeidas: 1);
+
+    expect(find.byType(PestanasDeslizables<bool>), findsOneWidget);
+  });
+
+  testWidgets('una bandeja vacía lleva su ilustración, no un ícono', (
+    tester,
+  ) async {
+    await _montar(tester);
+
+    expect(find.byType(AccesoIlustracion), findsOneWidget);
+  });
+
+  testWidgets('en horizontal (852×393) no desborda y deja la barra inferior', (
+    tester,
+  ) async {
+    await _montar(tester, avisos: _avisos, noLeidas: 1, apaisada: true);
+
+    expect(find.byType(BarraNavegacion), findsOneWidget);
+    expect(find.text(textosEn(tester).notificacionesTitulo), findsOneWidget);
   });
 }

@@ -60,8 +60,34 @@ enum TipoNotificacion {
   };
 }
 
+/// La propuesta de un aviso `incidente.propuesta` (ADR 0033 §4.3): el paso que
+/// el sistema sugiere ante un reincidente, con las cifras que lo justifican. La
+/// pantalla lleva al incidente para que la decisión la tome una persona.
+@immutable
+class PropuestaDeIncidente {
+  const new({
+    required this.accion,
+    required this.incidenteId,
+    required this.confirmados,
+    required this.minimo,
+    required this.ventanaDias,
+    required this.aplicadaAutomaticamente,
+  });
+
+  /// `restringir`, `suspender` o `suspender_y_anular`, tal como llega.
+  final String accion;
+  final String incidenteId;
+  final int confirmados;
+  final int minimo;
+  final int ventanaDias;
+
+  /// Si el sistema ya restringió al usuario: el aviso es informativo.
+  final bool aplicadaAutomaticamente;
+}
+
 /// Un aviso de mi bandeja (ADR 0030 §6). Solo lleva lo que la pantalla
-/// muestra: nada de ids internos ni cifras de detección.
+/// muestra: nada de ids internos ni cifras de detección, salvo el id del
+/// incidente de una propuesta, que sirve para abrirlo.
 @immutable
 class Notificacion {
   const new({
@@ -74,6 +100,7 @@ class Notificacion {
     required this.sitio,
     required this.usuario,
     required this.novedadAt,
+    this.propuesta,
   });
 
   final String id;
@@ -95,6 +122,9 @@ class Notificacion {
 
   /// Cuándo pasó lo que avisa (UTC).
   final DateTime novedadAt;
+
+  /// Solo en un aviso de propuesta de incidente; `null` en los demás.
+  final PropuestaDeIncidente? propuesta;
 
   /// Solo se marca leída si aún no lo está.
   bool get puedeMarcarLeida => !leida;
