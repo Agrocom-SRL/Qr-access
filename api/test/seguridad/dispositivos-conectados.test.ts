@@ -282,9 +282,102 @@ describe('dispositivos conectados: sesiones por instalación y plataforma (ADR 0
         "SELECT * FROM bitacoras WHERE tabla = 'sesiones' AND accion = 'actualizado'",
       );
       expect(filas).toHaveLength(1);
+      // El autor es quien ingresó (PIN ya verificado), no un cierre sin dueño.
       expect(filas[0]).toMatchObject({ origen: 'api', tenant_id: a.cuenta.id });
+      expect(String(filas[0]?.usuario_id)).toBe(a.usuario.id);
       expect(JSON.stringify(filas[0]?.antes)).not.toContain('refresh');
       expect(JSON.stringify(filas[0]?.despues)).not.toContain('refresh');
+    });
+
+    it('ingresos simultáneos de usuarios distintos desde la misma instalación no dan 5xx (deadlock de rango)', async () => {
+      const otros = await Promise.all(
+        ['US02', 'US03', 'US04'].map((sufijo) =>
+          crearUsuarioConPin(prueba.pool, a.cuenta, sufijo, [a.rolMiembroId], {
+            superiorId: a.administrador.id,
+          }),
+        ),
+      );
+      const pines = [a.usuario.pin, ...otros.map((u) => u.pin)];
+      // Dos rondas cruzadas para que los topes (por usuario y por instalación) se pisen.
+      const respuestas = await Promise.all(
+        [...pines, ...pines].map((pin) =>
+          prueba.app.inject({
+            method: 'POST',
+            url: RUTA,
+            payload: { pin, instalacion_id: instalacion(7) },
+          }),
+        ),
+      );
+      expect(respuestas.map((r) => r.statusCode)).toEqual(respuestas.map(() => 200));
+      const [vivas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS n FROM sesiones WHERE instalacion_id = ? AND revocada_at IS NULL',
+        [instalacion(7)],
+      );
+      expect(Number(vivas[0]?.n)).toBeLessThanOrEqual(2);
+    });
+
+    it('cerrar las demás sesiones de un usuario mientras otro ingresa desde la misma instalación no da 5xx', async () => {
+      const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'US02', [a.rolMiembroId], {
+        superiorId: a.administrador.id,
+      });
+      const mia = await entrar(a.usuario.pin, { n: 3 });
+      await entrar(a.usuario.pin, { n: 4 });
+      const respuestas = await Promise.all([
+        ...[1, 2, 3, 4].map(() =>
+          prueba.app.inject({
+            method: 'DELETE',
+            url: `${RUTA}/otras`,
+            headers: conUsuario(mia),
+          }),
+        ),
+        ...[1, 2, 3, 4].map(() =>
+          prueba.app.inject({
+            method: 'POST',
+            url: RUTA,
+            payload: { pin: otro.pin, instalacion_id: instalacion(3) },
+          }),
+        ),
+      ]);
+      for (const r of respuestas) expect(r.statusCode, r.body).toBeLessThan(500);
+    });
+
+    it('si suspenden al usuario justo entre la lectura previa y la transacción, no nace la sesión', async () => {
+      const conexion = await prueba.pool.getConnection();
+      try {
+        // Esta conexión retiene el bloqueo de la fila: la transacción del ingreso espera acá, con la
+        // lectura previa (sin bloqueo) ya hecha y viendo al usuario activo.
+        await conexion.beginTransaction();
+        await conexion.query('SELECT id FROM usuarios WHERE id = ? FOR UPDATE', [a.usuario.id]);
+        const ingreso = prueba.app.inject({
+          method: 'POST',
+          url: RUTA,
+          payload: { pin: a.usuario.pin, instalacion_id: instalacion(1) },
+        });
+        await new Promise((resolver) => setTimeout(resolver, 1500));
+        await conexion.query(
+          "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+          [a.usuario.id],
+        );
+        await conexion.commit();
+        const respuesta = await ingreso;
+        expect(respuesta.statusCode, respuesta.body).toBe(403);
+        expect(respuesta.json<Problema>()).toMatchObject({ code: 'sesion.usuario_suspendido' });
+      } finally {
+        conexion.release();
+      }
+      expect(await filaDeSesiones(a.usuario.id)).toHaveLength(0);
+    });
+
+    it('instalacion_id e ip no se copian a la bitácora', async () => {
+      await entrar(a.usuario.pin, { n: 1, ip: '10.9.8.7' });
+      await entrar(a.usuario.pin, { n: 1, ip: '10.9.8.7' });
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        "SELECT * FROM bitacoras WHERE tabla = 'sesiones'",
+      );
+      expect(filas.length).toBeGreaterThan(0);
+      const texto = JSON.stringify(filas);
+      expect(texto).not.toContain(instalacion(1));
+      expect(texto).not.toContain('10.9.8.7');
     });
 
     it('el tope de una cuenta no cierra sesiones de otra aunque usen la misma instalación', async () => {
@@ -752,6 +845,55 @@ describe('dispositivos conectados: sesiones por instalación y plataforma (ADR 0
       expect(await Promise.all(vivas)).toEqual([401, 401]);
       const refresco = await refrescar(uno);
       expect(refresco.statusCode).toBe(401);
+    });
+
+    it('si desactivan al super admin entre la contraseña y la transacción, no nace la sesión', async () => {
+      const conexion = await prueba.pool.getConnection();
+      try {
+        await conexion.beginTransaction();
+        await conexion.query('SELECT id FROM usuarios WHERE id = ? FOR UPDATE', [lucia.id]);
+        const ingreso = prueba.app.inject({
+          method: 'POST',
+          url: `${PLATAFORMA}/sesiones`,
+          payload: {
+            usuario: 'lucia.paz',
+            contrasena: lucia.contrasena,
+            instalacion_id: instalacion(1),
+          },
+        });
+        await new Promise((resolver) => setTimeout(resolver, 1500));
+        await conexion.query(
+          "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+          [lucia.id],
+        );
+        await conexion.commit();
+        const respuesta = await ingreso;
+        expect(respuesta.statusCode, respuesta.body).toBe(401);
+      } finally {
+        conexion.release();
+      }
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT id FROM sesiones WHERE usuario_id = ?',
+        [lucia.id],
+      );
+      expect(filas).toHaveLength(0);
+    });
+
+    it('ingresos simultáneos del super admin desde la misma instalación no dan 5xx', async () => {
+      const respuestas = await Promise.all(
+        [1, 2, 3, 4, 5].map(() =>
+          prueba.app.inject({
+            method: 'POST',
+            url: `${PLATAFORMA}/sesiones`,
+            payload: {
+              usuario: 'lucia.paz',
+              contrasena: lucia.contrasena,
+              instalacion_id: instalacion(2),
+            },
+          }),
+        ),
+      );
+      expect(respuestas.map((r) => r.statusCode)).toEqual(respuestas.map(() => 200));
     });
 
     it('el tope por usuario también rige para el super admin', async () => {
