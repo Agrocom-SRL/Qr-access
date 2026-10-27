@@ -33,6 +33,8 @@ import type { Paginado } from '@/shared/api/tipos';
 import type { SesionesRepositorio, SesionDeUsuario } from '@/features/sesiones';
 import type { IncidentesRepositorio } from '@/features/incidentes/api/IncidentesRepositorio';
 import type { Incidente } from '@/features/incidentes/domain/incidente';
+import type { AnulacionRepositorio } from '@/features/anulacion/api/AnulacionRepositorio';
+import type { ExportacionesRepositorio } from '@/features/exportacion/api/ExportacionesRepositorio';
 
 export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
   {
@@ -833,6 +835,8 @@ export function crearServiciosDePrueba(
     senales?: Partial<SenalesRepositorio>;
     sesiones?: Partial<SesionesRepositorio>;
     incidentes?: Partial<IncidentesRepositorio>;
+    anulacion?: Partial<AnulacionRepositorio>;
+    exportaciones?: Partial<ExportacionesRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -1053,7 +1057,28 @@ export function crearServiciosDePrueba(
         porPagina: 20,
         total: INCIDENTES_DE_CUENTA.length,
       }),
+    resolver: () =>
+      Promise.resolve({ incidente: INCIDENTES_DE_CUENTA[0] as Incidente, reincidencia: null }),
     ...parcial.incidentes,
+  };
+  const anulacion: AnulacionRepositorio = {
+    anularCuenta: () => Promise.resolve({ id: '501', usuariosAlcanzados: 3, qrAnulados: 4 }),
+    ...parcial.anulacion,
+  };
+  const exportaciones: ExportacionesRepositorio = {
+    pagina: () =>
+      Promise.resolve({
+        csv: new Blob(['codigo,nombre\nUSR1,Ana\n'], { type: 'text/csv' }),
+        resumen: {
+          pagina: 1,
+          porPagina: 1000,
+          total: 1,
+          filas: 1,
+          hayMas: false,
+          truncado: false,
+        },
+      }),
+    ...parcial.exportaciones,
   };
   return {
     almacen,
@@ -1074,6 +1099,8 @@ export function crearServiciosDePrueba(
     senales,
     sesiones,
     incidentes,
+    anulacion,
+    exportaciones,
   };
 }
 
