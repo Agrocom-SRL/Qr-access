@@ -114,7 +114,7 @@ Todas las olas están en PR hacia `develop`, **sin merge ni tag** (decisión de 
 | W11 | [#106](https://github.com/Agrocom-SRL/Qr-access/pull/106) | `claude/w11-incidentes` | En PR (API y base) |
 | W12 | [#107](https://github.com/Agrocom-SRL/Qr-access/pull/107) | `claude/w12-senales` | En PR (API y panel) |
 | W13 | [#108](https://github.com/Agrocom-SRL/Qr-access/pull/108) | `claude/w13-carga` | En PR (scripts k6; sin corrida en entorno real) |
-| W14 + integración | ver el PR de `claude/w14-lecturas` | `claude/w14-lecturas` (contiene `claude/integracion-olas`) | En PR |
+| W14 + integración | [#109](https://github.com/Agrocom-SRL/Qr-access/pull/109) | `claude/w14-lecturas` (contiene `claude/integracion-olas`) | En PR |
 
 **Pendiente de las olas** (no se hizo): W1b (cookie `HttpOnly` del refresco: toca la autenticación, pide revisión línea por línea); pantallas de la app y el panel para W8 (dispositivos conectados), W9 (bandeja de la cuenta en la app), W11 (incidentes, anulación masiva y exportación) y ajustes finales; correr `pio run` y `pio test -e native` y la prueba en banco del firmware (polaridad del reed); la corrida de carga en un entorno de prueba real y el ajuste de umbrales; W-REL (versión y despliegue).
 
