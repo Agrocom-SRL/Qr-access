@@ -1066,6 +1066,8 @@ export interface QrReenviadoFila extends RowDataPacket {
   usuario_id: string;
   qr_id: string;
   rechazos: number | string;
+  /** De los rechazos, los intentos distintos (`repetido_de_id IS NULL`). */
+  intentos: number | string;
   lectores: number | string;
   ids: string;
 }
@@ -1148,13 +1150,19 @@ function emparejarUsosImposibles(
   } as ActividadSospechosaFila;
 }
 
-/** Solo las aperturas que ordenó el servidor por QR: el pulsador y la llave no cuentan para estas señales. */
-const ES_APERTURA_POR_QR = "t.metodo = 'qr' AND t.resultado = 'permitido'";
+/**
+ * Solo las aperturas que ordenó el servidor por QR: el pulsador y la llave no cuentan para estas señales. Y solo
+ * aperturas DISTINTAS: una relectura enlazada (`repetido_de_id` no nulo, respuesta perdida, ADR 0032 §3) abre la
+ * puerta de nuevo pero es la misma apertura y no debe inflar el uso masivo, el flujo ni el emparejamiento de usos.
+ */
+const ES_APERTURA_POR_QR =
+  "t.metodo = 'qr' AND t.resultado = 'permitido' AND t.repetido_de_id IS NULL";
 
 /**
  * Lee `eventos_acceso` de TODAS las cuentas para los detectores de señales y la vista de AGROCOM (ADR 0030 §4 y §5,
  * ola W12): salto EXPLÍCITO del aislamiento, de solo lectura (la tabla es de solo inserción). Cada hallazgo se trata
- * luego dentro de su cuenta. Cuenta TODAS las filas, también las repeticiones de un mismo intento (ADR 0032 §4.3).
+ * luego dentro de su cuenta. Las aperturas se cuentan DISTINTAS (sin las repeticiones de un mismo intento, ADR 0032
+ * §4.3); en los rechazos de un QR reenviado las repeticiones sí hacen volumen.
  */
 export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
@@ -1267,8 +1275,9 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
   }
 
   /**
-   * QR con al menos `minimo` rechazos `qr.usado` (todas las filas, repeticiones incluidas) entre `desde` y `hasta`,
-   * con cuántos lectores distintos los vieron y quién generó el QR. Ordenados por (cuenta, generador, QR).
+   * QR con al menos `minimo` rechazos `qr.usado` entre `desde` y `hasta` CONTANDO TODAS las filas (el volumen: las
+   * repeticiones de un mismo intento incluidas), con cuántos son intentos distintos (`repetido_de_id IS NULL`), cuántos
+   * lectores distintos tuvieron un intento distinto y quién generó el QR. Ordenados por (cuenta, generador, QR).
    */
   qrReenviados(
     desde: Date,
@@ -1286,7 +1295,8 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
     return this.seleccionar<QrReenviadoFila>({
       columnas:
         't.tenant_id, q.generado_por AS usuario_id, t.qr_acceso_id AS qr_id, COUNT(*) AS rechazos, ' +
-        'COUNT(DISTINCT t.dispositivo_id) AS lectores, ' +
+        'SUM(t.repetido_de_id IS NULL) AS intentos, ' +
+        'COUNT(DISTINCT IF(t.repetido_de_id IS NULL, t.dispositivo_id, NULL)) AS lectores, ' +
         "SUBSTRING_INDEX(GROUP_CONCAT(t.id ORDER BY t.id DESC SEPARATOR ','), ',', 20) AS ids",
       uniones: 'JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id',
       donde:
@@ -1335,7 +1345,7 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
     return this.seleccionar<ActividadPorDiaFila>({
       columnas:
         "t.tenant_id, DATE_FORMAT(CONVERT_TZ(t.ocurrido_at, '+00:00', ?), '%Y-%m-%d') AS dia, " +
-        `SUM(${ES_APERTURA_POR_QR}) AS aperturas, SUM(t.resultado = 'rechazado') AS rechazos`,
+        `SUM(${ES_APERTURA_POR_QR}) AS aperturas, SUM(t.resultado = 'rechazado' AND t.repetido_de_id IS NULL) AS rechazos`,
       donde: 't.tenant_id IN (?) AND t.ocurrido_at >= ? AND t.ocurrido_at < ?',
       params: [desfaseUtc, cuentaIds, desde, hasta],
       agrupar: 't.tenant_id, dia',

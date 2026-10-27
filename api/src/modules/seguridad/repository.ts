@@ -927,9 +927,10 @@ export class RepositorioDeSesionesDePlataforma extends RepositorioDePlataforma {
 
   /**
    * Usuarios de cualquier cuenta con sesiones activas (vivas y movidas desde `desde`) desde al menos `minimo` IP
-   * distintas: la señal de un PIN que anda en varias manos (ADR 0030 §4.1, ola W12). Solo lectura y de TODAS las
+   * distintas O desde al menos `minimo` instalaciones distintas (`instalacion_id`, ola W8; la mayor de las dos medidas,
+   * no su suma, para que un mismo aparato no cuente doble): la señal de un PIN que anda en varias manos (ADR 0030 §4.1, ola W12). Solo lectura y de TODAS las
    * cuentas (salto explícito del aislamiento, para el detector); cada hallazgo se trata luego dentro de su cuenta. Una
-   * página de `limite`, por (cuenta, usuario), a continuación de `despuesDe`. Cuenta IP, nunca las devuelve.
+   * página de `limite`, por (cuenta, usuario), a continuación de `despuesDe`. Cuenta IP e instalaciones, nunca las devuelve.
    */
   usuariosConVariasIps(
     ahora: Date,
@@ -940,14 +941,18 @@ export class RepositorioDeSesionesDePlataforma extends RepositorioDePlataforma {
   ): Promise<SesionesDeUsuarioFila[]> {
     const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
     return this.seleccionar<SesionesDeUsuarioFila>({
-      columnas: 't.tenant_id, t.usuario_id, COUNT(DISTINCT t.ip) AS ips, COUNT(*) AS sesiones',
+      columnas:
+        't.tenant_id, t.usuario_id, COUNT(DISTINCT t.ip) AS ips, ' +
+        'COUNT(DISTINCT t.instalacion_id) AS instalaciones, COUNT(*) AS sesiones',
       donde:
-        't.tenant_id IS NOT NULL AND t.ip IS NOT NULL AND t.revocada_at IS NULL AND t.expira_at > ? ' +
+        't.tenant_id IS NOT NULL AND (t.ip IS NOT NULL OR t.instalacion_id IS NOT NULL) ' +
+        'AND t.revocada_at IS NULL AND t.expira_at > ? ' +
         'AND t.updated_at >= ?' +
         (despuesDe === null ? '' : ' AND (t.tenant_id, t.usuario_id) > (?, ?)'),
       // El último `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
       params: [ahora, desde, ...cursor, minimo],
-      agrupar: 't.tenant_id, t.usuario_id HAVING COUNT(DISTINCT t.ip) >= ?',
+      agrupar:
+        't.tenant_id, t.usuario_id HAVING GREATEST(COUNT(DISTINCT t.ip), COUNT(DISTINCT t.instalacion_id)) >= ?',
       orden: 't.tenant_id, t.usuario_id',
       limite,
     });
@@ -958,6 +963,7 @@ export interface SesionesDeUsuarioFila extends RowDataPacket {
   tenant_id: string;
   usuario_id: string;
   ips: number | string;
+  instalaciones: number | string;
   sesiones: number | string;
 }
 

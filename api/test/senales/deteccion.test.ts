@@ -778,7 +778,7 @@ describe('señales de abuso: detectores con reloj inyectado (ADR 0030 §4 y §5,
         tipo: 'pin_compartido',
         gravedad: 'media',
         origen: 'sistema',
-        descripcion: 'ips=4;sesiones=4;umbral=4',
+        descripcion: 'ips=4;instalaciones=0;sesiones=4;umbral=4',
       });
       await entregarTodo();
       const salida = JSON.stringify([

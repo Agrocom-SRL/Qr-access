@@ -537,9 +537,11 @@ export interface QrConRechazosRepetidos {
   /** Quién generó el QR. */
   readonly usuarioId: string;
   readonly qrId: string;
-  /** Rechazos `qr.usado` (todas las filas, repeticiones de un mismo intento incluidas). */
+  /** Rechazos `qr.usado`: el VOLUMEN (todas las filas, repeticiones de un mismo intento incluidas). */
   readonly rechazos: number;
-  /** Lectores (dispositivos) distintos que los vieron. */
+  /** De ellos, los intentos distintos (`repetido_de_id IS NULL`): sobre esto se exige el umbral. */
+  readonly intentos: number;
+  /** Lectores (dispositivos) distintos con al menos un intento distinto. */
   readonly lectores: number;
   readonly eventoIds: readonly string[];
 }
@@ -567,8 +569,8 @@ const ids = (lista: string | null | undefined): string[] =>
 /**
  * Lo que los detectores de señales y la vista de AGROCOM leen de los accesos (ADR 0030 §4 y §5, ola W12). Todo es
  * SOLO LECTURA y de TODAS las cuentas (salto explícito del aislamiento): el detector trata luego cada hallazgo
- * DENTRO de su cuenta. Nada de esto toca la validación ni la puerta, y las repeticiones de un mismo intento (ADR 0032
- * §4.3) cuentan como cualquier otra fila.
+ * DENTRO de su cuenta. Nada de esto toca la validación ni la puerta. Las aperturas y los rechazos por día se cuentan
+ * DISTINTOS (sin las repeticiones de un mismo intento, ADR 0032 §4.3); en un QR reenviado las repeticiones solo hacen volumen.
  */
 export interface ServicioDeActividadParaSenales {
   /** Usuarios con al menos `minimo` aperturas con su QR propio entre `desde` y `hasta` (ambos incl.). */
@@ -656,6 +658,7 @@ export function crearServicioDeActividadParaSenales(pool: Pool): ServicioDeActiv
         usuarioId: fila.usuario_id,
         qrId: fila.qr_id,
         rechazos: Number(fila.rechazos),
+        intentos: Number(fila.intentos),
         lectores: Number(fila.lectores),
         eventoIds: ids(fila.ids),
       }));

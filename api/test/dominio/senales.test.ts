@@ -33,13 +33,24 @@ describe('reglas de las señales de abuso (puras)', () => {
   });
 
   it('QR reenviado: lo que distingue el reenvío son los lectores distintos', () => {
-    expect(gravedadDeQrReenviado(2, 2, 3)).toBeNull(); // bajo el mínimo
-    expect(gravedadDeQrReenviado(3, 1, 3)).toBeNull(); // un lector que relee: normal
-    expect(gravedadDeQrReenviado(8, 1, 3)).toBeNull();
-    expect(gravedadDeQrReenviado(9, 1, 3)).toBe('baja'); // insistencia extrema, solo constancia
-    expect(gravedadDeQrReenviado(3, 2, 3)).toBe('media');
-    expect(gravedadDeQrReenviado(3, 3, 3)).toBe('alta');
-    expect(gravedadDeQrReenviado(3, 7, 3)).toBe('alta');
+    // (volumen, intentos distintos, lectores, mínimo)
+    expect(gravedadDeQrReenviado(2, 2, 2, 3)).toBeNull(); // bajo el mínimo
+    expect(gravedadDeQrReenviado(3, 3, 1, 3)).toBeNull(); // un lector que relee: normal
+    expect(gravedadDeQrReenviado(8, 8, 1, 3)).toBeNull();
+    expect(gravedadDeQrReenviado(9, 9, 1, 3)).toBe('baja'); // insistencia extrema, solo constancia
+    expect(gravedadDeQrReenviado(3, 3, 2, 3)).toBe('media');
+    expect(gravedadDeQrReenviado(3, 3, 3, 3)).toBe('alta');
+    expect(gravedadDeQrReenviado(3, 3, 7, 3)).toBe('alta');
+  });
+
+  it('QR reenviado: las repeticiones hacen volumen, pero no sustituyen intentos distintos (integración W7)', () => {
+    // Un intento distinto releído 9 veces: 10 filas, 1 intento, 1 lector: solo constancia baja.
+    expect(gravedadDeQrReenviado(10, 1, 1, 3)).toBe('baja');
+    // Dos lectores, pero con un solo intento distinto entre ambos: no es «media», solo constancia baja si hay volumen.
+    expect(gravedadDeQrReenviado(10, 2, 2, 3)).toBe('baja');
+    expect(gravedadDeQrReenviado(5, 2, 2, 3)).toBeNull();
+    // Tres lectores con intentos distintos suficientes: alta aunque haya además repeticiones.
+    expect(gravedadDeQrReenviado(30, 3, 3, 3)).toBe('alta');
   });
 
   it('solo la gravedad media o alta se avisa, y la peor manda', () => {

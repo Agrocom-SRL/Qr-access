@@ -47,21 +47,29 @@ export function gravedadDeUsoMasivo(aperturas: number, umbral: number): Gravedad
 
 /**
  * Un QR reenviado se ve en los lectores: varios lectores distintos intentando un QR ya usado es la huella de una
- * imagen compartida; un solo lector insistiendo es, casi siempre, una persona intentando otra vez. Las repeticiones de
- * un mismo intento (ADR 0032 §4.3) cuentan en `rechazos`, pero no bastan por sí solas: con un único lector hace falta
- * que insistan muchísimo (`MULTIPLO_DE_INSISTENCIA` veces el mínimo) para dejar constancia, y aun así de gravedad baja.
+ * imagen compartida; un solo lector insistiendo es, casi siempre, una persona intentando otra vez.
+ *
+ * El umbral se exige sobre INTENTOS DISTINTOS (`repetido_de_id IS NULL`, ADR 0032 §4.3): una relectura del mismo intento
+ * dentro de la ventana no es otro intento. Las repeticiones solo hacen VOLUMEN (`rechazos` las incluye): sirven para
+ * llegar al mínimo de filas y a la constancia baja, pero no bastan por sí solas para decir «varios lectores». Con los
+ * intentos distintos bajo el mínimo, o con un único lector, hace falta que el volumen sea `MULTIPLO_DE_INSISTENCIA`
+ * veces el mínimo para dejar constancia, y aun así de gravedad baja. `lectores` cuenta solo lectores con al menos un
+ * intento distinto, así dos lectores no son uno solo que repite.
  */
 export const MULTIPLO_DE_INSISTENCIA = 3;
 
 /** La gravedad de un QR reenviado, o `null` si no alcanza ni a dejar constancia. */
 export function gravedadDeQrReenviado(
   rechazos: number,
+  intentos: number,
   lectores: number,
   minimo: number,
 ): Gravedad | null {
   if (rechazos < minimo) return null;
-  if (lectores >= 3) return 'alta';
-  if (lectores === 2) return 'media';
+  if (intentos >= minimo) {
+    if (lectores >= 3) return 'alta';
+    if (lectores === 2) return 'media';
+  }
   return rechazos >= minimo * MULTIPLO_DE_INSISTENCIA ? 'baja' : null;
 }
 

@@ -332,6 +332,8 @@ export interface UsuarioConVariasIps {
   readonly usuarioId: string;
   /** IP distintas entre sus sesiones activas. */
   readonly ips: number;
+  /** Instalaciones distintas (`sesiones.instalacion_id`, ola W8) entre sus sesiones activas. */
+  readonly instalaciones: number;
   /** Sesiones activas. */
   readonly sesiones: number;
 }
@@ -339,7 +341,7 @@ export interface UsuarioConVariasIps {
 export interface ServicioDeSesionesParaSenales {
   /**
    * Quiénes, en CUALQUIER cuenta, tienen sesiones activas (vivas y con actividad desde `desde`) desde al menos
-   * `minimo` IP distintas. Es para el detector del sistema (salto explícito del aislamiento, solo lectura). Una
+   * `minimo` IP distintas o instalaciones distintas (la mayor de las dos medidas). Es para el detector del sistema (salto explícito del aislamiento, solo lectura). Una
    * página de `limite` ordenada por (cuenta, usuario) a continuación de `despuesDe`. Devuelve cantidades, nunca la IP.
    */
   conVariasIps(
@@ -360,6 +362,7 @@ export function crearServicioDeSesionesParaSenales(pool: Pool): ServicioDeSesion
         cuentaId: fila.tenant_id,
         usuarioId: fila.usuario_id,
         ips: Number(fila.ips),
+        instalaciones: Number(fila.instalaciones),
         sesiones: Number(fila.sesiones),
       }));
     },

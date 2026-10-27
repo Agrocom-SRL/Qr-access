@@ -24,10 +24,10 @@ import { tratarSenalDeUsuario } from '../senal-de-usuario.js';
  * NUNCA se bloquea ni se avisa por sí solo (una persona legítima tiene teléfono, tablet y navegador): lo que se vigila
  * es la dispersión de IP. Gravedad media (el ADR la fija para «muchas IP distintas a la vez»).
  *
- * VACÍO DE DATOS: el ADR también pide contar instalaciones distintas (`sesiones.instalacion_id`, ola W8), pero esa
- * columna no existe en este esquema, así que solo se cuentan IP. Cuando W8 se integre, la señal gana la combinación
- * «varias instalaciones y uso masivo» (gravedad alta). Una IP compartida por un sitio entero (todos los guardias en la
- * misma red) cuenta como una sola, por lo que esta señal no ve el PIN compartido dentro de una misma red.
+ * La dispersión es la MAYOR entre las IP distintas y las instalaciones distintas (`sesiones.instalacion_id`, ola W8):
+ * dos aparatos tras una misma IP (todos los guardias de un sitio en la misma red) cuentan 2 por sus instalaciones, y un
+ * teléfono que rota de IP sigue siendo una instalación. No se suman las dos medidas para que un mismo aparato no cuente
+ * doble. PENDIENTE: la combinación «varias instalaciones y uso masivo» (gravedad alta, ADR 0030 §4).
  *
  * La IP nunca sale del detector: solo se cuenta. Idempotente por usuario y día local; solo observa.
  */
@@ -58,7 +58,8 @@ export async function ejecutar(
         const claveUnica = claveDeSenal('pin_compartido', hallazgo.usuarioId, dia);
         if (await new RepositorioDeAvisosDeSenal(pool).existe(claveUnica)) return 'omitida';
         const { pinCompartidoIpsMinimo: umbral } = await umbrales.de(hallazgo.usuarioId);
-        if (hallazgo.ips < umbral) return 'omitida';
+        const dispersion = Math.max(hallazgo.ips, hallazgo.instalaciones);
+        if (dispersion < umbral) return 'omitida';
         return tratarSenalDeUsuario(pool, hallazgo.cuentaId, {
           usuarioId: hallazgo.usuarioId,
           tipo: 'pin_compartido',
@@ -66,9 +67,9 @@ export async function ejecutar(
           evidencia: {},
           claveUnica,
           dia,
-          valor: hallazgo.ips,
+          valor: dispersion,
           umbral,
-          descripcion: `ips=${String(hallazgo.ips)};sesiones=${String(hallazgo.sesiones)};umbral=${String(umbral)}`,
+          descripcion: `ips=${String(hallazgo.ips)};instalaciones=${String(hallazgo.instalaciones)};sesiones=${String(hallazgo.sesiones)};umbral=${String(umbral)}`,
           ahora,
         });
       }),

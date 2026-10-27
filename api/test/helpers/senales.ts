@@ -28,13 +28,15 @@ export interface EventoDePrueba {
   readonly motivo?: string;
   readonly metodo?: 'qr' | 'pulsador';
   readonly cuando: Date;
+  /** Id del intento original: esta fila es una repetición dentro de la ventana (ADR 0032, ola W7). */
+  readonly repetidoDeId?: string | null;
 }
 
 /** Un intento de acceso escrito directo; por omisión, una apertura permitida por QR. */
 export async function evento(pool: Pool, cuenta: Cuenta, datos: EventoDePrueba): Promise<string> {
   const resultado = datos.resultado ?? 'permitido';
   const [cabecera] = await pool.query<ResultSetHeader>(
-    'INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at, repetido_de_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       cuenta.id,
       datos.puertaId,
@@ -44,9 +46,27 @@ export async function evento(pool: Pool, cuenta: Cuenta, datos: EventoDePrueba):
       resultado,
       datos.motivo ?? (resultado === 'permitido' ? 'acceso.permitido' : 'qr.usado'),
       datos.cuando,
+      datos.repetidoDeId ?? null,
     ],
   );
   return String(cabecera.insertId);
+}
+
+/**
+ * Una repetición del intento `originalId` (ADR 0032 §3 y §4): el mismo lector, el mismo QR y el mismo resultado,
+ * `segundos` después, enlazada con `repetido_de_id`.
+ */
+export async function repeticionDe(
+  pool: Pool,
+  cuenta: Cuenta,
+  original: EventoDePrueba & { readonly id: string },
+  segundos: number,
+): Promise<string> {
+  return evento(pool, cuenta, {
+    ...original,
+    cuando: new Date(original.cuando.getTime() + segundos * 1000),
+    repetidoDeId: original.id,
+  });
 }
 
 /** `n` aperturas con QR propios distintos del usuario, uno por minuto hacia atrás desde `hasta`. */
@@ -75,15 +95,16 @@ export async function sesion(
   pool: Pool,
   cuenta: Cuenta,
   usuarioId: string,
-  datos: { ip: string; actividad: Date; expira: Date; revocada?: Date },
+  datos: { ip: string; actividad: Date; expira: Date; revocada?: Date; instalacion?: string },
 ): Promise<void> {
   await pool.query(
-    'INSERT INTO sesiones (tenant_id, usuario_id, refresh_hash, ip, expira_at, revocada_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO sesiones (tenant_id, usuario_id, refresh_hash, ip, instalacion_id, expira_at, revocada_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       cuenta.id,
       usuarioId,
       randomBytes(32).toString('hex'),
       datos.ip,
+      datos.instalacion ?? null,
       datos.expira,
       datos.revocada ?? null,
       datos.actividad,

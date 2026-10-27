@@ -39,10 +39,11 @@ interface QrDelGenerador {
 /**
  * QR reenviado (ADR 0030 §4, ADR 0031 §19, ADR 0032 §4.3, ola W12): un QR ya usado que sigue llegando a los lectores
  * como `qr.usado`, sobre todo desde lectores distintos, es la huella de una imagen reenviada o fotografiada. Se cuentan
- * TODAS las filas de rechazo, también las repeticiones de un mismo intento (ADR 0032 §4.3): hacen volumen. Pero el
- * volumen por sí solo no basta, porque un lector que relee el código frente a una persona es normal; lo que distingue el
- * reenvío son los lectores distintos (`gravedadDeQrReenviado`): 3 o más, alta; 2, media; uno solo, solo constancia baja
- * y únicamente si insiste el triple del mínimo. Un incidente por generador y día local, con los QR y los intentos como
+ * TODAS las filas de rechazo como VOLUMEN, también las repeticiones de un mismo intento (ADR 0032 §4.3), pero el
+ * umbral se exige sobre INTENTOS DISTINTOS (`repetido_de_id IS NULL`) y los lectores se cuentan solo si tuvieron un
+ * intento distinto. El volumen por sí solo no basta, porque un lector que relee el código frente a una persona es normal;
+ * lo que distingue el reenvío son los lectores distintos (`gravedadDeQrReenviado`): 3 o más, alta; 2, media; uno solo
+ * (o intentos distintos bajo el mínimo), solo constancia baja y únicamente si el volumen es el triple del mínimo. Un incidente por generador y día local, con los QR y los intentos como
  * evidencia (ids, nunca el token).
  *
  * VACÍO DE DATOS: el ADR también menciona IP e instalaciones distintas para un mismo QR; el rechazo de un lector no
@@ -73,7 +74,7 @@ export async function ejecutar(
         if (await new RepositorioDeAvisosDeSenal(pool).existe(claveUnica)) return 'omitida';
         const { qrReenviadoRechazosMinimo: minimo } = await umbrales.de(grupo.usuarioId);
         const juzgados = grupo.qrs.flatMap((qr) => {
-          const gravedad = gravedadDeQrReenviado(qr.rechazos, qr.lectores, minimo);
+          const gravedad = gravedadDeQrReenviado(qr.rechazos, qr.intentos, qr.lectores, minimo);
           return gravedad === null ? [] : [{ qr, gravedad }];
         });
         if (juzgados.length === 0) return 'omitida';
