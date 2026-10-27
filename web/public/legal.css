@@ -1,0 +1,60 @@
+/* Estilos de las páginas legales (privacidad y términos). Va en un archivo y no en un <style> en línea:
+   la CSP del panel (ADR 0033 §2) no permite estilos en línea. */
+:root {
+  --fondo: #ffffff;
+  --texto: #1c2420;
+  --suave: #53605a;
+  --acento: #007a33;
+  --linea: #d9e0dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #121715;
+    --texto: #e6ece8;
+    --suave: #a3b0a9;
+    --acento: #4cc47e;
+    --linea: #2b3530;
+  }
+}
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font:
+    16px/1.65 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.25;
+  margin: 0 0 0.25rem;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 2rem 0 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--linea);
+}
+p,
+li {
+  margin: 0.5rem 0;
+}
+.fecha,
+footer {
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+a {
+  color: var(--acento);
+}
+footer {
+  margin-top: 3rem;
+}

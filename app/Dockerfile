@@ -34,6 +34,9 @@ RUN flutter build web --release --base-href=${BASE_HREF} --dart-define=API_URL=$
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine AS web
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Cabeceras de seguridad (ADR 0033 §2): nginx.conf lo incluye con `include snippets/...`, ruta relativa a /etc/nginx
+# (la carpeta de configuración de nginx), así que el snippet debe quedar en /etc/nginx/snippets/.
+COPY nginx/cabeceras-seguridad.conf /etc/nginx/snippets/cabeceras-seguridad.conf
 ARG BASE_HREF=/app/
 COPY --from=build /app/build/web /usr/share/nginx/html${BASE_HREF}
 EXPOSE 8080
