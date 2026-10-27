@@ -18,6 +18,7 @@ const DESCRIPCION_DE_DISPOSITIVOS = {
     'en_linea_desde',
     'lector_responde',
     'lector_cambio_at',
+    'lector_informado_at',
     'estado_lector',
     'en_observacion',
     'revocado_at',
@@ -126,8 +127,15 @@ export interface Latido {
   readonly en: Date;
   /** Desde cuándo la racha de latidos es continua (lo calcula la acción con el latido anterior). */
   readonly enLineaDesde: Date;
-  /** Lo que informa el lector QR; `undefined` = el firmware no lo informa y no se toca lo guardado. */
-  readonly lector?: { readonly responde: boolean; readonly cambioAt: Date };
+  /**
+   * Lo que informa el lector QR; `undefined` = el firmware no lo informa y no se toca lo guardado. `informadoAt`
+   * se anota siempre que lo informa; `cambioAt` solo cuando el valor cambió (desde cuándo informa ese valor).
+   */
+  readonly lector?: {
+    readonly responde: boolean;
+    readonly informadoAt: Date;
+    readonly cambioAt?: Date;
+  };
 }
 
 /** Lo que el latido anterior dejó, para saber si la racha sigue y si el lector cambió. */
@@ -147,6 +155,7 @@ export interface DispositivoParaEvaluarFila extends RowDataPacket {
   estado_conexion: 'en_linea' | 'sin_conexion' | 'caida_sostenida' | 'desaparecida' | null;
   lector_responde: number | null;
   lector_cambio_at: Date | null;
+  lector_informado_at: Date | null;
   estado_lector: 'responde' | 'sin_respuesta' | null;
   en_observacion: number;
   en_servicio: number;
@@ -157,6 +166,17 @@ export interface CambioDeEstadoDePlaca {
   readonly estadoConexion?: 'en_linea' | 'sin_conexion' | 'caida_sostenida' | 'desaparecida' | null;
   readonly estadoLector?: 'responde' | 'sin_respuesta' | null;
   readonly enObservacion?: boolean;
+  /** Lo que informó el lector quedó obsoleto: `lector_responde` y `lector_cambio_at` vuelven a NULL. */
+  readonly olvidarLector?: boolean;
+}
+
+/** Lo que el detector leyó antes de decidir: el compare-and-set solo escribe si la fila sigue así. */
+export interface EstadoEsperadoDePlaca {
+  readonly estadoConexion: DispositivoParaEvaluarFila['estado_conexion'];
+  readonly estadoLector: DispositivoParaEvaluarFila['estado_lector'];
+  readonly enObservacion: boolean;
+  /** Solo cuenta si el cambio olvida el lector: un latido nuevo que lo informó lo impide. */
+  readonly lectorInformadoAt: Date | null;
 }
 
 export interface PuertaConSitioFila extends RowDataPacket {
@@ -194,7 +214,10 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
           ? {}
           : {
               lector_responde: latido.lector.responde ? 1 : 0,
-              lector_cambio_at: latido.lector.cambioAt,
+              lector_informado_at: latido.lector.informadoAt,
+              ...(latido.lector.cambioAt === undefined
+                ? {}
+                : { lector_cambio_at: latido.lector.cambioAt }),
             }),
       },
       { sinBitacora: true },
@@ -215,34 +238,57 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   }
 
   /**
-   * Los dispositivos de la cuenta del contexto que el detector debe mirar, BLOQUEADOS hasta que termine `tx`
-   * (dos pasadas simultáneas no encolan el mismo aviso): los que están en servicio y los que, ya fuera de
-   * servicio, aún conservan un estado (para limpiarlo y cerrar su aviso).
+   * Los dispositivos de la cuenta del contexto que el detector debe mirar: los que están en servicio y los que,
+   * ya fuera de servicio, aún conservan un estado (para limpiarlo y cerrar su aviso). Lectura SIN bloqueo: el
+   * detector no retiene filas de `dispositivos` (son padre de las FK de las validaciones, ADR 0032 §1); quien
+   * escribe lo hace con compare-and-set (`guardarEstado`).
    */
-  listarParaEvaluar(tx: Transaccion): Promise<DispositivoParaEvaluarFila[]> {
-    return this.seleccionar<DispositivoParaEvaluarFila>(
-      {
-        columnas:
-          't.id, t.puerta_id, t.created_at, t.ultimo_latido_at, t.en_linea_desde, t.estado_conexion, ' +
-          't.lector_responde, t.lector_cambio_at, t.estado_lector, t.en_observacion, ' +
-          '(t.revocado_at IS NULL AND t.activo = 1) AS en_servicio',
-        donde:
-          '(t.revocado_at IS NULL AND t.activo = 1) OR t.estado_conexion IS NOT NULL OR t.estado_lector IS NOT NULL OR t.en_observacion = 1',
-        orden: 't.id',
-        bloquear: true,
-      },
-      tx,
-    );
+  listarParaEvaluar(): Promise<DispositivoParaEvaluarFila[]> {
+    return this.seleccionar<DispositivoParaEvaluarFila>({
+      columnas:
+        't.id, t.puerta_id, t.created_at, t.ultimo_latido_at, t.en_linea_desde, t.estado_conexion, ' +
+        't.lector_responde, t.lector_cambio_at, t.lector_informado_at, t.estado_lector, t.en_observacion, ' +
+        '(t.revocado_at IS NULL AND t.activo = 1) AS en_servicio',
+      donde:
+        '(t.revocado_at IS NULL AND t.activo = 1) OR t.estado_conexion IS NOT NULL OR t.estado_lector IS NOT NULL OR t.en_observacion = 1',
+      orden: 't.id',
+    });
   }
 
-  /** Guarda el estado derivado. Es telemetría calculada: no pasa por la bitácora (como el latido). */
-  guardarEstado(tx: Transaccion, id: string, cambio: CambioDeEstadoDePlaca): Promise<boolean> {
+  /**
+   * Guarda el estado derivado con compare-and-set: solo si la fila sigue como la leyó el detector. Devuelve
+   * `false` si otra pasada la cambió antes (quien llama no encola el aviso). Es telemetría calculada: no pasa
+   * por la bitácora (como el latido).
+   */
+  guardarEstado(
+    tx: Transaccion,
+    id: string,
+    cambio: CambioDeEstadoDePlaca,
+    esperado: EstadoEsperadoDePlaca,
+  ): Promise<boolean> {
     const cambios: Record<string, unknown> = {};
     if (cambio.estadoConexion !== undefined) cambios.estado_conexion = cambio.estadoConexion;
     if (cambio.estadoLector !== undefined) cambios.estado_lector = cambio.estadoLector;
     if (cambio.enObservacion !== undefined) cambios.en_observacion = cambio.enObservacion ? 1 : 0;
+    if (cambio.olvidarLector === true) {
+      cambios.lector_responde = null;
+      cambios.lector_cambio_at = null;
+    }
     if (Object.keys(cambios).length === 0) return Promise.resolve(true);
-    return this.actualizar(tx, id, cambios, { sinBitacora: true });
+    const condiciones = ['estado_conexion <=> ?', 'estado_lector <=> ?', 'en_observacion = ?'];
+    const params: unknown[] = [
+      esperado.estadoConexion,
+      esperado.estadoLector,
+      esperado.enObservacion ? 1 : 0,
+    ];
+    if (cambio.olvidarLector === true) {
+      condiciones.push('lector_informado_at <=> ?');
+      params.push(esperado.lectorInformadoAt);
+    }
+    return this.actualizar(tx, id, cambios, {
+      sinBitacora: true,
+      cuando: { sql: condiciones.join(' AND '), params },
+    });
   }
 
   /**

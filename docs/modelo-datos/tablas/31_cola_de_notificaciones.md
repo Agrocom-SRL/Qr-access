@@ -30,5 +30,7 @@ El *outbox* de avisos (ADR 0030 §6): quien detecta algo lo deja aquí en la MIS
 
 ## Reglas
 
-- Sin bitácora: es infraestructura de entrega. Retención: los mensajes resueltos con más de 30 días se dan de baja.
+- Sin bitácora: es infraestructura de entrega. Retención: los mensajes resueltos con más de 30 días se dan de baja (soft delete, invariante 8; se mantiene en vez de un DELETE físico por criterio uniforme y volumen bajo) por lotes, una transacción por cuenta; los lee `idx_cola_de_notificaciones_retencion (estado, updated_at, deleted_at)`.
+- Entrega: un solo entregador a la vez (`GET_LOCK('entrega_de_notificaciones')`); además, bajo la transacción de cada mensaje se comprueba que no haya un `pendiente` anterior del mismo grupo (clave de agrupación + audiencia + canal) y, si ya se entregó uno posterior, el mensaje viejo se anota `omitida` con `ultimo_error = 'mensaje.superado'`.
+- Reintentos: 8 intentos con espera 30 s, 1 min... hasta 1 h. Los fallos transitorios (deadlock, espera de bloqueo, pool lleno) NO cuentan como intento. Re-drive (supuesto W9): una `fallida` de menos de 3 días con más de 6 h sin cambios vuelve a `pendiente` con un solo intento más y queda registrada en el log.
 - La lectura de pendientes de todas las cuentas es un salto explícito del aislamiento (`RepositorioDeColaDeTodas`): solo lee identificadores y cada mensaje se procesa dentro de su cuenta.

@@ -89,6 +89,26 @@ export function evaluarLector(
     : 'responde';
 }
 
+/** Horas latiendo sin informar el lector tras las cuales lo guardado se da por obsoleto. */
+export const LECTOR_OBSOLETO_HORAS = 6;
+
+/**
+ * ¿Lo que se guardó del lector quedó obsoleto? Pasa cuando la placa SIGUE latiendo pero hace horas que ya no lo
+ * informa (un firmware que dejó de hacerlo): sin esto, un `sin_respuesta` viejo mantendría abierto su aviso para
+ * siempre. Se mide con los latidos recibidos, no con el reloj: una placa caída no deja obsoleto su lector, para
+ * eso ya está el aviso de conexión.
+ */
+export function lectorObsoleto(datos: {
+  readonly lectorResponde: boolean | null;
+  readonly lectorInformadoAt: Date | null;
+  readonly ultimoLatidoAt: Date | null;
+}): boolean {
+  const { lectorResponde, lectorInformadoAt, ultimoLatidoAt } = datos;
+  if (lectorResponde === null || lectorInformadoAt === null || ultimoLatidoAt === null)
+    return false;
+  return ultimoLatidoAt.getTime() - lectorInformadoAt.getTime() >= LECTOR_OBSOLETO_HORAS * 3600_000;
+}
+
 /**
  * En observación: la placa está en línea pero la puerta no tuvo ninguna lectura en el plazo. Es una marca
  * informativa para el panel, sin aviso (una puerta de poco tráfico es normal). Una placa recién vinculada se

@@ -106,13 +106,33 @@ export function decidir(
   };
 }
 
-/** Intentos de entrega antes de dar el mensaje por fallido. */
-export const INTENTOS_MAXIMOS = 5;
+/**
+ * Intentos de entrega fallidos (no transitorios) antes de dar el mensaje por `fallida`. Con la espera creciente
+ * (30 s, 1 min, 2 min... hasta 1 h) son cerca de 2 h de reintentos; después, el re-drive de las `fallida`.
+ */
+export const INTENTOS_MAXIMOS = 8;
 const ESPERA_BASE_SEGUNDOS = 30;
 const ESPERA_MAXIMA_SEGUNDOS = 3600;
 
-/** Espera antes del próximo intento tras `intentos` fallos: 30 s, 1 min, 2 min, 4 min… hasta 1 h. */
+/** Espera antes del próximo intento tras `intentos` fallos: 30 s, 1 min, 2 min, 4 min... hasta 1 h. */
 export function esperaTrasFallo(intentos: number): number {
   const exponente = Math.max(0, intentos - 1);
   return Math.min(ESPERA_BASE_SEGUNDOS * 2 ** exponente, ESPERA_MAXIMA_SEGUNDOS);
 }
+
+/** Espera tras un fallo transitorio (bloqueo, pool lleno): no cuenta como intento y se reintenta pronto. */
+export const ESPERA_TRAS_FALLO_TRANSITORIO_SEGUNDOS = ESPERA_BASE_SEGUNDOS;
+
+/**
+ * Re-drive de las `fallida`: pasadas las horas de espera vuelven a la cola (con un solo intento más antes de
+ * volver a `fallida`), mientras el mensaje tenga menos de los días indicados: después el aviso ya no sirve y
+ * queda para revisión humana. Supuestos de la ola W9, no del documento funcional.
+ */
+export const ESPERA_DE_REINTENTO_DE_FALLIDA_HORAS = 6;
+export const VIGENCIA_DE_REINTENTO_DE_FALLIDA_DIAS = 3;
+
+/**
+ * Enfriamiento de un incidente: si un grupo se recupera y vuelve a caer dentro de estos minutos, se REABRE el
+ * incidente cerrado en vez de abrir otro (un dispositivo que parpadea no llena la bandeja de abrir y cerrar).
+ */
+export const ENFRIAMIENTO_DE_INCIDENTE_MINUTOS = 60;

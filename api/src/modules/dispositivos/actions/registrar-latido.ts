@@ -33,11 +33,17 @@ export async function ejecutar(
       ahora.getTime() - previo.ultimo_latido_at.getTime() <= LATIDO_MAXIMO_SEGUNDOS * 1000
         ? previo.en_linea_desde
         : ahora;
+    // Siempre que lo informa se anota cuándo (`informadoAt`); `cambioAt` solo si el valor cambió.
     const lector =
-      datos.lectorResponde === undefined ||
-      (previo?.lector_responde ?? null) === (datos.lectorResponde ? 1 : 0)
+      datos.lectorResponde === undefined
         ? undefined
-        : { responde: datos.lectorResponde, cambioAt: ahora };
+        : {
+            responde: datos.lectorResponde,
+            informadoAt: ahora,
+            ...((previo?.lector_responde ?? null) === (datos.lectorResponde ? 1 : 0)
+              ? {}
+              : { cambioAt: ahora }),
+          };
     await dispositivos.registrarLatido(tx, principal.dispositivoId, {
       firmware: datos.firmware,
       rssi: datos.rssi,

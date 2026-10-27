@@ -7,6 +7,8 @@
 -- destinatario, aunque dos procesos compitan. `datos` no lleva secretos (ni token, ni credenciales, ni PIN).
 -- Sin bitácora (perfil `dominio_sin_bitacora`): es un derivado del estado de las placas y leerlo o descartarlo
 -- es estado de lectura de cada persona, no un cambio de negocio.
+-- Retención: la depuración periódica da de baja (soft delete, invariante 8) las ya cerradas y viejas; el índice
+-- `idx_notificaciones_retencion` sirve esa consulta (`abierta = 0 AND novedad_at < ? AND deleted_at IS NULL`).
 CREATE TABLE notificaciones (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NULL,
@@ -46,7 +48,8 @@ CREATE TABLE notificaciones (
   UNIQUE KEY uq_notificaciones_incidente (destinatario_id, agrupacion_clave, incidente_abierto),
   UNIQUE KEY uq_notificaciones_clave (destinatario_id, clave_unica),
   KEY idx_notificaciones_bandeja (destinatario_id, descartada_at, leida_at, novedad_at),
-  KEY idx_notificaciones_cuenta (cuenta_id)
+  KEY idx_notificaciones_cuenta (cuenta_id),
+  KEY idx_notificaciones_retencion (abierta, novedad_at, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down

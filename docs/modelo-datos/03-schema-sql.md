@@ -848,7 +848,8 @@ CREATE TABLE notificaciones (
   UNIQUE KEY uq_notificaciones_incidente (destinatario_id, agrupacion_clave, incidente_abierto),
   UNIQUE KEY uq_notificaciones_clave (destinatario_id, clave_unica),
   KEY idx_notificaciones_bandeja (destinatario_id, descartada_at, leida_at, novedad_at),
-  KEY idx_notificaciones_cuenta (cuenta_id)
+  KEY idx_notificaciones_cuenta (cuenta_id),
+  KEY idx_notificaciones_retencion (abierta, novedad_at, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 20261030100002_create_cola_de_notificaciones.sql
@@ -878,7 +879,8 @@ CREATE TABLE cola_de_notificaciones (
   CONSTRAINT ck_cola_de_notificaciones_estado CHECK (estado IN ('pendiente', 'entregada', 'fallida', 'omitida')),
   UNIQUE KEY uq_cola_de_notificaciones_clave (tenant_id, clave_unica),
   KEY idx_cola_de_notificaciones_pendientes (estado, proximo_intento_at, id),
-  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado)
+  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado),
+  KEY idx_cola_de_notificaciones_retencion (estado, updated_at, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 20261030100003_add_estado_de_placa_a_dispositivos.sql
@@ -887,7 +889,8 @@ ALTER TABLE dispositivos
   ADD COLUMN en_linea_desde DATETIME(3) NULL AFTER estado_conexion,
   ADD COLUMN lector_responde TINYINT(1) NULL AFTER en_linea_desde,
   ADD COLUMN lector_cambio_at DATETIME(3) NULL AFTER lector_responde,
-  ADD COLUMN estado_lector VARCHAR(20) NULL AFTER lector_cambio_at,
+  ADD COLUMN lector_informado_at DATETIME(3) NULL AFTER lector_cambio_at,
+  ADD COLUMN estado_lector VARCHAR(20) NULL AFTER lector_informado_at,
   ADD COLUMN en_observacion TINYINT(1) NOT NULL DEFAULT 0 AFTER estado_lector,
   ADD CONSTRAINT ck_dispositivos_estado_conexion CHECK (
     estado_conexion IS NULL OR estado_conexion IN ('en_linea', 'sin_conexion', 'caida_sostenida', 'desaparecida')

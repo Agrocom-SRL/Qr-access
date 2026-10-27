@@ -7,6 +7,9 @@
 -- `agrupacion_clave` ordena la entrega: los mensajes de un mismo grupo se aplican en orden de id.
 -- Canal previsto: `app` (la bandeja propia). `push` y `correo` quedan reservados; no hay proveedor integrado.
 -- Sin bitácora (`dominio_sin_bitacora`): es infraestructura de entrega, no un cambio de negocio.
+-- Retención: se mantiene el soft delete (invariante 8) y NO un DELETE físico; el volumen es bajo (un mensaje por
+-- cambio de membresía de un grupo) y así el criterio es el mismo que el de toda tabla de dominio. La depuración y el
+-- re-drive de los `fallida` leen por `(estado, updated_at)`: de ahí `idx_cola_de_notificaciones_retencion`.
 CREATE TABLE cola_de_notificaciones (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
@@ -33,7 +36,8 @@ CREATE TABLE cola_de_notificaciones (
   CONSTRAINT ck_cola_de_notificaciones_estado CHECK (estado IN ('pendiente', 'entregada', 'fallida', 'omitida')),
   UNIQUE KEY uq_cola_de_notificaciones_clave (tenant_id, clave_unica),
   KEY idx_cola_de_notificaciones_pendientes (estado, proximo_intento_at, id),
-  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado)
+  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado),
+  KEY idx_cola_de_notificaciones_retencion (estado, updated_at, deleted_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- migrate:down

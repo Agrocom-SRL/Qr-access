@@ -10,6 +10,64 @@ export interface OpcionesDeTransaccion {
    * la conexión. Ya abortada, la transacción no empieza, no se reintenta y NO hace COMMIT.
    */
   readonly señal?: AbortSignal;
+  /**
+   * Segundos que esta transacción espera un bloqueo antes de rendirse (`innodb_lock_wait_timeout`). Para las
+   * tareas periódicas (ADR 0032 §1): ceden pronto ante una validación en vez de hacerla esperar. Se restaura
+   * al devolver la conexión al pool, para que no contamine a quien la reciba después.
+   */
+  readonly esperaDeBloqueoS?: number;
+}
+
+/** Cuánto esperan un bloqueo las tareas periódicas: poco, para ceder ante una validación (ADR 0032). */
+export const ESPERA_DE_BLOQUEO_DE_TAREA_S = 2;
+
+/**
+ * Fija `innodb_lock_wait_timeout` en la sesión de `conexion`. Quien lo llama DEBE terminar con
+ * `devolverConexion`, que lo restaura: una conexión del pool con el tope cambiado le llegaría a otro.
+ */
+export async function fijarEsperaDeBloqueo(
+  conexion: PoolConnection,
+  segundos: number,
+): Promise<void> {
+  await conexion.query('SET SESSION innodb_lock_wait_timeout = ?', [segundos]);
+}
+
+/**
+ * Devuelve la conexión al pool. Con `restaurarEspera` vuelve el tope de bloqueo al de la base; si eso falla
+ * (conexión rota), la conexión se destruye en vez de devolverse con un valor ajeno.
+ */
+export async function devolverConexion(
+  conexion: PoolConnection,
+  restaurarEspera: boolean,
+): Promise<void> {
+  if (restaurarEspera) {
+    try {
+      await conexion.query('SET SESSION innodb_lock_wait_timeout = DEFAULT');
+    } catch {
+      conexion.destroy();
+      return;
+    }
+  }
+  conexion.release();
+}
+
+/**
+ * Ejecuta `fn` en una transacción sobre una conexión que YA tiene quien llama (p. ej. la que sostiene un
+ * bloqueo de tarea): COMMIT si termina, ROLLBACK si lanza. Nunca pide otra conexión al pool.
+ */
+export async function enTransaccionSobre<T>(
+  conexion: PoolConnection,
+  fn: (tx: Transaccion) => Promise<T>,
+): Promise<T> {
+  await conexion.beginTransaction();
+  try {
+    const resultado = await fn(conexion);
+    await conexion.commit();
+    return resultado;
+  } catch (error) {
+    await conexion.rollback();
+    throw error;
+  }
 }
 
 /** Función aparte: el chequeo se repite tras un `await` y TS estrecharía `aborted` a `false`. */
@@ -21,10 +79,11 @@ function vencida(señal: AbortSignal | undefined): boolean {
 export async function enTransaccion<T>(
   pool: Pool,
   fn: (tx: Transaccion) => Promise<T>,
-  { señal }: OpcionesDeTransaccion = {},
+  { señal, esperaDeBloqueoS }: OpcionesDeTransaccion = {},
 ): Promise<T> {
   const conexion = await pool.getConnection();
   try {
+    if (esperaDeBloqueoS !== undefined) await fijarEsperaDeBloqueo(conexion, esperaDeBloqueoS);
     // Conexión obtenida tarde: nadie espera ya la respuesta, no se empieza nada.
     if (vencida(señal)) throw new PresupuestoAgotado();
     await conexion.beginTransaction();
@@ -39,7 +98,7 @@ export async function enTransaccion<T>(
     await conexion.rollback();
     throw error;
   } finally {
-    conexion.release();
+    await devolverConexion(conexion, esperaDeBloqueoS !== undefined);
   }
 }
 

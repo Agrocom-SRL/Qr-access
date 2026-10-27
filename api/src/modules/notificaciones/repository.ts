@@ -205,6 +205,68 @@ export class OperacionesDeBandeja {
     );
   }
 
+  /**
+   * El incidente del grupo que se cerró hace poco (desde `desde`), bloqueado hasta que termine `tx`: si el grupo
+   * vuelve a caer dentro del enfriamiento se reabre este en vez de crear otro. La constancia «recuperada» tiene
+   * otra clave de grupo (`...:resuelta`), así que nunca se confunde con él.
+   */
+  buscarCerradoReciente(
+    tx: Transaccion,
+    destinatarioId: string,
+    agrupacion: string,
+    desde: Date,
+  ): Promise<NotificacionFila | null> {
+    return this.p.seleccionarUna<NotificacionFila>(
+      {
+        columnas: COLUMNAS_DE_LECTURA,
+        donde:
+          't.destinatario_id = ? AND t.agrupacion_clave = ? AND t.abierta = 0 AND t.resuelta_at >= ?',
+        params: [destinatarioId, agrupacion, desde],
+        orden: 't.resuelta_at DESC, t.id DESC',
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /** Vuelve a abrir un incidente cerrado hace poco. Solo es noticia de nuevo si llegó alguien que no conocía. */
+  reabrirIncidente(
+    tx: Transaccion,
+    id: string,
+    cambio: {
+      readonly cantidad: number;
+      readonly miembros: readonly string[];
+      readonly datos: object;
+      readonly ahora: Date;
+      readonly hayNovedad: boolean;
+    },
+  ): Promise<boolean> {
+    return this.p.actualizar(tx, id, {
+      abierta: 1,
+      resuelta_at: null,
+      cantidad: cambio.cantidad,
+      miembros: JSON.stringify(cambio.miembros),
+      datos: JSON.stringify(cambio.datos),
+      ...(cambio.hayNovedad
+        ? { novedad_at: cambio.ahora, leida_at: null, descartada_at: null }
+        : {}),
+    });
+  }
+
+  /** Los incidentes abiertos que hablan de esa cuenta, bloqueados hasta que termine `tx`. */
+  async idsAbiertosDeLaCuenta(tx: Transaccion, cuentaId: string): Promise<string[]> {
+    const filas = await this.p.seleccionar<RowDataPacket>(
+      {
+        columnas: 't.id',
+        donde: 't.cuenta_id = ? AND t.abierta = 1',
+        params: [cuentaId],
+        bloquear: true,
+      },
+      tx,
+    );
+    return filas.map((fila) => String(fila.id));
+  }
+
   existeClave(tx: Transaccion, destinatarioId: string, claveUnica: string): Promise<boolean> {
     return this.p
       .contar(
@@ -325,6 +387,8 @@ export class RepositorioDeNotificacionesDePlataforma extends RepositorioDeFilasD
 export interface PendienteFila extends RowDataPacket {
   id: string;
   tenant_id: string;
+  audiencia: 'cuenta' | 'plataforma';
+  canal: 'app' | 'push' | 'correo';
   agrupacion_clave: string;
   proximo_intento_at: Date;
 }
@@ -406,6 +470,65 @@ export class RepositorioDeCola extends RepositorioDeCuenta {
     );
   }
 
+  /**
+   * ¿Hay un mensaje PENDIENTE anterior (id menor) del mismo grupo y destino? Entonces este espera su turno: los
+   * mensajes de un grupo se aplican en orden aunque haya varios entregadores. Se mira bajo la transacción del
+   * mensaje, no con la lista leída antes.
+   */
+  async hayPendienteAnterior(tx: Transaccion, mensaje: MensajeDeCola): Promise<boolean> {
+    return (
+      (await this.contar(
+        {
+          donde:
+            "t.agrupacion_clave = ? AND t.audiencia = ? AND t.canal = ? AND t.estado = 'pendiente' AND t.id < ?",
+          params: [mensaje.agrupacion_clave, mensaje.audiencia, mensaje.canal, mensaje.id],
+        },
+        tx,
+      )) > 0
+    );
+  }
+
+  /** ¿Ya se entregó uno POSTERIOR del mismo grupo y destino? Entonces este es una fotografía vieja. */
+  async hayEntregadoPosterior(tx: Transaccion, mensaje: MensajeDeCola): Promise<boolean> {
+    return (
+      (await this.contar(
+        {
+          donde:
+            "t.agrupacion_clave = ? AND t.audiencia = ? AND t.canal = ? AND t.estado = 'entregada' AND t.id > ?",
+          params: [mensaje.agrupacion_clave, mensaje.audiencia, mensaje.canal, mensaje.id],
+        },
+        tx,
+      )) > 0
+    );
+  }
+
+  /** Los mensajes de la cuenta del contexto que aún esperan entrega, bloqueados hasta que termine `tx`. */
+  async idsPendientes(tx: Transaccion): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>(
+      { columnas: 't.id', donde: "t.estado = 'pendiente'", bloquear: true },
+      tx,
+    );
+    return filas.map((fila) => String(fila.id));
+  }
+
+  /** Devuelve un `fallida` a la cola (re-drive) con `intentos` ya casi agotados: un fallo más y vuelve a `fallida`. */
+  reprogramar(
+    tx: Transaccion,
+    id: string,
+    reprogramacion: { intentos: number; proximoIntentoAt: Date },
+  ): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      {
+        estado: 'pendiente',
+        intentos: reprogramacion.intentos,
+        proximo_intento_at: reprogramacion.proximoIntentoAt,
+      },
+      { cuando: { sql: "estado = 'fallida'" } },
+    );
+  }
+
   marcarEntregada(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
     return this.actualizar(tx, id, {
       estado: 'entregada',
@@ -447,24 +570,40 @@ export class RepositorioDeColaDeTodas extends RepositorioDePlataforma {
     super(pool, DESCRIPCION_DE_COLA);
   }
 
-  /** Pendientes de todas las cuentas, en orden de id (el orden de los hechos). */
-  pendientes(limite: number): Promise<PendienteFila[]> {
+  /** Pendientes que ya les toca (de todas las cuentas), en orden de id (el orden de los hechos). */
+  pendientes(ahora: Date, limite: number): Promise<PendienteFila[]> {
     return this.seleccionar<PendienteFila>({
-      columnas: 't.id, t.tenant_id, t.agrupacion_clave, t.proximo_intento_at',
-      donde: "t.estado = 'pendiente'",
+      columnas: 't.id, t.tenant_id, t.audiencia, t.canal, t.agrupacion_clave, t.proximo_intento_at',
+      donde: "t.estado = 'pendiente' AND t.proximo_intento_at <= ?",
+      params: [ahora],
       orden: 't.id',
       limite,
     });
   }
 
-  /** Mensajes ya resueltos (entregados, omitidos o fallidos) y viejos. */
+  /** Los `fallida` que ya esperaron lo suficiente (`actualizadasAntes`) y siguen siendo recientes (`creadasDesde`). */
+  fallidasParaReintentar(
+    actualizadasAntes: Date,
+    creadasDesde: Date,
+    limite: number,
+  ): Promise<(RowDataPacket & { id: string; tenant_id: string })[]> {
+    return this.seleccionar({
+      columnas: 't.id, t.tenant_id',
+      donde: "t.estado = 'fallida' AND t.updated_at < ? AND t.created_at >= ?",
+      params: [actualizadasAntes, creadasDesde],
+      orden: 't.id',
+      limite,
+    });
+  }
+
+  /** Mensajes ya resueltos (entregados, omitidos o fallidos) y viejos; usa `idx_cola_de_notificaciones_retencion`. */
   viejos(
     antes: Date,
     limite: number,
   ): Promise<(RowDataPacket & { id: string; tenant_id: string })[]> {
     return this.seleccionar({
       columnas: 't.id, t.tenant_id',
-      donde: "t.estado <> 'pendiente' AND t.updated_at < ?",
+      donde: "t.estado IN ('entregada', 'omitida', 'fallida') AND t.updated_at < ?",
       params: [antes],
       orden: 't.id',
       limite,

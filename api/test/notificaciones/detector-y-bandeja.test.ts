@@ -9,7 +9,10 @@ import { reiniciarBase } from '../helpers/base.js';
 import {
   contarFilas,
   crearEscenario,
+  crearRol,
   crearSuperAdmin,
+  crearUsuarioConPin,
+  PERMISOS_DE_GUARDIA,
   type Escenario,
 } from '../helpers/fixtures.js';
 import {
@@ -37,6 +40,10 @@ interface Listado {
   datos: Notificacion[];
   meta: { total: number };
 }
+
+/** Lo que responde la API a un token de cuenta en una ruta de plataforma, y al revés (exactos, no «>= 401»). */
+const CODIGO_DE_CUENTA_EN_PLATAFORMA = 401;
+const CODIGO_DE_PLATAFORMA_EN_CUENTA = 401;
 
 const MIN = 60_000;
 const T0 = new Date(Date.now() + 30 * 24 * 3600_000);
@@ -241,7 +248,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       expect(await contarFilas(prueba.pool, 'notificaciones', "tipo = 'placa.recuperada'")).toBe(1);
     });
 
-    it('si cae otra vez después de recuperarse, abre un incidente nuevo', async () => {
+    it('si cae otra vez dentro del enfriamiento, REABRE el mismo incidente en vez de abrir otro', async () => {
       await latidoA(a.dispositivoPrincipal.id, en(-16));
       await pasada(en(0));
       await latidoA(a.dispositivoPrincipal.id, en(10), en(5));
@@ -250,8 +257,84 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       await pasada(en(30));
       await pasada(en(40));
       const propia = await bandeja(adminA);
+      expect(propia.datos).toHaveLength(1);
+      expect(propia.datos[0]).toMatchObject({ tipo: 'placa.caida_sostenida', resuelta: false });
+      expect(
+        await contarFilas(prueba.pool, 'notificaciones', 'destinatario_id = ?', [
+          a.administrador.id,
+        ]),
+      ).toBe(1);
+    });
+
+    it('un parpadeo sin gente nueva no vuelve a marcar el incidente como no leído', async () => {
+      await latidoA(a.dispositivoPrincipal.id, en(-16));
+      await pasada(en(0));
+      const [incidente] = (await bandeja(adminA)).datos;
+      await post(`/notificaciones/${incidente?.id}/leer`, adminA);
+      await latidoA(a.dispositivoPrincipal.id, en(10), en(5));
+      await pasada(en(10));
+      await pasada(en(30));
+      const [reabierto] = (await bandeja(adminA)).datos;
+      expect(reabierto).toMatchObject({ id: incidente?.id, resuelta: false, leida: true });
+    });
+
+    it('pasado el enfriamiento, una caída nueva abre OTRO incidente', async () => {
+      await latidoA(a.dispositivoPrincipal.id, en(-16));
+      await pasada(en(0));
+      await latidoA(a.dispositivoPrincipal.id, en(10), en(5));
+      await pasada(en(10));
+      await pasada(en(131)); // 2 h sin latido: más de la hora de enfriamiento desde que se cerró
+      const propia = await bandeja(adminA);
       expect(propia.datos).toHaveLength(2);
       expect(propia.datos.filter((n) => !n.resuelta)).toHaveLength(1);
+      expect(new Set(propia.datos.map((n) => n.id)).size).toBe(2);
+    });
+
+    it('un lector que lleva horas latiendo sin informarse deja de ser noticia y se olvida', async () => {
+      await latidoA(a.dispositivoPrincipal.id, en(-1), en(-30), {
+        responde: false,
+        desde: en(-60),
+      });
+      // Lo informó por última vez hace 7 h (respecto del último latido): obsoleto.
+      await prueba.pool.query('UPDATE dispositivos SET lector_informado_at = ? WHERE id = ?', [
+        en(-1 - 7 * 60),
+        a.dispositivoPrincipal.id,
+      ]);
+      const resultado = await pasada(en(0));
+      expect(resultado.evaluacion.avisos).toBe(0);
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT lector_responde, lector_cambio_at, estado_lector FROM dispositivos WHERE id = ?',
+        [a.dispositivoPrincipal.id],
+      );
+      expect(filas[0]).toMatchObject({
+        lector_responde: null,
+        lector_cambio_at: null,
+        estado_lector: null,
+      });
+    });
+
+    it('un lector informado hace poco sigue valiendo, y su aviso se cierra si se olvida', async () => {
+      await latidoA(a.dispositivoPrincipal.id, en(-1), en(-30), {
+        responde: false,
+        desde: en(-60),
+      });
+      await prueba.pool.query('UPDATE dispositivos SET lector_informado_at = ? WHERE id = ?', [
+        en(-2),
+        a.dispositivoPrincipal.id,
+      ]);
+      expect((await pasada(en(0))).evaluacion.avisos).toBe(1);
+      expect((await estadoDe(a.dispositivoPrincipal.id))?.estado_lector).toBe('sin_respuesta');
+      // Sigue latiendo 7 h más sin informarlo: el estado y su aviso se limpian.
+      await latidoA(a.dispositivoPrincipal.id, en(7 * 60), en(-30), {
+        responde: false,
+        desde: en(-60),
+      });
+      await pasada(en(7 * 60 + 1));
+      expect((await estadoDe(a.dispositivoPrincipal.id))?.estado_lector).toBeNull();
+      const deAgrocom = await bandeja(superAcceso, '/plataforma/notificaciones');
+      expect(deAgrocom.datos.find((n) => n.tipo === 'placa.lector_sin_respuesta')?.resuelta).toBe(
+        true,
+      );
     });
 
     it('lector sin respuesta: avisa a AGROCOM tras 5 min, no al propietario', async () => {
@@ -349,11 +432,14 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       expect((await cola())?.intentos).toBe(2);
       await intento(en(10));
       await intento(en(30));
-      const ultimo = await intento(en(120));
+      await intento(en(120));
+      await intento(en(200));
+      await intento(en(300));
+      const ultimo = await intento(en(500));
       expect(ultimo.fallidas).toBe(1);
       const fila = await cola();
-      expect(fila).toMatchObject({ estado: 'fallida', intentos: 5, ultimo_error: 'TypeError' });
-      expect(errores.length).toBe(5);
+      expect(fila).toMatchObject({ estado: 'fallida', intentos: 8, ultimo_error: 'TypeError' });
+      expect(errores.length).toBe(8);
     });
 
     it('at-least-once sin duplicar: entregar dos veces el mismo mensaje deja una sola notificación', async () => {
@@ -433,10 +519,65 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
         expect(respuesta.json<Problema>().code).toBe('notificacion.no_encontrada');
       }
       expect((await bandeja(adminB)).datos[0]?.leida).toBe(false);
-      // Tampoco desde la bandeja de AGROCOM: una cuenta no usa esas rutas.
-      expect((await get('/plataforma/notificaciones', adminA)).statusCode).toBeGreaterThanOrEqual(
-        401,
-      );
+    });
+
+    it('un token de cuenta no abre NINGUNA ruta de la bandeja de AGROCOM, y uno de plataforma no abre la de cuenta', async () => {
+      const deAgrocom = [
+        ['GET', '/plataforma/notificaciones'],
+        ['GET', '/plataforma/notificaciones/contador'],
+        ['POST', '/plataforma/notificaciones/leer-todas'],
+        ['POST', '/plataforma/notificaciones/1/leer'],
+        ['POST', '/plataforma/notificaciones/1/descartar'],
+      ] as const;
+      for (const [metodo, url] of deAgrocom) {
+        const respuesta = await prueba.app.inject({
+          method: metodo,
+          url: `/api/v1${url}`,
+          headers: conUsuario({ acceso: adminA }),
+        });
+        expect(respuesta.statusCode, `${metodo} ${url}`).toBe(CODIGO_DE_CUENTA_EN_PLATAFORMA);
+      }
+      const deCuenta = [
+        ['GET', '/notificaciones'],
+        ['GET', '/notificaciones/contador'],
+        ['POST', '/notificaciones/leer-todas'],
+        ['POST', '/notificaciones/1/leer'],
+        ['POST', '/notificaciones/1/descartar'],
+      ] as const;
+      for (const [metodo, url] of deCuenta) {
+        const respuesta = await prueba.app.inject({
+          method: metodo,
+          url: `/api/v1${url}`,
+          headers: conUsuario({ acceso: superAcceso }),
+        });
+        expect(respuesta.statusCode, `${metodo} ${url}`).toBe(CODIGO_DE_PLATAFORMA_EN_CUENTA);
+      }
+    });
+
+    it('un Titular y un Guardia no tienen bandeja: 403 en TODAS las rutas /notificaciones', async () => {
+      const titular = await crearUsuarioConPin(prueba.pool, a.cuenta, 'TI01', [a.rolTitularId], {
+        superiorId: a.administrador.id,
+      });
+      const rolGuardia = await crearRol(prueba.pool, a.cuenta, 'Guardia', PERMISOS_DE_GUARDIA);
+      const guardia = await crearUsuarioConPin(prueba.pool, a.cuenta, 'GU01', [rolGuardia]);
+      const rutas = [
+        ['GET', '/notificaciones'],
+        ['GET', '/notificaciones/contador'],
+        ['POST', '/notificaciones/leer-todas'],
+        ['POST', '/notificaciones/1/leer'],
+        ['POST', '/notificaciones/1/descartar'],
+      ] as const;
+      for (const usuario of [titular, guardia]) {
+        const { acceso } = await iniciarSesion(prueba.app, usuario.pin);
+        for (const [metodo, url] of rutas) {
+          const respuesta = await prueba.app.inject({
+            method: metodo,
+            url: `/api/v1${url}`,
+            headers: conUsuario({ acceso }),
+          });
+          expect(respuesta.statusCode, `${metodo} ${url}`).toBe(403);
+        }
+      }
     });
 
     it('la notificación de AGROCOM no se puede tocar desde la ruta de una cuenta', async () => {
@@ -534,7 +675,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       });
     const fila = async () => {
       const [filas] = await prueba.pool.query<RowDataPacket[]>(
-        'SELECT en_linea_desde, lector_responde, lector_cambio_at, ultimo_latido_at FROM dispositivos WHERE id = ?',
+        'SELECT en_linea_desde, lector_responde, lector_cambio_at, lector_informado_at, ultimo_latido_at FROM dispositivos WHERE id = ?',
         [a.dispositivoPrincipal.id],
       );
       return filas[0];
@@ -549,6 +690,16 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       const f = await fila();
       expect(f?.lector_responde).toBe(0);
       expect(f?.lector_cambio_at).toBeInstanceOf(Date);
+      expect(f?.lector_informado_at).toBeInstanceOf(Date);
+      // Repetir el mismo valor no mueve «desde cuándo», pero sí anota que lo siguió informando.
+      await prueba.pool.query('UPDATE dispositivos SET lector_informado_at = ? WHERE id = ?', [
+        new Date(Date.now() - 3600_000),
+        a.dispositivoPrincipal.id,
+      ]);
+      await latido(a.dispositivoPrincipal.encabezado, { lector_responde: false });
+      const g = await fila();
+      expect((g?.lector_cambio_at as Date).getTime()).toBe((f?.lector_cambio_at as Date).getTime());
+      expect((g?.lector_informado_at as Date).getTime()).toBeGreaterThan(Date.now() - 60_000);
       // Un valor que no es booleano se rechaza (esquema estricto).
       expect(
         (await latido(a.dispositivoPrincipal.encabezado, { lector_responde: 'si' })).statusCode,

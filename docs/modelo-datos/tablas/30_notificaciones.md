@@ -40,4 +40,7 @@ La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. 
 - Destinatarios por permiso, no por nombre de rol (ADR 0030 §5): `notificaciones.aviso.ver` (ámbito cuenta; lo tiene el Administrador, no el Titular, Miembro ni Guardia) y `notificaciones.aviso_plataforma.ver` (ámbito plataforma). Se excluyen los suspendidos.
 - Si llega una placa nueva a un incidente abierto, se actualiza la misma fila y vuelve a figurar como no leída; al recuperarse todas se cierra (y, en `desaparecida`, deja la constancia `placa.recuperada`).
 - Sin bitácora (`dominio_sin_bitacora`): es un derivado del estado de las placas y leer o descartar es estado personal.
-- Retención (supuesto W9): las cerradas con más de 90 días se dan de baja (soft delete).
+- Retención (supuesto W9): las cerradas con más de 90 días se dan de baja (soft delete, invariante 8; no hay DELETE físico) por lotes, una transacción por cuenta. Las lee `idx_notificaciones_retencion (abierta, novedad_at, deleted_at)`.
+- Enfriamiento (supuesto W9): si un grupo se recupera y vuelve a caer dentro de 60 minutos, se REABRE el incidente cerrado (misma fila) en vez de abrir otro; solo vuelve a figurar como no leído si llegó una placa que el destinatario no conocía. La constancia «recuperada» es una por incidente.
+- Al dar de baja una cuenta se cierran sus incidentes abiertos (los del propietario y los de AGROCOM que hablan de ella).
+- `cuenta_id` sale siempre de la cuenta del contexto con que se entrega, nunca de la carga del mensaje.
