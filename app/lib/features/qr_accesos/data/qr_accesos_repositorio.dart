@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/qr_contratos.dart';
+import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
@@ -30,6 +31,13 @@ abstract interface class QrAccesosRepositorio {
   /// como respaldo sin internet; `null` si no hay o ya venció.
   Future<QrGenerado?> ultimoPropioGuardado();
 
+  /// Reabre "Mi QR" sin generar nada (ADR 0030 §2.1.2): si el QR propio
+  /// guardado en este dispositivo sigue vigente y sin usar, y es para
+  /// [puertaIds], lo devuelve con su token. Si ya se usó, venció o se anuló, lo
+  /// olvida y devuelve `null`. Sin red lanza `sinConexion`: la pantalla usa el
+  /// respaldo.
+  Future<QrGenerado?> reanudarPropio(List<String> puertaIds);
+
   /// Qué pasó con un QR: su estado y el último intento de lectura.
   Future<SeguimientoQr> seguir(String id);
 
@@ -48,18 +56,23 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     DatosGeneracion datos, {
     required DateTime ahora,
   }) async {
-    final dto = await _api.generarQr(
-      puertaIds: datos.puertaIds,
-      venceAt: datos.vigencia.venceAtPara(ahora),
-      etiqueta: datos.etiqueta,
-      propio: datos.propio,
-    );
+    var dto = await _pedirQr(datos, ahora: ahora);
+    if (dto.reutilizado && dto.texto == null) {
+      // Hay un QR propio vigente para estas puertas, pero su token no está en
+      // este dispositivo (reinstalación u otro teléfono). Se pide reemplazarlo
+      // una sola vez: el anterior queda anulado (ADR 0030 §2.1.3).
+      dto = await _pedirQr(datos, ahora: ahora, reemplazar: true);
+    }
+    final texto = dto.texto;
+    // Con `reemplazar` la API siempre genera; si no lo hace, el contrato
+    // está roto.
+    if (texto == null) throw const ErrorApi(code: ErrorApi.desconocido);
     // El texto solo existe ahora: se guarda en el dispositivo para poder
     // volver a mostrarlo desde Mis QR (ADR 0008, addendum).
-    await _guardarSinFallar(dto.id, dto.texto, dto.venceAt);
+    await _guardarSinFallar(dto.id, texto, dto.venceAt);
     final generado = QrGenerado(
       id: dto.id,
-      texto: dto.texto,
+      texto: texto,
       venceAt: dto.venceAt,
       etiqueta: dto.etiqueta,
       puertas: dto.puertas.map(_aPuertaDeQr).toList(),
@@ -68,8 +81,47 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
     return generado;
   }
 
+  Future<QrGeneradoDto> _pedirQr(
+    DatosGeneracion datos, {
+    required DateTime ahora,
+    bool reemplazar = false,
+  }) => _api.generarQr(
+    puertaIds: datos.puertaIds,
+    venceAt: datos.vigencia.venceAtPara(ahora),
+    etiqueta: datos.etiqueta,
+    propio: datos.propio,
+    reemplazar: reemplazar,
+  );
+
   @override
-  Future<QrGenerado?> ultimoPropioGuardado() async {
+  Future<QrGenerado?> ultimoPropioGuardado() =>
+      _leerPropioLocal(respaldo: true);
+
+  @override
+  Future<QrGenerado?> reanudarPropio(List<String> puertaIds) async {
+    final guardado = await _leerPropioLocal(respaldo: false);
+    // Otras puertas: este QR no sirve para la petición; generar lo reemplaza.
+    if (guardado == null || !_mismasPuertas(guardado.puertas, puertaIds)) {
+      return null;
+    }
+    final SeguimientoQr seguimiento;
+    try {
+      seguimiento = await seguir(guardado.id);
+    } on ErrorApi catch (error) {
+      // Sin red se propaga: la pantalla muestra el respaldo sin generar nada.
+      if (error.code != 'qr.no_encontrado') rethrow;
+      await _descartarPropio(guardado.id);
+      return null;
+    }
+    if (seguimiento.estado == EstadoQr.vigente) return guardado;
+    // Usado, vencido o anulado: ya no abre nada, así que se olvida el token.
+    await _descartarPropio(guardado.id);
+    return null;
+  }
+
+  /// El QR propio guardado en este dispositivo, o `null` si no hay o si el
+  /// almacén no se puede leer (el respaldo es una comodidad, no un requisito).
+  Future<QrGenerado?> _leerPropioLocal({required bool respaldo}) async {
     try {
       final qr = await _almacenQr.leerUltimoPropio();
       if (qr == null) return null;
@@ -81,10 +133,23 @@ class QrAccesosRepositorioApi implements QrAccesosRepositorio {
         puertas: [
           for (final p in qr.puertas) PuertaDeQr(id: p.id, nombre: p.nombre),
         ],
-        respaldo: true,
+        respaldo: respaldo,
       );
     } on Object {
       return null;
+    }
+  }
+
+  static bool _mismasPuertas(List<PuertaDeQr> delQr, List<String> puertaIds) =>
+      delQr.length == puertaIds.toSet().length &&
+      delQr.every((p) => puertaIds.contains(p.id));
+
+  Future<void> _descartarPropio(String id) async {
+    try {
+      await _almacenQr.borrar(id);
+      await _almacenQr.borrarUltimoPropio(id);
+    } on Object {
+      // Sin borrar, el token caduca solo al vencer: no bloquea generar otro.
     }
   }
 

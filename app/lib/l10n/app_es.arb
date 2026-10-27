@@ -238,6 +238,49 @@
   "@comunErrorQrYaUsado": {
     "description": "code qr.ya_usado (409) al anular un QR"
   },
+  "comunErrorQrLimiteDiario": "Ya generaste el máximo de QR de hoy. Podrás generar más mañana.",
+  "@comunErrorQrLimiteDiario": {
+    "description": "code qr.limite_diario (429): tope diario por usuario. No bloquea: vuelve al día siguiente (ADR 0030 §2)"
+  },
+  "comunErrorQrLimitePendientes": "Tienes demasiados QR sin usar. Usa o anula alguno antes de generar otro.",
+  "@comunErrorQrLimitePendientes": {
+    "description": "code qr.limite_pendientes (429): demasiados QR vigentes sin usar (ADR 0030 §2)"
+  },
+  "comunErrorQrLimitePropiosEspera": "{minutos, plural, =1{Espera 1 minuto antes de pedir otro QR.} other{Espera {minutos} minutos antes de pedir otro QR.}}",
+  "@comunErrorQrLimitePropiosEspera": {
+    "description": "code qr.limite_propios_sin_uso (429) con espera corta: reemplazos del QR propio sin uso (ADR 0030 §2.1.5)",
+    "placeholders": {
+      "minutos": { "type": "int" }
+    }
+  },
+  "comunErrorQrLimitePropiosSinUso": "Pediste demasiados QR sin usar por hoy. Vuelve a intentarlo mañana.",
+  "@comunErrorQrLimitePropiosSinUso": {
+    "description": "code qr.limite_propios_sin_uso (429) con tope del día: la espera llega hasta medianoche (ADR 0030 §2.1.5)"
+  },
+  "comunErrorQrLimitePuertas": "Elegiste más puertas de las que admite un QR. Quita algunas.",
+  "@comunErrorQrLimitePuertas": {
+    "description": "code qr.limite_puertas (422): más puertas por QR que el máximo (ADR 0031 §9)"
+  },
+  "comunErrorQrGeneracionRestringida": "Tu permiso para generar QR está restringido. Habla con tu administrador.",
+  "@comunErrorQrGeneracionRestringida": {
+    "description": "code qr.generacion_restringida (403): el usuario, un superior o la cuenta no pueden generar; sus QR ya generados siguen vigentes"
+  },
+  "comunErrorQrGeneradorSuspendido": "Tu acceso para generar QR está suspendido. Habla con tu administrador.",
+  "@comunErrorQrGeneradorSuspendido": {
+    "description": "code qr.generador_suspendido (403): el usuario o un superior está suspendido"
+  },
+  "comunErrorQrCuentaSuspendida": "Tu cuenta está suspendida, así que no se generan QR. Comunícate con AGROCOM.",
+  "@comunErrorQrCuentaSuspendida": {
+    "description": "code qr.cuenta_suspendida (403): la cuenta entera está suspendida para generar"
+  },
+  "comunErrorSesionUsuarioSuspendido": "Tu usuario está suspendido. Habla con tu administrador.",
+  "@comunErrorSesionUsuarioSuspendido": {
+    "description": "code sesion.usuario_suspendido (403) al ingresar con el PIN"
+  },
+  "comunErrorSesionCuentaSuspendida": "Tu cuenta está suspendida. Comunícate con AGROCOM.",
+  "@comunErrorSesionCuentaSuspendida": {
+    "description": "code sesion.cuenta_suspendida (403) al ingresar con el PIN"
+  },
   "comunErrorValidacionInvalida": "Revisa los datos e intenta de nuevo.",
   "@comunErrorValidacionInvalida": {
     "description": "code validacion.invalida (400): algún dato no cumple el formato"

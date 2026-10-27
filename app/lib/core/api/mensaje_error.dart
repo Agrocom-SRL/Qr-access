@@ -40,6 +40,33 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'usuario.nivel_no_permitido' => l10n.comunErrorUsuarioNivelNoPermitido,
     'usuario.con_dependientes' => l10n.comunErrorUsuarioConDependientes,
     'plan.limite_miembros_por_titular' => l10n.comunErrorPlanLimiteMiembros,
+    'qr.limite_diario' => l10n.comunErrorQrLimiteDiario,
+    'qr.limite_pendientes' => l10n.comunErrorQrLimitePendientes,
+    'qr.limite_propios_sin_uso' => _textoLimitePropiosSinUso(l10n, error),
+    'qr.limite_puertas' => l10n.comunErrorQrLimitePuertas,
+    'qr.generacion_restringida' => l10n.comunErrorQrGeneracionRestringida,
+    'qr.generador_suspendido' => l10n.comunErrorQrGeneradorSuspendido,
+    'qr.cuenta_suspendida' => l10n.comunErrorQrCuentaSuspendida,
+    'sesion.usuario_suspendido' => l10n.comunErrorSesionUsuarioSuspendido,
+    'sesion.cuenta_suspendida' => l10n.comunErrorSesionCuentaSuspendida,
     _ => l10n.comunErrorGenerico,
   };
+}
+
+/// Hasta esta espera (en segundos) se dice cuántos minutos faltan. Más allá es
+/// el tope del día, que vuelve a medianoche: se responde sin cifra.
+const _esperaConMinutosMaxSegundos = 3600;
+const _segundosPorMinuto = 60;
+
+/// Los reemplazos sin uso tienen dos causas: la espera de 2 minutos entre uno
+/// y otro, o el tope del día (ADR 0030 §2.1.5). Ambas llegan como el mismo
+/// código.
+String _textoLimitePropiosSinUso(AppLocalizations l10n, ErrorApi error) {
+  final segundos = error.reintentarEnSegundos;
+  if (segundos == null || segundos > _esperaConMinutosMaxSegundos) {
+    return l10n.comunErrorQrLimitePropiosSinUso;
+  }
+  return l10n.comunErrorQrLimitePropiosEspera(
+    (segundos / _segundosPorMinuto).ceil(),
+  );
 }

@@ -32,12 +32,28 @@ class QrRapidoControlador extends Notifier<AsyncValue<QrGenerado>> {
     state = await AsyncValue.guard(() => _generarOUsarRespaldo(etiqueta));
   }
 
-  /// Con internet siempre se genera uno nuevo. Solo si no hay conexión se
-  /// reutiliza el último QR propio guardado: en el servidor sigue siendo el
-  /// único vigente de la persona, así que el lector lo valida igual.
+  /// Al reabrir, si el QR propio guardado sigue vigente y sin usar, se muestra
+  /// su token sin generar nada (ADR 0030 §2.1). Si no, se genera uno. Sin red,
+  /// se muestra el último QR guardado: en el servidor sigue siendo el único
+  /// vigente de la persona, así que el lector lo valida igual.
   Future<QrGenerado> _generarOUsarRespaldo(String etiqueta) async {
     try {
-      return await _generar(etiqueta);
+      final ahora = ref.read(relojProvider)();
+      final puertas = await ref.read(puertasDisponiblesProvider.future);
+      if (puertas.isEmpty) throw const SinPuertasParaQrRapido();
+      final datos = DatosGeneracion(
+        puertaIds: puertas.take(maxPuertasPorQr).map((p) => p.id).toSet(),
+        vigencia: Vigencia.porDefecto,
+        etiqueta: recortarEtiqueta(etiqueta),
+        ahora: ahora,
+        // La API anula el QR propio anterior: solo el último sirve, aunque a
+        // alguien le hayan sacado una foto del anterior.
+        propio: true,
+      );
+      final repositorio = ref.read(qrAccesosRepositorioProvider);
+      final reanudado = await repositorio.reanudarPropio(datos.puertaIds);
+      if (reanudado != null) return reanudado;
+      return await repositorio.generar(datos, ahora: ahora);
     } on ErrorApi catch (error) {
       if (!error.esSinConexion) rethrow;
       final respaldo = await ref
@@ -46,24 +62,6 @@ class QrRapidoControlador extends Notifier<AsyncValue<QrGenerado>> {
       if (respaldo == null) rethrow;
       return respaldo;
     }
-  }
-
-  Future<QrGenerado> _generar(String etiqueta) async {
-    final ahora = ref.read(relojProvider)();
-    final puertas = await ref.read(puertasDisponiblesProvider.future);
-    if (puertas.isEmpty) throw const SinPuertasParaQrRapido();
-    final datos = DatosGeneracion(
-      puertaIds: puertas.take(maxPuertasPorQr).map((p) => p.id).toSet(),
-      vigencia: Vigencia.porDefecto,
-      etiqueta: recortarEtiqueta(etiqueta),
-      ahora: ahora,
-      // La API anula el QR propio anterior: solo el último sirve, aunque a
-      // alguien le hayan sacado una foto del anterior.
-      propio: true,
-    );
-    return await ref
-        .read(qrAccesosRepositorioProvider)
-        .generar(datos, ahora: ahora);
   }
 }
 

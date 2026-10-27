@@ -1,5 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { enTransaccion, type Transaccion } from '../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { CLAVES, valorEfectivo, type ClaveDeLimite } from './domain/claves.js';
 import {
   RepositorioDeConfiguracion,
@@ -94,7 +95,9 @@ export function crearServicioDeLimites(pool: Pool): ServicioDeLimites {
       const general = new Map(generales.map((fila) => [fila.clave, fila.valor]));
       const valor = (clave: ClaveDeLimite, dePlan: number | null = null): number => {
         const base = general.get(clave);
-        if (base === undefined) throw new Error(`Falta el tope general ${clave}`);
+        // Falla cerrado (sin topes no se genera) con un código estable: el mensaje, con el nombre de la clave,
+        // no sale en la respuesta (ADR 0033).
+        if (base === undefined) throw new ErrorDeDominio('limite.configuracion_incompleta', 503);
         const deLaClave = excepciones.filter((fila) => fila.clave === clave);
         return valorEfectivo({
           deUsuario: deLaClave.find((fila) => fila.usuario_id === usuarioId)?.valor ?? null,

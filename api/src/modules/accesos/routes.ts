@@ -59,6 +59,11 @@ export function rutas({
       {
         schema: {
           tags: ['accesos'],
+          description:
+            'Genera un QR de un solo uso. 201 con el QR nuevo y su `texto`. 200 con `reutilizado: true` cuando ' +
+            'el QR propio (`propio: true`) sigue vigente y sin usar para las mismas puertas: no se crea nada y ' +
+            '`texto` es `null` (el servidor solo guarda el hash; la app conserva el token). Se ignoran ' +
+            '`vence_at` y `etiqueta` al reutilizar, salvo `reemplazar: true`. 429 con `qr.limite_*` al superar un tope.',
           body: cuerpoDeGeneracion,
           response: { 200: respuestaDeGeneracion, 201: respuestaDeGeneracion },
         },
@@ -78,6 +83,7 @@ export function rutas({
           etiqueta: request.body.etiqueta ?? null,
           propio: request.body.propio ?? false,
           reemplazar: request.body.reemplazar ?? false,
+          log: request.log,
         });
         // Reutilizar el QR propio no crea nada: 200. Un QR nuevo: 201.
         return reply.status(qr.reutilizado ? 200 : 201).send(qr);
