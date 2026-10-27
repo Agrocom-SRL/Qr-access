@@ -436,6 +436,14 @@
   "dispositivosPlataformaIos": "iOS",
   "dispositivosPlataformaWeb": "Browser",
   "dispositivosPlataformaOtra": "Other device",
+  "dispositivoNombreNavegadorWeb": "Web browser",
+  "@dispositivoNombreNavegadorWeb": {
+    "description": "Nombre automático que la app web manda al iniciar sesión (se guarda en la API)"
+  },
+  "dispositivoNombreOtro": "Other device",
+  "@dispositivoNombreOtro": {
+    "description": "Nombre automático neutro cuando la app no reconoce el aparato (se guarda en la API)"
+  },
   "dispositivosCerrarUna": "Close session",
   "dispositivosCerrarUnaTitulo": "Close this session?",
   "dispositivosCerrarUnaMensaje": "That device will lose access with your user and will have to sign in again with its PIN. Your valid QR codes are not cancelled.",

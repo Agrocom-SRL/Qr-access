@@ -8,6 +8,8 @@ import 'package:agrocom_acceso/features/qr_accesos/domain/estado_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/mis_qr_pagina.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -98,10 +100,100 @@ void main() {
     expect(repositorio.estadosListados.last, EstadoQr.usado);
   });
 
-  testWidgets('sin QR vigentes, lo dice con el estado vacío', (tester) async {
-    await _montar(tester, listado: _pagina(const []));
+  testWidgets('sin QR vigentes, el estado vacío dice que no tienes vigentes', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina(const []),
+      permisos: {Permisos.verQr, Permisos.generarQr},
+    );
+    final textos = textosEn(tester);
 
-    expect(find.text(textosEn(tester).qrMisQrSinVigentes), findsOneWidget);
+    expect(find.text(textos.qrVacioVigentesTitulo), findsOneWidget);
+    expect(find.text(textos.qrVacioVigentesAyuda), findsOneWidget);
+    expect(find.text(textos.qrVacioUsadosTitulo), findsNothing);
+  });
+
+  testWidgets('el estado vacío no lleva botón aunque pueda generar', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina(const []),
+      permisos: {Permisos.verQr, Permisos.generarQr},
+    );
+
+    expect(find.byType(EstadoVacio), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(EstadoVacio),
+        matching: find.byType(AccesoBoton),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('en expandido, cada filtro vacío dice su título y su ayuda', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina(const []),
+      permisos: {Permisos.verQr, Permisos.generarQr},
+      expandida: true,
+    );
+    final textos = textosEn(tester);
+
+    final casos = <({String filtro, String titulo, String ayuda})>[
+      (
+        filtro: textos.qrFiltroUsados,
+        titulo: textos.qrVacioUsadosTitulo,
+        ayuda: textos.qrVacioUsadosAyuda,
+      ),
+      (
+        filtro: textos.qrFiltroVencidos,
+        titulo: textos.qrVacioVencidosTitulo,
+        ayuda: textos.qrVacioVencidosAyuda,
+      ),
+      (
+        filtro: textos.qrFiltroAnulados,
+        titulo: textos.qrVacioAnuladosTitulo,
+        ayuda: textos.qrVacioAnuladosAyuda,
+      ),
+      (
+        filtro: textos.qrFiltroVigentes,
+        titulo: textos.qrVacioVigentesTitulo,
+        ayuda: textos.qrVacioVigentesAyuda,
+      ),
+    ];
+    for (final caso in casos) {
+      await tester.tap(find.text(caso.filtro));
+      await tester.pumpAndSettle();
+
+      expect(find.text(caso.titulo), findsOneWidget);
+      expect(find.text(caso.ayuda), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(EstadoVacio),
+          matching: find.byType(AccesoBoton),
+        ),
+        findsNothing,
+      );
+    }
+  });
+
+  testWidgets('en compacto, un filtro vacío muestra su propio título', (
+    tester,
+  ) async {
+    await _montar(tester, listado: _pagina(const []));
+    final textos = textosEn(tester);
+
+    await tester.tap(find.text(textos.qrFiltroAnulados));
+    await tester.pumpAndSettle();
+
+    expect(find.text(textos.qrVacioAnuladosTitulo), findsWidgets);
+    expect(find.text(textos.qrVacioAnuladosAyuda), findsWidgets);
   });
 
   testWidgets('sin el permiso de anular, un QR vigente no tiene el botón', (
@@ -245,5 +337,22 @@ void main() {
 
     expect(find.text(textos.qrVerQr), findsNothing);
     expect(find.text(textos.qrSoloEnOtroDispositivo), findsOneWidget);
+  });
+
+  testWidgets('en horizontal de teléfono (852x393) el vacío no desborda', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      listado: _pagina(const []),
+      permisos: {Permisos.verQr, Permisos.generarQr},
+    );
+    // Horizontal de iPhone: ancho de clase media, poca altura.
+    usarTamano(tester, const Size(852, 393));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(EstadoVacio), findsOneWidget);
+    expect(find.text(textosEn(tester).qrVacioVigentesTitulo), findsOneWidget);
   });
 }

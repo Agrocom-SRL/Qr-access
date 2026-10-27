@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/features/administracion/administracion.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -113,6 +114,7 @@ Future<UsuariosRepositorioFalso> _montar(
   Map<String, int> dependientes = const {},
   Exception? error,
   bool expandida = false,
+  bool apaisada = false,
 }) async {
   final repositorio = UsuariosRepositorioFalso(
     usuarios: [
@@ -139,6 +141,7 @@ Future<UsuariosRepositorioFalso> _montar(
     tester,
     pagina: pagina,
     expandida: expandida,
+    apaisada: apaisada,
     overrides: [
       sesionControladorProvider.overrideWith(
         () => SesionFalsa(sesionCon(permisos: permisos)),
@@ -204,7 +207,13 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('Luis Peña'),
         200,
-        scrollable: find.byType(Scrollable).first,
+        // El Scrollable vertical de la lista, no el de las pestañas.
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
       expect(find.text('Luis Peña'), findsOneWidget);
       // Nunca generó un QR vs. el último fue el 02/09/2026
@@ -373,5 +382,18 @@ void main() {
       );
       expect(find.text(textosEn(tester).comunEliminar), findsNothing);
     });
+  });
+
+  testWidgets('en horizontal (852×393) cabe y deja la barra inferior', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      pagina: const EstadisticasUsuariosPagina(),
+      apaisada: true,
+    );
+
+    expect(find.text(textosEn(tester).estadisticasTitulo), findsOneWidget);
+    expect(find.byType(BarraNavegacion), findsOneWidget);
   });
 }

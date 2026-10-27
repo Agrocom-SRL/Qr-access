@@ -32,6 +32,10 @@ class SesionConectada {
   bool get puedeCerrarse => !actual;
 }
 
+/// Largo máximo del nombre de un dispositivo: lo mismo que recorta la API al
+/// guardarlo (60 caracteres).
+const largoMaximoNombreDispositivo = 60;
+
 /// Orden de la lista: primero la de este aparato y luego la más reciente.
 List<SesionConectada> ordenarSesiones(Iterable<SesionConectada> sesiones) {
   final lista = [...sesiones]

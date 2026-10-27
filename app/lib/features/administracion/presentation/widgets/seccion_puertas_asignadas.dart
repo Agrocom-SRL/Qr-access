@@ -9,12 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Las puertas de la cuenta para asignárselas a un usuario: todas, o las que
-/// se marquen. De ellas ve los eventos un guardia.
+/// se marquen. De ellas ve los eventos un guardia. Un alta nuevo llega con
+/// todas marcadas; al editar se muestra lo ya guardado cuando se haya leído.
 class SeccionPuertasAsignadas extends ConsumerWidget {
   const new({
     required this.asignadas,
     required this.alAlternarTodas,
     required this.alAlternarPuerta,
+    this.cargando = false,
+    this.conError = false,
     super.key,
   });
 
@@ -22,10 +25,25 @@ class SeccionPuertasAsignadas extends ConsumerWidget {
   final void Function({required bool todas}) alAlternarTodas;
   final ValueChanged<String> alAlternarPuerta;
 
+  /// Las puertas del usuario que se edita todavía no se leyeron.
+  final bool cargando;
+
+  /// No se pudieron leer: no se muestra una selección que no es la real.
+  final bool conError;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final tokens = context.tokens;
+
+    if (conError) {
+      return AccesoAviso(
+        tono: TonoAviso.peligro,
+        texto: l10n.usuariosPuertasErrorCargar,
+      );
+    }
+    if (cargando) return const AccesoCargando();
+
     final puertas = ref.watch(puertasDisponiblesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

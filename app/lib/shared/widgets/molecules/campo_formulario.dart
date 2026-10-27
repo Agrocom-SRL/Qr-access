@@ -9,6 +9,7 @@ class CampoFormulario extends StatelessWidget {
     required this.etiqueta,
     required this.child,
     this.opcional = false,
+    this.obligatorio = false,
     this.ayuda,
     this.textoError,
     this.largoActual,
@@ -19,6 +20,10 @@ class CampoFormulario extends StatelessWidget {
   final String etiqueta;
   final Widget child;
   final bool opcional;
+
+  /// Marca el campo como obligatorio con un asterisco tras el rótulo, en
+  /// peligro, para que se vea antes de intentar guardar.
+  final bool obligatorio;
   final String? ayuda;
   final String? textoError;
   final int? largoActual;
@@ -47,6 +52,11 @@ class CampoFormulario extends StatelessWidget {
                   style: textos.bodyLarge?.copyWith(
                     color: colores.textoSecundario,
                   ),
+                ),
+              if (obligatorio)
+                TextSpan(
+                  text: context.l10n.comunMarcaObligatorio,
+                  style: textos.titleMedium?.copyWith(color: colores.peligro),
                 ),
             ],
           ),

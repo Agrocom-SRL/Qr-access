@@ -57,4 +57,19 @@ abstract final class Permisos {
   /// Ver el uso de los usuarios de la rama (inactivos, ruidosos, Titulares
   /// cerca del tope): solo el Administrador (ADR 0028 §4).
   static const verEstadisticas = 'seguridad.estadistica.ver';
+
+  /// Ver los incidentes de uso de mi rama (ADR 0033 §3): el Administrador, el
+  /// Titular, el Miembro y el Guardia, cada uno sobre lo que le toca.
+  static const verIncidentes = 'seguridad.incidente.ver';
+
+  /// Confirmar, descartar o dejar pendiente un incidente de mi rama (ADR 0033
+  /// §3): solo el Administrador y el Titular. Nunca uno propio.
+  static const resolverIncidentes = 'seguridad.incidente.resolver';
+
+  /// Anular en bloque los QR vigentes de mi rama (ADR 0033 §3). Cada nivel lo
+  /// hace sobre lo que le toca: el Administrador, su rama entera.
+  static const anularQrDeRama = 'accesos.qr.anular_masivo';
+
+  /// Exportar en CSV los datos de mi rama (ADR 0033 §3): solo el Administrador.
+  static const exportarDatos = 'accesos.evento.exportar';
 }

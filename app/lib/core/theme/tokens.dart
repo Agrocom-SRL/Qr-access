@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/theme/primitivos.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 
 /// Colores semánticos (handoff V1 §Tokens): lo único de color que leen los
@@ -165,6 +166,18 @@ class Espacios {
 /// Opacidad de lo que está apagado (un acceso sin acción posible).
 const double opacidadDeshabilitado = 0.4;
 
+/// Opacidades de los velos sobre las fotos de marca (ADR 0012: los valores
+/// viven en el tema, no sueltos en un widget). El velo del hero es parejo y
+/// alto a propósito, para que el texto sobre la foto se lea.
+const double opacidadVeloHero = 0.86;
+
+/// Fundido de la foto hacia el fondo, y el acento verde de arriba.
+const double opacidadFundidoFoto = 0.88;
+const double opacidadAcentoFoto = 0.45;
+
+/// Tamaño de la inicial del avatar: el lado dividido entre este número.
+const double divisorInicialAvatar = 2.6;
+
 /// Radios de esquina: chips 6 · campos e íconos 10 · tarjetas 14 · hero y
 /// diálogos 20 · completo para botones y badges.
 @immutable
@@ -314,6 +327,15 @@ class Breakpoints {
   const new();
   double get medio => 600;
   double get expandido => 1024;
+
+  /// Lado corto (dp) a partir del cual un dispositivo deja de ser teléfono: el
+  /// umbral estándar de Material. Un teléfono, en vertical o en horizontal,
+  /// tiene el lado corto por debajo de 600 (393 dp en un iPhone en horizontal).
+  double get ladoCorto => 600;
+
+  /// Alto por debajo del cual hay poco lugar vertical (teléfono en horizontal):
+  /// la barra y las cabeceras se achican para que el contenido quepa.
+  double get alturaCorta => 500;
 }
 
 /// Tamaños y pesos de la tipografía (IBM Plex Sans; Mono para cifras).
@@ -382,14 +404,38 @@ extension TokensContexto on BuildContext {
 enum ClasePantalla { compacta, media, expandida }
 
 extension ClasePantallaContexto on BuildContext {
-  /// Clasifica el ancho disponible con los breakpoints del tema.
+  /// Clasifica el área disponible con los breakpoints del tema.
+  ///
+  /// Un teléfono es siempre compacto, también en horizontal (852×393 en un
+  /// iPhone): lo decide el lado corto de la pantalla y no el ancho, porque en
+  /// horizontal el ancho es de tablet. Un teléfono en la web (navegador en el
+  /// teléfono) cuenta igual, por la plataforma que reporta Flutter. La web de
+  /// escritorio y las tablets siguen por ancho: rail en medio, expandido en
+  /// 1024 o más.
   ClasePantalla get clasePantalla {
-    final ancho = MediaQuery.sizeOf(this).width;
-    if (ancho >= tokens.breakpoint.expandido) return ClasePantalla.expandida;
-    if (ancho >= tokens.breakpoint.medio) return ClasePantalla.media;
-    return ClasePantalla.compacta;
+    final tamano = MediaQuery.sizeOf(this);
+    final breakpoint = tokens.breakpoint;
+    if (esTelefono(tamano.shortestSide)) return ClasePantalla.compacta;
+    if (tamano.width < breakpoint.medio) return ClasePantalla.compacta;
+    if (tamano.width >= breakpoint.expandido) return ClasePantalla.expandida;
+    return ClasePantalla.media;
+  }
+
+  /// Teléfono: plataforma móvil (o navegador móvil) y lado corto menor que
+  /// [Breakpoints.ladoCorto]. Un tablet tiene el lado corto por encima.
+  bool esTelefono(double ladoCorto) {
+    final plataforma = defaultTargetPlatform;
+    final esMovil =
+        plataforma == TargetPlatform.android ||
+        plataforma == TargetPlatform.iOS;
+    return esMovil && ladoCorto < tokens.breakpoint.ladoCorto;
   }
 
   bool get esExpandida => clasePantalla == ClasePantalla.expandida;
   bool get esCompacta => clasePantalla == ClasePantalla.compacta;
+
+  /// Poco alto (teléfono en horizontal): las cabeceras con foto y la barra
+  /// inferior se achican para que el contenido tenga dónde mostrarse.
+  bool get esAlturaCorta =>
+      MediaQuery.sizeOf(this).height < tokens.breakpoint.alturaCorta;
 }

@@ -436,6 +436,14 @@
   "dispositivosPlataformaIos": "iOS",
   "dispositivosPlataformaWeb": "Navegador",
   "dispositivosPlataformaOtra": "Outro aparelho",
+  "dispositivoNombreNavegadorWeb": "Navegador web",
+  "@dispositivoNombreNavegadorWeb": {
+    "description": "Nombre automático que la app web manda al iniciar sesión (se guarda en la API)"
+  },
+  "dispositivoNombreOtro": "Outro dispositivo",
+  "@dispositivoNombreOtro": {
+    "description": "Nombre automático neutro cuando la app no reconoce el aparato (se guarda en la API)"
+  },
   "dispositivosCerrarUna": "Encerrar sessão",
   "dispositivosCerrarUnaTitulo": "Encerrar esta sessão?",
   "dispositivosCerrarUnaMensaje": "Esse aparelho deixa de ter acesso com seu usuário e terá que entrar de novo com o PIN dele. Seus QR vigentes não são anulados.",

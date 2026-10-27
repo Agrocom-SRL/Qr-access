@@ -5,6 +5,8 @@ import 'package:agrocom_acceso/core/theme/tema.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/sesion/data/sesion_repositorio.dart';
 import 'package:agrocom_acceso/features/sesion/presentation/ingreso_pagina.dart';
+import 'package:agrocom_acceso/features/sesion/presentation/widgets/casillas_pin.dart';
+import 'package:agrocom_acceso/shared/widgets/templates/plantilla_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,6 +38,8 @@ Future<({SesionRepositorioFalso repositorio, SesionFalsa sesion})> _montar(
   SesionRepositorioFalso? repositorio,
   ThemeData? tema,
   bool expandida = false,
+  bool apaisada = false,
+  Size? tamano,
 }) async {
   final repo = repositorio ?? SesionRepositorioFalso(respuesta: _inicio);
   final sesion = SesionFalsa();
@@ -44,15 +48,26 @@ Future<({SesionRepositorioFalso repositorio, SesionFalsa sesion})> _montar(
     pagina: const IngresoPagina(),
     tema: tema,
     expandida: expandida,
+    apaisada: apaisada,
     overrides: [
       sesionRepositorioProvider.overrideWithValue(repo),
       sesionControladorProvider.overrideWith(() => sesion),
       relojProvider.overrideWithValue(() => _ahora),
     ],
   );
+  // Un tamaño propio (vertical, tablet, web) se aplica después de montar.
+  if (tamano != null) {
+    usarTamano(tester, tamano);
+  }
   await tester.pump();
   return (repositorio: repo, sesion: sesion);
 }
+
+Rect _rect(WidgetTester tester, Finder finder) => tester.getRect(finder);
+
+/// Alto del área que el teclado deja libre en el test (el iPhone en horizontal
+/// abre un teclado de unos 200 dp).
+const _altoTeclado = 200.0;
 
 void main() {
   for (final (nombre, tema) in [
@@ -189,4 +204,115 @@ void main() {
     await _montar(tester, expandida: true);
     expect(find.text(textosEn(tester).bienvenidaFrase), findsOneWidget);
   });
+
+  group('teléfono en horizontal (852×393)', () {
+    testWidgets('la foto va a un lado y ocupa todo el alto', (tester) async {
+      await _montar(tester, apaisada: true);
+      final foto = _rect(tester, find.byType(CabeceraFoto));
+      final titulo = _rect(
+        tester,
+        find.text(textosEn(tester).sesionIngresoTitulo),
+      );
+
+      expect(foto.height, tamanoApaisado.height);
+      expect(foto.right, lessThanOrEqualTo(titulo.left));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('título, PIN y botón se ven sin desplazarse', (tester) async {
+      await _montar(tester, apaisada: true);
+      final textos = textosEn(tester);
+
+      expect(
+        _rect(tester, find.text(textos.sesionIngresoTitulo)).bottom,
+        lessThanOrEqualTo(tamanoApaisado.height),
+      );
+      expect(
+        _rect(tester, find.byType(CasillasPin)).bottom,
+        lessThanOrEqualTo(tamanoApaisado.height),
+      );
+      expect(
+        _rect(tester, _botonIngresar(tester)).bottom,
+        lessThanOrEqualTo(tamanoApaisado.height),
+      );
+      expect(_alcanceDelDesplazamiento(tester), 0);
+    });
+
+    testWidgets('el campo del PIN es visible, alcanzable y acepta el PIN', (
+      tester,
+    ) async {
+      await _montar(tester, apaisada: true);
+
+      expect(find.byType(CasillasPin).hitTestable(), findsOneWidget);
+      expect(_campoPin.hitTestable(), findsOneWidget);
+
+      await tester.enterText(_campoPin, 'AGR7K2Q');
+      await tester.pump();
+      expect(_habilitado(tester), isTrue);
+    });
+
+    testWidgets('con el teclado abierto, el PIN sigue a la vista', (
+      tester,
+    ) async {
+      await _montar(tester, apaisada: true);
+
+      // Como en el teléfono: se toca el campo y luego sube el teclado.
+      await tester.tap(find.byType(CasillasPin));
+      await tester.pump();
+      tester.view.viewInsets = const FakeViewPadding(bottom: _altoTeclado);
+      await tester.pumpAndSettle();
+      final sobreTeclado = tamanoApaisado.height - _altoTeclado;
+
+      // La casilla entera queda sobre el teclado, y el botón también.
+      final casillas = _rect(tester, find.byType(CasillasPin));
+      expect(casillas.top, greaterThanOrEqualTo(0));
+      expect(casillas.bottom, lessThanOrEqualTo(sobreTeclado));
+      expect(_campoPin.hitTestable(), findsOneWidget);
+      expect(tester.widget<TextField>(_campoPin).focusNode?.hasFocus, isTrue);
+      expect(
+        _rect(tester, _botonIngresar(tester)).bottom,
+        lessThanOrEqualTo(sobreTeclado),
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('los demás tamaños conservan su layout', () {
+    testWidgets('vertical (393×852): la foto queda arriba y el PIN debajo', (
+      tester,
+    ) async {
+      await _montar(tester, tamano: const Size(393, 852));
+      final cabecera = _rect(tester, find.byType(CabeceraFoto));
+      final casillas = _rect(tester, find.byType(CasillasPin));
+
+      expect(cabecera.height, 220);
+      expect(casillas.top, greaterThanOrEqualTo(cabecera.bottom));
+      expect(tester.takeException(), isNull);
+    });
+
+    for (final tamano in [const Size(1024, 768), const Size(1280, 800)]) {
+      testWidgets(
+        'tablet y web (${tamano.width.toInt()}×${tamano.height.toInt()}): '
+        'panel de marca a la izquierda y PIN a la derecha',
+        (tester) async {
+          await _montar(tester, tamano: tamano);
+          final panel = _rect(tester, find.byType(PanelDeMarca));
+          final casillas = _rect(tester, find.byType(CasillasPin));
+
+          expect(find.byType(CabeceraFoto), findsNothing);
+          expect(casillas.left, greaterThanOrEqualTo(panel.right));
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  });
+}
+
+/// Cuánto puede desplazarse el formulario: 0 significa que cabe sin scroll.
+double _alcanceDelDesplazamiento(WidgetTester tester) {
+  final scroll = find.descendant(
+    of: find.byType(PlantillaAuth),
+    matching: find.byType(Scrollable),
+  );
+  return tester.state<ScrollableState>(scroll.first).position.maxScrollExtent;
 }

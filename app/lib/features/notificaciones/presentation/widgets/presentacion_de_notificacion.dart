@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/l10n/acciones_propuestas.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/features/notificaciones/domain/notificacion.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
@@ -60,6 +61,8 @@ IconData iconoDeSeveridad(Severidad severidad) => switch (severidad) {
 /// Lo que dice a quién o a dónde se refiere el aviso, en una línea: primero
 /// las puertas, luego el usuario y luego el sitio. Todo es texto plano.
 String? detalleDeNotificacion(AppLocalizations l10n, Notificacion aviso) {
+  final propuesta = aviso.propuesta;
+  if (propuesta != null) return _detalleDePropuesta(l10n, aviso, propuesta);
   if (aviso.puertas.isNotEmpty) {
     return l10n.notificacionDetallePuertas(aviso.puertas.join(', '));
   }
@@ -70,4 +73,25 @@ String? detalleDeNotificacion(AppLocalizations l10n, Notificacion aviso) {
     return l10n.notificacionDetalleSitio(aviso.sitio!);
   }
   return null;
+}
+
+/// La propuesta dice a quién se refiere, qué paso sugiere y con cuántas cifras.
+/// Si el sistema ya aplicó la restricción, dice eso (ADR 0033 §4.4). El usuario
+/// sin etiqueta se nombra como en los incidentes.
+String _detalleDePropuesta(
+  AppLocalizations l10n,
+  Notificacion aviso,
+  PropuestaDeIncidente propuesta,
+) {
+  final usuario = aviso.usuario ?? l10n.incidentesUsuarioSinNombre;
+  if (propuesta.aplicadaAutomaticamente) {
+    return l10n.incidenteReincidenciaAplicada(usuario);
+  }
+  return l10n.notificacionDetallePropuesta(
+    usuario,
+    textoDeAccionPropuesta(l10n, propuesta.accion),
+    propuesta.confirmados,
+    propuesta.minimo,
+    propuesta.ventanaDias,
+  );
 }

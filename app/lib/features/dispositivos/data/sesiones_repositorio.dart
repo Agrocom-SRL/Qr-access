@@ -15,6 +15,10 @@ abstract interface class SesionesRepositorio {
 
   /// Cierra todas mis sesiones menos la actual. Devuelve cuántas cerró.
   Future<int> cerrarOtras();
+
+  /// Pone el nombre de este aparato (la sesión actual). Pendiente de backend:
+  /// ver `ClienteApi.renombrarMiSesionActual`.
+  Future<void> renombrarActual(String dispositivo);
 }
 
 class SesionesRepositorioApi implements SesionesRepositorio {
@@ -33,6 +37,10 @@ class SesionesRepositorioApi implements SesionesRepositorio {
 
   @override
   Future<int> cerrarOtras() => _api.cerrarMisOtrasSesiones();
+
+  @override
+  Future<void> renombrarActual(String dispositivo) =>
+      _api.renombrarMiSesionActual(dispositivo);
 
   SesionConectada _aSesion(SesionAbiertaDto dto) => SesionConectada(
     id: dto.id,

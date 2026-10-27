@@ -70,3 +70,32 @@ cierreDeSesionesProvider =
     NotifierProvider.autoDispose<CierreDeSesionesControlador, bool>(
       CierreDeSesionesControlador.new,
     );
+
+/// Pone el nombre de este aparato. El estado es si hay un cambio en curso.
+/// Devuelve el error de la API (o `null` si salió bien) para que la pantalla
+/// lo traduzca; no se lanza.
+class RenombrarDispositivoControlador extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  Future<ErrorApi?> renombrar(String nombre) async {
+    state = true;
+    try {
+      await ref.read(sesionesRepositorioProvider).renombrarActual(nombre);
+      return null;
+    } on ErrorApi catch (error) {
+      return error;
+    } finally {
+      // Con éxito cambia el nombre en la lista; con error, la lista vuelve a
+      // leerse para mostrar lo que hay en la API.
+      ref.invalidate(misSesionesProvider);
+      state = false;
+    }
+  }
+}
+
+final NotifierProvider<RenombrarDispositivoControlador, bool>
+renombrarDispositivoProvider =
+    NotifierProvider.autoDispose<RenombrarDispositivoControlador, bool>(
+      RenombrarDispositivoControlador.new,
+    );

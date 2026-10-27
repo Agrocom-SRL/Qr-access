@@ -1,3 +1,4 @@
+import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -9,6 +10,7 @@ import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -63,6 +65,13 @@ const _pin = PinGenerado(
   esNuevo: false,
 );
 
+/// El aviso se retira solo a los 4 s; `pumpAndSettle` no avanza ese tiempo si
+/// no hay frames pendientes, así que se avanza explícitamente.
+Future<void> esperarQueSalgaElAviso(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 6));
+  await tester.pumpAndSettle();
+}
+
 const Set<String> _administrador = {
   Permisos.supervisarPuertas,
   Permisos.verUsuarios,
@@ -82,6 +91,7 @@ Future<UsuariosRepositorioFalso> _montar(
   Map<String, int> dependientes = const {},
   Cupo? cupo,
   RolSesion rol = rolDePrueba,
+  List<Puerta> puertas = const [],
 }) async {
   final repositorio = UsuariosRepositorioFalso(
     usuarios: _usuarios,
@@ -112,7 +122,7 @@ Future<UsuariosRepositorioFalso> _montar(
         EstructuraRepositorioFalso(_sitios),
       ),
       puertasRepositorioProvider.overrideWithValue(
-        PuertasRepositorioFalso(const []),
+        PuertasRepositorioFalso(puertas),
       ),
       relojProvider.overrideWithValue(() => _ahora),
     ],
@@ -261,6 +271,10 @@ void main() {
       );
       await tester.pump();
       expect(find.text(textos.usuariosErrorSinEtiqueta), findsOneWidget);
+      expect(
+        find.text(textos.usuariosFaltaCampo(textos.usuariosCampoEtiqueta)),
+        findsOneWidget,
+      );
 
       await tester.enterText(find.byType(TextField), 'Jorge Rivero');
       await tester.tap(
@@ -368,7 +382,7 @@ void main() {
         await tester.tap(
           find.widgetWithText(FilledButton, textos.usuariosGenerarPin),
         );
-        await tester.pump();
+        await esperarQueSalgaElAviso(tester);
       }
 
       await tester.enterText(find.byType(TextField).first, 'Jorge Rivero');
@@ -381,6 +395,12 @@ void main() {
 
       await generar();
       expect(find.text(textos.usuariosErrorSinPropiedad), findsOneWidget);
+      // Los dos campos que faltan se marcan a la vez, no uno detrás de otro.
+      expect(find.text(textos.usuariosErrorSinNombreUnidad), findsOneWidget);
+      expect(
+        find.text(textos.usuariosFaltaCampo(textos.usuariosCampoPropiedad)),
+        findsOneWidget,
+      );
 
       final selector = find.byType(DropdownButtonFormField<String>);
       await tester.ensureVisible(selector);
@@ -652,5 +672,225 @@ void main() {
       );
       expect(find.text(textosEn(tester).usuariosSeccionPuertas), findsNothing);
     });
+  });
+
+  group('validación visible y puertas del alta', () {
+    const puertas = [
+      Puerta(
+        id: 'p1',
+        nombre: 'Puerta Norte',
+        sitioId: 's1',
+        sitioNombre: 'Condominio Norte',
+      ),
+      Puerta(
+        id: 'p2',
+        nombre: 'Puerta Sur',
+        sitioId: 's1',
+        sitioNombre: 'Condominio Norte',
+      ),
+    ];
+
+    const pinGuardia = PinGenerado(
+      pin: 'AGR7K2Q',
+      usuarioEtiqueta: 'Portería',
+      roles: [Rol(id: 'r4', nombre: 'Guardia')],
+      esNuevo: true,
+      usuarioId: 'nuevo',
+    );
+
+    const conPuertas = {..._administrador, Permisos.asignarGuardias};
+
+    bool marcada(WidgetTester tester, String texto) =>
+        tester
+            .widget<CheckboxListTile>(
+              find.widgetWithText(CheckboxListTile, texto),
+            )
+            .value ??
+        false;
+
+    /// Toca lo que esté visible tras desplazarlo y deja que salga el aviso
+    /// (si sale): flota sobre la barra de acciones y tapa el botón.
+    Future<void> tocar(WidgetTester tester, Finder objetivo) async {
+      await tester.ensureVisible(objetivo);
+      await tester.tap(objetivo);
+      await esperarQueSalgaElAviso(tester);
+    }
+
+    Future<void> generar(WidgetTester tester, AppLocalizations textos) => tocar(
+      tester,
+      find.widgetWithText(FilledButton, textos.usuariosGenerarPin),
+    );
+
+    testWidgets('Generar PIN con la etiqueta vacía marca el campo y avisa', (
+      tester,
+    ) async {
+      final repositorio = await _montar(
+        tester,
+        pagina: const UsuarioFormularioPagina(),
+      );
+      final textos = textosEn(tester);
+
+      await generar(tester, textos);
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(
+        find.text(textos.usuariosFaltaCampo(textos.usuariosCampoEtiqueta)),
+        findsOneWidget,
+      );
+      expect(find.text(textos.usuariosErrorSinEtiqueta), findsOneWidget);
+      expect(repositorio.creados, isEmpty);
+    });
+
+    testWidgets(
+      'un Titular sin propiedad ni unidad marca ambos y avisa del primero',
+      (tester) async {
+        final repositorio = await _montar(
+          tester,
+          pagina: const UsuarioFormularioPagina(),
+        );
+        final textos = textosEn(tester);
+
+        await tester.enterText(find.byType(TextField).first, 'Jorge Rivero');
+        await tocar(tester, find.text('Titular'));
+        await generar(tester, textos);
+
+        expect(find.text(textos.usuariosErrorSinPropiedad), findsOneWidget);
+        expect(find.text(textos.usuariosErrorSinNombreUnidad), findsOneWidget);
+        expect(
+          find.text(textos.usuariosFaltaCampo(textos.usuariosCampoPropiedad)),
+          findsOneWidget,
+        );
+        expect(repositorio.creados, isEmpty);
+      },
+    );
+
+    testWidgets('los campos obligatorios llevan la marca de asterisco', (
+      tester,
+    ) async {
+      await _montar(tester, pagina: const UsuarioFormularioPagina());
+      final textos = textosEn(tester);
+
+      await tocar(tester, find.text('Titular'));
+
+      String conMarca(String rotulo) =>
+          '$rotulo${textos.comunMarcaObligatorio}';
+      expect(find.text(conMarca(textos.usuariosCampoEtiqueta)), findsOneWidget);
+      expect(
+        find.text(conMarca(textos.usuariosCampoPropiedad)),
+        findsOneWidget,
+      );
+      expect(find.text(conMarca(textos.usuariosCampoUnidad)), findsOneWidget);
+      expect(
+        find.text(conMarca(textos.usuariosSeccionRoles).toUpperCase()),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('un alta nuevo llega con todas las puertas marcadas', (
+      tester,
+    ) async {
+      final repositorio = await _montar(
+        tester,
+        pagina: const UsuarioFormularioPagina(),
+        permisos: conPuertas,
+        puertas: puertas,
+        pin: pinGuardia,
+      );
+      final textos = textosEn(tester);
+
+      await tester.enterText(find.byType(TextField), 'Portería');
+      await tocar(tester, find.text('Guardia'));
+
+      expect(marcada(tester, textos.usuariosPuertasTodas), isTrue);
+      expect(marcada(tester, 'Puerta Norte'), isTrue);
+      expect(marcada(tester, 'Puerta Sur'), isTrue);
+
+      await generar(tester, textos);
+
+      expect(repositorio.asignaciones.single.$2.todas, isTrue);
+    });
+
+    testWidgets('desmarcar Todas deja elegir y se guarda solo lo marcado', (
+      tester,
+    ) async {
+      final repositorio = await _montar(
+        tester,
+        pagina: const UsuarioFormularioPagina(),
+        permisos: conPuertas,
+        puertas: puertas,
+        pin: pinGuardia,
+      );
+      final textos = textosEn(tester);
+
+      await tester.enterText(find.byType(TextField), 'Portería');
+      await tocar(tester, find.text('Guardia'));
+      await tocar(tester, find.text(textos.usuariosPuertasTodas));
+
+      expect(marcada(tester, textos.usuariosPuertasTodas), isFalse);
+      expect(marcada(tester, 'Puerta Norte'), isFalse);
+
+      await tocar(tester, find.text('Puerta Norte'));
+      expect(marcada(tester, 'Puerta Norte'), isTrue);
+
+      await generar(tester, textos);
+
+      final asignada = repositorio.asignaciones.single.$2;
+      expect(asignada.todas, isFalse);
+      expect(asignada.puertaIds, {'p1'});
+    });
+
+    testWidgets('al editar, se muestran las puertas guardadas y no todas', (
+      tester,
+    ) async {
+      await _montar(
+        tester,
+        pagina: const UsuarioFormularioPagina(usuarioId: 'u2'),
+        permisos: conPuertas,
+        puertas: puertas,
+        asignadas: const PuertasAsignadas(puertaIds: {'p2'}),
+      );
+      final textos = textosEn(tester);
+      await tester.pumpAndSettle();
+
+      expect(marcada(tester, textos.usuariosPuertasTodas), isFalse);
+      expect(marcada(tester, 'Puerta Norte'), isFalse);
+      expect(marcada(tester, 'Puerta Sur'), isTrue);
+    });
+
+    testWidgets(
+      'en horizontal (852x393) el formulario se desplaza sin cortarse',
+      (tester) async {
+        await _montar(
+          tester,
+          pagina: const UsuarioFormularioPagina(),
+          permisos: conPuertas,
+          puertas: puertas,
+        );
+        usarTamano(tester, const Size(852, 393));
+        await tester.pumpAndSettle();
+        final textos = textosEn(tester);
+
+        await tester.enterText(find.byType(TextField).first, 'Jorge Rivero');
+        await tocar(tester, find.text('Titular'));
+
+        final desplazable = find
+            .descendant(
+              of: find.byType(FormularioSecciones),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        final generarPin = find.widgetWithText(
+          FilledButton,
+          textos.usuariosGenerarPin,
+        );
+        await tester.scrollUntilVisible(
+          generarPin,
+          100,
+          scrollable: desplazable,
+        );
+        expect(tester.takeException(), isNull);
+        expect(generarPin, findsOneWidget);
+      },
+    );
   });
 }

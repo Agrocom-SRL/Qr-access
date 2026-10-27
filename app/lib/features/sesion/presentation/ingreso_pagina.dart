@@ -101,6 +101,7 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
+    final apaisada = esTelefonoApaisado(context);
     final ahora = ref.read(relojProvider)();
     final bloqueado = estado.bloqueadoEn(ahora);
     final errorApi = estado.errorApi;
@@ -125,13 +126,20 @@ class _IngresoPaginaEstado extends ConsumerState<IngresoPagina> {
             AccesoLogo(tamano: tokens.tamano.logoChico),
             SizedBox(height: tokens.espacio.xl),
           ],
-          Text(l10n.sesionIngresoTitulo, style: textos.headlineLarge),
+          // En teléfono horizontal el título y la ayuda bajan de tamaño y los
+          // bloques se acercan: todo, incluido el botón, cabe sin desplazarse.
+          Text(
+            l10n.sesionIngresoTitulo,
+            style: apaisada ? textos.headlineMedium : textos.headlineLarge,
+          ),
           SizedBox(height: tokens.espacio.s),
           Text(
             l10n.sesionIngresoAyuda,
-            style: textos.bodyLarge?.copyWith(color: colores.textoSecundario),
+            style: (apaisada ? textos.bodyMedium : textos.bodyLarge)?.copyWith(
+              color: colores.textoSecundario,
+            ),
           ),
-          SizedBox(height: tokens.espacio.xl),
+          SizedBox(height: apaisada ? tokens.espacio.l : tokens.espacio.xl),
           CasillasPin(
             controlador: _pin,
             habilitado: !estado.enviando && !bloqueado,
