@@ -11,6 +11,7 @@ class SesionesRepositorioFalso implements SesionesRepositorio {
     this.errorCerrar,
     this.cerradasDeOtras = 0,
     this.errorCerrarOtras,
+    this.errorRenombrar,
   });
 
   final List<SesionConectada> sesiones;
@@ -18,7 +19,11 @@ class SesionesRepositorioFalso implements SesionesRepositorio {
   final Exception? errorCerrar;
   final int cerradasDeOtras;
   final Exception? errorCerrarOtras;
+  final Exception? errorRenombrar;
   final List<String> cerradas = [];
+
+  /// Los nombres que la pantalla pidió poner, en orden.
+  final List<String> nombresPedidos = [];
   int pedidosDeCerrarOtras = 0;
 
   @override
@@ -43,5 +48,11 @@ class SesionesRepositorioFalso implements SesionesRepositorio {
     pedidosDeCerrarOtras++;
     if (errorCerrarOtras != null) throw errorCerrarOtras!;
     return cerradasDeOtras;
+  }
+
+  @override
+  Future<void> renombrarActual(String dispositivo) async {
+    if (errorRenombrar != null) throw errorRenombrar!;
+    nombresPedidos.add(dispositivo);
   }
 }
