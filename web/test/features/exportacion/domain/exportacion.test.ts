@@ -116,6 +116,15 @@ describe('archivo', () => {
     expect(nombreDeArchivo('lecturas', 'AGR', 2)).toBe('lecturas-agr-p2.csv');
   });
 
+  it('el código de la cuenta se limita a letras, cifras, guion y guion bajo', () => {
+    expect(nombreDeArchivo('usuarios', '../A G.R/x', 1)).toBe('usuarios-agrx-p1.csv');
+    expect(nombreDeArchivo('usuarios', 'a_b-1', 1)).toBe('usuarios-a_b-1-p1.csv');
+  });
+
+  it('si del código no queda nada usa «cuenta»', () => {
+    expect(nombreDeArchivo('puertas', '/ \\ .', 3)).toBe('puertas-cuenta-p3.csv');
+  });
+
   it('Excel recibe el archivo con la marca de orden de bytes delante, en UTF-8', () => {
     const csv = new Blob(['nombre\nÑandú\n'], { type: 'text/csv' });
     const conBom = conBomDeExcel(csv);

@@ -107,13 +107,18 @@ export function claveDeExportacion(
   return [recurso, filtros.resultado, filtros.desde, filtros.hasta].join('|');
 }
 
-/** Nombre del archivo: el recurso, el código de la cuenta y la página, como `lecturas-agr-p2.csv`. */
+/**
+ * Nombre del archivo: el recurso, el código de la cuenta y la página, como `lecturas-agr-p2.csv`.
+ * El código viene de la API: se limita a letras, cifras, guion y guion bajo para que el nombre sea
+ * siempre predecible; si no queda nada se usa `cuenta`.
+ */
 export function nombreDeArchivo(
   recurso: RecursoExportable,
   codigoCuenta: string,
   pagina: number,
 ): string {
-  return `${recurso}-${codigoCuenta.toLowerCase()}-p${String(pagina)}.csv`;
+  const codigo = codigoCuenta.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'cuenta';
+  return `${recurso}-${codigo}-p${String(pagina)}.csv`;
 }
 
 /** Excel lee el UTF-8 con tildes solo si el archivo empieza con la marca de orden de bytes (BOM). */
