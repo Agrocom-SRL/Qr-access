@@ -66,6 +66,8 @@ En capas, de la más barata a la más fina:
 4. **Pool de MySQL y timeouts:** el pool de 10 conexiones se revisa junto con un tiempo máximo por consulta y por petición, para que unos pocos clientes lentos no lo agoten.
 5. **Pruebas de carga** (por ejemplo `k6`) contra un entorno de prueba antes de abrir la app al público; nunca contra producción.
 
+   Las pruebas de carga con un cliente HTTP real destaparon que la validación de QR respondía `503` por usar `request.signal` como presupuesto (detalle y corrección en el ADR 0032 §1, "Hallazgo y corrección"). El tope de petición de los dispositivos es un plazo propio (`presupuestoDePeticion`), y la API debe probarse también con servidor real, no solo con `app.inject()`.
+
 **Implementado (ola W3, API):** `@fastify/rate-limit` en `api/src/plugins/limites.ts`, registrado después de la autenticación. Cuenta por (clase de ruta, identidad): el dispositivo por su credencial, el usuario por su sesión y, sin sesión, la IP; una cabecera sin verificar nunca elige la clave. Ventana de un minuto; el contador está en memoria (una instancia, V1). Pasado el tope responde `429` `limite.excedido` con `Retry-After`. Valores por defecto (todos en variables `LIMITE_*_POR_MINUTO`, ver `.env.example`):
 
 | Clase         | Rutas                                         | Clave          | Por defecto |
