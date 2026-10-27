@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/cabecera_titulo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -57,6 +58,18 @@ void main() {
     expect(find.textContaining('Empresa'), findsOneWidget);
     expect(find.text('Administrador'), findsOneWidget);
     expect(find.text(textos.perfilVersion), findsOneWidget);
+  });
+
+  testWidgets('no lleva título de pantalla: empieza por el usuario', (
+    tester,
+  ) async {
+    await _montar(tester);
+
+    expect(find.byType(CabeceraTitulo), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('Ana Pérez')).dy,
+      lessThan(tester.getTopLeft(find.text(textosEn(tester).sesionCerrar)).dy),
+    );
   });
 
   testWidgets('sin suscripción vigente lo avisa', (tester) async {

@@ -11,7 +11,9 @@ import 'package:flutter/material.dart';
 ///   pasos 2 y 3 de Generar QR.
 /// - [cerrar]: X. Descarta lo que se estaba haciendo: formularios de crear y
 ///   editar, el primer paso de Generar QR, y el QR y el PIN generados (se ven
-///   una sola vez y "salir" es abandonarlos).
+///   una sola vez y "salir" es abandonarlos). También las pantallas de tercer
+///   nivel, abiertas desde una subpágina (Perfil → Exportar datos → Exportar
+///   accesos): la X cierra y vuelve a la subpágina de origen.
 /// - [ninguna]: sin botón. Un destino principal de la navegación no tiene
 ///   salida.
 enum SalidaDeCabecera { volver, cerrar, ninguna }
@@ -43,17 +45,18 @@ class BotonSalidaCabecera extends StatelessWidget {
     final tokens = context.tokens;
     final l10n = context.l10n;
     final esVolver = salida == SalidaDeCabecera.volver;
-    return IconButton(
-      tooltip: esVolver ? l10n.comunVolver : l10n.comunCerrar,
-      onPressed: alPulsar,
-      color: color,
-      // El mínimo táctil del tema (44): el ícono sigue siendo de 24, pero la
-      // zona que responde al toque nunca baja de ahí.
-      constraints: BoxConstraints(
-        minWidth: tokens.tamano.controlMinimo,
-        minHeight: tokens.tamano.controlMinimo,
+    // Caja de exactamente el mínimo táctil del tema (44): sin el SizedBox, el
+    // IconButton de Material se ensancha a 48 y la cabecera no puede calcular
+    // dónde empieza su título (la sangría del subtítulo) ni el eje del botón.
+    // El ícono sigue de 24 y centrado, así que se ve igual.
+    return SizedBox.square(
+      dimension: tokens.tamano.controlMinimo,
+      child: IconButton(
+        tooltip: esVolver ? l10n.comunVolver : l10n.comunCerrar,
+        onPressed: alPulsar,
+        color: color,
+        icon: Icon(esVolver ? Icons.arrow_back : Icons.close),
       ),
-      icon: Icon(esVolver ? Icons.arrow_back : Icons.close),
     );
   }
 }

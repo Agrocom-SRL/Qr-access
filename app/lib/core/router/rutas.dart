@@ -60,5 +60,11 @@ abstract final class Rutas {
   /// Administrador).
   static const exportar = '/exportar';
 
+  /// Bajar los accesos a puertas en CSV, con sus filtros; desde Exportar.
+  static const exportarAccesos = '/exportar/accesos';
+
+  /// Anular los QR vigentes de mis usuarios, desde Perfil (pantalla completa).
+  static const anularQrDeRama = '/qr/anular';
+
   static String incidente(String id) => '/incidentes/$id';
 }

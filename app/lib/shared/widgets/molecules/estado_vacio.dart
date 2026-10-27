@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/centrado_desplazable.dart';
 import 'package:flutter/material.dart';
 
 /// Variantes (handoff): vacío (ilustración, o ícono si el llamador pasa uno;
@@ -106,7 +107,9 @@ class EstadoVacio extends StatelessWidget {
         Icons.refresh,
       ),
     };
-    return Center(
+    // Dentro de un scrollable (CentradoDesplazable): si no cabe en la altura,
+    // se desplaza y el título queda alcanzable.
+    return CentradoDesplazable(
       child: Padding(
         padding: EdgeInsets.all(tokens.espacio.xl),
         child: ConstrainedBox(

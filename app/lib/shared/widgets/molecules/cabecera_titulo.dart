@@ -55,31 +55,41 @@ class CabeceraTitulo extends StatelessWidget {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     final pulsarSalida = alSalir;
-    return Row(
+    final conSalida =
+        salida != SalidaDeCabecera.ninguna && pulsarSalida != null;
+    // El título y el botón comparten la fila centrada en vertical: la flecha
+    // cae en el centro de la línea del título (como en el AppBar de Generar
+    // QR). El subtítulo va bajo el título, sangrado para no quedar bajo el
+    // botón; por eso no se centra la columna entera (la flecha se iría a
+    // mitad de camino entre el título y el subtítulo).
+    final sangria = conSalida
+        ? tokens.tamano.controlMinimo + tokens.espacio.s
+        : 0.0;
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (salida != SalidaDeCabecera.ninguna && pulsarSalida != null) ...[
-          BotonSalidaCabecera(salida: salida, alPulsar: pulsarSalida),
-          SizedBox(width: tokens.espacio.s),
-        ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titulo, style: estiloDe(context)),
-              if (subtitulo != null) ...[
-                SizedBox(height: tokens.espacio.xs),
-                Text(
-                  subtitulo!,
-                  style: textos.bodyLarge?.copyWith(
-                    color: tokens.colores.textoSecundario,
-                  ),
-                ),
-              ],
+        Row(
+          children: [
+            if (conSalida) ...[
+              BotonSalidaCabecera(salida: salida, alPulsar: pulsarSalida),
+              SizedBox(width: tokens.espacio.s),
             ],
-          ),
+            Expanded(child: Text(titulo, style: estiloDe(context))),
+            if (accion != null) ...[SizedBox(width: tokens.espacio.l), accion!],
+          ],
         ),
-        if (accion != null) ...[SizedBox(width: tokens.espacio.l), accion!],
+        if (subtitulo != null) ...[
+          SizedBox(height: tokens.espacio.xs),
+          Padding(
+            padding: EdgeInsets.only(left: sangria),
+            child: Text(
+              subtitulo!,
+              style: textos.bodyLarge?.copyWith(
+                color: tokens.colores.textoSecundario,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

@@ -74,9 +74,9 @@ class PerfilPagina extends ConsumerWidget {
         MediaQuery.platformBrightnessOf(context) == Brightness.dark,
     };
 
+    // Sin título de pantalla: la página empieza por el bloque del usuario.
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
-      titulo: l10n.perfilTitulo,
       anchoMaximo: tokens.tamano.maxFormulario,
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),

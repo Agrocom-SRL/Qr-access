@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 /// Ilustración decorativa de un estado (vacío, error, sin conexión, bloqueo):
-/// 160 dp (200 en expandido). Es decorativa: el título y la ayuda que la
-/// acompañan ya dicen lo mismo, así que los lectores de pantalla la saltan.
+/// 160 dp (200 en expandido), y 88 cuando la altura es poca (teléfono en
+/// horizontal) para que el título no quede tapado. Es decorativa: el título y
+/// la ayuda que la acompañan ya dicen lo mismo, así que los lectores de
+/// pantalla la saltan.
 class AccesoIlustracion extends StatelessWidget {
   const new({required this.ruta, super.key});
 
@@ -14,7 +16,9 @@ class AccesoIlustracion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tamano = context.tokens.tamano;
-    final lado = context.esExpandida
+    final lado = context.esAlturaCorta
+        ? tamano.ilustracionAlturaCorta
+        : context.esExpandida
         ? tamano.ilustracionExpandida
         : tamano.ilustracion;
     return Semantics(

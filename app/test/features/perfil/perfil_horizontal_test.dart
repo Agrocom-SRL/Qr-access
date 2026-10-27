@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/cabecera_titulo.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fakes.dart';
@@ -27,7 +28,8 @@ void main() {
     final textos = textosEn(tester);
 
     expect(tester.takeException(), isNull);
-    expect(find.text(textos.perfilTitulo), findsWidgets);
+    // Sin título de pantalla: la página empieza por el bloque del usuario.
+    expect(find.byType(CabeceraTitulo), findsNothing);
     expect(find.text(textos.sesionCerrar), findsOneWidget);
   });
 }

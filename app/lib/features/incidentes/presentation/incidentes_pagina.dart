@@ -12,6 +12,7 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_accion_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_selector.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/campo_formulario.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -62,14 +63,10 @@ class IncidentesPagina extends ConsumerWidget {
               alCambiarPagina: ref
                   .read(filtroIncidentesProvider.notifier)
                   .irAPagina,
-              // Con poca altura (horizontal) la ilustración y el texto se
-              // desplazan en vez de desbordar.
-              vacio: SingleChildScrollView(
-                child: EstadoVacio(
-                  ilustracion: Multimedia.bloqueo,
-                  titulo: l10n.incidentesVacioTitulo,
-                  ayuda: l10n.incidentesVacioAyuda,
-                ),
+              vacio: EstadoVacio(
+                ilustracion: Multimedia.bloqueo,
+                titulo: l10n.incidentesVacioTitulo,
+                ayuda: l10n.incidentesVacioAyuda,
               ),
               tarjeta: (context, incidente) => _TarjetaIncidente(
                 incidente: incidente,
@@ -144,41 +141,62 @@ class _Filtros extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final tokens = context.tokens;
-    final todos = l10n.incidentesFiltroTodos;
     final notifier = ref.read(filtroIncidentesProvider.notifier);
+    // Cada filtro lleva su rótulo visible ("Tipo", "Estado") encima del campo,
+    // para que se lea qué filtra aunque la opción elegida sea "Todos".
+    final tipo = CampoFormulario(
+      etiqueta: l10n.incidentesFiltroTipo,
+      child: AccesoSelector<TipoDeIncidente?>(
+        opciones: [
+          OpcionSelector(
+            valor: null,
+            etiqueta: l10n.incidentesFiltroTodosTipos,
+          ),
+          for (final valor in TipoDeIncidente.values)
+            OpcionSelector(
+              valor: valor,
+              etiqueta: textoDeTipoDeIncidente(l10n, valor),
+            ),
+        ],
+        seleccionado: filtro.tipo,
+        alElegir: notifier.elegirTipo,
+        placeholder: l10n.incidentesFiltroTipo,
+      ),
+    );
+    final estado = CampoFormulario(
+      etiqueta: l10n.incidentesFiltroEstado,
+      child: AccesoSelector<EstadoDeIncidente?>(
+        opciones: [
+          OpcionSelector(
+            valor: null,
+            etiqueta: l10n.incidentesFiltroTodosEstados,
+          ),
+          for (final valor in EstadoDeIncidente.values)
+            OpcionSelector(valor: valor, etiqueta: textoDeEstado(l10n, valor)),
+        ],
+        seleccionado: filtro.estado,
+        alElegir: notifier.elegirEstado,
+        placeholder: l10n.incidentesFiltroEstado,
+      ),
+    );
+    // En vertical, uno debajo del otro y a todo el ancho, para que no se corte
+    // el texto de la opción. En horizontal de teléfono, medio y expandido, lado
+    // a lado.
+    if (context.esCompacta && !context.esTelefonoEnHorizontal) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          tipo,
+          SizedBox(height: tokens.espacio.m),
+          estado,
+        ],
+      );
+    }
     return Row(
       children: [
-        Expanded(
-          child: AccesoSelector<TipoDeIncidente?>(
-            opciones: [
-              OpcionSelector(valor: null, etiqueta: todos),
-              for (final tipo in TipoDeIncidente.values)
-                OpcionSelector(
-                  valor: tipo,
-                  etiqueta: textoDeTipoDeIncidente(l10n, tipo),
-                ),
-            ],
-            seleccionado: filtro.tipo,
-            alElegir: notifier.elegirTipo,
-            placeholder: l10n.incidentesFiltroTipo,
-          ),
-        ),
+        Expanded(child: tipo),
         SizedBox(width: tokens.espacio.s),
-        Expanded(
-          child: AccesoSelector<EstadoDeIncidente?>(
-            opciones: [
-              OpcionSelector(valor: null, etiqueta: todos),
-              for (final estado in EstadoDeIncidente.values)
-                OpcionSelector(
-                  valor: estado,
-                  etiqueta: textoDeEstado(l10n, estado),
-                ),
-            ],
-            seleccionado: filtro.estado,
-            alElegir: notifier.elegirEstado,
-            placeholder: l10n.incidentesFiltroEstado,
-          ),
-        ),
+        Expanded(child: estado),
       ],
     );
   }
