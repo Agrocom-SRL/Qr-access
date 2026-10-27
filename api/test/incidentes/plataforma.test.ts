@@ -86,7 +86,7 @@ describe('AGROCOM y los incidentes de una cuenta (ADR 0033 §4)', () => {
       expect(sinSesion.statusCode).toBe(401);
     });
 
-    it('es de solo lectura: AGROCOM no resuelve ni registra por esta ruta', async () => {
+    it('esta ruta es de lectura: AGROCOM no registra incidentes por ella (resolver tiene su propia ruta)', async () => {
       const escritura = await prueba.app.inject({
         method: 'POST',
         url: `/api/v1/plataforma/cuentas/${a.cuenta.id}/incidentes`,
