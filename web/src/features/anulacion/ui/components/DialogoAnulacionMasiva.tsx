@@ -95,7 +95,7 @@ export function DialogoAnulacionMasiva({ cuenta, onCerrar }: Props) {
             etiqueta={t('anulacion:dialogo.codigo', { codigo: cuenta.codigo })}
             mono
             value={codigo}
-            maxLength={3}
+            maxLength={cuenta.codigo.length}
             autoComplete="off"
             autoCapitalize="characters"
             onChange={(evento) => {
