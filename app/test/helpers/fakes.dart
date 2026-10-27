@@ -16,7 +16,7 @@ import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuar
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
@@ -230,13 +230,13 @@ class EventosRepositorioFalso implements EventosRepositorio {
     this.error,
   });
 
-  final Pagina<EventoAcceso> pagina;
+  final Pagina<Lectura> pagina;
   final ResumenEventos resumen;
   final Exception? error;
   final List<FiltroEventos> filtrosPedidos = [];
 
   @override
-  Future<Pagina<EventoAcceso>> listar({
+  Future<Pagina<Lectura>> listar({
     required FiltroEventos filtro,
     required int pagina,
     required int porPagina,

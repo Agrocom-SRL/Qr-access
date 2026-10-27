@@ -1,8 +1,8 @@
 {
-  "titulo": "Access",
+  "titulo": "Scans",
   "subtitulo": "What the boards read across all accounts, live",
-  "tabla": "Access",
-  "errorCarga": "We couldn't load the access attempts",
+  "tabla": "Scans",
+  "errorCarga": "We couldn't load the scans",
   "columna": {
     "cuando": "When",
     "cuenta": "Account",
@@ -27,11 +27,11 @@
     "ejecucionEtiqueta": "What the door did"
   },
   "vacio": {
-    "titulo": "No access attempts yet",
-    "texto": "When a board reads a QR, the attempt shows up here right away."
+    "titulo": "No scans yet",
+    "texto": "When a board reads a QR, the read attempt shows up here right away."
   },
   "sinResultados": {
-    "titulo": "No access attempts with these filters",
+    "titulo": "No scans with these filters",
     "texto": "Try other dates or clear the filters."
   },
   "motivo": {

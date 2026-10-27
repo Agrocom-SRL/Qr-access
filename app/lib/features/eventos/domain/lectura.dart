@@ -16,10 +16,11 @@ enum ResultadoEvento {
       );
 }
 
-/// Un intento de acceso en una puerta de la cuenta. Es de solo lectura: la
+/// Una lectura: un intento de lectura de un QR en una puerta de la cuenta,
+/// aceptado o rechazado (tabla `lecturas`). Es de solo lectura: la
 /// bitácora no se edita ni se borra (invariante 4).
 @immutable
-class EventoAcceso {
+class Lectura {
   const new({
     required this.id,
     required this.ocurridoAt,

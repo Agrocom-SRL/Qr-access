@@ -77,7 +77,7 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
     ocurrido: Date,
   ): Promise<string> {
     const [resultado] = await prueba.pool.query(
-      "INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'permitido', 'acceso.permitido', ?)",
+      "INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'permitido', 'acceso.permitido', ?)",
       [escenario.cuenta.id, puerta.id, dispositivo.id, ocurrido],
     );
     return String((resultado as { insertId: number }).insertId);
@@ -207,7 +207,7 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
     it('los rechazos no son aperturas: no esperan informe', async () => {
       await habilitarSensor(a.dispositivoPrincipal);
       await prueba.pool.query(
-        "INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'rechazado', 'qr.vencido', ?)",
+        "INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'rechazado', 'qr.vencido', ?)",
         [a.cuenta.id, a.puertaPrincipal.id, a.dispositivoPrincipal.id, en(-5)],
       );
       expect((await pasada(en(0))).evaluacion.constancias).toBe(0);
@@ -253,9 +253,7 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
     it('un evento de otro método (pulsador) no es una apertura ordenada por QR: no se juzga', async () => {
       await habilitarSensor(a.dispositivoPrincipal);
       const evento = await aperturaA(en(-5));
-      await prueba.pool.query("UPDATE eventos_acceso SET metodo = 'pulsador' WHERE id = ?", [
-        evento,
-      ]);
+      await prueba.pool.query("UPDATE lecturas SET metodo = 'pulsador' WHERE id = ?", [evento]);
       expect((await pasada(en(0))).evaluacion.constancias).toBe(0);
     });
   });
@@ -269,7 +267,7 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
       const resultado = await pasada(en(300));
       expect(resultado.evaluacion).toMatchObject({ constancias: 2, avisos: 0 });
       const [fila] = await filasDe(
-        'SELECT registrada_at, TIMESTAMPDIFF(SECOND, e.ocurrido_at, c.registrada_at) AS despues FROM confirmaciones_apertura AS c JOIN eventos_acceso AS e ON e.id = c.evento_acceso_id WHERE c.evento_acceso_id = ?',
+        'SELECT registrada_at, TIMESTAMPDIFF(SECOND, e.ocurrido_at, c.registrada_at) AS despues FROM confirmaciones_apertura AS c JOIN lecturas AS e ON e.id = c.evento_acceso_id WHERE c.evento_acceso_id = ?',
         [primero],
       );
       expect(Number(fila?.despues)).toBe(90);
@@ -604,9 +602,9 @@ describe('aperturas que fallan: constancia de falta de respuesta y aviso agrupad
   it('el detector nunca abre ni cambia un evento ni un QR: solo agrega filas de confirmación', async () => {
     await habilitarSensor(a.dispositivoPrincipal);
     const evento = await aperturaA(en(-5));
-    const antes = await filasDe('SELECT * FROM eventos_acceso WHERE id = ?', [evento]);
+    const antes = await filasDe('SELECT * FROM lecturas WHERE id = ?', [evento]);
     await pasada(en(0));
-    expect(await filasDe('SELECT * FROM eventos_acceso WHERE id = ?', [evento])).toEqual(antes);
-    expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(1);
+    expect(await filasDe('SELECT * FROM lecturas WHERE id = ?', [evento])).toEqual(antes);
+    expect(await contarFilas(prueba.pool, 'lecturas')).toBe(1);
   });
 });

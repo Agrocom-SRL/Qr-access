@@ -9,7 +9,7 @@ import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
 import 'package:dio/dio.dart';
 
-/// Filtros de `GET /eventos-acceso` y de su resumen.
+/// Filtros de `GET /lecturas` y de su resumen.
 class FiltroEventosApi {
   const new({this.resultado, this.puertaId, this.desde, this.hasta});
 
@@ -156,28 +156,28 @@ class ClienteApi {
     });
   }
 
-  Future<PaginaDto<EventoAccesoDto>> eventosAcceso({
+  Future<PaginaDto<LecturaDto>> lecturas({
     required int pagina,
     required int porPagina,
     FiltroEventosApi filtro = const FiltroEventosApi(),
   }) {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>(
-        '/eventos-acceso',
+        '/lecturas',
         queryParameters: {
           'pagina': pagina,
           'por_pagina': porPagina,
           ...filtro.aQuery(),
         },
       );
-      return paginaDeApi(r.data!, EventoAccesoDto.desde);
+      return paginaDeApi(r.data!, LecturaDto.desde);
     });
   }
 
   Future<ResumenEventosDto> resumenEventos(FiltroEventosApi filtro) {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>(
-        '/eventos-acceso/resumen',
+        '/lecturas/resumen',
         queryParameters: filtro.aQuery(),
       );
       return ResumenEventosDto.desde(r.data!);

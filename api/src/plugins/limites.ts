@@ -108,7 +108,7 @@ export async function registrarLimites(app: FastifyInstance, config: Config): Pr
     onExceeded: (request: FastifyRequest) => {
       // Sin la clave: lleva la IP o el id del usuario y no hace falta en el log. De un dispositivo
       // sí van su id y su puerta (no son secretos): sin ellos, un 429 en la puerta no deja rastro
-      // de cuál fue (invariante 4: el rechazo no llega a `eventos_acceso`).
+      // de cuál fue (invariante 4: el rechazo no llega a `lecturas`).
       request.log.warn(
         { clase: claseDe(request), ...datosDelDispositivo(request.principal) },
         'límite de uso excedido',

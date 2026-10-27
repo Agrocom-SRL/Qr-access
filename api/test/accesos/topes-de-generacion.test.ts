@@ -467,7 +467,7 @@ describe('topes de generación de QR (ADR 0030 §2, §2.1, §7; ADR 0031 §9)', 
         abrir: true,
         motivo_code: 'acceso.permitido',
       });
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(1);
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(1);
     });
   });
 });

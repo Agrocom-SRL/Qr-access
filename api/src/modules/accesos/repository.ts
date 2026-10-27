@@ -449,7 +449,7 @@ export class RepositorioDePuertasDeQr extends RepositorioDeCuenta {
   }
 }
 
-export interface EventoFila extends RowDataPacket {
+export interface LecturaFila extends RowDataPacket {
   id: string;
   ocurrido_at: Date;
   resultado: 'permitido' | 'rechazado';
@@ -467,7 +467,7 @@ export interface IntentoFila extends RowDataPacket {
   puerta_id: string;
 }
 
-export interface FiltroDeEventos {
+export interface FiltroDeLecturas {
   /** Solo los de QR generados por este usuario; `null` = todos los de la cuenta. */
   readonly generadoPor: string | null;
   /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
@@ -494,7 +494,7 @@ export const EJECUCION_EFECTIVA =
   "ORDER BY (c.origen = 'placa') DESC, c.id DESC LIMIT 1)";
 
 function armarFiltroDeEventos(
-  filtro: FiltroDeEventos,
+  filtro: FiltroDeLecturas,
   repeticiones = false,
 ): { donde?: string; params: unknown[] } {
   // Por omisión solo el primer intento; las repeticiones se cuentan aparte («×N», ADR 0032 §4.2).
@@ -537,7 +537,7 @@ function armarFiltroDeEventos(
   return condiciones.length === 0 ? { params } : { donde: condiciones.join(' AND '), params };
 }
 
-export interface NuevoEvento {
+export interface NuevaLectura {
   readonly puertaId: string;
   readonly dispositivoId: string;
   readonly qrAccesoId: string | null;
@@ -575,11 +575,11 @@ export interface AperturaOrdenadaFila extends RowDataPacket {
 /** El QR de una unión con `qr_accesos` es de la misma cuenta; no se filtra por `deleted_at` para no perder el historial. */
 const UNION_QR = 'LEFT JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id';
 
-/** Dueño de `eventos_acceso`: solo inserción (invariante 4). */
-export class RepositorioDeEventos extends RepositorioDeCuenta {
+/** Dueño de `lecturas`: solo inserción (invariante 4). */
+export class RepositorioDeLecturas extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
-      nombre: 'eventos_acceso',
+      nombre: 'lecturas',
       columnas: [
         'puerta_id',
         'dispositivo_id',
@@ -597,7 +597,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
-  registrar(tx: Transaccion, evento: NuevoEvento): Promise<string> {
+  registrar(tx: Transaccion, evento: NuevaLectura): Promise<string> {
     return this.insertar(tx, {
       puerta_id: evento.puertaId,
       dispositivo_id: evento.dispositivoId,
@@ -678,9 +678,9 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     );
   }
 
-  listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {
+  listar(filtro: FiltroDeLecturas, limite: number, desplazamiento: number): Promise<LecturaFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
-    return this.seleccionar<EventoFila>({
+    return this.seleccionar<LecturaFila>({
       columnas: COLUMNAS_DE_EVENTO,
       uniones: UNION_QR,
       ...(donde === undefined ? {} : { donde }),
@@ -697,12 +697,12 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
    * creciente, lo nuevo cae siempre al final.
    */
   listarParaExportar(
-    filtro: FiltroDeEventos,
+    filtro: FiltroDeLecturas,
     limite: number,
     desplazamiento: number,
-  ): Promise<EventoFila[]> {
+  ): Promise<LecturaFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
-    return this.seleccionar<EventoFila>({
+    return this.seleccionar<LecturaFila>({
       columnas: COLUMNAS_DE_EVENTO,
       uniones: UNION_QR,
       ...(donde === undefined ? {} : { donde }),
@@ -766,9 +766,9 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
   }
 
   /** Un evento visible de la cuenta, para el detalle (el alcance lo pone el filtro). */
-  buscarVisible(filtro: FiltroDeEventos, id: string): Promise<EventoFila | null> {
+  buscarVisible(filtro: FiltroDeLecturas, id: string): Promise<LecturaFila | null> {
     const { donde, params } = armarFiltroDeEventos(filtro);
-    return this.seleccionarUna<EventoFila>({
+    return this.seleccionarUna<LecturaFila>({
       columnas: COLUMNAS_DE_EVENTO,
       uniones: UNION_QR,
       donde: donde === undefined ? 't.id = ?' : donde + ' AND t.id = ?',
@@ -802,7 +802,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
-  contarVisibles(filtro: FiltroDeEventos): Promise<number> {
+  contarVisibles(filtro: FiltroDeLecturas): Promise<number> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.contar({ uniones: UNION_QR, ...(donde === undefined ? {} : { donde }), params });
   }
@@ -812,7 +812,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
    * originales cuentan una vez; las repeticiones se suman aparte (`repeticiones_*`): las permitidas
    * son aperturas repetidas por respuesta perdida y no son invisibles.
    */
-  resumir(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
+  resumir(filtro: FiltroDeLecturas): Promise<ResumenDeEventosFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<ResumenDeEventosFila>({
       columnas: 't.resultado, t.motivo_code, COUNT(*) AS total',
@@ -828,7 +828,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
    * Cuántas repeticiones (filas con `repetido_de_id`) hubo por resultado dentro del filtro: las
    * `permitido` son aperturas repetidas por respuesta perdida (ADR 0032 §3) y no deben quedar invisibles.
    */
-  resumirRepeticiones(filtro: FiltroDeEventos): Promise<ResumenDeEventosFila[]> {
+  resumirRepeticiones(filtro: FiltroDeLecturas): Promise<ResumenDeEventosFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro, true);
     return this.seleccionar<ResumenDeEventosFila>({
       columnas: "t.resultado, '' AS motivo_code, COUNT(*) AS total",
@@ -870,7 +870,7 @@ export interface NuevaConfirmacion {
 const COLUMNAS_DE_CONFIRMACION =
   't.id, t.evento_acceso_id, t.dispositivo_id, t.puerta_id, t.origen, t.resultado, t.causa, t.registrada_at';
 
-/** Dueño de `confirmaciones_apertura`: solo inserción (se enlaza a `eventos_acceso`, invariante 4). */
+/** Dueño de `confirmaciones_apertura`: solo inserción (se enlaza a `lecturas`, invariante 4). */
 export class RepositorioDeConfirmaciones extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
@@ -948,8 +948,7 @@ export class RepositorioDeConfirmaciones extends RepositorioDeCuenta {
   registradasDesde(desde: Date, limite: number): Promise<ConfirmacionConOrdenFila[]> {
     return this.seleccionar<ConfirmacionConOrdenFila>({
       columnas: COLUMNAS_DE_CONFIRMACION + ', e.ocurrido_at',
-      uniones:
-        'JOIN eventos_acceso AS e ON e.id = t.evento_acceso_id AND e.tenant_id = t.tenant_id',
+      uniones: 'JOIN lecturas AS e ON e.id = t.evento_acceso_id AND e.tenant_id = t.tenant_id',
       donde: 't.registrada_at >= ?',
       params: [desde],
       orden: 't.id',
@@ -1159,7 +1158,7 @@ const ES_APERTURA_POR_QR =
   "t.metodo = 'qr' AND t.resultado = 'permitido' AND t.repetido_de_id IS NULL";
 
 /**
- * Lee `eventos_acceso` de TODAS las cuentas para los detectores de señales y la vista de AGROCOM (ADR 0030 §4 y §5,
+ * Lee `lecturas` de TODAS las cuentas para los detectores de señales y la vista de AGROCOM (ADR 0030 §4 y §5,
  * ola W12): salto EXPLÍCITO del aislamiento, de solo lectura (la tabla es de solo inserción). Cada hallazgo se trata
  * luego dentro de su cuenta. Las aperturas se cuentan DISTINTAS (sin las repeticiones de un mismo intento, ADR 0032
  * §4.3); en los rechazos de un QR reenviado las repeticiones sí hacen volumen.
@@ -1167,7 +1166,7 @@ const ES_APERTURA_POR_QR =
 export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
-      nombre: 'eventos_acceso',
+      nombre: 'lecturas',
       columnas: [],
       perfil: 'solo_insercion',
       deCuenta: true,
@@ -1207,7 +1206,7 @@ export class RepositorioDeActividadDeTodas extends RepositorioDePlataforma {
    * sitios, así que el tiempo mínimo es un umbral configurado, no un cálculo de recorrido.
    *
    * Se evalúa CUENTA POR CUENTA y los pares se emparejan en memoria, ordenados por hora: un self-join de
-   * `eventos_acceso` (MariaDB no logra acotar su rango por fila con `(tenant_id, ocurrido_at)`) era cuadrático en los
+   * `lecturas` (MariaDB no logra acotar su rango por fila con `(tenant_id, ocurrido_at)`) era cuadrático en los
    * eventos de la cuenta. Aquí cada cuenta cuesta una lectura por índice de su ventana y, por usuario, solo se
    * comparan las aperturas a menos de `max(umbrales)` segundos; ninguna página rehace las cuentas ya recorridas.
    * Un par es (A, B) con B posterior a A (`id` y hora), en otra puerta, y ambos dentro de `desde`..`hasta`.

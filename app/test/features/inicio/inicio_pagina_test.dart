@@ -93,7 +93,7 @@ Future<SesionFalsa> _montar(
         EventosRepositorioFalso(
           Pagina(
             datos: [
-              EventoAcceso(
+              Lectura(
                 id: 'e1',
                 ocurridoAt: _ahora,
                 resultado: ResultadoEvento.rechazado,
@@ -220,8 +220,8 @@ void main() {
       expect(find.text('12'), findsOneWidget);
       expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
       expect(find.text('1'), findsOneWidget);
-      expect(find.text(textos.inicioUltimosEventos), findsOneWidget);
-      expect(find.text(textos.eventoMotivoQrVencido), findsOneWidget);
+      expect(find.text(textos.inicioUltimasLecturas), findsOneWidget);
+      expect(find.text(textos.lecturaMotivoQrVencido), findsOneWidget);
     });
 
     testWidgets('la cabecera lleva el QR propio y el botón flotante genera', (

@@ -4,7 +4,7 @@
 
 ## Propósito
 
-Qué pasó con una orden de abrir (ADR 0031 §18): cada fila cuelga de un `eventos_acceso` **permitido** y dice si la puerta de verdad se abrió. Es una fila **aparte** y de **solo inserción**: el intento no se edita (invariante 4); una confirmación tardía es otra fila.
+Qué pasó con una orden de abrir (ADR 0031 §18): cada fila cuelga de una lectura (`lecturas`) **permitida** y dice si la puerta de verdad se abrió. Es una fila **aparte** y de **solo inserción**: el intento no se edita (invariante 4); una confirmación tardía es otra fila.
 
 ## Columnas
 
@@ -12,7 +12,7 @@ Qué pasó con una orden de abrir (ADR 0031 §18): cada fila cuelga de un `event
 |---|---|---|---|
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
-| `evento_acceso_id` | `BIGINT UNSIGNED` | no | FK a `eventos_acceso`: el intento permitido que ordenó abrir |
+| `evento_acceso_id` | `BIGINT UNSIGNED` | no | FK a `lecturas`: el intento permitido que ordenó abrir |
 | `dispositivo_id` | `BIGINT UNSIGNED` | no | FK a `dispositivos`: el que ejecutó la orden |
 | `puerta_id` | `BIGINT UNSIGNED` | no | FK a `puertas` |
 | `origen` | `VARCHAR(10)` | no | `placa` (la placa informó) o `servidor` (la placa no contestó a tiempo y el detector dejó constancia) |
@@ -21,7 +21,7 @@ Qué pasó con una orden de abrir (ADR 0031 §18): cada fila cuelga de un `event
 | `reportado_en_dispositivo_at` | `DATETIME(3)` | sí | Hora del reloj de la placa; solo informativa |
 | `registrada_at` | `DATETIME(3)` | no | Hora del servidor en que se registró (UTC) |
 
-Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `eventos_acceso`.
+Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `lecturas`.
 
 ## Resultados y causas
 
@@ -49,4 +49,4 @@ Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `evento
 - **Límite inherente:** `ejecutada` lo informa la propia placa con SU sensor; un sensor trabado o un firmware que miente puede reportar éxito sin que la puerta se moviera, y el servidor no tiene forma de comprobarlo.
 - **Orden:** para decidir qué fallas son posteriores a la última apertura `ejecutada` se ordena por `registrada_at` (hora del servidor, no la del evento) y, a igual hora, por id del evento. Una confirmación tardía de la placa puede quedar «después» de aperturas más nuevas; es un límite conocido.
 - Nunca abre nada ni cambia el evento.
-- Retención: **pendiente**. Todavía no hay política de retención para `confirmaciones_apertura` (no hay borrado; el volumen es una fila por apertura de una puerta con sensor, más la constancia del servidor); debe decidirse junto con la duda D-06 de `eventos_acceso` antes de que crezca.
+- Retención: **pendiente**. Todavía no hay política de retención para `confirmaciones_apertura` (no hay borrado; el volumen es una fila por apertura de una puerta con sensor, más la constancia del servidor); debe decidirse junto con la duda D-06 de `lecturas` antes de que crezca.

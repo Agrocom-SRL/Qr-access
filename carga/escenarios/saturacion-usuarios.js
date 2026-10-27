@@ -61,7 +61,7 @@ export function saturar() {
     tags: { endpoint: 'app_qr' },
   });
   if (qr.status === 401) olvidarToken(indice);
-  const eventos = pedir('GET', '/eventos-acceso?por_pagina=50', undefined, {
+  const eventos = pedir('GET', '/lecturas?por_pagina=50', undefined, {
     token,
     tags: { endpoint: 'app_eventos' },
   });

@@ -1,8 +1,8 @@
 {
-  "titulo": "Accesos",
+  "titulo": "Lecturas",
   "subtitulo": "Lo que leyeron las placas en todas las cuentas, en vivo",
-  "tabla": "Accesos",
-  "errorCarga": "No pudimos cargar los accesos",
+  "tabla": "Lecturas",
+  "errorCarga": "No pudimos cargar las lecturas",
   "columna": {
     "cuando": "Cuándo",
     "cuenta": "Cuenta",
@@ -27,11 +27,11 @@
     "ejecucionEtiqueta": "Qué hizo la puerta"
   },
   "vacio": {
-    "titulo": "Aún no hay accesos",
-    "texto": "Cuando una placa lea un QR, el intento aparece aquí al instante."
+    "titulo": "Aún no hay lecturas",
+    "texto": "Cuando una placa lea un QR, el intento de lectura aparece aquí al instante."
   },
   "sinResultados": {
-    "titulo": "Sin accesos con estos filtros",
+    "titulo": "Sin lecturas con estos filtros",
     "texto": "Prueba con otras fechas o quita los filtros."
   },
   "motivo": {

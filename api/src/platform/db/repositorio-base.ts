@@ -12,7 +12,7 @@ export type Ejecutor = Pool | PoolConnection;
  * - `dominio_sin_bitacora`: soft delete y autoría; para pivotes cuyo cambio ya queda en la
  *   bitácora de la entidad que los crea.
  * - `transitoria`: se actualiza en sitio, sin soft delete ni bitácora (sesiones).
- * - `solo_insercion`: no se actualiza ni se borra (eventos de acceso).
+ * - `solo_insercion`: no se actualiza ni se borra (lecturas).
  */
 export type PerfilDeTabla = 'dominio' | 'dominio_sin_bitacora' | 'transitoria' | 'solo_insercion';
 

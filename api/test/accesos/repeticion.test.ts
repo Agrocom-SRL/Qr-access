@@ -1,6 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RepositorioDeEventos } from '../../src/modules/accesos/repository.js';
+import { RepositorioDeLecturas } from '../../src/modules/accesos/repository.js';
 import { crearAppDePrueba, type AppDePrueba } from '../helpers/app.js';
 import { reiniciarBase } from '../helpers/base.js';
 import {
@@ -59,9 +59,7 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
   };
 
   async function eventos(): Promise<EventoFila[]> {
-    const [filas] = await prueba.pool.query<EventoFila[]>(
-      'SELECT * FROM eventos_acceso ORDER BY id',
-    );
+    const [filas] = await prueba.pool.query<EventoFila[]>('SELECT * FROM lecturas ORDER BY id');
     return filas;
   }
 
@@ -75,7 +73,7 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
 
   /** Envejece los eventos ya escritos: el reloj de la prueba no espera 15 s de verdad. */
   const envejecer = (segundos: number) =>
-    prueba.pool.query('UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL ? SECOND', [
+    prueba.pool.query('UPDATE lecturas SET ocurrido_at = ocurrido_at - INTERVAL ? SECOND', [
       segundos,
     ]);
 
@@ -234,7 +232,7 @@ describe('ventana de repetición de 15 s en POST /api/v1/dispositivos/validacion
 
   it('si falla buscar el original de un rechazo, el rechazo se registra igual sin enlace', async () => {
     const espia = vi
-      .spyOn(RepositorioDeEventos.prototype, 'buscarOriginal')
+      .spyOn(RepositorioDeLecturas.prototype, 'buscarOriginal')
       .mockRejectedValueOnce(new Error('fallo simulado'));
     try {
       const respuesta = await validar(a.dispositivoPrincipal, 'basura');

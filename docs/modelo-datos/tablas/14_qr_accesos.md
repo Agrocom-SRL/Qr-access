@@ -46,7 +46,7 @@ El SQL completo está en `03-schema-sql.md`.
 
 ## QR propio ("Mi QR de acceso")
 
-- `es_propio` marca el QR que la app genera al abrir "Mi QR de acceso". No se lista ni se cuenta en "Mis QR" (se presenta como una entrada fija); sus usos siguen quedando en `eventos_acceso`.
+- `es_propio` marca el QR que la app genera al abrir "Mi QR de acceso". No se lista ni se cuenta en "Mis QR" (se presenta como una entrada fija); sus usos siguen quedando en `lecturas`.
 - `propio_activo` vale 1 mientras ese QR no se anule ni se use, y el `UNIQUE (generado_por, propio_activo)` impide dos activos por usuario. Al generar uno nuevo, la API anula los anteriores en la misma transacción: si alguien le sacó una foto al QR viejo, ya no abre.
 
 ## Reutilización y topes (ADR 0030 §2 y §2.1, ola W5)

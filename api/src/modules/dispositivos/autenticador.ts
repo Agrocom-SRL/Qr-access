@@ -25,7 +25,7 @@ export function crearAutenticadorDeDispositivo({ poolDispositivos: pool }: Depen
     }
     if (!(await verificarHash(fila.clave_hash, clave))) return null;
     // Basta con que la cuenta exista: una suspendida SÍ autentica a sus placas para que cada lectura
-    // llegue a la validación, que la rechaza y la deja en `eventos_acceso` (invariante 4, ADR 0031 §2).
+    // llegue a la validación, que la rechaza y la deja en `lecturas` (invariante 4, ADR 0031 §2).
     if (!(await cuentas.existe(fila.tenant_id))) return null;
     return {
       tipo: 'dispositivo',

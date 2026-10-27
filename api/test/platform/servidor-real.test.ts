@@ -90,9 +90,7 @@ describe('API con servidor HTTP real', () => {
 
       // Dentro de la ventana de repetición (ADR 0032 §3) la relectura del mismo lector reabre; para probar
       // el rechazo del segundo uso se envejece la apertura más allá de los 15 s (el reloj no espera).
-      await p.pool.query(
-        'UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL 20 SECOND',
-      );
+      await p.pool.query('UPDATE lecturas SET ocurrido_at = ocurrido_at - INTERVAL 20 SECOND');
 
       const segunda = await validar(qr.texto);
       expect(segunda.status).toBe(200);
@@ -191,7 +189,7 @@ describe('API con servidor HTTP real', () => {
       await espera(1200);
       expect(await usadoAt(p, qr.id)).toBeNull();
       const [filas] = await p.pool.query<RowDataPacket[]>(
-        "SELECT COUNT(*) AS total FROM eventos_acceso WHERE resultado = 'permitido'",
+        "SELECT COUNT(*) AS total FROM lecturas WHERE resultado = 'permitido'",
       );
       expect(Number(filas[0]?.total)).toBe(0);
     });
@@ -303,7 +301,7 @@ describe('API con servidor HTTP real', () => {
       const consumo = await usadoAt(p, qr.id);
 
       // El reloj de la prueba no espera 5 s de verdad: se envejece el evento ya escrito.
-      await p.pool.query('UPDATE eventos_acceso SET ocurrido_at = ocurrido_at - INTERVAL 5 SECOND');
+      await p.pool.query('UPDATE lecturas SET ocurrido_at = ocurrido_at - INTERVAL 5 SECOND');
       const segunda = await validar(qr.texto);
       expect(segunda.status).toBe(200);
       expect(((await segunda.json()) as Validacion).abrir).toBe(true);

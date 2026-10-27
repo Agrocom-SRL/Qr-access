@@ -24,7 +24,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 - Listado: `GET /api/v1/puertas?q=&pagina=1&por_pagina=25&orden=nombre` → `{ "datos": [...], "meta": { "pagina": 1, "por_pagina": 25, "total": 132 } }`. `por_pagina` máx. 100.
 - Detalle: el objeto directo. Crear: `201` + objeto + `Location`. Borrar: `204` (soft delete).
 - Idempotencia: `POST` críticos (invitaciones) aceptan `Idempotency-Key`.
-- Filtros de un listado como query (`GET /api/v1/eventos-acceso?resultado=rechazado&puerta_id=9&desde=…&hasta=…`); un resumen agregado como subrecurso `GET …/resumen` con los mismos filtros (`/eventos-acceso/resumen`, `/qr-accesos/resumen`).
+- Filtros de un listado como query (`GET /api/v1/lecturas?resultado=rechazado&puerta_id=9&desde=…&hasta=…`); un resumen agregado como subrecurso `GET …/resumen` con los mismos filtros (`/lecturas/resumen`, `/qr-accesos/resumen`). `/eventos-acceso` (y `/plataforma/eventos-acceso`) es el nombre anterior de `/lecturas`: sigue respondiendo igual como alias `deprecated` en el OpenAPI hasta su retiro (supuesto: 2027-06-30); un recurso renombrado se resuelve así, con alias y no rompiendo `/api/v1`.
 - Un secreto que se muestra una sola vez (el PIN de un usuario) va solo en la respuesta que lo genera (`POST /api/v1/usuarios` → `pin`, `POST /api/v1/usuarios/{id}/pin`) y nunca en un `GET`.
 
 ## Errores (RFC 9457)
@@ -55,7 +55,7 @@ ADR 0005. Consumidores: la app Flutter (móvil y web) y el firmware de cada puer
 POST   /sesiones · /sesiones/refresco · GET/DELETE /sesiones/actual (trae permisos y suscripcion)
 GET    /puertas                       (con dispositivo { id, nombre, en_linea, ultimo_latido_at } | null)
 POST   /qr-accesos (permiso `accesos.qr.generar`; con `propio: true`, `accesos.qr.generar_propio`) · GET /qr-accesos?estado= · GET /qr-accesos/resumen · POST /qr-accesos/{id}/anulacion
-GET    /eventos-acceso?resultado=&puerta_id=&desde=&hasta= · GET /eventos-acceso/resumen
+GET    /lecturas?resultado=&puerta_id=&desde=&hasta= · GET /lecturas/resumen
 GET    /roles · GET /usuarios · POST /usuarios (201 + pin) · PATCH /usuarios/{id} · DELETE /usuarios/{id} · POST /usuarios/{id}/pin
 ```
 

@@ -4,7 +4,7 @@ library;
 
 export 'data/eventos_repositorio.dart'
     show EventosRepositorio, eventosRepositorioProvider;
-export 'domain/evento_acceso.dart';
+export 'domain/lectura.dart';
 export 'presentation/evento_vista.dart'
     show
         textoDetalleEvento,

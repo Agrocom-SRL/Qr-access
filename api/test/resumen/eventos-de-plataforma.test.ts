@@ -40,7 +40,7 @@ describe('plataforma: accesos de todas las cuentas', () => {
     ];
     for (const [escenario, resultado, motivo] of intentos) {
       await prueba.pool.query(
-        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
+        'INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
         [escenario.cuenta.id, escenario.puertaPrincipal.id, resultado, motivo],
       );
     }
@@ -76,13 +76,13 @@ describe('plataforma: accesos de todas las cuentas', () => {
 
   it('el original expone sus repeticiones permitidas y rechazadas, y no las lista aparte', async () => {
     const [filas] = await prueba.pool.query<RowDataPacket[]>(
-      'SELECT id FROM eventos_acceso WHERE tenant_id = ? AND resultado = ?',
+      'SELECT id FROM lecturas WHERE tenant_id = ? AND resultado = ?',
       [a.cuenta.id, 'permitido'],
     );
     const originalId = String(filas[0]?.id);
     for (const resultado of ['permitido', 'rechazado', 'rechazado']) {
       await prueba.pool.query(
-        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
         [a.cuenta.id, a.puertaPrincipal.id, resultado, 'ok', originalId],
       );
     }

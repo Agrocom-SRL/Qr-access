@@ -12,9 +12,9 @@ import { crearServicioDeOrganizacion } from '../../organizacion/contracts.js';
 import { crearServicioDeUsuarios } from '../../seguridad/contracts.js';
 import type { Ejecucion } from '../domain/confirmacion.js';
 import { ejecucionesPorEvento, puertasPorId } from '../presentacion.js';
-import { RepositorioDeEventos, type EventoFila, type FiltroDeEventos } from '../repository.js';
+import { RepositorioDeLecturas, type LecturaFila, type FiltroDeLecturas } from '../repository.js';
 
-export interface EventoListado {
+export interface LecturaListada {
   id: string;
   ocurrido_at: string;
   resultado: 'permitido' | 'rechazado';
@@ -40,7 +40,7 @@ export interface EventoListado {
   repeticiones_rechazadas: number;
 }
 
-export interface FiltrosDeEventos {
+export interface FiltrosDeLecturas {
   readonly resultado: 'permitido' | 'rechazado' | null;
   /** Solo los eventos cuya ejecución efectiva es esta; `null` o ausente = todos. */
   readonly ejecucion?: Ejecucion | null;
@@ -57,8 +57,8 @@ export interface FiltrosDeEventos {
 export async function alcanceDe(
   pool: Pool,
   principal: PrincipalUsuario,
-  filtros: FiltrosDeEventos,
-): Promise<FiltroDeEventos> {
+  filtros: FiltrosDeLecturas,
+): Promise<FiltroDeLecturas> {
   const verTodos = tienePermiso(principal, 'accesos.evento.ver_todos');
   const verAsignadas = !verTodos && tienePermiso(principal, 'accesos.evento.ver_asignadas');
   const asignadas = verAsignadas
@@ -76,10 +76,10 @@ export async function alcanceDe(
 }
 
 /** Arma los eventos con su puerta, su sitio, el QR que se leyó y qué pasó con la orden de abrir. */
-export async function presentarEventos(
+export async function presentarLecturas(
   pool: Pool,
-  filas: readonly EventoFila[],
-): Promise<EventoListado[]> {
+  filas: readonly LecturaFila[],
+): Promise<LecturaListada[]> {
   const [puertas, etiquetas, ejecuciones, repeticiones] = await Promise.all([
     puertasPorId(
       pool,
@@ -94,7 +94,7 @@ export async function presentarEventos(
       pool,
       filas.map((fila) => fila.id),
     ),
-    new RepositorioDeEventos(pool).contarRepeticiones(filas.map((fila) => fila.id)),
+    new RepositorioDeLecturas(pool).contarRepeticiones(filas.map((fila) => fila.id)),
   ]);
   return filas.map((fila) => {
     const puerta = puertas.get(fila.puerta_id);
@@ -136,15 +136,15 @@ export async function presentarEventos(
 export async function ejecutar(
   pool: Pool,
   principal: PrincipalUsuario,
-  filtros: FiltrosDeEventos,
+  filtros: FiltrosDeLecturas,
   paginacion: Paginacion,
-): Promise<Listado<EventoListado>> {
+): Promise<Listado<LecturaListada>> {
   const filtro = await alcanceDe(pool, principal, filtros);
   const { limite, desplazamiento } = limiteDe(paginacion);
-  const repositorio = new RepositorioDeEventos(pool);
+  const repositorio = new RepositorioDeLecturas(pool);
   const [filas, total] = await Promise.all([
     repositorio.listar(filtro, limite, desplazamiento),
     repositorio.contarVisibles(filtro),
   ]);
-  return armarListado(await presentarEventos(pool, filas), paginacion, total);
+  return armarListado(await presentarLecturas(pool, filas), paginacion, total);
 }

@@ -15,7 +15,7 @@ import { conUsuario, iniciarSesionDePlataforma } from '../helpers/http.js';
 import { evento, qrPropio, repeticionDe, sesion } from '../helpers/senales.js';
 
 /**
- * Integración de las olas W7 (repeticiones, `eventos_acceso.repetido_de_id`) y W8 (`sesiones.instalacion_id`) con los
+ * Integración de las olas W7 (repeticiones, `lecturas.repetido_de_id`) y W8 (`sesiones.instalacion_id`) con los
  * detectores de la ola W12 (ADR 0030, «Tareas de integración», y D-37). Cada prueba FALLA si alguien olvida la tarea:
  * una relectura del mismo QR no es otra apertura ni otro intento, y dos aparatos tras una misma IP son dos.
  */
@@ -96,7 +96,7 @@ describe('señales: integración con las repeticiones (W7) y las instalaciones (
       for (let i = 0; i < 6; i++) {
         await aperturaConRepeticiones(arbol.guardia.id, hace(i * MIN), 4);
       }
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(30);
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(30);
       expect(await tarea('senal-uso-masivo')).toMatchObject({ revisados: 0, senales: 0 });
       expect(await contarFilas(prueba.pool, 'incidentes_uso')).toBe(0);
     });
@@ -133,7 +133,7 @@ describe('señales: integración con las repeticiones (W7) y las instalaciones (
       });
       const [original] = (
         await prueba.pool.query<RowDataPacket[]>(
-          'SELECT id, puerta_id, dispositivo_id, qr_acceso_id FROM eventos_acceso WHERE puerta_id = ?',
+          'SELECT id, puerta_id, dispositivo_id, qr_acceso_id FROM lecturas WHERE puerta_id = ?',
           [a.puertaPrincipal.id],
         )
       )[0];
@@ -175,7 +175,7 @@ describe('señales: integración con las repeticiones (W7) y las instalaciones (
         await repeticionDe(prueba.pool, a.cuenta, { ...base, id }, 2);
       }
       // 60 filas ≥ 50 aperturas mínimas y 30 por usuario ≥ 25: SIN el filtro sería atípico. Con 20 distintas, no.
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(60);
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(60);
       expect(await tarea('senal-flujo-atipico')).toMatchObject({ senales: 0 });
       expect(await contarFilas(prueba.pool, 'cola_de_notificaciones')).toBe(0);
     });
@@ -213,7 +213,7 @@ describe('señales: integración con las repeticiones (W7) y las instalaciones (
         const id = await evento(prueba.pool, a.cuenta, base);
         for (let r = 1; r <= 3; r++) await repeticionDe(prueba.pool, a.cuenta, { ...base, id }, r);
       }
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(28);
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(28);
 
       const detalle = await prueba.app.inject({
         method: 'GET',

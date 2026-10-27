@@ -25,8 +25,8 @@ abstract final class Permisos {
   /// `accesos.qr.anular_todos`.
   static const anularQr = 'accesos.qr.anular';
 
-  /// Consultar los eventos de acceso: los de sus QR, o todos los de la cuenta
-  /// con `accesos.evento.ver_todos`.
+  /// Consultar las lecturas (intentos de lectura de un QR): las de sus QR, o
+  /// todas las de la cuenta con `accesos.evento.ver_todos`.
   static const verEventos = 'accesos.evento.ver';
   static const verTodosLosEventos = 'accesos.evento.ver_todos';
 

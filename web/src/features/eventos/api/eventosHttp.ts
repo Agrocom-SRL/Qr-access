@@ -51,13 +51,13 @@ export function eventoDesdeDto(dto: EventoDto): EventoDeAcceso {
   };
 }
 
-/** Endpoint `/plataforma/eventos-acceso` de la API (módulo `resumen`). */
+/** Endpoint `/plataforma/lecturas` de la API (módulo `resumen`). */
 export function crearEventosHttp(cliente: ClienteHttp): EventosRepositorio {
   return {
     async listar(filtros, porPagina) {
       const dto = await cliente.solicitar<ListadoDto<EventoDto>>({
         metodo: 'GET',
-        ruta: '/plataforma/eventos-acceso',
+        ruta: '/plataforma/lecturas',
         consulta: {
           cuenta_id: filtros.cuentaId ?? undefined,
           resultado: filtros.resultado === 'todos' ? undefined : filtros.resultado,

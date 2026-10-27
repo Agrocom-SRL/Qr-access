@@ -48,7 +48,7 @@ class HeroAccesosDeHoy extends StatelessWidget {
                     Expanded(
                       child: _Cifra(
                         valor: permitidos,
-                        etiqueta: l10n.eventosFiltroPermitidos,
+                        etiqueta: l10n.lecturasFiltroPermitidos,
                       ),
                     ),
                     Expanded(

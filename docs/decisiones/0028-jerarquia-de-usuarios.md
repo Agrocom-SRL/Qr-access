@@ -70,7 +70,7 @@ Son dos permisos distintos (2026-10-22): `accesos.qr.generar` (QR de visitas) y 
 - Roles base por cuenta: **Administrador**, **Titular**, **Miembro** y **Guardia**. Migración de los existentes: el rol *Administrador* se conserva; el rol *Usuario* pasa a *Miembro*; el *Guardia* se conserva. No hay migración de datos de producción: se reinicia la base (ver "Decisiones finales").
 - El JWT deja de llevar rol activo; lleva el rol único y el árbol se resuelve en el servidor. Las rutas de listado, actividad y regeneración de PIN filtran por rama en el repositorio, no en cada módulo.
 - Toda creación, baja, reasignación y regeneración de PIN va a la bitácora con quien actúa (invariante 9).
-- Estadísticas (inactivos, ruidosos, uso del cupo, Titulares que abusan del cupo) las calcula la API a partir de `qr_accesos` y `eventos_acceso`; la app y la web solo las muestran. Audiencia: el Administrador en la app (con la baja directa desde la lista) y AGROCOM en el panel web.
+- Estadísticas (inactivos, ruidosos, uso del cupo, Titulares que abusan del cupo) las calcula la API a partir de `qr_accesos` y `lecturas`; la app y la web solo las muestran. Audiencia: el Administrador en la app (con la baja directa desde la lista) y AGROCOM en el panel web.
 
 ## Alternativas descartadas
 

@@ -16,7 +16,7 @@ import {
   VENTANA_DE_REPETICION_MS,
   type MotivoDeRechazo,
 } from '../domain/validacion.js';
-import { RepositorioDePuertasDeQr, RepositorioDeEventos, RepositorioDeQr } from '../repository.js';
+import { RepositorioDePuertasDeQr, RepositorioDeLecturas, RepositorioDeQr } from '../repository.js';
 
 export type ResultadoDeValidacion =
   | { abrir: true; segundos: number; evento_id: string; motivo_code: typeof MOTIVO_PERMITIDO }
@@ -31,7 +31,7 @@ export interface LecturaDelDispositivo {
 
 /**
  * Validación de un QR en la puerta (ADR 0008 §4). Responde SIEMPRE con un resultado, nunca con
- * un error HTTP de negocio, y deja SIEMPRE un `eventos_acceso` (invariante 4). Solo abre con
+ * un error HTTP de negocio, y deja SIEMPRE una fila en `lecturas` (invariante 4). Solo abre con
  * `abrir: true` cuando el consumo atómico del paso 7 tuvo éxito; ante cualquier duda, rechaza.
  * Las dos transacciones (rechazo y consumo) son idempotentes: ante un deadlock se repiten una
  * vez (ADR 0032 §2); si vuelve a fallar, el error sale como 503 y la puerta no abre. `señal` es la
@@ -58,7 +58,7 @@ export async function ejecutar(
   if (puerta === undefined) throw new ErrorDeDominio('puerta.no_encontrada', 404);
 
   const qrs = new RepositorioDeQr(pool);
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
 
   const rechazar = async (
     motivo: MotivoDeRechazo,

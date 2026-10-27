@@ -209,9 +209,7 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
 
     it('un evento permitido de otro método (pulsador, forzada) no se confirma: 404', async () => {
       const { eventoId } = await validar(a, a.dispositivoPrincipal, a.puertaPrincipal.id);
-      await prueba.pool.query("UPDATE eventos_acceso SET metodo = 'pulsador' WHERE id = ?", [
-        eventoId,
-      ]);
+      await prueba.pool.query("UPDATE lecturas SET metodo = 'pulsador' WHERE id = ?", [eventoId]);
       const respuesta = await confirmar(a.dispositivoPrincipal, {
         evento_id: eventoId,
         resultado: 'ejecutada',
@@ -307,7 +305,7 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
     it('pasados 10 minutos de la orden ya no se acepta (409) y la placa no debe reintentar', async () => {
       const { eventoId } = await validar(a, a.dispositivoPrincipal, a.puertaPrincipal.id);
       await prueba.pool.query(
-        'UPDATE eventos_acceso SET ocurrido_at = DATE_SUB(NOW(3), INTERVAL 11 MINUTE) WHERE id = ?',
+        'UPDATE lecturas SET ocurrido_at = DATE_SUB(NOW(3), INTERVAL 11 MINUTE) WHERE id = ?',
         [eventoId],
       );
       const respuesta = await confirmar(a.dispositivoPrincipal, {
@@ -324,7 +322,7 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
       const cuerpo = { evento_id: eventoId, resultado: 'ejecutada' };
       await confirmar(a.dispositivoPrincipal, cuerpo);
       await prueba.pool.query(
-        'UPDATE eventos_acceso SET ocurrido_at = DATE_SUB(NOW(3), INTERVAL 30 MINUTE) WHERE id = ?',
+        'UPDATE lecturas SET ocurrido_at = DATE_SUB(NOW(3), INTERVAL 30 MINUTE) WHERE id = ?',
         [eventoId],
       );
       expect((await confirmar(a.dispositivoPrincipal, cuerpo)).statusCode).toBe(204);
@@ -346,15 +344,15 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
         payload: { token: qr.texto },
       });
       const eventoId = primera.json<Validacion>().evento_id;
-      const antes = await contarFilas(prueba.pool, 'eventos_acceso');
+      const antes = await contarFilas(prueba.pool, 'lecturas');
       await confirmar(a.dispositivoPrincipal, {
         evento_id: eventoId,
         resultado: 'fallida',
         causa: 'puerta_no_abrio',
       });
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(antes);
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(antes);
       const [eventos] = await prueba.pool.query<RowDataPacket[]>(
-        'SELECT resultado, motivo_code FROM eventos_acceso WHERE id = ?',
+        'SELECT resultado, motivo_code FROM lecturas WHERE id = ?',
         [eventoId],
       );
       expect(eventos[0]).toMatchObject({ resultado: 'permitido', motivo_code: 'acceso.permitido' });

@@ -9,7 +9,7 @@ El objetivo es que cualquiera (persona o agente) entienda un archivo sin abrir o
 
 ## Nombres
 
-- **Dominio en español, infraestructura en inglés** (CLAUDE.md): `validarQr`, `Puerta`, `eventos_acceso`; `routes.ts`, `repository.ts`, `plugin`.
+- **Dominio en español, infraestructura en inglés** (CLAUDE.md): `validarQr`, `Puerta`, `lecturas`; `routes.ts`, `repository.ts`, `plugin`.
 - Un nombre dice **qué es o qué hace**, no cómo: `qrVencido`, no `flag2`; `buscarPuertaPorId`, no `getData`.
 - Booleanos como pregunta: `estaActiva`, `puedeAbrir`, `tieneRolActivo`.
 - Unidades en el nombre cuando no hay tipo que las diga: `TIMEOUT_VALIDACION_MS`, `segundosApertura`.

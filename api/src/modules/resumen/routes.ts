@@ -3,7 +3,7 @@ import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { permisoDePlataforma } from '../../plugins/permisos.js';
 import { ejecutar as verEstadisticas } from './actions/ver-estadisticas.js';
 import { ejecutar as verResumen } from './actions/ver-resumen.js';
-import { ejecutar as listarEventos } from './actions/listar-eventos-de-acceso.js';
+import { ejecutar as listarLecturas } from './actions/listar-lecturas.js';
 import {
   consultaDeEventosDePlataforma,
   respuestaDeEstadisticas,
@@ -32,32 +32,41 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
       },
       () => verEstadisticas(pool),
     );
-    app.get(
-      '/plataforma/eventos-acceso',
-      {
-        schema: {
-          tags: ['plataforma'],
-          querystring: consultaDeEventosDePlataforma,
-          response: { 200: respuestaDeEventosDePlataforma },
-        },
-        config: { acceso: 'plataforma' },
-        preHandler: permisoDePlataforma('resumen.panel.ver'),
-      },
-      (request) => {
-        const { pagina, por_pagina, cuenta_id, resultado, ejecucion, desde, hasta } = request.query;
-        return listarEventos(
-          pool,
-          {
-            cuentaId: cuenta_id ?? null,
-            resultado: resultado ?? null,
-            ejecucion: ejecucion ?? null,
-            desde: desde ?? null,
-            hasta: hasta ?? null,
+    // `/plataforma/lecturas` es la ruta vigente; `/plataforma/eventos-acceso` (nombre anterior) sigue con el mismo
+    // handler y queda obsoleta en el OpenAPI. Retiro propuesto (SUPUESTO): 2027-06-30, ver accesos/routes.ts.
+    for (const { base, obsoleta } of [
+      { base: '/plataforma/lecturas', obsoleta: false },
+      { base: '/plataforma/eventos-acceso', obsoleta: true },
+    ] as const) {
+      app.get(
+        base,
+        {
+          schema: {
+            tags: ['plataforma'],
+            deprecated: obsoleta,
+            querystring: consultaDeEventosDePlataforma,
+            response: { 200: respuestaDeEventosDePlataforma },
           },
-          { pagina, por_pagina },
-        );
-      },
-    );
+          config: { acceso: 'plataforma' },
+          preHandler: permisoDePlataforma('resumen.panel.ver'),
+        },
+        (request) => {
+          const { pagina, por_pagina, cuenta_id, resultado, ejecucion, desde, hasta } =
+            request.query;
+          return listarLecturas(
+            pool,
+            {
+              cuentaId: cuenta_id ?? null,
+              resultado: resultado ?? null,
+              ejecucion: ejecucion ?? null,
+              desde: desde ?? null,
+              hasta: hasta ?? null,
+            },
+            { pagina, por_pagina },
+          );
+        },
+      );
+    }
     listo();
   };
 }

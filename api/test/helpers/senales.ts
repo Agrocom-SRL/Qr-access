@@ -36,7 +36,7 @@ export interface EventoDePrueba {
 export async function evento(pool: Pool, cuenta: Cuenta, datos: EventoDePrueba): Promise<string> {
   const resultado = datos.resultado ?? 'permitido';
   const [cabecera] = await pool.query<ResultSetHeader>(
-    'INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at, repetido_de_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at, repetido_de_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [
       cuenta.id,
       datos.puertaId,

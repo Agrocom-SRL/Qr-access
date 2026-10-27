@@ -357,7 +357,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       await latidoA(a.dispositivoPrincipal.id, new Date(ahora.getTime() - MIN));
       await latidoA(a.dispositivoTrasero.id, new Date(ahora.getTime() - MIN));
       await prueba.pool.query(
-        "INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'permitido', 'qr.valido', ?)",
+        "INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, metodo, resultado, motivo_code, ocurrido_at) VALUES (?, ?, ?, 'qr', 'permitido', 'qr.valido', ?)",
         [
           a.cuenta.id,
           a.puertaTrasera.id,

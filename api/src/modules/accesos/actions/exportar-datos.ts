@@ -14,8 +14,8 @@ import {
   type RecursoExportable,
   type ResumenDeExportacion,
 } from '../domain/exportacion.js';
-import { RepositorioDeEventos, RepositorioDeExportaciones } from '../repository.js';
-import { alcanceDe, presentarEventos, type FiltrosDeEventos } from './listar-eventos.js';
+import { RepositorioDeLecturas, RepositorioDeExportaciones } from '../repository.js';
+import { alcanceDe, presentarLecturas, type FiltrosDeLecturas } from './listar-lecturas.js';
 
 export interface PaginaExportada extends ResumenDeExportacion {
   /** El CSV de esta página, con su fila de encabezado. */
@@ -121,22 +121,22 @@ async function paginaDePuertas(
 async function paginaDeLecturas(
   pool: Pool,
   principal: PrincipalUsuario,
-  filtros: FiltrosDeEventos,
+  filtros: FiltrosDeLecturas,
   limite: number,
   desplazamiento: number,
 ): Promise<Pagina> {
   // El mismo alcance que el listado de eventos: quien exporta sin `ver_todos` solo se lleva lo suyo.
   const alcance = await alcanceDe(pool, principal, filtros);
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
   const [total, filas] = await Promise.all([
     eventos.contarVisibles(alcance),
     eventos.listarParaExportar(alcance, limite, desplazamiento),
   ]);
-  const presentados = await presentarEventos(pool, filas);
+  const presentados = await presentarLecturas(pool, filas);
   return {
     total,
     encabezado: ENCABEZADO_DE_LECTURAS,
-    // Sin el token ni su hash: ni `presentarEventos` ni la consulta los traen.
+    // Sin el token ni su hash: ni `presentarLecturas` ni la consulta los traen.
     filas: presentados.map((e) => [
       e.id,
       e.ocurrido_at,
@@ -172,7 +172,7 @@ export async function ejecutar(
   principal: PrincipalUsuario,
   recurso: RecursoExportable,
   paginacion: { readonly pagina: number; readonly por_pagina: number },
-  filtros: FiltrosDeEventos,
+  filtros: FiltrosDeLecturas,
 ): Promise<PaginaExportada> {
   const tramo = tramoDe(paginacion.pagina, paginacion.por_pagina);
   if (tramo === null) throw new ErrorDeDominio('exportacion.tope_excedido', 422);

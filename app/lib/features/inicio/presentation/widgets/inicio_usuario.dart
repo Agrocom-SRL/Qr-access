@@ -86,7 +86,7 @@ class InicioUsuario extends ConsumerWidget {
       if (sesion.tiene(Permisos.verEventos))
         _AccesoRapido(
           icono: Icons.history,
-          etiqueta: l10n.navEventos,
+          etiqueta: l10n.navLecturas,
           alTocar: () => context.go(Rutas.eventos),
         ),
     ];
@@ -141,7 +141,7 @@ class InicioUsuario extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.inicioUltimosEventos,
+                      l10n.inicioUltimasLecturas,
                       style: textos.titleLarge,
                     ),
                   ),
@@ -179,8 +179,8 @@ class InicioUsuario extends ConsumerWidget {
                 data: (lista) => lista.isEmpty
                     ? EstadoVacio(
                         ilustracion: Multimedia.vacioEventos,
-                        titulo: l10n.eventosSinResultados,
-                        ayuda: l10n.eventosSinResultadosAyuda,
+                        titulo: l10n.lecturasSinResultados,
+                        ayuda: l10n.lecturasSinResultadosAyuda,
                       )
                     : AccesoTarjeta(
                         relleno: EdgeInsets.symmetric(

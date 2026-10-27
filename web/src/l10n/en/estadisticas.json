@@ -4,7 +4,7 @@
   "leyenda": "Legend",
   "cobradoTitulo": "Collected per month",
   "cobradoSubtitulo": "{{total}} in the last 12 months",
-  "accesosTitulo": "Access per day",
+  "accesosTitulo": "Scans per day",
   "accesosSubtitulo": "Last 14 days: {{permitidos}} allowed and {{rechazados}} rejected",
   "altasTitulo": "New accounts per month",
   "altasSubtitulo_one": "{{count}} new account in the last 12 months",

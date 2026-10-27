@@ -3,10 +3,10 @@ import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { aIso } from '../../../platform/tiempo/fechas.js';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
 import type { CausaDeEjecucion, Ejecucion, OrigenDeConfirmacion } from '../domain/confirmacion.js';
-import { RepositorioDeConfirmaciones, RepositorioDeEventos } from '../repository.js';
-import { alcanceDe, presentarEventos, type EventoListado } from './listar-eventos.js';
+import { RepositorioDeConfirmaciones, RepositorioDeLecturas } from '../repository.js';
+import { alcanceDe, presentarLecturas, type LecturaListada } from './listar-lecturas.js';
 
-export interface EventoDetallado extends EventoListado {
+export interface LecturaDetallada extends LecturaListada {
   /**
    * Lo que se supo de la apertura, de la más vieja a la más nueva: lo que informó la placa y, si no dijo nada a
    * tiempo, la constancia `sin_respuesta` del servidor. Vacío en un rechazo o mientras no hay informe.
@@ -27,17 +27,17 @@ export async function ejecutar(
   pool: Pool,
   principal: PrincipalUsuario,
   id: string,
-): Promise<EventoDetallado> {
+): Promise<LecturaDetallada> {
   const filtro = await alcanceDe(pool, principal, {
     resultado: null,
     puertaId: null,
     desde: null,
     hasta: null,
   });
-  const fila = await new RepositorioDeEventos(pool).buscarVisible(filtro, id);
+  const fila = await new RepositorioDeLecturas(pool).buscarVisible(filtro, id);
   if (fila === null) throw new ErrorDeDominio('evento.no_encontrado', 404);
   const [[evento], confirmaciones] = await Promise.all([
-    presentarEventos(pool, [fila]),
+    presentarLecturas(pool, [fila]),
     new RepositorioDeConfirmaciones(pool).deEventos([id]),
   ]);
   if (evento === undefined) throw new ErrorDeDominio('evento.no_encontrado', 404);

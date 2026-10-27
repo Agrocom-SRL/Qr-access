@@ -13,12 +13,12 @@ import { ejecutar as consultarEstadoQr } from './actions/consultar-estado-qr.js'
 import { ejecutar as exportarDatos } from './actions/exportar-datos.js';
 import { ejecutar as generarQr } from './actions/generar-qr.js';
 import { ejecutar as limpiarClavesVencidas } from './actions/limpiar-claves-vencidas.js';
-import { ejecutar as listarEventos } from './actions/listar-eventos.js';
+import { ejecutar as listarLecturas } from './actions/listar-lecturas.js';
 import { ejecutar as listarQr } from './actions/listar-qr.js';
-import { ejecutar as resumirEventos } from './actions/resumir-eventos.js';
+import { ejecutar as resumirLecturas } from './actions/resumir-lecturas.js';
 import { ejecutar as resumirQr } from './actions/resumir-qr.js';
 import { ejecutar as validarQr } from './actions/validar-qr.js';
-import { ejecutar as verEvento } from './actions/ver-evento.js';
+import { ejecutar as verLectura } from './actions/ver-lectura.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
 import {
   consultaDeEventos,
@@ -45,6 +45,12 @@ import {
 } from './schemas.js';
 
 type ConsultaDeEventos = z.infer<typeof consultaDeEventos>;
+
+/** Rutas del recurso: la vigente (`/lecturas`) y el alias obsoleto (`/eventos-acceso`, nombre anterior). */
+const RUTAS_DE_LECTURAS = [
+  { base: '/lecturas', obsoleta: false },
+  { base: '/eventos-acceso', obsoleta: true },
+] as const;
 
 /** Los filtros de la query, con `null` donde no se pidió nada. */
 function filtrosDe(consulta: ConsultaDeEventos) {
@@ -274,50 +280,62 @@ export function rutas({
       },
     );
 
-    app.get(
-      '/eventos-acceso',
-      {
-        schema: {
-          tags: ['accesos'],
-          querystring: esquemaPaginacion.extend(consultaDeEventos.shape),
-          response: { 200: respuestaListadoDeEventos },
+    // La tabla y el recurso se llaman `lecturas` (ADR 0032 §5). `/eventos-acceso` sigue vivo, con el mismo handler,
+    // esquema y permiso, y queda marcado como obsoleto en el OpenAPI (ADR 0005: ningún cambio incompatible dentro
+    // de `/api/v1`). Retiro propuesto, SUPUESTO a confirmar con el producto: 2027-06-30, con aviso previo en el
+    // changelog y cuando la app y el panel publicados ya no lo llamen.
+    for (const { base, obsoleta } of RUTAS_DE_LECTURAS) {
+      app.get(
+        base,
+        {
+          schema: {
+            tags: ['accesos'],
+            deprecated: obsoleta,
+            querystring: esquemaPaginacion.extend(consultaDeEventos.shape),
+            response: { 200: respuestaListadoDeEventos },
+          },
+          preHandler: permiso('accesos.evento.ver'),
         },
-        preHandler: permiso('accesos.evento.ver'),
-      },
-      (request) => {
-        const { pagina, por_pagina, ...filtros } = request.query;
-        return listarEventos(pool, usuarioDe(request), filtrosDe(filtros), { pagina, por_pagina });
-      },
-    );
+        (request) => {
+          const { pagina, por_pagina, ...filtros } = request.query;
+          return listarLecturas(pool, usuarioDe(request), filtrosDe(filtros), {
+            pagina,
+            por_pagina,
+          });
+        },
+      );
 
-    app.get(
-      '/eventos-acceso/resumen',
-      {
-        schema: {
-          tags: ['accesos'],
-          querystring: consultaDeEventos,
-          response: { 200: respuestaDeResumenDeEventos },
+      // `/resumen` va antes que `/:id`: el segmento fijo gana al parámetro.
+      app.get(
+        `${base}/resumen`,
+        {
+          schema: {
+            tags: ['accesos'],
+            deprecated: obsoleta,
+            querystring: consultaDeEventos,
+            response: { 200: respuestaDeResumenDeEventos },
+          },
+          preHandler: permiso('accesos.evento.ver'),
         },
-        preHandler: permiso('accesos.evento.ver'),
-      },
-      (request) => resumirEventos(pool, usuarioDe(request), filtrosDe(request.query)),
-    );
+        (request) => resumirLecturas(pool, usuarioDe(request), filtrosDe(request.query)),
+      );
 
-    // `/eventos-acceso/resumen` va antes: el segmento fijo gana a `:id`.
-    app.get(
-      '/eventos-acceso/:id',
-      {
-        schema: {
-          tags: ['accesos'],
-          description:
-            'Un intento de acceso con el detalle de su ejecución (`confirmaciones`). 404 `evento.no_encontrado` si no existe, es de otra cuenta o está fuera del alcance del rol.',
-          params: parametrosDeEvento,
-          response: { 200: respuestaDeEventoDetallado },
+      app.get(
+        `${base}/:id`,
+        {
+          schema: {
+            tags: ['accesos'],
+            deprecated: obsoleta,
+            description:
+              'Una lectura (intento de lectura de un QR) con el detalle de su ejecución (`confirmaciones`). 404 `evento.no_encontrado` si no existe, es de otra cuenta o está fuera del alcance del rol.',
+            params: parametrosDeEvento,
+            response: { 200: respuestaDeEventoDetallado },
+          },
+          preHandler: permiso('accesos.evento.ver'),
         },
-        preHandler: permiso('accesos.evento.ver'),
-      },
-      (request) => verEvento(pool, usuarioDe(request), request.params.id),
-    );
+        (request) => verLectura(pool, usuarioDe(request), request.params.id),
+      );
+    }
 
     // Siempre 200 con `abrir` explícito: un rechazo de negocio no es un error HTTP para el firmware (ADR 0005).
     app.post(

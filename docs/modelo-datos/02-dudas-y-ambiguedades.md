@@ -6,7 +6,7 @@ Formato: **D-NN** · pregunta · por qué importa · propuesta · estado. Al cer
 
 | # | Pregunta | Por qué importa | Propuesta | Estado |
 |---|---|---|---|---|
-| D-06 | ¿Cuánto tiempo se guardan los eventos de acceso? | Volumen de `eventos_acceso` y normativa de datos personales | 2 años y archivo | Abierta |
+| D-06 | ¿Cuánto tiempo se guardan las lecturas? | Volumen de `lecturas` y normativa de datos personales | 2 años y archivo | Abierta |
 | D-08 | ¿Hex oficial del verde de marca (bandera de Santa Cruz)? | Rampa y contraste del sistema de diseño | `#007A33` provisional | Abierta |
 | D-12 | ¿Una cuenta puede tener sitios en otra zona horaria? | Evaluación del vencimiento "fin del día" | `zona_horaria` por sitio, por defecto `America/La_Paz` | Abierta |
 | D-13 | ¿Dónde se despliega (servidor propio, VPS, nube)? ¿Quién gestiona el DNS de `agrocom.com.bo`? | Deploy, TLS y OTA | VPS con Docker Compose + Nginx + Let's Encrypt | Abierta |

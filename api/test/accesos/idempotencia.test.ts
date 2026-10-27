@@ -554,8 +554,8 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       // (Otro lector: la relectura del mismo lector dentro de la ventana es una repetición, ADR 0032 §3.)
       const repite = await validar(texto, { 'idempotency-key': CLAVE }, a.dispositivoTrasero);
       expect(repite.json<{ abrir: boolean; motivo?: string }>().abrir).toBe(false);
-      // Ambos intentos quedan en eventos_acceso y la validación no creó ninguna clave.
-      expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(2);
+      // Ambos intentos quedan en lecturas y la validación no creó ninguna clave.
+      expect(await contarFilas(prueba.pool, 'lecturas')).toBe(2);
       expect(await filasDeClaves()).toHaveLength(1);
     });
   });

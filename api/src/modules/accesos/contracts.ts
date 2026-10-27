@@ -12,7 +12,7 @@ import {
   RepositorioDeActividadDeTodas,
   RepositorioDeConfirmaciones,
   RepositorioDeConfirmacionesDeTodas,
-  RepositorioDeEventos,
+  RepositorioDeLecturas,
   RepositorioDeQr,
   RepositorioDeQrDeTodas,
 } from './repository.js';
@@ -37,7 +37,7 @@ const UNIONES_DE_EVENTO =
   'LEFT JOIN dispositivos AS d ON d.id = t.dispositivo_id AND d.tenant_id = t.tenant_id ' +
   'LEFT JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id';
 
-export interface FiltroDeEventosDePlataforma {
+export interface FiltroDeLecturasDePlataforma {
   readonly cuentaId: string | null;
   readonly resultado: 'permitido' | 'rechazado' | null;
   /** Solo los eventos cuya orden de abrir terminó así; `null` o ausente = todos. */
@@ -74,7 +74,7 @@ interface EventoDePlataformaFila extends RowDataPacket {
 }
 
 /** El `WHERE` de los filtros presentes; los valores van siempre como parámetros. */
-function armarFiltro(filtro: FiltroDeEventosDePlataforma): { donde?: string; params: unknown[] } {
+function armarFiltro(filtro: FiltroDeLecturasDePlataforma): { donde?: string; params: unknown[] } {
   // Solo el primer intento; las repeticiones se cuentan aparte (`repeticiones*`, ADR 0032 §4.2).
   const condiciones: string[] = ['t.repetido_de_id IS NULL'];
   const params: unknown[] = [];
@@ -104,12 +104,12 @@ function armarFiltro(filtro: FiltroDeEventosDePlataforma): { donde?: string; par
 /**
  * Cuántos intentos de acceso hubo por día en TODAS las cuentas, para las gráficas del panel de
  * plataforma. Salto EXPLÍCITO del aislamiento: solo lee totales agregados, nunca filas de una
- * cuenta ni escribe (`eventos_acceso` es de solo inserción).
+ * cuenta ni escribe (`lecturas` es de solo inserción).
  */
 class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
-      nombre: 'eventos_acceso',
+      nombre: 'lecturas',
       columnas: [],
       perfil: 'solo_insercion',
       deCuenta: true,
@@ -121,7 +121,7 @@ class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
    * puerta y el lector. Las uniones leen nombres para mostrar; no escriben nada.
    */
   listar(
-    filtro: FiltroDeEventosDePlataforma,
+    filtro: FiltroDeLecturasDePlataforma,
     limite: number,
     desplazamiento: number,
   ): Promise<EventoDePlataformaFila[]> {
@@ -141,7 +141,7 @@ class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
     });
   }
 
-  contarTodos(filtro: FiltroDeEventosDePlataforma): Promise<number> {
+  contarTodos(filtro: FiltroDeLecturasDePlataforma): Promise<number> {
     const { donde, params } = armarFiltro(filtro);
     return this.contar({
       uniones: UNIONES_DE_EVENTO,
@@ -221,7 +221,7 @@ export interface EventoDePlataforma {
 export interface ServicioDeAccesosDePlataforma {
   /** Los intentos de todas las cuentas (o de una), paginados, del más nuevo al más viejo. */
   listar(
-    filtro: FiltroDeEventosDePlataforma,
+    filtro: FiltroDeLecturasDePlataforma,
     limite: number,
     desplazamiento: number,
   ): Promise<{ eventos: EventoDePlataforma[]; total: number }>;
@@ -390,7 +390,7 @@ export interface ServicioDeLecturas {
 }
 
 export function crearServicioDeLecturas(pool: Pool): ServicioDeLecturas {
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
   return { ultimaLecturaPorPuertas: (puertaIds) => eventos.ultimaLecturaPorPuertas(puertaIds) };
 }
 
@@ -440,7 +440,7 @@ export interface ServicioDeConfirmaciones {
 }
 
 export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmaciones {
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
   const confirmaciones = new RepositorioDeConfirmaciones(pool);
   return {
     async aperturasSinInforme(dispositivos, hasta, limite) {
@@ -509,7 +509,7 @@ export interface ServicioDeEvidencia {
 
 export function crearServicioDeEvidencia(pool: Pool): ServicioDeEvidencia {
   const qr = new RepositorioDeQr(pool);
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
   return {
     async existentes({ qrIds, eventoAccesoIds, generadores }) {
       const [qrs, intentos] = await Promise.all([

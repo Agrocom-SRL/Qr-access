@@ -1,9 +1,9 @@
 import type { Pool } from 'mysql2/promise';
 import type { PrincipalUsuario } from '../../../platform/seguridad/principal.js';
-import { RepositorioDeEventos } from '../repository.js';
-import { alcanceDe, type FiltrosDeEventos } from './listar-eventos.js';
+import { RepositorioDeLecturas } from '../repository.js';
+import { alcanceDe, type FiltrosDeLecturas } from './listar-lecturas.js';
 
-export interface ResumenDeEventos {
+export interface ResumenDeLecturas {
   permitidos: number;
   rechazados: number;
   rechazados_por_motivo: { motivo_code: string; total: number }[];
@@ -16,15 +16,15 @@ export interface ResumenDeEventos {
 export async function ejecutar(
   pool: Pool,
   principal: PrincipalUsuario,
-  filtros: FiltrosDeEventos,
-): Promise<ResumenDeEventos> {
-  const repositorio = new RepositorioDeEventos(pool);
+  filtros: FiltrosDeLecturas,
+): Promise<ResumenDeLecturas> {
+  const repositorio = new RepositorioDeLecturas(pool);
   const alcance = await alcanceDe(pool, principal, filtros);
   const [filas, repeticiones] = await Promise.all([
     repositorio.resumir(alcance),
     repositorio.resumirRepeticiones(alcance),
   ]);
-  const resumen: ResumenDeEventos = {
+  const resumen: ResumenDeLecturas = {
     permitidos: 0,
     rechazados: 0,
     rechazados_por_motivo: [],

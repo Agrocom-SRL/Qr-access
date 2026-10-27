@@ -4,7 +4,7 @@
 
 ## Propósito
 
-Registro de **solo inserción** de lo que pasa con los topes de generación de QR (ADR 0030 §5 y §7). No son intentos de acceso (esos van a `eventos_acceso`, invariante 4). De aquí leerán la bandeja de avisos (ADR 0030 §6) y las señales de abuso (§4).
+Registro de **solo inserción** de lo que pasa con los topes de generación de QR (ADR 0030 §5 y §7). No son intentos de acceso (esos van a `lecturas`, invariante 4). De aquí leerán la bandeja de avisos (ADR 0030 §6) y las señales de abuso (§4).
 
 ## Columnas
 

@@ -72,7 +72,7 @@ class VistaPuertas extends ConsumerWidget {
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaSitio,
+          titulo: l10n.lecturasColumnaSitio,
           celda: (context, puerta) => Text(
             puerta.sitioNombre,
             style: Theme.of(context).textTheme.bodyMedium

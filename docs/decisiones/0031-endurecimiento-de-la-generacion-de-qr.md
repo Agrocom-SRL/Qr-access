@@ -23,7 +23,7 @@ El ADR 0030 limita *cuántos* QR se generan. Falta endurecer *cómo* se generan,
 5. ~~Ventana de activación (`valido_desde`).~~ **Descartado** (2026-10-23): el tiempo de vida de un QR es uno solo, hasta su `vence_at`. No hay «desde cuándo»; un QR de un solo uso que se lee antes de la hora prevista se consume y deja de servir, y quien lo generó decide cuándo enviarlo y con qué vigencia.
 6. ~~Franja horaria dentro del día.~~ **Descartado** por el mismo motivo que el 5.
 7. **[Futuro] Vigencia por puerta sensible.** Una puerta puede marcarse como sensible: vigencia máxima más corta y/o etiqueta obligatoria. El máximo efectivo es el menor entre plan, cuenta y puerta.
-8. **[Futuro] Etiqueta obligatoria por política de cuenta.** Si la cuenta lo activa, el QR no se genera sin nombre del visitante (o placa del vehículo). La etiqueta se normaliza, se limita de largo y se escapa al mostrarla; entra a la bitácora y se ve en `eventos_acceso` para trazabilidad.
+8. **[Futuro] Etiqueta obligatoria por política de cuenta.** Si la cuenta lo activa, el QR no se genera sin nombre del visitante (o placa del vehículo). La etiqueta se normaliza, se limita de largo y se escapa al mostrarla; entra a la bitácora y se ve en `lecturas` para trazabilidad.
 9. **[Aceptado] Límite de puertas por QR.** Tope de puertas por QR (por ejemplo, 10) para que un solo token no sea una llave maestra; configurable por plan.
 10. **[Aceptado] Versión del formato.** El prefijo `AQ1.` ya versiona el texto; el lector y el servidor rechazan versiones desconocidas con `qr.formato_invalido`, lo que permite pasar a `AQ2.` sin ambigüedad.
 

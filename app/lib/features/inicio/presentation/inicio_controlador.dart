@@ -21,8 +21,8 @@ final FutureProvider<Pagina<QrAcceso>> qrVigentesProvider =
     );
 
 /// Los últimos eventos que ve el rol activo (del guardia: los de sus puertas).
-final FutureProvider<List<EventoAcceso>> ultimosEventosProvider =
-    FutureProvider.autoDispose<List<EventoAcceso>>((ref) async {
+final FutureProvider<List<Lectura>> ultimosEventosProvider =
+    FutureProvider.autoDispose<List<Lectura>>((ref) async {
       final pagina = await ref
           .watch(eventosRepositorioProvider)
           .listar(
@@ -54,7 +54,7 @@ class Tablero {
 
   final ResumenEventos resumenDeHoy;
   final List<Puerta> puertas;
-  final List<EventoAcceso> ultimosEventos;
+  final List<Lectura> ultimosEventos;
   final DateTime actualizadoAt;
 
   List<Puerta> get puertasSinConexion =>

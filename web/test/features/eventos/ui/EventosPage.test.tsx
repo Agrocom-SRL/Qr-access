@@ -30,10 +30,10 @@ function montar(listar: EventosRepositorio['listar'], ruta = '/accesos') {
   );
 }
 
-describe('accesos: ejecución de la orden de abrir', () => {
+describe('lecturas: ejecución de la orden de abrir', () => {
   it('muestra la falla con su causa en la tabla', async () => {
     montar(() => Promise.resolve({ elementos: [FALLIDA], pagina: 1, porPagina: 15, total: 1 }));
-    const tabla = await screen.findByRole('table', { name: 'Accesos' });
+    const tabla = await screen.findByRole('table', { name: 'Lecturas' });
     expect(await within(tabla).findByText('La puerta no se abrió')).toBeInTheDocument();
     expect(within(tabla).getByText('Portón vehicular')).toBeInTheDocument();
   });
@@ -52,7 +52,7 @@ describe('accesos: ejecución de la orden de abrir', () => {
       Promise.resolve({ elementos: [], pagina: 1, porPagina: 15, total: 0 }),
     );
     montar(listar, '/accesos?ejecucion=sin_confirmacion');
-    await screen.findByText('Sin accesos con estos filtros');
+    await screen.findByText('Sin lecturas con estos filtros');
     expect(listar).toHaveBeenCalledWith(
       expect.objectContaining({ ejecucion: 'sin_confirmacion' }),
       15,

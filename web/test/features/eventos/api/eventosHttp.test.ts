@@ -34,7 +34,7 @@ function clienteFalso() {
   return { solicitar, cliente: { solicitar } as unknown as ClienteHttp };
 }
 
-describe('accesos por HTTP: ejecución (ADR 0031 §18)', () => {
+describe('lecturas por HTTP: ejecución (ADR 0031 §18)', () => {
   it('sin filtro de ejecución no manda el parámetro', async () => {
     const { solicitar, cliente } = clienteFalso();
     await crearEventosHttp(cliente).listar(FILTROS_BASE, 15);

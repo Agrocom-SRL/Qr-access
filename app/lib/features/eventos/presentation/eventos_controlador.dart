@@ -1,6 +1,6 @@
 import 'package:agrocom_acceso/core/listados/pagina.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
@@ -54,9 +54,8 @@ consultaEventosProvider =
 /// Eventos de una consulta. Es una familia para que cada pestaña de resultado
 /// tenga su lista mientras se desliza entre ellas. Se recarga al cambiar
 /// filtro o página.
-final FutureProviderFamily<Pagina<EventoAcceso>, ConsultaEventos>
-eventosProvider = FutureProvider.autoDispose
-    .family<Pagina<EventoAcceso>, ConsultaEventos>(
+final FutureProviderFamily<Pagina<Lectura>, ConsultaEventos> eventosProvider =
+    FutureProvider.autoDispose.family<Pagina<Lectura>, ConsultaEventos>(
       (ref, consulta) => ref
           .watch(eventosRepositorioProvider)
           .listar(

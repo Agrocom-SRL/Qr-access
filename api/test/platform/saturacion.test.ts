@@ -479,9 +479,7 @@ describe('la API ante la saturación', () => {
         () => validarQr(pool, dispositivo(), { texto, leidoEn: null }),
       );
     const contarEventos = async (p: AppDePrueba): Promise<number> => {
-      const [filas] = await p.pool.query<RowDataPacket[]>(
-        'SELECT COUNT(*) AS total FROM eventos_acceso',
-      );
+      const [filas] = await p.pool.query<RowDataPacket[]>('SELECT COUNT(*) AS total FROM lecturas');
       return Number(filas[0]?.total);
     };
 
@@ -510,7 +508,7 @@ describe('la API ante la saturación', () => {
     it('un deadlock al registrar un rechazo también se reintenta una vez', async () => {
       const p = await abrir({});
       const resultado = await validarConPool(
-        conDeadlocks(p.poolDispositivos, 'INSERT INTO eventos_acceso', 1),
+        conDeadlocks(p.poolDispositivos, 'INSERT INTO lecturas', 1),
         'texto-que-no-es-un-qr',
       );
       expect(resultado).toMatchObject({ abrir: false, motivo_code: 'qr.formato_invalido' });
@@ -554,7 +552,7 @@ describe('la API ante la saturación', () => {
       ).rejects.toBeInstanceOf(PresupuestoAgotado);
       expect(await usadoAt(p, qr.id)).toBeNull();
       const [filas] = await p.pool.query<RowDataPacket[]>(
-        "SELECT COUNT(*) AS total FROM eventos_acceso WHERE resultado = 'permitido'",
+        "SELECT COUNT(*) AS total FROM lecturas WHERE resultado = 'permitido'",
       );
       expect(Number(filas[0]?.total)).toBe(0);
     });

@@ -1,6 +1,6 @@
 # ADR 0032 — Concurrencia, prioridad de las puertas y registro de lecturas
 
-**Estado:** Propuesta (2026-10-23). Se acepta o descarta por partes con Miguel. El nombre del registro (§5) se decide al final de la planificación y se aplica en el último PR.
+**Estado:** Propuesta (2026-10-23). Se acepta o descarta por partes con Miguel. El nombre del registro (§5) quedó decidido por Miguel (`lecturas`, 2026-10-26/27) y se aplicó en la ola W14.
 
 ## Contexto
 
@@ -11,7 +11,7 @@ Lo que hay hoy (verificado en el código):
 - El cuello de botella real es el **pool de MySQL: 10 conexiones** (`api/src/platform/db/pool.ts`), con cola de espera sin tope (el valor por omisión de `mysql2`) y sin tiempo máximo por consulta ni por petición.
 - La validación hace varias consultas y una transacción (`validar-qr.ts`); el consumo del QR es atómico (`UPDATE … WHERE usado_at IS NULL`, una fila), así que dos lectores con el mismo QR nunca abren los dos.
 - El firmware espera la respuesta como máximo 3 s (`cliente.cpp`) y, sin respuesta válida, **no abre**. Su máquina de estados no se bloquea, pero la decisión de abrir sí depende de la respuesta (falla segura).
-- Cada `eventos_acceso` es solo inserción (invariante 4): hoy todo intento, repetido o no, es una fila.
+- Cada fila de `lecturas` es solo inserción (invariante 4): hoy todo intento, repetido o no, es una fila.
 
 ## Decisión
 
@@ -37,7 +37,7 @@ Con una instancia, el consumo atómico ya garantiza un solo uso. Con varias inst
 
 **Presupuesto de la petición y consumo (ola W3, auditoría).** La validación recibe la señal de la petición (`request.signal`, que Fastify aborta al vencer el `handlerTimeout` o cortarse la conexión) y la pasa a `enTransaccionIdempotente`: con la señal vencida no se empieza la transacción, no se reintenta tras un deadlock y, sobre todo, **no se hace COMMIT** antes de confirmar el consumo (ROLLBACK, `PresupuestoAgotado`): la placa ya no espera, la puerta no abre y el QR queda sin consumir. La configuración exige además que el presupuesto de UN intento quepa en la petición: espera por conexión + consulta máxima < petición < 3 s del firmware (en el pool del dispositivo y en el de la app); con reintento no cabe, y por eso la señal es lo que lo corta. **Riesgo residual:** el COMMIT que se confirma justo antes del vencimiento, cuya respuesta ya no llega a la placa: el QR queda consumido y la puerta cerrada. Lo cubre la ventana de repetición de 15 s (§3, ola W7), que vuelve a responder `abrir: true` al mismo lector sin consumir otra vez. No se reabre el mismo QR por otra vía (invariante 3).
 
-**Excepción conocida a la invariante 4.** Cuando la base de datos no responde (pool saturado, consulta o petición vencidas, deadlock persistente) o el rate limit corta la validación (429), el intento **no puede** quedar en `eventos_acceso`: no hay dónde escribirlo. La puerta no abre (falla segura) y el rastro es el log: cada 429 o 503 de una ruta del dispositivo registra un `warn` con `dispositivoId`, `puertaId` y, en el 429, la clase del límite (sin credenciales ni texto de QR). El rechazo por 429 de validación *sí* se podría registrar (la base responde), pero requiere un `motivo_code` `limite_excedido` que hoy no existe en el catálogo de motivos: **pendiente** para una ola con cambio de esquema y de contrato (no se inventa el motivo acá).
+**Excepción conocida a la invariante 4.** Cuando la base de datos no responde (pool saturado, consulta o petición vencidas, deadlock persistente) o el rate limit corta la validación (429), el intento **no puede** quedar en `lecturas`: no hay dónde escribirlo. La puerta no abre (falla segura) y el rastro es el log: cada 429 o 503 de una ruta del dispositivo registra un `warn` con `dispositivoId`, `puertaId` y, en el 429, la clase del límite (sin credenciales ni texto de QR). El rechazo por 429 de validación *sí* se podría registrar (la base responde), pero requiere un `motivo_code` `limite_excedido` que hoy no existe en el catálogo de motivos: **pendiente** para una ola con cambio de esquema y de contrato (no se inventa el motivo acá).
 
 ### 3. No perder una lectura cuando se pierde la respuesta
 
@@ -57,14 +57,19 @@ Los lectores de QR suelen releer el mismo código varias veces por segundo mient
 4. **Relación con la confirmación de apertura (ADR 0031 §18):** la ventana de repetición no depende de ella; si la puerta no se abrió físicamente, se ve como `no_confirmada` en el panel y no se reabre sola.
 5. **Retención:** las filas repetidas se pueden archivar antes que las demás cuando se defina la retención (duda D-06); eso es una excepción de borrado físico a justificar en su PR.
 
-### 5. Nombre del registro (abierto; se hace al final)
+### 5. Nombre del registro — Decidido: `lecturas` (Miguel, 2026-10-26/27)
 
-«Evento de acceso» confunde: incluye lecturas rechazadas, el pulsador de salida y la puerta forzada. Opciones para decidir:
-- **`intentos_acceso`** (recomendada): todo lo que se intentó, con resultado `permitido` o `rechazado`. «Intento» deja claro por qué hay filas fallidas.
-- **`lecturas`**: describe bien al QR, no al pulsador ni a la llave.
-- **`registro_accesos`**: neutro, pero «registro» ya nombra a la bitácora.
+«Evento de acceso» confundía: incluye lecturas rechazadas, el pulsador de salida y la puerta forzada. Se evaluaron `intentos_acceso`, `lecturas` y `registro_accesos`. **Decisión de Miguel: «se entiende mejor como lecturas».** La tabla pasa a llamarse **`lecturas`**: cada fila es un intento de lectura de un QR, aceptado o rechazado. «Intento de lectura» queda como concepto en los textos cuando se habla del intento (por ejemplo, «este intento de lectura se rechazó»); «lectura» es el nombre de la fila y del recurso.
 
-Renombrar toca la tabla, el repositorio, el contrato, los ARB y varios ADR. Como pasó con «emitir QR» → «generar QR», se hace **al final**, en una migración propia (`RENAME TABLE`) y un solo PR, con el resto estable. Mientras tanto todo usa `eventos_acceso`.
+Lo implementado (ola W14, como pasó con «emitir QR» → «generar QR»: un solo PR, con el resto estable):
+- **Base:** migración `20261103100001_rename_eventos_acceso_a_lecturas.sql`: `RENAME TABLE` (atómico), índices renombrados con `RENAME INDEX` y claves foráneas rehechas en el mismo `ALTER`, todo `INPLACE, LOCK=NONE` para no bloquear la escritura de las placas. Las claves foráneas de las tablas hijas (`confirmaciones_apertura`) y la autorreferencia `repetido_de_id` siguen al nombre nuevo. Los dos `CHECK` conservan su nombre antiguo (`ck_eventos_acceso_*`): renombrarlos exige copiar la tabla. El `down` revierte todo.
+- **API:** el repositorio es `RepositorioDeLecturas` y las acciones `listar-lecturas`, `ver-lectura` y `resumir-lecturas`. Rutas nuevas `GET /lecturas`, `/lecturas/resumen`, `/lecturas/{id}` y `/plataforma/lecturas`, con el mismo handler, esquema y permiso (`accesos.evento.ver`, `resumen.panel.ver`) que las anteriores.
+- **Compatibilidad (ADR 0005, ningún cambio incompatible dentro de `/api/v1`):** `/eventos-acceso` (con `/resumen` y `/{id}`) y `/plataforma/eventos-acceso` siguen respondiendo igual y están marcadas `deprecated` en el OpenAPI. **Fecha de retiro propuesta (supuesto, por confirmar con Miguel): 2027-06-30**, con aviso previo en el changelog y una vez que la app y el panel publicados ya no las llamen. Se mantienen sin cambio los campos JSON existentes (`evento_id`, `evento_acceso_ids`, `evento_acceso_id`), los códigos de error (`evento.no_encontrado`) y los permisos (`accesos.evento.*`): renombrarlos es un cambio incompatible y queda para una `v2`.
+- **Bitácora:** `lecturas` es de solo inserción y no pasa por la bitácora; los valores históricos de `bitacoras.tabla` no se reescriben.
+- **App y panel:** los textos dicen «Lecturas» (ES), «Leituras» (PT) y «Scans» (EN) y llaman a `/lecturas` y `/plataforma/lecturas`.
+- **Despliegue:** entre el `RENAME TABLE` (decenas de milisegundos) y el arranque del código nuevo, el código anterior falla al escribir en `eventos_acceso`; por la falla segura la puerta no abre, y la placa reintenta. Se despliega con la API detenida un instante: migrar y arrancar la versión nueva seguidos (`docs/gestion/despliegue.md`).
+
+*Nombre anterior (compatibilidad):* `eventos_acceso`. Aparece solo en las migraciones históricas, en la migración del renombre, en la nota de la ficha `docs/modelo-datos/tablas/16_lecturas.md`, en esta nota y en los alias obsoletos `/eventos-acceso`.
 
 ## Alternativas descartadas
 
@@ -86,5 +91,5 @@ Renombrar toca la tabla, el repositorio, el contrato, los ARB y varios ADR. Como
 
 - **M3, consumo por las señales de W12:** el conteo de repeticiones y de `qr.usado` por QR (§4.3) todavía no lo lee nadie; lo consumirán las señales del ADR 0030 §4.
 - **M4, hora de la última repetición:** el listado muestra «×N» pero no cuándo fue la última repetición; se agrega con el detalle de repeticiones.
-- **B2, clave foránea compuesta:** `repetido_de_id` apunta solo a `eventos_acceso (id)`; una FK `(tenant_id, repetido_de_id)` garantizaría en la base que el original es de la misma cuenta (hoy lo asegura el repositorio de cuenta).
+- **B2, clave foránea compuesta:** `repetido_de_id` apunta solo a `lecturas (id)`; una FK `(tenant_id, repetido_de_id)` garantizaría en la base que el original es de la misma cuenta (hoy lo asegura el repositorio de cuenta).
 - **B3, anular un QR ya usado:** `anular` solo actúa sobre QR sin usar; anular uno ya consumido (para cortar una repetición dentro de la ventana) no existe y requiere una regla de negocio escrita.

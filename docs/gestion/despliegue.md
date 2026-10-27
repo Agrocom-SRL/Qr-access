@@ -141,9 +141,9 @@ docker compose -p acceso --env-file /opt/acceso/.env -f docker-compose.prod.yml 
 
 Escucha en `:8082` de la red privada. Para abrirlo por web, un sitio en NPMplus con HTTPS y Access List; no se expone sin autenticación delante.
 
-## Migraciones sobre `eventos_acceso` poblada
+## Migraciones sobre `lecturas` poblada
 
-`eventos_acceso` recibe una fila por cada lectura de cada placa, así que una migración que la bloquee corta los registros. Regla: sobre esta tabla, cada `ALTER` va con `ALGORITHM=INPLACE, LOCK=NONE` (si MariaDB no puede cumplirlo, falla en vez de bloquear). Una clave foránea nueva exige `SET foreign_key_checks = 0` en la sesión de la migración (MariaDB 10.11 responde `ERROR 1846: Adding foreign keys needs foreign_key_checks=OFF` y solo ofrece `COPY`); es seguro cuando la columna nace toda en `NULL` y no hay filas que validar.
+`lecturas` recibe una fila por cada lectura de cada placa, así que una migración que la bloquee corta los registros. Regla: sobre esta tabla, cada `ALTER` va con `ALGORITHM=INPLACE, LOCK=NONE` (si MariaDB no puede cumplirlo, falla en vez de bloquear). Una clave foránea nueva exige `SET foreign_key_checks = 0` en la sesión de la migración (MariaDB 10.11 responde `ERROR 1846: Adding foreign keys needs foreign_key_checks=OFF` y solo ofrece `COPY`); es seguro cuando la columna nace toda en `NULL` y no hay filas que validar.
 
 La migración `20261028100001` (`repetido_de_id`, ADR 0032) va en tres `ALTER`: columna, índices y clave foránea. Verificada en MariaDB 10.11.14 con una base nueva y la tabla con 200 000 filas, con un escritor insertando en paralelo (400 inserciones, una cada ~50 ms):
 
@@ -152,6 +152,17 @@ La migración `20261028100001` (`repetido_de_id`, ADR 0032) va en tres `ALTER`: 
 - el `ALTER` único original (columna + índice + FK) con `LOCK=NONE` falla con el error 1846, por eso se partió.
 
 Ventana de despliegue: ninguna; se puede aplicar con la API en marcha. Para tablas mucho mayores, repite la medición en una copia antes de migrar.
+
+### Renombre `eventos_acceso` a `lecturas` (migración `20261103100001`, ola W14)
+
+Verificado en MariaDB 10.11.14 con una base nueva (todas las migraciones, seed dos veces) y con la tabla en 200 005 filas, con un escritor insertando sin parar durante el `up` y el `down`:
+
+- subir: 48 ms; bajar: ~70 ms; volver a subir: 67 ms. Sin copia de la tabla: `RENAME TABLE` y `RENAME INDEX` son solo metadatos, y las claves foráneas se rehacen con `foreign_key_checks = 0` e `INPLACE`. La inserción más lenta del escritor concurrente tardó entre 25 y 40 ms;
+- las 200 005 filas, las 100 confirmaciones hijas y las 5 repeticiones (`repetido_de_id`) quedan intactas (suma de control igual antes y después) y las claves foráneas siguen activas (insertar una confirmación con un `evento_acceso_id` inexistente falla);
+- el esquema tras `down` es idéntico al anterior al `up`;
+- los `CHECK` conservan su nombre: añadirlos con otro nombre fuerza `ALGORITHM=COPY` (4 s con 200 000 filas y bloquea escrituras).
+
+**Ventana de despliegue.** El código y la tabla cambian de nombre a la vez, y no hay un instante común: el código anterior falla en `eventos_acceso` apenas corre la migración (el escritor de prueba vio exactamente un error `ER_NO_SUCH_TABLE`), y el nuevo falla en `lecturas` si se despliega antes. Orden: detener la API (o sacarla del balanceador), `dbmate up`, arrancar la versión nueva. Mientras tanto la validación no responde y, por la falla segura, ninguna puerta abre con QR (los pulsadores y la llave siguen funcionando). Si una migración posterior falla y hay que volver atrás: `dbmate rollback` y la versión anterior de la API.
 
 ## Respaldo
 
@@ -173,9 +184,9 @@ El servidor ya escucha en `0.0.0.0`; el puerto 3306 solo debe estar abierto para
 
 Si había datos en la base MySQL vieja del contenedor `acceso_datos-db`, se vuelcan con `mysqldump --no-create-info --complete-insert` y se restauran sobre la base ya migrada antes de abrir al público; ese volumen no se borra hasta confirmar el uso estable.
 
-## Migraciones que tocan tablas grandes (`eventos_acceso`, `sesiones`)
+## Migraciones que tocan tablas grandes (`lecturas`, `sesiones`)
 
-La placa escribe un `eventos_acceso` por cada lectura de QR: un `ALTER` que bloquee esa tabla deja las puertas sin registrar intentos (y, por falla segura, sin abrir). Por eso la migración `20261102100003_add_indices_de_senales` (ola W12):
+La placa escribe una fila en `lecturas` por cada lectura de QR: un `ALTER` que bloquee esa tabla deja las puertas sin registrar intentos (y, por falla segura, sin abrir). Por eso la migración `20261102100003_add_indices_de_senales` (ola W12):
 
 - declara `ALGORITHM=INPLACE, LOCK=NONE` en cada `ALTER`: si MariaDB no puede cumplirlo, el paso **falla** en vez de bloquear escrituras;
 - fija `SET SESSION lock_wait_timeout = 5` antes: el `ALTER` necesita un bloqueo de metadatos breve al empezar y al terminar, y si hay una transacción larga abierta sobre la tabla se queda en cola **bloqueando a todas las demás**. Con 5 s falla pronto y no deja la cola formada.

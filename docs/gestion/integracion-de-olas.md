@@ -63,7 +63,7 @@ Fusión hecha sobre la base `claude/w12-senales` (que ya contiene W1-api, W3, W4
 | w7-ventana-repeticion | `accesos/repository.ts` | `EJECUCION_EFECTIVA` (W10) frente a la nueva firma de `armarFiltroDeEventos(filtro, repeticiones)` (W7) | Se conserva la constante y la nueva firma |
 | w7-ventana-repeticion | `resumen/actions/listar-eventos-de-acceso.ts` y `resumen/schemas.ts` | Campos de la vista de plataforma: `ejecucion`/`ejecucion_causa` y `repeticiones_*` | Ambos juegos de campos |
 | w7-ventana-repeticion | `docs/gestion/plan-maestro.md` | Filas W6 (ya en la base) y W7 | W6 de la base, W7 de la rama |
-| w7-ventana-repeticion | `docs/modelo-datos/tablas/16_eventos_acceso.md` | Índices (`idx_eventos_acceso_global` de W12; `idx_eventos_acceso_repeticion`, `repetido_de_id` de W7) y nota de la orden de abrir frente a la de `repetido_de_id` | Todo, sin pérdida |
+| w7-ventana-repeticion | `docs/modelo-datos/tablas/16_lecturas.md` | Índices (`idx_lecturas_global` de W12; `idx_lecturas_repeticion`, `repetido_de_id` de W7) y nota de la orden de abrir frente a la de `repetido_de_id` | Todo, sin pérdida |
 | w8-sesiones | `seguridad/domain/roles-base.ts` | `seguridad.incidente.resolver` (W11) frente a `seguridad.sesion.ver/cerrar` (W8) en el Administrador | Los tres permisos |
 | w8-sesiones | `seguridad/repository.ts` | `idsConPermiso()` (W11) frente a `bloquearSiActivo()` (W8) en `RepositorioDeSuperAdmins` | Ambos métodos |
 | w8-sesiones | `api/test/helpers/fixtures.ts` | `PERMISOS_DE_ADMINISTRADOR` y `PERMISOS_DE_TITULAR`: avisos (W9) e incidentes (W11) frente a sesiones (W8) | Todos los permisos |
@@ -102,9 +102,10 @@ Sin versiones duplicadas. Aplicadas todas con un mini-dbmate en MariaDB 10.11: `
 20261102100001  add_senales_a_tipos_de_notificacion  (W12)
 20261102100002  create_avisos_de_senal               (W12)
 20261102100003  add_indices_de_senales               (W12)
+20261103100001  rename_eventos_acceso_a_lecturas     (W14)
 ```
 
-**Dependencias hacia versiones posteriores: ninguna.** W7 (`20261028…`) y W8 (`20261029…`) solo alteran `eventos_acceso` y `sesiones`, creadas en `20261009…`; W9 a W12 no usan `repetido_de_id` ni `instalacion_id` en SQL de migración. Las migraciones que amplían el ENUM de tipos de notificación (W9, W10, W11, W12) están en una sola línea de versiones creciente, cada una parte de la lista de la anterior. Aviso operativo: W7 y W8 quedan con versión menor que W9; si algún entorno ya tuviera aplicadas las de W9 a W12 antes que las de W7 y W8, dbmate aplica las pendientes sin importar el orden y no hay dependencia que lo impida.
+**Dependencias hacia versiones posteriores: ninguna.** W7 (`20261028…`) y W8 (`20261029…`) solo alteran `lecturas` y `sesiones`, creadas en `20261009…`; W9 a W12 no usan `repetido_de_id` ni `instalacion_id` en SQL de migración. Las migraciones que amplían el ENUM de tipos de notificación (W9, W10, W11, W12) están en una sola línea de versiones creciente, cada una parte de la lista de la anterior. Aviso operativo: W7 y W8 quedan con versión menor que W9; si algún entorno ya tuviera aplicadas las de W9 a W12 antes que las de W7 y W8, dbmate aplica las pendientes sin importar el orden y no hay dependencia que lo impida.
 
 ## 5. Tareas de integración de W12 (ADR 0030 y D-37): hechas
 

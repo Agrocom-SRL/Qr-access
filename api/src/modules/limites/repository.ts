@@ -142,7 +142,7 @@ interface ConteoFila extends RowDataPacket {
   ultimo: Date | null;
 }
 
-/** Dueño de `eventos_de_limite`: solo inserción, como `eventos_acceso` (no se edita ni se borra). */
+/** Dueño de `eventos_de_limite`: solo inserción, como `lecturas` (no se edita ni se borra). */
 export class RepositorioDeEventosDeLimite extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {

@@ -84,6 +84,8 @@ Recomendamos `NavigationBar` en lugar de drawer: cada rol tiene 4 destinos o men
 | Guardia | Inicio · Eventos · Puertas · Perfil | igual |
 | Administrador | Inicio · Eventos · Admin · Perfil | Inicio · Emitir QR · Eventos · Puertas · Usuarios · Perfil |
 
+> Nota (ola W14, ADR 0032 §5): el destino «Eventos» de la tabla de arriba se llama ahora **Lecturas** en los textos de la app (ES «Lecturas», PT «Leituras», EN «Scans»); las capturas y los ids C08/E08 conservan el nombre anterior.
+
 ## Componentes (nombres obligatorios)
 - **Átomos**: AccesoBoton (primario, secundario, texto, peligro tonal / relleno), AccesoBadge, AccesoCampoTexto, AccesoSelector, AccesoInterruptor.
 - **Moléculas**: CampoFormulario, TarjetaIndicador, EstadoVacio, ConfirmarDialogo, FilaClaveValor.

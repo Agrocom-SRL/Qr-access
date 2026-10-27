@@ -51,7 +51,7 @@ export function registrarErrores(app: FastifyInstance, reintentoSegundos = 2): v
     if (esServicioNoDisponible(error)) {
       // Sin el SQL ni sus valores: el serializador del log los omite (ADR 0033 §2).
       // De una petición del dispositivo se anotan su id y su puerta (no son secretos): la
-      // validación que no llegó a `eventos_acceso` queda al menos en el log (ADR 0032 §2).
+      // validación que no llegó a `lecturas` queda al menos en el log (ADR 0032 §2).
       const principal = request.principal;
       request.log.warn(
         {

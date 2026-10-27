@@ -82,7 +82,7 @@ describe('uso imposible: volumen y equivalencia (W12)', () => {
       );
       const primero = (cab as unknown as { insertId: number }).insertId;
       await pool.query(
-        'INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at) VALUES ?',
+        'INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, qr_acceso_id, metodo, resultado, motivo_code, ocurrido_at) VALUES ?',
         [
           lote.map((p, k) => {
             const puerta = puertas.find((x) => x.id === p.puertaId);
@@ -210,7 +210,7 @@ describe('uso imposible: volumen y equivalencia (W12)', () => {
     );
     await sembrar(prueba.pool, puntos);
     // Estadísticas al día, como en producción: el plan no depende de la carga recién hecha.
-    await prueba.pool.query('ANALYZE TABLE eventos_acceso, qr_accesos');
+    await prueba.pool.query('ANALYZE TABLE lecturas, qr_accesos');
 
     // Registra cada SQL para pedirle su plan a MariaDB.
     const consultas: { sql: string; params: unknown[] }[] = [];

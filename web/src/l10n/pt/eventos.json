@@ -1,8 +1,8 @@
 {
-  "titulo": "Acessos",
+  "titulo": "Leituras",
   "subtitulo": "O que as placas leram em todas as contas, ao vivo",
-  "tabla": "Acessos",
-  "errorCarga": "Não conseguimos carregar os acessos",
+  "tabla": "Leituras",
+  "errorCarga": "Não conseguimos carregar as leituras",
   "columna": {
     "cuando": "Quando",
     "cuenta": "Conta",
@@ -27,11 +27,11 @@
     "ejecucionEtiqueta": "O que a porta fez"
   },
   "vacio": {
-    "titulo": "Ainda não há acessos",
-    "texto": "Quando uma placa ler um QR, a tentativa aparece aqui na hora."
+    "titulo": "Ainda não há leituras",
+    "texto": "Quando uma placa ler um QR, a tentativa de leitura aparece aqui na hora."
   },
   "sinResultados": {
-    "titulo": "Sem acessos com estes filtros",
+    "titulo": "Sem leituras com estes filtros",
     "texto": "Tente outras datas ou remova os filtros."
   },
   "motivo": {

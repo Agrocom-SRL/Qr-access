@@ -8,7 +8,7 @@ import {
 import { aIso } from '../../../platform/tiempo/fechas.js';
 import {
   crearServicioDeAccesosDePlataforma,
-  type FiltroDeEventosDePlataforma,
+  type FiltroDeLecturasDePlataforma,
 } from '../../accesos/contracts.js';
 
 export interface EventoDeAccesoDePlataforma {
@@ -35,7 +35,7 @@ export interface EventoDeAccesoDePlataforma {
  */
 export async function ejecutar(
   pool: Pool,
-  filtro: FiltroDeEventosDePlataforma,
+  filtro: FiltroDeLecturasDePlataforma,
   paginacion: Paginacion,
 ): Promise<Listado<EventoDeAccesoDePlataforma>> {
   const { limite, desplazamiento } = limiteDe(paginacion);

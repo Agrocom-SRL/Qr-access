@@ -603,7 +603,7 @@ describe('estados de usuario y cuenta: restringido, suspendido y reactivar (ADR 
   describe('la validación respeta el estado efectivo del generador (ADR 0031 §2)', () => {
     const filaDeEvento = async (): Promise<RowDataPacket | undefined> => {
       const [filas] = await prueba.pool.query<RowDataPacket[]>(
-        'SELECT resultado, motivo_code FROM eventos_acceso ORDER BY id DESC LIMIT 1',
+        'SELECT resultado, motivo_code FROM lecturas ORDER BY id DESC LIMIT 1',
       );
       return filas[0];
     };

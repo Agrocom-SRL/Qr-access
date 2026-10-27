@@ -7,7 +7,7 @@ import {
   resultadoDelInforme,
   type InformeDeLaPlaca,
 } from '../domain/confirmacion.js';
-import { RepositorioDeConfirmaciones, RepositorioDeEventos } from '../repository.js';
+import { RepositorioDeConfirmaciones, RepositorioDeLecturas } from '../repository.js';
 
 export interface DatosDeConfirmacion {
   /** El `evento_id` que devolvió la validación que ordenó abrir. */
@@ -36,7 +36,7 @@ export async function ejecutar(
   ahora: Date = new Date(),
   señal?: AbortSignal,
 ): Promise<void> {
-  const eventos = new RepositorioDeEventos(pool);
+  const eventos = new RepositorioDeLecturas(pool);
   const confirmaciones = new RepositorioDeConfirmaciones(pool);
 
   const apertura = await eventos.buscarAperturaDelDispositivo(

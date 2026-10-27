@@ -10,7 +10,7 @@ Verificado contra `mysql:8.4` en un contenedor descartable (2026-10-09): migrar 
 - Entran `planes` y `suscripciones` (ADR 0017), `qr_accesos` y `qr_acceso_puertas` (ADR 0008).
 - `cuentas.codigo` pasa a `CHAR(3)` solo `A`–`Z` (ADR 0018). `usuarios` pasa a PIN: `etiqueta`, `pin_indice`, `pin_hash`, `pin_generado_at`; `username` y `contrasena_hash` quedan solo para el super admin y `email` sale. Se agrega `usuarios.rol_preferido_id` (último rol elegido, para arrancar la próxima sesión).
 - `puertas` pierde `tipo_cerradura` (la cerradura se acciona con un pulso, D-04). `dispositivos` gana `ultima_puerta_abierta` y una columna generada `en_servicio` para que una puerta tenga un solo dispositivo sin revocar.
-- `eventos_acceso` guarda `token_hash` (nunca el texto), `qr_acceso_id` y `resultado` en (`permitido`, `rechazado`); `metodo` en (`qr`, `pulsador`, `forzada`).
+- `lecturas` guarda `token_hash` (nunca el texto), `qr_acceso_id` y `resultado` en (`permitido`, `rechazado`); `metodo` en (`qr`, `pulsador`, `forzada`).
 - `sesiones` gana `rol_activo_id` y `updated_at` (el refresh se rota en sitio).
 - `cuenta_datos_empresa` se agregó con la administración de cuentas del web admin (ficha 17). `usuario_perfiles` se agrega con su ficha cuando se necesite.
 
@@ -454,12 +454,12 @@ CREATE TABLE qr_acceso_puertas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-## eventos_acceso
+## lecturas
 
-Migración: `db/migrations/20261009100016_create_eventos_acceso.sql`
+Migración: `db/migrations/20261009100016_create_eventos_acceso.sql` (nació como `eventos_acceso`) y `db/migrations/20261103100001_rename_eventos_acceso_a_lecturas.sql` (la renombró a `lecturas`; los `CHECK` conservan su nombre anterior, ver `tablas/16_lecturas.md`)
 
 ```sql
-CREATE TABLE eventos_acceso (
+CREATE TABLE lecturas (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
   puerta_id BIGINT UNSIGNED NOT NULL,
@@ -472,16 +472,16 @@ CREATE TABLE eventos_acceso (
   ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   leido_en_dispositivo_at DATETIME(3) NULL,
   repetido_de_id BIGINT UNSIGNED NULL,
-  KEY idx_eventos_acceso_puerta (tenant_id, puerta_id, ocurrido_at),
-  KEY idx_eventos_acceso_fecha (tenant_id, ocurrido_at),
-  KEY idx_eventos_acceso_qr (qr_acceso_id),
-  KEY idx_eventos_acceso_repeticion (tenant_id, dispositivo_id, token_hash, ocurrido_at),
-  KEY idx_eventos_acceso_repetido_de (repetido_de_id),
-  CONSTRAINT fk_eventos_acceso_repetido_de FOREIGN KEY (repetido_de_id) REFERENCES eventos_acceso (id),
-  CONSTRAINT fk_eventos_acceso_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_eventos_acceso_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
-  CONSTRAINT fk_eventos_acceso_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
-  CONSTRAINT fk_eventos_acceso_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
+  KEY idx_lecturas_puerta (tenant_id, puerta_id, ocurrido_at),
+  KEY idx_lecturas_fecha (tenant_id, ocurrido_at),
+  KEY idx_lecturas_qr (qr_acceso_id),
+  KEY idx_lecturas_repeticion (tenant_id, dispositivo_id, token_hash, ocurrido_at),
+  KEY idx_lecturas_repetido_de (repetido_de_id),
+  CONSTRAINT fk_lecturas_repetido_de FOREIGN KEY (repetido_de_id) REFERENCES lecturas (id),
+  CONSTRAINT fk_lecturas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_lecturas_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT fk_lecturas_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_lecturas_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT ck_eventos_acceso_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada')),
   CONSTRAINT ck_eventos_acceso_resultado CHECK (resultado IN ('permitido', 'rechazado'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -946,7 +946,7 @@ CREATE TABLE confirmaciones_apertura (
   reportado_en_dispositivo_at DATETIME(3) NULL,
   registrada_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_confirmaciones_apertura_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_confirmaciones_apertura_evento FOREIGN KEY (evento_acceso_id) REFERENCES eventos_acceso (id),
+  CONSTRAINT fk_confirmaciones_apertura_evento FOREIGN KEY (evento_acceso_id) REFERENCES lecturas (id),
   CONSTRAINT fk_confirmaciones_apertura_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
   CONSTRAINT fk_confirmaciones_apertura_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
   CONSTRAINT ck_confirmaciones_apertura_origen CHECK (origen IN ('placa', 'servidor')),
@@ -1111,6 +1111,6 @@ CREATE TABLE avisos_de_senal (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 20261102100003_add_indices_de_senales.sql
-ALTER TABLE eventos_acceso ADD KEY idx_eventos_acceso_global (ocurrido_at), ALGORITHM=INPLACE, LOCK=NONE;
+ALTER TABLE lecturas ADD KEY idx_lecturas_global (ocurrido_at), ALGORITHM=INPLACE, LOCK=NONE;
 ALTER TABLE eventos_de_limite ADD KEY idx_eventos_de_limite_global (tipo, ocurrido_at);
 ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);

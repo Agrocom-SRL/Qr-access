@@ -55,9 +55,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
 
   async function eventos(): Promise<EventoFila[]> {
-    const [filas] = await prueba.pool.query<EventoFila[]>(
-      'SELECT * FROM eventos_acceso ORDER BY id',
-    );
+    const [filas] = await prueba.pool.query<EventoFila[]>('SELECT * FROM lecturas ORDER BY id');
     return filas;
   }
 
@@ -175,7 +173,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         expect(evento?.token_hash).toMatch(/^[0-9a-f]{64}$/);
         expect(evento?.qr_acceso_id).toBeNull();
       }
-      const [todo] = await prueba.pool.query<RowDataPacket[]>('SELECT * FROM eventos_acceso');
+      const [todo] = await prueba.pool.query<RowDataPacket[]>('SELECT * FROM lecturas');
       expect(JSON.stringify(todo)).not.toContain('AQ1.corto');
     });
 
@@ -249,9 +247,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       const evento = await rechazado(a.dispositivoPrincipal, deB.texto, 'qr.desconocido');
       expect(evento?.qr_acceso_id).toBeNull();
       // Y el evento quedó en la cuenta del dispositivo, no en la del QR
-      const [filas] = await prueba.pool.query<RowDataPacket[]>(
-        'SELECT tenant_id FROM eventos_acceso',
-      );
+      const [filas] = await prueba.pool.query<RowDataPacket[]>('SELECT tenant_id FROM lecturas');
       expect(String(filas[0]?.tenant_id)).toBe(a.cuenta.id);
       const [qrDeB] = await prueba.pool.query<RowDataPacket[]>(
         'SELECT usado_at FROM qr_accesos WHERE id = ?',
@@ -285,7 +281,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
   });
 
-  it('todo intento queda en eventos_acceso: ninguna respuesta se pierde', async () => {
+  it('todo intento queda en lecturas: ninguna respuesta se pierde', async () => {
     const vigente = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
     const intentos = [vigente.texto, vigente.texto, 'basura', `AQ1.${'B'.repeat(22)}`];
     const respuestas = [];
@@ -302,7 +298,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     ]);
   });
 
-  it('eventos_acceso es de solo inserción para la API: no hay ruta que lo cambie', async () => {
+  it('lecturas es de solo inserción para la API: no hay ruta que lo cambie', async () => {
     const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
     await validar(a.dispositivoPrincipal, qr.texto);
     const antes = await eventos();
@@ -397,7 +393,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
     expect(respuesta.json<Validacion>().abrir).toBe(true);
     const [evento] = await prueba.pool.query<RowDataPacket[]>(
-      'SELECT leido_en_dispositivo_at FROM eventos_acceso',
+      'SELECT leido_en_dispositivo_at FROM lecturas',
     );
     expect(evento[0]?.leido_en_dispositivo_at).toBeNull();
   });

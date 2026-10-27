@@ -92,7 +92,7 @@ describe('plataforma: estadísticas del panel (A02, A08)', () => {
   it('suma los intentos de acceso de hoy de todas las cuentas, permitidos y rechazados', async () => {
     for (const resultado of ['permitido', 'permitido', 'rechazado']) {
       await prueba.pool.query(
-        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
+        'INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
         [a.cuenta.id, a.puertaPrincipal.id, resultado, 'prueba'],
       );
     }
@@ -107,12 +107,12 @@ describe('plataforma: estadísticas del panel (A02, A08)', () => {
 
   it('cuenta aparte las repeticiones (ADR 0032): no suman a permitidos pero no quedan invisibles', async () => {
     const [original] = await prueba.pool.query<ResultSetHeader>(
-      'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
+      'INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code) VALUES (?, ?, ?, ?)',
       [a.cuenta.id, a.puertaPrincipal.id, 'permitido', 'acceso.permitido'],
     );
     for (const resultado of ['permitido', 'rechazado']) {
       await prueba.pool.query(
-        'INSERT INTO eventos_acceso (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code, repetido_de_id) VALUES (?, ?, ?, ?, ?)',
         [a.cuenta.id, a.puertaPrincipal.id, resultado, 'prueba', original.insertId],
       );
     }
