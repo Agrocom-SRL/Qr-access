@@ -11,12 +11,12 @@ export interface SolicitudHttp {
   cuerpo?: unknown;
   /** Un archivo como cuerpo crudo (su `type` es el `Content-Type`); no se combina con `cuerpo`. */
   archivo?: Blob;
-  /** `blob` devuelve el contenido tal cual (un comprobante) en vez de leerlo como JSON. */
-  formato?: 'json' | 'blob' | 'respuesta';
   /**
-   * `respuesta` devuelve la `Response` completa para leer sus cabeceras (las `X-*` de una exportación
-   * paginada). El llamador decide el tipo; la autenticación y el refresco siguen igual.
+   * `blob` devuelve el contenido tal cual (un comprobante) en vez de leerlo como JSON. `respuesta`
+   * devuelve la `Response` completa para leer sus cabeceras (las `X-*` de una exportación paginada):
+   * el llamador decide el tipo y la autenticación y el refresco siguen igual.
    */
+  formato?: 'json' | 'blob' | 'respuesta';
   senal?: AbortSignal;
 }
 
@@ -63,6 +63,9 @@ export function crearClienteFetch({
   implementacionFetch = fetch,
 }: Opciones): ClienteHttp {
   async function enviar(solicitud: SolicitudHttp, acceso: string | undefined): Promise<Response> {
+    // `Accept` es solo una preferencia: las rutas que devuelven otro tipo (el CSV de una exportación, un
+    // comprobante) fijan su propio `Content-Type` y no negocian contenido. Si la API empezara a hacerlo,
+    // estas solicitudes (`formato` `blob` o `respuesta`) tendrían que mandar su `Accept` propio.
     const cabeceras: Record<string, string> = { Accept: 'application/json' };
     if (solicitud.cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
     if (solicitud.archivo) cabeceras['Content-Type'] = solicitud.archivo.type;
