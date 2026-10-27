@@ -725,6 +725,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       const tareas = crearTareas(prueba.pool);
       expect(tareas.map((t) => t.nombre)).toEqual([
         'estado-de-placas',
+        'aperturas-fallidas',
         'entrega-de-notificaciones',
         'depuracion-de-notificaciones',
       ]);
@@ -732,6 +733,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
       const errores: unknown[] = [];
       await tareas[0]?.ejecutar(en(0), (e) => errores.push(e));
       await tareas[1]?.ejecutar(en(0), (e) => errores.push(e));
+      await tareas[2]?.ejecutar(en(0), (e) => errores.push(e));
       expect(errores).toEqual([]);
       expect((await bandeja(adminA)).meta.total).toBe(1);
     });

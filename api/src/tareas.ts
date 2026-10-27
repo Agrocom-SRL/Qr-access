@@ -24,6 +24,13 @@ export function crearTareas(pool: Pool): readonly Tarea[] {
       ejecutar: (ahora, registrarError) =>
         dispositivos.evaluarEstadoDePlacas(ahora, registrarError),
     },
+    // Deja la constancia de las aperturas sin respuesta y avisa de las puertas que fallan al abrir (ADR 0031 §18).
+    {
+      nombre: 'aperturas-fallidas',
+      cadaMs: 60_000,
+      ejecutar: (ahora, registrarError) =>
+        dispositivos.evaluarAperturasFallidas(ahora, registrarError),
+    },
     // Entrega lo que está en la cola (outbox) a las bandejas (ADR 0030 §6).
     {
       nombre: 'entrega-de-notificaciones',

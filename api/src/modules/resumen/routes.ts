@@ -44,12 +44,13 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         preHandler: permisoDePlataforma('resumen.panel.ver'),
       },
       (request) => {
-        const { pagina, por_pagina, cuenta_id, resultado, desde, hasta } = request.query;
+        const { pagina, por_pagina, cuenta_id, resultado, ejecucion, desde, hasta } = request.query;
         return listarEventos(
           pool,
           {
             cuentaId: cuenta_id ?? null,
             resultado: resultado ?? null,
+            ejecucion: ejecucion ?? null,
             desde: desde ?? null,
             hasta: hasta ?? null,
           },

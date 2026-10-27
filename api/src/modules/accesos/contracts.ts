@@ -1,7 +1,19 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
-import { RepositorioDeEventos, RepositorioDeQr } from './repository.js';
+import {
+  filaEfectiva,
+  SIN_RESPUESTA,
+  type CausaDeEjecucion,
+  type Ejecucion,
+} from './domain/confirmacion.js';
+import {
+  EJECUCION_EFECTIVA,
+  RepositorioDeConfirmaciones,
+  RepositorioDeConfirmacionesDeTodas,
+  RepositorioDeEventos,
+  RepositorioDeQr,
+} from './repository.js';
 
 interface AccesosPorDiaFila extends RowDataPacket {
   dia: string;
@@ -19,6 +31,8 @@ const UNIONES_DE_EVENTO =
 export interface FiltroDeEventosDePlataforma {
   readonly cuentaId: string | null;
   readonly resultado: 'permitido' | 'rechazado' | null;
+  /** Solo los eventos cuya orden de abrir terminó así; `null` o ausente = todos. */
+  readonly ejecucion?: Ejecucion | null;
   readonly desde: Date | null;
   readonly hasta: Date | null;
 }
@@ -49,6 +63,10 @@ function armarFiltro(filtro: FiltroDeEventosDePlataforma): { donde?: string; par
   if (filtro.resultado !== null) {
     condiciones.push('t.resultado = ?');
     params.push(filtro.resultado);
+  }
+  if (filtro.ejecucion !== undefined && filtro.ejecucion !== null) {
+    condiciones.push(EJECUCION_EFECTIVA + ' = ?');
+    params.push(filtro.ejecucion);
   }
   if (filtro.desde !== null) {
     condiciones.push('t.ocurrido_at >= ?');
@@ -138,6 +156,10 @@ export interface EventoDePlataforma {
   readonly puerta: { readonly id: string; readonly nombre: string; readonly sitio: string };
   readonly dispositivo: string | null;
   readonly qrEtiqueta: string | null;
+  /** Qué pasó con la orden de abrir (ADR 0031 §18); `null` en un rechazo o sin informe todavía. */
+  readonly ejecucion: Ejecucion | null;
+  /** La causa del resultado de la ejecución (`puerta_no_abrio`, `sin_respuesta`...); `null` si no hay ejecución. */
+  readonly ejecucionCausa: CausaDeEjecucion | null;
 }
 
 export interface ServicioDeAccesosDePlataforma {
@@ -153,12 +175,27 @@ export interface ServicioDeAccesosDePlataforma {
 
 export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAccesosDePlataforma {
   const repositorio = new RepositorioDeAccesosDeTodas(pool);
+  const confirmaciones = new RepositorioDeConfirmacionesDeTodas(pool);
   return {
     async listar(filtro, limite, desplazamiento) {
       const [filas, total] = await Promise.all([
         repositorio.listar(filtro, limite, desplazamiento),
         repositorio.contarTodos(filtro),
       ]);
+      const efectivas = new Map<string, { ejecucion: Ejecucion; causa: CausaDeEjecucion }>();
+      const porEvento = new Map<string, Awaited<ReturnType<typeof confirmaciones.deEventos>>>();
+      for (const fila of await confirmaciones.deEventos(filas.map((evento) => evento.id))) {
+        porEvento.set(fila.evento_acceso_id, [
+          ...(porEvento.get(fila.evento_acceso_id) ?? []),
+          fila,
+        ]);
+      }
+      for (const [eventoId, deUnEvento] of porEvento) {
+        const efectiva = filaEfectiva(deUnEvento);
+        if (efectiva !== null) {
+          efectivas.set(eventoId, { ejecucion: efectiva.resultado, causa: efectiva.causa });
+        }
+      }
       return {
         total,
         eventos: filas.map((fila) => ({
@@ -170,6 +207,8 @@ export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAcceso
           puerta: { id: fila.puerta_id, nombre: fila.puerta_nombre, sitio: fila.sitio_nombre },
           dispositivo: fila.dispositivo_nombre,
           qrEtiqueta: fila.qr_etiqueta,
+          ejecucion: efectivas.get(fila.id)?.ejecucion ?? null,
+          ejecucionCausa: efectivas.get(fila.id)?.causa ?? null,
         })),
       };
     },
@@ -262,4 +301,93 @@ export interface ServicioDeLecturas {
 export function crearServicioDeLecturas(pool: Pool): ServicioDeLecturas {
   const eventos = new RepositorioDeEventos(pool);
   return { ultimaLecturaPorPuertas: (puertaIds) => eventos.ultimaLecturaPorPuertas(puertaIds) };
+}
+
+/** Una apertura que el servidor ordenó y de la que nadie ha informado nada. */
+export interface AperturaSinInforme {
+  readonly eventoId: string;
+  readonly dispositivoId: string;
+  readonly puertaId: string;
+  readonly ocurridoAt: Date;
+}
+
+/** Lo que pasó con una apertura ordenada (el estado efectivo: la placa manda sobre el servidor). */
+export interface EjecucionDeApertura {
+  readonly eventoId: string;
+  readonly dispositivoId: string;
+  readonly puertaId: string;
+  readonly resultado: Ejecucion;
+  readonly causa: CausaDeEjecucion;
+  /** Hora del servidor en que se registró. */
+  readonly registradaAt: Date;
+}
+
+export interface ServicioDeConfirmaciones {
+  /**
+   * Las aperturas de esos dispositivos entre `desde` (incl.) y `hasta` (excl.) sin ningún informe, en la cuenta
+   * del contexto. Lectura sin bloqueo.
+   */
+  aperturasSinInforme(
+    dispositivoIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+    limite: number,
+  ): Promise<AperturaSinInforme[]>;
+  /** Deja la constancia `sin_confirmacion` / `sin_respuesta` del servidor dentro de `tx`; `false` si ya había una. */
+  dejarSinRespuesta(tx: Transaccion, apertura: AperturaSinInforme, ahora: Date): Promise<boolean>;
+  /** El estado efectivo de las aperturas registradas desde `desde`, en la cuenta del contexto. Lectura sin bloqueo. */
+  ejecucionesDesde(desde: Date, limite: number): Promise<EjecucionDeApertura[]>;
+}
+
+export function crearServicioDeConfirmaciones(pool: Pool): ServicioDeConfirmaciones {
+  const eventos = new RepositorioDeEventos(pool);
+  const confirmaciones = new RepositorioDeConfirmaciones(pool);
+  return {
+    async aperturasSinInforme(dispositivoIds, desde, hasta, limite) {
+      const filas = await eventos.aperturasSinInforme(dispositivoIds, desde, hasta, limite);
+      return filas.map((fila) => ({
+        eventoId: fila.id,
+        dispositivoId: fila.dispositivo_id,
+        puertaId: fila.puerta_id,
+        ocurridoAt: fila.ocurrido_at,
+      }));
+    },
+    async dejarSinRespuesta(tx, apertura, ahora) {
+      const id = await confirmaciones.registrar(tx, {
+        eventoId: apertura.eventoId,
+        dispositivoId: apertura.dispositivoId,
+        puertaId: apertura.puertaId,
+        origen: 'servidor',
+        ...SIN_RESPUESTA,
+        reportadoEnDispositivoAt: null,
+        registradaAt: ahora,
+      });
+      return id !== null;
+    },
+    async ejecucionesDesde(desde, limite) {
+      const filas = await confirmaciones.registradasDesde(desde, limite);
+      const porEvento = new Map<string, typeof filas>();
+      for (const fila of filas) {
+        porEvento.set(fila.evento_acceso_id, [
+          ...(porEvento.get(fila.evento_acceso_id) ?? []),
+          fila,
+        ]);
+      }
+      return [...porEvento.values()].flatMap((deUnEvento) => {
+        const efectiva = filaEfectiva(deUnEvento);
+        return efectiva === null
+          ? []
+          : [
+              {
+                eventoId: efectiva.evento_acceso_id,
+                dispositivoId: efectiva.dispositivo_id,
+                puertaId: efectiva.puerta_id,
+                resultado: efectiva.resultado,
+                causa: efectiva.causa,
+                registradaAt: efectiva.registrada_at,
+              },
+            ];
+      });
+    },
+  };
 }

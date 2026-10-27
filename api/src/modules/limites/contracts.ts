@@ -3,9 +3,11 @@ import { enTransaccion, type Transaccion } from '../../platform/db/transaccion.j
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import {
   CLAVES,
+  CLAVES_DE_APERTURA,
   CLAVES_DE_PLACA,
   valorEfectivo,
   type ClaveDeLimite,
+  type ClaveDeApertura,
   type ClaveDePlaca,
 } from './domain/claves.js';
 import {
@@ -201,6 +203,51 @@ export function crearServicioDeUmbralesDePlaca(pool: Pool): ServicioDeUmbralesDe
         recuperacionMinutos: valor(CLAVES_DE_PLACA.recuperacionMinutos, base.recuperacionMinutos),
         lectorMinutos: valor(CLAVES_DE_PLACA.lectorMinutos, base.lectorMinutos),
         observacionHoras: valor(CLAVES_DE_PLACA.observacionHoras, base.observacionHoras),
+      };
+    },
+  };
+}
+
+/** Los umbrales con que se juzga si la apertura de una puerta falla (ADR 0031 §18, ola W10). */
+export interface UmbralesDeAperturaConfigurados {
+  /** Segundos que se espera el informe de la placa antes de dar la apertura por `sin_confirmacion`. */
+  readonly plazoConfirmacionSegundos: number;
+  /** Cuántas aperturas fallidas en la ventana abren el aviso (un caso aislado no avisa). */
+  readonly fallidasMinimo: number;
+  /** Ventana, en minutos, en que se cuentan las aperturas fallidas. */
+  readonly fallidasVentanaMinutos: number;
+}
+
+/** Valores de partida: supuestos de la ola W10 (el ADR dice «repetirse», no cuántas veces ni en cuánto tiempo). */
+export const UMBRALES_DE_APERTURA_POR_DEFECTO: UmbralesDeAperturaConfigurados = {
+  plazoConfirmacionSegundos: 90,
+  fallidasMinimo: 2,
+  fallidasVentanaMinutos: 60,
+};
+
+export interface ServicioDeUmbralesDeApertura {
+  /** Los umbrales vigentes; como los de placa, no fallan cerrado: sin la clave rige el valor de partida. */
+  umbrales(): Promise<UmbralesDeAperturaConfigurados>;
+}
+
+export function crearServicioDeUmbralesDeApertura(pool: Pool): ServicioDeUmbralesDeApertura {
+  return {
+    async umbrales() {
+      const filas = await new RepositorioDeConfiguracion(pool).listar();
+      const general = new Map(filas.map((fila) => [fila.clave, fila.valor]));
+      const valor = (clave: ClaveDeApertura, porDefecto: number): number =>
+        general.get(clave) ?? porDefecto;
+      const base = UMBRALES_DE_APERTURA_POR_DEFECTO;
+      return {
+        plazoConfirmacionSegundos: valor(
+          CLAVES_DE_APERTURA.plazoConfirmacionSegundos,
+          base.plazoConfirmacionSegundos,
+        ),
+        fallidasMinimo: valor(CLAVES_DE_APERTURA.fallidasMinimo, base.fallidasMinimo),
+        fallidasVentanaMinutos: valor(
+          CLAVES_DE_APERTURA.fallidasVentanaMinutos,
+          base.fallidasVentanaMinutos,
+        ),
       };
     },
   };

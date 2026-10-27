@@ -2,7 +2,7 @@ import type { Pool } from 'mysql2/promise';
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import type { PrincipalDispositivo } from '../../../platform/seguridad/principal.js';
 import { LATIDO_MAXIMO_SEGUNDOS } from '../domain/en-linea.js';
-import { RepositorioDeDispositivos } from '../repository.js';
+import { RepositorioDeDispositivos, type EstadoDeSensor } from '../repository.js';
 
 export interface DatosDeLatido {
   readonly firmware: string;
@@ -10,6 +10,8 @@ export interface DatosDeLatido {
   readonly puertaAbierta: boolean;
   /** Si el lector QR responde por UART; `undefined` si el firmware no lo informa (ADR 0031 §18). */
   readonly lectorResponde?: boolean;
+  /** Estado del sensor de puerta; `undefined` si el firmware no lo informa (ADR 0031 §18). */
+  readonly sensorPuerta?: EstadoDeSensor;
 }
 
 /**
@@ -51,6 +53,7 @@ export async function ejecutar(
       en: ahora,
       enLineaDesde: racha,
       ...(lector === undefined ? {} : { lector }),
+      ...(datos.sensorPuerta === undefined ? {} : { sensor: datos.sensorPuerta }),
     });
   });
 }

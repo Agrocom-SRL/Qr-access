@@ -34,8 +34,11 @@ Los siembran la migración y `db/seeds/01_catalogo.sql` (idempotente: no pisa un
 | `placa.recuperacion_minutos` | 3 | **Supuesto W9** (histéresis: racha de latidos para dar la placa por recuperada) | ninguna (global) |
 | `placa.lector_minutos` | 5 | **Supuesto W9** (lector sin respuesta; «unos minutos», no 24 h) | ninguna (global) |
 | `placa.observacion_horas` | 24 | **Supuesto W9** (en observación: sin lecturas en la puerta) | ninguna (global) |
+| `apertura.plazo_confirmacion_segundos` | 90 | **Supuesto W10** (cuánto se espera el informe de la placa antes de dejar `sin_respuesta`) | ninguna (global) |
+| `apertura.fallidas_minimo` | 2 | **Supuesto W10** (el ADR dice «repetirse»; con 1 avisaría de cada falla) | ninguna (global) |
+| `apertura.fallidas_ventana_minutos` | 60 | **Supuesto W10** | ninguna (global) |
 
-Las claves `placa.*` son umbrales del detector de estados de placa (ola W9); no son topes de generación de QR y la generación no las lee. Se editan por la misma ruta. Si faltan, el detector usa los valores de partida (no falla cerrado: un aviso de más o de menos no abre ninguna puerta).
+Las claves `apertura.*` son los umbrales del detector de aperturas fallidas (ola W10) y se tratan igual. Las claves `placa.*` son umbrales del detector de estados de placa (ola W9); no son topes de generación de QR y la generación no las lee. Se editan por la misma ruta. Si faltan, el detector usa los valores de partida (no falla cerrado: un aviso de más o de menos no abre ninguna puerta).
 
 ## Reglas
 

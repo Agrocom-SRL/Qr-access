@@ -421,6 +421,8 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
           sitio: { id: a.sitioId, nombre: 'Sitio AAA' },
         },
         qr_id: null,
+        // Campo aditivo (ADR 0031 §18): un rechazo no ordenó abrir, no tiene ejecución.
+        ejecucion: null,
         qr: null,
       });
       expect(cuerpo.datos.at(-1)).toMatchObject({

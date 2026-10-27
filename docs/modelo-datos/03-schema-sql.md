@@ -898,4 +898,54 @@ ALTER TABLE dispositivos
   ADD CONSTRAINT ck_dispositivos_estado_lector CHECK (
     estado_lector IS NULL OR estado_lector IN ('responde', 'sin_respuesta')
   );
+
+-- 20261031100001_create_confirmaciones_apertura.sql
+CREATE TABLE confirmaciones_apertura (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  evento_acceso_id BIGINT UNSIGNED NOT NULL,
+  dispositivo_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  origen VARCHAR(10) NOT NULL,
+  resultado VARCHAR(20) NOT NULL,
+  causa VARCHAR(30) NOT NULL,
+  reportado_en_dispositivo_at DATETIME(3) NULL,
+  registrada_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_confirmaciones_apertura_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_confirmaciones_apertura_evento FOREIGN KEY (evento_acceso_id) REFERENCES eventos_acceso (id),
+  CONSTRAINT fk_confirmaciones_apertura_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_confirmaciones_apertura_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT ck_confirmaciones_apertura_origen CHECK (origen IN ('placa', 'servidor')),
+  CONSTRAINT ck_confirmaciones_apertura_resultado CHECK (resultado IN ('ejecutada', 'fallida', 'sin_confirmacion')),
+  CONSTRAINT ck_confirmaciones_apertura_causa CHECK (
+    (resultado = 'ejecutada' AND causa = 'puerta_abrio')
+    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'))
+    OR (resultado = 'sin_confirmacion' AND causa IN ('sin_sensor', 'sin_respuesta'))
+  ),
+  CONSTRAINT ck_confirmaciones_apertura_servidor CHECK (origen = 'placa' OR causa = 'sin_respuesta'),
+  UNIQUE KEY uq_confirmaciones_apertura_origen (evento_acceso_id, origen),
+  KEY idx_confirmaciones_apertura_reciente (tenant_id, registrada_at),
+  KEY idx_confirmaciones_apertura_dispositivo (dispositivo_id, registrada_at),
+  KEY idx_confirmaciones_apertura_puerta (puerta_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261031100002_add_sensor_y_apertura_a_dispositivos.sql
+ALTER TABLE dispositivos
+  ADD COLUMN sensor_instalado TINYINT(1) NOT NULL DEFAULT 0 AFTER en_observacion,
+  ADD COLUMN sensor_abierto_nivel VARCHAR(5) NOT NULL DEFAULT 'alto' AFTER sensor_instalado,
+  ADD COLUMN sensor_estado VARCHAR(12) NULL AFTER sensor_abierto_nivel,
+  ADD COLUMN sensor_informado_at DATETIME(3) NULL AFTER sensor_estado,
+  ADD COLUMN apertura_fallida TINYINT(1) NOT NULL DEFAULT 0 AFTER sensor_informado_at,
+  ADD CONSTRAINT ck_dispositivos_sensor_nivel CHECK (sensor_abierto_nivel IN ('alto', 'bajo')),
+  ADD CONSTRAINT ck_dispositivos_sensor_estado CHECK (
+    sensor_estado IS NULL OR sensor_estado IN ('abierta', 'cerrada', 'sin_sensor')
+  );
+
+-- 20261031100003_add_apertura_fallida_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida'
+  ));
 ```

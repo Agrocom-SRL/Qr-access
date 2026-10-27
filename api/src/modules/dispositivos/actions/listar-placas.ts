@@ -30,6 +30,12 @@ export interface PlacaDeInventario {
   readonly lector_responde: boolean | null;
   /** En línea pero sin lecturas en la puerta por el plazo (marca informativa, sin aviso). */
   readonly en_observacion: boolean;
+  /** Lo que informó el último latido sobre el sensor de puerta; `null` si no lo informa. */
+  readonly sensor_puerta: 'abierta' | 'cerrada' | 'sin_sensor' | null;
+  /** Cómo está configurado el sensor; `null` si la placa no está vinculada. */
+  readonly sensor_configurado: { instalado: boolean; nivel_abierto: 'alto' | 'bajo' } | null;
+  /** La puerta está en el grupo de «aperturas que fallan». */
+  readonly apertura_fallida: boolean;
   /** Hasta cuándo espera el botón de la placa, si se pidió vincularla. */
   readonly por_confirmar_hasta: string | null;
   readonly dispositivo: { id: string; nombre: string } | null;
@@ -82,6 +88,14 @@ export async function ejecutar(
       lector_responde:
         vinculada && fila.lector_responde !== null ? fila.lector_responde === 1 : null,
       en_observacion: vinculada && fila.en_observacion === 1,
+      sensor_puerta: vinculada ? fila.sensor_estado : null,
+      sensor_configurado: vinculada
+        ? {
+            instalado: fila.sensor_instalado === 1,
+            nivel_abierto: fila.sensor_abierto_nivel ?? 'alto',
+          }
+        : null,
+      apertura_fallida: vinculada && fila.apertura_fallida === 1,
       por_confirmar_hasta: esperaElPulsador
         ? (fila.por_confirmar_hasta?.toISOString() ?? null)
         : null,

@@ -75,7 +75,7 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
     });
 
   describe('valores generales', () => {
-    it('lista los siete topes de QR y los cinco umbrales de placa con su valor inicial sembrado', async () => {
+    it('lista los siete topes de QR, los cinco umbrales de placa y los tres de apertura con su valor inicial sembrado', async () => {
       const respuesta = await pedir('GET', '/plataforma/limites');
       expect(respuesta.statusCode).toBe(200);
       const datos = respuesta.json<{ datos: Limite[] }>().datos;
@@ -92,6 +92,9 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
         ['placa.recuperacion_minutos', 3],
         ['placa.lector_minutos', 5],
         ['placa.observacion_horas', 24],
+        ['apertura.plazo_confirmacion_segundos', 90],
+        ['apertura.fallidas_minimo', 2],
+        ['apertura.fallidas_ventana_minutos', 60],
       ]);
       expect(datos.find((limite) => limite.clave === 'qr.bolsa_mensual')).toMatchObject({
         excepcion: 'cuenta',

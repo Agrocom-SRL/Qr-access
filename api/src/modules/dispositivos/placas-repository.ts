@@ -54,6 +54,10 @@ export interface PlacaListada extends RowDataPacket {
   estado_conexion: 'en_linea' | 'sin_conexion' | 'caida_sostenida' | 'desaparecida' | null;
   lector_responde: number | null;
   en_observacion: number | null;
+  sensor_estado: 'abierta' | 'cerrada' | 'sin_sensor' | null;
+  sensor_instalado: number | null;
+  sensor_abierto_nivel: 'alto' | 'bajo' | null;
+  apertura_fallida: number | null;
   puerta_id: string | null;
   puerta_nombre: string | null;
   cuenta_id: string | null;
@@ -220,6 +224,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
           'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.ultimo_latido_at, ' +
           'd.firmware_version AS firmware_del_dispositivo, ' +
           'd.en_linea_desde, d.estado_conexion, d.lector_responde, d.en_observacion, ' +
+          'd.sensor_estado, d.sensor_instalado, d.sensor_abierto_nivel, d.apertura_fallida, ' +
           'p.id AS puerta_id, p.nombre AS puerta_nombre, ' +
           'c.id AS cuenta_id, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre',
         orden: 't.id DESC',

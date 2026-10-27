@@ -23,6 +23,9 @@ const esquemaPlaca = z.object({
   puerta_id: z.string(),
   puerta_nombre: z.string(),
   desde: z.string().nullable(),
+  /** Solo en `apertura.fallida`. */
+  fallos: z.number().int().optional(),
+  causa: z.string().nullable().optional(),
 });
 
 /** El contenido de un aviso. Sin secretos: ni claves, ni tokens, ni MAC. */

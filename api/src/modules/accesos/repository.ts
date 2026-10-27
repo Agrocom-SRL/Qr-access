@@ -1,6 +1,8 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import type { CausaDeEjecucion, Ejecucion, OrigenDeConfirmacion } from './domain/confirmacion.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
 
 export interface QrFila extends RowDataPacket {
@@ -399,6 +401,8 @@ export interface FiltroDeEventos {
   /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
   readonly puertaIds: readonly string[] | null;
   readonly resultado: 'permitido' | 'rechazado' | null;
+  /** Solo los eventos cuya ejecución efectiva es esta (ADR 0031 §18); `null` = todos. */
+  readonly ejecucion?: Ejecucion | null;
   readonly puertaId: string | null;
   /** Ventana `[desde, hasta)` en UTC. */
   readonly desde: Date | null;
@@ -411,6 +415,11 @@ export interface ResumenDeEventosFila extends RowDataPacket {
   /** `COUNT(*)` es BIGINT y mysql2 lo entrega como texto (`bigNumberStrings`). */
   total: string;
 }
+
+/** Qué pasó con la orden de abrir: la fila de la placa si existe; si no, la constancia del servidor (o nada). */
+export const EJECUCION_EFECTIVA =
+  '(SELECT c.resultado FROM confirmaciones_apertura AS c WHERE c.evento_acceso_id = t.id AND c.tenant_id = t.tenant_id ' +
+  "ORDER BY (c.origen = 'placa') DESC, c.id DESC LIMIT 1)";
 
 function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params: unknown[] } {
   const condiciones: string[] = [];
@@ -435,6 +444,10 @@ function armarFiltroDeEventos(filtro: FiltroDeEventos): { donde?: string; params
     condiciones.push('t.puerta_id = ?');
     params.push(filtro.puertaId);
   }
+  if (filtro.ejecucion !== undefined && filtro.ejecucion !== null) {
+    condiciones.push(EJECUCION_EFECTIVA + ' = ?');
+    params.push(filtro.ejecucion);
+  }
   if (filtro.desde !== null) {
     condiciones.push('t.ocurrido_at >= ?');
     params.push(filtro.desde);
@@ -455,6 +468,17 @@ export interface NuevoEvento {
   readonly motivoCode: string;
   readonly ocurridoAt: Date;
   readonly leidoEnDispositivoAt: Date | null;
+}
+
+const COLUMNAS_DE_EVENTO =
+  't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
+
+/** Una apertura que el servidor ordenó (un evento `permitido`). */
+export interface AperturaOrdenadaFila extends RowDataPacket {
+  id: string;
+  puerta_id: string;
+  dispositivo_id: string;
+  ocurrido_at: Date;
 }
 
 /** El QR de una unión con `qr_accesos` es de la misma cuenta; no se filtra por `deleted_at` para no perder el historial. */
@@ -498,8 +522,7 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
   listar(filtro: FiltroDeEventos, limite: number, desplazamiento: number): Promise<EventoFila[]> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.seleccionar<EventoFila>({
-      columnas:
-        't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por',
+      columnas: COLUMNAS_DE_EVENTO,
       uniones: UNION_QR,
       ...(donde === undefined ? {} : { donde }),
       params,
@@ -534,6 +557,52 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
     });
   }
 
+  /** Un evento PERMITIDO de este dispositivo (el que ordenó una apertura), o `null`. Sin bloqueo. */
+  buscarAperturaDelDispositivo(
+    id: string,
+    dispositivoId: string,
+  ): Promise<AperturaOrdenadaFila | null> {
+    return this.seleccionarUna<AperturaOrdenadaFila>({
+      columnas: 't.id, t.puerta_id, t.dispositivo_id, t.ocurrido_at',
+      donde: "t.id = ? AND t.dispositivo_id = ? AND t.resultado = 'permitido'",
+      params: [id, dispositivoId],
+    });
+  }
+
+  /** Un evento visible de la cuenta, para el detalle (el alcance lo pone el filtro). */
+  buscarVisible(filtro: FiltroDeEventos, id: string): Promise<EventoFila | null> {
+    const { donde, params } = armarFiltroDeEventos(filtro);
+    return this.seleccionarUna<EventoFila>({
+      columnas: COLUMNAS_DE_EVENTO,
+      uniones: UNION_QR,
+      donde: donde === undefined ? 't.id = ?' : donde + ' AND t.id = ?',
+      params: [...params, id],
+    });
+  }
+
+  /**
+   * Las aperturas ordenadas (eventos permitidos) de esos dispositivos entre `desde` (incl.) y `hasta` (excl.) de las
+   * que nadie informó nada: ni la placa ni el servidor. Las más viejas primero; sin bloqueo (lectura del detector).
+   */
+  aperturasSinInforme(
+    dispositivoIds: readonly string[],
+    desde: Date,
+    hasta: Date,
+    limite: number,
+  ): Promise<AperturaOrdenadaFila[]> {
+    if (dispositivoIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<AperturaOrdenadaFila>({
+      columnas: 't.id, t.puerta_id, t.dispositivo_id, t.ocurrido_at',
+      uniones:
+        'LEFT JOIN confirmaciones_apertura AS c ON c.evento_acceso_id = t.id AND c.tenant_id = t.tenant_id',
+      donde:
+        "t.resultado = 'permitido' AND t.dispositivo_id IN (?) AND t.ocurrido_at >= ? AND t.ocurrido_at < ? AND c.id IS NULL",
+      params: [dispositivoIds, desde, hasta],
+      orden: 't.ocurrido_at, t.id',
+      limite,
+    });
+  }
+
   contarVisibles(filtro: FiltroDeEventos): Promise<number> {
     const { donde, params } = armarFiltroDeEventos(filtro);
     return this.contar({ uniones: UNION_QR, ...(donde === undefined ? {} : { donde }), params });
@@ -549,6 +618,146 @@ export class RepositorioDeEventos extends RepositorioDeCuenta {
       params,
       agrupar: 't.resultado, t.motivo_code',
       orden: 't.resultado, t.motivo_code',
+    });
+  }
+}
+
+export interface ConfirmacionFila extends RowDataPacket {
+  id: string;
+  evento_acceso_id: string;
+  dispositivo_id: string;
+  puerta_id: string;
+  origen: OrigenDeConfirmacion;
+  resultado: Ejecucion;
+  causa: CausaDeEjecucion;
+  registrada_at: Date;
+}
+
+export interface NuevaConfirmacion {
+  readonly eventoId: string;
+  readonly dispositivoId: string;
+  readonly puertaId: string;
+  readonly origen: OrigenDeConfirmacion;
+  readonly resultado: Ejecucion;
+  readonly causa: CausaDeEjecucion;
+  readonly reportadoEnDispositivoAt: Date | null;
+  readonly registradaAt: Date;
+}
+
+const COLUMNAS_DE_CONFIRMACION =
+  't.id, t.evento_acceso_id, t.dispositivo_id, t.puerta_id, t.origen, t.resultado, t.causa, t.registrada_at';
+
+/** Dueño de `confirmaciones_apertura`: solo inserción (se enlaza a `eventos_acceso`, invariante 4). */
+export class RepositorioDeConfirmaciones extends RepositorioDeCuenta {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'confirmaciones_apertura',
+      columnas: [
+        'evento_acceso_id',
+        'dispositivo_id',
+        'puerta_id',
+        'origen',
+        'resultado',
+        'causa',
+        'reportado_en_dispositivo_at',
+        'registrada_at',
+      ],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  /**
+   * Inserta si el evento aún no tiene una fila de ese origen. Idempotente: repetir el informe (o competir con
+   * otra pasada) devuelve `null` y no crea nada. Devuelve el id de la fila nueva.
+   */
+  async registrar(tx: Transaccion, confirmacion: NuevaConfirmacion): Promise<string | null> {
+    const previa = await this.seleccionarUna<ConfirmacionFila>(
+      {
+        columnas: COLUMNAS_DE_CONFIRMACION,
+        donde: 't.evento_acceso_id = ? AND t.origen = ?',
+        params: [confirmacion.eventoId, confirmacion.origen],
+      },
+      tx,
+    );
+    if (previa !== null) return null;
+    try {
+      return await this.insertar(tx, {
+        evento_acceso_id: confirmacion.eventoId,
+        dispositivo_id: confirmacion.dispositivoId,
+        puerta_id: confirmacion.puertaId,
+        origen: confirmacion.origen,
+        resultado: confirmacion.resultado,
+        causa: confirmacion.causa,
+        reportado_en_dispositivo_at: confirmacion.reportadoEnDispositivoAt,
+        registrada_at: confirmacion.registradaAt,
+      });
+    } catch (error) {
+      // Otra petición la insertó entre la lectura y el INSERT: el índice único hizo su trabajo.
+      if (esEntradaDuplicada(error)) return null;
+      throw error;
+    }
+  }
+
+  /** ¿La placa ya informó sobre esta apertura? */
+  async yaInformo(eventoId: string): Promise<boolean> {
+    return (
+      (await this.seleccionarUna<ConfirmacionFila>({
+        columnas: COLUMNAS_DE_CONFIRMACION,
+        donde: "t.evento_acceso_id = ? AND t.origen = 'placa'",
+        params: [eventoId],
+      })) !== null
+    );
+  }
+
+  /** Todas las filas de esos eventos (la de la placa y la del servidor), de la más vieja a la más nueva. */
+  deEventos(eventoIds: readonly string[]): Promise<ConfirmacionFila[]> {
+    if (eventoIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<ConfirmacionFila>({
+      columnas: COLUMNAS_DE_CONFIRMACION,
+      donde: 't.evento_acceso_id IN (?)',
+      params: [eventoIds],
+      orden: 't.id',
+    });
+  }
+
+  /** Las filas registradas desde `desde`, de la cuenta del contexto, para que el detector juzgue (sin bloqueo). */
+  registradasDesde(desde: Date, limite: number): Promise<ConfirmacionFila[]> {
+    return this.seleccionar<ConfirmacionFila>({
+      columnas: COLUMNAS_DE_CONFIRMACION,
+      donde: 't.registrada_at >= ?',
+      params: [desde],
+      orden: 't.id',
+      limite,
+    });
+  }
+}
+
+/** ¿Un `ER_DUP_ENTRY` de MySQL/MariaDB? */
+function esEntradaDuplicada(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && 'code' in error && error.code === 'ER_DUP_ENTRY'
+  );
+}
+
+/** Lee las confirmaciones de TODAS las cuentas por id de evento (listado del panel de plataforma). Solo lectura. */
+export class RepositorioDeConfirmacionesDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'confirmaciones_apertura',
+      columnas: [],
+      perfil: 'solo_insercion',
+      deCuenta: true,
+    });
+  }
+
+  deEventos(eventoIds: readonly string[]): Promise<ConfirmacionFila[]> {
+    if (eventoIds.length === 0) return Promise.resolve([]);
+    return this.seleccionar<ConfirmacionFila>({
+      columnas: COLUMNAS_DE_CONFIRMACION,
+      donde: 't.evento_acceso_id IN (?)',
+      params: [eventoIds],
+      orden: 't.id',
     });
   }
 }

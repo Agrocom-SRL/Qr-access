@@ -37,6 +37,7 @@ El SQL completo está en `03-schema-sql.md`.
 - Solo inserción: sin `updated_*` ni `deleted_*`; la API nunca actualiza ni borra una fila. En producción, el usuario de base no tiene `UPDATE` ni `DELETE`.
 - Un token desconocido o ilegible se guarda como `token_hash`, nunca como texto.
 - `ocurrido_at` es la hora del servidor; `leido_en_dispositivo_at` es la del reloj del dispositivo, solo informativa.
+- Qué pasó con la orden de abrir (¿la puerta se abrió?) no se guarda aquí: vive en `confirmaciones_apertura` (ficha 32), enlazada a este evento. El evento nunca se edita.
 - La apertura por pulsador de salida y la puerta forzada (`metodo`) quedan para el firmware.
 
 ## Dudas

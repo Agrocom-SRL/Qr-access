@@ -32,13 +32,25 @@ export const CLAVES_DE_PLACA = {
 export type ClaveDePlaca = (typeof CLAVES_DE_PLACA)[keyof typeof CLAVES_DE_PLACA];
 
 /**
+ * Los umbrales de la confirmación de apertura (ADR 0031 §18, ola W10). Globales, como los de placa: el detector
+ * de aperturas los lee; la generación de QR no.
+ */
+export const CLAVES_DE_APERTURA = {
+  plazoConfirmacionSegundos: 'apertura.plazo_confirmacion_segundos',
+  fallidasMinimo: 'apertura.fallidas_minimo',
+  fallidasVentanaMinutos: 'apertura.fallidas_ventana_minutos',
+} as const;
+
+export type ClaveDeApertura = (typeof CLAVES_DE_APERTURA)[keyof typeof CLAVES_DE_APERTURA];
+
+/**
  * Dónde puede tener excepción una clave: `usuario` = para una cuenta o para un usuario; `cuenta` = solo para
  * una cuenta entera (la bolsa es de la cuenta); `global` = ninguna, vale igual para todos.
  */
 export type AlcanceDeExcepcion = 'usuario' | 'cuenta' | 'global';
 
 export interface DefinicionDeClave {
-  readonly clave: ClaveDeLimite | ClaveDePlaca;
+  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura;
   readonly minimo: number;
   readonly maximo: number;
   readonly excepcion: AlcanceDeExcepcion;
@@ -62,6 +74,22 @@ const DEFINICIONES_DE_PLACA: readonly DefinicionDeClave[] = [
   { clave: CLAVES_DE_PLACA.observacionHoras, minimo: 1, maximo: 720, excepcion: 'global' },
 ];
 
+const DEFINICIONES_DE_APERTURA: readonly DefinicionDeClave[] = [
+  {
+    clave: CLAVES_DE_APERTURA.plazoConfirmacionSegundos,
+    minimo: 10,
+    maximo: 3_600,
+    excepcion: 'global',
+  },
+  { clave: CLAVES_DE_APERTURA.fallidasMinimo, minimo: 1, maximo: 100, excepcion: 'global' },
+  {
+    clave: CLAVES_DE_APERTURA.fallidasVentanaMinutos,
+    minimo: 1,
+    maximo: 1_440,
+    excepcion: 'global',
+  },
+];
+
 /** Los topes de generación de QR (no incluye los umbrales de placa). */
 export const CLAVES_DE_LIMITE: readonly ClaveDeLimite[] = Object.values(CLAVES);
 
@@ -71,7 +99,7 @@ export function definicionDe(clave: string): DefinicionDeClave | null {
 }
 
 export function todasLasDefiniciones(): readonly DefinicionDeClave[] {
-  return [...DEFINICIONES, ...DEFINICIONES_DE_PLACA];
+  return [...DEFINICIONES, ...DEFINICIONES_DE_PLACA, ...DEFINICIONES_DE_APERTURA];
 }
 
 /** ¿`valor` es un entero dentro de los extremos de la clave? */

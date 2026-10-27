@@ -6,6 +6,8 @@ export const TIPOS_DE_AVISO = [
   'placa.caida_sostenida',
   'placa.desaparecida',
   'placa.lector_sin_respuesta',
+  // La puerta recibió la orden de abrir y no se abrió, varias veces (ADR 0031 §18, ola W10).
+  'apertura.fallida',
 ] as const;
 export type TipoDeAviso = (typeof TIPOS_DE_AVISO)[number];
 
@@ -36,6 +38,10 @@ export interface PlacaDeAviso {
   readonly puerta_nombre: string;
   /** Desde cuándo está así (ISO 8601 UTC): el último latido o el último cambio del lector. */
   readonly desde: string | null;
+  /** Solo en `apertura.fallida`: cuántas aperturas fallaron en la ventana en esta puerta. */
+  readonly fallos?: number;
+  /** Solo en `apertura.fallida`: la causa de la última falla (`puerta_no_abrio`, `sin_respuesta`...). */
+  readonly causa?: string | null;
 }
 
 export interface DatosDeAviso {

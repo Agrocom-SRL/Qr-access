@@ -103,6 +103,15 @@ INSERT INTO configuracion_limites (clave, valor) VALUES
   ('placa.observacion_horas', 24)
 ON DUPLICATE KEY UPDATE clave = VALUES(clave);
 
+-- Confirmación de apertura (ADR 0031 §18, ola W10; todos son supuestos): una placa con sensor que no confirma en 90 s
+-- queda `sin_confirmacion`; desde 2 aperturas fallidas en 60 min el aviso `apertura.fallida` se abre (el ADR dice
+-- «repetirse», un caso aislado no avisa; con 1 avisaría de cada falla). Se editan por la misma ruta de límites.
+INSERT INTO configuracion_limites (clave, valor) VALUES
+  ('apertura.plazo_confirmacion_segundos', 90),
+  ('apertura.fallidas_minimo', 2),
+  ('apertura.fallidas_ventana_minutos', 60)
+ON DUPLICATE KEY UPDATE clave = VALUES(clave);
+
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'

@@ -3,6 +3,10 @@ import {
   ejecutar as evaluarEstadoDePlacas,
   type ResultadoDeEvaluacion,
 } from './actions/evaluar-estado-de-placas.js';
+import {
+  ejecutar as evaluarAperturasFallidas,
+  type ResultadoDeEvaluacionDeAperturas,
+} from './actions/evaluar-aperturas-fallidas.js';
 import { estaEnLinea } from './domain/en-linea.js';
 import { RepositorioDeDispositivos, RepositorioDeDispositivosDePlataforma } from './repository.js';
 
@@ -86,6 +90,7 @@ export function crearServicioDeDispositivosDePlataforma(
 }
 
 export type { ResultadoDeEvaluacion } from './actions/evaluar-estado-de-placas.js';
+export type { ResultadoDeEvaluacionDeAperturas } from './actions/evaluar-aperturas-fallidas.js';
 
 /** Tareas periódicas del módulo (`tareas.ts`). */
 export interface TareasDeDispositivos {
@@ -97,11 +102,21 @@ export interface TareasDeDispositivos {
     ahora: Date,
     registrarError?: (error: unknown) => void,
   ): Promise<ResultadoDeEvaluacion>;
+  /**
+   * Deja la constancia de las aperturas sin respuesta y avisa de las puertas que fallan al abrir, agrupado por
+   * sitio (ADR 0031 §18). El reloj se inyecta.
+   */
+  evaluarAperturasFallidas(
+    ahora: Date,
+    registrarError?: (error: unknown) => void,
+  ): Promise<ResultadoDeEvaluacionDeAperturas>;
 }
 
 export function crearTareasDeDispositivos(pool: Pool): TareasDeDispositivos {
   return {
     evaluarEstadoDePlacas: (ahora, registrarError) =>
       evaluarEstadoDePlacas(pool, ahora, registrarError),
+    evaluarAperturasFallidas: (ahora, registrarError) =>
+      evaluarAperturasFallidas(pool, ahora, registrarError),
   };
 }

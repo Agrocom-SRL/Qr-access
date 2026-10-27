@@ -21,6 +21,11 @@ const DESCRIPCION_DE_DISPOSITIVOS = {
     'lector_informado_at',
     'estado_lector',
     'en_observacion',
+    'sensor_instalado',
+    'sensor_abierto_nivel',
+    'sensor_estado',
+    'sensor_informado_at',
+    'apertura_fallida',
     'revocado_at',
     'activo',
   ],
@@ -53,7 +58,7 @@ export class RepositorioDeDispositivosDePlataforma extends RepositorioDePlatafor
       columnas: 'DISTINCT c.id, c.codigo, c.nombre',
       uniones: 'JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL',
       donde:
-        '(t.revocado_at IS NULL AND t.activo = 1) OR t.estado_conexion IS NOT NULL OR t.estado_lector IS NOT NULL OR t.en_observacion = 1',
+        '(t.revocado_at IS NULL AND t.activo = 1) OR t.estado_conexion IS NOT NULL OR t.estado_lector IS NOT NULL OR t.en_observacion = 1 OR t.apertura_fallida = 1',
       orden: 'c.id',
     });
     return filas.map((fila) => ({
@@ -136,7 +141,11 @@ export interface Latido {
     readonly informadoAt: Date;
     readonly cambioAt?: Date;
   };
+  /** Lo que informa el sensor de puerta; `undefined` = el firmware no lo informa y no se toca lo guardado. */
+  readonly sensor?: EstadoDeSensor;
 }
+
+export type EstadoDeSensor = 'abierta' | 'cerrada' | 'sin_sensor';
 
 /** Lo que el latido anterior dejó, para saber si la racha sigue y si el lector cambió. */
 export interface EstadoDeLatidoFila extends RowDataPacket {
@@ -179,6 +188,21 @@ export interface EstadoEsperadoDePlaca {
   readonly lectorInformadoAt: Date | null;
 }
 
+/** El sensor de puerta de un dispositivo, tal como está configurado. */
+export interface SensorConfiguradoFila extends RowDataPacket {
+  sensor_instalado: number;
+  sensor_abierto_nivel: 'alto' | 'bajo';
+}
+
+/** Un dispositivo con lo que el detector de aperturas fallidas necesita. */
+export interface DispositivoParaAperturasFila extends RowDataPacket {
+  id: string;
+  puerta_id: string;
+  sensor_instalado: number;
+  apertura_fallida: number;
+  en_servicio: number;
+}
+
 export interface PuertaConSitioFila extends RowDataPacket {
   puerta_id: string;
   puerta_nombre: string;
@@ -219,6 +243,9 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
                 ? {}
                 : { lector_cambio_at: latido.lector.cambioAt }),
             }),
+        ...(latido.sensor === undefined
+          ? {}
+          : { sensor_estado: latido.sensor, sensor_informado_at: latido.en }),
       },
       { sinBitacora: true },
     );
@@ -289,6 +316,63 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
       sinBitacora: true,
       cuando: { sql: condiciones.join(' AND '), params },
     });
+  }
+
+  /** Cómo está configurado el sensor de puerta de este dispositivo (la placa lo recibe en su configuración). */
+  leerSensorConfigurado(id: string): Promise<SensorConfiguradoFila | null> {
+    return this.seleccionarUna<SensorConfiguradoFila>({
+      columnas: 't.sensor_instalado, t.sensor_abierto_nivel',
+      donde: 't.id = ?',
+      params: [id],
+    });
+  }
+
+  /**
+   * Configura el sensor de puerta (si está instalado y a qué nivel lee «abierta»). Es un cambio de configuración:
+   * entra a la bitácora con el antes y el después.
+   */
+  configurarSensor(
+    tx: Transaccion,
+    id: string,
+    sensor: { readonly instalado: boolean; readonly nivelAbierto: 'alto' | 'bajo' },
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, {
+      sensor_instalado: sensor.instalado ? 1 : 0,
+      sensor_abierto_nivel: sensor.nivelAbierto,
+    });
+  }
+
+  /**
+   * Los dispositivos de la cuenta del contexto que el detector de aperturas fallidas debe mirar: los que están en
+   * servicio con el sensor habilitado y los que ya figuran en el grupo (para sacarlos si dejaron de servir).
+   * Lectura SIN bloqueo, como `listarParaEvaluar`.
+   */
+  listarParaEvaluarAperturas(): Promise<DispositivoParaAperturasFila[]> {
+    return this.seleccionar<DispositivoParaAperturasFila>({
+      columnas:
+        't.id, t.puerta_id, t.sensor_instalado, t.apertura_fallida, (t.revocado_at IS NULL AND t.activo = 1) AS en_servicio',
+      donde:
+        '(t.revocado_at IS NULL AND t.activo = 1 AND t.sensor_instalado = 1) OR t.apertura_fallida = 1',
+      orden: 't.id',
+    });
+  }
+
+  /**
+   * Marca (o desmarca) al dispositivo como parte del grupo de aperturas fallidas, con compare-and-set: solo si
+   * sigue como lo leyó el detector. Telemetría derivada: sin bitácora, como el estado de la placa.
+   */
+  guardarAperturaFallida(
+    tx: Transaccion,
+    id: string,
+    nuevo: boolean,
+    esperado: boolean,
+  ): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { apertura_fallida: nuevo ? 1 : 0 },
+      { sinBitacora: true, cuando: { sql: 'apertura_fallida = ?', params: [esperado ? 1 : 0] } },
+    );
   }
 
   /**

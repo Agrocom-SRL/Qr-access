@@ -110,6 +110,9 @@ export function rutas({
           ...(request.body.lector_responde === undefined
             ? {}
             : { lectorResponde: request.body.lector_responde }),
+          ...(request.body.sensor_puerta === undefined
+            ? {}
+            : { sensorPuerta: request.body.sensor_puerta }),
         });
         return reply.status(204).send();
       },

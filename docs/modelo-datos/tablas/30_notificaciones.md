@@ -1,6 +1,6 @@
 # 28 — `notificaciones`
 
-**Módulo dueño:** `notificaciones` · **Tenant:** mixto (`tenant_id` de la cuenta para el propietario; `NULL` para AGROCOM) · **Migración:** `db/migrations/20261030100001_create_notificaciones.sql`
+**Módulo dueño:** `notificaciones` · **Tenant:** mixto (`tenant_id` de la cuenta para el propietario; `NULL` para AGROCOM) · **Migraciones:** `db/migrations/20261030100001_create_notificaciones.sql` y `20261031100003_add_apertura_fallida_a_tipos_de_notificacion.sql`
 
 ## Propósito
 
@@ -14,7 +14,7 @@ La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. 
 | `tenant_id` | `BIGINT UNSIGNED` | sí | FK a `cuentas`. Cuenta del destinatario; `NULL` = bandeja de AGROCOM |
 | `cuenta_id` | `BIGINT UNSIGNED` | no | FK a `cuentas`: de qué cuenta habla el aviso (con `tenant_id` no nulo son iguales) |
 | `destinatario_id` | `BIGINT UNSIGNED` | no | FK a `usuarios` (un usuario de la cuenta o un integrante de AGROCOM) |
-| `tipo` | `VARCHAR(40)` | no | `placa.caida_sostenida`, `placa.desaparecida`, `placa.lector_sin_respuesta`, `placa.recuperada` (`CHECK`) |
+| `tipo` | `VARCHAR(40)` | no | `placa.caida_sostenida`, `placa.desaparecida`, `placa.lector_sin_respuesta`, `placa.recuperada`, `apertura.fallida` (`CHECK`) |
 | `severidad` | `VARCHAR(10)` | no | `info`, `aviso`, `critica` |
 | `sitio_id` | `BIGINT UNSIGNED` | sí | FK a `sitios`: el grupo del aviso |
 | `agrupacion_clave` | `VARCHAR(100)` | no | `<tipo>:sitio:<id>`; un incidente abierto por destinatario y clave |
@@ -36,6 +36,8 @@ La bandeja in-app (ADR 0030 §6, ADR 0031 §18): una fila **por destinatario**. 
 - `idx_notificaciones_bandeja`, `idx_notificaciones_cuenta`, `ck_notificaciones_ambito` (`tenant_id` es nulo o igual a `cuenta_id`).
 
 ## Reglas
+
+- `apertura.fallida` (W10, ADR 0031 §18): una puerta con sensor que recibió la orden de abrir y no se abrió (informe `fallida` de la placa o falta de respuesta) al menos `apertura.fallidas_minimo` veces (2) dentro de `apertura.fallidas_ventana_minutos` (60) desde su última apertura ejecutada. Un aviso por sitio (`agrupacion_clave = apertura.fallida:sitio:<id>`), severidad `aviso`, para el Administrador de la cuenta y para AGROCOM; se cierra (sin constancia) cuando ninguna puerta del sitio sigue fallando. Cada placa del aviso lleva además `fallos` y `causa`.
 
 - Destinatarios por permiso, no por nombre de rol (ADR 0030 §5): `notificaciones.aviso.ver` (ámbito cuenta; lo tiene el Administrador, no el Titular, Miembro ni Guardia) y `notificaciones.aviso_plataforma.ver` (ámbito plataforma). Se excluyen los suspendidos.
 - Si llega una placa nueva a un incidente abierto, se actualiza la misma fila y vuelve a figurar como no leída; al recuperarse todas se cierra (y, en `desaparecida`, deja la constancia `placa.recuperada`).

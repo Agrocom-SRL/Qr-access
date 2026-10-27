@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { esquemaListado } from '../../platform/http/paginacion.js';
+import { CAUSAS_DE_FALLA, EJECUCIONES } from './domain/confirmacion.js';
 import { ESTADOS_DE_QR } from './domain/estado-qr.js';
 
 const esquemaId = z.string().regex(/^\d{1,19}$/);
@@ -87,6 +88,8 @@ const esquemaFechaDeFiltro = z.iso.datetime({ offset: true }).transform((texto) 
 /** Filtros del listado y del resumen de eventos: resultado, puerta y ventana `[desde, hasta)`. */
 export const consultaDeEventos = z.object({
   resultado: z.enum(['permitido', 'rechazado']).optional(),
+  /** Solo los eventos cuya orden de abrir terminó así (ADR 0031 §18); p. ej. `fallida` para ver las que fallan. */
+  ejecucion: z.enum(EJECUCIONES).optional(),
   puerta_id: esquemaId.optional(),
   desde: esquemaFechaDeFiltro.optional(),
   hasta: esquemaFechaDeFiltro.optional(),
@@ -99,6 +102,11 @@ export const esquemaEvento = z.object({
   motivo_code: z.string(),
   puerta: esquemaPuertaCorta.extend({ sitio: z.object({ id: z.string(), nombre: z.string() }) }),
   qr_id: z.string().nullable(),
+  /**
+   * Qué pasó con la orden de abrir (ADR 0031 §18). `null` en un rechazo y mientras la placa aún no informa.
+   * `sin_confirmacion` = no se puede saber (puerta sin sensor, o la placa no contestó a tiempo; ver `causa` en el detalle).
+   */
+  ejecucion: z.enum(EJECUCIONES).nullable(),
   qr: z
     .object({
       id: z.string(),
@@ -108,6 +116,19 @@ export const esquemaEvento = z.object({
     .nullable(),
 });
 export const respuestaListadoDeEventos = esquemaListado(esquemaEvento);
+
+export const parametrosDeEvento = z.object({ id: esquemaId });
+
+export const respuestaDeEventoDetallado = esquemaEvento.extend({
+  confirmaciones: z.array(
+    z.object({
+      origen: z.enum(['placa', 'servidor']),
+      resultado: z.enum(EJECUCIONES),
+      causa: z.enum(['puerta_abrio', ...CAUSAS_DE_FALLA, 'sin_sensor', 'sin_respuesta']),
+      registrada_at: esquemaFecha,
+    }),
+  ),
+});
 
 export const respuestaDeResumenDeEventos = z.object({
   permitidos: z.number().int(),
@@ -126,3 +147,27 @@ export const respuestaDeValidacion = z.object({
   evento_id: z.string(),
   motivo_code: z.string(),
 });
+
+/**
+ * Lo que la placa cuenta de una apertura que el servidor ordenó (ADR 0031 §18). `evento_id` es el que devolvió la
+ * validación. `fallida` lleva su `causa` (si falta, se asume `puerta_no_abrio`); `ejecutada` y `sin_sensor` no
+ * llevan causa. `leido_en` es la hora del reloj de la placa, solo informativa.
+ */
+export const cuerpoDeConfirmacionDeApertura = z.discriminatedUnion('resultado', [
+  z.strictObject({
+    evento_id: esquemaId,
+    resultado: z.literal('ejecutada'),
+    leido_en: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    evento_id: esquemaId,
+    resultado: z.literal('fallida'),
+    causa: z.enum(CAUSAS_DE_FALLA).default('puerta_no_abrio'),
+    leido_en: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    evento_id: esquemaId,
+    resultado: z.literal('sin_sensor'),
+    leido_en: z.string().max(40).optional(),
+  }),
+]);
