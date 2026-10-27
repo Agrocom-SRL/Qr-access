@@ -184,6 +184,32 @@ describe('límites de uso de la API', () => {
     expect((await validar(p, b.dispositivoPrincipal, qrDeB.texto)).statusCode).toBe(200);
   });
 
+  it('las confirmaciones de apertura cuentan en el límite del dispositivo y nunca frenan la validación (ADR 0031 §18)', async () => {
+    const p = await abrir({ LIMITE_DISPOSITIVO_POR_MINUTO: '3' });
+    const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+    const abierta = (await validar(p, a.dispositivoPrincipal, qr.texto)).json<{
+      evento_id: string;
+    }>();
+    const confirmar = () =>
+      p.app.inject({
+        method: 'POST',
+        url: '/api/v1/dispositivos/confirmaciones',
+        headers: { authorization: a.dispositivoPrincipal.encabezado },
+        payload: { evento_id: abierta.evento_id, resultado: 'ejecutada' },
+      });
+    for (let i = 0; i < 3; i += 1) expect((await confirmar()).statusCode).toBe(204);
+    const excedido = await confirmar();
+    expect(excedido.statusCode).toBe(429);
+    expect(excedido.json()).toMatchObject({ code: 'limite.excedido' });
+    expect(Number(excedido.headers['retry-after'])).toBeGreaterThanOrEqual(1);
+
+    // La validación del MISMO dispositivo sigue abriendo: su límite es otro y no se contagia.
+    const otro = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+    const validacion = await validar(p, a.dispositivoPrincipal, otro.texto);
+    expect(validacion.statusCode).toBe(200);
+    expect(validacion.json()).toMatchObject({ abrir: true });
+  });
+
   it('con los valores por defecto, una ráfaga de lecturas del lector no se corta', async () => {
     const p = await abrir({ LIMITE_VALIDACION_POR_MINUTO: '600' });
     const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);

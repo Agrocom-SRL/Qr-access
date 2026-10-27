@@ -52,11 +52,6 @@ export const SIN_RESPUESTA: ResultadoDeEjecucion = {
  */
 export const CONFIRMACION_TARDIA_MAXIMA_MINUTOS = 10;
 
-/** ¿Una falla de ejecución? Cuentan `fallida` y la falta de respuesta de una placa con sensor. */
-export function esFalla(ejecucion: ResultadoDeEjecucion): boolean {
-  return ejecucion.resultado === 'fallida' || ejecucion.causa === 'sin_respuesta';
-}
-
 export interface FilaDeConfirmacion {
   readonly origen: OrigenDeConfirmacion;
   readonly resultado: Ejecucion;
