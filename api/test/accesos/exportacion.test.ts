@@ -91,20 +91,25 @@ describe('GET /exportaciones/:recurso: CSV de la cuenta (ADR 0033 §3)', () => {
       headers: conUsuario(sesion),
     });
 
-  /** Deja intentos reales: uno permitido y uno rechazado en la puerta principal de A. */
+  /**
+   * Deja intentos reales: uno permitido en la puerta principal de A, un rechazo `qr.usado` del OTRO lector (la
+   * relectura del mismo lector dentro de la ventana es una repetición, ADR 0032 §3, y el listado no la muestra) y
+   * un rechazo de formato.
+   */
   async function dejarLecturas(escenario: Escenario, generadorId: string) {
     const qr = await crearQr(prueba.pool, escenario.cuenta, generadorId, [
       escenario.puertaPrincipal.id,
+      escenario.puertaTrasera.id,
     ]);
-    const validar = (token: string) =>
+    const validar = (token: string, lector = escenario.dispositivoPrincipal) =>
       prueba.app.inject({
         method: 'POST',
         url: '/api/v1/dispositivos/validaciones',
-        headers: { authorization: escenario.dispositivoPrincipal.encabezado },
+        headers: { authorization: lector.encabezado },
         payload: { token },
       });
     await validar(qr.texto);
-    await validar(qr.texto);
+    await validar(qr.texto, escenario.dispositivoTrasero);
     await validar('AQ1.' + 'x'.repeat(40));
     return qr;
   }
@@ -195,7 +200,7 @@ describe('GET /exportaciones/:recurso: CSV de la cuenta (ADR 0033 §3)', () => {
       const otraPuerta = leerCsv(
         (await exportar(admin, 'lecturas', `?puerta_id=${a.puertaTrasera.id}`)).body,
       );
-      expect(otraPuerta).toHaveLength(1);
+      expect(otraPuerta).toHaveLength(2); // el encabezado y el rechazo `qr.usado` del lector trasero
       const futuro = encodeURIComponent(new Date(Date.now() + 86_400_000).toISOString());
       const sinNada = leerCsv((await exportar(admin, 'lecturas', `?desde=${futuro}`)).body);
       expect(sinNada).toHaveLength(1);

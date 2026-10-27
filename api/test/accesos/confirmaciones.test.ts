@@ -333,7 +333,19 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
 
   describe('la confirmación nunca abre nada (falla segura)', () => {
     it('no cambia el evento ni libera el QR: un QR ya usado sigue rechazándose', async () => {
-      const { eventoId, qr } = await validar(a, a.dispositivoPrincipal, a.puertaPrincipal.id);
+      // El QR sirve en las dos puertas: la relectura del OTRO lector prueba que el QR sigue consumido (la del mismo
+      // lector, dentro de la ventana, sería una repetición que vuelve a abrir, ADR 0032 §3).
+      const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [
+        a.puertaPrincipal.id,
+        a.puertaTrasera.id,
+      ]);
+      const primera = await prueba.app.inject({
+        method: 'POST',
+        url: '/api/v1/dispositivos/validaciones',
+        headers: { authorization: a.dispositivoPrincipal.encabezado },
+        payload: { token: qr.texto },
+      });
+      const eventoId = primera.json<Validacion>().evento_id;
       const antes = await contarFilas(prueba.pool, 'eventos_acceso');
       await confirmar(a.dispositivoPrincipal, {
         evento_id: eventoId,
@@ -351,7 +363,7 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
         await prueba.app.inject({
           method: 'POST',
           url: '/api/v1/dispositivos/validaciones',
-          headers: { authorization: a.dispositivoPrincipal.encabezado },
+          headers: { authorization: a.dispositivoTrasero.encabezado },
           payload: { token: qr.texto },
         })
       ).json<Validacion>();

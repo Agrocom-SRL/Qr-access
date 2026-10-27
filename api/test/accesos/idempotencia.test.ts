@@ -524,11 +524,15 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
   });
 
   describe('validar un QR no usa idempotencia ni se limita', () => {
-    const validar = (texto: string, cabeceras: Record<string, string> = {}) =>
+    const validar = (
+      texto: string,
+      cabeceras: Record<string, string> = {},
+      lector = a.dispositivoPrincipal,
+    ) =>
       prueba.app.inject({
         method: 'POST',
         url: '/api/v1/dispositivos/validaciones',
-        headers: { authorization: a.dispositivoPrincipal.encabezado, ...cabeceras },
+        headers: { authorization: lector.encabezado, ...cabeceras },
         payload: { token: texto, leido_en: new Date().toISOString() },
       });
 
@@ -536,8 +540,9 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       await prueba.pool.query(
         "UPDATE configuracion_limites SET valor = 1 WHERE clave = 'qr.tope_diario'",
       );
-      const primera = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
-      const reintento = await visita(sesionA, [a.puertaPrincipal.id], CLAVE);
+      const puertas = [a.puertaPrincipal.id, a.puertaTrasera.id];
+      const primera = await visita(sesionA, puertas, CLAVE);
+      const reintento = await visita(sesionA, puertas, CLAVE);
       const texto = reintento.json<Generado>().texto ?? '';
       expect(texto).toBe(primera.json<Generado>().texto);
 
@@ -546,7 +551,8 @@ describe('Idempotency-Key en POST /qr-accesos (ADR 0031 §11)', () => {
       expect(abre.statusCode).toBe(200);
       expect(abre.json<{ abrir: boolean }>().abrir).toBe(true);
       // Mismo texto, misma clave: no es un reintento "idempotente", el QR ya se usó.
-      const repite = await validar(texto, { 'idempotency-key': CLAVE });
+      // (Otro lector: la relectura del mismo lector dentro de la ventana es una repetición, ADR 0032 §3.)
+      const repite = await validar(texto, { 'idempotency-key': CLAVE }, a.dispositivoTrasero);
       expect(repite.json<{ abrir: boolean; motivo?: string }>().abrir).toBe(false);
       // Ambos intentos quedan en eventos_acceso y la validación no creó ninguna clave.
       expect(await contarFilas(prueba.pool, 'eventos_acceso')).toBe(2);
