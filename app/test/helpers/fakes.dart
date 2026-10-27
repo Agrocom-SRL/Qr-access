@@ -16,7 +16,7 @@ import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuar
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/administracion/domain/usuario.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.dart';
@@ -142,18 +142,25 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
     this.errorAnular,
     this.errorListar,
     this.respaldo,
+    this.reanudado,
+    this.errorReanudar,
   });
 
   QrGenerado? generado;
 
   /// Lo que devuelve el respaldo sin internet del QR propio.
   QrGenerado? respaldo;
+
+  /// Lo que devuelve `reanudarPropio`: el QR propio vigente, o `null`.
+  QrGenerado? reanudado;
+  Exception? errorReanudar;
   Pagina<QrAcceso>? listado;
   Map<EstadoQr, int> resumen;
   Exception? errorGenerar;
   Exception? errorAnular;
   Exception? errorListar;
 
+  final List<List<String>> reanudaciones = [];
   final List<DatosGeneracion> generaciones = [];
   final List<DateTime> ahoras = [];
   final List<EstadoQr> estadosListados = [];
@@ -203,6 +210,13 @@ class QrAccesosRepositorioFalso implements QrAccesosRepositorio {
 
   @override
   Future<QrGenerado?> ultimoPropioGuardado() async => respaldo;
+
+  @override
+  Future<QrGenerado?> reanudarPropio(List<String> puertaIds) async {
+    reanudaciones.add(puertaIds);
+    if (errorReanudar != null) throw errorReanudar!;
+    return reanudado;
+  }
 }
 
 class EventosRepositorioFalso implements EventosRepositorio {
@@ -216,13 +230,13 @@ class EventosRepositorioFalso implements EventosRepositorio {
     this.error,
   });
 
-  final Pagina<EventoAcceso> pagina;
+  final Pagina<Lectura> pagina;
   final ResumenEventos resumen;
   final Exception? error;
   final List<FiltroEventos> filtrosPedidos = [];
 
   @override
-  Future<Pagina<EventoAcceso>> listar({
+  Future<Pagina<Lectura>> listar({
     required FiltroEventos filtro,
     required int pagina,
     required int porPagina,

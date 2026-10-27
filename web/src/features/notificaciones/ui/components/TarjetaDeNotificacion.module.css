@@ -1,0 +1,50 @@
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp8);
+  padding: var(--esp16);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio14);
+}
+
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.titulo {
+  margin: 0;
+  color: var(--texto);
+  font-size: var(--texto16);
+  font-weight: var(--peso600);
+}
+
+.placas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.placa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp4) var(--esp12);
+}
+
+.suave {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--esp4);
+}

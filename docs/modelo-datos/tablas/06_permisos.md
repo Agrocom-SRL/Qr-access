@@ -24,6 +24,7 @@ El SQL completo está en `03-schema-sql.md`.
 ## Reglas
 
 - Se siembra con `db/seeds/01_catalogo.sql` (idempotente, también en producción); nunca a mano.
+- Estados (ADR 0033 §3): `seguridad.usuario.restringir` y `seguridad.usuario.suspender` (ámbito `cuenta`). Los reciben el Administrador (todos los de ámbito cuenta) y el Titular, sobre su rama; Miembro y Guardia no. AGROCOM cambia el estado de una cuenta con `seguridad.cuenta.editar` y el de su equipo con `seguridad.equipo.desactivar`. Los demás permisos del §3 (`accesos.qr.anular_masivo`, `accesos.evento.exportar`, `seguridad.incidente.*`) llegan con su ola.
 - Núcleo V1: `organizacion.puerta.ver`, `accesos.qr.{generar,ver,ver_todos,anular,anular_todos}`, `accesos.evento.{ver,ver_todos}`.
 
 ## Dudas

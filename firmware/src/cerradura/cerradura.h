@@ -8,12 +8,14 @@
 namespace cerradura {
 
 void iniciar();
-void activar(uint32_t ms, uint32_t ahoraMs);
+// true si el relé quedó accionado; false si no se accionó (duración 0).
+bool activar(uint32_t ms, uint32_t ahoraMs);
 void desactivar();
 void tick(uint32_t ahoraMs);
 
-// Sensor magnético de la puerta: informativo (va en el latido), no decide nada.
-bool puertaAbierta();
+// Nivel crudo del pin del sensor magnético (true = alto). Quién lo interpreta (polaridad, si hay
+// sensor instalado) es lib/confirmacion con lo que dicta el servidor. Informativo: no decide nada.
+bool sensorEnNivelAlto();
 
 // true una sola vez por pulsación (con antirrebote).
 bool pulsadorPresionado(uint32_t ahoraMs);

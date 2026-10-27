@@ -104,6 +104,59 @@ Sin vínculo (o con la credencial rechazada, por ejemplo una cuenta suspendida) 
 
 **Recuperación:** `borrar` elimina lo cargado (solo el espacio `acceso` de la NVS; no borra la flash). `set api_url <https://…>` reemplaza la URL de fábrica si hiciera falta. Para una mesa de trabajo, `set disp_id` y `set disp_clave` cargan una credencial a mano.
 
+## Confirmación de la apertura y latido ampliado (ADR 0031 §18; contrato de la API, ola W10)
+
+La placa sigue sin lógica de negocio: lee pines y reporta. Lo de abajo es **solo un informe**: nada de esto abre, cierra ni retrasa una validación, y la puerta **nunca** abre por una respuesta de estos endpoints. Todas las rutas llevan `Authorization: Dispositivo <id>.<clave>`, usan el pool del dispositivo y responden `Cache-Control: no-store`.
+
+**1. Configuración** — `GET /api/v1/dispositivos/configuracion` → `200`:
+
+```json
+{ "segundos_apertura": 6, "zona_horaria": "America/La_Paz", "ota": null,
+  "sensor_puerta": { "instalado": false, "nivel_abierto": "alto" },
+  "espera_confirmacion_segundos": 11 }
+```
+
+- `sensor_puerta.instalado` (bool): si el contacto magnético está habilitado para esta puerta. **Vale `false` hasta que AGROCOM lo habilite** (`PUT /plataforma/placas/{id}/sensor`) tras verificar el cableado; una placa no puede saberlo sola. Con `false` la placa no interpreta el pin y informa `sin_sensor`. El servidor juzga las aperturas desde que se habilitó el sensor (`sensor_habilitado_at`, no se expone en la API); si con `instalado: true` la placa informa `sin_sensor`, el servidor lo cuenta como falla.
+- `sensor_puerta.nivel_abierto` (`"alto"` o `"bajo"`): nivel que lee el pin (`INPUT_PULLUP`) con la puerta ABIERTA. **Polaridad pendiente de confirmar en campo**: por omisión `"alto"`; el firmware usa el valor del servidor (ya no hay constante de compilación en `pines.h`; el valor por omisión, marcado como pendiente de confirmar, es `NIVEL_ABIERTO_POR_OMISION` en `firmware/lib/confirmacion`). Mientras no haya leído la primera configuración válida la placa **no sabe** si hay sensor: no observa ninguna apertura (no informa nada, el servidor lo toma como «sin respuesta») y el latido omite `sensor_puerta` (manda solo `puerta_abierta: false`, campo obligatorio); nunca afirma `sin_sensor` por no haber leído nada. Con el sensor no instalado el latido manda `puerta_abierta: false`, porque el pin al aire con pull-up leería «abierta».
+- `espera_confirmacion_segundos` (int): cuánto espera la placa ver la puerta abierta, contado desde el inicio del pulso del relé (`segundos_apertura` + 5).
+
+**2. Latido ampliado** — `POST /api/v1/dispositivos/latidos` (sin cambios de ruta, cada 60 s) → `204`. Cuerpo estricto (cualquier campo no listado es `400`):
+
+```json
+{ "firmware": "1.3.0", "rssi": -61, "puerta_abierta": false,
+  "lector_responde": true, "sensor_puerta": "cerrada" }
+```
+
+- `firmware` (string 1–20), `rssi` (int −200..100), `puerta_abierta` (bool): obligatorios, como hasta ahora.
+- `lector_responde` (bool, opcional): si el lector QR responde por UART.
+- `sensor_puerta` (opcional): `"abierta"`, `"cerrada"` o `"sin_sensor"` (la placa no lo tiene habilitado). Omitirlo no borra el último valor guardado. Es diagnóstico; no decide nada.
+
+**3. Confirmación de apertura** — `POST /api/v1/dispositivos/confirmaciones`. Tras un `abrir: true` de `POST /dispositivos/validaciones`, la placa conserva el `evento_id` de la respuesta y, cuando sabe el desenlace, informa **una sola vez** (cuerpo estricto):
+
+| `resultado` | Campos | Cuándo |
+|---|---|---|
+| `"ejecutada"` | `evento_id` | El sensor vio abrir la puerta (`nivel_abierto`) dentro de `espera_confirmacion_segundos`. Se envía en cuanto se ve, sin esperar al fin del plazo |
+| `"fallida"` | `evento_id`, `causa` (opcional, por omisión `"puerta_no_abrio"`) | `"puerta_no_abrio"`: se accionó el relé y venció el plazo sin ver abrir. `"rele_no_accionado"`: la placa no pudo accionar el relé. `"puerta_no_cerro"`: opcional, si decide esperar al cierre y no ocurrió |
+| `"sin_sensor"` | `evento_id` | `sensor_puerta.instalado` es `false`: se informa igualmente, una vez |
+
+`evento_id` es el string de dígitos devuelto por la validación. `leido_en` (ISO 8601, opcional, ≤ 40 caracteres) es la hora del reloj de la placa, solo informativa (la hora válida es la del servidor).
+
+Respuestas: `204` sin cuerpo (registrado, **o ya había un informe de esa apertura**: es idempotente, el primer informe es el que vale); `400` cuerpo inválido; `401` credencial inválida (mismo trato que en las validaciones); `404 evento.no_encontrado` si el evento no es una apertura permitida de ESTE dispositivo (de otra puerta, de otra cuenta, rechazado o inexistente); `409 confirmacion.fuera_de_plazo` si pasaron más de 10 minutos de la orden; `429 limite.excedido` (límite por credencial, aparte del de validaciones: nunca compite con ellas); `503 servicio.no_disponible` (con `Retry-After`).
+
+Reglas para el firmware:
+- Enviarlo **en segundo plano, después** de haber accionado y atendido la lectura siguiente: nunca debe retrasar una validación ni mantener el relé.
+- Reintentar solo ante falta de red, `429` o `5xx`, con espera creciente, hasta unos 10 minutos desde la orden; con cualquier otro `4xx` se descarta. Perder el informe es aceptable (el servidor lo toma como «sin respuesta»); no hace falta persistirlo.
+- Un solo informe por apertura. Si la puerta se vuelve a abrir con otro QR, es otro `evento_id`.
+- Plazo por omisión de observación (sin `espera_confirmacion_segundos` en la configuración): los segundos reales de apertura vigentes (`segundos_apertura` de la configuración, tope duro 10 s) más 5 s.
+- Segundo plano acotado: latido, informe y configuración usan 1 s por fase (conexión, handshake TLS, lectura) y no se inician hasta 10 s después del último byte del lector, para no retener la tarea de red cuando llega una validación. Un pedido de validación que esperó 3 s o más se descarta sin enviarse (la máquina de estados ya lo abandonó; enviarlo solo consumiría el QR sin abrir).
+
+Limitaciones conocidas del diagnóstico (informativas; el servidor las tolera):
+- **Aperturas solapadas.** Si una apertura ocurre mientras se observa otra, la primera se cierra con lo que se vio hasta entonces; si la puerta aún no se había abierto puede informarse `puerta_no_abrio` aunque el usuario esté entrando (falso negativo). Es raro: el lector se ignora mientras hay una validación o el relé activo.
+- **Apertura física dentro de la ventana.** Si alguien abre la puerta con el pulsador de salida o la llave dentro del plazo de observación, el sensor la ve abrir y la apertura cuenta como `ejecutada`; el sensor no distingue quién la abrió.
+- **`lector_responde` cuenta cualquier byte.** El lector es pasivo; basta un byte por la UART (incluso ruido) para marcarlo como «responde». Sin bytes desde el arranque el campo se omite; pasado un día sin bytes se informa `false` (puede estar caído o solo sin uso).
+
+Qué hace el servidor (para quien consuma el estado): ver la ficha `docs/modelo-datos/tablas/32_confirmaciones_apertura.md` y el ADR 0031 §18.
+
 ## Compilación de desarrollo
 
 `pio run -e esp32-dev -t upload` compila con `ACCESO_DESARROLLO`: permite una API `http://` (la API local del Mac, por la red cableada) y lee `include/secretos.h` (copia de `secretos.example.h`, no versionado) cuando no hay nada en NVS. Imprime un aviso al arrancar y reporta la versión `0.5.0-dev` en el latido. Es solo para la mesa de trabajo: nunca se publica ni se instala en una puerta real. El env `esp32` (el que compila `bin/verify`) no contiene ninguno de esos dos caminos.

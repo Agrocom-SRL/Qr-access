@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { CampanaNotificaciones } from '../features/notificaciones';
 import { tienePermiso, useSesion } from '../features/seguridad';
 import { PlantillaAdmin } from '../shared/ui/templates/PlantillaAdmin';
 import { RailNavegacion, type ItemRail } from '../shared/ui/organisms/RailNavegacion';
@@ -6,7 +7,8 @@ import { PantallaSesionVencida } from '../shared/ui/organisms/PantallasDeEstado'
 import { PantallaDeCarga } from '../shared/ui/organisms/PantallaDeCarga';
 import { RUTAS } from './rutas';
 
-const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
+/** Un ítem se ve si su permiso, o uno de `cualquieraDe`, lo tiene la sesión. La API decide de todos modos. */
+const ITEMS: readonly (ItemRail & { permiso?: string; cualquieraDe?: readonly string[] })[] = [
   {
     clave: 'resumen',
     ruta: RUTAS.resumen,
@@ -47,6 +49,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string })[] = [
     icono: 'bar_chart',
     iconoActivo: 'bar_chart_fill',
     permiso: 'resumen.panel.ver',
+  },
+  {
+    clave: 'consumo',
+    ruta: RUTAS.consumo,
+    icono: 'monitoring',
+    iconoActivo: 'monitoring_fill',
+    cualquieraDe: ['limites.consumo.ver', 'seguridad.senal.ver'],
   },
   {
     clave: 'planes',
@@ -94,15 +103,23 @@ export function LayoutAdmin() {
   if (sesion.debeCambiarContrasena && ubicacion.pathname !== RUTAS.perfil) {
     return <Navigate to={RUTAS.perfil} replace />;
   }
-  const items = ITEMS.filter(
-    (item) => item.permiso === undefined || tienePermiso(sesion.permisos, item.permiso),
-  );
+  const items = ITEMS.filter((item) => {
+    if (item.cualquieraDe) return item.cualquieraDe.some((p) => tienePermiso(sesion.permisos, p));
+    return item.permiso === undefined || tienePermiso(sesion.permisos, item.permiso);
+  });
+  // La campana de avisos de AGROCOM solo aparece con su permiso; leer y descartar exigen el de gestionar.
+  const campana = tienePermiso(sesion.permisos, 'notificaciones.aviso_plataforma.ver') ? (
+    <CampanaNotificaciones
+      puedeGestionar={tienePermiso(sesion.permisos, 'notificaciones.aviso_plataforma.gestionar')}
+    />
+  ) : undefined;
   return (
     <PlantillaAdmin
       rail={
         <RailNavegacion
           items={items}
           usuario={{ nombre: sesion.usuario.nombre, rutaPerfil: RUTAS.perfil }}
+          acciones={campana}
         />
       }
     >

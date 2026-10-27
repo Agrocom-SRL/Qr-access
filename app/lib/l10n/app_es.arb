@@ -126,7 +126,7 @@
   },
   "comunHoyPunto": "Hoy · {dia}",
   "@comunHoyPunto": {
-    "description": "Encabezado del grupo de eventos de hoy",
+    "description": "Encabezado del grupo de lecturas de hoy",
     "placeholders": {
       "dia": {
         "type": "String"
@@ -135,7 +135,7 @@
   },
   "comunAyerPunto": "Ayer · {dia}",
   "@comunAyerPunto": {
-    "description": "Encabezado del grupo de eventos de ayer",
+    "description": "Encabezado del grupo de lecturas de ayer",
     "placeholders": {
       "dia": {
         "type": "String"
@@ -234,9 +234,64 @@
   "@comunErrorQrPropioEnCurso": {
     "description": "code qr.propio_en_curso (409): dos generaciones del QR propio a la vez"
   },
+  "comunErrorIdempotenciaConflicto": "Esa solicitud ya se envió con otros datos. Genera el QR de nuevo.",
+  "@comunErrorIdempotenciaConflicto": {
+    "description": "code idempotencia.conflicto (422): la clave de idempotencia ya se usó con otro cuerpo; se empieza una generación nueva"
+  },
+  "comunErrorIdempotenciaEnCurso": "Ese QR ya se está generando. Espera un momento y toca de nuevo.",
+  "@comunErrorIdempotenciaEnCurso": {
+    "description": "code idempotencia.en_curso (409): otra petición con la misma clave aún no terminó; se reintenta con la misma clave"
+  },
+  "comunErrorIdempotenciaQrNoVigente": "Ese QR ya no está vigente. Toca de nuevo para generar uno nuevo.",
+  "@comunErrorIdempotenciaQrNoVigente": {
+    "description": "code idempotencia.qr_no_vigente (409): el QR de la clave ya se usó, anuló, reemplazó o venció; es definitivo, la clave se descarta y el siguiente toque genera otro QR"
+  },
   "comunErrorQrYaUsado": "Este QR ya fue usado, así que no se puede anular.",
   "@comunErrorQrYaUsado": {
     "description": "code qr.ya_usado (409) al anular un QR"
+  },
+  "comunErrorQrLimiteDiario": "Ya generaste el máximo de QR de hoy. Podrás generar más mañana.",
+  "@comunErrorQrLimiteDiario": {
+    "description": "code qr.limite_diario (429): tope diario por usuario. No bloquea: vuelve al día siguiente (ADR 0030 §2)"
+  },
+  "comunErrorQrLimitePendientes": "Tienes demasiados QR sin usar. Usa o anula alguno antes de generar otro.",
+  "@comunErrorQrLimitePendientes": {
+    "description": "code qr.limite_pendientes (429): demasiados QR vigentes sin usar (ADR 0030 §2)"
+  },
+  "comunErrorQrLimitePropiosEspera": "{minutos, plural, =1{Espera 1 minuto antes de pedir otro QR.} other{Espera {minutos} minutos antes de pedir otro QR.}}",
+  "@comunErrorQrLimitePropiosEspera": {
+    "description": "code qr.limite_propios_sin_uso (429) con espera corta: reemplazos del QR propio sin uso (ADR 0030 §2.1.5)",
+    "placeholders": {
+      "minutos": { "type": "int" }
+    }
+  },
+  "comunErrorQrLimitePropiosSinUso": "Pediste demasiados QR sin usar por hoy. Vuelve a intentarlo mañana.",
+  "@comunErrorQrLimitePropiosSinUso": {
+    "description": "code qr.limite_propios_sin_uso (429) con tope del día: la espera llega hasta medianoche (ADR 0030 §2.1.5)"
+  },
+  "comunErrorQrLimitePuertas": "Elegiste más puertas de las que admite un QR. Quita algunas.",
+  "@comunErrorQrLimitePuertas": {
+    "description": "code qr.limite_puertas (422): más puertas por QR que el máximo (ADR 0031 §9)"
+  },
+  "comunErrorQrGeneracionRestringida": "Tu permiso para generar QR está restringido. Habla con tu administrador.",
+  "@comunErrorQrGeneracionRestringida": {
+    "description": "code qr.generacion_restringida (403): el usuario, un superior o la cuenta no pueden generar; sus QR ya generados siguen vigentes"
+  },
+  "comunErrorQrGeneradorSuspendido": "Tu acceso para generar QR está suspendido. Habla con tu administrador.",
+  "@comunErrorQrGeneradorSuspendido": {
+    "description": "code qr.generador_suspendido (403): el usuario o un superior está suspendido"
+  },
+  "comunErrorQrCuentaSuspendida": "Tu cuenta está suspendida, así que no se generan QR. Comunícate con AGROCOM.",
+  "@comunErrorQrCuentaSuspendida": {
+    "description": "code qr.cuenta_suspendida (403): la cuenta entera está suspendida para generar"
+  },
+  "comunErrorSesionUsuarioSuspendido": "Tu usuario está suspendido. Habla con tu administrador.",
+  "@comunErrorSesionUsuarioSuspendido": {
+    "description": "code sesion.usuario_suspendido (403) al ingresar con el PIN"
+  },
+  "comunErrorSesionCuentaSuspendida": "Tu cuenta está suspendida. Comunícate con AGROCOM.",
+  "@comunErrorSesionCuentaSuspendida": {
+    "description": "code sesion.cuenta_suspendida (403) al ingresar con el PIN"
   },
   "comunErrorValidacionInvalida": "Revisa los datos e intenta de nuevo.",
   "@comunErrorValidacionInvalida": {
@@ -354,8 +409,8 @@
   "@navMisQr": {
     "description": "Destino de navegación"
   },
-  "navEventos": "Eventos",
-  "@navEventos": {
+  "navLecturas": "Lecturas",
+  "@navLecturas": {
     "description": "Destino de navegación"
   },
   "navPuertas": "Puertas",
@@ -481,9 +536,9 @@
   "@inicioPuertasSinConexion": {
     "description": "Indicador del tablero (cifra en peligro si > 0)"
   },
-  "inicioUltimosEventos": "Últimos eventos",
-  "@inicioUltimosEventos": {
-    "description": "Título de la lista de eventos del tablero"
+  "inicioUltimasLecturas": "Últimas lecturas",
+  "@inicioUltimasLecturas": {
+    "description": "Título de la lista de lecturas del tablero"
   },
   "inicioErrorCargar": "No pudimos cargar el tablero",
   "@inicioErrorCargar": {
@@ -826,7 +881,7 @@
   "@qrGenerarEtiqueta": {
     "description": "Rótulo del campo de etiqueta (D-21)"
   },
-  "qrGenerarEtiquetaAyuda": "Te ayuda a reconocerlo en Mis QR y Eventos.",
+  "qrGenerarEtiquetaAyuda": "Te ayuda a reconocerlo en Mis QR y Lecturas.",
   "@qrGenerarEtiquetaAyuda": {
     "description": "Ayuda del campo de etiqueta"
   },
@@ -944,77 +999,77 @@
   "@qrCerrarIgual": {
     "description": "Botón de confirmar el cierre sin compartir"
   },
-  "eventosTitulo": "Eventos",
-  "@eventosTitulo": {
-    "description": "Título de la bitácora de intentos de acceso"
+  "lecturasTitulo": "Lecturas",
+  "@lecturasTitulo": {
+    "description": "Título de la bitácora de lecturas (intentos de lectura de un QR)"
   },
-  "eventosFiltrar": "Filtrar",
-  "@eventosFiltrar": {
+  "lecturasFiltrar": "Filtrar",
+  "@lecturasFiltrar": {
     "description": "Ícono que muestra el filtro por puerta en compacto"
   },
-  "eventosFiltroTodos": "Todos",
-  "@eventosFiltroTodos": {
+  "lecturasFiltroTodos": "Todos",
+  "@lecturasFiltroTodos": {
     "description": "Pastilla del filtro de resultado"
   },
-  "eventosFiltroPermitidos": "Permitidos",
-  "@eventosFiltroPermitidos": {
+  "lecturasFiltroPermitidos": "Permitidos",
+  "@lecturasFiltroPermitidos": {
     "description": "Pastilla del filtro de resultado"
   },
-  "eventosFiltroRechazados": "Rechazados",
-  "@eventosFiltroRechazados": {
+  "lecturasFiltroRechazados": "Rechazados",
+  "@lecturasFiltroRechazados": {
     "description": "Pastilla del filtro de resultado"
   },
-  "eventosTodasLasPuertas": "Todas las puertas",
-  "@eventosTodasLasPuertas": {
+  "lecturasTodasLasPuertas": "Todas las puertas",
+  "@lecturasTodasLasPuertas": {
     "description": "Opción por defecto del selector de puerta"
   },
-  "eventosSinResultados": "Sin eventos todavía",
-  "@eventosSinResultados": {
+  "lecturasSinResultados": "Sin lecturas todavía",
+  "@lecturasSinResultados": {
     "description": "Estado vacío de la bitácora"
   },
-  "eventosSinResultadosAyuda": "Cuando alguien use un QR en una puerta, lo verás aquí.",
-  "@eventosSinResultadosAyuda": {
+  "lecturasSinResultadosAyuda": "Cuando alguien use un QR en una puerta, lo verás aquí.",
+  "@lecturasSinResultadosAyuda": {
     "description": "Ayuda del estado vacío de la bitácora"
   },
-  "eventosSinResultadosFiltro": "Sin eventos para este filtro",
-  "@eventosSinResultadosFiltro": {
+  "lecturasSinResultadosFiltro": "Sin lecturas para este filtro",
+  "@lecturasSinResultadosFiltro": {
     "description": "Estado vacío con filtros"
   },
-  "eventosSinResultadosFiltroAyuda": "Prueba con otro resultado o quita el filtro de puerta.",
-  "@eventosSinResultadosFiltroAyuda": {
+  "lecturasSinResultadosFiltroAyuda": "Prueba con otro resultado o quita el filtro de puerta.",
+  "@lecturasSinResultadosFiltroAyuda": {
     "description": "Ayuda del estado vacío con filtros"
   },
-  "eventosErrorCargar": "No pudimos cargar los eventos",
-  "@eventosErrorCargar": {
+  "lecturasErrorCargar": "No pudimos cargar las lecturas",
+  "@lecturasErrorCargar": {
     "description": "Título del estado de error de la bitácora"
   },
-  "eventosColumnaHora": "Hora",
-  "@eventosColumnaHora": {
-    "description": "Encabezado de la tabla de eventos"
+  "lecturasColumnaHora": "Hora",
+  "@lecturasColumnaHora": {
+    "description": "Encabezado de la tabla de lecturas"
   },
-  "eventosColumnaPuerta": "Puerta",
-  "@eventosColumnaPuerta": {
-    "description": "Encabezado de la tabla de eventos"
+  "lecturasColumnaPuerta": "Puerta",
+  "@lecturasColumnaPuerta": {
+    "description": "Encabezado de la tabla de lecturas"
   },
-  "eventosColumnaSitio": "Propiedad",
-  "@eventosColumnaSitio": {
-    "description": "Encabezado de la tabla de eventos y de puertas"
+  "lecturasColumnaSitio": "Propiedad",
+  "@lecturasColumnaSitio": {
+    "description": "Encabezado de la tabla de lecturas y de puertas"
   },
-  "eventosColumnaQr": "QR",
-  "@eventosColumnaQr": {
-    "description": "Encabezado de la tabla de eventos"
+  "lecturasColumnaQr": "QR",
+  "@lecturasColumnaQr": {
+    "description": "Encabezado de la tabla de lecturas"
   },
-  "eventosColumnaResultado": "Resultado",
-  "@eventosColumnaResultado": {
-    "description": "Encabezado de la tabla de eventos"
+  "lecturasColumnaResultado": "Resultado",
+  "@lecturasColumnaResultado": {
+    "description": "Encabezado de la tabla de lecturas"
   },
-  "eventosColumnaMotivo": "Motivo",
-  "@eventosColumnaMotivo": {
-    "description": "Encabezado de la tabla de eventos"
+  "lecturasColumnaMotivo": "Motivo",
+  "@lecturasColumnaMotivo": {
+    "description": "Encabezado de la tabla de lecturas"
   },
-  "eventoQrDe": "{etiqueta} · QR de {generador}",
-  "@eventoQrDe": {
-    "description": "Detalle de un evento permitido: etiqueta del QR y quién lo generó",
+  "lecturaQrDe": "{etiqueta} · QR de {generador}",
+  "@lecturaQrDe": {
+    "description": "Detalle de una lectura permitida: etiqueta del QR y quién lo generó",
     "placeholders": {
       "etiqueta": {
         "type": "String"
@@ -1024,48 +1079,48 @@
       }
     }
   },
-  "eventoResultadoPermitido": "Permitido",
-  "@eventoResultadoPermitido": {
+  "lecturaResultadoPermitido": "Permitido",
+  "@lecturaResultadoPermitido": {
     "description": "Resultado de un intento aceptado"
   },
-  "eventoResultadoRechazado": "Rechazado",
-  "@eventoResultadoRechazado": {
+  "lecturaResultadoRechazado": "Rechazado",
+  "@lecturaResultadoRechazado": {
     "description": "Resultado de un intento rechazado"
   },
-  "eventoMotivoAccesoPermitido": "Acceso permitido",
-  "@eventoMotivoAccesoPermitido": {
+  "lecturaMotivoAccesoPermitido": "Acceso permitido",
+  "@lecturaMotivoAccesoPermitido": {
     "description": "motivo_code acceso.permitido"
   },
-  "eventoMotivoQrFormatoInvalido": "Código no válido",
-  "@eventoMotivoQrFormatoInvalido": {
+  "lecturaMotivoQrFormatoInvalido": "Código no válido",
+  "@lecturaMotivoQrFormatoInvalido": {
     "description": "motivo_code qr.formato_invalido"
   },
-  "eventoMotivoQrDesconocido": "QR desconocido",
-  "@eventoMotivoQrDesconocido": {
+  "lecturaMotivoQrDesconocido": "QR desconocido",
+  "@lecturaMotivoQrDesconocido": {
     "description": "motivo_code qr.desconocido"
   },
-  "eventoMotivoQrAnulado": "QR anulado",
-  "@eventoMotivoQrAnulado": {
+  "lecturaMotivoQrAnulado": "QR anulado",
+  "@lecturaMotivoQrAnulado": {
     "description": "motivo_code qr.anulado"
   },
-  "eventoMotivoQrVencido": "QR vencido",
-  "@eventoMotivoQrVencido": {
+  "lecturaMotivoQrVencido": "QR vencido",
+  "@lecturaMotivoQrVencido": {
     "description": "motivo_code qr.vencido"
   },
-  "eventoMotivoQrOtraPuerta": "Otra puerta",
-  "@eventoMotivoQrOtraPuerta": {
+  "lecturaMotivoQrOtraPuerta": "Otra puerta",
+  "@lecturaMotivoQrOtraPuerta": {
     "description": "motivo_code qr.otra_puerta"
   },
-  "eventoMotivoQrUsado": "QR ya usado",
-  "@eventoMotivoQrUsado": {
+  "lecturaMotivoQrUsado": "QR ya usado",
+  "@lecturaMotivoQrUsado": {
     "description": "motivo_code qr.usado"
   },
-  "eventoMotivoSuscripcionVencida": "Suscripción vencida",
-  "@eventoMotivoSuscripcionVencida": {
+  "lecturaMotivoSuscripcionVencida": "Suscripción vencida",
+  "@lecturaMotivoSuscripcionVencida": {
     "description": "motivo_code suscripcion.vencida"
   },
-  "eventoMotivoDesconocido": "Motivo no disponible",
-  "@eventoMotivoDesconocido": {
+  "lecturaMotivoDesconocido": "Motivo no disponible",
+  "@lecturaMotivoDesconocido": {
     "description": "Un motivo_code que la app no conoce (versión vieja de la app)"
   },
   "perfilTitulo": "Perfil",
@@ -1786,7 +1841,7 @@
   "@usuariosSeccionPuertas": {
     "description": "Sección del formulario de usuario con las puertas asignadas"
   },
-  "usuariosPuertasAyuda": "Un guardia ve los eventos de las puertas que tenga asignadas.",
+  "usuariosPuertasAyuda": "Un guardia ve las lecturas de las puertas que tenga asignadas.",
   "@usuariosPuertasAyuda": {
     "description": "Ayuda de las puertas asignadas"
   },

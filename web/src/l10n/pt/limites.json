@@ -1,0 +1,72 @@
+{
+  "pestana": "Consumo da cota",
+  "subtitulo": "Os QR gerados neste mês em relação à cota de cada conta. Aqui só se registra e se avisa: nenhuma conta é cortada.",
+  "aviso": "Aviso em {{porcentaje}} da cota",
+  "mes": "Mês de {{mes}}",
+  "sinPlan": "Sem plano",
+  "tabla": "Consumo da cota por conta",
+  "estado": {
+    "normal": "Normal",
+    "aviso": "Aviso",
+    "superada": "Superada",
+    "sin_tope": "Sem limite"
+  },
+  "filtros": {
+    "estado": "Estado da cota",
+    "todas": "Todas",
+    "buscar": "Buscar por código ou nome",
+    "orden": "Ordenar por",
+    "sentido": "Sentido da ordem",
+    "mayorAMenor": "Maior para menor",
+    "menorAMayor": "Menor para maior"
+  },
+  "orden": {
+    "porcentaje": "Porcentagem",
+    "usado": "QR usados",
+    "tope": "Cota",
+    "nombre": "Nome"
+  },
+  "origen": {
+    "excepcion": "Exceção da conta",
+    "plan": "Plano",
+    "general": "Valor geral"
+  },
+  "columnas": {
+    "cuenta": "Conta",
+    "plan": "Plano",
+    "consumo": "Consumo do mês",
+    "estado": "Estado",
+    "origen": "Origem do limite"
+  },
+  "barra": {
+    "etiqueta": "Consumo de {{cuenta}}",
+    "valor": "{{usado}} de {{tope}} QR ({{porcentaje}})",
+    "sinTope": "{{usado}} QR, sem cota"
+  },
+  "vacio": {
+    "titulo": "Sem contas",
+    "texto": "Ainda não há contas com consumo para mostrar."
+  },
+  "sinResultados": {
+    "titulo": "Sem resultados",
+    "texto": "Nenhuma conta corresponde a estes filtros."
+  },
+  "errorCarga": "Não foi possível carregar o consumo da cota",
+  "detalle": {
+    "volver": "Consumo da cota",
+    "plan": "Plano {{plan}}",
+    "usado": "QR usados",
+    "tope": "Cota do mês",
+    "sinTope": "Sem cota atribuída",
+    "porcentaje": "Porcentagem da cota",
+    "avisoEl": "Aviso em {{cuando}}",
+    "superadaEl": "Superada em {{cuando}}",
+    "origen": "Origem do limite: {{origen}}",
+    "graficaTitulo": "QR gerados por dia",
+    "graficaSubtitulo": "{{mes}}, até hoje: {{total}} QR no total",
+    "graficaEtiqueta": "QR gerados por dia da conta {{cuenta}}",
+    "dia": "Dia",
+    "generados": "QR gerados",
+    "errorCarga": "Não foi possível carregar o consumo desta conta"
+  }
+}

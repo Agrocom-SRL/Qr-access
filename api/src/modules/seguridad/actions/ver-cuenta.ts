@@ -8,6 +8,8 @@ import {
   crearServicioDeSuscripcionesDePlataforma,
   type EstadoDeSuscripcion,
 } from '../../suscripciones/contracts.js';
+import { aIsoONulo } from '../../../platform/tiempo/fechas.js';
+import type { Estado } from '../domain/estado.js';
 import {
   RepositorioDeConteoDeUsuarios,
   RepositorioDeCuentasDePlataforma,
@@ -20,7 +22,12 @@ export interface DetalleDeCuenta {
     id: string;
     codigo: string;
     nombre: string;
+    /** `true` si puede operar: no está suspendida (restringida sí). */
     activa: boolean;
+    estado: Estado;
+    estado_motivo: string | null;
+    estado_desde: string | null;
+    estado_impuesto_por: string | null;
     cliente_desde: string;
     max_miembros_por_titular: number;
   };
@@ -79,7 +86,11 @@ export async function ejecutar(
         id: cuenta.id,
         codigo: cuenta.codigo,
         nombre: cuenta.nombre,
-        activa: cuenta.activo === 1,
+        activa: cuenta.estado !== 'suspendido',
+        estado: cuenta.estado,
+        estado_motivo: cuenta.estado_motivo,
+        estado_desde: aIsoONulo(cuenta.estado_desde),
+        estado_impuesto_por: cuenta.estado_impuesto_por,
         cliente_desde: cuenta.created_at.toISOString(),
         max_miembros_por_titular: cuenta.max_miembros_por_titular,
       },

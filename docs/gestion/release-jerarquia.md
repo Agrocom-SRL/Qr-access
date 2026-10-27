@@ -116,7 +116,7 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
   - `SELECT codigo FROM permisos WHERE codigo LIKE 'accesos.qr.%';` debe dar `accesos.qr.generar` y `accesos.qr.generar_propio`, sin `accesos.qr.emitir`.
   - `SELECT COUNT(*) FROM usuarios WHERE tenant_id IS NULL AND username = 'root';` debe dar `1`.
 - Entrar al panel como `root` y cambiar la contraseña.
-- Con el Administrador real: crear un Titular, un Guardia y un Miembro; generar un QR de visita (que el Guardia no debe poder generar) y uno propio con el Guardia; registrar un acceso de prueba y confirmar que aparece en `eventos_acceso` y en la bitácora.
+- Con el Administrador real: crear un Titular, un Guardia y un Miembro; generar un QR de visita (que el Guardia no debe poder generar) y uno propio con el Guardia; registrar un acceso de prueba y confirmar que aparece en `lecturas` y en la bitácora.
 - `docker compose logs --tail 100 api` sin errores.
 - Placas: aparecen como detectadas y latido con la versión de firmware esperada.
 
@@ -124,7 +124,7 @@ Reinicio según `docs/gestion/jerarquia-de-usuarios.md` §13 y ADR 0028 ("Datos 
 
 1. **Versión:** 1.0.3 (decidido). Falta saber qué trajeron v1.0.1 y v1.0.2.
 2. **Contradicción con ADR 0005 y la invariante 11 de `CLAUDE.md`:** ambos prohíben un cambio incompatible dentro de la misma versión de la API. Los cambios de permisos y campos de #71 y #72 lo son. Opciones: (a) documentar la excepción en un ADR, porque los clientes instalados son pocos y la app web va con la API; (b) publicar `/api/v2`. Elegir una antes de publicar.
-3. **Reinicio de producción:** autorizar el `DROP DATABASE` con respaldo previo. **Conflicto a tener en cuenta:** la invariante 4 dice que `eventos_acceso` no se borra. El reinicio borra también la bitácora y los eventos de la primera prueba. Si se acepta, la excepción debe quedar en el PR (invariante 8) y en el ADR 0028.
+3. **Reinicio de producción:** autorizar el `DROP DATABASE` con respaldo previo. **Conflicto a tener en cuenta:** la invariante 4 dice que `lecturas` no se borra. El reinicio borra también la bitácora y los eventos de la primera prueba. Si se acepta, la excepción debe quedar en el PR (invariante 8) y en el ADR 0028.
 4. **Dónde se guarda el respaldo** y por cuánto tiempo.
 5. **Código de la cuenta y datos del Administrador** al recrearla (paso 11).
 6. **Placas:** reflasheo por USB si hace falta, y la versión de firmware de la release.

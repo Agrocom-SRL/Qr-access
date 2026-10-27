@@ -9,7 +9,7 @@ import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
 import 'package:dio/dio.dart';
 
-/// Filtros de `GET /eventos-acceso` y de su resumen.
+/// Filtros de `GET /lecturas` y de su resumen.
 class FiltroEventosApi {
   const new({this.resultado, this.puertaId, this.desde, this.hasta});
 
@@ -88,11 +88,17 @@ class ClienteApi {
 
   /// `venceAt` y `etiqueta` van solo si el usuario los eligió; sin ellos, la
   /// API calcula el fin del día local del sitio (ADR 0008).
+  /// [reemplazar] pide otro QR propio aunque el vigente siga sin usar (la app
+  /// perdió su token). Solo tiene efecto con [propio] (ADR 0030 §2.1.3).
+  /// [idempotencyKey] va en la cabecera `Idempotency-Key`: un reintento con la
+  /// misma clave y el mismo cuerpo recibe la misma respuesta (ADR 0031 §11).
   Future<QrGeneradoDto> generarQr({
     required List<String> puertaIds,
     DateTime? venceAt,
     String? etiqueta,
     bool propio = false,
+    bool reemplazar = false,
+    String? idempotencyKey,
   }) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
@@ -102,7 +108,11 @@ class ClienteApi {
           'vence_at': ?venceAt?.toUtc().toIso8601String(),
           'etiqueta': ?etiqueta,
           if (propio) 'propio': true,
+          if (reemplazar) 'reemplazar': true,
         },
+        options: idempotencyKey == null
+            ? null
+            : Options(headers: {'Idempotency-Key': idempotencyKey}),
       );
       return QrGeneradoDto.desde(r.data!);
     });
@@ -146,28 +156,28 @@ class ClienteApi {
     });
   }
 
-  Future<PaginaDto<EventoAccesoDto>> eventosAcceso({
+  Future<PaginaDto<LecturaDto>> lecturas({
     required int pagina,
     required int porPagina,
     FiltroEventosApi filtro = const FiltroEventosApi(),
   }) {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>(
-        '/eventos-acceso',
+        '/lecturas',
         queryParameters: {
           'pagina': pagina,
           'por_pagina': porPagina,
           ...filtro.aQuery(),
         },
       );
-      return paginaDeApi(r.data!, EventoAccesoDto.desde);
+      return paginaDeApi(r.data!, LecturaDto.desde);
     });
   }
 
   Future<ResumenEventosDto> resumenEventos(FiltroEventosApi filtro) {
     return _ejecutar(() async {
       final r = await _dio.get<Map<String, dynamic>>(
-        '/eventos-acceso/resumen',
+        '/lecturas/resumen',
         queryParameters: filtro.aQuery(),
       );
       return ResumenEventosDto.desde(r.data!);

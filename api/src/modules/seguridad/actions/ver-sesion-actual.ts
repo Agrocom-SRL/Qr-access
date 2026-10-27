@@ -18,6 +18,10 @@ export interface SesionActual {
   permisos: string[];
   /** Plan y vencimiento de la suscripción vigente (HU-03); `null` si no hay una vigente. */
   suscripcion: { plan: string; hasta: string } | null;
+  /** Su estado efectivo (ADR 0031 §0): `restringido` conserva la sesión pero no genera QR nuevos. */
+  estado: 'activo' | 'restringido';
+  /** De dónde viene el estado cuando no es `activo`: él mismo, un superior o su cuenta. */
+  estado_origen: 'usuario' | 'superior' | 'cuenta' | null;
 }
 
 /** Quién soy, en qué cuenta, con qué rol y qué puedo hacer: con esto la app arma su menú. */
@@ -27,8 +31,8 @@ export async function ejecutar(
   ahora: Date = new Date(),
 ): Promise<SesionActual> {
   const [usuario, cuenta, roles, suscripcion] = await Promise.all([
-    new RepositorioDeUsuarios(pool).buscarActivoPorId(principal.usuarioId),
-    new RepositorioDeCuentas(pool).buscarActivaPorId(principal.cuentaId),
+    new RepositorioDeUsuarios(pool).buscarPorId(principal.usuarioId),
+    new RepositorioDeCuentas(pool).buscarPorId(principal.cuentaId),
     new RepositorioDeRolesDeUsuario(pool).rolesDe(principal.usuarioId),
     crearServicioDeSuscripciones(pool).obtenerVigente(ahora),
   ]);
@@ -45,5 +49,7 @@ export async function ejecutar(
       suscripcion === null
         ? null
         : { plan: suscripcion.planNombre, hasta: aIso(suscripcion.hasta) },
+    estado: principal.estado,
+    estado_origen: principal.origenDelEstado,
   };
 }

@@ -1,0 +1,21 @@
+# Configuración de gitleaks para el escaneo de secretos de CI (ADR 0033 §2).
+# La usa .github/workflows/seguridad.yml con `gitleaks git --config .gitleaks.toml`.
+# Procedimiento ante un hallazgo y excepciones: docs/gestion/seguridad-ci.md.
+
+title = "AGROCOM Acceso: escaneo de secretos"
+
+# Se parte de las reglas por defecto de gitleaks y se agregan solo excepciones acotadas.
+[extend]
+useDefault = true
+
+# Valores de PRUEBA que api/test/setup.ts fija para los tests de la API. No son secretos:
+# el entorno real los trae de .env o del servidor (invariante 6). La excepción es por
+# VALOR EXACTO y no por ruta: en gitleaks 8.24, `paths` y `regexes` de un [allowlist]
+# global se combinan con O (comprobado: `condition = "AND"` no lo restringe). Por eso
+# cualquier otro secreto, también en ese archivo, sigue detectándose.
+[allowlist]
+description = "Secretos de prueba de api/test/setup.ts (JWT_SECRETO y PIN_PIMIENTA de los tests)"
+regexes = [
+  '''secreto-de-pruebas-jwt-0123456789abcdef0123456789abcdef''',
+  '''cGltaWVudGEtZGUtcHJ1ZWJhcy0wMTIzNDU2Nzg5YWJjZGVm''',
+]

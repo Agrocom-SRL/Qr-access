@@ -3,12 +3,16 @@ import { rutas as rutasDeAccesos } from './modules/accesos/routes.js';
 import { rutas as rutasDeBitacora } from './modules/bitacora/routes.js';
 import { crearAutenticadorDeDispositivo } from './modules/dispositivos/contracts.js';
 import { rutas as rutasDeDispositivos } from './modules/dispositivos/routes.js';
+import { rutas as rutasDeIncidentes } from './modules/incidentes/routes.js';
+import { rutas as rutasDeLimites } from './modules/limites/routes.js';
+import { rutas as rutasDeNotificaciones } from './modules/notificaciones/routes.js';
 import { rutas as rutasDeOrganizacion } from './modules/organizacion/routes.js';
 import {
   crearAutenticadorDePlataforma,
   crearAutenticadorDeUsuario,
 } from './modules/seguridad/contracts.js';
 import { rutas as rutasDeResumen } from './modules/resumen/routes.js';
+import { rutas as rutasDeSenales } from './modules/senales/routes.js';
 import { rutas as rutasDeSeguridad } from './modules/seguridad/routes.js';
 import { rutas as rutasDeSuscripciones } from './modules/suscripciones/routes.js';
 import type { DependenciasDeModulo } from './platform/http/dependencias.js';
@@ -28,8 +32,12 @@ export const MODULOS: readonly ModuloRegistrado[] = [
   { nombre: 'accesos', rutas: rutasDeAccesos },
   { nombre: 'dispositivos', rutas: rutasDeDispositivos },
   { nombre: 'suscripciones', rutas: rutasDeSuscripciones },
+  { nombre: 'incidentes', rutas: rutasDeIncidentes },
+  { nombre: 'limites', rutas: rutasDeLimites },
+  { nombre: 'notificaciones', rutas: rutasDeNotificaciones },
   { nombre: 'bitacora', rutas: rutasDeBitacora },
   { nombre: 'resumen', rutas: rutasDeResumen },
+  { nombre: 'senales', rutas: rutasDeSenales },
 ];
 
 /** Cómo se autentica un usuario, un super admin y un dispositivo: lo aportan sus módulos, el plugin solo los usa. */

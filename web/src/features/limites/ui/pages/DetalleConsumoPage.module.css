@@ -1,0 +1,26 @@
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  gap: var(--esp16);
+  margin-bottom: var(--esp16);
+}
+
+.estado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--esp12);
+  margin-top: var(--esp8);
+}
+
+.marca {
+  margin: var(--esp8) 0 0;
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cargando {
+  display: flex;
+  justify-content: center;
+  padding: var(--esp48) 0;
+}

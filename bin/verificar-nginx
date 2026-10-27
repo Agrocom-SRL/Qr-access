@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+#
+# Prueba la configuración de nginx del panel o de la app web (ADR 0033 §2) contra su build real:
+# sintaxis, cabeceras de seguridad, caché (solo /assets/ con hash y solo en respuestas 2xx), 404 de
+# archivos inexistentes, fallback SPA y que el hash del splash de la app coincida con su index.html.
+#
+#   bin/verificar-nginx panel    # web/nginx.conf sobre web/dist (npm run build)
+#   bin/verificar-nginx app      # app/nginx.conf sobre app/build/web (flutter build web)
+#
+# Con Docker usa la imagen de producción (nginxinc/nginx-unprivileged, la misma de los Dockerfile).
+# Sin Docker usa el nginx del host: la sintaxis es la misma, pero la versión puede ser otra, y la
+# API se sustituye por un puerto cerrado (en el host no hay resolución de `api`).
+# Devuelve 0 solo si todo pasa.
+#
+set -uo pipefail
+cd "$(dirname "$0")/.." || exit 1
+
+PUERTO=18080
+IMAGEN=nginxinc/nginx-unprivileged:1.29-alpine
+
+case "${1:-}" in
+    panel)
+        conf=web/nginx.conf; snippet=web/nginx/cabeceras-seguridad.conf
+        estaticos=web/dist; destino=/usr/share/nginx/html ;;
+    app)
+        conf=app/nginx.conf; snippet=app/nginx/cabeceras-seguridad.conf
+        estaticos=app/build/web; destino=/usr/share/nginx/html/app ;;
+    *) echo "uso: bin/verificar-nginx panel|app" >&2; exit 2 ;;
+esac
+
+fallos=0
+paso() { printf '\n\033[1m── nginx %s ──\033[0m\n' "$1"; }
+ok()   { printf '\033[32m✓ %s\033[0m\n' "$1"; }
+mal()  { printf '\033[31m✗ %s\033[0m\n' "$1"; fallos=$((fallos + 1)); }
+aviso(){ printf '\033[33m· %s\033[0m\n' "$1"; }
+
+[ -f "$conf" ] && [ -f "$snippet" ] || { mal "falta $conf o $snippet"; exit 1; }
+[ -f "$estaticos/index.html" ] || { mal "falta el build en $estaticos (npm run build o flutter build web)"; exit 1; }
+
+raiz="$PWD"
+parte="$1"
+work=$(mktemp -d)
+nombre_contenedor="qr-access-nginx-$1-$$"
+modo=""
+
+limpiar() {
+    if [ "$modo" = docker ]; then
+        docker rm -f "$nombre_contenedor" >/dev/null 2>&1
+    elif [ "$modo" = host ] && [ -f "$work/nginx.pid" ]; then
+        nginx -p "$work" -c "$work/nginx.conf" -s stop >/dev/null 2>&1
+    fi
+    rm -rf "$work"
+}
+trap limpiar EXIT
+
+# Docker con la imagen de producción si está disponible; si no, el nginx del host (así `bin/verify`
+# también corre en un equipo sin contenedores, con un aviso).
+if command -v docker >/dev/null && docker info >/dev/null 2>&1 &&
+    { docker image inspect "$IMAGEN" >/dev/null 2>&1 || docker pull -q "$IMAGEN" >/dev/null 2>&1; }; then
+    modo=docker
+else
+    modo=host
+    aviso "Docker o la imagen $IMAGEN no están disponibles: se usa el nginx del host"
+fi
+
+montajes=(
+    -v "$raiz/$conf:/etc/nginx/conf.d/default.conf:ro"
+    -v "$raiz/$snippet:/etc/nginx/snippets/cabeceras-seguridad.conf:ro"
+    -v "$raiz/$estaticos:$destino:ro"
+)
+
+arrancar_docker() {
+    docker run --rm "${montajes[@]}" --add-host api:127.0.0.1 --add-host app:127.0.0.1 "$IMAGEN" nginx -t >"$work/sintaxis.log" 2>&1
+}
+
+preparar_host() {
+    command -v nginx >/dev/null || { mal "falta Docker y nginx: no se puede probar la configuración"; return 1; }
+    local mime=/etc/nginx/mime.types
+    [ -f "$mime" ] || mime=/usr/local/etc/nginx/mime.types
+    [ -f "$mime" ] || { mal "no encuentro mime.types de nginx"; return 1; }
+    mkdir -p "$work/conf.d" "$work/snippets" "$work/html" "$work/tmp"
+    cp "$snippet" "$work/snippets/cabeceras-seguridad.conf"
+    if [ "$parte" = app ]; then mkdir -p "$work/html/app"; cp -R "$estaticos/." "$work/html/app/"
+    else cp -R "$estaticos/." "$work/html/"; fi
+    # Único cambio respecto al archivo real: el puerto, la raíz del build y el upstream `api`
+    # (en el host no hay DNS para `api`; el upstream cerrado da 502, que es lo que se comprueba).
+    sed -e "s#^    listen 8080;#    listen 127.0.0.1:$PUERTO;#" \
+        -e "s#root /usr/share/nginx/html;#root $work/html;#" \
+        -e "s#http://api:3000#http://127.0.0.1:9#" "$conf" > "$work/conf.d/default.conf"
+    cat > "$work/nginx.conf" <<EOF
+user $(id -un);
+pid $work/nginx.pid;
+error_log $work/error.log warn;
+events {}
+http {
+    include $mime;
+    access_log off;
+    client_body_temp_path $work/tmp;
+    proxy_temp_path $work/tmp;
+    include conf.d/*.conf;
+}
+EOF
+    nginx -t -p "$work" -c "$work/nginx.conf" >"$work/sintaxis.log" 2>&1
+}
+
+paso "$parte: sintaxis y arranque ($modo)"
+if [ "$modo" = docker ]; then
+    arrancar_docker && ok "nginx -t con la imagen $IMAGEN" || { mal "nginx -t con la imagen $IMAGEN"; cat "$work/sintaxis.log"; exit 1; }
+    docker run -d --rm --name "$nombre_contenedor" -p "127.0.0.1:$PUERTO:8080" --add-host api:127.0.0.1 --add-host app:127.0.0.1 \
+        "${montajes[@]}" "$IMAGEN" >/dev/null || { mal "arrancar el contenedor"; exit 1; }
+else
+    preparar_host && ok "nginx -t con el nginx del host" || { mal "nginx -t con el nginx del host"; cat "$work/sintaxis.log" 2>/dev/null; exit 1; }
+    nginx -p "$work" -c "$work/nginx.conf" || { mal "arrancar nginx"; exit 1; }
+fi
+
+listo=0
+for _ in $(seq 1 40); do
+    if curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$PUERTO/"; then listo=1; break; fi
+    sleep 0.5
+done
+[ "$listo" -eq 1 ] || { mal "nginx no responde en 127.0.0.1:$PUERTO"; exit 1; }
+
+# pedir <ruta>: deja el código en $estado y las cabeceras y el cuerpo en $work
+pedir() {
+    estado=$(curl -s -o "$work/cuerpo" -D "$work/cab" -w '%{http_code}' --max-time 10 "http://127.0.0.1:$PUERTO$1")
+}
+tiene() { tr -d '\r' < "$work/cab" | grep -qi "^$1: .*$2"; }
+cabeceras_seguridad() {
+    tiene content-security-policy "default-src 'self'" &&
+    tiene x-content-type-options "nosniff" &&
+    tiene referrer-policy "strict-origin-when-cross-origin" &&
+    tiene permissions-policy "camera=()" &&
+    tiene x-frame-options "DENY"
+}
+sin_csp_insegura() { ! tiene content-security-policy "unsafe-eval" && ! tiene content-security-policy "'unsafe-inline'"; }
+cuerpo_tiene() { grep -q "$1" "$work/cuerpo"; }
+
+# Cada comprobación devuelve 0 si pasa; `caso` la cuenta y la informa.
+caso() {
+    local nombre="$1"; shift
+    if "$@"; then ok "$nombre"; else mal "$nombre (código $estado)"; fi
+}
+
+# La API no escucha en la prueba (upstream cerrado): nginx debe responder un problema RFC 9457 sin caché,
+# con una sola Cache-Control (nginx no deduplica add_header y la de la API se oculta con proxy_hide_header).
+paso "$parte: API caída (upstream cerrado)"
+c_api_caida() {
+    pedir /api/v1/salud && [ "$estado" = 503 ] &&
+    tiene content-type "application/problem+json" &&
+    tiene vary "Authorization" && tiene cache-control "no-store" && cabeceras_seguridad &&
+    cuerpo_tiene '"code":"servicio.no_disponible"' &&
+    [ "$(tr -d '\r' < "$work/cab" | grep -ci '^cache-control:')" -eq 1 ]
+}
+caso "/api/ sin API responde 503 problema+json, no-store y una sola Cache-Control" c_api_caida
+
+if [ "$parte" = panel ]; then
+    paso "panel: rutas, caché y cabeceras"
+    c_raiz() { pedir / && [ "$estado" = 200 ] && cabeceras_seguridad && sin_csp_insegura && tiene cache-control "no-cache" && cuerpo_tiene 'id="raiz"'; }
+    c_asset() {
+        local js; js=$(cd "$estaticos/assets" && ls -1 *.js | head -1)
+        pedir "/assets/$js" && [ "$estado" = 200 ] && tiene cache-control "immutable" && cabeceras_seguridad
+    }
+    c_asset_inexistente() { pedir "/assets/no-existe-$$.js" && [ "$estado" = 404 ] && ! tiene cache-control "immutable"; }
+    c_estatico_inexistente() { pedir "/no-existe-$$.js" && [ "$estado" = 404 ] && ! cuerpo_tiene 'id="raiz"'; }
+    c_ruta_spa() { pedir /ingreso && [ "$estado" = 200 ] && cuerpo_tiene 'id="raiz"' && tiene cache-control "no-cache"; }
+    c_api_no_es_panel() { pedir "/api/v1/no-existe-$$.js" && [ "$estado" != 404 ] && ! cuerpo_tiene 'id="raiz"'; }
+    caso "/ sirve el panel con cabeceras de seguridad y sin caché" c_raiz
+    caso "/assets/ con hash se cachea un año y lleva cabeceras" c_asset
+    caso "/assets/ inexistente da 404 y no queda cacheado" c_asset_inexistente
+    caso "archivo inexistente con extensión (/x.js) da 404, no el índice" c_estatico_inexistente
+    caso "ruta de React Router (/ingreso) devuelve el índice" c_ruta_spa
+    caso "/api/… con extensión .js va a la API, no al panel" c_api_no_es_panel
+    # img-src con blob: (vista previa de QR y comprobantes con URL.createObjectURL); exacto, sin data:
+    c_img_blob() { pedir / && [ "$estado" = 200 ] && tiene content-security-policy "img-src 'self' blob:;"; }
+    caso "CSP del panel permite img-src 'self' blob: (y no data:)" c_img_blob
+
+    paso "panel: el build no necesita CSP con 'unsafe-inline'"
+    c_sin_inline() {
+        # Todas las páginas HTML del build (el índice y las legales), no solo el índice
+        ! grep -Eq '<script[^>]*>[^<]' "$estaticos"/*.html && ! grep -q '<style' "$estaticos"/*.html &&
+        ! grep -q ' style="' "$estaticos"/*.html && ! grep -lq 'url(data:' "$estaticos"/assets/*.css 2>/dev/null
+    }
+    if c_sin_inline; then ok "páginas HTML sin script ni estilo en línea; CSS sin data: URL"; else mal "el build trae script o estilo en línea (la CSP estricta lo bloquearía)"; fi
+fi
+
+if [ "$parte" = app ]; then
+    paso "app: rutas, caché y cabeceras"
+    c_app() { pedir /app/ && [ "$estado" = 200 ] && cabeceras_seguridad && tiene cache-control "no-cache" && tiene content-security-policy "'wasm-unsafe-eval'"; }
+    c_app_js() { pedir /app/main.dart.js && [ "$estado" = 200 ] && cabeceras_seguridad; }
+    c_app_inexistente() { pedir "/app/no-existe-$$.js" && [ "$estado" = 404 ] && ! cuerpo_tiene 'splash'; }
+    c_app_spa() { pedir "/app/ruta/inexistente" && [ "$estado" = 200 ] && cuerpo_tiene 'splash'; }
+    c_raiz_redirige() { pedir / && [ "$estado" = 302 ] && tiene location "/app/"; }
+    caso "/app/ sirve la app con CSP y sin caché" c_app
+    caso "/app/main.dart.js sirve el motor con cabeceras" c_app_js
+    caso "/app/ archivo inexistente da 404, no el índice" c_app_inexistente
+    # Las extensiones que el panel ya trata como estáticas: sin esto, un .woff2 o .html que falta devolvería la app
+    c_app_fuentes_html() { pedir "/app/no-existe-$$.woff2" && [ "$estado" = 404 ] && ! cuerpo_tiene 'splash' && pedir "/app/no-existe-$$.html" && [ "$estado" = 404 ] && ! cuerpo_tiene 'splash'; }
+    caso "/app/ woff2 y html inexistentes dan 404, no el índice" c_app_fuentes_html
+    caso "/app/ruta de go_router devuelve la app (fallback SPA)" c_app_spa
+    caso "/ redirige a /app/" c_raiz_redirige
+
+    paso "app: el hash del splash coincide con el build"
+    # La CSP lleva el hash del bloque inline `splash-screen-script`. Si alguien regenera el splash y
+    # cambia ese bloque, este chequeo falla y avisa de actualizar app/nginx/cabeceras-seguridad.conf.
+    hash=$(python3 - "$estaticos/index.html" <<'PY'
+import base64, hashlib, re, sys
+html = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r'<script id="splash-screen-script">(.*?)</script>', html, re.S)
+print(base64.b64encode(hashlib.sha256(m.group(1).encode("utf-8")).digest()).decode() if m else "")
+PY
+)
+    if [ -n "$hash" ] && grep -q "'sha256-$hash'" "$raiz/$snippet"; then
+        ok "hash sha256-$hash del splash presente en la CSP"
+    else
+        mal "el hash del splash (sha256-$hash) no está en la CSP de $snippet"
+    fi
+fi
+
+printf '\n'
+if [ "$fallos" -eq 0 ]; then
+    printf '\033[32m✓ Configuración de nginx (%s) verificada.\033[0m\n' "$parte"
+    exit 0
+fi
+printf '\033[31m✗ %s comprobación(es) de nginx fallaron.\033[0m\n' "$fallos"
+exit 1

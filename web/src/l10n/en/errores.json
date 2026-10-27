@@ -55,5 +55,6 @@
   "cuenta_de_cobro_existente": "There is already an account with that bank and number.",
   "cuenta_de_cobro_datos_incompletos": "Missing data: a bank account needs a holder and number, and a QR needs its image.",
   "cuenta_de_cobro_imagen_invalida": "The QR must be an image, not a PDF.",
-  "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again."
+  "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again.",
+  "notificacion_no_encontrada": "We couldn't find that notice."
 }

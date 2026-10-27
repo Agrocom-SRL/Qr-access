@@ -5,6 +5,7 @@ import {
   crearServicioDeSuscripcionesDePlataforma,
   type EstadoDeSuscripcion,
 } from '../../suscripciones/contracts.js';
+import type { Estado } from '../domain/estado.js';
 import {
   contarPorEstado,
   filtrarCuentas,
@@ -17,6 +18,8 @@ export interface CuentaListada {
   id: string;
   codigo: string;
   nombre: string;
+  /** El estado de la cuenta (no el de su suscripción, que va en `estado`). */
+  cuenta_estado: Estado;
   plan: { id: string; nombre: string; cupo_usuarios: number | null } | null;
   usuarios_activos: number;
   vence_el: string | null;
@@ -49,6 +52,7 @@ export async function ejecutar(
       id: cuenta.id,
       codigo: cuenta.codigo,
       nombre: cuenta.nombre,
+      cuenta_estado: cuenta.estado,
       plan:
         suscripcion === undefined
           ? null

@@ -4,7 +4,7 @@
   "leyenda": "Leyenda",
   "cobradoTitulo": "Cobrado por mes",
   "cobradoSubtitulo": "{{total}} en los últimos 12 meses",
-  "accesosTitulo": "Accesos por día",
+  "accesosTitulo": "Lecturas por día",
   "accesosSubtitulo": "Últimos 14 días: {{permitidos}} permitidos y {{rechazados}} rechazados",
   "altasTitulo": "Cuentas nuevas por mes",
   "altasSubtitulo_one": "{{count}} cuenta nueva en los últimos 12 meses",

@@ -1,0 +1,50 @@
+.subtitulo {
+  margin: 0;
+  color: var(--textoSecundario);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.esqueleto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+}
+
+.cabeceraGrupo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--esp4) var(--esp12);
+}
+
+.nombreSitio {
+  margin: 0;
+  color: var(--texto);
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.cuenta {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

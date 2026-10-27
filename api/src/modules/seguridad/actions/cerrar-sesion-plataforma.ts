@@ -10,6 +10,11 @@ export async function ejecutar(
   ahora: Date = new Date(),
 ): Promise<void> {
   await enTransaccion(servicios.pool, (tx) =>
-    new RepositorioDeSesionesDeSuperAdmins(servicios.pool).revocar(tx, principal.sesionId, ahora),
+    new RepositorioDeSesionesDeSuperAdmins(servicios.pool).revocar(
+      tx,
+      principal.sesionId,
+      ahora,
+      'salida',
+    ),
   );
 }

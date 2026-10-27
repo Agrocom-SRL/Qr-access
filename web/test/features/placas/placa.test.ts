@@ -1,6 +1,8 @@
 import {
+  estadoDeConexionDe,
   minutosRestantes,
   puedeCancelarVinculo,
+  puedeConfigurarSensor,
   puedeDarDeBaja,
   puedeLiberar,
   puedeVincular,
@@ -15,6 +17,12 @@ const base: Placa = {
   ip: null,
   ultimoContactoEn: null,
   enLinea: false,
+  estadoConexion: null,
+  lectorResponde: null,
+  enObservacion: false,
+  sensorPuerta: null,
+  sensorConfigurado: null,
+  aperturaFallida: false,
   porConfirmarHasta: null,
   dispositivo: null,
   cuenta: null,
@@ -49,5 +57,26 @@ describe('placas: ventana de confirmación', () => {
     expect(minutosRestantes(new Date('2026-10-14T12:10:00Z'), ahora)).toBe(10);
     expect(minutosRestantes(new Date('2026-10-14T12:00:30Z'), ahora)).toBe(1);
     expect(minutosRestantes(new Date('2026-10-14T11:00:00Z'), ahora)).toBe(0);
+  });
+});
+
+describe('placas: conexión y sensor (ADR 0031 §18)', () => {
+  it('el estado de conexión es el de la API; sin él, el del anuncio', () => {
+    expect(estadoDeConexionDe({ ...base, estadoConexion: 'caida_sostenida' })).toBe(
+      'caida_sostenida',
+    );
+    expect(estadoDeConexionDe({ ...base, enLinea: true })).toBe('en_linea');
+    expect(estadoDeConexionDe({ ...base, enLinea: false })).toBe('sin_conexion');
+  });
+
+  it('el sensor se configura solo en una placa con dispositivo', () => {
+    expect(puedeConfigurarSensor(base)).toBe(false);
+    expect(
+      puedeConfigurarSensor({
+        ...base,
+        estado: 'vinculada',
+        dispositivo: { id: '7', nombre: 'P' },
+      }),
+    ).toBe(true);
   });
 });

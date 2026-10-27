@@ -1,0 +1,77 @@
+{
+  "titulo": "Notificações",
+  "subtitulo": "Avisos das placas de todas as contas, agrupados por local.",
+  "campana_one": "Notificações: {{count}} não lida",
+  "campana_other": "Notificações: {{count}} não lidas",
+  "nuevas_one": "Chegou {{count}} notificação nova",
+  "nuevas_other": "Chegaram {{count}} notificações novas",
+  "filtro": "Quais notificações mostrar",
+  "filtros": {
+    "no_leidas": "Não lidas",
+    "todas": "Todas"
+  },
+  "leerTodas": "Marcar todas como lidas",
+  "leyendoTodas": "Marcando…",
+  "leer": "Marcar como lida",
+  "descartar": "Descartar",
+  "sinSitio": "Conta inteira",
+  "sinLeer": "Não lida",
+  "novedad": "Última novidade: {{cuando}}",
+  "errorCarga": "Não conseguimos carregar as notificações",
+  "severidad": {
+    "info": "Informação",
+    "aviso": "Aviso",
+    "critica": "Crítica"
+  },
+  "tipo": {
+    "placa_caida_sostenida": "Uma placa parou de informar",
+    "placa_desaparecida": "Uma placa desapareceu",
+    "placa_lector_sin_respuesta": "O leitor de uma placa não responde",
+    "placa_recuperada": "Uma placa voltou a informar",
+    "apertura_fallida": "Uma porta não abre depois de várias tentativas",
+    "senal_uso": "Um QR teve uso fora do normal",
+    "bolsa_aviso": "A cota de QR de uma conta chegou ao aviso",
+    "bolsa_superada": "Uma conta superou a cota de QR do mês",
+    "flujo_atipico": "Um dia de acessos foi atípico"
+  },
+  "detalle": {
+    "aperturasFallidas_one": "{{count}} abertura sem confirmação",
+    "aperturasFallidas_other": "{{count}} aberturas sem confirmação",
+    "desde": "Desde {{cuando}}"
+  },
+  "causa": {
+    "puerta_no_abrio": "A porta não abriu",
+    "puerta_no_cerro": "A porta não voltou a fechar",
+    "rele_no_accionado": "O relé não foi acionado",
+    "sin_sensor": "A porta não tem sensor",
+    "sin_respuesta": "A placa não respondeu a tempo"
+  },
+  "vacio": {
+    "noLeidas": {
+      "titulo": "Tudo em dia",
+      "texto": "Não há notificações não lidas."
+    },
+    "todas": {
+      "titulo": "Sem notificações",
+      "texto": "Quando uma placa parar de informar ou uma porta não abrir, o aviso aparece aqui."
+    }
+  },
+  "cuentaDelGrupo": "{{codigo}} · {{nombre}}",
+  "senal": {
+    "usuario": "Usuário: {{usuario}}",
+    "usuarioSinNombre": "Usuário sem nome",
+    "medido": "Medido: {{valor}}; limite: {{umbral}}",
+    "dia": "Dia {{dia}}"
+  },
+  "bolsa": {
+    "usado": "{{usado}} de {{tope}} QR em {{mes}}",
+    "sinCifras": "Cota de {{mes}}: este aviso não traz os números"
+  },
+  "flujo": {
+    "aperturas": "{{aperturas}} aberturas com {{usuarios}} usuários ativos",
+    "porUsuario": "{{porUsuario}} por usuário (limite: {{umbral}})",
+    "base": "Base habitual: {{base}} aberturas",
+    "sinBase": "Ainda sem base habitual",
+    "dia": "Dia {{dia}}"
+  }
+}

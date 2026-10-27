@@ -10,6 +10,8 @@ export interface SuscripcionVigenteFila extends RowDataPacket {
   max_vigencia_qr_horas: number | null;
   max_usuarios: number | null;
   max_dispositivos: number | null;
+  bolsa_qr_mensual: number | null;
+  max_puertas_por_qr: number | null;
 }
 
 export interface SuscripcionActualFila extends RowDataPacket {
@@ -18,6 +20,7 @@ export interface SuscripcionActualFila extends RowDataPacket {
   plan_id: string;
   plan_nombre: string;
   max_usuarios: number | null;
+  bolsa_qr_mensual: number | null;
   precio_anual: string;
   desde: Date;
   hasta: Date;
@@ -33,7 +36,7 @@ export interface NuevaSuscripcion {
 }
 
 const COLUMNAS_ACTUAL =
-  't.id, t.tenant_id, t.plan_id, p.nombre AS plan_nombre, p.max_usuarios, p.precio_anual, t.desde, t.hasta, t.estado';
+  't.id, t.tenant_id, t.plan_id, p.nombre AS plan_nombre, p.max_usuarios, p.bolsa_qr_mensual, p.precio_anual, t.desde, t.hasta, t.estado';
 const UNION_PLAN = 'JOIN planes AS p ON p.id = t.plan_id';
 
 /** Dueño de `suscripciones` (ADR 0003). `planes` es de plataforma y se une por su id. */
@@ -89,7 +92,7 @@ export class RepositorioDeSuscripciones extends RepositorioDeCuenta {
   buscarVigente(ahora: Date): Promise<SuscripcionVigenteFila | null> {
     return this.seleccionarUna<SuscripcionVigenteFila>({
       columnas:
-        't.id, t.hasta, p.nombre AS plan_nombre, p.max_vigencia_qr_horas, p.max_usuarios, p.max_dispositivos',
+        't.id, t.hasta, p.nombre AS plan_nombre, p.max_vigencia_qr_horas, p.max_usuarios, p.max_dispositivos, p.bolsa_qr_mensual, p.max_puertas_por_qr',
       // Un plan retirado de la venta (activo = 0) sigue valiendo para la cuenta que ya lo tiene (ADR 0022).
       uniones: 'JOIN planes AS p ON p.id = t.plan_id',
       donde: "t.estado = 'vigente' AND t.desde <= ? AND t.hasta > ?",
@@ -103,7 +106,12 @@ export interface PlanFila extends RowDataPacket {
   nombre: string;
   max_usuarios: number | null;
   precio_anual: string;
+  bolsa_qr_mensual: number | null;
+  max_puertas_por_qr: number | null;
 }
+
+const COLUMNAS_DE_PLAN =
+  't.id, t.nombre, t.max_usuarios, t.precio_anual, t.bolsa_qr_mensual, t.max_puertas_por_qr';
 
 /** Dueño de `planes` (catálogo de plataforma, sin cuenta). */
 export class RepositorioDePlanes extends RepositorioDePlataforma {
@@ -115,6 +123,8 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
         'max_dispositivos',
         'max_usuarios',
         'max_vigencia_qr_horas',
+        'bolsa_qr_mensual',
+        'max_puertas_por_qr',
         'precio_anual',
         'activo',
       ],
@@ -126,7 +136,7 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
   /** Los planes que se venden, del cupo más chico al más grande. */
   listarActivos(): Promise<PlanFila[]> {
     return this.seleccionar<PlanFila>({
-      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      columnas: COLUMNAS_DE_PLAN,
       donde: 't.activo = 1',
       orden: 't.max_usuarios, t.id',
     });
@@ -136,7 +146,7 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
   async nombresPorIds(ids: readonly string[]): Promise<Map<string, string>> {
     if (ids.length === 0) return new Map();
     const filas = await this.seleccionar<PlanFila>({
-      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      columnas: COLUMNAS_DE_PLAN,
       donde: 't.id IN (?)',
       params: [ids],
     });
@@ -146,7 +156,7 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
   /** Un plan vigente (no borrado) con ese nombre, activo o retirado: el nombre es único. */
   buscarPorNombre(nombre: string): Promise<PlanFila | null> {
     return this.seleccionarUna<PlanFila>({
-      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      columnas: COLUMNAS_DE_PLAN,
       donde: 't.nombre = ?',
       params: [nombre],
     });
@@ -184,7 +194,7 @@ export class RepositorioDePlanes extends RepositorioDePlataforma {
 
   buscarActivoPorId(id: string): Promise<PlanFila | null> {
     return this.seleccionarUna<PlanFila>({
-      columnas: 't.id, t.nombre, t.max_usuarios, t.precio_anual',
+      columnas: COLUMNAS_DE_PLAN,
       donde: 't.id = ? AND t.activo = 1',
       params: [id],
     });
@@ -224,7 +234,8 @@ export class RepositorioDeUsoDePlanes extends RepositorioDePlataforma {
   async cuentasPorPlan(): Promise<Map<string, string[]>> {
     const filas = await this.seleccionar<UsoDePlanFila>({
       columnas: 't.plan_id, t.tenant_id',
-      uniones: 'JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL AND c.activo = 1',
+      uniones:
+        "JOIN cuentas AS c ON c.id = t.tenant_id AND c.deleted_at IS NULL AND c.estado <> 'suspendido'",
     });
     const mapa = new Map<string, string[]>();
     for (const fila of filas)

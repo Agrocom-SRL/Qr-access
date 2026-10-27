@@ -1,6 +1,9 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import * as administradores from './actions/administradores-de-cuenta.js';
+import { ejecutar as cerrarSesionDeUsuarioDeCuenta } from './actions/cerrar-sesion-de-usuario-de-cuenta.js';
+import { ejecutar as cerrarSesionesDeUsuarioDeCuenta } from './actions/cerrar-sesiones-de-usuario-de-cuenta.js';
+import { ejecutar as listarSesionesDeUsuarioDeCuenta } from './actions/listar-sesiones-de-usuario-de-cuenta.js';
 import { ejecutar as cambiarCodigo } from './actions/cambiar-codigo-de-cuenta.js';
 import { ejecutar as codigoDisponible } from './actions/codigo-disponible.js';
 import { ejecutar as crearCuenta } from './actions/crear-cuenta.js';
@@ -8,11 +11,16 @@ import { ejecutar as editarCuenta } from './actions/editar-cuenta.js';
 import { ejecutar as eliminarCuenta } from './actions/eliminar-cuenta.js';
 import { deCuenta as estadisticasDeCuenta } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as listarCuentas } from './actions/listar-cuentas.js';
+import { ejecutar as reactivarCuenta } from './actions/reactivar-cuenta.js';
+import { ejecutar as reactivarUsuarioDeCuenta } from './actions/reactivar-usuario-de-cuenta.js';
+import { ejecutar as restringirCuenta } from './actions/restringir-cuenta.js';
+import { ejecutar as suspenderCuenta } from './actions/suspender-cuenta.js';
 import { ejecutar as verCobranza } from './actions/ver-cobranza.js';
 import { ejecutar as verCuenta } from './actions/ver-cuenta.js';
 import { ejecutar as verSuscripcionDeCuenta } from './actions/ver-suscripcion-de-cuenta.js';
 import {
   consultaDeCobranza,
+  cuerpoDeCambioDeEstado,
   cuerpoDeBajaDeCuenta,
   cuerpoDeCambioDeCodigo,
   cuerpoDeNuevoAdministrador,
@@ -27,6 +35,10 @@ import {
   consultaDeCuentas,
   cuerpoDeNuevaCuenta,
   parametrosDeCuenta,
+  parametrosDeSesionDeUsuarioDeCuenta,
+  parametrosDeUsuarioDeCuenta,
+  respuestaDeSesionesCerradas,
+  respuestaListadoDeSesiones,
   respuestaDeCobranza,
   respuestaDeCodigoDeCuenta,
   respuestaDeSuscripcionDeCuenta,
@@ -160,6 +172,127 @@ export const rutasDeCuentas =
           contactoCorreo: cuerpo.contacto_correo,
           maxMiembrosPorTitular: cuerpo.max_miembros_por_titular,
         });
+        return reply.status(204).send();
+      },
+    );
+
+    // Estados de la cuenta (ADR 0031 §0, ADR 0033 §1): restringida no genera QR pero lo ya generado abre;
+    // suspendida cierra todas las sesiones y anula todos los QR vigentes. El motivo es obligatorio.
+    app.post(
+      '/plataforma/cuentas/:id/restriccion',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeCambioDeEstado },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await restringirCuenta(pool, plataformaDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/plataforma/cuentas/:id/suspension',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta, body: cuerpoDeCambioDeEstado },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await suspenderCuenta(pool, plataformaDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/plataforma/cuentas/:id/reactivacion',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeCuenta },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        await reactivarCuenta(pool, plataformaDe(request), request.params.id);
+        return reply.status(204).send();
+      },
+    );
+
+    // La salida de un usuario restringido o suspendido que nadie de la cuenta puede levantar (sin autor,
+    // impuesto por AGROCOM o por quien ya no está sobre él): AGROCOM lo levanta siempre, con motivo.
+    app.post(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/reactivacion',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          body: cuerpoDeCambioDeEstado,
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.cuenta.editar'),
+      },
+      async (request, reply) => {
+        const { id, usuarioId } = request.params;
+        await reactivarUsuarioDeCuenta(pool, plataformaDe(request), id, usuarioId);
+        request.log.info(
+          { cuentaId: id, usuarioId, motivo: request.body.motivo },
+          'usuario reactivado por la plataforma',
+        );
+        return reply.status(204).send();
+      },
+    );
+
+    // Dispositivos conectados de un usuario de la cuenta (ADR 0030 §4.1): AGROCOM los ve y los cierra.
+    app.get(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          response: { 200: respuestaListadoDeSesiones },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.ver'),
+      },
+      (request) =>
+        listarSesionesDeUsuarioDeCuenta(
+          pool,
+          plataformaDe(request),
+          request.params.id,
+          request.params.usuarioId,
+        ),
+    );
+
+    app.delete(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones',
+      {
+        schema: {
+          tags: ETIQUETA,
+          params: parametrosDeUsuarioDeCuenta,
+          response: { 200: respuestaDeSesionesCerradas },
+        },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.cerrar'),
+      },
+      async (request) => ({
+        cerradas: await cerrarSesionesDeUsuarioDeCuenta(
+          pool,
+          plataformaDe(request),
+          request.params.id,
+          request.params.usuarioId,
+        ),
+      }),
+    );
+
+    app.delete(
+      '/plataforma/cuentas/:id/usuarios/:usuarioId/sesiones/:sesionId',
+      {
+        schema: { tags: ETIQUETA, params: parametrosDeSesionDeUsuarioDeCuenta },
+        config: plataforma,
+        preHandler: permisoDePlataforma('seguridad.sesion_cuenta.cerrar'),
+      },
+      async (request, reply) => {
+        const { id, usuarioId, sesionId } = request.params;
+        await cerrarSesionDeUsuarioDeCuenta(pool, plataformaDe(request), id, usuarioId, sesionId);
         return reply.status(204).send();
       },
     );

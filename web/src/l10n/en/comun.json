@@ -36,5 +36,9 @@
   "mesAnterior": "Previous month",
   "mesSiguiente": "Next month",
   "limpiar": "Clear",
-  "seleccionado": "Selected"
+  "seleccionado": "Selected",
+  "sinPermiso": {
+    "titulo": "You don't have access to this section",
+    "texto": "Your role doesn't include the permission this needs. If you need it, ask a super admin to review it."
+  }
 }

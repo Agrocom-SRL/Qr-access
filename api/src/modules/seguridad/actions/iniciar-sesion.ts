@@ -1,20 +1,24 @@
 import { ContextoCuenta } from '../../../platform/contexto/contexto-cuenta.js';
-import { enTransaccion } from '../../../platform/db/transaccion.js';
+import { enTransaccionConReintentos } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { verificarContraRelleno, verificarHash } from '../../../platform/seguridad/hash.js';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 import { sumarDias } from '../../../platform/tiempo/fechas.js';
+import { type EstadoEfectivo } from '../domain/estado.js';
 import { calcularIndiceDePin, normalizarPin, secretoDePin } from '../domain/pin.js';
 import { rolUnico } from '../domain/rol-unico.js';
+import { nombreDeDispositivoLimpio, type OrigenDeSesion } from '../domain/sesion.js';
+import { cerrarLasQueSobran } from '../apertura-de-sesion.js';
 import {
   RepositorioDeCuentas,
   RepositorioDeRolesDeUsuario,
   RepositorioDeSesiones,
   RepositorioDeUsuarios,
 } from '../repository.js';
+import { crearServicioDeUsuarios } from '../contracts.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
 
-export interface DatosDeIngreso {
+export interface DatosDeIngreso extends OrigenDeSesion {
   readonly pin: string;
   readonly ip: string;
   readonly agente: string | null;
@@ -45,9 +49,27 @@ function rechazar(
 }
 
 /**
+ * Suspendido no entra (se le dice por qué, ya con el PIN verificado); eliminado, ni siquiera: un superior
+ * eliminado deja al usuario sin dueño y falla cerrado, como si el PIN no sirviera. Restringido sí entra.
+ */
+function exigirQuePuedaIngresar(efectivo: EstadoEfectivo, rechazar: () => never): void {
+  if (efectivo.estado === 'eliminado') rechazar();
+  if (efectivo.estado === 'suspendido') {
+    throw new ErrorDeDominio(
+      efectivo.origen === 'cuenta' ? 'sesion.cuenta_suspendida' : 'sesion.usuario_suspendido',
+      403,
+    );
+  }
+}
+
+/**
  * Login por PIN (ADR 0018): con los 3 primeros caracteres se busca la cuenta y con los 4
  * restantes el usuario DENTRO de ella. Cualquier fallo responde lo mismo y gasta el mismo
  * tiempo; los fallos se cuentan por IP y por cuenta y llevan a un bloqueo creciente.
+ *
+ * Suspendido (él, un superior o su cuenta, ADR 0031 §0) no entra, pero solo se le dice DESPUÉS de
+ * verificar el PIN, con `sesion.usuario_suspendido` o `sesion.cuenta_suspendida`: así un tercero no
+ * descubre qué cuentas o usuarios existen. Restringido sí entra (conserva sesión y consulta).
  */
 export async function ejecutar(
   servicios: ServiciosDeSeguridad,
@@ -71,8 +93,9 @@ export async function ejecutar(
     return rechazar(servicios, claves, datos.log);
   }
 
-  // Salto explícito del aislamiento (RepositorioDePlataforma): aún no sabemos la cuenta.
-  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarActivaPorCodigo(codigo);
+  // Salto explícito del aislamiento (RepositorioDePlataforma): aún no sabemos la cuenta. Se trae en
+  // cualquier estado: la suspensión se informa recién con el PIN verificado.
+  const cuenta = await new RepositorioDeCuentas(servicios.pool).buscarPorCodigo(codigo);
   if (cuenta === null) {
     await verificarContraRelleno(pin.completo);
     return rechazar(servicios, claves, datos.log);
@@ -88,8 +111,9 @@ export async function ejecutar(
 
   return ContextoCuenta.ejecutar(contexto, async () => {
     const usuarios = new RepositorioDeUsuarios(servicios.pool);
+    const servicioDeUsuarios = crearServicioDeUsuarios(servicios.pool);
     const indice = calcularIndiceDePin(servicios.config.PIN_PIMIENTA, cuenta.id, pin.sufijo);
-    const usuario = await usuarios.buscarActivoPorIndiceDePin(indice);
+    const usuario = await usuarios.buscarPorIndiceDePin(indice);
     const valido =
       usuario?.pin_hash == null
         ? await verificarContraRelleno(pin.completo)
@@ -98,17 +122,46 @@ export async function ejecutar(
 
     servicios.limitadorPorIp.registrarExito(claves.ip);
 
+    // Lectura previa, sin bloqueo: solo para responder rápido. La decisión firme se toma dentro de la transacción.
+    const efectivo = await servicioDeUsuarios.estadoEfectivoDe(usuario.id);
+    exigirQuePuedaIngresar(efectivo, () => rechazar(servicios, claves, datos.log));
+
     const roles = await new RepositorioDeRolesDeUsuario(servicios.pool).rolesDe(usuario.id);
     const rolActivoId = rolUnico(roles.map((rol) => rol.id));
     const refresco = generarTokenOpaco(32);
-    const sesionId = await enTransaccion(servicios.pool, (tx) =>
-      new RepositorioDeSesiones(servicios.pool).crear(tx, {
-        usuarioId: usuario.id,
-        rolActivoId,
-        refreshHash: sha256Hex(refresco),
-        agente: datos.agente,
-        ip: datos.ip,
-        expiraAt: sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
+    const instalacionId = datos.instalacionId ?? null;
+    // Con el PIN ya verificado el autor de lo que sigue es este usuario: sin esto, los cierres por tope
+    // (misma_instalacion, limite_*) quedarían en la bitácora sin autor.
+    const sesionId = await ContextoCuenta.ejecutar({ ...contexto, usuarioId: usuario.id }, () =>
+      enTransaccionConReintentos(servicios.pool, async (tx) => {
+        // Bloquea cuenta y cadena del usuario y relee su estado AHORA: una suspensión confirmada entre la
+        // lectura previa y este punto impide que nazca una sesión viva para un suspendido (invariante de
+        // ADR 0031 §0). Es lo primero de la transacción: la foto de lo que sigue es posterior al bloqueo.
+        const vigente = await servicioDeUsuarios.estadoEfectivoBloqueando(tx, usuario.id);
+        exigirQuePuedaIngresar(vigente, () => rechazar(servicios, claves, datos.log));
+        const sesiones = new RepositorioDeSesiones(servicios.pool);
+        await cerrarLasQueSobran(
+          sesiones,
+          tx,
+          { usuarioId: usuario.id, instalacionId },
+          {
+            maxPorUsuario: servicios.config.SESIONES_MAX_POR_USUARIO,
+            maxPorInstalacion: servicios.config.SESIONES_MAX_POR_INSTALACION,
+          },
+          ahora,
+        );
+        return sesiones.crear(tx, {
+          usuarioId: usuario.id,
+          rolActivoId,
+          refreshHash: sha256Hex(refresco),
+          agente: datos.agente,
+          ip: datos.ip,
+          expiraAt: sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
+          instalacionId,
+          plataforma: datos.plataforma ?? null,
+          nombreDeDispositivo: nombreDeDispositivoLimpio(datos.dispositivo),
+          ahora,
+        });
       }),
     );
     const acceso = await servicios.jwt.firmar({

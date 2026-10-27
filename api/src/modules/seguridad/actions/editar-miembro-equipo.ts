@@ -1,6 +1,7 @@
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
+import { MOTIVO_POR_DEFECTO } from '../domain/super-admin.js';
 import { RepositorioDeSuperAdmins } from '../repository.js';
 import type { ServiciosDeSeguridad } from '../servicios.js';
 import { ejecutar as desactivar } from './desactivar-miembro-equipo.js';
@@ -8,6 +9,8 @@ import { ejecutar as desactivar } from './desactivar-miembro-equipo.js';
 export interface CambiosDeMiembro {
   readonly nombre?: string | undefined;
   readonly activo?: boolean | undefined;
+  /** Por qué se desactiva (solo con `activo: false`); sin él, un motivo por defecto. */
+  readonly motivo?: string | undefined;
 }
 
 /**
@@ -30,8 +33,10 @@ export async function ejecutar(
       admins.renombrar(tx, objetivoId, cambios.nombre ?? ''),
     );
   }
-  if (cambios.activo === true && objetivo.activo !== 1) {
+  if (cambios.activo === true && objetivo.estado !== 'activo') {
     await enTransaccion(servicios.pool, (tx) => admins.reactivar(tx, objetivoId));
   }
-  if (cambios.activo === false) await desactivar(servicios, principal, objetivoId);
+  if (cambios.activo === false) {
+    await desactivar(servicios, principal, objetivoId, cambios.motivo ?? MOTIVO_POR_DEFECTO);
+  }
 }

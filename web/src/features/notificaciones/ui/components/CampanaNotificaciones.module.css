@@ -1,0 +1,49 @@
+/* Contenedor de posición: el texto que solo leen los lectores de pantalla se ancla a él. */
+.envoltorio {
+  position: relative;
+  display: inline-flex;
+}
+
+.campana {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--altoMinimoTactil);
+  height: var(--altoMinimoTactil);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radioCompleto);
+  color: var(--textoSecundario);
+  cursor: pointer;
+  transition: background var(--dur120) var(--easeOutCubic);
+}
+
+.campana:hover {
+  background: var(--fondo);
+}
+
+.contador {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+  display: grid;
+  place-items: center;
+  min-width: var(--tam20);
+  height: var(--tam20);
+  padding: 0 var(--esp4);
+  background: var(--primario);
+  border-radius: var(--radioCompleto);
+  color: var(--sobrePrimario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+}
+
+.soloLector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

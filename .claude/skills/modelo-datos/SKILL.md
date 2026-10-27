@@ -9,7 +9,7 @@ ADR 0007, 0011 y 0016. Documentación del modelo: `docs/modelo-datos/`.
 
 ## Nombres
 
-- Tablas en español, plural, `snake_case`, sin prefijo de módulo: `puertas`, `reglas_acceso`, `eventos_acceso`.
+- Tablas en español, plural, `snake_case`, sin prefijo de módulo: `puertas`, `reglas_acceso`, `lecturas`.
 - Columnas en español, `snake_case`; FK como `<entidad_singular>_id` (`puerta_id`, `sitio_id`); `tenant_id` es la excepción (nombre técnico fijo).
 - Índices: `idx_<tabla>_<columnas>`, únicos `uq_<tabla>_<columnas>`, FK `fk_<tabla>_<columna>`.
 
@@ -33,7 +33,7 @@ CONSTRAINT fk_<tabla>_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id)
 ```
 
 - Toda entidad propia tiene además `activo TINYINT(1) NOT NULL DEFAULT 1` (desactivar no es borrar).
-- **Solo inserción** (`eventos_acceso`, `bitacoras`, `qr_usos`): sin `updated_*` ni `deleted_*`; el usuario de la base de la API no tiene `UPDATE`/`DELETE` sobre ellas en producción.
+- **Solo inserción** (`lecturas`, `bitacoras`, `qr_usos`): sin `updated_*` ni `deleted_*`; el usuario de la base de la API no tiene `UPDATE`/`DELETE` sobre ellas en producción.
 
 ## Unicidad con soft delete (ADR 0016)
 

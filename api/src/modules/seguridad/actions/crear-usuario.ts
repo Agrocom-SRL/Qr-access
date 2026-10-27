@@ -69,7 +69,7 @@ export async function ejecutar(
     throw new ErrorDeDominio('plan.limite_usuarios', 422, { maximo: suscripcion.maxUsuarios });
   }
 
-  const cuenta = await new RepositorioDeCuentas(pool).buscarActivaPorId(principal.cuentaId);
+  const cuenta = await new RepositorioDeCuentas(pool).buscarPorId(principal.cuentaId);
   if (cuenta === null) throw new ErrorDeDominio('autenticacion.requerida', 401);
   if (
     nivelCreado === 'miembro' &&

@@ -1,12 +1,15 @@
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 
-/// Respuesta de `POST /qr-accesos` (201). `texto` solo llega aquí: la app
-/// no lo persiste (ADR 0008).
+/// Respuesta de `POST /qr-accesos`: 201 si se generó, 200 si `reutilizado`
+/// (ya había un QR propio vigente y sin usar, y no se generó nada). El
+/// `texto` solo llega al generar: la API no lo guarda (ADR 0008 y ADR 0030
+/// §2.1), así que con `reutilizado` viene `null`.
 class QrGeneradoDto {
   const new({
     required this.id,
     required this.texto,
+    required this.reutilizado,
     required this.venceAt,
     required this.etiqueta,
     required this.puertas,
@@ -14,7 +17,8 @@ class QrGeneradoDto {
 
   new desde(Map<String, dynamic> json)
     : id = json['id'] as String,
-      texto = json['texto'] as String,
+      texto = json['texto'] as String?,
+      reutilizado = json['reutilizado'] as bool? ?? false,
       venceAt = fechaDeApi(json['vence_at'] as String),
       etiqueta = json['etiqueta'] as String?,
       puertas = [
@@ -23,7 +27,10 @@ class QrGeneradoDto {
       ];
 
   final String id;
-  final String texto;
+
+  /// `null` si `reutilizado`: el token lo tiene la copia local de la app.
+  final String? texto;
+  final bool reutilizado;
   final DateTime venceAt;
   final String? etiqueta;
   final List<ReferenciaDto> puertas;

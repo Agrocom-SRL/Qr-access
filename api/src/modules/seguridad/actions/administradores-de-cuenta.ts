@@ -1,6 +1,6 @@
 import type { Pool } from 'mysql2/promise';
 import { ContextoCuenta } from '../../../platform/contexto/contexto-cuenta.js';
-import { enTransaccion } from '../../../platform/db/transaccion.js';
+import { enTransaccion, type Transaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import type { PrincipalPlataforma } from '../../../platform/seguridad/principal.js';
 import { aIsoONulo } from '../../../platform/tiempo/fechas.js';
@@ -186,10 +186,35 @@ export async function verJerarquia(
 }
 
 /**
+ * Criterio: un estado propio (restringido o suspendido) solo lo levanta quien lo impuso o alguien sobre él
+ * (`puedeCambiarEstado`). Al mover una rama, quien lo impuso (el Administrador anterior) deja de estar
+ * sobre ella, y el estado quedaría sin salida para la nueva rama. Por eso, entre el usuario movido y toda
+ * su rama, cada estado impuesto por alguien de FUERA de lo movido pasa a ser del nuevo Administrador, que
+ * ahora es quien está arriba. Lo impuesto por el movido o por alguien de su rama se queda como está, y lo
+ * que no tiene autor (migrado, `NULL`) sigue siendo solo de AGROCOM. El estado, el motivo y la fecha no
+ * cambian; la bitácora registra cada traspaso.
+ */
+async function traspasarEstadosImpuestos(
+  usuarios: RepositorioDeUsuarios,
+  tx: Transaccion,
+  movidoId: string,
+  nuevoAdministradorId: string,
+): Promise<void> {
+  const movidos = [movidoId, ...(await usuarios.idsDeRama(movidoId, tx))];
+  const dentro = new Set(movidos);
+  for (const fila of await usuarios.buscarPorIds(movidos, tx)) {
+    const autor = fila.estado_impuesto_por;
+    if (fila.estado === 'activo' || autor === null || dentro.has(autor)) continue;
+    await usuarios.cambiarQuienImpusoElEstado(tx, fila.id, nuevoAdministradorId);
+  }
+}
+
+/**
  * Mueve un Guardia o un Titular a otro Administrador de la misma cuenta (ADR 0028 §7). Es una
  * operación solo de AGROCOM: un Administrador nunca abre un camino hacia la rama de otro. Los
  * Miembros siguen a su Titular y la unidad con él; el cupo no cambia. Queda en la bitácora con el
- * super admin como autor (antes y después del vínculo superior).
+ * super admin como autor (antes y después del vínculo superior). Los estados impuestos por el Administrador
+ * anterior pasan al nuevo (ver `traspasarEstadosImpuestos`).
  */
 export async function reasignar(
   pool: Pool,
@@ -216,8 +241,9 @@ export async function reasignar(
     if (usuario.superior_id === datos.administradorId) {
       throw new ErrorDeDominio('reasignacion.mismo_administrador', 422);
     }
-    await enTransaccion(pool, (tx) =>
-      usuarios.cambiarSuperior(tx, usuario.id, datos.administradorId),
-    );
+    await enTransaccion(pool, async (tx) => {
+      await usuarios.cambiarSuperior(tx, usuario.id, datos.administradorId);
+      await traspasarEstadosImpuestos(usuarios, tx, usuario.id, datos.administradorId);
+    });
   });
 }

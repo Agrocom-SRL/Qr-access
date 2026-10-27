@@ -1,0 +1,24 @@
+.selector {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--esp16);
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--anchoTarjetaPlan), 1fr));
+  gap: var(--esp16);
+  margin-bottom: var(--esp16);
+}
+
+.umbrales {
+  margin: var(--esp12) 0 0;
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cargando {
+  display: flex;
+  justify-content: center;
+  padding: var(--esp48) 0;
+}

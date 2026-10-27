@@ -1,0 +1,10 @@
+.salud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp4);
+  max-width: var(--anchoValorRecortado);
+}
+
+.suave {
+  color: var(--textoSecundario);
+}

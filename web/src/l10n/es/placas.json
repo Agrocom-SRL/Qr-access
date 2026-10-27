@@ -19,7 +19,9 @@
   },
   "conexion": {
     "enLinea": "En línea",
-    "sinConexion": "Sin conexión"
+    "sinConexion": "Sin conexión",
+    "caidaSostenida": "Caída sostenida",
+    "desaparecida": "Desaparecida"
   },
   "columna": {
     "mac": "MAC",
@@ -27,7 +29,8 @@
     "asignada": "Cuenta y puerta",
     "firmware": "Firmware",
     "contacto": "Último contacto",
-    "accion": "Acción"
+    "accion": "Acción",
+    "salud": "Lector y sensor"
   },
   "sinAsignar": "Sin asignar",
   "nunca": "Nunca",
@@ -78,5 +81,24 @@
     "todas": "Todas",
     "en_linea": "En línea",
     "sin_conexion": "Sin conexión"
-  }
+  },
+  "salud": {
+    "lectorResponde": "Lector responde",
+    "lectorSinRespuesta": "Lector sin respuesta",
+    "sensorAbierta": "Sensor: puerta abierta",
+    "sensorCerrada": "Sensor: puerta cerrada",
+    "sinSensor": "Sin sensor",
+    "aperturaFallida": "Aperturas fallidas",
+    "observacion": "En observación"
+  },
+  "sensorDe": "Configurar el sensor de la placa {{mac}}",
+  "sensorTitulo": "Sensor de la puerta",
+  "sensorTexto": "El sensor dice si la puerta quedó abierta después de un pulso. Sin sensor, el resultado de cada apertura queda sin confirmar.",
+  "sensorInstalado": "Hay un sensor de puerta instalado",
+  "sensorNivel": "Nivel del sensor con la puerta abierta",
+  "sensorAlto": "Alto",
+  "sensorBajo": "Bajo",
+  "sensorPolaridad": "La polaridad se confirma en campo: con la puerta abierta, revisa que el nivel elegido sea el que llega a la placa antes de guardar.",
+  "sensorGuardar": "Guardar",
+  "sensorGuardando": "Guardando…"
 }

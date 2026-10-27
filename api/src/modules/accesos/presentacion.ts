@@ -1,8 +1,14 @@
 import type { Pool } from 'mysql2/promise';
 import { aIso, aIsoONulo } from '../../platform/tiempo/fechas.js';
 import { crearServicioDeOrganizacion, type PuertaDeCuenta } from '../organizacion/contracts.js';
+import { filaEfectiva, type Ejecucion } from './domain/confirmacion.js';
 import { estadoDelQr, type EstadoDeQr } from './domain/estado-qr.js';
-import { RepositorioDePuertasDeQr, type QrFila } from './repository.js';
+import {
+  RepositorioDeConfirmaciones,
+  RepositorioDePuertasDeQr,
+  type ConfirmacionFila,
+  type QrFila,
+} from './repository.js';
 
 export interface QrListado {
   id: string;
@@ -51,4 +57,36 @@ export async function presentarQr(
       nombre: puertas.get(id)?.nombre ?? '',
     })),
   }));
+}
+
+/** Agrupa las filas de confirmación por evento, de la más vieja a la más nueva. */
+export function confirmacionesPorEvento(
+  filas: readonly ConfirmacionFila[],
+): Map<string, ConfirmacionFila[]> {
+  const porEvento = new Map<string, ConfirmacionFila[]>();
+  for (const fila of filas) {
+    porEvento.set(fila.evento_acceso_id, [...(porEvento.get(fila.evento_acceso_id) ?? []), fila]);
+  }
+  return porEvento;
+}
+
+/**
+ * `evento -> qué pasó con la orden de abrir` (ADR 0031 §18). Un evento sin fila no figura: es un rechazo (no hubo
+ * orden), una apertura que aún espera el informe de la placa o una puerta sin sensor cuya placa no informa.
+ */
+export async function ejecucionesPorEvento(
+  pool: Pool,
+  eventoIds: readonly string[],
+): Promise<Map<string, Ejecucion>> {
+  const filas = await new RepositorioDeConfirmaciones(pool).deEventos(eventoIds);
+  return ejecucionesDe(filas);
+}
+
+export function ejecucionesDe(filas: readonly ConfirmacionFila[]): Map<string, Ejecucion> {
+  const ejecuciones = new Map<string, Ejecucion>();
+  for (const [eventoId, deUnEvento] of confirmacionesPorEvento(filas)) {
+    const efectiva = filaEfectiva(deUnEvento);
+    if (efectiva !== null) ejecuciones.set(eventoId, efectiva.resultado);
+  }
+  return ejecuciones;
 }

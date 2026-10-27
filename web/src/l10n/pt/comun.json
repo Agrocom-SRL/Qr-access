@@ -36,5 +36,9 @@
   "mesAnterior": "Mês anterior",
   "mesSiguiente": "Próximo mês",
   "limpiar": "Limpar",
-  "seleccionado": "Selecionado"
+  "seleccionado": "Selecionado",
+  "sinPermiso": {
+    "titulo": "Você não tem acesso a esta seção",
+    "texto": "Seu perfil não inclui a permissão necessária. Se precisar dela, peça a um super admin que a revise."
+  }
 }

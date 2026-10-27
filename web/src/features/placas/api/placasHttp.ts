@@ -1,6 +1,12 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import { paginadoDesde, type ListadoDto } from '../../../shared/api/tipos';
-import type { EstadoDePlaca, Placa } from '../domain/placa';
+import type {
+  EstadoDeConexion,
+  EstadoDePlaca,
+  NivelAbierto,
+  Placa,
+  SensorDePuerta,
+} from '../domain/placa';
 import { POR_PAGINA_DE_PLACAS } from '../domain/placa';
 import type { PlacasRepositorio } from './PlacasRepositorio';
 
@@ -12,6 +18,12 @@ interface PlacaDto {
   ip: string | null;
   ultimo_contacto_at: string | null;
   en_linea: boolean;
+  estado_conexion: EstadoDeConexion | null;
+  lector_responde: boolean | null;
+  en_observacion: boolean;
+  sensor_puerta: SensorDePuerta | null;
+  sensor_configurado: { instalado: boolean; nivel_abierto: NivelAbierto } | null;
+  apertura_fallida: boolean;
   por_confirmar_hasta: string | null;
   dispositivo: { id: string; nombre: string } | null;
   cuenta: { id: string; codigo: string; nombre: string } | null;
@@ -27,6 +39,18 @@ export function placaDesdeDto(dto: PlacaDto): Placa {
     ip: dto.ip,
     ultimoContactoEn: dto.ultimo_contacto_at === null ? null : new Date(dto.ultimo_contacto_at),
     enLinea: dto.en_linea,
+    estadoConexion: dto.estado_conexion,
+    lectorResponde: dto.lector_responde,
+    enObservacion: dto.en_observacion,
+    sensorPuerta: dto.sensor_puerta,
+    sensorConfigurado:
+      dto.sensor_configurado === null
+        ? null
+        : {
+            instalado: dto.sensor_configurado.instalado,
+            nivelAbierto: dto.sensor_configurado.nivel_abierto,
+          },
+    aperturaFallida: dto.apertura_fallida,
     porConfirmarHasta: dto.por_confirmar_hasta === null ? null : new Date(dto.por_confirmar_hasta),
     dispositivo: dto.dispositivo,
     cuenta: dto.cuenta,
@@ -70,6 +94,13 @@ export function crearPlacasHttp(cliente: ClienteHttp): PlacasRepositorio {
     },
     async darDeBaja(placaId) {
       await cliente.solicitar({ metodo: 'DELETE', ruta: `/plataforma/placas/${placaId}` });
+    },
+    async configurarSensor(placaId, sensor) {
+      await cliente.solicitar({
+        metodo: 'PUT',
+        ruta: `/plataforma/placas/${placaId}/sensor`,
+        cuerpo: { instalado: sensor.instalado, nivel_abierto: sensor.nivelAbierto },
+      });
     },
   };
 }

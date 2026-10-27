@@ -10,7 +10,7 @@ Verificado contra `mysql:8.4` en un contenedor descartable (2026-10-09): migrar 
 - Entran `planes` y `suscripciones` (ADR 0017), `qr_accesos` y `qr_acceso_puertas` (ADR 0008).
 - `cuentas.codigo` pasa a `CHAR(3)` solo `A`–`Z` (ADR 0018). `usuarios` pasa a PIN: `etiqueta`, `pin_indice`, `pin_hash`, `pin_generado_at`; `username` y `contrasena_hash` quedan solo para el super admin y `email` sale. Se agrega `usuarios.rol_preferido_id` (último rol elegido, para arrancar la próxima sesión).
 - `puertas` pierde `tipo_cerradura` (la cerradura se acciona con un pulso, D-04). `dispositivos` gana `ultima_puerta_abierta` y una columna generada `en_servicio` para que una puerta tenga un solo dispositivo sin revocar.
-- `eventos_acceso` guarda `token_hash` (nunca el texto), `qr_acceso_id` y `resultado` en (`permitido`, `rechazado`); `metodo` en (`qr`, `pulsador`, `forzada`).
+- `lecturas` guarda `token_hash` (nunca el texto), `qr_acceso_id` y `resultado` en (`permitido`, `rechazado`); `metodo` en (`qr`, `pulsador`, `forzada`).
 - `sesiones` gana `rol_activo_id` y `updated_at` (el refresh se rota en sitio).
 - `cuenta_datos_empresa` se agregó con la administración de cuentas del web admin (ficha 17). `usuario_perfiles` se agrega con su ficha cuando se necesite.
 
@@ -203,7 +203,7 @@ CREATE TABLE usuario_roles (
 
 ## sesiones
 
-Migración: `db/migrations/20261009100009_create_sesiones.sql`
+Migraciones: `db/migrations/20261009100009_create_sesiones.sql` y `db/migrations/20261029100001_add_instalacion_y_plataforma_a_sesiones.sql` (ADR 0030 §4.1)
 
 ```sql
 CREATE TABLE sesiones (
@@ -214,15 +214,27 @@ CREATE TABLE sesiones (
   refresh_hash CHAR(64) NOT NULL,
   agente VARCHAR(255) NULL,
   ip VARCHAR(45) NULL,
+  instalacion_id VARCHAR(64) NULL,
+  plataforma VARCHAR(10) NULL,
+  nombre_dispositivo VARCHAR(60) NULL,
+  ultima_actividad_at DATETIME(3) NULL,
   expira_at DATETIME(3) NOT NULL,
   revocada_at DATETIME(3) NULL,
+  motivo_cierre VARCHAR(24) NULL,
+  revocada_por BIGINT UNSIGNED NULL,
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   CONSTRAINT fk_sesiones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
   CONSTRAINT fk_sesiones_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_sesiones_rol_activo FOREIGN KEY (rol_activo_id) REFERENCES roles (id),
+  CONSTRAINT fk_sesiones_revocada_por FOREIGN KEY (revocada_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_sesiones_plataforma CHECK (plataforma IS NULL OR plataforma IN ('android', 'ios', 'web')),
+  CONSTRAINT ck_sesiones_motivo_cierre CHECK (motivo_cierre IS NULL OR motivo_cierre IN
+    ('salida', 'propia', 'superior', 'plataforma', 'misma_instalacion', 'limite_usuario', 'limite_instalacion')),
   UNIQUE KEY uq_sesiones_refresh (refresh_hash),
-  KEY idx_sesiones_usuario (usuario_id)
+  KEY idx_sesiones_usuario (usuario_id),
+  KEY idx_sesiones_instalacion (instalacion_id, revocada_at),
+  KEY idx_sesiones_vivas (usuario_id, revocada_at, expira_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -442,12 +454,12 @@ CREATE TABLE qr_acceso_puertas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-## eventos_acceso
+## lecturas
 
-Migración: `db/migrations/20261009100016_create_eventos_acceso.sql`
+Migración: `db/migrations/20261009100016_create_eventos_acceso.sql` (nació como `eventos_acceso`) y `db/migrations/20261103100001_rename_eventos_acceso_a_lecturas.sql` (la renombró a `lecturas`; los `CHECK` conservan su nombre anterior, ver `tablas/16_lecturas.md`)
 
 ```sql
-CREATE TABLE eventos_acceso (
+CREATE TABLE lecturas (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
   puerta_id BIGINT UNSIGNED NOT NULL,
@@ -459,13 +471,17 @@ CREATE TABLE eventos_acceso (
   motivo_code VARCHAR(60) NOT NULL,
   ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   leido_en_dispositivo_at DATETIME(3) NULL,
-  KEY idx_eventos_acceso_puerta (tenant_id, puerta_id, ocurrido_at),
-  KEY idx_eventos_acceso_fecha (tenant_id, ocurrido_at),
-  KEY idx_eventos_acceso_qr (qr_acceso_id),
-  CONSTRAINT fk_eventos_acceso_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
-  CONSTRAINT fk_eventos_acceso_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
-  CONSTRAINT fk_eventos_acceso_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
-  CONSTRAINT fk_eventos_acceso_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
+  repetido_de_id BIGINT UNSIGNED NULL,
+  KEY idx_lecturas_puerta (tenant_id, puerta_id, ocurrido_at),
+  KEY idx_lecturas_fecha (tenant_id, ocurrido_at),
+  KEY idx_lecturas_qr (qr_acceso_id),
+  KEY idx_lecturas_repeticion (tenant_id, dispositivo_id, token_hash, ocurrido_at),
+  KEY idx_lecturas_repetido_de (repetido_de_id),
+  CONSTRAINT fk_lecturas_repetido_de FOREIGN KEY (repetido_de_id) REFERENCES lecturas (id),
+  CONSTRAINT fk_lecturas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_lecturas_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT fk_lecturas_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_lecturas_qr FOREIGN KEY (qr_acceso_id) REFERENCES qr_accesos (id),
   CONSTRAINT ck_eventos_acceso_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada')),
   CONSTRAINT ck_eventos_acceso_resultado CHECK (resultado IN ('permitido', 'rechazado'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -676,3 +692,425 @@ CREATE TABLE cuentas_de_cobro (
   CONSTRAINT ck_cuentas_de_cobro_qr CHECK (metodo <> 'qr' OR imagen_id IS NOT NULL)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+## cuentas: estado
+
+Migración: `db/migrations/20261026100001_alter_cuentas_estado.sql` (ADR 0033 §1). `estado` reemplaza a `activo`: `activo = 0` pasa a `suspendido`. El `CREATE TABLE` de arriba muestra la tabla original; este es el cambio.
+
+```sql
+ALTER TABLE cuentas
+  ADD COLUMN estado VARCHAR(20) NOT NULL DEFAULT 'activo' AFTER activo,
+  ADD COLUMN estado_impuesto_por BIGINT UNSIGNED NULL AFTER estado,
+  ADD COLUMN estado_desde DATETIME(3) NULL AFTER estado_impuesto_por,
+  ADD COLUMN estado_motivo VARCHAR(200) NULL AFTER estado_desde;
+-- UPDATE: activo = 0 -> 'suspendido' (estado_impuesto_por = updated_by, estado_desde = updated_at)
+ALTER TABLE cuentas
+  ADD CONSTRAINT fk_cuentas_estado_impuesto_por FOREIGN KEY (estado_impuesto_por) REFERENCES usuarios (id),
+  ADD KEY idx_cuentas_estado (estado),
+  ADD CONSTRAINT ck_cuentas_estado CHECK (estado IN ('activo', 'restringido', 'suspendido')),
+  ADD CONSTRAINT ck_cuentas_estado_datos CHECK (
+    (estado = 'activo' AND estado_impuesto_por IS NULL AND estado_desde IS NULL AND estado_motivo IS NULL)
+    OR (estado <> 'activo' AND estado_desde IS NOT NULL
+         AND estado_motivo IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
+  ),
+  DROP COLUMN activo;
+```
+
+## usuarios: estado
+
+Migración: `db/migrations/20261026100002_alter_usuarios_estado.sql` (ADR 0033 §1). Igual que en `cuentas`; la cascada por rama no se escribe en las filas, se deriva de `superior_id` y `cuentas.estado`.
+
+```sql
+ALTER TABLE usuarios
+  ADD COLUMN estado VARCHAR(20) NOT NULL DEFAULT 'activo' AFTER activo,
+  ADD COLUMN estado_impuesto_por BIGINT UNSIGNED NULL AFTER estado,
+  ADD COLUMN estado_desde DATETIME(3) NULL AFTER estado_impuesto_por,
+  ADD COLUMN estado_motivo VARCHAR(200) NULL AFTER estado_desde;
+-- UPDATE: activo = 0 -> 'suspendido' (estado_impuesto_por = updated_by, estado_desde = updated_at)
+ALTER TABLE usuarios
+  ADD CONSTRAINT fk_usuarios_estado_impuesto_por FOREIGN KEY (estado_impuesto_por) REFERENCES usuarios (id),
+  ADD KEY idx_usuarios_tenant_estado (tenant_id, estado),
+  ADD CONSTRAINT ck_usuarios_estado CHECK (estado IN ('activo', 'restringido', 'suspendido')),
+  ADD CONSTRAINT ck_usuarios_estado_datos CHECK (
+    (estado = 'activo' AND estado_impuesto_por IS NULL AND estado_desde IS NULL AND estado_motivo IS NULL)
+    OR (estado <> 'activo' AND estado_desde IS NOT NULL
+         AND estado_motivo IS NOT NULL AND CHAR_LENGTH(TRIM(estado_motivo)) > 0)
+  ),
+  DROP COLUMN activo;
+```
+
+## permisos: restringir y suspender
+
+Seed `db/seeds/01_catalogo.sql` (sin migración: el catálogo vive en el seed idempotente): `seguridad.usuario.restringir` y `seguridad.usuario.suspender`, ámbito `cuenta`, asignados al Administrador de cada cuenta (todos los de ámbito cuenta) y al rol base Titular.
+
+## Topes de generación de QR (ola W5, ADR 0030 y 0031 §9)
+
+Migraciones `20261027100001` a `20261027100005`. Los valores iniciales de `configuracion_limites` (y los supuestos entre ellos) están en `tablas/25_configuracion_limites.md`.
+
+```sql
+-- 20261027100001_create_configuracion_limites.sql
+CREATE TABLE configuracion_limites (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  clave VARCHAR(60) NOT NULL,
+  valor INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  UNIQUE KEY uq_configuracion_limites_clave (clave, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100002_create_excepciones_de_limite.sql
+CREATE TABLE excepciones_de_limite (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  clave VARCHAR(60) NOT NULL,
+  valor INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  usuario_clave BIGINT UNSIGNED GENERATED ALWAYS AS (IFNULL(usuario_id, 0)) STORED,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_excepciones_de_limite_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_excepciones_de_limite_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_excepciones_de_limite (tenant_id, usuario_clave, clave, vigente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100003_create_eventos_de_limite.sql (solo inserción)
+CREATE TABLE eventos_de_limite (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  tipo VARCHAR(40) NOT NULL,
+  valor INT UNSIGNED NULL,
+  tope INT UNSIGNED NULL,
+  clave_unica VARCHAR(80) NULL,
+  ocurrido_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_eventos_de_limite_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_eventos_de_limite_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_eventos_de_limite_tipo CHECK (tipo IN (
+    'qr.limite_diario', 'qr.limite_pendientes', 'qr.limite_propios_sin_uso',
+    'qr.reemplazo_sin_uso', 'bolsa.aviso', 'bolsa.superada'
+  )),
+  UNIQUE KEY uq_eventos_de_limite_marca (tenant_id, clave_unica),
+  KEY idx_eventos_de_limite_usuario (tenant_id, usuario_id, tipo, ocurrido_at),
+  KEY idx_eventos_de_limite_tipo (tenant_id, tipo, ocurrido_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261027100004_add_limites_de_qr_a_planes.sql
+ALTER TABLE planes
+  ADD COLUMN bolsa_qr_mensual INT UNSIGNED NULL AFTER max_vigencia_qr_horas,
+  ADD COLUMN max_puertas_por_qr INT UNSIGNED NULL AFTER bolsa_qr_mensual,
+  ADD CONSTRAINT ck_planes_bolsa_qr CHECK (bolsa_qr_mensual IS NULL OR bolsa_qr_mensual >= 1),
+  ADD CONSTRAINT ck_planes_max_puertas_qr CHECK (max_puertas_por_qr IS NULL OR max_puertas_por_qr >= 1);
+
+-- 20261027100005_add_indice_de_creacion_a_qr_accesos.sql
+ALTER TABLE qr_accesos ADD KEY idx_qr_accesos_creado (tenant_id, created_at);
+
+-- 20261027100006_create_claves_idempotencia.sql (transitoria: sin soft delete ni autoría; las vencidas se borran)
+CREATE TABLE claves_idempotencia (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  operacion VARCHAR(40) NOT NULL,
+  clave_hash CHAR(64) NOT NULL,
+  huella CHAR(64) NOT NULL,
+  respuesta JSON NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  vence_at DATETIME(3) NOT NULL,
+  CONSTRAINT fk_claves_idempotencia_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_claves_idempotencia_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_claves_idempotencia_operacion CHECK (operacion IN ('qr.generar')),
+  UNIQUE KEY uq_claves_idempotencia_clave (tenant_id, usuario_id, operacion, clave_hash),
+  KEY idx_claves_idempotencia_vence (vence_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## permisos: configuración de los topes
+
+Seed `db/seeds/01_catalogo.sql`: `limites.configuracion.ver` y `limites.configuracion.editar`, ámbito `plataforma` (el rol Super admin recibe todos los de plataforma). El mismo seed siembra los valores iniciales de `configuracion_limites` sin pisar los editados.
+
+## Estados de placa y bandeja de notificaciones (ola W9, ADR 0030 §6 y ADR 0031 §18)
+
+Migraciones `20261030100001`, `20261030100002` y `20261030100003`. Seed: permisos `notificaciones.aviso.ver` y `notificaciones.aviso.gestionar` (cuenta; los recibe el Administrador), `notificaciones.aviso_plataforma.ver` y `notificaciones.aviso_plataforma.gestionar` (plataforma; los recibe el Super admin) y las claves `placa.*` de `configuracion_limites`.
+
+```sql
+-- 20261030100001_create_notificaciones.sql
+CREATE TABLE notificaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NULL,
+  cuenta_id BIGINT UNSIGNED NOT NULL,
+  destinatario_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(40) NOT NULL,
+  severidad VARCHAR(10) NOT NULL,
+  sitio_id BIGINT UNSIGNED NULL,
+  agrupacion_clave VARCHAR(100) NOT NULL,
+  clave_unica VARCHAR(120) NULL,
+  abierta TINYINT(1) NOT NULL DEFAULT 0,
+  cantidad INT UNSIGNED NOT NULL DEFAULT 1,
+  miembros JSON NOT NULL,
+  datos JSON NOT NULL,
+  novedad_at DATETIME(3) NOT NULL,
+  resuelta_at DATETIME(3) NULL,
+  leida_at DATETIME(3) NULL,
+  descartada_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  incidente_abierto TINYINT GENERATED ALWAYS AS (IF(abierta = 1 AND deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_notificaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_notificaciones_cuenta FOREIGN KEY (cuenta_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_notificaciones_destinatario FOREIGN KEY (destinatario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_notificaciones_sitio FOREIGN KEY (sitio_id) REFERENCES sitios (id),
+  CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada'
+  )),
+  CONSTRAINT ck_notificaciones_severidad CHECK (severidad IN ('info', 'aviso', 'critica')),
+  CONSTRAINT ck_notificaciones_abierta CHECK (abierta IN (0, 1)),
+  CONSTRAINT ck_notificaciones_ambito CHECK (tenant_id IS NULL OR tenant_id = cuenta_id),
+  UNIQUE KEY uq_notificaciones_incidente (destinatario_id, agrupacion_clave, incidente_abierto),
+  UNIQUE KEY uq_notificaciones_clave (destinatario_id, clave_unica),
+  KEY idx_notificaciones_bandeja (destinatario_id, descartada_at, leida_at, novedad_at),
+  KEY idx_notificaciones_cuenta (cuenta_id),
+  KEY idx_notificaciones_retencion (abierta, novedad_at, deleted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261030100002_create_cola_de_notificaciones.sql
+CREATE TABLE cola_de_notificaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  audiencia VARCHAR(12) NOT NULL,
+  canal VARCHAR(10) NOT NULL DEFAULT 'app',
+  agrupacion_clave VARCHAR(100) NOT NULL,
+  carga JSON NOT NULL,
+  estado VARCHAR(12) NOT NULL DEFAULT 'pendiente',
+  intentos SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  proximo_intento_at DATETIME(3) NOT NULL,
+  ultimo_error VARCHAR(60) NULL,
+  entregada_at DATETIME(3) NULL,
+  clave_unica VARCHAR(160) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  vigente TINYINT GENERATED ALWAYS AS (IF(deleted_at IS NULL, 1, NULL)) STORED,
+  CONSTRAINT fk_cola_de_notificaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT ck_cola_de_notificaciones_audiencia CHECK (audiencia IN ('cuenta', 'plataforma')),
+  CONSTRAINT ck_cola_de_notificaciones_canal CHECK (canal IN ('app', 'push', 'correo')),
+  CONSTRAINT ck_cola_de_notificaciones_estado CHECK (estado IN ('pendiente', 'entregada', 'fallida', 'omitida')),
+  UNIQUE KEY uq_cola_de_notificaciones_clave (tenant_id, clave_unica),
+  KEY idx_cola_de_notificaciones_pendientes (estado, proximo_intento_at, id),
+  KEY idx_cola_de_notificaciones_grupo (tenant_id, agrupacion_clave, estado),
+  KEY idx_cola_de_notificaciones_retencion (estado, updated_at, deleted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261030100003_add_estado_de_placa_a_dispositivos.sql
+ALTER TABLE dispositivos
+  ADD COLUMN estado_conexion VARCHAR(20) NULL AFTER ultima_puerta_abierta,
+  ADD COLUMN en_linea_desde DATETIME(3) NULL AFTER estado_conexion,
+  ADD COLUMN lector_responde TINYINT(1) NULL AFTER en_linea_desde,
+  ADD COLUMN lector_cambio_at DATETIME(3) NULL AFTER lector_responde,
+  ADD COLUMN lector_informado_at DATETIME(3) NULL AFTER lector_cambio_at,
+  ADD COLUMN estado_lector VARCHAR(20) NULL AFTER lector_informado_at,
+  ADD COLUMN en_observacion TINYINT(1) NOT NULL DEFAULT 0 AFTER estado_lector,
+  ADD CONSTRAINT ck_dispositivos_estado_conexion CHECK (
+    estado_conexion IS NULL OR estado_conexion IN ('en_linea', 'sin_conexion', 'caida_sostenida', 'desaparecida')
+  ),
+  ADD CONSTRAINT ck_dispositivos_estado_lector CHECK (
+    estado_lector IS NULL OR estado_lector IN ('responde', 'sin_respuesta')
+  );
+
+-- 20261031100001_create_confirmaciones_apertura.sql
+CREATE TABLE confirmaciones_apertura (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  evento_acceso_id BIGINT UNSIGNED NOT NULL,
+  dispositivo_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  origen VARCHAR(10) NOT NULL,
+  resultado VARCHAR(20) NOT NULL,
+  causa VARCHAR(30) NOT NULL,
+  reportado_en_dispositivo_at DATETIME(3) NULL,
+  registrada_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_confirmaciones_apertura_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_confirmaciones_apertura_evento FOREIGN KEY (evento_acceso_id) REFERENCES lecturas (id),
+  CONSTRAINT fk_confirmaciones_apertura_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_confirmaciones_apertura_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT ck_confirmaciones_apertura_origen CHECK (origen IN ('placa', 'servidor')),
+  CONSTRAINT ck_confirmaciones_apertura_resultado CHECK (resultado IN ('ejecutada', 'fallida', 'sin_confirmacion')),
+  CONSTRAINT ck_confirmaciones_apertura_causa CHECK (
+    (resultado = 'ejecutada' AND causa = 'puerta_abrio')
+    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'))
+    OR (resultado = 'sin_confirmacion' AND causa IN ('sin_sensor', 'sin_respuesta'))
+  ),
+  CONSTRAINT ck_confirmaciones_apertura_servidor CHECK (origen = 'placa' OR causa = 'sin_respuesta'),
+  UNIQUE KEY uq_confirmaciones_apertura_origen (evento_acceso_id, origen),
+  KEY idx_confirmaciones_apertura_reciente (tenant_id, registrada_at),
+  KEY idx_confirmaciones_apertura_dispositivo (dispositivo_id, registrada_at),
+  KEY idx_confirmaciones_apertura_puerta (puerta_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261031100002_add_sensor_y_apertura_a_dispositivos.sql
+ALTER TABLE dispositivos
+  ADD COLUMN sensor_instalado TINYINT(1) NOT NULL DEFAULT 0 AFTER en_observacion,
+  ADD COLUMN sensor_habilitado_at DATETIME(3) NULL AFTER sensor_instalado,
+  ADD COLUMN sensor_abierto_nivel VARCHAR(5) NOT NULL DEFAULT 'alto' AFTER sensor_habilitado_at,
+  ADD COLUMN sensor_estado VARCHAR(12) NULL AFTER sensor_abierto_nivel,
+  ADD COLUMN sensor_informado_at DATETIME(3) NULL AFTER sensor_estado,
+  ADD COLUMN apertura_fallida TINYINT(1) NOT NULL DEFAULT 0 AFTER sensor_informado_at,
+  ADD CONSTRAINT ck_dispositivos_sensor_nivel CHECK (sensor_abierto_nivel IN ('alto', 'bajo')),
+  ADD CONSTRAINT ck_dispositivos_sensor_estado CHECK (
+    sensor_estado IS NULL OR sensor_estado IN ('abierta', 'cerrada', 'sin_sensor')
+  );
+
+-- 20261031100003_add_apertura_fallida_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida'
+  ));
+```
+
+-- 20261101100001_create_incidentes_uso.sql
+CREATE TABLE incidentes_uso (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(30) NOT NULL,
+  gravedad VARCHAR(10) NOT NULL,
+  origen VARCHAR(10) NOT NULL,
+  registrado_por BIGINT UNSIGNED NULL,
+  descripcion VARCHAR(300) NULL,
+  evidencia JSON NOT NULL,
+  clave_unica VARCHAR(100) NULL,
+  ocurrido_at DATETIME(3) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_incidentes_uso_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_incidentes_uso_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_incidentes_uso_registrado_por FOREIGN KEY (registrado_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_incidentes_uso_tipo CHECK (tipo IN (
+    'uso_masivo', 'uso_imposible', 'pin_compartido', 'qr_reenviado', 'generacion_ruidosa', 'perdida_o_robo', 'otro'
+  )),
+  CONSTRAINT ck_incidentes_uso_gravedad CHECK (gravedad IN ('baja', 'media', 'alta')),
+  CONSTRAINT ck_incidentes_uso_origen CHECK (
+    (origen = 'sistema' AND registrado_por IS NULL) OR (origen = 'persona' AND registrado_por IS NOT NULL)
+  ),
+  UNIQUE KEY uq_incidentes_uso_clave (tenant_id, clave_unica),
+  KEY idx_incidentes_uso_usuario (tenant_id, usuario_id, ocurrido_at),
+  KEY idx_incidentes_uso_reciente (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100002_create_resoluciones_de_incidente.sql
+CREATE TABLE resoluciones_de_incidente (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  incidente_id BIGINT UNSIGNED NOT NULL,
+  resultado VARCHAR(12) NOT NULL,
+  motivo VARCHAR(200) NULL,
+  resuelto_por BIGINT UNSIGNED NOT NULL,
+  resuelta_at DATETIME(3) NOT NULL,
+  CONSTRAINT fk_resoluciones_de_incidente_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_resoluciones_de_incidente_incidente FOREIGN KEY (incidente_id) REFERENCES incidentes_uso (id),
+  CONSTRAINT fk_resoluciones_de_incidente_resuelto_por FOREIGN KEY (resuelto_por) REFERENCES usuarios (id),
+  CONSTRAINT ck_resoluciones_de_incidente_resultado CHECK (resultado IN ('descartado', 'confirmado', 'pendiente')),
+  CONSTRAINT ck_resoluciones_de_incidente_motivo CHECK (
+    resultado <> 'confirmado' OR (motivo IS NOT NULL AND CHAR_LENGTH(TRIM(motivo)) > 0)
+  ),
+  KEY idx_resoluciones_de_incidente_incidente (incidente_id, id),
+  KEY idx_resoluciones_de_incidente_tenant (tenant_id, resuelta_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100003_create_anulaciones_masivas.sql
+CREATE TABLE anulaciones_masivas (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  alcance VARCHAR(10) NOT NULL,
+  usuario_objetivo_id BIGINT UNSIGNED NULL,
+  motivo VARCHAR(200) NOT NULL,
+  usuarios_alcanzados INT UNSIGNED NOT NULL,
+  qr_anulados INT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_anulaciones_masivas_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_anulaciones_masivas_objetivo FOREIGN KEY (usuario_objetivo_id) REFERENCES usuarios (id),
+  CONSTRAINT ck_anulaciones_masivas_alcance CHECK (alcance IN ('usuario', 'rama', 'cuenta')),
+  CONSTRAINT ck_anulaciones_masivas_objetivo CHECK (
+    (alcance = 'cuenta' AND usuario_objetivo_id IS NULL) OR (alcance <> 'cuenta' AND usuario_objetivo_id IS NOT NULL)
+  ),
+  CONSTRAINT ck_anulaciones_masivas_motivo CHECK (CHAR_LENGTH(TRIM(motivo)) > 0),
+  KEY idx_anulaciones_masivas_tenant (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100004_create_exportaciones.sql
+CREATE TABLE exportaciones (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  recurso VARCHAR(10) NOT NULL,
+  pagina INT UNSIGNED NOT NULL,
+  por_pagina INT UNSIGNED NOT NULL,
+  filas INT UNSIGNED NOT NULL,
+  filtros JSON NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  deleted_at DATETIME(3) NULL,
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  deleted_by BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_exportaciones_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT ck_exportaciones_recurso CHECK (recurso IN ('usuarios', 'puertas', 'lecturas')),
+  KEY idx_exportaciones_tenant (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261101100005_add_incidente_propuesta_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida', 'incidente.propuesta'
+  ));
+
+-- 20261102100001_add_senales_a_tipos_de_notificacion.sql
+ALTER TABLE notificaciones
+  DROP CONSTRAINT ck_notificaciones_tipo,
+  ADD CONSTRAINT ck_notificaciones_tipo CHECK (tipo IN (
+    'placa.caida_sostenida', 'placa.desaparecida', 'placa.lector_sin_respuesta', 'placa.recuperada',
+    'apertura.fallida', 'incidente.propuesta',
+    'senal.uso', 'bolsa.aviso', 'bolsa.superada', 'flujo.atipico'
+  ));
+
+-- 20261102100002_create_avisos_de_senal.sql
+CREATE TABLE avisos_de_senal (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  tipo VARCHAR(40) NOT NULL,
+  usuario_id BIGINT UNSIGNED NULL,
+  clave_unica VARCHAR(120) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  CONSTRAINT fk_avisos_de_senal_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_avisos_de_senal_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  UNIQUE KEY uq_avisos_de_senal_clave (tenant_id, clave_unica),
+  KEY idx_avisos_de_senal_creado (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20261102100003_add_indices_de_senales.sql
+ALTER TABLE lecturas ADD KEY idx_lecturas_global (ocurrido_at), ALGORITHM=INPLACE, LOCK=NONE;
+ALTER TABLE eventos_de_limite ADD KEY idx_eventos_de_limite_global (tipo, ocurrido_at);
+ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);

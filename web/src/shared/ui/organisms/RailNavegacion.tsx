@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Avatar } from '../atoms/Avatar';
@@ -18,13 +19,15 @@ export interface ItemRail {
 interface Props {
   items: readonly ItemRail[];
   usuario: { nombre: string; rutaPerfil: string };
+  /** Controles de la barra que no son navegación (la campana de avisos), encima del menú. */
+  acciones?: ReactNode;
 }
 
 /**
  * Rail de 240 (≥ 1024) que colapsa a 80 con solo íconos y tooltip (768–1023). El ítem activo es
  * una pastilla `primarioSuave` con ícono relleno, texto 600 y alto 48.
  */
-export function RailNavegacion({ items, usuario }: Props) {
+export function RailNavegacion({ items, usuario, acciones }: Props) {
   const { t } = useTranslation(['nav', 'app']);
   return (
     <aside className={styles.rail}>
@@ -35,6 +38,7 @@ export function RailNavegacion({ items, usuario }: Props) {
           <span>{t('app:subtitulo')}</span>
         </div>
       </div>
+      {acciones ? <div className={styles.acciones}>{acciones}</div> : null}
       <nav className={styles.navegacion} aria-label={t('app:nombre')}>
         {items.map((item) => (
           <NavLink

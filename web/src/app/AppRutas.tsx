@@ -6,15 +6,19 @@ import {
   RUTAS_DE_CUENTAS,
 } from '../features/cuentas';
 import { BitacoraPage } from '../features/bitacora';
+import { DetalleConsumoPage } from '../features/limites';
 import { CuentasDeCobroPage } from '../features/cobro';
 import { CobranzaPage, RegistrarPagoPage } from '../features/pagos';
 import { EventosPage } from '../features/eventos';
 import { EquipoPage } from '../features/equipo';
 import { EstadisticasPage } from '../features/estadisticas';
+import { DetalleFlujoPage } from '../features/senales';
 import { PlacasPage } from '../features/placas';
 import { PlanesPage } from '../features/planes';
 import { ResumenPage } from '../features/resumen';
 import { IngresoPage, PerfilPage } from '../features/seguridad';
+import { ConPermiso } from './ConPermiso';
+import { ConsumoYSenalesPage } from './ConsumoYSenalesPage';
 import { LayoutAdmin } from './LayoutAdmin';
 import { EstadosPage } from './EstadosPage';
 import { RutaNoEncontrada } from './RutaNoEncontrada';
@@ -36,6 +40,23 @@ export function AppRutas() {
         <Route path={RUTAS.accesos} element={<EventosPage />} />
         <Route path={RUTAS.placas} element={<PlacasPage />} />
         <Route path={RUTAS.estadisticas} element={<EstadisticasPage />} />
+        <Route path={RUTAS.consumo} element={<ConsumoYSenalesPage />} />
+        <Route
+          path={`${RUTAS.consumo}/cuentas/:id`}
+          element={
+            <ConPermiso permisos={['limites.consumo.ver']}>
+              <DetalleConsumoPage />
+            </ConPermiso>
+          }
+        />
+        <Route
+          path={`${RUTAS.consumo}/flujo/:id`}
+          element={
+            <ConPermiso permisos={['seguridad.senal.ver']}>
+              <DetalleFlujoPage />
+            </ConPermiso>
+          }
+        />
         <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<BitacoraPage />} />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />

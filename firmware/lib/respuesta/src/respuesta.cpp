@@ -32,9 +32,36 @@ bool textoNoVacio(JsonVariantConst campo, const char*& texto) {
   return texto != nullptr && texto[0] != '\0';
 }
 
+// Sensor de la puerta: todo o nada. Un objeto incompleto o con un nivel desconocido deja el sensor
+// NO instalado, que es lo seguro (la placa no inventa ni un éxito ni una falla).
+confirmacion::Sensor leerSensor(JsonVariantConst campo) {
+  confirmacion::Sensor sensor;  // no instalado
+  if (!campo.is<JsonObjectConst>()) return sensor;
+  JsonVariantConst instalado = campo["instalado"];
+  const char* nivel = nullptr;
+  if (!instalado.is<bool>() || !textoNoVacio(campo["nivel_abierto"], nivel)) return sensor;
+  if (strcmp(nivel, "alto") == 0) {
+    sensor.nivelAbierto = confirmacion::Nivel::Alto;
+  } else if (strcmp(nivel, "bajo") == 0) {
+    sensor.nivelAbierto = confirmacion::Nivel::Bajo;
+  } else {
+    return sensor;
+  }
+  sensor.instalado = instalado.as<bool>();
+  return sensor;
+}
+
+uint16_t leerEspera(JsonVariantConst campo) {
+  if (!campo.is<int>() || campo.is<bool>()) return 0;
+  const int segundos = campo.as<int>();
+  if (segundos < 1 || segundos > ESPERA_CONFIRMACION_MAXIMA_S) return 0;
+  return static_cast<uint16_t>(segundos);
+}
+
 }  // namespace
 
-Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo) {
+Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo, char* eventoIdSalida) {
+  if (eventoIdSalida != nullptr) eventoIdSalida[0] = '\0';
   if (estadoHttp == 401) return Resultado::invalido(Motivo::CredencialInvalida);
   if (estadoHttp != 200) return Resultado::invalido(Motivo::RespuestaInvalida);
 
@@ -62,6 +89,11 @@ Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo) {
   if (!segundosEnRango(doc["segundos"], segundos)) {
     return Resultado::invalido(Motivo::RespuestaInvalida);
   }
+  // Solo una apertura válida y completa deja su evento para informar; lo demás no lo toca.
+  if (eventoIdSalida != nullptr && confirmacion::eventoIdValido(eventoId)) {
+    strncpy(eventoIdSalida, eventoId, confirmacion::MAX_EVENTO_ID);
+    eventoIdSalida[confirmacion::MAX_EVENTO_ID] = '\0';
+  }
   return Resultado::permitido(segundos);
 }
 
@@ -74,7 +106,10 @@ Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_
 
   uint16_t segundos = 0;
   if (!segundosEnRango(doc["segundos_apertura"], segundos)) return invalida;
-  return Configuracion{true, segundos};
+  Configuracion config{true, segundos};
+  config.sensor = leerSensor(doc["sensor_puerta"]);
+  config.esperaConfirmacionS = leerEspera(doc["espera_confirmacion_segundos"]);
+  return config;
 }
 
 Anuncio interpretarAnuncio(int estadoHttp, const char* cuerpo, size_t largo) {

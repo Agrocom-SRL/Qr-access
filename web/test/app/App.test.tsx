@@ -1659,3 +1659,59 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
     expect(await screen.findByText('No pudimos cargar el uso de los usuarios')).toBeInTheDocument();
   });
 });
+
+describe('avisos de AGROCOM y sensor de la puerta (ADR 0031 §18, W10)', () => {
+  it('la campana de avisos está en la barra con su contador, solo con el permiso', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    expect(
+      await screen.findByRole('button', { name: 'Notificaciones: 1 sin leer' }),
+    ).toBeInTheDocument();
+  });
+
+  it('sin el permiso de avisos, la barra no ofrece la campana', async () => {
+    const servicios = crearServiciosDePrueba({
+      seguridad: {
+        ingresar: () =>
+          Promise.resolve({
+            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
+            debeCambiarContrasena: false,
+            permisos: ['resumen.panel.ver'],
+          }),
+      },
+    });
+    montar(servicios, '/ingreso');
+    await ingresar();
+    await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
+    expect(screen.queryByRole('button', { name: /Notificaciones/ })).not.toBeInTheDocument();
+  });
+
+  it('desde Placas se configura el sensor de una placa vinculada y se guarda', async () => {
+    const configurarSensor = vi.fn<PlacasRepositorio['configurarSensor']>(() => Promise.resolve());
+    montar(crearServiciosDePrueba({ placas: { configurarSensor } }), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Placas/ }));
+    const tabla = await screen.findByRole('table', { name: 'Placas' });
+    // La placa detectada no tiene dispositivo: solo la vinculada ofrece el sensor.
+    expect(
+      within(tabla).getAllByRole('button', { name: /^Configurar el sensor de la placa / }),
+    ).toHaveLength(1);
+    await userEvent.click(
+      within(tabla).getByRole('button', {
+        name: 'Configurar el sensor de la placa AA:BB:CC:00:11:22',
+      }),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+    expect(configurarSensor).toHaveBeenCalledWith('1', { instalado: true, nivelAbierto: 'alto' });
+  });
+
+  it('la tabla de placas muestra el lector, el sensor y las aperturas que fallan', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Placas/ }));
+    const tabla = await screen.findByRole('table', { name: 'Placas' });
+    expect(within(tabla).getByText('Lector responde')).toBeInTheDocument();
+    expect(within(tabla).getByText('Sensor: puerta cerrada')).toBeInTheDocument();
+    expect(within(tabla).getByText('Aperturas fallidas')).toBeInTheDocument();
+  });
+});

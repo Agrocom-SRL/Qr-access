@@ -85,7 +85,7 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
 ```
 
 - `seleccionar` / `seleccionarUna` / `contar` / `insertar(tx, …)` / `actualizar(tx, id, cambios, { cuando })` / `borrar(tx, id)` **agregan solos** `tenant_id = ?` y `deleted_at IS NULL`, completan `created_by`/`updated_by`/`deleted_by` y escriben la bitácora con valores antes/después en la misma transacción. La tabla es el alias `t`; toda unión a otra tabla de cuenta lleva también `s.tenant_id = t.tenant_id`.
-- `perfil`: `dominio` (soft delete + autoría + bitácora), `dominio_sin_bitacora` (pivotes), `transitoria` (sesiones) y `solo_insercion` (`eventos_acceso`: `actualizar` y `borrar` lanzan). `sensibles` lista las columnas que nunca van a la bitácora. Las claves de un objeto a escribir se validan contra `columnas` (lista blanca).
+- `perfil`: `dominio` (soft delete + autoría + bitácora), `dominio_sin_bitacora` (pivotes), `transitoria` (sesiones) y `solo_insercion` (`lecturas`: `actualizar` y `borrar` lanzan). `sensibles` lista las columnas que nunca van a la bitácora. Las claves de un objeto a escribir se validan contra `columnas` (lista blanca).
 - `actualizar(..., { cuando })` lee la fila con `FOR UPDATE` y aplica el `UPDATE` con la condición extra: es el compare-and-set del consumo de un QR (`usado_at IS NULL AND …`); devuelve `false` si no afectó la fila.
 - `RepositorioDePlataforma` es el salto EXPLÍCITO: lee sin filtro de cuenta (login por código, refresh por hash, credencial de dispositivo) y nunca escribe una tabla de cuenta. Cada uso se justifica en el PR.
 - Columnas dinámicas (orden, filtros) solo desde una lista blanca: `ORDENABLES = { nombre: 'p.nombre', creado: 'p.created_at' } as const`.

@@ -4,12 +4,12 @@ import { useEventos } from '../../application/useEventos';
 import { POR_PAGINA_DE_EVENTOS } from '../../domain/evento';
 import { TablaEventos } from './TablaEventos';
 
-/** Pestaña "Accesos" de la ficha de una cuenta: lo que leyeron sus placas, en vivo. */
+/** Pestaña "Lecturas" de la ficha de una cuenta: lo que leyeron sus placas, en vivo. */
 export function PestanaAccesos({ cuentaId }: { cuentaId: string }) {
   const { t } = useTranslation('eventos');
   const [pagina, setPagina] = useState(1);
   const consulta = useEventos(
-    { cuentaId, resultado: 'todos', desde: '', hasta: '', pagina },
+    { cuentaId, resultado: 'todos', ejecucion: 'todas', desde: '', hasta: '', pagina },
     POR_PAGINA_DE_EVENTOS,
   );
   return (

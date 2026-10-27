@@ -1,0 +1,72 @@
+{
+  "pestana": "Quota usage",
+  "subtitulo": "QR codes generated this month against each account's quota. This only records and warns: no account is cut off.",
+  "aviso": "Warning at {{porcentaje}} of the quota",
+  "mes": "Month of {{mes}}",
+  "sinPlan": "No plan",
+  "tabla": "Quota usage by account",
+  "estado": {
+    "normal": "Normal",
+    "aviso": "Warning",
+    "superada": "Exceeded",
+    "sin_tope": "No limit"
+  },
+  "filtros": {
+    "estado": "Quota status",
+    "todas": "All",
+    "buscar": "Search by code or name",
+    "orden": "Sort by",
+    "sentido": "Sort order",
+    "mayorAMenor": "Highest first",
+    "menorAMayor": "Lowest first"
+  },
+  "orden": {
+    "porcentaje": "Percentage",
+    "usado": "QR used",
+    "tope": "Quota",
+    "nombre": "Name"
+  },
+  "origen": {
+    "excepcion": "Account exception",
+    "plan": "Plan",
+    "general": "General value"
+  },
+  "columnas": {
+    "cuenta": "Account",
+    "plan": "Plan",
+    "consumo": "Usage this month",
+    "estado": "Status",
+    "origen": "Source of the limit"
+  },
+  "barra": {
+    "etiqueta": "Usage of {{cuenta}}",
+    "valor": "{{usado}} of {{tope}} QR ({{porcentaje}})",
+    "sinTope": "{{usado}} QR, no quota"
+  },
+  "vacio": {
+    "titulo": "No accounts",
+    "texto": "There are no accounts with usage to show yet."
+  },
+  "sinResultados": {
+    "titulo": "No results",
+    "texto": "No account matches these filters."
+  },
+  "errorCarga": "We couldn't load the quota usage",
+  "detalle": {
+    "volver": "Quota usage",
+    "plan": "Plan {{plan}}",
+    "usado": "QR used",
+    "tope": "Monthly quota",
+    "sinTope": "No quota assigned",
+    "porcentaje": "Percentage of the quota",
+    "avisoEl": "Warning on {{cuando}}",
+    "superadaEl": "Exceeded on {{cuando}}",
+    "origen": "Source of the limit: {{origen}}",
+    "graficaTitulo": "QR generated per day",
+    "graficaSubtitulo": "{{mes}}, up to today: {{total}} QR in total",
+    "graficaEtiqueta": "QR generated per day for {{cuenta}}",
+    "dia": "Day",
+    "generados": "QR generated",
+    "errorCarga": "We couldn't load this account's usage"
+  }
+}

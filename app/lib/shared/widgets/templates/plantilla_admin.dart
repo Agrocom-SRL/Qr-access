@@ -185,7 +185,7 @@ class PlantillaAdmin extends ConsumerWidget {
     DestinoNav.inicio => l10n.navInicio,
     DestinoNav.generarQr => l10n.navGenerarQr,
     DestinoNav.misQr => l10n.navMisQr,
-    DestinoNav.eventos => l10n.navEventos,
+    DestinoNav.eventos => l10n.navLecturas,
     DestinoNav.puertas => l10n.navPuertas,
     DestinoNav.usuarios => l10n.navUsuarios,
     DestinoNav.admin => l10n.navAdmin,

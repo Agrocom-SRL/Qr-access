@@ -16,6 +16,7 @@ export async function ejecutar(
   usuarioId: string,
   hashActual: string,
   ahora: Date,
+  ip: string | null = null,
 ): Promise<SesionRefrescada> {
   const invalido = new ErrorDeDominio('sesion.refresco_invalido', 401);
   const admin = await new RepositorioDeSuperAdmins(servicios.pool).buscarActivoPorId(usuarioId);
@@ -30,6 +31,7 @@ export async function ejecutar(
       sha256Hex(refresco),
       sumarDias(ahora, servicios.config.JWT_REFRESH_DIAS),
       ahora,
+      ip,
     ),
   );
   if (!rotada) throw invalido;

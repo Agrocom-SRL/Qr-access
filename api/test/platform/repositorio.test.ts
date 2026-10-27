@@ -63,7 +63,7 @@ class RepositorioDeUsuariosDePrueba extends RepositorioDeCuenta {
 class RepositorioDeEventosDePrueba extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
-      nombre: 'eventos_acceso',
+      nombre: 'lecturas',
       columnas: ['motivo_code'],
       perfil: 'solo_insercion',
       deCuenta: true,

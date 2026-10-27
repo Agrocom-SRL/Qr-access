@@ -46,10 +46,12 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       JWT_SECRETO: ${JWT_SECRETO}
       PIN_PIMIENTA: ${PIN_PIMIENTA}
+      QR_IDEMPOTENCIA_CLAVE: ${QR_IDEMPOTENCIA_CLAVE}
       JWT_ACCESO_MINUTOS: 15
       JWT_REFRESH_DIAS: 30
-      # Detrás de NPMplus y del Nginx de la app: la IP del cliente viene de X-Forwarded-For.
-      TRUST_PROXY: "true"
+      # Un salto: el Nginx (panel o app) que reenvía a la API sobrescribe X-Forwarded-For con la IP
+      # real del cliente (ver docs/gestion/despliegue.md). Nunca "true".
+      TRUST_PROXY: "1"
       # Los comprobantes de pago viven en un volumen, fuera del contenedor (ADR 0024).
       ARCHIVOS_RUTA: /archivos
     volumes:

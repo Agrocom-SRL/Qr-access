@@ -28,3 +28,7 @@ Detalle operativo: skill `api-rest`.
 
 - `api-rest` (agente) revisa todo cambio de esquema antes de que `backend` lo implemente.
 - Un test compara el OpenAPI generado con el último publicado y falla ante un cambio incompatible en `v1` (pendiente de implementar con la primera versión de la API).
+
+**Enmienda 2026-10-26.** Usar `.strictObject` en los cuerpos de entrada (campos de más, 400 `validacion.invalida`) es una excepción aceptada de endurecimiento de la entrada (ADR 0033 §2), no un cambio incompatible: solo rechaza lo que el contrato nunca definió. `cuerpoDeMiPerfil` y `cuerpoDeEdicionDeUsuario` siguen sin `strict` por sus tests de mass-assignment; queda pendiente para una ola posterior. Ampliar un campo para aceptar `null` (p. ej. `tipo_cuenta` en la cuenta de cobro nueva) es una ampliación compatible.
+
+**Enmienda 2026-10-27.** `POST /qr-accesos` amplía su contrato de forma compatible (ADR 0030 §2.1): el campo `texto` de la respuesta pasa a ser nullable (`null` cuando se reutiliza un QR propio vigente, porque el servidor solo guarda el hash del token); aparece `reutilizado: boolean`; y la respuesta es `200` al reutilizar y `201` al crear un QR nuevo. Un cliente que solo lee `texto` de un `201` no cambia; el que trate `200` como error debe ajustarse. La descripción OpenAPI de la ruta lo recoge.

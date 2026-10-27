@@ -26,6 +26,7 @@ export abstract class RepositorioDeCuenta extends RepositorioBase {
     return {
       tenantId: cuentaId,
       condicion: (alias: string | null) => ({
+        // eslint-disable-next-line no-restricted-syntax -- el alias es un literal interno del repositorio y el valor de la cuenta va como `?`.
         sql: `${alias === null ? '' : `${alias}.`}tenant_id = ?`,
         params: [cuentaId],
       }),

@@ -232,7 +232,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.inicioUltimosEventos,
+                      l10n.inicioUltimasLecturas,
                       style: textos.titleLarge,
                     ),
                   ),
@@ -247,8 +247,8 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
               if (datos != null && datos.ultimosEventos.isEmpty)
                 EstadoVacio(
                   ilustracion: Multimedia.vacioEventos,
-                  titulo: l10n.eventosSinResultados,
-                  ayuda: l10n.eventosSinResultadosAyuda,
+                  titulo: l10n.lecturasSinResultados,
+                  ayuda: l10n.lecturasSinResultadosAyuda,
                 )
               else if (datos != null)
                 AccesoTarjeta(
@@ -276,7 +276,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
 class _TablaUltimosEventos extends StatelessWidget {
   const new({required this.eventos});
 
-  final List<EventoAcceso> eventos;
+  final List<Lectura> eventos;
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +313,7 @@ class _TablaUltimosEventos extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    l10n.inicioUltimosEventos,
+                    l10n.inicioUltimasLecturas,
                     style: textos.titleLarge,
                   ),
                 ),
@@ -345,12 +345,12 @@ class _TablaUltimosEventos extends StatelessWidget {
                   decoration: BoxDecoration(color: tokens.colores.fondo),
                   children: [
                     for (final titulo in [
-                      l10n.eventosColumnaHora,
-                      l10n.eventosColumnaPuerta,
-                      l10n.eventosColumnaSitio,
-                      l10n.eventosColumnaQr,
-                      l10n.eventosColumnaResultado,
-                      l10n.eventosColumnaMotivo,
+                      l10n.lecturasColumnaHora,
+                      l10n.lecturasColumnaPuerta,
+                      l10n.lecturasColumnaSitio,
+                      l10n.lecturasColumnaQr,
+                      l10n.lecturasColumnaResultado,
+                      l10n.lecturasColumnaMotivo,
                     ])
                       celda(Text(titulo, style: cabecera)),
                   ],
@@ -376,7 +376,7 @@ class _TablaUltimosEventos extends StatelessWidget {
                           evento.qrEtiqueta == null &&
                                   evento.generadorEtiqueta == null
                               ? l10n.comunGuion
-                              : l10n.eventoQrDe(
+                              : l10n.lecturaQrDe(
                                   evento.qrEtiqueta ?? l10n.qrSinEtiqueta,
                                   evento.generadorEtiqueta ?? l10n.comunGuion,
                                 ),

@@ -21,7 +21,7 @@ Un QR viaja como imagen por WhatsApp o correo: se puede reenviar y fotografiar. 
    5. la puerta del dispositivo es una de las del QR;
    6. suscripción de la cuenta vigente (ADR 0017);
    7. **consumo atómico**: `UPDATE … SET usado_at = ?, usado_dispositivo_id = ? WHERE id = ? AND usado_at IS NULL`, que tiene que afectar exactamente una fila. Si dos lectores leen el mismo QR a la vez, solo uno abre.
-5. La respuesta es siempre `200` con `abrir: true|false` y un `motivo_code` (`qr.vencido`, `qr.usado`, `qr.desconocido`, `qr.otra_puerta`, `suscripcion.vencida`…). **Todo intento** queda en `eventos_acceso` (ADR 0007), incluido un token desconocido, guardando su hash y nunca el texto.
+5. La respuesta es siempre `200` con `abrir: true|false` y un `motivo_code` (`qr.vencido`, `qr.usado`, `qr.desconocido`, `qr.otra_puerta`, `suscripcion.vencida`…). **Todo intento** queda en `lecturas` (ADR 0007), incluido un token desconocido, guardando su hash y nunca el texto.
 6. **Anulación**: quien generó el QR, o un administrador, puede anularlo antes de que se use (`anulado_at`).
 7. **Cierre del día**: un proceso del sistema da de baja (soft delete) los QR vencidos, usados o no, y guarda la autoría `sistema`. Los eventos que los referencian se mantienen.
 

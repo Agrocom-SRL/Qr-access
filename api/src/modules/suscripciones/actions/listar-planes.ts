@@ -7,6 +7,8 @@ export interface PlanListado {
   nombre: string;
   cupo_usuarios: number | null;
   precio_anual: number;
+  bolsa_qr_mensual: number | null;
+  max_puertas_por_qr: number | null;
   cuentas: number;
   usuarios_en_uso: number;
 }
@@ -26,6 +28,8 @@ export async function ejecutar(pool: Pool): Promise<PlanListado[]> {
       nombre: plan.nombre,
       cupo_usuarios: plan.max_usuarios,
       precio_anual: Number(plan.precio_anual),
+      bolsa_qr_mensual: plan.bolsa_qr_mensual,
+      max_puertas_por_qr: plan.max_puertas_por_qr,
       cuentas: cuentas.length,
       usuarios_en_uso: cuentas.reduce((suma, id) => suma + (usuarios.get(id) ?? 0), 0),
     };

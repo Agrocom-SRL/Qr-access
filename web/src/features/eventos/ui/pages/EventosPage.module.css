@@ -5,12 +5,24 @@
   margin-bottom: var(--esp16);
 }
 
-.segmentado {
+/* Los dos filtros segmentados van uno debajo del otro; en pantallas angostas cada uno se desplaza solo. */
+.segmentados {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp12);
   margin-bottom: var(--esp24);
+  max-width: 100%;
 }
 
 @media (width < 1024px) {
   .filtros {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (width < 600px) {
+  .filtros {
+    grid-template-columns: 1fr;
   }
 }

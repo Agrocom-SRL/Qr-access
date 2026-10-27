@@ -13,23 +13,33 @@ namespace api {
 
 namespace {
 
-// Timeout total de una validación: 3 s (la máquina de estados la abandona a los
-// 3 s aunque esta tarea siga; una respuesta tardía se descarta por su id).
+// Presupuesto de una validación: 3 s (puerta::TIMEOUT_VALIDACION_MS). La máquina de estados la
+// abandona a los 3 s; un pedido vencido ni se envía (atenderValidacion) y una respuesta tardía se
+// descarta por su id.
 constexpr uint16_t TIMEOUT_CONEXION_MS = 1500;
 constexpr uint16_t TIMEOUT_LECTURA_MS = 1500;
-// Latido y configuración no urgen: nunca retienen la tarea más de ~2 s.
-constexpr uint16_t TIMEOUT_SEGUNDO_PLANO_MS = 2000;
+// Vínculo (anuncio y confirmación): solo corre sin operar, nunca compite con una validación; el
+// servidor verifica la clave con argon2id, así que se deja holgura.
+constexpr uint16_t TIMEOUT_VINCULO_MS = 2000;
+// Latido, informe y configuración (segundo plano) ocupan la única tarea de red mientras una
+// validación podría llegar. Cada fase (conexión, handshake TLS, lectura) se acota a 1 s, bastante
+// menos que el presupuesto de 3 s de la validación; perder uno es barato (el latido es periódico,
+// el informe se reintenta y la configuración reintenta con backoff). Además, loop() no inicia
+// ninguno con actividad reciente del lector.
+constexpr uint16_t TIMEOUT_SEGUNDO_PLANO_MS = 1000;
 constexpr size_t MAX_AUTORIZACION = 12 + 64 + 1 + 128 + 1;
 
 struct PedidoValidacion {
   uint32_t id;
   int64_t leidoEn;
+  uint32_t pedidoEnMs;  // millis() de validar(): desde ahí corre el presupuesto de la validación
   char qr[puerta::MAX_QR + 1];
 };
 
 struct TrabajoSegundoPlano {
   Tipo tipo;
-  bool puertaAbierta;
+  EstadoLatido latido;                // solo Latido
+  confirmacion::Informe informe;      // solo Informe
   char clave[aprovisionamiento::MAX_VALOR + 1];  // solo Anuncio y Confirmacion
 };
 
@@ -50,7 +60,7 @@ portMUX_TYPE candado = portMUX_INITIALIZER_UNLOCKED;  // loop() la cambia, la ta
 // Una llamada HTTP(S) a la API. TLS siempre verificado con la CA embebida;
 // solo la compilación de desarrollo admite http:// (y lo declara al arrancar).
 Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeoutConexionMs,
-               uint16_t timeoutLecturaMs, bool conCredencial = true) {
+               uint16_t timeoutLecturaMs, bool conCredencial = true, uint8_t handshakeS = 0) {
   const Llamada fallo{-1, String()};
   char credencial[MAX_AUTORIZACION];
   portENTER_CRITICAL(&candado);
@@ -65,7 +75,9 @@ Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeout
   WiFiClient* cliente = &tls;
   if (url.startsWith("https://")) {
     tls.setCACert(CA_SERVIDOR);  // TLS verificado: nunca setInsecure()
-    tls.setTimeout(timeoutLecturaMs / 1000 + 1);
+    tls.setTimeout((timeoutLecturaMs + 999) / 1000);
+    // 0 = el de la librería: la validación la acota la máquina de estados, no este tiempo.
+    if (handshakeS > 0) tls.setHandshakeTimeout(handshakeS);
   } else {
 #ifdef ACCESO_DESARROLLO
     cliente = &plano;
@@ -105,8 +117,10 @@ void publicar(const Respuesta& r) {
 }
 
 void atenderValidacion(const PedidoValidacion& pedido) {
-  // Un pedido que ya no es el vigente (la máquina lo abandonó) ni se envía.
-  if (pedido.id != idVigente) return;
+  // Un pedido que ya no es el vigente, o que ya cumplió el presupuesto de la validación, la máquina
+  // lo abandonó: no se envía. Enviarlo tarde haría que el servidor consuma el QR (un solo uso) y
+  // la puerta no abriría. Es el caso de un pedido que esperó detrás de una llamada de segundo plano.
+  if (pedido.id != idVigente || puerta::pedidoVencido(pedido.pedidoEnMs, millis())) return;
 
   char leidoEn[tiempo::CAPACIDAD_ISO];
   Respuesta r{Tipo::Validacion, pedido.id, -1, puerta::Resultado::invalido(puerta::Motivo::SinRed),
@@ -122,7 +136,7 @@ void atenderValidacion(const PedidoValidacion& pedido) {
                                    TIMEOUT_CONEXION_MS, TIMEOUT_LECTURA_MS);
     r.http = llamada.http;
     r.resultado = respuesta::interpretar(llamada.http, llamada.cuerpo.c_str(),
-                                         llamada.cuerpo.length());
+                                         llamada.cuerpo.length(), r.eventoId);
   }
   publicar(r);
 }
@@ -140,7 +154,7 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     serializeJson(cuerpo, json);
     const Llamada llamada = llamar(true, anuncio ? "/api/v1/dispositivos/anunciar"
                                                  : "/api/v1/dispositivos/confirmar",
-                                   json, TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, false);
+                                   json, TIMEOUT_VINCULO_MS, TIMEOUT_VINCULO_MS, false);
     r.http = llamada.http;
     r.anuncio = respuesta::interpretarAnuncio(llamada.http, llamada.cuerpo.c_str(),
                                               llamada.cuerpo.length());
@@ -149,15 +163,39 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     JsonDocument cuerpo;
     cuerpo["firmware"] = FIRMWARE_VERSION;
     cuerpo["rssi"] = 0;  // por cable no hay señal que medir; la API todavía exige el campo
-    cuerpo["puerta_abierta"] = trabajo.puertaAbierta;
+    cuerpo["puerta_abierta"] = trabajo.latido.puertaAbierta;
+    // Antes de leer la configuración no se sabe si hay sensor: el campo se omite (no se afirma
+    // `sin_sensor` por no haber leído nada).
+    if (trabajo.latido.sensorConocido) {
+      cuerpo["sensor_puerta"] = confirmacion::texto(trabajo.latido.sensor);
+    }
+    // El lector es pasivo: sin señales desde el arranque no se afirma nada (el campo se omite).
+    if (trabajo.latido.lector != diagnostico::EstadoLector::Desconocido) {
+      cuerpo["lector_responde"] = trabajo.latido.lector == diagnostico::EstadoLector::Responde;
+    }
     String json;
     serializeJson(cuerpo, json);
     r.http = llamar(true, "/api/v1/dispositivos/latidos", json, TIMEOUT_SEGUNDO_PLANO_MS,
-                    TIMEOUT_SEGUNDO_PLANO_MS)
+                    TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
                  .http;
+  } else if (trabajo.tipo == Tipo::Informe) {
+    // Cuerpo estricto del contrato: evento_id, resultado y, si falló, la causa.
+    JsonDocument cuerpo;
+    cuerpo["evento_id"] = trabajo.informe.eventoId;
+    cuerpo["resultado"] = confirmacion::texto(trabajo.informe.resultado);
+    if (trabajo.informe.resultado == confirmacion::Resultado::Fallida &&
+        trabajo.informe.causa != confirmacion::Causa::Ninguna) {
+      cuerpo["causa"] = confirmacion::texto(trabajo.informe.causa);
+    }
+    String json;
+    serializeJson(cuerpo, json);
+    r.http = llamar(true, "/api/v1/dispositivos/confirmaciones", json, TIMEOUT_SEGUNDO_PLANO_MS,
+                    TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
+                 .http;
+    memcpy(r.eventoId, trabajo.informe.eventoId, sizeof(r.eventoId));
   } else {
     const Llamada llamada = llamar(false, "/api/v1/dispositivos/configuracion", String(),
-                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS);
+                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, 1);
     r.http = llamada.http;
     r.config = respuesta::interpretarConfiguracion(llamada.http, llamada.cuerpo.c_str(),
                                                    llamada.cuerpo.length());
@@ -219,6 +257,7 @@ bool validar(uint32_t id, const char* qr, int64_t leidoEn) {
   PedidoValidacion pedido{};
   pedido.id = id;
   pedido.leidoEn = leidoEn;
+  pedido.pedidoEnMs = millis();
   strncpy(pedido.qr, qr, puerta::MAX_QR);
   idVigente = id;
   // Si no entra, la máquina lo trata como error y no abre.
@@ -227,10 +266,17 @@ bool validar(uint32_t id, const char* qr, int64_t leidoEn) {
   return ok;
 }
 
-bool enviarLatido(bool puertaAbierta) {
+bool enviarLatido(const EstadoLatido& estado) {
   TrabajoSegundoPlano trabajo{};
   trabajo.tipo = Tipo::Latido;
-  trabajo.puertaAbierta = puertaAbierta;
+  trabajo.latido = estado;
+  return encolarSegundoPlano(trabajo);
+}
+
+bool enviarInforme(const confirmacion::Informe& informe) {
+  TrabajoSegundoPlano trabajo{};
+  trabajo.tipo = Tipo::Informe;
+  trabajo.informe = informe;
   return encolarSegundoPlano(trabajo);
 }
 

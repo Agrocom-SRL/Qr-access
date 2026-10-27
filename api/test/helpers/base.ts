@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
+import { vaciarCachesCortas } from '../../src/platform/cache/cache-corta.js';
 
 /** Las tablas que dbmate maneja y que nunca se vacían. */
 const TABLAS_INTOCABLES = new Set(['schema_migrations']);
@@ -48,6 +49,8 @@ export async function cargarCatalogo(pool: Pool): Promise<void> {
 /** Deja la base de tests sin datos (y con el catálogo de permisos). Solo corre sobre `*_testing`. */
 export async function reiniciarBase(pool: Pool): Promise<void> {
   await exigirBaseDeTests(pool);
+  // Las vistas de plataforma guardan unos segundos su resultado: otra base, otro resultado.
+  vaciarCachesCortas();
   const conexion = await pool.getConnection();
   try {
     const [tablas] = await conexion.query<RowDataPacket[]>(

@@ -5,7 +5,7 @@ import { aIso } from '../../../platform/tiempo/fechas.js';
 import { tienePermiso } from '../../../plugins/permisos.js';
 import { estadoDelQr, type EstadoDeQr } from '../domain/estado-qr.js';
 import { puertasPorId } from '../presentacion.js';
-import { RepositorioDeEventos, RepositorioDeQr } from '../repository.js';
+import { RepositorioDeLecturas, RepositorioDeQr } from '../repository.js';
 
 export interface EstadoDeQrConsultado {
   id: string;
@@ -23,7 +23,7 @@ export interface EstadoDeQrConsultado {
 /**
  * Qué pasó con un QR: su estado y el último intento de lectura (HU de seguimiento del QR). La
  * app lo consulta mientras muestra el QR para saber si la puerta lo aceptó o por qué lo rechazó.
- * Solo lee `qr_accesos` y `eventos_acceso`; quien lo generó ve el suyo y quien tenga
+ * Solo lee `qr_accesos` y `lecturas`; quien lo generó ve el suyo y quien tenga
  * `accesos.qr.ver_todos`, cualquiera de la cuenta. Uno ajeno o de otra cuenta no existe: 404.
  */
 export async function ejecutar(
@@ -38,7 +38,7 @@ export async function ejecutar(
     throw new ErrorDeDominio('qr.no_encontrado', 404);
   }
 
-  const intento = await new RepositorioDeEventos(pool).ultimoDeQr(qr.id);
+  const intento = await new RepositorioDeLecturas(pool).ultimoDeQr(qr.id);
   const puertas = intento === null ? null : await puertasPorId(pool, [intento.puerta_id]);
   return {
     id: qr.id,

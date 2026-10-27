@@ -1,0 +1,122 @@
+name: Seguridad
+
+# CI de seguridad (ADR 0033 §2): dependencias (npm audit), secretos (gitleaks) y análisis
+# estático (CodeQL). Corre en cada PR a develop o master, cada lunes (escaneo programado:
+# detecta avisos nuevos sobre dependencias que no cambiaron) y a mano.
+#
+# Es un workflow APARTE de ci.yml y NO está en `needs` del job `ci`: el único check requerido
+# por auto-merge.yml sigue siendo `ci`. Un fallo aquí se ve en el PR pero no bloquea la
+# integración. Que bloquee es una decisión de Miguel (cambia el gate, es ADR): sumar estos
+# jobs a `needs` de `ci` en ci.yml. Procedimiento y excepciones: docs/gestion/seguridad-ci.md.
+#
+# Antes de activarlo en el repo: ver docs/ci/propuestos/README.md (CodeQL en un repo privado
+# requiere GitHub Advanced Security).
+
+on:
+  pull_request:
+    branches: [develop, master]
+  schedule:
+    # Lunes 06:17 UTC (02:17 en Bolivia), fuera del horario de trabajo.
+    - cron: '17 6 * * 1'
+  workflow_dispatch: {}
+
+# Mínimo por omisión: solo lectura del código. Cada job pide lo suyo.
+permissions:
+  contents: read
+
+# Un solo run vigente por referencia: un push nuevo cancela el run anterior del mismo PR.
+concurrency:
+  group: seguridad-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  npm-audit:
+    name: npm audit (${{ matrix.parte }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [api, web]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      # Solo el lockfile: no instala nada, así que no corre ningún script de dependencias.
+      # Bloqueante: lo que llega a producción (sin devDependencies) no puede tener avisos altos.
+      - name: Vulnerabilidades en dependencias de producción (bloqueante)
+        working-directory: ${{ matrix.parte }}
+        run: npm audit --omit=dev --audit-level=high --package-lock-only
+      # Informativa: las devDependencies corren en la CI y en el build, pero no llegan al
+      # servidor ni al panel. Un aviso aquí se revisa, no detiene la integración.
+      - name: Vulnerabilidades incluidas las de desarrollo (informativa)
+        working-directory: ${{ matrix.parte }}
+        continue-on-error: true
+        run: npm audit --audit-level=high --package-lock-only
+
+  secretos:
+    name: escaneo de secretos (gitleaks)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      # Versión exacta y SHA-256 del binario oficial de la release. Se verifica antes de ejecutar.
+      GITLEAKS_VERSION: '8.24.3'
+      GITLEAKS_SHA256: '9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Historial completo: gitleaks escanea commits, no solo el árbol de trabajo.
+          fetch-depth: 0
+          persist-credentials: false
+      # Se usa el binario y no gitleaks-action: en una organización esa acción exige una licencia.
+      - name: Instalar gitleaks (versión y checksum fijados)
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/gitleaks"
+          mkdir -p "$dir"
+          curl -fsSL -o "$dir/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $dir/gitleaks.tar.gz" | sha256sum --check --strict
+          tar -xzf "$dir/gitleaks.tar.gz" -C "$dir" gitleaks
+          echo "$dir" >> "$GITHUB_PATH"
+      - name: Escanear los commits del PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gitleaks git --config .gitleaks.toml --redact --exit-code 1 --log-opts "${BASE_SHA}..${HEAD_SHA}" .
+      - name: Escanear todo el historial
+        if: github.event_name != 'pull_request'
+        run: gitleaks git --config .gitleaks.toml --redact --exit-code 1 .
+
+  codeql:
+    name: CodeQL (${{ matrix.lenguaje }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Sube los hallazgos a la pestaña Security (code scanning).
+      security-events: write
+      # En repos privados, CodeQL necesita leer el contexto del workflow.
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # javascript-typescript cubre api/ y web/ (y los prototipos de docs/, que también son JS).
+        # Dart y C++ no están aquí: ver docs/ci/propuestos/README.md.
+        lenguaje: [javascript-typescript, actions]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.lenguaje }}
+          # Sin compilación: CodeQL extrae TypeScript y los workflows directamente.
+          build-mode: none
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:${{ matrix.lenguaje }}

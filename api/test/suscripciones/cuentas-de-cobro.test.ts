@@ -80,6 +80,11 @@ describe('plataforma: cuentas de cobro (ADR 0029)', () => {
     ]);
   });
 
+  it('acepta tipo_cuenta null al crear, como lo envía el panel', async () => {
+    const id = await crearYLeer({ ...TRANSFERENCIA, tipo_cuenta: null });
+    expect(await lista()).toEqual([expect.objectContaining({ id, tipo_cuenta: null })]);
+  });
+
   it('una cuenta bancaria pide titular y número', async () => {
     for (const falta of ['titular', 'numero_cuenta']) {
       const respuesta = await crear({ ...TRANSFERENCIA, [falta]: undefined });

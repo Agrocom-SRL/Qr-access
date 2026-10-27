@@ -5,11 +5,12 @@ import type { PrincipalDispositivo } from '../../platform/seguridad/principal.js
 import { RepositorioDeDispositivosDePlataforma } from './repository.js';
 
 /**
+ * Corre sobre el pool reservado al dispositivo (ADR 0032 §1), no el de la app.
  * Verifica `Dispositivo <id>.<clave>` (invariante 5): la clave se compara con su hash argon2id
- * y el dispositivo tiene que estar en servicio (no revocado ni dado de baja) y su cuenta activa.
+ * y el dispositivo tiene que estar en servicio (no revocado ni dado de baja) y su cuenta existir.
  * Cualquier fallo es `null` y tarda lo mismo, exista o no el dispositivo.
  */
-export function crearAutenticadorDeDispositivo({ pool }: DependenciasDeModulo) {
+export function crearAutenticadorDeDispositivo({ poolDispositivos: pool }: DependenciasDeModulo) {
   const dispositivos = new RepositorioDeDispositivosDePlataforma(pool);
   const cuentas = crearServicioDeCuentas(pool);
 
@@ -23,7 +24,9 @@ export function crearAutenticadorDeDispositivo({ pool }: DependenciasDeModulo) {
       return null;
     }
     if (!(await verificarHash(fila.clave_hash, clave))) return null;
-    if (!(await cuentas.estaActiva(fila.tenant_id))) return null;
+    // Basta con que la cuenta exista: una suspendida SÍ autentica a sus placas para que cada lectura
+    // llegue a la validación, que la rechaza y la deja en `lecturas` (invariante 4, ADR 0031 §2).
+    if (!(await cuentas.existe(fila.tenant_id))) return null;
     return {
       tipo: 'dispositivo',
       dispositivoId: fila.id,

@@ -120,6 +120,9 @@ describe('dispositivos: latido y configuración', () => {
         segundos_apertura: 6,
         zona_horaria: 'America/La_Paz',
         ota: null,
+        // Sin sensor habilitado y con la polaridad por omisión (pendiente de confirmar en campo).
+        sensor_puerta: { instalado: false, nivel_abierto: 'alto' },
+        espera_confirmacion_segundos: 11,
       });
       expect((await configuracion(a.dispositivoTrasero.encabezado)).json()).toMatchObject({
         segundos_apertura: 5,

@@ -1,8 +1,8 @@
 {
-  "titulo": "Accesos",
+  "titulo": "Lecturas",
   "subtitulo": "Lo que leyeron las placas en todas las cuentas, en vivo",
-  "tabla": "Accesos",
-  "errorCarga": "No pudimos cargar los accesos",
+  "tabla": "Lecturas",
+  "errorCarga": "No pudimos cargar las lecturas",
   "columna": {
     "cuando": "Cuándo",
     "cuenta": "Cuenta",
@@ -10,7 +10,8 @@
     "lector": "Lector",
     "qr": "QR",
     "resultado": "Resultado",
-    "motivo": "Motivo"
+    "motivo": "Motivo",
+    "ejecucion": "Ejecución"
   },
   "resultado": {
     "permitido": "Permitido",
@@ -22,14 +23,15 @@
     "resultado": "Resultado",
     "todos": "Todos",
     "permitido": "Permitidos",
-    "rechazado": "Rechazados"
+    "rechazado": "Rechazados",
+    "ejecucionEtiqueta": "Qué hizo la puerta"
   },
   "vacio": {
-    "titulo": "Aún no hay accesos",
-    "texto": "Cuando una placa lea un QR, el intento aparece aquí al instante."
+    "titulo": "Aún no hay lecturas",
+    "texto": "Cuando una placa lea un QR, el intento de lectura aparece aquí al instante."
   },
   "sinResultados": {
-    "titulo": "Sin accesos con estos filtros",
+    "titulo": "Sin lecturas con estos filtros",
     "texto": "Prueba con otras fechas o quita los filtros."
   },
   "motivo": {
@@ -42,5 +44,24 @@
     "qr_usado": "QR ya usado",
     "suscripcion_vencida": "Suscripción vencida",
     "desconocido": "Motivo no disponible"
+  },
+  "ejecucionFiltro": {
+    "todas": "Todas",
+    "ejecutada": "Abrió",
+    "fallida": "No abrió",
+    "sin_confirmacion": "Sin confirmar"
+  },
+  "ejecucion": {
+    "ejecutada": "Abrió",
+    "fallida": "No abrió",
+    "sin_confirmacion": "Sin confirmar"
+  },
+  "ejecucionCausa": {
+    "puerta_abrio": "La puerta se abrió",
+    "puerta_no_abrio": "La puerta no se abrió",
+    "puerta_no_cerro": "La puerta no volvió a cerrar",
+    "rele_no_accionado": "El relé no se accionó",
+    "sin_sensor": "La puerta no tiene sensor",
+    "sin_respuesta": "La placa no respondió a tiempo"
   }
 }

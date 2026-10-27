@@ -23,7 +23,7 @@ En ACRECIA la regla que sostuvo la coherencia fue "entre módulos, solo contrato
 | `seguridad` | Cuentas, usuarios (PIN), roles, permisos, sesiones, rol activo |
 | `suscripciones` | Planes, suscripciones y límites (ADR 0017) |
 | `organizacion` | Sitios y puertas |
-| `accesos` | Generación y anulación de QR, validación, eventos de acceso |
+| `accesos` | Generación y anulación de QR, validación, lecturas |
 | `dispositivos` | Alta, credencial, latido, configuración, OTA |
 
 ### App (`app/lib/`)

@@ -31,6 +31,6 @@ Trabajo que sigue un patrón ya definido en un ADR o una convención: no decide 
 
 ## Cuándo usar `orquestador` y cuándo ir directo al agente
 
-- Tarea de una sola parte (p. ej. "agrega un índice a `eventos_acceso`"): directo al agente (`modelo-datos`).
+- Tarea de una sola parte (p. ej. "agrega un índice a `lecturas`"): directo al agente (`modelo-datos`).
 - Tarea que cruza partes (p. ej. "abrir la puerta con QR", que toca `modelo-datos` + `backend` + `api-rest` + `app-flutter` + `firmware`): primero `orquestador`.
 - Después de cualquier cambio no trivial, antes de darlo por cerrado: `validador`.

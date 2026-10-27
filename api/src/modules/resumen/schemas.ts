@@ -68,6 +68,8 @@ export const respuestaDeEstadisticas = z.object({
       dia: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       permitidos: z.number().int(),
       rechazados: z.number().int(),
+      repeticiones_permitidas: z.number().int(),
+      repeticiones_rechazadas: z.number().int(),
     }),
   ),
 });
@@ -81,6 +83,8 @@ export const consultaDeEventosDePlataforma = esquemaPaginacion.extend({
     .regex(/^\d{1,19}$/)
     .optional(),
   resultado: z.enum(['permitido', 'rechazado']).optional(),
+  /** Solo los accesos cuya orden de abrir terminó así (ADR 0031 §18); `fallida` muestra las aperturas que fallan. */
+  ejecucion: z.enum(['ejecutada', 'fallida', 'sin_confirmacion']).optional(),
   desde: esquemaFechaDeFiltro.optional(),
   hasta: esquemaFechaDeFiltro.optional(),
 });
@@ -95,5 +99,11 @@ export const respuestaDeEventosDePlataforma = esquemaListado(
     puerta: z.object({ id: z.string(), nombre: z.string(), sitio: z.string() }),
     dispositivo: z.string().nullable(),
     qr_etiqueta: z.string().nullable(),
+    /** Qué pasó con la orden de abrir; `null` en un rechazo o mientras la placa no informa. */
+    ejecucion: z.enum(['ejecutada', 'fallida', 'sin_confirmacion']).nullable(),
+    /** Por qué (`puerta_abrio`, `puerta_no_abrio`, `puerta_no_cerro`, `rele_no_accionado`, `sin_sensor`, `sin_respuesta`). */
+    ejecucion_causa: z.string().nullable(),
+    repeticiones_permitidas: z.number().int(),
+    repeticiones_rechazadas: z.number().int(),
   }),
 );
