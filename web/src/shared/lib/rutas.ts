@@ -18,6 +18,7 @@ export const RUTAS = {
   perfil: '/perfil',
   estados: '/estados',
   consumo: '/consumo',
+  notificaciones: '/notificaciones',
 } as const;
 
 /** Consumo de la bolsa de una cuenta (ADR 0030 §5). */

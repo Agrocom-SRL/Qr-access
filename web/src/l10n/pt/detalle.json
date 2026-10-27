@@ -4,7 +4,8 @@
     "suscripcion": "Assinatura",
     "sitios": "Propriedades e portas",
     "accesos": "Leituras",
-    "bitacora": "Registro de atividades"
+    "bitacora": "Registro de atividades",
+    "incidentes": "Incidentes"
   },
   "planActual": "Plano atual",
   "usuariosActivos": "Usuários ativos",
@@ -119,6 +120,8 @@
   "titularDetalle_other": "Titular · {{unidad}} · {{count}} Membros",
   "guardiaDetalle": "Guarda",
   "reasignar": "Reatribuir",
+  "dispositivos": "Dispositivos",
+  "verSesiones": "Ver os dispositivos conectados de {{nombre}}",
   "reasignando": "Reatribuindo",
   "reasignarA": "Reatribuir {{nombre}} a outro administrador",
   "reasignarTitulo": "Reatribuir {{nombre}}",

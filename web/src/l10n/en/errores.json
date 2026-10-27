@@ -56,5 +56,7 @@
   "cuenta_de_cobro_datos_incompletos": "Missing data: a bank account needs a holder and number, and a QR needs its image.",
   "cuenta_de_cobro_imagen_invalida": "The QR must be an image, not a PDF.",
   "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again.",
-  "notificacion_no_encontrada": "We couldn't find that notice."
+  "notificacion_no_encontrada": "We couldn't find that notice.",
+  "sesion_no_encontrada": "That session is no longer open.",
+  "limite_excedido": "You made too many requests in a row. Wait a moment and try again."
 }

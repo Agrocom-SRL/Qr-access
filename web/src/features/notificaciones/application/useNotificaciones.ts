@@ -1,5 +1,9 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { REFRESCO_DE_NOTIFICACIONES_MS, type FiltroDeNotificaciones } from '../domain/notificacion';
+import {
+  REFRESCO_DE_NOTIFICACIONES_MS,
+  type FiltroDeNotificaciones,
+  type TipoDeNotificacion,
+} from '../domain/notificacion';
 import { useNotificacionesRepositorio } from './contextos';
 
 /** Clave raíz de la bandeja: cualquier cambio la invalida entera (contador incluido). */
@@ -16,11 +20,15 @@ export function useContadorDeNotificaciones() {
 }
 
 /** La lista de la bandeja; se refresca mientras está abierta y mantiene la página anterior mientras carga. */
-export function useNotificaciones(filtro: FiltroDeNotificaciones, pagina: number) {
+export function useNotificaciones(
+  filtro: FiltroDeNotificaciones,
+  pagina: number,
+  tipo?: TipoDeNotificacion,
+) {
   const repositorio = useNotificacionesRepositorio();
   return useQuery({
-    queryKey: [...CLAVE_NOTIFICACIONES, 'lista', filtro, pagina],
-    queryFn: () => repositorio.listar(filtro, pagina),
+    queryKey: [...CLAVE_NOTIFICACIONES, 'lista', filtro, pagina, tipo ?? 'todos'],
+    queryFn: () => repositorio.listar(filtro, pagina, tipo),
     placeholderData: keepPreviousData,
     refetchInterval: REFRESCO_DE_NOTIFICACIONES_MS,
   });

@@ -1,0 +1,67 @@
+{
+  "titulo": "Incidentes de uso",
+  "subtitulo": "Casos raros da conta e as evidências. Aqui só são consultados: quem administra o ramo os confirma ou descarta. Nenhum corta o acesso sozinho.",
+  "filtros": {
+    "tipo": "Tipo",
+    "origen": "Origem",
+    "estado": "Situação",
+    "todos": "Todos"
+  },
+  "tipo": {
+    "uso_masivo": "Uso em massa de um QR",
+    "uso_imposible": "Uso impossível",
+    "pin_compartido": "PIN compartilhado",
+    "qr_reenviado": "QR reenviado",
+    "generacion_ruidosa": "Geração excessiva",
+    "perdida_o_robo": "Perda ou roubo",
+    "otro": "Outro"
+  },
+  "origen": {
+    "sistema": "Sistema",
+    "persona": "Pessoa"
+  },
+  "gravedad": {
+    "baja": "Baixa",
+    "media": "Média",
+    "alta": "Alta"
+  },
+  "estado": {
+    "sin_resolver": "Sem resolver",
+    "pendiente": "Pendente",
+    "confirmado": "Confirmado",
+    "descartado": "Descartado"
+  },
+  "columnas": {
+    "ocurrido": "Ocorrido",
+    "usuario": "Usuário",
+    "tipo": "Tipo",
+    "gravedad": "Gravidade",
+    "origen": "Origem",
+    "estado": "Situação"
+  },
+  "sinUsuario": "Usuário sem nome",
+  "tabla": "Incidentes da conta",
+  "ver": "Ver o incidente de {{usuario}}",
+  "vacio": {
+    "titulo": "Sem incidentes",
+    "texto": "Esta conta não tem incidentes com estes filtros."
+  },
+  "errorCarga": "Não conseguimos carregar os incidentes",
+  "detalle": {
+    "titulo": "Incidente de {{usuario}}",
+    "soloLectura": "Só é consultado aqui. Quem administra o ramo da conta o resolve.",
+    "usuario": "Usuário",
+    "tipo": "Tipo",
+    "origen": "Origem",
+    "registradoPor": "Registrado por {{persona}}",
+    "ocurrido": "Ocorrido",
+    "descripcion": "Descrição",
+    "sinDescripcion": "Sem descrição",
+    "evidencia": "Evidência",
+    "evidenciaCifras": "{{qr}} QR, {{accesos}} tentativas de acesso e {{limites}} recusas de geração",
+    "resolucion": "Resolução",
+    "sinResolver": "Ninguém o resolveu ainda",
+    "resueltoPor": "Por {{persona}}, em {{cuando}}",
+    "sinMotivo": "Sem motivo"
+  }
+}

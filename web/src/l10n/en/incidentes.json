@@ -1,0 +1,67 @@
+{
+  "titulo": "Usage incidents",
+  "subtitulo": "Rare cases in the account and their evidence. They are only viewed here: whoever manages the branch confirms or dismisses them. None of them cuts access by itself.",
+  "filtros": {
+    "tipo": "Type",
+    "origen": "Origin",
+    "estado": "Status",
+    "todos": "All"
+  },
+  "tipo": {
+    "uso_masivo": "Mass use of a QR",
+    "uso_imposible": "Impossible use",
+    "pin_compartido": "Shared PIN",
+    "qr_reenviado": "Forwarded QR",
+    "generacion_ruidosa": "Noisy generation",
+    "perdida_o_robo": "Loss or theft",
+    "otro": "Other"
+  },
+  "origen": {
+    "sistema": "System",
+    "persona": "Person"
+  },
+  "gravedad": {
+    "baja": "Low",
+    "media": "Medium",
+    "alta": "High"
+  },
+  "estado": {
+    "sin_resolver": "Unresolved",
+    "pendiente": "Pending",
+    "confirmado": "Confirmed",
+    "descartado": "Dismissed"
+  },
+  "columnas": {
+    "ocurrido": "Occurred",
+    "usuario": "User",
+    "tipo": "Type",
+    "gravedad": "Severity",
+    "origen": "Origin",
+    "estado": "Status"
+  },
+  "sinUsuario": "User without a name",
+  "tabla": "Incidents of the account",
+  "ver": "See the incident of {{usuario}}",
+  "vacio": {
+    "titulo": "No incidents",
+    "texto": "This account has no incidents with these filters."
+  },
+  "errorCarga": "We couldn't load the incidents",
+  "detalle": {
+    "titulo": "Incident of {{usuario}}",
+    "soloLectura": "You can only view it here. Whoever manages the account's branch resolves it.",
+    "usuario": "User",
+    "tipo": "Type",
+    "origen": "Origin",
+    "registradoPor": "Registered by {{persona}}",
+    "ocurrido": "Occurred",
+    "descripcion": "Description",
+    "sinDescripcion": "No description",
+    "evidencia": "Evidence",
+    "evidenciaCifras": "{{qr}} QR codes, {{accesos}} access attempts and {{limites}} generation rejections",
+    "resolucion": "Resolution",
+    "sinResolver": "Nobody has resolved it yet",
+    "resueltoPor": "By {{persona}}, on {{cuando}}",
+    "sinMotivo": "No reason given"
+  }
+}

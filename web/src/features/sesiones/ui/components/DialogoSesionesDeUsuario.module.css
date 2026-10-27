@@ -1,0 +1,21 @@
+.subtitulo {
+  margin: 0;
+  color: var(--textoSecundario);
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+}
+
+.dispositivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp2);
+}
+
+.suave {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BotonIcono } from '../atoms/BotonIcono';
 import { Icono } from '../atoms/Icono';
@@ -34,6 +34,8 @@ export function Dialogo({
 }: Props) {
   const { t } = useTranslation('comun');
   const ref = useRef<HTMLDialogElement>(null);
+  // Un id fijo rompe los diálogos anidados (una confirmación sobre una ficha): dos títulos con el mismo id.
+  const idTitulo = useId();
 
   useEffect(() => {
     const dialogo = ref.current;
@@ -53,7 +55,7 @@ export function Dialogo({
     <dialog
       ref={ref}
       className={cx(styles.dialogo, styles[ancho])}
-      aria-labelledby="titulo-dialogo"
+      aria-labelledby={idTitulo}
       onClose={onCerrar}
       onCancel={(e) => {
         e.preventDefault();
@@ -66,7 +68,7 @@ export function Dialogo({
         </span>
       ) : null}
       <div className={styles.cabecera}>
-        <h2 id="titulo-dialogo" className={styles.titulo}>
+        <h2 id={idTitulo} className={styles.titulo}>
           {titulo}
         </h2>
         {icono ? null : <BotonIcono icono="close" etiqueta={t('cerrar')} onClick={onCerrar} />}

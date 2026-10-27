@@ -43,6 +43,27 @@ export function lineasDeAviso(notificacion: Notificacion, t: TFunction, idioma: 
           }),
     );
   }
+  const propuesta = notificacion.propuesta;
+  if (propuesta) {
+    // La propuesta no aplica nada: dice qué se propone y con qué cifras, y si ya la aplicó el sistema.
+    lineas.push(
+      t(`notificaciones:propuesta.accion.${propuesta.accion}`, {
+        usuario: propuesta.usuarioEtiqueta ?? t('notificaciones:propuesta.sinNombre'),
+      }),
+    );
+    lineas.push(
+      t('notificaciones:propuesta.incidentes', {
+        confirmados: formatearNumero(propuesta.confirmados, idioma),
+        minimo: formatearNumero(propuesta.minimo, idioma),
+        ventana: formatearNumero(propuesta.ventanaDias, idioma),
+      }),
+    );
+    lineas.push(
+      propuesta.aplicadaAutomaticamente
+        ? t('notificaciones:propuesta.aplicada')
+        : t('notificaciones:propuesta.pendiente'),
+    );
+  }
   const flujo = notificacion.flujo;
   if (flujo) {
     lineas.push(

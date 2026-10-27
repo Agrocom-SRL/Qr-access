@@ -30,6 +30,9 @@ import type {
   ListadoDeFlujo,
 } from '@/features/senales';
 import type { Paginado } from '@/shared/api/tipos';
+import type { SesionesRepositorio, SesionDeUsuario } from '@/features/sesiones';
+import type { IncidentesRepositorio } from '@/features/incidentes/api/IncidentesRepositorio';
+import type { Incidente } from '@/features/incidentes/domain/incidente';
 
 export const CUENTAS_DE_COBRO: readonly CuentaDeCobro[] = [
   {
@@ -751,6 +754,65 @@ export const DETALLE_FLUJO: DetalleDeFlujo = {
   ],
 };
 
+/** Dispositivos conectados de un usuario de cuenta; el nombre trae HTML a propósito: debe verse como texto. */
+export const SESIONES_DE_USUARIO: SesionDeUsuario[] = [
+  {
+    id: '501',
+    plataforma: 'android',
+    dispositivo: 'Pixel <img src=x onerror=alert(1)>',
+    ip: '190.4.12.9',
+    iniciadaEn: new Date('2026-10-27T11:00:00Z'),
+    ultimaActividadEn: new Date('2026-10-27T12:30:00Z'),
+    expiraEn: new Date('2026-11-03T11:00:00Z'),
+  },
+  {
+    id: '502',
+    plataforma: null,
+    dispositivo: null,
+    ip: null,
+    iniciadaEn: new Date('2026-10-26T09:00:00Z'),
+    ultimaActividadEn: new Date('2026-10-26T09:05:00Z'),
+    expiraEn: new Date('2026-11-02T09:00:00Z'),
+  },
+];
+
+/** Incidentes de una cuenta: uno de un sistema con resolución y otro registrado a mano, sin resolver. */
+export const INCIDENTES_DE_CUENTA: Incidente[] = [
+  {
+    id: '901',
+    usuario: { id: '31', etiqueta: 'Jorge Rivero' },
+    tipo: 'uso_masivo',
+    gravedad: 'media',
+    origen: 'sistema',
+    registradoPor: null,
+    descripcion: null,
+    evidencia: { qrIds: ['11', '12'], eventoAccesoIds: ['70', '71', '72'], eventoLimiteIds: [] },
+    estado: 'confirmado',
+    resolucion: {
+      resultado: 'confirmado',
+      motivo: 'Dos QR a nombre de un mismo Titular',
+      resueltoPor: { id: '31', etiqueta: 'Jorge Rivero' },
+      resueltaEn: new Date('2026-10-26T15:00:00Z'),
+    },
+    ocurridoEn: new Date('2026-10-26T14:00:00Z'),
+    creadoEn: new Date('2026-10-26T14:01:00Z'),
+  },
+  {
+    id: '902',
+    usuario: { id: '42', etiqueta: null },
+    tipo: 'perdida_o_robo',
+    gravedad: 'alta',
+    origen: 'persona',
+    registradoPor: { id: '11', etiqueta: 'Carla Méndez' },
+    descripcion: '<b>Reportado</b> por la portería',
+    evidencia: { qrIds: [], eventoAccesoIds: [], eventoLimiteIds: [] },
+    estado: 'sin_resolver',
+    resolucion: null,
+    ocurridoEn: new Date('2026-10-27T09:00:00Z'),
+    creadoEn: new Date('2026-10-27T09:10:00Z'),
+  },
+];
+
 /** Servicios en memoria para tests de interfaz: mismos contratos que los HTTP (LSP). */
 export function crearServiciosDePrueba(
   parcial: {
@@ -769,6 +831,8 @@ export function crearServiciosDePrueba(
     estadisticas?: Partial<EstadisticasRepositorio>;
     limites?: Partial<LimitesRepositorio>;
     senales?: Partial<SenalesRepositorio>;
+    sesiones?: Partial<SesionesRepositorio>;
+    incidentes?: Partial<IncidentesRepositorio>;
   } = {},
 ): Servicios {
   const almacen = new AlmacenSesion();
@@ -975,6 +1039,22 @@ export function crearServiciosDePrueba(
     flujoDeCuenta: () => Promise.resolve(DETALLE_FLUJO),
     ...parcial.senales,
   };
+  const sesiones: SesionesRepositorio = {
+    listar: () => Promise.resolve(SESIONES_DE_USUARIO),
+    cerrar: () => Promise.resolve(),
+    cerrarTodas: () => Promise.resolve(SESIONES_DE_USUARIO.length),
+    ...parcial.sesiones,
+  };
+  const incidentes: IncidentesRepositorio = {
+    listar: () =>
+      Promise.resolve({
+        elementos: INCIDENTES_DE_CUENTA,
+        pagina: 1,
+        porPagina: 20,
+        total: INCIDENTES_DE_CUENTA.length,
+      }),
+    ...parcial.incidentes,
+  };
   return {
     almacen,
     seguridad,
@@ -992,6 +1072,8 @@ export function crearServiciosDePrueba(
     estadisticas,
     limites,
     senales,
+    sesiones,
+    incidentes,
   };
 }
 

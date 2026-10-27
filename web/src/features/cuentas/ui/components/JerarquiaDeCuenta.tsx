@@ -4,6 +4,12 @@ import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
+import { tienePermiso, useSesion } from '../../../seguridad';
+import {
+  DialogoSesionesDeUsuario,
+  PERMISO_VER_SESIONES,
+  type UsuarioConSesiones,
+} from '../../../sesiones';
 import { useJerarquia } from '../../application/useCuentas';
 import { destinosDeReasignacion } from '../../domain/cuenta';
 import { DialogoReasignar, type Reasignable } from './DialogoReasignar';
@@ -12,7 +18,8 @@ import styles from './JerarquiaDeCuenta.module.css';
 /**
  * Cómo está armada la cuenta (ADR 0028 §6): cada Administrador con sus Guardias y sus Titulares
  * (unidad y cuántos Miembros tiene cada uno). Con el permiso de reasignar, un Guardia o un Titular
- * se puede mover a otro Administrador; es la única forma de hacerlo.
+ * se puede mover a otro Administrador; es la única forma de hacerlo. Con el permiso de sesiones, cada
+ * persona abre sus dispositivos conectados (ADR 0030 §4.1).
  */
 export function JerarquiaDeCuenta({
   cuentaId,
@@ -24,7 +31,24 @@ export function JerarquiaDeCuenta({
 }) {
   const { t } = useTranslation(['detalle', 'comun']);
   const arbol = useJerarquia(cuentaId);
+  const { sesion } = useSesion();
+  const puedeVerSesiones = tienePermiso(sesion?.permisos ?? [], PERMISO_VER_SESIONES);
   const [aMover, setAMover] = useState<Reasignable | null>(null);
+  const [conSesiones, setConSesiones] = useState<UsuarioConSesiones | null>(null);
+
+  const botonDeSesiones = (usuario: UsuarioConSesiones) =>
+    puedeVerSesiones ? (
+      <AccesoBoton
+        variante="tonal"
+        icono="wifi"
+        aria-label={t('detalle:verSesiones', { nombre: usuario.etiqueta ?? '' })}
+        onClick={() => {
+          setConSesiones(usuario);
+        }}
+      >
+        {t('detalle:dispositivos')}
+      </AccesoBoton>
+    ) : null;
 
   return (
     <section className={styles.tarjeta} aria-labelledby="jerarquia-titulo">
@@ -45,7 +69,10 @@ export function JerarquiaDeCuenta({
         <ul className={styles.ramas}>
           {arbol.data.map((rama) => (
             <li key={rama.id} className={styles.rama}>
-              <h3 className={styles.administrador}>{rama.etiqueta}</h3>
+              <div className={styles.cabeceraRama}>
+                <h3 className={styles.administrador}>{rama.etiqueta}</h3>
+                {botonDeSesiones({ id: rama.id, etiqueta: rama.etiqueta })}
+              </div>
               {rama.guardias.length === 0 && rama.titulares.length === 0 ? (
                 <p className={styles.suave}>{t('detalle:ramaVacia')}</p>
               ) : (
@@ -61,6 +88,7 @@ export function JerarquiaDeCuenta({
                           })}
                         </span>
                       </div>
+                      {botonDeSesiones({ id: titular.id, etiqueta: titular.etiqueta })}
                       {puedeReasignar ? (
                         <AccesoBoton
                           variante="tonal"
@@ -87,6 +115,7 @@ export function JerarquiaDeCuenta({
                         <strong>{guardia.etiqueta}</strong>
                         <span className={styles.suave}>{t('detalle:guardiaDetalle')}</span>
                       </div>
+                      {botonDeSesiones({ id: guardia.id, etiqueta: guardia.etiqueta })}
                       {puedeReasignar ? (
                         <AccesoBoton
                           variante="tonal"
@@ -121,6 +150,15 @@ export function JerarquiaDeCuenta({
           setAMover(null);
         }}
       />
+      {conSesiones ? (
+        <DialogoSesionesDeUsuario
+          cuentaId={cuentaId}
+          usuario={conSesiones}
+          onCerrar={() => {
+            setConSesiones(null);
+          }}
+        />
+      ) : null}
     </section>
   );
 }
