@@ -6,7 +6,7 @@
 //
 // Uso (desde la raíz del repo, con los datos de preparar-datos.mjs):
 //   CARGA_ENTORNO=prueba CARGA_URL=http://127.0.0.1:3000 CARGA_DATOS=/ruta/absoluta/prueba.json \
-//   CARGA_ETAPAS=10:30,50:10,10:30 k6 run carga/escenarios/validacion-qr.js
+//   CARGA_ETAPAS=10:30,50:10,10:30 k6 run api/test/carga/escenarios/validacion-qr.js
 import { comprobarDatos, escenariosDeValidacion, validar, repetir } from '../lib/escenario-validacion.js';
 import { COMPUERTAS_VALIDACION } from '../lib/umbrales.js';
 import { resumenDe } from '../lib/resumen.js';

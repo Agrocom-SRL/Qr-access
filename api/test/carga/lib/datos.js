@@ -5,7 +5,7 @@ import { CONFIG } from './entorno.js';
 /** Lee y valida lo mínimo que necesitan los escenarios. Falla con un mensaje claro si falta algo. */
 export function leerDatos() {
   if (!CONFIG.datos) {
-    throw new Error('Falta CARGA_DATOS: ruta absoluta al JSON que genera carga/preparar-datos.mjs.');
+    throw new Error('Falta CARGA_DATOS: ruta absoluta al JSON que genera api/test/carga/preparar-datos.mjs.');
   }
   const datos = JSON.parse(open(CONFIG.datos));
   for (const clave of ['puertas', 'dispositivos', 'usuarios']) {

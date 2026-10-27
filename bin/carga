@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Pruebas de carga de AGROCOM Acceso (ADR 0030 §3, ADR 0032): un atajo sobre carga/ con las mismas variables.
+# Pruebas de carga de AGROCOM Acceso (ADR 0030 §3, ADR 0032): un atajo sobre api/test/carga/ con las mismas variables.
 # SOLO contra un entorno de prueba: exige CARGA_ENTORNO=prueba y un host declarado (ver docs/gestion/pruebas-de-carga.md).
 #
-#   bin/carga preparar [opciones]          crea los datos en el entorno de prueba (carga/preparar-datos.mjs)
+#   bin/carga preparar [opciones]          crea los datos en el entorno de prueba (api/test/carga/preparar-datos.mjs)
 #   bin/carga <escenario>                  corre un escenario k6 (validacion-qr, saturacion-usuarios, generacion-qr,
 #                                          login-sesiones, latidos-confirmaciones, rampa-stress, soak, verificar-limites)
 #   bin/carga lista                        muestra los escenarios
@@ -33,7 +33,7 @@ fi
 
 if [ "$orden" = preparar ]; then
   shift
-  exec node carga/preparar-datos.mjs "$@"
+  exec node api/test/carga/preparar-datos.mjs "$@"
 fi
 
 if ! printf '%s\n' "${ESCENARIOS[@]}" | grep -qx "$orden"; then
@@ -63,4 +63,4 @@ if [ -n "$datos" ]; then
   args+=(-e "CARGA_DATOS=$datos")
 fi
 
-exec k6 run "${args[@]}" "carga/escenarios/$orden.js"
+exec k6 run "${args[@]}" "api/test/carga/escenarios/$orden.js"

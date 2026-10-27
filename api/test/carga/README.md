@@ -33,12 +33,12 @@ Este README es la referencia rápida de la carpeta.
 ```bash
 # 1. Preparar datos (una vez por corrida de validación: cada QR se usa una sola vez).
 CARGA_ENTORNO=prueba CARGA_URL=http://127.0.0.1:3000 CARGA_ROOT_CLAVE='<clave de root del entorno>' \
-  node carga/preparar-datos.mjs --puertas 5 --usuarios 12 --qr 300 --qr-confirmacion 30 --qr-repeticion 5
+  node api/test/carga/preparar-datos.mjs --puertas 5 --usuarios 12 --qr 300 --qr-confirmacion 30 --qr-repeticion 5
 
 # 2. Correr un escenario desde la raíz del repo. k6 necesita las variables con -e (no como prefijo del shell).
 k6 run -e CARGA_ENTORNO=prueba -e CARGA_URL=http://127.0.0.1:3000 \
   -e CARGA_DATOS="$PWD/carga/datos/generados/prueba.json" -e CARGA_ETAPAS=10:30,50:10,10:30 \
-  carga/escenarios/validacion-qr.js
+  api/test/carga/escenarios/validacion-qr.js
 ```
 
 Con `bin/carga` el paso 2 se simplifica: `bin/carga validacion-qr` (ver `bin/carga lista`).
@@ -65,7 +65,7 @@ del proceso** en esta versión (probado con v1.3.0).
 | `CARGA_ESCALONES`, `CARGA_ESCALON_S`, `CARGA_PAUSA_ESCALON_S`, `CARGA_SONDA_TASA` | rampa | Escalones de VU, duración de cada uno, pausa y tasa de la sonda. |
 | `CARGA_SOAK_S`, `CARGA_SOAK_TASA` | soak | Duración en segundos y tasa de ciclos por segundo. |
 | `CARGA_TASA_CONFIRMACION`, `CARGA_LATIDO_S` | latidos y confirmaciones | Tasa de confirmaciones por segundo y periodo de latido. |
-| `CARGA_SALIDA` | todas | Carpeta de resúmenes (por omisión `carga/resultados`). |
+| `CARGA_SALIDA` | todas | Carpeta de resúmenes (por omisión `api/test/carga/resultados`). |
 | `CARGA_ROOT_CLAVE` | `preparar-datos.mjs` (**obligatoria**) | Contraseña del super admin del entorno de prueba. Nunca va a k6 ni a git. |
 | `CARGA_ROOT_USUARIO` | `preparar-datos.mjs` | Usuario del super admin (por omisión `root`). |
 | `CARGA_PLAN_ID`, `CARGA_CODIGO` | `preparar-datos.mjs` | Plan de la cuenta de prueba y código de 3 letras (si no, se sortea). |
@@ -86,6 +86,6 @@ toma como referencia, con `LIMITE_LOGIN_POR_MINUTO` y `LIMITE_GENERAR_QR_POR_MIN
 
 ```bash
 k6 inspect -e CARGA_ENTORNO=prueba -e CARGA_URL=http://127.0.0.1:3000 -e CARGA_DATOS=/ruta/absoluta.json \
-  carga/escenarios/validacion-qr.js
-node --check carga/preparar-datos.mjs
+  api/test/carga/escenarios/validacion-qr.js
+node --check api/test/carga/preparar-datos.mjs
 ```

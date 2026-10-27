@@ -43,7 +43,10 @@ export const REGLAS_SQL = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist/', 'coverage/', 'node_modules/', '.dependency-cruiser.cjs'] },
+  {
+    // test/carga son scripts de k6 en JavaScript (otro runtime, con globales como __ENV): no son TypeScript de la API.
+    ignores: ['dist/', 'coverage/', 'node_modules/', '.dependency-cruiser.cjs', 'test/carga/'],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
