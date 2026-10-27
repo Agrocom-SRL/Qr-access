@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
@@ -68,11 +69,13 @@ Future<SesionFalsa> _montar(
   WidgetTester tester, {
   required Set<String> permisos,
   List<QrAcceso> vigentes = const [],
+  bool apaisada = false,
 }) async {
   final sesion = SesionFalsa(sesionCon(permisos: permisos));
   await montarPantalla(
     tester,
     pagina: const InicioPagina(),
+    apaisada: apaisada,
     overrides: [
       sesionControladorProvider.overrideWith(() => sesion),
       relojProvider.overrideWithValue(() => _ahora),
@@ -264,6 +267,29 @@ void main() {
       await tester.tap(enBarra(Icons.person_outline).first);
       await tester.pumpAndSettle();
       expect(find.text('destino /perfil'), findsOneWidget);
+    });
+  });
+
+  group('en horizontal (852×393)', () {
+    testWidgets('el tablero de administración cabe y deja la barra inferior', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _administrador, apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      // La cabecera (avatar y campanita) no se corta arriba ni abajo.
+      final cabecera = tester.getRect(find.byType(EncabezadoInicio));
+      expect(cabecera.top, greaterThanOrEqualTo(0));
+      expect(cabecera.bottom, lessThanOrEqualTo(393));
+    });
+
+    testWidgets('el inicio de usuario cabe y deja la barra inferior', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario, apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
     });
   });
 }

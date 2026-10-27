@@ -32,7 +32,7 @@ class AccesoFoto extends StatelessWidget {
     final claro = Theme.of(context).brightness == Brightness.light;
     final fin = fundirConFondo && !(verdeEnClaro && claro)
         ? Theme.of(context).scaffoldBackgroundColor
-        : colores.hero.withValues(alpha: 0.88);
+        : colores.hero.withValues(alpha: opacidadFundidoFoto);
     return ExcludeSemantics(
       child: Stack(
         fit: StackFit.expand,
@@ -44,7 +44,7 @@ class AccesoFoto extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  colores.heroAcento.withValues(alpha: 0.45),
+                  colores.heroAcento.withValues(alpha: opacidadAcentoFoto),
                   colores.hero.withValues(alpha: 0),
                   fin,
                 ],

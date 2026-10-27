@@ -7,6 +7,8 @@ import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
 import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/eventos_pagina.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,6 +38,7 @@ Future<EventosRepositorioFalso> _montar(
   List<Lectura> eventos, {
   Exception? error,
   bool expandida = false,
+  bool apaisada = false,
 }) async {
   final repositorio = EventosRepositorioFalso(
     Pagina(datos: eventos, pagina: 1, porPagina: 20, total: eventos.length),
@@ -45,6 +48,7 @@ Future<EventosRepositorioFalso> _montar(
     tester,
     pagina: const EventosPagina(),
     expandida: expandida,
+    apaisada: apaisada,
     overrides: [
       eventosRepositorioProvider.overrideWithValue(repositorio),
       puertasRepositorioProvider.overrideWithValue(
@@ -162,4 +166,23 @@ void main() {
     expect(find.text('Sede'), findsOneWidget);
     expect(find.text(textos.lecturaMotivoQrUsado), findsOneWidget);
   });
+
+  testWidgets(
+    'en horizontal (852×393) las pestañas y la barra inferior caben',
+    (tester) async {
+      await _montar(tester, [
+        _evento(
+          id: 'e1',
+          resultado: ResultadoEvento.rechazado,
+          motivo: 'qr.vencido',
+        ),
+      ], apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
+      expect(
+        find.byType(PestanasDeslizables<ResultadoEvento?>),
+        findsOneWidget,
+      );
+    },
+  );
 }

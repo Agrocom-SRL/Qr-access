@@ -1,5 +1,5 @@
-import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:flutter/material.dart';
 
 /// Plantilla de QR generado y PIN generado (handoff): sin navegación, cerrar
@@ -11,7 +11,6 @@ class PlantillaPantallaCompleta extends StatelessWidget {
     required this.child,
     required this.alCerrar,
     this.pie,
-    this.iconoCerrar = Icons.close,
     super.key,
   });
 
@@ -23,7 +22,6 @@ class PlantillaPantallaCompleta extends StatelessWidget {
 
   /// Acción principal, fija abajo.
   final Widget? pie;
-  final IconData iconoCerrar;
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +33,10 @@ class PlantillaPantallaCompleta extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            tooltip: context.l10n.comunCerrar,
-            onPressed: alCerrar,
-            icon: Icon(iconoCerrar),
+          // Siempre X: lo que muestra se ve una sola vez y salir es abandonarlo
+          leading: BotonSalidaCabecera(
+            salida: SalidaDeCabecera.cerrar,
+            alPulsar: alCerrar,
           ),
           title: Text(titulo),
         ),

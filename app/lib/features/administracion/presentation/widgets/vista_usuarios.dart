@@ -42,7 +42,6 @@ class VistaUsuarios extends ConsumerWidget {
     final ahora = ref.read(relojProvider)();
     final puedeEditar = sesion.tiene(Permisos.editarUsuarios);
     final puedeEliminar = sesion.tiene(Permisos.eliminarUsuarios);
-    final puedeCrear = sesion.tiene(Permisos.crearUsuarios);
     final propioId = sesion is SesionAutenticada ? sesion.usuario.id : null;
 
     Widget botonPin(Usuario usuario, {required bool corto}) => AccesoBoton(
@@ -60,14 +59,9 @@ class VistaUsuarios extends ConsumerWidget {
       alCambiarPagina: (pagina) =>
           ref.read(paginaUsuariosProvider.notifier).pagina = pagina,
       vacio: EstadoVacio(
-        icono: Icons.people_outline,
+        ilustracion: Multimedia.vacioQr,
         titulo: l10n.usuariosSinUsuarios,
         ayuda: l10n.usuariosSinUsuariosAyuda,
-        textoAccion: puedeCrear ? l10n.usuariosNuevo : null,
-        iconoAccion: Icons.person_add_outlined,
-        alAccionar: puedeCrear
-            ? () => context.go(Rutas.adminUsuarioNuevo)
-            : null,
       ),
       tarjeta: (context, usuario) => TarjetaFila(
         titulo: usuario.etiqueta ?? l10n.qrSinEtiqueta,

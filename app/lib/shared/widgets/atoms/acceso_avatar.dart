@@ -58,8 +58,10 @@ class AccesoAvatar extends StatelessWidget {
             ? Icon(Icons.person_outline, color: color, size: lado / 2)
             : Text(
                 texto,
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(color: color, fontSize: lado / 2.6),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color,
+                  fontSize: lado / divisorInicialAvatar,
+                ),
               ),
       ),
     );

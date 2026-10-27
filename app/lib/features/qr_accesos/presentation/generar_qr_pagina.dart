@@ -16,6 +16,8 @@ import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/paso_vig
 import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/resumen_generacion.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/cabecera_titulo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/indicador_pasos.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
@@ -261,20 +263,20 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            tooltip: estado.paso == PasoGeneracion.puertas
-                ? l10n.comunCerrar
-                : l10n.comunAtras,
-            icon: Icon(
-              estado.paso == PasoGeneracion.puertas
-                  ? Icons.close
-                  : Icons.arrow_back,
-            ),
-            onPressed: estado.paso == PasoGeneracion.puertas
+          // El primer paso se descarta (X); los demás vuelven un paso (flecha).
+          leading: BotonSalidaCabecera(
+            salida: estado.paso == PasoGeneracion.puertas
+                ? SalidaDeCabecera.cerrar
+                : SalidaDeCabecera.volver,
+            alPulsar: estado.paso == PasoGeneracion.puertas
                 ? _cerrar
                 : controlador.atras,
           ),
-          title: Text(l10n.qrGenerarTitulo),
+          // Mismo estilo que el título de las demás pantallas (cabecera común).
+          title: Text(
+            l10n.qrGenerarTitulo,
+            style: CabeceraTitulo.estiloDe(context),
+          ),
         ),
         body: SafeArea(
           child: Column(

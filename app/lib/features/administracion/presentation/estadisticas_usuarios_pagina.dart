@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -14,8 +15,10 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
@@ -45,14 +48,14 @@ class _EstadisticasUsuariosPaginaEstado
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final tokens = context.tokens;
     final estadisticas = ref.watch(estadisticasProvider);
     final rutaLista = context.esCompacta ? Rutas.admin : Rutas.adminUsuarios;
 
     return PlantillaAdmin(
       destino: context.esCompacta ? DestinoNav.admin : DestinoNav.usuarios,
       rutaAtras: rutaLista,
-      alVolver: () => context.go(rutaLista),
+      salida: SalidaDeCabecera.volver,
+      alSalir: () => context.go(rutaLista),
       titulo: l10n.estadisticasTitulo,
       conRelleno: false,
       // Riverpod reintenta solo: mientras, el error previo sigue visible.
@@ -67,47 +70,56 @@ class _EstadisticasUsuariosPaginaEstado
                 titulo: textoDeError(l10n, error),
                 alReintentar: () => ref.invalidate(estadisticasProvider),
               ),
-              data: (datos) => ListView(
-                padding: EdgeInsets.all(tokens.espacio.l),
-                children: [
-                  AccesoAviso(
-                    tono: TonoAviso.informacion,
-                    texto: l10n.estadisticasAviso(
-                      datos.umbralInactivoDias,
-                      datos.umbralRuidosoPorDia,
-                    ),
+              data: (datos) => PestanasDeslizables<_Vista>(
+                segmentos: [
+                  SegmentoDeSelector(
+                    valor: _Vista.inactivos,
+                    etiqueta: l10n.estadisticasInactivos,
+                    conteo: datos.inactivos.length,
                   ),
-                  SizedBox(height: tokens.espacio.l),
-                  SelectorSegmentado<_Vista>(
-                    segmentos: [
-                      SegmentoDeSelector(
-                        valor: _Vista.inactivos,
-                        etiqueta: l10n.estadisticasInactivos,
-                        conteo: datos.inactivos.length,
-                      ),
-                      SegmentoDeSelector(
-                        valor: _Vista.ruidosos,
-                        etiqueta: l10n.estadisticasRuidosos,
-                        conteo: datos.ruidosos.length,
-                      ),
-                      SegmentoDeSelector(
-                        valor: _Vista.titulares,
-                        etiqueta: l10n.estadisticasTitulares,
-                        conteo: datos.titularesCercaDelTope.length,
-                      ),
-                    ],
-                    seleccionado: _vista,
-                    alElegir: (vista) => setState(() => _vista = vista),
+                  SegmentoDeSelector(
+                    valor: _Vista.ruidosos,
+                    etiqueta: l10n.estadisticasRuidosos,
+                    conteo: datos.ruidosos.length,
                   ),
-                  SizedBox(height: tokens.espacio.l),
-                  ..._filas(datos),
+                  SegmentoDeSelector(
+                    valor: _Vista.titulares,
+                    etiqueta: l10n.estadisticasTitulares,
+                    conteo: datos.titularesCercaDelTope.length,
+                  ),
                 ],
+                seleccionado: _vista,
+                alElegir: (vista) => setState(() => _vista = vista),
+                paginaDe: (context, vista) => _pagina(datos, vista),
               ),
             ),
     );
   }
 
-  List<Widget> _filas(EstadisticasDeUsuarios datos) {
+  /// La lista de una vista con el aviso informativo: arriba cuando hay filas
+  /// y debajo de la ilustración cuando la lista está vacía, para que no
+  /// compita con ella.
+  Widget _pagina(EstadisticasDeUsuarios datos, _Vista vista) {
+    final tokens = context.tokens;
+    final filas = _filas(datos, vista);
+    final vacia = filas.length == 1 && filas.first is EstadoVacio;
+    final aviso = AccesoAviso(
+      tono: TonoAviso.informacion,
+      texto: context.l10n.estadisticasAviso(
+        datos.umbralInactivoDias,
+        datos.umbralRuidosoPorDia,
+      ),
+    );
+    final separacion = SizedBox(height: tokens.espacio.l);
+    return ListView(
+      padding: EdgeInsets.all(tokens.espacio.l),
+      children: vacia
+          ? [...filas, separacion, aviso]
+          : [aviso, separacion, ...filas],
+    );
+  }
+
+  List<Widget> _filas(EstadisticasDeUsuarios datos, _Vista vista) {
     final l10n = context.l10n;
     final tokens = context.tokens;
     final puedeEliminar = ref
@@ -119,16 +131,16 @@ class _EstadisticasUsuariosPaginaEstado
       child: fila,
     );
 
-    switch (_vista) {
+    switch (vista) {
       case _Vista.inactivos || _Vista.ruidosos:
-        final lista = _vista == _Vista.inactivos
+        final lista = vista == _Vista.inactivos
             ? datos.inactivos
             : datos.ruidosos;
         if (lista.isEmpty) {
           return [
             EstadoVacio(
-              icono: Icons.check_circle_outline,
-              titulo: _vista == _Vista.inactivos
+              ilustracion: Multimedia.vacioQr,
+              titulo: vista == _Vista.inactivos
                   ? l10n.estadisticasSinInactivos
                   : l10n.estadisticasSinRuidosos,
             ),
@@ -190,7 +202,7 @@ class _EstadisticasUsuariosPaginaEstado
         if (lista.isEmpty) {
           return [
             EstadoVacio(
-              icono: Icons.check_circle_outline,
+              ilustracion: Multimedia.vacioEventos,
               titulo: l10n.estadisticasSinTitulares,
             ),
           ];

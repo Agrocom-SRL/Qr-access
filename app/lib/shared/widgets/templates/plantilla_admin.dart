@@ -8,6 +8,8 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_logo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/banner_sin_conexion.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/cabecera_titulo.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,11 +28,15 @@ class PlantillaAdmin extends ConsumerWidget {
     this.accionCompacta,
     this.fab,
     this.rutaAtras,
-    this.alVolver,
+    this.salida = SalidaDeCabecera.ninguna,
+    this.alSalir,
     this.anchoMaximo,
     this.conRelleno = true,
     super.key,
-  });
+  }) : assert(
+         salida == SalidaDeCabecera.ninguna || alSalir != null,
+         'Una salida necesita qué hacer al pulsarla (alSalir)',
+       );
 
   final DestinoNav destino;
   final Widget child;
@@ -52,8 +58,13 @@ class PlantillaAdmin extends ConsumerWidget {
   /// (un formulario, por ejemplo); por defecto, a Inicio.
   final String? rutaAtras;
 
-  /// Muestra una flecha para volver a la izquierda del título (formularios).
-  final VoidCallback? alVolver;
+  /// Botón de salida a la izquierda del título: flecha para volver dentro de
+  /// la jerarquía, X para cerrar un formulario que se descarta (ver
+  /// `SalidaDeCabecera`).
+  final SalidaDeCabecera salida;
+
+  /// Lo que pasa al pulsar la salida; obligatorio si hay [salida].
+  final VoidCallback? alSalir;
   final double? anchoMaximo;
 
   /// Relleno horizontal alrededor del contenido; `false` si el contenido lo
@@ -70,10 +81,11 @@ class PlantillaAdmin extends ConsumerWidget {
 
     final cabecera = titulo == null
         ? null
-        : _Cabecera(
+        : CabeceraTitulo(
             titulo: titulo!,
             subtitulo: subtitulo,
-            alVolver: alVolver,
+            salida: salida,
+            alSalir: alSalir,
             accion: clase == ClasePantalla.compacta
                 ? (accionCompacta ?? accion)
                 : accion,
@@ -212,57 +224,6 @@ class _AvisoDatosGuardados extends ConsumerWidget {
   }
 }
 
-class _Cabecera extends StatelessWidget {
-  const new({
-    required this.titulo,
-    required this.subtitulo,
-    required this.accion,
-    this.alVolver,
-  });
-
-  final String titulo;
-  final String? subtitulo;
-  final Widget? accion;
-  final VoidCallback? alVolver;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final textos = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (alVolver != null) ...[
-          IconButton(
-            tooltip: context.l10n.comunAtras,
-            icon: const Icon(Icons.arrow_back),
-            onPressed: alVolver,
-          ),
-          SizedBox(width: tokens.espacio.s),
-        ],
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(titulo, style: textos.headlineLarge),
-              if (subtitulo != null) ...[
-                SizedBox(height: tokens.espacio.xs),
-                Text(
-                  subtitulo!,
-                  style: textos.bodyLarge?.copyWith(
-                    color: tokens.colores.textoSecundario,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (accion != null) ...[SizedBox(width: tokens.espacio.l), accion!],
-      ],
-    );
-  }
-}
-
 class _Rail extends StatelessWidget {
   const new({
     required this.destinos,
@@ -296,6 +257,9 @@ class _Rail extends StatelessWidget {
     return SizedBox(
       width: extendido ? tokens.tamano.railExpandido : tokens.tamano.railMedio,
       child: NavigationRail(
+        // Con poco alto, los destinos se desplazan y el logo y el usuario
+        // quedan fijos: ningún destino queda fuera de pantalla.
+        scrollable: true,
         extended: extendido,
         minExtendedWidth: tokens.tamano.railExpandido,
         minWidth: tokens.tamano.railMedio,
@@ -333,54 +297,52 @@ class _Rail extends StatelessWidget {
         ),
         trailing: autenticada == null
             ? null
-            : Expanded(
-                child: Align(
-                  alignment: extendido
-                      ? Alignment.bottomLeft
-                      : Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.all(tokens.espacio.l),
-                    // Extendido: el bloque ocupa todo el ancho del rail y
-                    // arranca a la izquierda, alineado con el logo de arriba.
-                    child: SizedBox(
-                      width: extendido
-                          ? tokens.tamano.railExpandido - tokens.espacio.xxl
-                          : null,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AccesoAvatar(
-                            etiqueta: autenticada.usuario.etiqueta,
-                            tamano: tokens.tamano.avatarChico,
-                          ),
-                          if (extendido) ...[
-                            SizedBox(width: tokens.espacio.m),
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    autenticada.usuario.etiqueta ??
-                                        l10n.inicioSaludoSinNombre,
-                                    style: textos.titleSmall,
-                                    overflow: TextOverflow.ellipsis,
+            : Align(
+                alignment: extendido
+                    ? Alignment.bottomLeft
+                    : Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.all(tokens.espacio.l),
+                  // Extendido: el bloque ocupa todo el ancho del rail y
+                  // arranca a la izquierda, alineado con el logo de arriba.
+                  child: SizedBox(
+                    width: extendido
+                        ? tokens.tamano.railExpandido - tokens.espacio.xxl
+                        : null,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AccesoAvatar(
+                          etiqueta: autenticada.usuario.etiqueta,
+                          tamano: tokens.tamano.avatarChico,
+                        ),
+                        if (extendido) ...[
+                          SizedBox(width: tokens.espacio.m),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  autenticada.usuario.etiqueta ??
+                                      l10n.inicioSaludoSinNombre,
+                                  style: textos.titleSmall,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  l10n.perfilRolYCuenta(
+                                    autenticada.rolActivo.nombre,
+                                    autenticada.cuenta.codigo,
                                   ),
-                                  Text(
-                                    l10n.perfilRolYCuenta(
-                                      autenticada.rolActivo.nombre,
-                                      autenticada.cuenta.codigo,
-                                    ),
-                                    style: textos.bodySmall?.copyWith(
-                                      color: tokens.colores.textoSecundario,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                  style: textos.bodySmall?.copyWith(
+                                    color: tokens.colores.textoSecundario,
                                   ),
-                                ],
-                              ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ],
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -426,68 +388,83 @@ class _BarraLateral extends StatelessWidget {
       width: tokens.tamano.railExpandido,
       color: colores.superficie,
       padding: EdgeInsets.all(tokens.espacio.l),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              AccesoLogo(tamano: tokens.tamano.iconoCaja),
-              SizedBox(width: tokens.espacio.m),
-              Expanded(
-                child: Text(
-                  l10n.appTitulo,
-                  style: textos.titleMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: tokens.espacio.xl),
-          for (var i = 0; i < destinos.length; i++)
-            Padding(
-              padding: EdgeInsets.only(bottom: tokens.espacio.xs),
-              child: _ItemLateral(
-                icono: PlantillaAdmin._icono(destinos[i], activo: i == indice),
-                etiqueta: PlantillaAdmin._etiqueta(l10n, destinos[i]),
-                activo: i == indice,
-                alTocar: () => irA(i),
-              ),
-            ),
-          const Spacer(),
-          if (usuario != null)
-            Row(
-              children: [
-                AccesoAvatar(
-                  etiqueta: usuario.usuario.etiqueta,
-                  tamano: tokens.tamano.avatar,
-                ),
-                SizedBox(width: tokens.espacio.m),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+      // Con poco alto (horizontal de teléfono) la barra se desplaza: el usuario
+      // queda abajo si hay lugar, y ningún destino se corta.
+      child: LayoutBuilder(
+        builder: (context, restricciones) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: restricciones.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        usuario.usuario.etiqueta ?? l10n.inicioSaludoSinNombre,
-                        style: textos.titleSmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        l10n.perfilRolYCuenta(
-                          usuario.rolActivo.nombre,
-                          usuario.cuenta.codigo,
+                      AccesoLogo(tamano: tokens.tamano.iconoCaja),
+                      SizedBox(width: tokens.espacio.m),
+                      Expanded(
+                        child: Text(
+                          l10n.appTitulo,
+                          style: textos.titleMedium,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        style: textos.bodySmall?.copyWith(
-                          color: colores.textoSecundario,
-                        ),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-              ],
+                  SizedBox(height: tokens.espacio.xl),
+                  for (var i = 0; i < destinos.length; i++)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: tokens.espacio.xs),
+                      child: _ItemLateral(
+                        icono: PlantillaAdmin._icono(
+                          destinos[i],
+                          activo: i == indice,
+                        ),
+                        etiqueta: PlantillaAdmin._etiqueta(l10n, destinos[i]),
+                        activo: i == indice,
+                        alTocar: () => irA(i),
+                      ),
+                    ),
+                  const Spacer(),
+                  if (usuario != null)
+                    Row(
+                      children: [
+                        AccesoAvatar(
+                          etiqueta: usuario.usuario.etiqueta,
+                          tamano: tokens.tamano.avatar,
+                        ),
+                        SizedBox(width: tokens.espacio.m),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                usuario.usuario.etiqueta ??
+                                    l10n.inicioSaludoSinNombre,
+                                style: textos.titleSmall,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                l10n.perfilRolYCuenta(
+                                  usuario.rolActivo.nombre,
+                                  usuario.cuenta.codigo,
+                                ),
+                                style: textos.bodySmall?.copyWith(
+                                  color: colores.textoSecundario,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

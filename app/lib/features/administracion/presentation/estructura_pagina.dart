@@ -17,6 +17,7 @@ import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/confirmar_dialogo.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
@@ -59,8 +60,6 @@ class EstructuraPagina extends ConsumerWidget {
               ilustracion: Multimedia.vacioPuertas,
               titulo: l10n.estructuraSinSitios,
               ayuda: l10n.estructuraSinSitiosAyuda,
-              textoAccion: puedeSitios ? l10n.estructuraSitioNuevo : null,
-              alAccionar: puedeSitios ? () => _nuevoSitio(context, ref) : null,
             )
           : ListView.separated(
               padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
@@ -77,45 +76,23 @@ class EstructuraPagina extends ConsumerWidget {
               },
             ),
     );
-    // En compacto, la misma estructura de "Generar QR": barra superior con la
-    // flecha para volver a Administración › Puertas y sin navegación inferior.
-    if (context.esCompacta) {
-      return PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (salio, _) {
-          if (!salio) _volver(context, ref);
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              tooltip: l10n.comunAtras,
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => _volver(context, ref),
-            ),
-            title: Text(l10n.estructuraTitulo),
-            actions: [
-              if (puedeSitios)
-                IconButton(
-                  tooltip: l10n.estructuraSitioNuevo,
-                  onPressed: () => _nuevoSitio(context, ref),
-                  icon: const Icon(Icons.add_business_outlined),
-                ),
-            ],
-          ),
-          body: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
-              child: cuerpo,
-            ),
-          ),
-        ),
-      );
-    }
+    // La misma cabecera que el resto de listados (título grande de
+    // PlantillaAdmin, con flecha para volver a Administración › Puertas). En
+    // compacto, la acción va como ícono; no hay AppBar aparte.
     return PlantillaAdmin(
       destino: DestinoNav.puertas,
       rutaAtras: Rutas.adminPuertas,
+      salida: SalidaDeCabecera.volver,
+      alSalir: () => _volver(context, ref),
       titulo: l10n.estructuraTitulo,
       accion: puedeSitios ? nuevoSitio : null,
+      accionCompacta: puedeSitios
+          ? IconButton(
+              tooltip: l10n.estructuraSitioNuevo,
+              onPressed: () => _nuevoSitio(context, ref),
+              icon: const Icon(Icons.add_business_outlined),
+            )
+          : null,
       child: cuerpo,
     );
   }

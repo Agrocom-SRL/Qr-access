@@ -382,42 +382,47 @@ class _TarjetasSkeleton extends StatelessWidget {
     final tokens = context.tokens;
     return Semantics(
       label: context.l10n.comunCargando,
-      child: Column(
-        children: [
-          for (var i = 0; i < tokens.tamano.filasDelTablero; i++) ...[
-            AccesoTarjeta(
-              child: Row(
-                children: [
-                  AccesoSkeleton(
-                    ancho: tokens.tamano.iconoCaja,
-                    alto: tokens.tamano.iconoCaja,
-                  ),
-                  SizedBox(width: tokens.espacio.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AccesoSkeleton(
-                          ancho: tokens.tamano.railExpandido / 1.4,
-                        ),
-                        SizedBox(height: tokens.espacio.s),
-                        AccesoSkeleton(
-                          ancho: tokens.tamano.railExpandido / 2,
-                          alto: tokens.espacio.m,
-                        ),
-                      ],
+      // Con poco alto (horizontal de teléfono) el esqueleto no cabe: se recorta
+      // sin desbordar, sin que nadie pueda desplazarlo.
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            for (var i = 0; i < tokens.tamano.filasDelTablero; i++) ...[
+              AccesoTarjeta(
+                child: Row(
+                  children: [
+                    AccesoSkeleton(
+                      ancho: tokens.tamano.iconoCaja,
+                      alto: tokens.tamano.iconoCaja,
                     ),
-                  ),
-                  AccesoSkeleton(
-                    ancho: tokens.tamano.railMedio,
-                    alto: tokens.tamano.badge,
-                  ),
-                ],
+                    SizedBox(width: tokens.espacio.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.railExpandido / 1.4,
+                          ),
+                          SizedBox(height: tokens.espacio.s),
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.railExpandido / 2,
+                            alto: tokens.espacio.m,
+                          ),
+                        ],
+                      ),
+                    ),
+                    AccesoSkeleton(
+                      ancho: tokens.tamano.railMedio,
+                      alto: tokens.tamano.badge,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: tokens.espacio.m),
+              SizedBox(height: tokens.espacio.m),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

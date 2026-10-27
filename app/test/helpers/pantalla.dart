@@ -11,6 +11,10 @@ import 'package:go_router/go_router.dart';
 const tamanoCompacto = Size(360, 800);
 const tamanoExpandido = Size(1440, 900);
 
+/// Teléfono en horizontal (iPhone 17): ancho de tablet, poco alto. Debe
+/// verse como compacto, sin desbordes.
+const tamanoApaisado = Size(852, 393);
+
 /// Fija el tamaño de la ventana del test (y lo restaura al terminar).
 void usarTamano(WidgetTester tester, Size tamano) {
   tester.view
@@ -30,8 +34,16 @@ Future<void> montarPantalla(
   ThemeData? tema,
   String ruta = '/',
   bool expandida = false,
+  bool apaisada = false,
 }) async {
-  usarTamano(tester, expandida ? tamanoExpandido : tamanoCompacto);
+  usarTamano(
+    tester,
+    apaisada
+        ? tamanoApaisado
+        : expandida
+        ? tamanoExpandido
+        : tamanoCompacto,
+  );
   final router = GoRouter(
     initialLocation: ruta,
     routes: [
@@ -48,6 +60,9 @@ Future<void> montarPantalla(
         Rutas.perfil,
         Rutas.dispositivos,
         Rutas.notificaciones,
+        Rutas.incidentes,
+        Rutas.incidenteDetalle,
+        Rutas.exportar,
         Rutas.admin,
         Rutas.adminPuertas,
         Rutas.adminEstructura,
