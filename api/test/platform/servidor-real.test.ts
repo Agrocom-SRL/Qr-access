@@ -211,4 +211,32 @@ describe('API con servidor HTTP real', () => {
       expect(((await qr.json()) as { texto: string }).texto).toMatch(/^AQ1\./);
     });
   });
+
+  describe('POST /dispositivos/confirmaciones', () => {
+    // Usaba `request.signal`: con un cliente real llegaba abortada y respondía 503 (ver presupuesto.ts).
+    it('con un cliente real responde 204 (y repetida, 204) y no 503', async () => {
+      const p = await abrir();
+      const qr = await crearQr(p.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+      const validada = (await (await validar(qr.texto)).json()) as Validacion & {
+        evento_id: string;
+      };
+      expect(validada.abrir).toBe(true);
+
+      for (let intento = 0; intento < 2; intento++) {
+        const respuesta = await fetch(`${url}/dispositivos/confirmaciones`, {
+          method: 'POST',
+          headers: {
+            authorization: a.dispositivoPrincipal.encabezado,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ evento_id: validada.evento_id, resultado: 'ejecutada' }),
+        });
+        expect(respuesta.status).toBe(204);
+      }
+      const [filas] = await p.pool.query<RowDataPacket[]>(
+        'SELECT COUNT(*) AS total FROM confirmaciones_apertura',
+      );
+      expect(Number(filas[0]?.total)).toBe(1);
+    });
+  });
 });
