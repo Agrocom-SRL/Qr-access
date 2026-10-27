@@ -32,7 +32,8 @@
     "senal_uso": "A QR has unusual use",
     "bolsa_aviso": "An account's QR quota reached the warning level",
     "bolsa_superada": "An account exceeded its QR quota for the month",
-    "flujo_atipico": "A day of openings was unusual"
+    "flujo_atipico": "A day of openings was unusual",
+    "incidente_propuesta": "The system proposes an action on a user with repeat incidents"
   },
   "detalle": {
     "aperturasFallidas_one": "{{count}} opening not confirmed",
@@ -73,5 +74,21 @@
     "base": "Usual baseline: {{base}} openings",
     "sinBase": "No usual baseline yet",
     "dia": "Day {{dia}}"
+  },
+  "filtroTipo": "Notice type",
+  "todosLosTipos": "All types",
+  "pagina": {
+    "titulo": "Notices"
+  },
+  "propuesta": {
+    "accion": {
+      "restringir": "Proposes restricting {{usuario}}",
+      "suspender": "Proposes suspending {{usuario}}",
+      "suspender_y_anular": "Proposes suspending {{usuario}} and cancelling their valid QR codes"
+    },
+    "sinNombre": "this user",
+    "incidentes": "{{confirmados}} of {{minimo}} confirmed incidents in {{ventana}} days",
+    "aplicada": "The system already restricted them automatically. Check whether that is right.",
+    "pendiente": "Nobody has applied it yet: a person in the account decides."
   }
 }

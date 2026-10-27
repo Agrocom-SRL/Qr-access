@@ -58,6 +58,13 @@ const ITEMS: readonly (ItemRail & { permiso?: string; cualquieraDe?: readonly st
     cualquieraDe: ['limites.consumo.ver', 'seguridad.senal.ver'],
   },
   {
+    clave: 'notificaciones',
+    ruta: RUTAS.notificaciones,
+    icono: 'notifications',
+    iconoActivo: 'notifications_active',
+    permiso: 'notificaciones.aviso_plataforma.ver',
+  },
+  {
     clave: 'planes',
     ruta: RUTAS.planes,
     icono: 'sell',

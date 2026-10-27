@@ -54,6 +54,7 @@
   --railColapsado: 80px; /* 768–1023 */
   --anchoFormulario: 720px;
   --anchoContenido: 1200px;
+  --anchoSelector: 280px; /* selectores de filtro en una barra; se parten en varias filas si no caben */
 
   /* Movimiento */
   --dur120: 120ms;

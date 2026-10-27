@@ -32,7 +32,8 @@
     "senal_uso": "Um QR teve uso fora do normal",
     "bolsa_aviso": "A cota de QR de uma conta chegou ao aviso",
     "bolsa_superada": "Uma conta superou a cota de QR do mês",
-    "flujo_atipico": "Um dia de acessos foi atípico"
+    "flujo_atipico": "Um dia de acessos foi atípico",
+    "incidente_propuesta": "O sistema propõe uma ação sobre um usuário reincidente"
   },
   "detalle": {
     "aperturasFallidas_one": "{{count}} abertura sem confirmação",
@@ -73,5 +74,21 @@
     "base": "Base habitual: {{base}} aberturas",
     "sinBase": "Ainda sem base habitual",
     "dia": "Dia {{dia}}"
+  },
+  "filtroTipo": "Tipo de aviso",
+  "todosLosTipos": "Todos os tipos",
+  "pagina": {
+    "titulo": "Avisos"
+  },
+  "propuesta": {
+    "accion": {
+      "restringir": "Propõe restringir {{usuario}}",
+      "suspender": "Propõe suspender {{usuario}}",
+      "suspender_y_anular": "Propõe suspender {{usuario}} e anular os QR válidos dele"
+    },
+    "sinNombre": "este usuário",
+    "incidentes": "{{confirmados}} de {{minimo}} incidentes confirmados em {{ventana}} dias",
+    "aplicada": "O sistema já o restringiu automaticamente. Verifique se está correto.",
+    "pendiente": "Ninguém a aplicou ainda: quem decide é uma pessoa da conta."
   }
 }

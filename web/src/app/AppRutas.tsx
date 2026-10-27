@@ -6,6 +6,7 @@ import {
   RUTAS_DE_CUENTAS,
 } from '../features/cuentas';
 import { BitacoraPage } from '../features/bitacora';
+import { NotificacionesPage } from '../features/notificaciones';
 import { DetalleConsumoPage } from '../features/limites';
 import { CuentasDeCobroPage } from '../features/cobro';
 import { CobranzaPage, RegistrarPagoPage } from '../features/pagos';
@@ -59,6 +60,14 @@ export function AppRutas() {
         />
         <Route path={RUTAS.planes} element={<PlanesPage />} />
         <Route path={RUTAS.bitacora} element={<BitacoraPage />} />
+        <Route
+          path={RUTAS.notificaciones}
+          element={
+            <ConPermiso permisos={['notificaciones.aviso_plataforma.ver']}>
+              <NotificacionesPage />
+            </ConPermiso>
+          }
+        />
         <Route path={RUTAS.equipo} element={<EquipoPage />} />
         <Route path={RUTAS.perfil} element={<PerfilPage />} />
         <Route path={RUTAS.estados} element={<EstadosPage />} />

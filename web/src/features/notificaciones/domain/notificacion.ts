@@ -10,11 +10,49 @@ export type TipoDeNotificacion =
   | 'placa.lector_sin_respuesta'
   | 'placa.recuperada'
   | 'apertura.fallida'
+  // El sistema PROPONE restringir o suspender a un reincidente; una persona decide (ADR 0033 §4.3, ola W11).
+  | 'incidente.propuesta'
   // Señales de abuso y consumo de la bolsa (ADR 0030 §4 y §5, ola W12): no cortan nada, solo avisan.
   | 'senal.uso'
   | 'bolsa.aviso'
   | 'bolsa.superada'
   | 'flujo.atipico';
+
+/** Todos los tipos que la bandeja puede traer, en el orden del filtro. Espejo de `TIPOS_DE_NOTIFICACION` de la API. */
+export const TIPOS_DE_NOTIFICACION: readonly TipoDeNotificacion[] = [
+  'placa.caida_sostenida',
+  'placa.desaparecida',
+  'placa.lector_sin_respuesta',
+  'placa.recuperada',
+  'apertura.fallida',
+  'incidente.propuesta',
+  'senal.uso',
+  'bolsa.aviso',
+  'bolsa.superada',
+  'flujo.atipico',
+];
+
+/** Lo que se propone hacer con un usuario reincidente (ADR 0033 §4.3). */
+export const ACCIONES_PROPUESTAS = ['restringir', 'suspender', 'suspender_y_anular'] as const;
+export type AccionPropuesta = (typeof ACCIONES_PROPUESTAS)[number];
+
+/**
+ * La propuesta de un incidente reincidente: el sistema NO aplica nada, la propone. Quien administra la rama
+ * la aplica desde la cuenta; AGROCOM la ve aquí. Sin tokens: ids y recuentos.
+ */
+export interface PropuestaDeIncidente {
+  accion: AccionPropuesta;
+  usuarioId: string;
+  usuarioEtiqueta: string | null;
+  incidenteId: string;
+  /** Código del tipo de incidente (`uso_masivo`, `perdida_o_robo`...); la interfaz lo traduce. */
+  incidenteTipo: string;
+  confirmados: number;
+  minimo: number;
+  ventanaDias: number;
+  /** `true` si la cuenta tenía la restricción automática encendida y el sistema ya restringió al usuario. */
+  aplicadaAutomaticamente: boolean;
+}
 
 export type Severidad = 'info' | 'aviso' | 'critica';
 
@@ -89,6 +127,8 @@ export interface Notificacion {
   bolsa?: BolsaDeAviso;
   /** Solo en `flujo.atipico`. */
   flujo?: FlujoDeAviso;
+  /** Solo en `incidente.propuesta`. */
+  propuesta?: PropuestaDeIncidente;
   novedadEn: Date;
   creadaEn: Date;
 }

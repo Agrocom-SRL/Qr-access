@@ -2,8 +2,10 @@ import type { ClienteHttp } from '../../../shared/api/clienteHttp';
 import { paginadoDesde, type ListadoDto } from '../../../shared/api/tipos';
 import {
   CAUSAS_DE_APERTURA,
+  type AccionPropuesta,
   type BolsaDeAviso,
   type FlujoDeAviso,
+  type PropuestaDeIncidente,
   type SenalDeUso,
   POR_PAGINA_DE_NOTIFICACIONES,
   type CausaDeApertura,
@@ -52,6 +54,17 @@ interface NotificacionDto {
       umbral_por_usuario: number;
       base: number | null;
     };
+    propuesta?: {
+      accion: AccionPropuesta;
+      usuario_id: string;
+      usuario_etiqueta: string | null;
+      incidente_id: string;
+      incidente_tipo: string;
+      confirmados: number;
+      minimo: number;
+      ventana_dias: number;
+      aplicada_automaticamente: boolean;
+    };
   };
   novedad_at: string;
   creada_at: string;
@@ -73,6 +86,23 @@ function senalDesdeDto(dto: NonNullable<NotificacionDto['datos']['senal']>): Sen
     dia: dto.dia,
     valor: dto.valor,
     umbral: dto.umbral,
+  };
+}
+
+/** La propuesta de un incidente, tal cual la manda la API: sin tokens ni IP, solo ids y recuentos. */
+function propuestaDesdeDto(
+  dto: NonNullable<NotificacionDto['datos']['propuesta']>,
+): PropuestaDeIncidente {
+  return {
+    accion: dto.accion,
+    usuarioId: dto.usuario_id,
+    usuarioEtiqueta: dto.usuario_etiqueta,
+    incidenteId: dto.incidente_id,
+    incidenteTipo: dto.incidente_tipo,
+    confirmados: dto.confirmados,
+    minimo: dto.minimo,
+    ventanaDias: dto.ventana_dias,
+    aplicadaAutomaticamente: dto.aplicada_automaticamente,
   };
 }
 
@@ -113,6 +143,7 @@ export function notificacionDesdeDto(dto: NotificacionDto): Notificacion {
           base: flujo.base,
         } satisfies FlujoDeAviso)
       : undefined,
+    propuesta: dto.datos.propuesta ? propuestaDesdeDto(dto.datos.propuesta) : undefined,
     novedadEn: new Date(dto.novedad_at),
     creadaEn: new Date(dto.creada_at),
   };
@@ -121,7 +152,7 @@ export function notificacionDesdeDto(dto: NotificacionDto): Notificacion {
 /** Endpoints `/plataforma/notificaciones` de la API (módulo `notificaciones`, solo super admin). */
 export function crearNotificacionesHttp(cliente: ClienteHttp): NotificacionesRepositorio {
   return {
-    async listar(filtro, pagina) {
+    async listar(filtro, pagina, tipo) {
       const dto = await cliente.solicitar<ListadoDto<NotificacionDto>>({
         metodo: 'GET',
         ruta: '/plataforma/notificaciones',
@@ -129,6 +160,7 @@ export function crearNotificacionesHttp(cliente: ClienteHttp): NotificacionesRep
           estado: filtro,
           pagina,
           por_pagina: POR_PAGINA_DE_NOTIFICACIONES,
+          tipo,
         },
       });
       return paginadoDesde(dto, notificacionDesdeDto);

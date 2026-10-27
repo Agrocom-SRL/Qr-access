@@ -48,10 +48,16 @@ describe('campana de avisos de AGROCOM', () => {
     expect(
       within(bandeja).getByRole('heading', { name: 'Toda la cuenta', level: 3 }),
     ).toBeInTheDocument();
+    // El selector de tipo repite estos textos como opciones: el título de la tarjeta es el que importa.
     expect(
-      within(bandeja).getByText('Una puerta no abre tras varios intentos'),
+      within(bandeja).getByRole('heading', {
+        name: 'Una puerta no abre tras varios intentos',
+        level: 4,
+      }),
     ).toBeInTheDocument();
-    expect(within(bandeja).getByText('Una placa dejó de reportar')).toBeInTheDocument();
+    expect(
+      within(bandeja).getByRole('heading', { name: 'Una placa dejó de reportar', level: 4 }),
+    ).toBeInTheDocument();
     expect(within(bandeja).getByText('Crítica')).toBeInTheDocument();
     expect(within(bandeja).getByText('Portón vehicular')).toBeInTheDocument();
     expect(within(bandeja).getByText('3 aperturas sin confirmar')).toBeInTheDocument();
