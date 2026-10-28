@@ -87,7 +87,8 @@ class ExportarAccesosPagina extends ConsumerWidget {
           ),
         ],
       ),
-      anchoMaximo: apaisada
+      // En pantalla ancha ocupa el ancho del contenido, como las demás páginas.
+      anchoMaximo: apaisada || context.esExpandida
           ? tokens.tamano.maxContenido
           : tokens.tamano.maxFormularioSecciones,
       conRelleno: false,
