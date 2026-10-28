@@ -87,7 +87,6 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
               Expanded(
                 flex: expandida ? 0 : 1,
                 child: SelectorSegmentado<ResultadoEvento?>(
-                  estirado: !expandida,
                   segmentos: [
                     SegmentoDeSelector(
                       valor: null,

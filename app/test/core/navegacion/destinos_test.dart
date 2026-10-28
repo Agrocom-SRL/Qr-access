@@ -176,6 +176,23 @@ void main() {
       );
     });
 
+    test('titular suma Mis QR y Usuarios', () {
+      expect(
+        destinosPara(
+          sesionCon(permisos: {..._usuario, Permisos.verUsuarios}),
+          ClasePantalla.expandida,
+        ),
+        [
+          DestinoNav.inicio,
+          DestinoNav.generarQr,
+          DestinoNav.misQr,
+          DestinoNav.eventos,
+          DestinoNav.usuarios,
+          DestinoNav.perfil,
+        ],
+      );
+    });
+
     test('guardia es igual que en compacto', () {
       expect(destinosPara(sesionCon(permisos: _guardia), ClasePantalla.media), [
         DestinoNav.inicio,
@@ -185,8 +202,8 @@ void main() {
       ]);
     });
 
-    test('administrador: Inicio · Generar QR · Eventos · Puertas · Usuarios '
-        '· Perfil', () {
+    test('administrador: Inicio · Generar QR · Mis QR · Eventos · Puertas '
+        '· Usuarios · Perfil', () {
       expect(
         destinosPara(
           sesionCon(permisos: _administrador),
@@ -195,6 +212,7 @@ void main() {
         [
           DestinoNav.inicio,
           DestinoNav.generarQr,
+          DestinoNav.misQr,
           DestinoNav.eventos,
           DestinoNav.puertas,
           DestinoNav.usuarios,

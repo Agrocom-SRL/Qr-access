@@ -15,7 +15,7 @@ class PestanasDeslizables<T> extends StatefulWidget {
     required this.seleccionado,
     required this.alElegir,
     required this.paginaDe,
-    this.estirado = true,
+    this.estirado,
     super.key,
   });
 
@@ -26,8 +26,10 @@ class PestanasDeslizables<T> extends StatefulWidget {
   /// El contenido de cada pestaña; se construye según se necesita.
   final Widget Function(BuildContext context, T valor) paginaDe;
 
-  /// Reparte el ancho entre las pestañas (compacto) o las deja a su medida.
-  final bool estirado;
+  /// Reparte el ancho entre las pestañas o las deja a su medida. Sin valor,
+  /// se reparten en el teléfono y en la tableta, y en pantalla ancha (web)
+  /// quedan al ancho de su texto.
+  final bool? estirado;
 
   @override
   State<PestanasDeslizables<T>> createState() =>
@@ -79,6 +81,7 @@ class _PestanasDeslizablesEstado<T> extends State<PestanasDeslizables<T>>
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
+    final estirado = widget.estirado ?? !context.esExpandida;
     final barra = DecoratedBox(
       decoration: BoxDecoration(
         color: colores.superficie,
@@ -89,8 +92,8 @@ class _PestanasDeslizablesEstado<T> extends State<PestanasDeslizables<T>>
         padding: EdgeInsets.all(tokens.espacio.xs),
         child: TabBar(
           controller: _controlador,
-          isScrollable: !widget.estirado,
-          tabAlignment: widget.estirado ? null : TabAlignment.start,
+          isScrollable: !estirado,
+          tabAlignment: estirado ? null : TabAlignment.start,
           dividerColor: colores.superficie.withValues(alpha: 0),
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
@@ -107,7 +110,7 @@ class _PestanasDeslizablesEstado<T> extends State<PestanasDeslizables<T>>
             fontWeight: tokens.tipografia.medio,
           ),
           labelPadding: EdgeInsets.symmetric(
-            horizontal: widget.estirado ? tokens.espacio.xs : tokens.espacio.l,
+            horizontal: estirado ? tokens.espacio.xs : tokens.espacio.l,
           ),
           tabs: [
             for (final segmento in widget.segmentos)
@@ -146,13 +149,21 @@ class _PestanasDeslizablesEstado<T> extends State<PestanasDeslizables<T>>
             tokens.espacio.l,
             0,
           ),
-          // Repartidas, las pestañas ocupan todo el ancho; a su medida, se
-          // alinean al inicio.
-          child: widget.estirado
+          // Repartidas, las pestañas ocupan todo el ancho. A la medida de su
+          // texto (pantalla ancha) va la píldora de siempre, que mide lo justo,
+          // alineada al inicio y con el mismo controlador de las páginas.
+          child: estirado
               ? barra
               : Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: barra,
+                  child: SelectorSegmentado<T>(
+                    estirado: false,
+                    segmentos: widget.segmentos,
+                    seleccionado: widget.seleccionado,
+                    alElegir: (valor) => _controlador.animateTo(
+                      widget.segmentos.indexWhere((s) => s.valor == valor),
+                    ),
+                  ),
                 ),
         ),
         Expanded(

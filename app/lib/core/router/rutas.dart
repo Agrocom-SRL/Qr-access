@@ -19,7 +19,11 @@ abstract final class Rutas {
   /// URL que se pueda volver a abrir.
   static const qrGenerado = '/qr/generado';
 
-  static const eventos = '/eventos';
+  /// Lecturas (antes "eventos"): la URL sigue el nombre que ve la persona.
+  static const eventos = '/lecturas';
+
+  /// La URL anterior de Lecturas: quien la tenga guardada llega a [eventos].
+  static const eventosAnterior = '/eventos';
   static const perfil = '/perfil';
 
   /// Dispositivos conectados (ADR 0030 §4.1): desde Perfil. Sin permiso, es de

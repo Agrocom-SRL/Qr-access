@@ -56,7 +56,7 @@ void main() {
       find.text(textos.exportacionResultadoPermitidoAyuda),
       findsOneWidget,
     );
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(find.byTooltip(textos.exportacionDescargar));
     await tester.pumpAndSettle();
     await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
@@ -76,10 +76,10 @@ void main() {
     );
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(find.byTooltip(textos.exportacionDescargar));
     await tester.pumpAndSettle();
     await elegirFormato(tester, FormatoDeDescarga.xlsx);
-    await tester.tap(find.text(textos.exportacionSiguiente(2, 3)));
+    await tester.tap(find.byTooltip(textos.exportacionSiguiente(2, 3)));
     await tester.pumpAndSettle();
     await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
@@ -102,7 +102,7 @@ void main() {
     );
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.exportacionDescargar));
+    await tester.tap(find.byTooltip(textos.exportacionDescargar));
     await tester.pumpAndSettle();
     await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
@@ -165,7 +165,7 @@ void main() {
   ]) {
     testWidgets(
       'en ${tamano.width.toInt()}×${tamano.height.toInt()}, sin desbordes y '
-      'con Descargar a la vista',
+      'con Descargar en la barra superior',
       (tester) async {
         await montarExportacion(
           tester,
@@ -176,11 +176,11 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(
-          find
-              .widgetWithText(AccesoBoton, textos.exportacionDescargar)
-              .hitTestable(),
+          find.byTooltip(textos.exportacionDescargar).hitTestable(),
           findsOneWidget,
         );
+        // Sin botón grande abajo: la descarga vive en la barra.
+        expect(find.byType(AccesoBoton), findsNothing);
       },
     );
   }

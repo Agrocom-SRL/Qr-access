@@ -1,5 +1,4 @@
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -40,9 +39,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(textos.exportacionTodos).hitTestable(), findsOneWidget);
       expect(
-        find
-            .widgetWithText(AccesoBoton, textos.exportacionDescargar)
-            .hitTestable(),
+        find.byTooltip(textos.exportacionDescargar).hitTestable(),
         findsOneWidget,
       );
     });

@@ -42,13 +42,41 @@ class ExportacionPagina extends ConsumerWidget {
         ? null
         : () => unawaited(bajarConFormato(context, ref, recurso));
 
+    final filas = [
+      _FilaDeRecurso(
+        icono: Icons.people_outline,
+        titulo: l10n.exportacionRecursoUsuarios,
+        descripcion: l10n.exportacionDescUsuarios,
+        cargando: cargando(RecursoExportable.usuarios),
+        alTocar: accion(RecursoExportable.usuarios),
+      ),
+      _FilaDeRecurso(
+        icono: Icons.door_front_door_outlined,
+        titulo: l10n.exportacionRecursoPuertas,
+        descripcion: l10n.exportacionDescPuertas,
+        cargando: cargando(RecursoExportable.puertas),
+        alTocar: accion(RecursoExportable.puertas),
+      ),
+      _FilaDeRecurso(
+        icono: Icons.history,
+        titulo: l10n.exportacionRecursoLecturas,
+        descripcion: l10n.exportacionDescLecturas,
+        cargando: false,
+        alTocar: estado.descargando
+            ? null
+            : () => context.push(Rutas.exportarAccesos),
+      ),
+    ];
+
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
       titulo: l10n.exportacionTitulo,
       rutaAtras: Rutas.perfil,
       salida: SalidaDeCabecera.volver,
       alSalir: () => context.go(Rutas.perfil),
-      anchoMaximo: tokens.tamano.maxFormularioSecciones,
+      anchoMaximo: context.esExpandida
+          ? tokens.tamano.maxContenido
+          : tokens.tamano.maxFormularioSecciones,
       conRelleno: false,
       child: ListView(
         padding: EdgeInsets.all(tokens.espacio.l),
@@ -59,31 +87,24 @@ class ExportacionPagina extends ConsumerWidget {
                 ?.copyWith(color: tokens.colores.textoSecundario),
           ),
           SizedBox(height: tokens.espacio.l),
-          _FilaDeRecurso(
-            icono: Icons.people_outline,
-            titulo: l10n.exportacionRecursoUsuarios,
-            descripcion: l10n.exportacionDescUsuarios,
-            cargando: cargando(RecursoExportable.usuarios),
-            alTocar: accion(RecursoExportable.usuarios),
-          ),
-          SizedBox(height: tokens.espacio.m),
-          _FilaDeRecurso(
-            icono: Icons.door_front_door_outlined,
-            titulo: l10n.exportacionRecursoPuertas,
-            descripcion: l10n.exportacionDescPuertas,
-            cargando: cargando(RecursoExportable.puertas),
-            alTocar: accion(RecursoExportable.puertas),
-          ),
-          SizedBox(height: tokens.espacio.m),
-          _FilaDeRecurso(
-            icono: Icons.history,
-            titulo: l10n.exportacionRecursoLecturas,
-            descripcion: l10n.exportacionDescLecturas,
-            cargando: false,
-            alTocar: estado.descargando
-                ? null
-                : () => context.push(Rutas.exportarAccesos),
-          ),
+          if (context.esExpandida)
+            // Pantalla ancha: las tres tarjetas en una fila, del mismo alto.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < filas.length; i++) ...[
+                    if (i > 0) SizedBox(width: tokens.espacio.l),
+                    Expanded(child: filas[i]),
+                  ],
+                ],
+              ),
+            )
+          else
+            for (var i = 0; i < filas.length; i++) ...[
+              if (i > 0) SizedBox(height: tokens.espacio.m),
+              filas[i],
+            ],
         ],
       ),
     );

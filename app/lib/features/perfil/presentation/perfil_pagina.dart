@@ -1,5 +1,4 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
-import 'package:agrocom_acceso/core/config/info_app.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
@@ -11,6 +10,7 @@ import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/acerca_de_la_app.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/seccion_seguridad.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
@@ -29,15 +29,8 @@ import 'package:go_router/go_router.dart';
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
 
-/// El valor de la fila de la app: la versión (si se pudo leer) y, debajo, quién
-/// la desarrolló.
-String _textoDeVersion(AppLocalizations l10n, InfoApp? info) => [
-  if (info != null) l10n.perfilAppVersion(info.completa),
-  l10n.perfilAppEmpresa,
-].join('\n');
-
 /// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol,
-/// el tema, la versión de la app y "Cerrar sesión".
+/// el tema, la información de la app y "Cerrar sesión".
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -69,7 +62,6 @@ class PerfilPagina extends ConsumerWidget {
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
     final modo = ref.watch(temaProvider);
-    final info = ref.watch(infoAppProvider).value;
     final ahora = ref.read(relojProvider)();
     final suscripcion = sesion.suscripcion;
     final dias = suscripcion == null
@@ -182,14 +174,7 @@ class PerfilPagina extends ConsumerWidget {
                           .activarOscuro(oscuro: valor),
                     ),
                   ),
-                  FilaClaveValor(
-                    clave: l10n.perfilAppNombre,
-                    valor: _textoDeVersion(l10n, info),
-                    icono: Icons.info_outline,
-                    invertida: true,
-                    claveEnfatizada: true,
-                    conSeparador: false,
-                  ),
+                  const FilaAcercaDeLaApp(conSeparador: false),
                 ],
               ),
             ),

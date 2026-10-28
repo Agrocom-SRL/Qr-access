@@ -47,6 +47,7 @@ class MisQrPagina extends ConsumerWidget {
     final botonGenerar = AccesoBoton(
       texto: l10n.qrGenerarBoton,
       icono: Icons.add,
+      variante: VarianteBoton.acento,
       onPressed: () => context.go(Rutas.qrNuevo),
     );
 
@@ -89,7 +90,6 @@ class MisQrPagina extends ConsumerWidget {
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: SelectorSegmentado<EstadoQr>(
-                      estirado: false,
                       segmentos: segmentos,
                       seleccionado: filtro.estado,
                       alElegir: ref

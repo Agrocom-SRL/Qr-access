@@ -34,8 +34,9 @@ const maxDestinosCompactosApaisado = 5;
 ///   Generar QR; el rail lo lleva igual (Inicio · Generar QR · Mis QR ·
 ///   Eventos · Perfil).
 /// - Guardia: Inicio · Eventos · Puertas · Perfil, igual en todos lados.
+/// - Titular: como el usuario, y además Usuarios en el rail.
 /// - Administrador: compacto Inicio · Mis QR · Admin · Perfil; en horizontal
-///   suma Eventos; el rail muestra Puertas y Usuarios por separado.
+///   suma Eventos; el rail muestra Mis QR, Puertas y Usuarios por separado.
 ///
 /// En compacto caben cuatro: si sobran, Eventos cede el lugar (los ve desde
 /// el tablero) antes que Mis QR o Admin, que son de uso diario. En horizontal
@@ -79,7 +80,9 @@ List<DestinoNav> destinosPara(
   return [
     DestinoNav.inicio,
     if (sesion.tiene(Permisos.generarQr)) DestinoNav.generarQr,
-    if (!administra && sesion.tiene(Permisos.verQr)) DestinoNav.misQr,
+    // Todos generan QR salvo el guardia: quien los ve (Usuario, Titular y
+    // Administrador) tiene Mis QR en el menú.
+    if (sesion.tiene(Permisos.verQr)) DestinoNav.misQr,
     if (sesion.tiene(Permisos.verEventos)) DestinoNav.eventos,
     if (supervisa) DestinoNav.puertas,
     if (administra) DestinoNav.usuarios,

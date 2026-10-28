@@ -182,6 +182,11 @@ class _GenerarQrPaginaEstado extends ConsumerState<GenerarQrPagina> {
 
     final botonPrincipal = AccesoBoton(
       texto: esUltimo ? l10n.qrGenerarBoton : l10n.comunSiguiente,
+      // Crear va con el color de acento en pantalla ancha (en el teléfono, el
+      // acento es el botón flotante).
+      variante: esUltimo && expandida
+          ? VarianteBoton.acento
+          : VarianteBoton.primaria,
       textoCargando: l10n.qrGenerando,
       cargando: estado.enviando,
       expandido: expandida || apaisada,

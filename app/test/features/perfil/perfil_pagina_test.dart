@@ -57,8 +57,25 @@ void main() {
     expect(find.text('AGR'), findsOneWidget);
     expect(find.textContaining('Empresa'), findsOneWidget);
     expect(find.text('Administrador'), findsOneWidget);
-    expect(find.text(textos.perfilAppNombre), findsOneWidget);
-    expect(find.text(textos.perfilAppEmpresa), findsOneWidget);
+    // La información de la app va en su propia hoja, no en la fila.
+    expect(find.text(textos.perfilAcercaTitulo), findsOneWidget);
+    expect(find.text(textos.perfilAcercaOrganizacion), findsNothing);
+  });
+
+  testWidgets('Acerca de la app abre la hoja con nombre, organización, '
+      'versión y el copyright', (tester) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.ensureVisible(find.text(textos.perfilAcercaTitulo));
+    await tester.tap(find.text(textos.perfilAcercaTitulo));
+    await tester.pumpAndSettle();
+
+    expect(find.text(textos.perfilAcercaNombreEtiqueta), findsOneWidget);
+    expect(find.text(textos.perfilAcercaOrganizacion), findsOneWidget);
+    expect(find.text(textos.perfilAcercaVersionEtiqueta), findsOneWidget);
+    expect(find.text(textos.perfilAcercaDesarrollo), findsOneWidget);
+    expect(find.text(textos.perfilAcercaDerechos(2026)), findsOneWidget);
   });
 
   testWidgets('no lleva título de pantalla: empieza por el usuario', (
