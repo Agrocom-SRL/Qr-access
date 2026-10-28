@@ -38,24 +38,32 @@ ProviderContainer _contenedor({
 }
 
 void main() {
-  test('baja la primera página, la pasa al menú con BOM y su nombre', () async {
-    final repo = ExportacionRepositorioFalso(paginaEntregada: paginaDePrueba());
-    final compartir = CompartirArchivoFalso();
-    final contenedor = _contenedor(repositorio: repo, compartir: compartir);
+  test(
+    'baja la primera página, la pasa al menú como Excel y con su nombre',
+    () async {
+      final repo = ExportacionRepositorioFalso(
+        paginaEntregada: paginaDePrueba(),
+      );
+      final compartir = CompartirArchivoFalso();
+      final contenedor = _contenedor(repositorio: repo, compartir: compartir);
 
-    await contenedor
-        .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente(textosDe: _textosDe);
+      await contenedor
+          .read(exportacionControladorProvider.notifier)
+          .descargarSiguiente(
+            formato: FormatoDeDescarga.xlsx,
+            textosDe: _textosDe,
+          );
 
-    final compartido = compartir.compartidos.single;
-    expect(compartido.nombreArchivo, 'usuarios-agr-p1.csv');
-    expect(compartido.mimeType, 'text/csv');
-    expect(compartido.bytes.sublist(0, 3), [0xEF, 0xBB, 0xBF]);
-    final estado = contenedor.read(exportacionControladorProvider);
-    expect(estado.ultimo?.pagina, 1);
-    expect(estado.descargando, isFalse);
-    expect(estado.error, isNull);
-  });
+      final compartido = compartir.compartidos.single;
+      expect(compartido.nombreArchivo, 'usuarios-agr-p1.xlsx');
+      expect(compartido.mimeType, FormatoDeDescarga.xlsx.mimeType);
+      expect(compartido.bytes.sublist(0, 2), [0x50, 0x4B]);
+      final estado = contenedor.read(exportacionControladorProvider);
+      expect(estado.ultimo?.pagina, 1);
+      expect(estado.descargando, isFalse);
+      expect(estado.error, isNull);
+    },
+  );
 
   test('la siguiente vez pide la página que sigue', () async {
     final repo = ExportacionRepositorioFalso(
@@ -67,8 +75,14 @@ void main() {
     );
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
 
-    await notifier.descargarSiguiente(textosDe: _textosDe);
-    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
 
     expect(repo.pedidos.map((p) => p.pagina), [1, 2]);
   });
@@ -82,7 +96,10 @@ void main() {
 
     await contenedor
         .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente(textosDe: _textosDe);
+        .descargarSiguiente(
+          formato: FormatoDeDescarga.xlsx,
+          textosDe: _textosDe,
+        );
 
     expect(compartir.compartidos, isEmpty);
     expect(contenedor.read(exportacionControladorProvider).ultimo?.total, 0);
@@ -98,8 +115,14 @@ void main() {
     final contenedor = _contenedor(repositorio: repo, compartir: compartir);
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
 
-    await notifier.descargarSiguiente(textosDe: _textosDe);
-    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
 
     expect(contenedor.read(exportacionControladorProvider).ultimo, isNull);
     expect(repo.pedidos.map((p) => p.pagina), [1, 1]);
@@ -116,7 +139,10 @@ void main() {
 
     await contenedor
         .read(exportacionControladorProvider.notifier)
-        .descargarSiguiente(textosDe: _textosDe);
+        .descargarSiguiente(
+          formato: FormatoDeDescarga.xlsx,
+          textosDe: _textosDe,
+        );
 
     final estado = contenedor.read(exportacionControladorProvider);
     expect(estado.error?.code, 'limite.excedido');
@@ -133,7 +159,10 @@ void main() {
     await expectLater(
       contenedor
           .read(exportacionControladorProvider.notifier)
-          .descargarSiguiente(textosDe: _textosDe),
+          .descargarSiguiente(
+            formato: FormatoDeDescarga.xlsx,
+            textosDe: _textosDe,
+          ),
       throwsA(isA<StateError>()),
     );
 
@@ -154,7 +183,10 @@ void main() {
       ..elegirDesde(instanteDeDia(DateTime.utc(2026, 10, 5)))
       ..elegirHasta(instanteDeDia(DateTime.utc(2026, 10)));
 
-    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
 
     expect(repo.pedidos, isEmpty);
   });
@@ -168,7 +200,10 @@ void main() {
       compartir: CompartirArchivoFalso(),
     );
     final notifier = contenedor.read(exportacionControladorProvider.notifier);
-    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
 
     notifier.elegirRecurso(RecursoExportable.puertas);
 
@@ -187,7 +222,10 @@ void main() {
       ..elegirResultado(ResultadoFiltro.permitido)
       ..elegirDesde(dia);
 
-    await notifier.descargarSiguiente(textosDe: _textosDe);
+    await notifier.descargarSiguiente(
+      formato: FormatoDeDescarga.xlsx,
+      textosDe: _textosDe,
+    );
 
     final pedido = repo.pedidos.single;
     expect(pedido.recurso, RecursoExportable.lecturas);

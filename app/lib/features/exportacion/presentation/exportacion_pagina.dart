@@ -8,16 +8,18 @@ import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/avisos_de_descarga.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/descarga_de_formato.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/exportacion_controlador.dart';
-import 'package:agrocom_acceso/features/exportacion/presentation/widgets/tarjeta_recurso_exportable.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Exportar datos (ADR 0033 §3), solo para el Administrador. Es un listado
-/// corto de tres tarjetas. Usuarios y Puertas abren la hoja de formatos (CSV,
-/// PDF o Excel); Accesos a puertas tiene filtros y abre su propia pantalla.
+/// corto de tres tarjetas que se tocan enteras. Usuarios y Puertas abren
+/// la hoja de formatos (PDF o Excel); Accesos a puertas tiene filtros y abre
+/// su propia pantalla.
 class ExportacionPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -57,42 +59,72 @@ class ExportacionPagina extends ConsumerWidget {
                 ?.copyWith(color: tokens.colores.textoSecundario),
           ),
           SizedBox(height: tokens.espacio.l),
-          TarjetaRecursoExportable(
+          _FilaDeRecurso(
             icono: Icons.people_outline,
             titulo: l10n.exportacionRecursoUsuarios,
             descripcion: l10n.exportacionDescUsuarios,
-            textoAccion: l10n.exportacionDescargar,
-            iconoAccion: Icons.download_outlined,
-            textoCargando: l10n.exportacionDescargando,
             cargando: cargando(RecursoExportable.usuarios),
-            onPressed: accion(RecursoExportable.usuarios),
+            alTocar: accion(RecursoExportable.usuarios),
           ),
           SizedBox(height: tokens.espacio.m),
-          TarjetaRecursoExportable(
+          _FilaDeRecurso(
             icono: Icons.door_front_door_outlined,
             titulo: l10n.exportacionRecursoPuertas,
             descripcion: l10n.exportacionDescPuertas,
-            textoAccion: l10n.exportacionDescargar,
-            iconoAccion: Icons.download_outlined,
-            textoCargando: l10n.exportacionDescargando,
             cargando: cargando(RecursoExportable.puertas),
-            onPressed: accion(RecursoExportable.puertas),
+            alTocar: accion(RecursoExportable.puertas),
           ),
           SizedBox(height: tokens.espacio.m),
-          TarjetaRecursoExportable(
+          _FilaDeRecurso(
             icono: Icons.history,
             titulo: l10n.exportacionRecursoLecturas,
             descripcion: l10n.exportacionDescLecturas,
-            textoAccion: l10n.exportacionElegirFiltros,
-            iconoAccion: Icons.tune,
-            textoCargando: l10n.exportacionDescargando,
             cargando: false,
-            onPressed: estado.descargando
+            alTocar: estado.descargando
                 ? null
                 : () => context.push(Rutas.exportarAccesos),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Un recurso de la lista: toda la tarjeta es el botón. Usuarios y Puertas
+/// abren la hoja de formatos; Accesos abre su pantalla de filtros. Mientras su
+/// recurso se baja, el chevron cambia por el progreso.
+class _FilaDeRecurso extends StatelessWidget {
+  const new({
+    required this.icono,
+    required this.titulo,
+    required this.descripcion,
+    required this.cargando,
+    required this.alTocar,
+  });
+
+  final IconData icono;
+  final String titulo;
+  final String descripcion;
+  final bool cargando;
+
+  /// `null` deja la tarjeta apagada (otra descarga en curso).
+  final VoidCallback? alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return TarjetaFila(
+      centrada: true,
+      titulo: titulo,
+      subtitulo: descripcion,
+      inicio: CajaIcono(icono: icono, tamano: tokens.tamano.iconoCaja),
+      fin: cargando
+          ? SizedBox.square(
+              dimension: tokens.tamano.iconoNav,
+              child: const CircularProgressIndicator(),
+            )
+          : const Icon(Icons.chevron_right),
+      alTocar: alTocar,
     );
   }
 }

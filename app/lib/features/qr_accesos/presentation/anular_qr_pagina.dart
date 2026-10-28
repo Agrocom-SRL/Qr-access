@@ -64,9 +64,10 @@ class _AnularQrPaginaEstado extends ConsumerState<AnularQrPagina> {
       alCerrar: () {
         if (!anulando) context.go(Rutas.perfil);
       },
-      // En horizontal de teléfono, AccesoIlustracion se reduce sola para que
-      // el motivo y el botón sigan visibles.
-      visual: const AccesoIlustracion(ruta: Multimedia.anulacion),
+      // En horizontal de teléfono la ilustración tiene su propia columna, así
+      // que va grande; en vertical se achica sola para que el motivo y el
+      // botón sigan visibles.
+      visual: const AccesoIlustracion(ruta: Multimedia.anulacion, grande: true),
       pie: AccesoBoton(
         texto: l10n.qrAnulacionMiRamaConfirmar,
         variante: VarianteBoton.peligroRelleno,

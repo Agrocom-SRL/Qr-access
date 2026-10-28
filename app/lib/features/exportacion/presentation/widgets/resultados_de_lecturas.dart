@@ -1,6 +1,8 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ class ResultadosDeLecturas extends StatelessWidget {
     required this.seleccionado,
     required this.bloqueado,
     required this.alElegir,
+    this.conIlustracion = true,
     super.key,
   });
 
@@ -21,6 +24,11 @@ class ResultadosDeLecturas extends StatelessWidget {
   /// Con una descarga en curso, no se cambia.
   final bool bloqueado;
   final ValueChanged<ResultadoFiltro> alElegir;
+
+  /// La explicación va con la ilustración y su título (vertical). Sin ella
+  /// (horizontal de teléfono, donde la ilustración va en la columna lateral)
+  /// queda solo la explicación, siempre a la vista bajo las pestañas.
+  final bool conIlustracion;
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +52,23 @@ class ResultadosDeLecturas extends StatelessWidget {
       ],
       seleccionado: seleccionado,
       alElegir: bloqueado ? (_) {} : alElegir,
-      paginaDe: (contexto, valor) => Padding(
-        padding: EdgeInsets.all(tokens.espacio.l),
-        child: Text(
-          _explicacion(l10n, valor),
-          style: textos.bodyMedium?.copyWith(
-            color: tokens.colores.textoSecundario,
-          ),
-        ),
-      ),
+      // Aún no hay nada que mostrar: la explicación va con la ilustración de
+      // vacío y su título, como en las demás pantallas sin datos.
+      paginaDe: (contexto, valor) => conIlustracion
+          ? EstadoVacio(
+              ilustracion: Multimedia.vacioEventos,
+              titulo: l10n.exportacionEleccionTitulo,
+              ayuda: _explicacion(l10n, valor),
+            )
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(tokens.espacio.l),
+              child: Text(
+                _explicacion(l10n, valor),
+                style: textos.bodyMedium?.copyWith(
+                  color: tokens.colores.textoSecundario,
+                ),
+              ),
+            ),
     );
   }
 

@@ -31,10 +31,10 @@ enum ResultadoFiltro {
   };
 }
 
-/// En qué formato se baja una página. La API solo entrega CSV: el PDF y el
-/// Excel se arman en la app a partir de esas mismas filas (ver `tabla_*.dart`).
+/// En qué formato se baja una página. La API solo entrega CSV, pero la persona
+/// elige PDF o Excel: ambos se arman en la app a partir de esas mismas filas
+/// (ver `tabla_*.dart`). El CSV no se ofrece.
 enum FormatoDeDescarga {
-  csv('csv', 'text/csv'),
   pdf('pdf', 'application/pdf'),
   xlsx(
     'xlsx',
@@ -175,12 +175,3 @@ String nombreDeArchivo(
   final base = codigo.isEmpty ? 'cuenta' : codigo;
   return '${recurso.api}-$base-p$pagina.${formato.extension}';
 }
-
-/// La marca de orden de bytes de UTF-8. Excel lee las tildes y las eñes de un
-/// CSV solo si el archivo empieza con ella; sin esto, al abrirlo con doble clic
-/// se rompen.
-const _marcaDeOrdenDeBytes = [0xEF, 0xBB, 0xBF];
-
-/// El CSV con la marca de orden de bytes delante, para que Excel lo abra bien.
-Uint8List conBomDeExcel(Uint8List csv) =>
-    Uint8List.fromList([..._marcaDeOrdenDeBytes, ...csv]);

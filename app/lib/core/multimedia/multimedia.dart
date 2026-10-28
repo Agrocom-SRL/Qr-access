@@ -26,6 +26,10 @@ abstract final class Multimedia {
   static const bloqueo = 'assets/ilustraciones/bloqueo.svg';
   static const anulacion = 'assets/ilustraciones/anular_qr.svg';
 
+  /// Íconos a color de los formatos de descarga (hoja de Exportar datos).
+  static const iconoPdf = 'assets/ilustraciones/icono_pdf.svg';
+  static const iconoExcel = 'assets/ilustraciones/icono_excel.svg';
+
   static const List<String> ilustraciones = [
     vacioQr,
     vacioEventos,
@@ -34,6 +38,8 @@ abstract final class Multimedia {
     sinConexion,
     bloqueo,
     anulacion,
+    iconoPdf,
+    iconoExcel,
   ];
 
   /// Deja las ilustraciones ya parseadas en la caché de `flutter_svg` para

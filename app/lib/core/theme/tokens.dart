@@ -303,6 +303,18 @@ class Tamanos {
   /// Ilustración cuando la altura es poca (teléfono en horizontal): el estado
   /// vacío entra junto al título y la barra inferior sin desbordar.
   double get ilustracionAlturaCorta => 88;
+
+  /// Ilustración de una pantalla completa en horizontal de teléfono: tiene
+  /// toda la columna izquierda para ella, así que puede ser más grande.
+  double get ilustracionApaisada => 240;
+
+  /// Ilustración sobre el botón, en la columna lateral de un teléfono en
+  /// horizontal (Exportar accesos): lo que cabe con un título y un botón.
+  double get ilustracionColumna => 120;
+
+  /// Diámetro del círculo de un formato de descarga (PDF, Excel) en su hoja;
+  /// su ícono a color mide `iconoCaja`.
+  double get iconoFormato => 72;
   double get qrMinimo => 240;
   double get qrExpandido => 320;
   double get qrZonaSilencio => 16;

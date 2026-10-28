@@ -68,8 +68,8 @@ class ExportacionControlador extends Notifier<EstadoExportacion> {
   /// Si la persona cierra el menú, la página no cuenta como bajada y la próxima
   /// vez se pide la misma. Un rango al revés no se manda.
   Future<void> descargarSiguiente({
+    required FormatoDeDescarga formato,
     required TextosDeDocumento Function(ResumenDePagina resumen) textosDe,
-    FormatoDeDescarga formato = FormatoDeDescarga.csv,
   }) async {
     final recurso = state.recurso;
     final filtros = state.filtros;
@@ -121,16 +121,14 @@ class ExportacionControlador extends Notifier<EstadoExportacion> {
     return resultado;
   }
 
-  /// El archivo de la página en el formato pedido. El CSV sale tal cual (con
-  /// su BOM); el Excel y el PDF se arman con las mismas filas.
+  /// El archivo de la página en el formato pedido; ambos se arman con las
+  /// filas del CSV que entrega la API.
   Future<Uint8List> _archivo(
     FormatoDeDescarga formato,
     Uint8List csv,
     TextosDeDocumento textos,
   ) async {
     switch (formato) {
-      case FormatoDeDescarga.csv:
-        return conBomDeExcel(csv);
       case FormatoDeDescarga.xlsx:
         return tablaAXlsx(leerCsv(csv), nombreHoja: textos.titulo);
       case FormatoDeDescarga.pdf:

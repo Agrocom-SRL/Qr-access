@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/exportacion/data/exportacion_repositorio.dart';
 import 'package:agrocom_acceso/features/exportacion/data/fuentes_pdf.dart';
+import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -45,9 +46,12 @@ montarExportacion(
   return (repo: repo, compartir: compartir);
 }
 
-/// Toca una opción de la hoja de formatos (CSV, PDF o Excel) y espera a que la
+/// Toca una opción de la hoja de formatos (PDF o Excel) y espera a que la
 /// descarga termine.
-Future<void> elegirFormato(WidgetTester tester, String etiqueta) async {
-  await tester.tap(find.text(etiqueta));
+Future<void> elegirFormato(
+  WidgetTester tester,
+  FormatoDeDescarga formato,
+) async {
+  await tester.tap(find.byKey(ValueKey('formato-${formato.extension}')));
   await tester.pumpAndSettle();
 }
