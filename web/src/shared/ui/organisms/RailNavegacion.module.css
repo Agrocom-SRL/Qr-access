@@ -40,14 +40,6 @@
   font-weight: var(--peso600);
 }
 
-/* En el rail extendido la campana va alineada a la izquierda, junto a la marca; colapsado, centrada. */
-.acciones {
-  display: flex;
-  align-items: center;
-  gap: var(--esp8);
-  padding: 0 var(--esp12);
-}
-
 .navegacion {
   display: flex;
   flex: 1;
@@ -121,10 +113,5 @@
 
   .usuario {
     padding: var(--esp8);
-  }
-
-  .acciones {
-    justify-content: center;
-    padding: 0;
   }
 }

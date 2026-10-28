@@ -41,6 +41,9 @@ export const ESTADOS_DEL_FILTRO: readonly FiltroEstado[] = [
   'pendientePago',
 ];
 
+/** El estado de seguridad de la cuenta (ADR 0033 §1); el de su suscripción es otro (`EstadoCuenta`). */
+export type EstadoDeSeguridad = 'activo' | 'restringido' | 'suspendido';
+
 export interface DetalleDeCuenta {
   cuenta: {
     id: string;
@@ -48,6 +51,10 @@ export interface DetalleDeCuenta {
     nombre: string;
     activa: boolean;
     clienteDesde: Date;
+    estadoDeSeguridad: EstadoDeSeguridad;
+    /** Por qué se restringió o suspendió y desde cuándo; `null` mientras está activa. */
+    estadoMotivo: string | null;
+    estadoDesde: Date | null;
     /** Cuántos Miembros puede tener cada Titular de la cuenta (ADR 0028 §6). */
     maxMiembrosPorTitular: number;
   };

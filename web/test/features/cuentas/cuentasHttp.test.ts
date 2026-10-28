@@ -210,6 +210,9 @@ describe('cuentas por HTTP (contrato de la API)', () => {
         nombre: 'Agroindustrial Norte',
         activa: true,
         cliente_desde: '2024-11-05T12:00:00Z',
+        estado: 'activo',
+        estado_motivo: null,
+        estado_desde: null,
         max_miembros_por_titular: 10,
       },
       empresa: {

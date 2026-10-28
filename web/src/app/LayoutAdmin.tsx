@@ -1,5 +1,4 @@
 import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CampanaNotificaciones } from '../features/notificaciones';
 import { tienePermiso, useSesion } from '../features/seguridad';
 import { PlantillaAdmin } from '../shared/ui/templates/PlantillaAdmin';
 import { RailNavegacion, type ItemRail } from '../shared/ui/organisms/RailNavegacion';
@@ -114,19 +113,12 @@ export function LayoutAdmin() {
     if (item.cualquieraDe) return item.cualquieraDe.some((p) => tienePermiso(sesion.permisos, p));
     return item.permiso === undefined || tienePermiso(sesion.permisos, item.permiso);
   });
-  // La campana de avisos de AGROCOM solo aparece con su permiso; leer y descartar exigen el de gestionar.
-  const campana = tienePermiso(sesion.permisos, 'notificaciones.aviso_plataforma.ver') ? (
-    <CampanaNotificaciones
-      puedeGestionar={tienePermiso(sesion.permisos, 'notificaciones.aviso_plataforma.gestionar')}
-    />
-  ) : undefined;
   return (
     <PlantillaAdmin
       rail={
         <RailNavegacion
           items={items}
           usuario={{ nombre: sesion.usuario.nombre, rutaPerfil: RUTAS.perfil }}
-          acciones={campana}
         />
       }
     >

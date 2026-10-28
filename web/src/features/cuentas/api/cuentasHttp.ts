@@ -32,6 +32,9 @@ interface DetalleDto {
     nombre: string;
     activa: boolean;
     cliente_desde: string;
+    estado: 'activo' | 'restringido' | 'suspendido';
+    estado_motivo: string | null;
+    estado_desde: string | null;
     max_miembros_por_titular: number;
   };
   empresa: {
@@ -103,6 +106,9 @@ export function detalleDesdeDto(dto: DetalleDto): DetalleDeCuenta {
       nombre: dto.cuenta.nombre,
       activa: dto.cuenta.activa,
       clienteDesde: new Date(dto.cuenta.cliente_desde),
+      estadoDeSeguridad: dto.cuenta.estado,
+      estadoMotivo: dto.cuenta.estado_motivo,
+      estadoDesde: dto.cuenta.estado_desde === null ? null : new Date(dto.cuenta.estado_desde),
       maxMiembrosPorTitular: dto.cuenta.max_miembros_por_titular,
     },
     empresa:
@@ -410,6 +416,26 @@ export function crearCuentasHttp(cliente: ClienteHttp): CuentasRepositorio {
         ruta: `/plataforma/cuentas/${id}`,
         cuerpo: { codigo },
       });
+    },
+
+    async restringir(id, motivo) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${id}/restriccion`,
+        cuerpo: { motivo },
+      });
+    },
+
+    async suspender(id, motivo) {
+      await cliente.solicitar({
+        metodo: 'POST',
+        ruta: `/plataforma/cuentas/${id}/suspension`,
+        cuerpo: { motivo },
+      });
+    },
+
+    async reactivar(id) {
+      await cliente.solicitar({ metodo: 'POST', ruta: `/plataforma/cuentas/${id}/reactivacion` });
     },
 
     async sitiosYPuertas(id) {

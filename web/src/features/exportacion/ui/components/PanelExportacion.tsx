@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
-import controles from '../../../../shared/ui/molecules/controles.module.css';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { AccesoCampoFecha } from '../../../../shared/ui/molecules/AccesoCampoFecha';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { tienePermiso, useSesion } from '../../../seguridad';
@@ -91,38 +91,37 @@ export function PanelExportacion({ cuenta }: Props) {
       </h2>
       <p className={styles.texto}>{t('exportacion:subtitulo')}</p>
       <div className={styles.filtros}>
-        <label className={styles.campo}>
-          <span className={styles.etiqueta}>{t('exportacion:recurso.etiqueta')}</span>
-          <select
-            className={controles.control}
-            value={recurso}
-            onChange={(evento) => {
-              cambiarRecurso(evento.target.value as RecursoExportable);
+        <div className={styles.campo}>
+          <AccesoSelectorBuscable
+            conBusqueda={false}
+            etiqueta={t('exportacion:recurso.etiqueta')}
+            valor={recurso}
+            opciones={RECURSOS_EXPORTABLES.map((valor) => ({
+              valor,
+              etiqueta: t(`exportacion:recurso.${valor}`),
+            }))}
+            onCambio={(valor) => {
+              cambiarRecurso(valor as RecursoExportable);
             }}
-          >
-            {RECURSOS_EXPORTABLES.map((valor) => (
-              <option key={valor} value={valor}>
-                {t(`exportacion:recurso.${valor}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
         {recurso === 'lecturas' ? (
           <>
-            <label className={styles.campo}>
-              <span className={styles.etiqueta}>{t('exportacion:filtros.resultado')}</span>
-              <select
-                className={controles.control}
-                value={filtros.resultado}
-                onChange={(evento) => {
-                  cambiarFiltros({ resultado: evento.target.value as ResultadoDeFiltro });
+            <div className={styles.campo}>
+              <AccesoSelectorBuscable
+                conBusqueda={false}
+                etiqueta={t('exportacion:filtros.resultado')}
+                valor={filtros.resultado}
+                opciones={[
+                  { valor: 'todos', etiqueta: t('exportacion:filtros.todos') },
+                  { valor: 'permitido', etiqueta: t('exportacion:filtros.permitido') },
+                  { valor: 'rechazado', etiqueta: t('exportacion:filtros.rechazado') },
+                ]}
+                onCambio={(valor) => {
+                  cambiarFiltros({ resultado: valor as ResultadoDeFiltro });
                 }}
-              >
-                <option value="todos">{t('exportacion:filtros.todos')}</option>
-                <option value="permitido">{t('exportacion:filtros.permitido')}</option>
-                <option value="rechazado">{t('exportacion:filtros.rechazado')}</option>
-              </select>
-            </label>
+              />
+            </div>
             <AccesoCampoFecha
               etiqueta={t('exportacion:filtros.desde')}
               valor={filtros.desde}

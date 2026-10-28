@@ -13,6 +13,8 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'sesion.bloqueada' => l10n.comunErrorSesionBloqueada,
     'sesion.refresco_invalido' ||
     'autenticacion.requerida' => l10n.comunErrorSesionRefrescoInvalido,
+    'sesion.origen_invalido' => l10n.comunErrorSesionOrigenInvalido,
+    'sesion.refresco_ambiguo' => l10n.comunErrorSesionRefrescoAmbiguo,
     'permiso.denegado' => l10n.comunErrorPermisoDenegado,
     'suscripcion.vencida' => l10n.comunErrorSuscripcionVencida,
     'puerta.no_encontrada' => l10n.comunErrorPuertaNoEncontrada,

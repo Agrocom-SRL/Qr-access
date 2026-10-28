@@ -26,7 +26,8 @@ function montar(servicios: Servicios, ruta = '/') {
 }
 
 async function ingresar(usuario = 'lucia.paz', contrasena = 'secreta-12345') {
-  await userEvent.type(screen.getByLabelText('Usuario'), usuario);
+  // Al arrancar la pantalla muestra "Cargando" mientras `restaurar()` pide el refresco con la cookie.
+  await userEvent.type(await screen.findByLabelText('Usuario'), usuario);
   await userEvent.type(screen.getByLabelText('Contraseña'), contrasena);
   await userEvent.click(screen.getByRole('button', { name: 'Ingresar' }));
 }
@@ -267,13 +268,13 @@ describe('cuentas de cobro (ADR 0029)', () => {
     montar(servicios, '/ingreso');
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Cobranza/ }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Cuentas de cobro' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Modalidades de pago' }));
   }
 
   it('desde Cobranza se llega a la lista de cuentas y QR de AGROCOM', async () => {
     await irACuentasDeCobro(crearServiciosDePrueba());
     expect(
-      await screen.findByRole('heading', { name: 'Cuentas de cobro', level: 1 }),
+      await screen.findByRole('heading', { name: 'Modalidades de pago', level: 1 }),
     ).toBeInTheDocument();
     expect(await screen.findByRole('article', { name: 'Banco Unión' })).toBeInTheDocument();
     expect(screen.getByText('10000123456')).toBeInTheDocument();
@@ -604,6 +605,42 @@ describe('detalle de cuenta (A05)', () => {
     expect(within(dialogo).getByLabelText('Nombre')).toHaveValue('Carla');
     expect(within(dialogo).getByLabelText('Apellido')).toHaveValue('Méndez');
     expect(within(dialogo).getByLabelText(/^NIT/)).toHaveValue('1023456021');
+  });
+
+  it('restringe la cuenta con un motivo obligatorio', async () => {
+    const restringir = vi.fn<CuentasRepositorio['restringir']>(() => Promise.resolve());
+    await abrirDetalle(crearServiciosDePrueba({ cuentas: { restringir } }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Restringir' }));
+    const dialogo = await screen.findByRole('dialog', { name: /Restringir Agroindustrial Norte/ });
+    const confirmar = within(dialogo).getByRole('button', { name: 'Restringir' });
+    expect(confirmar).toBeDisabled();
+    await userEvent.type(within(dialogo).getByLabelText('Motivo'), 'Pago en revisión');
+    await userEvent.click(confirmar);
+    expect(restringir).toHaveBeenCalledWith('1', 'Pago en revisión');
+  });
+
+  it('una cuenta suspendida muestra su motivo y se reactiva con confirmación', async () => {
+    const reactivar = vi.fn<CuentasRepositorio['reactivar']>(() => Promise.resolve());
+    const suspendida = {
+      ...DETALLE,
+      cuenta: {
+        ...DETALLE.cuenta,
+        estadoDeSeguridad: 'suspendido' as const,
+        estadoMotivo: 'Uso indebido',
+        estadoDesde: new Date('2026-10-20T12:00:00Z'),
+      },
+    };
+    await abrirDetalle(
+      crearServiciosDePrueba({
+        cuentas: { obtener: () => Promise.resolve(suspendida), reactivar },
+      }),
+    );
+    expect(await screen.findByText(/Cuenta suspendida desde/)).toHaveTextContent('Uso indebido');
+    expect(screen.queryByRole('button', { name: 'Suspender cuenta' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reactivar' }));
+    const dialogo = await screen.findByRole('dialog', { name: /Reactivar Agroindustrial Norte/ });
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Reactivar' }));
+    expect(reactivar).toHaveBeenCalledWith('1');
   });
 
   it('sin NIT ni teléfono, la ficha muestra un guion en su lugar', async () => {
@@ -1146,8 +1183,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    // Como responsable, como administrador, en el árbol de la cuenta y en el cupo por rama (ADR 0028)
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(4);
+    // Como responsable, como administrador y en el árbol de la cuenta (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(3);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1590,6 +1627,8 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
+    // El uso de los usuarios vive en la pestaña Suscripción, junto al plan y al cupo.
+    await userEvent.click(await screen.findByRole('tab', { name: 'Suscripción' }));
   }
 
   it('explica los umbrales y que es solo informativo', async () => {
@@ -1661,31 +1700,6 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
 });
 
 describe('avisos de AGROCOM y sensor de la puerta (ADR 0031 §18, W10)', () => {
-  it('la campana de avisos está en la barra con su contador, solo con el permiso', async () => {
-    montar(crearServiciosDePrueba(), '/ingreso');
-    await ingresar();
-    expect(
-      await screen.findByRole('button', { name: 'Notificaciones: 1 sin leer' }),
-    ).toBeInTheDocument();
-  });
-
-  it('sin el permiso de avisos, la barra no ofrece la campana', async () => {
-    const servicios = crearServiciosDePrueba({
-      seguridad: {
-        ingresar: () =>
-          Promise.resolve({
-            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
-            debeCambiarContrasena: false,
-            permisos: ['resumen.panel.ver'],
-          }),
-      },
-    });
-    montar(servicios, '/ingreso');
-    await ingresar();
-    await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
-    expect(screen.queryByRole('button', { name: /Notificaciones/ })).not.toBeInTheDocument();
-  });
-
   it('desde Placas se configura el sensor de una placa vinculada y se guarda', async () => {
     const configurarSensor = vi.fn<PlacasRepositorio['configurarSensor']>(() => Promise.resolve());
     montar(crearServiciosDePrueba({ placas: { configurarSensor } }), '/ingreso');

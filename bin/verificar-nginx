@@ -173,6 +173,13 @@ if [ "$parte" = panel ]; then
     # img-src con blob: (vista previa de QR y comprobantes con URL.createObjectURL); exacto, sin data:
     c_img_blob() { pedir / && [ "$estado" = 200 ] && tiene content-security-policy "img-src 'self' blob:;"; }
     caso "CSP del panel permite img-src 'self' blob: (y no data:)" c_img_blob
+    # El nonce de style-src (estilos de react-select) debe ser el mismo que nginx escribió en el index.
+    c_nonce_estilos() {
+        pedir / && [ "$estado" = 200 ] || return 1
+        local nonce; nonce=$(tr -d '\r' < "$work/cab" | grep -i '^content-security-policy:' | sed -n "s/.*style-src 'self' 'nonce-\([0-9a-f]*\)'.*/\1/p")
+        [ -n "$nonce" ] && cuerpo_tiene "name=\"csp-nonce\" content=\"$nonce\"" && ! cuerpo_tiene '__CSP_NONCE__'
+    }
+    caso "CSP del panel: style-src con nonce igual al del index (react-select)" c_nonce_estilos
 
     paso "panel: el build no necesita CSP con 'unsafe-inline'"
     c_sin_inline() {

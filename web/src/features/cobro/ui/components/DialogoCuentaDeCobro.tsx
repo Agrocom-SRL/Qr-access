@@ -80,6 +80,7 @@ export function DialogoCuentaDeCobro({ abierto, onCerrar, cuenta }: Props) {
       abierto={abierto}
       titulo={cuenta === null ? t('cobro:dialogoNueva') : t('cobro:dialogoEditar')}
       onCerrar={onCerrar}
+      ancho="ancho"
       acciones={
         <>
           <AccesoBoton variante="texto" onClick={onCerrar}>

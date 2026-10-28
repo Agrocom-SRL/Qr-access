@@ -3,6 +3,7 @@ import 'package:agrocom_acceso/core/api/interceptor_cache.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
 import 'package:agrocom_acceso/core/config/entorno.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_cache.dart';
+import 'package:agrocom_acceso/core/plataforma/cliente_http.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,15 +38,19 @@ final NotifierProvider<DatosGuardados, DateTime?> datosGuardadosProvider =
     NotifierProvider<DatosGuardados, DateTime?>(DatosGuardados.new);
 
 /// Cliente HTTP con la base `…/api/v1`, el JWT y la renovación de sesión.
+/// Lo que cambia por plataforma (la cabecera que anuncia a la web y el
+/// adaptador con credenciales) sale de `ajustesClienteHttpProvider`.
 final dioProvider = Provider<Dio>((ref) {
+  final ajustes = ref.watch(ajustesClienteHttpProvider);
   final dio = Dio(
     BaseOptions(
       baseUrl: '${Entorno.apiUrl}/api/${Entorno.versionApi}',
       connectTimeout: const Duration(seconds: Entorno.tiempoEsperaSegundos),
       receiveTimeout: const Duration(seconds: Entorno.tiempoEsperaSegundos),
-      headers: {'Accept': 'application/json'},
+      headers: {'Accept': 'application/json', ...ajustes.cabeceras},
     ),
   );
+  ajustes.aplicar(dio);
   dio.interceptors.add(
     InterceptorSesion(ref.watch(proveedorTokensProvider), dio),
   );

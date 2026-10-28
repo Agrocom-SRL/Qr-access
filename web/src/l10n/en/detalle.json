@@ -152,5 +152,32 @@
   "usoDetalleTitular": "{{unidad}} · {{miembros}} of {{tope}} Members",
   "usoDetalleRama_one": "{{count}} user",
   "usoDetalleRama_other": "{{count}} users",
-  "errorUso": "We could not load the user activity"
+  "errorUso": "We could not load the user activity",
+  "estado": {
+    "restringir": {
+      "boton": "Restrict",
+      "titulo": "Restrict {{cuenta}}?",
+      "texto": "The account stops generating new QR codes. Its users keep their session and the QR codes they already generated work until they expire.",
+      "confirmar": "Restrict"
+    },
+    "suspender": {
+      "boton": "Suspend account",
+      "titulo": "Suspend {{cuenta}}?",
+      "texto": "All of the account's sessions are closed and all its valid QR codes are voided. Voided QR codes do not come back: after reactivating, they must be generated again.",
+      "confirmar": "Suspend"
+    },
+    "reactivar": {
+      "boton": "Reactivate",
+      "titulo": "Reactivate {{cuenta}}?",
+      "texto": "The account becomes active again. Its users can sign in and generate QR codes again.",
+      "confirmar": "Reactivate"
+    },
+    "motivo": "Reason",
+    "motivoAyuda": "Required; it is recorded in the audit log.",
+    "motivoDe": "Reason: {{motivo}}",
+    "aviso": {
+      "restringido": "Account restricted since {{fecha}}: it does not generate new QR codes.",
+      "suspendido": "Account suspended since {{fecha}}: no sessions or valid QR codes."
+    }
+  }
 }

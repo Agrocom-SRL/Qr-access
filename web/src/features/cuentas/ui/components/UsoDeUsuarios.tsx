@@ -59,46 +59,49 @@ function Contenido({
         {t('usoAviso', { dias: datos.umbralInactivoDias, qr: datos.umbralRuidosoPorDia })}
       </Aviso>
 
-      <Grupo
-        titulo={t('usoInactivos', { count: inactivos.length })}
-        vacio={t('usoSinInactivos')}
-        filas={inactivos.map((u) => ({
-          id: u.id,
-          nombre: u.etiqueta,
-          detalle: detalleDeInactivo(u, datos.ventanaDias, t),
-        }))}
-      />
-      <Grupo
-        titulo={t('usoRuidosos', { count: ruidosos.length })}
-        vacio={t('usoSinRuidosos')}
-        filas={ruidosos.map((u) => ({
-          id: u.id,
-          nombre: u.etiqueta,
-          detalle: t('usoDetalleRuidoso', { maximo: u.maxQrEnUnDia, total: u.qrGenerados }),
-        }))}
-      />
-      <Grupo
-        titulo={t('usoTitulares', { count: cerca.length })}
-        vacio={t('usoSinTitulares')}
-        filas={cerca.map((titular) => ({
-          id: titular.id,
-          nombre: titular.etiqueta,
-          detalle: t('usoDetalleTitular', {
-            unidad: titular.unidad ?? t('sinUnidad'),
-            miembros: titular.miembros,
-            tope: titular.tope,
-          }),
-        }))}
-      />
-      <Grupo
-        titulo={t('usoRamas')}
-        vacio={t('administradoresVacio')}
-        filas={datos.ramas.map((rama) => ({
-          id: rama.id,
-          nombre: rama.etiqueta,
-          detalle: t('usoDetalleRama', { count: rama.usuarios }),
-        }))}
-      />
+      {/* Son listas cortas de cantidades: en dos columnas se leen de un vistazo y el bloque ocupa menos alto. */}
+      <div className={styles.columnas}>
+        <Grupo
+          titulo={t('usoInactivos', { count: inactivos.length })}
+          vacio={t('usoSinInactivos')}
+          filas={inactivos.map((u) => ({
+            id: u.id,
+            nombre: u.etiqueta,
+            detalle: detalleDeInactivo(u, datos.ventanaDias, t),
+          }))}
+        />
+        <Grupo
+          titulo={t('usoRuidosos', { count: ruidosos.length })}
+          vacio={t('usoSinRuidosos')}
+          filas={ruidosos.map((u) => ({
+            id: u.id,
+            nombre: u.etiqueta,
+            detalle: t('usoDetalleRuidoso', { maximo: u.maxQrEnUnDia, total: u.qrGenerados }),
+          }))}
+        />
+        <Grupo
+          titulo={t('usoTitulares', { count: cerca.length })}
+          vacio={t('usoSinTitulares')}
+          filas={cerca.map((titular) => ({
+            id: titular.id,
+            nombre: titular.etiqueta,
+            detalle: t('usoDetalleTitular', {
+              unidad: titular.unidad ?? t('sinUnidad'),
+              miembros: titular.miembros,
+              tope: titular.tope,
+            }),
+          }))}
+        />
+        <Grupo
+          titulo={t('usoRamas')}
+          vacio={t('administradoresVacio')}
+          filas={datos.ramas.map((rama) => ({
+            id: rama.id,
+            nombre: rama.etiqueta,
+            detalle: t('usoDetalleRama', { count: rama.usuarios }),
+          }))}
+        />
+      </div>
     </>
   );
 }

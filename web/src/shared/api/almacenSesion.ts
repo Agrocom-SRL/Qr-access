@@ -1,64 +1,26 @@
-/** Tokens de la sesión del super admin. */
-export interface Tokens {
-  acceso: string;
-  refresco: string;
-}
-
 type Oyente = () => void;
 
-const CLAVE_REFRESCO = 'acceso.refresco';
-
-/** El `sessionStorage` puede faltar o lanzar (ventana privada, datos bloqueados): sin él no se recuerda nada. */
-function almacenamientoDePestana(): Storage | null {
-  try {
-    return globalThis.sessionStorage;
-  } catch {
-    return null;
-  }
-}
-
 /**
- * El token de acceso vive solo en memoria. El de refresco se recuerda en el `sessionStorage` de la
- * pestaña para que recargar o escribir otra URL no cierre la sesión; se borra al cerrar la
- * pestaña o la sesión (nunca en `localStorage`, ADR 0022).
- * TODO(docs): cookie httpOnly para el refresco necesita soporte en la API; hoy el refresco viaja en el cuerpo.
+ * Guarda solo el token de acceso, en memoria. El refresco no pasa por aquí: la API lo deja en una
+ * cookie `HttpOnly` (ADR 0033 §5) que JavaScript no puede leer, así que no hay nada que persistir.
+ * Sin `localStorage` ni `sessionStorage` (ADR 0022): recargar la página no conserva el acceso y la
+ * sesión se recupera pidiendo un refresco con la cookie.
  */
 export class AlmacenSesion {
-  private tokens: Tokens | null = null;
+  private acceso: string | null = null;
   private readonly oyentes = new Set<Oyente>();
 
-  constructor(private readonly pestana: Storage | null = almacenamientoDePestana()) {}
-
-  obtener(): Tokens | null {
-    return this.tokens;
+  obtener(): string | null {
+    return this.acceso;
   }
 
-  /** El refresco recordado por la pestaña, para recuperar la sesión tras una recarga. */
-  refrescoRecordado(): string | null {
-    try {
-      return this.pestana?.getItem(CLAVE_REFRESCO) ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  guardar(tokens: Tokens): void {
-    this.tokens = tokens;
-    try {
-      this.pestana?.setItem(CLAVE_REFRESCO, tokens.refresco);
-    } catch {
-      // Sin almacenamiento la sesión sigue, solo que no sobrevive a una recarga.
-    }
+  guardar(acceso: string): void {
+    this.acceso = acceso;
     this.avisar();
   }
 
   limpiar(): void {
-    this.tokens = null;
-    try {
-      this.pestana?.removeItem(CLAVE_REFRESCO);
-    } catch {
-      // Nada que borrar.
-    }
+    this.acceso = null;
     this.avisar();
   }
 

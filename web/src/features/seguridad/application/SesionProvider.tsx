@@ -16,7 +16,7 @@ import { useSeguridadRepositorio } from './contextos';
 interface ContextoSesion {
   /** `null` si no hay sesión. */
   sesion: SesionIniciada | null;
-  /** `true` mientras se recupera la sesión que recordaba la pestaña (recarga o URL nueva). */
+  /** `true` mientras se recupera la sesión con la cookie de refresco (al arrancar o recargar). */
   restaurando: boolean;
   /** `true` cuando la API cortó la sesión (refresco fallido): se muestra PE5c. */
   vencida: boolean;
@@ -28,8 +28,8 @@ interface ContextoSesion {
 const Contexto = createContext<ContextoSesion | null>(null);
 
 /**
- * Estado de sesión de la interfaz. Los tokens viven en el `AlmacenSesion` (memoria); acá solo
- * quién entró. Si los tokens desaparecen sin que el usuario cierre sesión, la sesión venció.
+ * Estado de sesión de la interfaz. El acceso vive en el `AlmacenSesion` (memoria); acá solo quién
+ * entró. Si el acceso desaparece sin que el usuario cierre sesión, la sesión venció.
  */
 export function SesionProvider({
   almacen,
@@ -38,13 +38,14 @@ export function SesionProvider({
   almacen: AlmacenSesion;
   children: ReactNode;
 }) {
-  const tokens = useSyncExternalStore(
+  const acceso = useSyncExternalStore(
     (aviso) => almacen.suscribir(aviso),
     () => almacen.obtener(),
   );
   const [sesion, setSesion] = useState<SesionIniciada | null>(null);
   const [vencida, setVencida] = useState(false);
-  const [restaurando, setRestaurando] = useState(() => almacen.refrescoRecordado() !== null);
+  // Al arrancar no se sabe si hay cookie de refresco (es `HttpOnly`): siempre se intenta restaurar.
+  const [restaurando, setRestaurando] = useState(true);
   const cierreVoluntario = useRef(false);
   const repositorio = useSeguridadRepositorio();
 
@@ -62,11 +63,11 @@ export function SesionProvider({
   }, [repositorio, restaurando]);
 
   useEffect(() => {
-    if (tokens === null && sesion !== null && !cierreVoluntario.current) {
+    if (acceso === null && sesion !== null && !cierreVoluntario.current) {
       setSesion(null);
       setVencida(true);
     }
-  }, [tokens, sesion]);
+  }, [acceso, sesion]);
 
   const iniciar = useCallback((nueva: SesionIniciada) => {
     cierreVoluntario.current = false;

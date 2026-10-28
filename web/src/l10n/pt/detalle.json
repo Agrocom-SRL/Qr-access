@@ -152,5 +152,32 @@
   "usoDetalleTitular": "{{unidad}} · {{miembros}} de {{tope}} Membros",
   "usoDetalleRama_one": "{{count}} usuário",
   "usoDetalleRama_other": "{{count}} usuários",
-  "errorUso": "Não foi possível carregar o uso dos usuários"
+  "errorUso": "Não foi possível carregar o uso dos usuários",
+  "estado": {
+    "restringir": {
+      "boton": "Restringir",
+      "titulo": "Restringir {{cuenta}}?",
+      "texto": "A conta deixa de gerar novos QR. Os usuários mantêm a sessão e os QR já gerados funcionam até vencerem.",
+      "confirmar": "Restringir"
+    },
+    "suspender": {
+      "boton": "Suspender conta",
+      "titulo": "Suspender {{cuenta}}?",
+      "texto": "Todas as sessões da conta são encerradas e todos os QR vigentes são anulados. Os QR anulados não voltam: ao reativar, é preciso gerá-los de novo.",
+      "confirmar": "Suspender"
+    },
+    "reactivar": {
+      "boton": "Reativar",
+      "titulo": "Reativar {{cuenta}}?",
+      "texto": "A conta volta a ficar ativa. Os usuários podem entrar e gerar QR novamente.",
+      "confirmar": "Reativar"
+    },
+    "motivo": "Motivo",
+    "motivoAyuda": "Obrigatório; fica registrado na bitácora.",
+    "motivoDe": "Motivo: {{motivo}}",
+    "aviso": {
+      "restringido": "Conta restrita desde {{fecha}}: não gera novos QR.",
+      "suspendido": "Conta suspensa desde {{fecha}}: sem sessões nem QR vigentes."
+    }
+  }
 }

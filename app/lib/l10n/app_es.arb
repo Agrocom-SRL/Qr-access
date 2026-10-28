@@ -249,6 +249,14 @@
   "@comunErrorSesionRefrescoInvalido": {
     "description": "code sesion.refresco_invalido: hay que volver a iniciar sesión"
   },
+  "comunErrorSesionOrigenInvalido": "No podemos renovar tu sesión desde esta dirección. Ingresa de nuevo desde la dirección oficial de AGROCOM Acceso.",
+  "@comunErrorSesionOrigenInvalido": {
+    "description": "code sesion.origen_invalido (403): la app web no viene del propio dominio al renovar la sesión (ADR 0033 §5)"
+  },
+  "comunErrorSesionRefrescoAmbiguo": "No pudimos renovar tu sesión por un dato repetido. Ingresa de nuevo.",
+  "@comunErrorSesionRefrescoAmbiguo": {
+    "description": "code sesion.refresco_ambiguo (400): llegaron el refresco en el cuerpo y en la cookie a la vez (ADR 0033 §5)"
+  },
   "comunErrorPermisoDenegado": "Tu rol no tiene permiso para hacer esto.",
   "@comunErrorPermisoDenegado": {
     "description": "code permiso.denegado (403): el rol activo no tiene el permiso"

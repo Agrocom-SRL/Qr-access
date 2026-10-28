@@ -10,7 +10,9 @@ globalThis.ResizeObserver = class {
   disconnect() {}
 };
 
-// La pestaña recuerda el refresco entre cargas; cada test arranca sin sesión recordada.
+// Ningún test deja datos en el almacenamiento del navegador: el refresco vive en una cookie HttpOnly
+// que el panel no ve, y los tests que comprueban que no se guarda nada parten de un almacenamiento vacío.
 afterEach(() => {
+  localStorage.clear();
   sessionStorage.clear();
 });

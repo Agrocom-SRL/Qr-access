@@ -4,7 +4,7 @@ import { tienePermiso, useSesion } from '../../../seguridad';
 import { ListaDeNotificaciones } from '../components/ListaDeNotificaciones';
 
 /**
- * Pantalla completa de avisos de AGROCOM: la misma lista que la campana, con su filtro por tipo. Quien solo
+ * Pantalla completa de avisos de AGROCOM: la lista de avisos con su filtro por tipo. Quien solo
  * mira no ve leer ni descartar (la API lo exige igual).
  */
 export function NotificacionesPage() {

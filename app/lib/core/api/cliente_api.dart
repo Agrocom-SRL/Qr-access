@@ -67,11 +67,14 @@ class ClienteApi {
     });
   }
 
-  Future<TokensDto> refrescar(String refresco) {
+  /// [refresco] va en el cuerpo para la app nativa. En web es `null`: la API
+  /// lee la cookie `HttpOnly` que el navegador envía sola (ADR 0033 §5), y el
+  /// cuerpo queda vacío.
+  Future<TokensDto> refrescar(String? refresco) {
     return _ejecutar(() async {
       final r = await _dio.post<Map<String, dynamic>>(
         '/sesiones/refresco',
-        data: {'refresco': refresco},
+        data: {'refresco': ?refresco},
         options: _sinSesion,
       );
       return TokensDto.desde(r.data!);

@@ -10,15 +10,19 @@ class RespuestaInicioDto {
     required this.rolActivoId,
   });
 
+  /// `refresco` no viene para un navegador: la API lo deja en su cookie
+  /// `HttpOnly` (ADR 0033 §5). La app nativa sí lo recibe en el cuerpo.
   new desde(Map<String, dynamic> json)
     : acceso = json['acceso'] as String,
-      refresco = json['refresco'] as String,
+      refresco = json['refresco'] as String?,
       usuario = UsuarioDto.desde(json['usuario'] as Map<String, dynamic>),
       cuenta = CuentaDto.desde(json['cuenta'] as Map<String, dynamic>),
       rolActivoId = json['rol_activo_id'] as String?;
 
   final String acceso;
-  final String refresco;
+
+  /// `null` en web: el refresco está en la cookie, no en el cuerpo.
+  final String? refresco;
   final UsuarioDto usuario;
   final CuentaDto cuenta;
 
@@ -26,16 +30,19 @@ class RespuestaInicioDto {
   final String? rolActivoId;
 }
 
-/// Respuesta de `POST /sesiones/refresco`: el refresco es rotativo.
+/// Respuesta de `POST /sesiones/refresco`: el refresco es rotativo. En web
+/// la respuesta trae solo el acceso (el refresco rota en la cookie).
 class TokensDto {
-  const new({required this.acceso, required this.refresco});
+  const new({required this.acceso, this.refresco});
 
   new desde(Map<String, dynamic> json)
     : acceso = json['acceso'] as String,
-      refresco = json['refresco'] as String;
+      refresco = json['refresco'] as String?;
 
   final String acceso;
-  final String refresco;
+
+  /// `null` en web (ver `RespuestaInicioDto.refresco`).
+  final String? refresco;
 }
 
 /// Respuesta de `GET /sesiones/actual`: menú, permisos y suscripción.

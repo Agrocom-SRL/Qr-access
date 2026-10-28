@@ -75,7 +75,7 @@ presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), w
 7. **Fakes con el shape real**: los tests sobrescriben `xxxRepositorioProvider` con un fake que devuelve lo que devuelve el contrato.
 8. **Web y móvil con el mismo código**: lo específico de plataforma va detrás de una interfaz en `core/plataforma/` y se elige por importación condicional (`if (dart.library.io)`). Nada de `dart:io` fuera de `*_movil.dart`.
 9. **QR**: negro sobre blanco siempre (`colores.qrModulo`/`qrFondo`), al menos `tamano.qrMinimo` dp, zona de silencio de `tamano.qrZonaSilencioModulos`, con la hora de vencimiento visible. El `texto` del token solo vive en la pantalla que lo muestra y comparte (ADR 0008): se pasa por `extra` de la ruta y no se guarda.
-10. **Sesión**: el acceso vive en memoria. El refresco se guarda cifrado en móvil y solo en memoria en web (ADR 0004). El interceptor renueva una sola vez aunque lleguen varios 401 a la vez. Lo que el rol no puede usar no se muestra y la ruta tampoco se abre (`guarda_sesion.dart`). Los destinos de la navegación salen de los permisos (`destinosPara`), nunca del nombre del rol.
+10. **Sesión**: el acceso vive en memoria. El refresco se guarda cifrado en móvil; en web nunca pasa por JavaScript: vive en la cookie `__Host-refresco-app` (`HttpOnly`), la app se anuncia con `X-Requested-With: agrocom-app` y la restauración llama al refresco con cuerpo vacío (ADR 0033 §5). El interceptor renueva una sola vez aunque lleguen varios 401 a la vez. Lo que el rol no puede usar no se muestra y la ruta tampoco se abre (`guarda_sesion.dart`). Los destinos de la navegación salen de los permisos (`destinosPara`), nunca del nombre del rol.
 11. **Breakpoints**: `context.clasePantalla` (compacta < 600, media < 1024, expandida). Una pantalla con listado se prueba en 360×800 y en 1440×900 (`montarPantalla(expandida: true)`). Cada pantalla se compara con la captura de su id en `docs/diseno/handoff/capturas/`.
 12. **Lo que se ve una sola vez** (el token del QR, el PIN generado) viaja por `extra` de go_router y nunca se guarda; su pantalla usa `PlantillaPantallaCompleta`.
 
@@ -87,7 +87,7 @@ presentation/  página (ConsumerWidget), controlador (Notifier/AsyncNotifier), w
 | Compartir la imagen del QR | `CompartirImagen` | share_plus (`XFile.fromData`) | share_plus; sin Web Share API, descarga (`descargar_archivo_web.dart`) |
 | Tema elegido | `AlmacenPreferencias` | shared_preferences | shared_preferences |
 
-Pendiente: brillo de pantalla para el QR (CLAUDE.md, invariante 5) y la cookie HttpOnly del refresco cuando la API la soporte.
+Pendiente: brillo de pantalla para el QR (CLAUDE.md, invariante 5).
 
 ## Reglas de pantalla (de ACRECIA, `guia-pantallas.md`)
 
