@@ -89,14 +89,16 @@ class SuscripcionSesion {
 class RespuestaInicio {
   const new({
     required this.acceso,
-    required this.refresco,
     required this.usuario,
     required this.cuenta,
     required this.rolActivoId,
+    this.refresco,
   });
 
   final String acceso;
-  final String refresco;
+
+  /// `null` en web: el refresco ya quedó en la cookie `HttpOnly` (ADR 0033 §5).
+  final String? refresco;
   final UsuarioSesion usuario;
   final CuentaSesion cuenta;
 

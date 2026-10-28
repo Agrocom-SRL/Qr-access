@@ -6,7 +6,7 @@ import { AccesoBadge } from '../../../../shared/ui/atoms/AccesoBadge';
 import { BotonIcono } from '../../../../shared/ui/atoms/BotonIcono';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
 import { TextoMono } from '../../../../shared/ui/atoms/TextoMono';
-import controles from '../../../../shared/ui/molecules/controles.module.css';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { Paginador } from '../../../../shared/ui/molecules/Paginador';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
@@ -165,57 +165,57 @@ export function PestanaIncidentes({ cuentaId }: { cuentaId: string }) {
         <p className={styles.subtitulo}>{t('incidentes:subtitulo')}</p>
       </div>
       <div className={styles.filtros}>
-        <label className={styles.campo}>
-          <span className={styles.etiqueta}>{t('incidentes:filtros.tipo')}</span>
-          <select
-            className={controles.control}
-            value={filtros.tipo}
-            onChange={(evento) => {
-              cambiar({ tipo: evento.target.value as FiltrosDeIncidentes['tipo'] });
+        <div className={styles.campo}>
+          <AccesoSelectorBuscable
+            conBusqueda={false}
+            etiqueta={t('incidentes:filtros.tipo')}
+            valor={filtros.tipo}
+            opciones={[
+              { valor: 'todos', etiqueta: t('incidentes:filtros.todos') },
+              ...TIPOS_DE_INCIDENTE.map((valor) => ({
+                valor,
+                etiqueta: t(`incidentes:tipo.${valor}`),
+              })),
+            ]}
+            onCambio={(valor) => {
+              cambiar({ tipo: valor as FiltrosDeIncidentes['tipo'] });
             }}
-          >
-            <option value="todos">{t('incidentes:filtros.todos')}</option>
-            {TIPOS_DE_INCIDENTE.map((valor) => (
-              <option key={valor} value={valor}>
-                {t(`incidentes:tipo.${valor}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.campo}>
-          <span className={styles.etiqueta}>{t('incidentes:filtros.origen')}</span>
-          <select
-            className={controles.control}
-            value={filtros.origen}
-            onChange={(evento) => {
-              cambiar({ origen: evento.target.value as FiltrosDeIncidentes['origen'] });
+          />
+        </div>
+        <div className={styles.campo}>
+          <AccesoSelectorBuscable
+            conBusqueda={false}
+            etiqueta={t('incidentes:filtros.origen')}
+            valor={filtros.origen}
+            opciones={[
+              { valor: 'todos', etiqueta: t('incidentes:filtros.todos') },
+              ...ORIGENES_DE_INCIDENTE.map((valor) => ({
+                valor,
+                etiqueta: t(`incidentes:origen.${valor}`),
+              })),
+            ]}
+            onCambio={(valor) => {
+              cambiar({ origen: valor as FiltrosDeIncidentes['origen'] });
             }}
-          >
-            <option value="todos">{t('incidentes:filtros.todos')}</option>
-            {ORIGENES_DE_INCIDENTE.map((valor) => (
-              <option key={valor} value={valor}>
-                {t(`incidentes:origen.${valor}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.campo}>
-          <span className={styles.etiqueta}>{t('incidentes:filtros.estado')}</span>
-          <select
-            className={controles.control}
-            value={filtros.estado}
-            onChange={(evento) => {
-              cambiar({ estado: evento.target.value as FiltrosDeIncidentes['estado'] });
+          />
+        </div>
+        <div className={styles.campo}>
+          <AccesoSelectorBuscable
+            conBusqueda={false}
+            etiqueta={t('incidentes:filtros.estado')}
+            valor={filtros.estado}
+            opciones={[
+              { valor: 'todos', etiqueta: t('incidentes:filtros.todos') },
+              ...ESTADOS_DE_INCIDENTE.map((valor) => ({
+                valor,
+                etiqueta: t(`incidentes:estado.${valor}`),
+              })),
+            ]}
+            onCambio={(valor) => {
+              cambiar({ estado: valor as FiltrosDeIncidentes['estado'] });
             }}
-          >
-            <option value="todos">{t('incidentes:filtros.todos')}</option>
-            {ESTADOS_DE_INCIDENTE.map((valor) => (
-              <option key={valor} value={valor}>
-                {t(`incidentes:estado.${valor}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
       </div>
       {contenido()}
       {seleccionado ? (

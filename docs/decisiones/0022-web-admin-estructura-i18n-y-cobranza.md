@@ -27,3 +27,7 @@ El token de acceso sigue solo en memoria, pero el de refresco se recuerda en el 
 ## Addendum (2026-10-15): la app Flutter web aplica el mismo criterio
 
 La app Flutter en su versión web (ADR 0012) también guarda el refresco en el `sessionStorage` de la pestaña (`almacen_refresco_web.dart`): recargar la página no cierra la sesión; cerrar la pestaña o la sesión lo borra, nunca `localStorage`. El acceso sigue solo en memoria. La caché de datos y el texto de los QR generados siguen solo en memoria en web. Mismo riesgo asumido y misma salida: la cookie httpOnly cuando la API la soporte.
+
+## Addendum (2026-10-28): el refresco sale de `sessionStorage`
+
+Este addendum reemplaza a los dos anteriores. El panel React y la app Flutter web ya no guardan el refresco en `sessionStorage`: la API lo entrega en una cookie `HttpOnly` (ADR 0033 §5) y el navegador la envía sola. El acceso sigue solo en memoria. La sesión sobrevive a recargar y a cerrar el navegador mientras la cookie no venza (`JWT_REFRESH_DIAS`).

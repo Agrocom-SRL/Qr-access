@@ -6,7 +6,7 @@ import type { NotificacionesRepositorio } from '@/features/notificaciones/api/No
 import type { Notificacion } from '@/features/notificaciones/domain/notificacion';
 import { TarjetaDeNotificacion } from '@/features/notificaciones/ui/components/TarjetaDeNotificacion';
 import { NotificacionesPage } from '@/features/notificaciones/ui/pages/NotificacionesPage';
-import { SUPER_ADMIN, crearServiciosDePrueba } from '../../../servicios';
+import { ErrorApi, NOTIFICACIONES, SUPER_ADMIN, crearServiciosDePrueba } from '../../../servicios';
 
 const BASE: Omit<Notificacion, 'propuesta'> = {
   id: '910',
@@ -92,7 +92,7 @@ function montarPagina(permisos: string[], notificaciones: Partial<Notificaciones
     },
     notificaciones,
   });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>
@@ -109,7 +109,10 @@ describe('pantalla completa de avisos de AGROCOM', () => {
     );
     montarPagina(['notificaciones.aviso_plataforma.ver'], { listar });
     const selector = await screen.findByRole('combobox', { name: 'Tipo de aviso' });
-    await userEvent.selectOptions(selector, 'incidente.propuesta');
+    await userEvent.click(selector);
+    await userEvent.click(
+      await screen.findByText('El sistema propone una acción sobre un usuario reincidente'),
+    );
     expect(listar).toHaveBeenLastCalledWith('no_leidas', 1, 'incidente.propuesta');
   });
 
@@ -131,5 +134,64 @@ describe('pantalla completa de avisos de AGROCOM', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }));
     expect(leerTodas).toHaveBeenCalledTimes(1);
     expect(within(document.body).getByText('Planta Warnes')).toBeInTheDocument();
+  });
+
+  it('agrupa los avisos por sitio y traduce el tipo y la severidad', async () => {
+    montarPagina(['notificaciones.aviso_plataforma.ver']);
+    expect(
+      await screen.findByRole('heading', { name: 'Planta Warnes', level: 3 }),
+    ).toBeInTheDocument();
+    // Un aviso de la cuenta entera (sin sitio) va en su propio grupo.
+    expect(screen.getByRole('heading', { name: 'Toda la cuenta', level: 3 })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Una puerta no abre tras varios intentos', level: 4 }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Crítica')).toBeInTheDocument();
+    expect(screen.getByText('3 aperturas sin confirmar')).toBeInTheDocument();
+  });
+
+  it('leer y descartar llaman a la API con el aviso', async () => {
+    const leer = vi.fn<NotificacionesRepositorio['leer']>(() => Promise.resolve());
+    const descartar = vi.fn<NotificacionesRepositorio['descartar']>(() => Promise.resolve());
+    montarPagina(
+      ['notificaciones.aviso_plataforma.ver', 'notificaciones.aviso_plataforma.gestionar'],
+      { leer, descartar },
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Marcar como leída' }));
+    expect(leer).toHaveBeenCalledWith(NOTIFICACIONES[0]?.id);
+    const botonesDescartar = screen.getAllByRole('button', { name: 'Descartar' });
+    expect(botonesDescartar).toHaveLength(2);
+    await userEvent.click(botonesDescartar[0] as HTMLElement);
+    expect(descartar).toHaveBeenCalledWith(NOTIFICACIONES[0]?.id);
+  });
+
+  it('quien solo mira no ve leer ni descartar', async () => {
+    montarPagina(['notificaciones.aviso_plataforma.ver']);
+    await screen.findByText('Planta Warnes');
+    expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marcar como leída' })).not.toBeInTheDocument();
+  });
+
+  it('un error al cargar se traduce por su código y deja reintentar', async () => {
+    const listar = vi
+      .fn<NotificacionesRepositorio['listar']>()
+      .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
+      .mockResolvedValue({
+        elementos: NOTIFICACIONES,
+        pagina: 1,
+        porPagina: 10,
+        total: NOTIFICACIONES.length,
+      });
+    montarPagina(['notificaciones.aviso_plataforma.ver'], { listar });
+    expect(await screen.findByText('No pudimos cargar las notificaciones')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByText('Planta Warnes')).toBeInTheDocument();
+  });
+
+  it('sin avisos sin leer, dice que todo está al día', async () => {
+    montarPagina(['notificaciones.aviso_plataforma.ver'], {
+      listar: () => Promise.resolve({ elementos: [], pagina: 1, porPagina: 10, total: 0 }),
+    });
+    expect(await screen.findByText('Todo al día')).toBeInTheDocument();
   });
 });

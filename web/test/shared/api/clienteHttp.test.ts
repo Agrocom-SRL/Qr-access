@@ -6,14 +6,27 @@ function respuesta(estado: number, cuerpo?: unknown): Response {
   return new Response(cuerpo === undefined ? null : JSON.stringify(cuerpo), { status: estado });
 }
 
+interface LlamadaRegistrada {
+  url: string;
+  auth: string | null;
+  cliente: string | null;
+  metodo: string | undefined;
+  cuerpo: string | null | undefined;
+}
+
 function armar(respuestas: Response[]) {
   const sesion = new AlmacenSesion();
-  sesion.guardar({ acceso: 'a1', refresco: 'r1' });
-  const llamadas: { url: string; auth: string | null }[] = [];
+  sesion.guardar('a1');
+  const llamadas: LlamadaRegistrada[] = [];
   const falso = vi.fn<typeof fetch>((url, init) => {
+    const cabeceras = new Headers(init?.headers);
     llamadas.push({
       url: url instanceof Request ? url.url : String(url),
-      auth: new Headers(init?.headers).get('Authorization'),
+      auth: cabeceras.get('Authorization'),
+      cliente: cabeceras.get('X-Requested-With'),
+      metodo: init?.method,
+      cuerpo:
+        typeof init?.body === 'string' ? init.body : init?.body === undefined ? undefined : null,
     });
     const siguiente = respuestas.shift();
     if (!siguiente) throw new TypeError('sin red');
@@ -33,7 +46,21 @@ describe('clienteHttp', () => {
   it('manda el Bearer y arma la consulta sin valores vacíos', async () => {
     const { cliente, llamadas } = armar([respuesta(200, { ok: true })]);
     await cliente.solicitar({ metodo: 'GET', ruta: '/cuentas', consulta: { pagina: 2, q: '' } });
-    expect(llamadas[0]).toEqual({ url: '/api/v1/cuentas?pagina=2', auth: 'Bearer a1' });
+    expect(llamadas[0]).toMatchObject({ url: '/api/v1/cuentas?pagina=2', auth: 'Bearer a1' });
+  });
+
+  it('se anuncia como panel con X-Requested-With en cada petición, también en las de archivo', async () => {
+    const { cliente, llamadas } = armar([
+      respuesta(200, { ok: true }),
+      respuesta(200, { ok: true }),
+    ]);
+    await cliente.solicitar({ metodo: 'GET', ruta: '/cuentas' });
+    await cliente.solicitar({
+      metodo: 'POST',
+      ruta: '/comprobantes',
+      archivo: new Blob(['x'], { type: 'image/png' }),
+    });
+    expect(llamadas.map((l) => l.cliente)).toEqual(['agrocom-panel', 'agrocom-panel']);
   });
 
   it('traduce un problema RFC 9457 a ErrorApi con su code', async () => {
@@ -49,15 +76,31 @@ describe('clienteHttp', () => {
     });
   });
 
-  it('en 401 refresca los tokens y reintenta una vez', async () => {
+  it('en 401 refresca el acceso con cuerpo vacío (el refresco va en la cookie) y reintenta una vez', async () => {
     const { cliente, sesion, llamadas } = armar([
       respuesta(401, { code: 'autenticacion.requerida' }),
-      respuesta(200, { acceso: 'a2', refresco: 'r2' }),
+      respuesta(200, { acceso: 'a2' }),
       respuesta(200, { datos: [] }),
     ]);
     await cliente.solicitar({ metodo: 'GET', ruta: '/cuentas' });
-    expect(sesion.obtener()).toEqual({ acceso: 'a2', refresco: 'r2' });
+    expect(sesion.obtener()).toBe('a2');
     expect(llamadas.map((l) => l.auth)).toEqual(['Bearer a1', null, 'Bearer a2']);
+    expect(llamadas[1]).toMatchObject({
+      metodo: 'POST',
+      url: '/api/v1/sesiones/refresco',
+      cuerpo: '{}',
+    });
+  });
+
+  it('el refresco nunca se guarda en el almacenamiento del navegador', async () => {
+    const { cliente } = armar([
+      respuesta(401, { code: 'autenticacion.requerida' }),
+      respuesta(200, { acceso: 'a2' }),
+      respuesta(200, { datos: [] }),
+    ]);
+    await cliente.solicitar({ metodo: 'GET', ruta: '/cuentas' });
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
   });
 
   it('si el refresco falla, limpia la sesión y avisa que terminó', async () => {

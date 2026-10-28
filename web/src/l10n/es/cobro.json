@@ -1,10 +1,10 @@
 {
-  "titulo": "Cuentas de cobro",
+  "titulo": "Modalidades de pago",
   "subtitulo": "Dónde recibe AGROCOM los pagos: se muestran al registrar el pago de una cuenta",
   "nueva": "Agregar cuenta",
-  "errorCarga": "No pudimos cargar las cuentas de cobro",
+  "errorCarga": "No pudimos cargar las modalidades de pago",
   "vacio": {
-    "titulo": "Aún no hay cuentas de cobro",
+    "titulo": "Aún no hay modalidades de pago",
     "texto": "Agrega una cuenta bancaria o un QR para mostrarlos al activar una cuenta."
   },
   "metodo": "Método de cobro",
@@ -34,8 +34,8 @@
   "imagenVista": "Vista previa del QR",
   "imagenQr": "QR de cobro de {{banco}}",
   "imagenError": "No pudimos cargar el QR",
-  "dialogoNueva": "Nueva cuenta de cobro",
-  "dialogoEditar": "Editar cuenta de cobro",
+  "dialogoNueva": "Nueva modalidad de pago",
+  "dialogoEditar": "Editar modalidad de pago",
   "guardar": "Guardar",
   "guardando": "Guardando",
   "editarCuenta": "Editar la cuenta de {{banco}}",
@@ -49,8 +49,8 @@
   "archivoGrande": "El archivo pesa más de 5 MB",
   "paraPagar": "Dónde paga la cuenta",
   "paraPagarVacio": {
-    "transferencia": "No hay cuentas bancarias activas: agrégalas en Cuentas de cobro.",
-    "qr": "No hay un QR de cobro activo: agrégalo en Cuentas de cobro."
+    "transferencia": "No hay cuentas bancarias activas: agrégalas en Modalidades de pago.",
+    "qr": "No hay un QR de cobro activo: agrégalo en Modalidades de pago."
   },
-  "gestionar": "Cuentas de cobro"
+  "gestionar": "Modalidades de pago"
 }

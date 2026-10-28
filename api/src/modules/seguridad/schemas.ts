@@ -57,18 +57,25 @@ export const parametrosDeSesionDeUsuarioDeCuenta = z.object({
   sesionId: esquemaId,
 });
 
+/**
+ * El refresco va en el cuerpo para la app nativa; un cliente de navegador lo recibe en una cookie
+ * `HttpOnly` y el cuerpo no lo trae (ADR 0033 §5).
+ */
+const refrescoEnElCuerpo = z.string().optional();
+
 export const respuestaDeIngreso = z.object({
   acceso: z.string(),
-  refresco: z.string(),
+  refresco: refrescoEnElCuerpo,
   usuario: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
   cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }),
   roles: z.array(esquemaRol),
   rol_activo_id: z.string().nullable(),
 });
 
-export const cuerpoDeRefresco = z.strictObject({ refresco: z.string().min(1).max(256) });
+/** Sin `refresco`, un cliente de navegador lo presenta en su cookie. */
+export const cuerpoDeRefresco = z.strictObject({ refresco: z.string().min(1).max(256).optional() });
 
-export const respuestaDeRefresco = z.object({ acceso: z.string(), refresco: z.string() });
+export const respuestaDeRefresco = z.object({ acceso: z.string(), refresco: refrescoEnElCuerpo });
 
 export const respuestaDeSesionActual = z.object({
   usuario: z.object({ id: z.string(), etiqueta: z.string().nullable() }),
@@ -191,7 +198,7 @@ export const cuerpoDeIngresoDePlataforma = z.strictObject({
 
 export const respuestaDeIngresoDePlataforma = z.object({
   acceso: z.string(),
-  refresco: z.string(),
+  refresco: refrescoEnElCuerpo,
   usuario: z.object({ id: z.string(), nombre: z.string().nullable(), usuario: z.string() }),
   debe_cambiar_contrasena: z.boolean(),
   permisos: z.array(z.string()),

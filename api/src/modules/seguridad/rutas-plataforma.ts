@@ -1,6 +1,11 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
+import {
+  borrarCookieDeRefresco,
+  clienteWebDe,
+  fijarCookieDeRefresco,
+} from '../../platform/http/refresco-en-cookie.js';
 import { permisoDePlataforma, plataformaDe } from '../../plugins/permisos.js';
 import { ejecutar as agregarMiembro } from './actions/agregar-miembro-equipo.js';
 import { ejecutar as cambiarContrasena } from './actions/cambiar-contrasena.js';
@@ -55,8 +60,8 @@ export const rutasDePlataforma =
         },
         config: { acceso: 'publica', limite: 'login' },
       },
-      (request) =>
-        iniciarSesion(servicios, {
+      async (request, reply) => {
+        const { refresco, ...ingreso } = await iniciarSesion(servicios, {
           usuario: request.body.usuario,
           contrasena: request.body.contrasena,
           instalacionId: request.body.instalacion_id ?? null,
@@ -65,7 +70,13 @@ export const rutasDePlataforma =
           ip: request.ip,
           agente: request.headers['user-agent']?.slice(0, LARGO_MAXIMO_DEL_AGENTE) ?? null,
           log: request.log,
-        }),
+        });
+        // Un navegador recibe el refresco en su cookie y no en el cuerpo (ADR 0033 §5).
+        const cliente = clienteWebDe(request);
+        if (cliente === null) return { ...ingreso, refresco };
+        fijarCookieDeRefresco(reply, cliente, refresco, servicios.config.JWT_REFRESH_DIAS);
+        return ingreso;
+      },
     );
 
     app.delete(
@@ -73,6 +84,8 @@ export const rutasDePlataforma =
       { schema: { tags: ETIQUETA }, config: { acceso: 'plataforma' } },
       async (request, reply) => {
         await cerrarSesion(servicios, plataformaDe(request));
+        // Se borra la cookie en cualquier caso: en un cliente que no la usa no hace nada.
+        borrarCookieDeRefresco(reply, 'panel');
         return reply.status(204).send();
       },
     );

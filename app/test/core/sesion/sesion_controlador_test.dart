@@ -34,12 +34,15 @@ const Map<String, Object?> _sesionActualSinRol = {
 };
 
 /// Rutas de la API que el controlador usa, con las respuestas del contrato.
-/// `refrescoValido` marca qué refresco acepta el servidor.
+/// `refrescoValido` marca qué refresco acepta el servidor. `cookieDelNavegador`
+/// dice si el navegador trae una cookie de refresco válida: en web la petición
+/// no lleva refresco en el cuerpo y el servidor usa esa cookie (ADR 0033 §5).
 Future<ResponseBody> _api(
   RequestOptions options, {
   String refrescoValido = 'ref-1',
   bool red = false,
   bool sinRol = false,
+  bool cookieDelNavegador = false,
 }) async {
   if (red) {
     throw DioException.connectionError(
@@ -52,10 +55,19 @@ Future<ResponseBody> _api(
       : options.data as Map<String, dynamic>?;
   switch ((options.method, options.path)) {
     case ('POST', '/sesiones/refresco'):
-      if (cuerpo?['refresco'] != refrescoValido) {
+      final enCuerpo = cuerpo?['refresco'];
+      final valido = enCuerpo == null
+          ? cookieDelNavegador
+          : enCuerpo == refrescoValido;
+      if (!valido) {
         return respuestaJson(401, {'code': 'sesion.refresco_invalido'});
       }
-      return respuestaJson(200, {'acceso': 'acc-2', 'refresco': 'ref-2'});
+      // Web (sin refresco en el cuerpo) recibe solo el acceso: el refresco
+      // rota en la cookie (ADR 0033 §5).
+      return respuestaJson(200, {
+        'acceso': 'acc-2',
+        'refresco': ?(enCuerpo == null ? null : 'ref-2'),
+      });
     case ('GET', '/sesiones/actual'):
       return respuestaJson(200, sinRol ? _sesionActualSinRol : _sesionActual);
     case ('DELETE', '/sesiones/actual'):
@@ -72,17 +84,20 @@ ProviderContainer _contenedor({
   String refrescoValido = 'ref-1',
   bool red = false,
   bool sinRol = false,
+  bool cookieDelNavegador = false,
   AlmacenPreferenciasFalso? preferencias,
 }) {
-  final dio = Dio(BaseOptions(baseUrl: 'http://api.test'))
-    ..httpClientAdapter = AdaptadorHttpFalso(
-      (options) => _api(
-        options,
-        refrescoValido: refrescoValido,
-        red: red,
-        sinRol: sinRol,
-      ),
-    );
+  final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+  _ultimoAdaptador = AdaptadorHttpFalso(
+    (options) => _api(
+      options,
+      refrescoValido: refrescoValido,
+      red: red,
+      sinRol: sinRol,
+      cookieDelNavegador: cookieDelNavegador,
+    ),
+  );
+  dio.httpClientAdapter = _ultimoAdaptador;
   return ProviderContainer(
     overrides: [
       clienteApiProvider.overrideWithValue(ClienteApi(dio)),
@@ -93,6 +108,13 @@ ProviderContainer _contenedor({
     ],
   );
 }
+
+/// El adaptador del último contenedor creado: permite ver las peticiones que
+/// hizo el controlador (p. ej. qué cuerpo llevó el refresco).
+late AdaptadorHttpFalso _ultimoAdaptador;
+
+Iterable<RequestOptions> _peticionesA(String ruta) =>
+    _ultimoAdaptador.peticiones.where((o) => o.path == ruta);
 
 /// Deja correr las microtareas pendientes (la restauración del arranque).
 Future<void> _asentar() =>
@@ -253,13 +275,14 @@ void main() {
   });
 
   group('restaurar al abrir la app', () {
-    test('sin refresco guardado, pide ingresar (web: siempre)', () async {
+    test('sin refresco guardado, pide ingresar y no renueva', () async {
       final contenedor = _contenedor(almacen: almacen);
       addTearDown(contenedor.dispose);
       contenedor.read(sesionControladorProvider.notifier);
       await _asentar();
 
       expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      expect(_peticionesA('/sesiones/refresco'), isEmpty);
     });
 
     test('con refresco guardado, vuelve a entrar con sus permisos', () async {
@@ -343,6 +366,128 @@ void main() {
       expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
       expect(controlador.acceso, isNull);
       expect(almacen.refresco, isNull);
+    });
+  });
+
+  group('web: el refresco vive en la cookie HttpOnly (ADR 0033 §5)', () {
+    test(
+      'al abrir la app renueva sin cuerpo aunque no haya nada guardado',
+      () async {
+        final contenedor = _contenedor(
+          almacen: AlmacenRefrescoFalso(enCookie: true),
+          cookieDelNavegador: true,
+        );
+        addTearDown(contenedor.dispose);
+        contenedor.read(sesionControladorProvider.notifier);
+        await _asentar();
+
+        final estado = contenedor.read(sesionControladorProvider);
+        expect(estado, isA<SesionAutenticada>());
+        expect(estado.tiene(Permisos.generarQr), isTrue);
+        final peticion = _peticionesA('/sesiones/refresco').single;
+        expect(peticion.data, isEmpty, reason: 'sin refresco en el cuerpo');
+      },
+    );
+
+    test('sin cookie válida, pasa a sin sesión sin fallar', () async {
+      final almacen = AlmacenRefrescoFalso(enCookie: true);
+      final contenedor = _contenedor(almacen: almacen);
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      expect(almacen.refresco, isNull);
+    });
+
+    test('ingresar no guarda ningún refresco en la app', () async {
+      final almacen = AlmacenRefrescoFalso(enCookie: true);
+      final contenedor = _contenedor(
+        almacen: almacen,
+        cookieDelNavegador: true,
+      );
+      addTearDown(contenedor.dispose);
+      final controlador = contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      await controlador.adoptarInicio(
+        const RespuestaInicio(
+          acceso: 'acc-1',
+          usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+          cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+          rolActivoId: 'r1',
+        ),
+      );
+
+      expect(
+        contenedor.read(sesionControladorProvider),
+        isA<SesionAutenticada>(),
+      );
+      expect(almacen.refresco, isNull);
+    });
+
+    test('renovar rota el acceso y no guarda nada', () async {
+      final almacen = AlmacenRefrescoFalso(enCookie: true);
+      final contenedor = _contenedor(
+        almacen: almacen,
+        cookieDelNavegador: true,
+      );
+      addTearDown(contenedor.dispose);
+      final controlador = contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+
+      expect(await controlador.renovar(), isTrue);
+      expect(controlador.acceso, 'acc-2');
+      expect(almacen.refresco, isNull);
+    });
+
+    test(
+      'cerrar sin acceso en memoria igual avisa a la API para borrar la cookie',
+      () async {
+        final almacen = AlmacenRefrescoFalso(enCookie: true);
+        final contenedor = _contenedor(
+          almacen: almacen,
+          red: true,
+          preferencias: AlmacenPreferenciasFalso()
+            ..valores[claveSesionGuardada] = codificarSesion(
+              const SesionAutenticada(
+                usuario: UsuarioSesion(id: 'u1', etiqueta: 'Ana'),
+                cuenta: CuentaSesion(id: 'c1', codigo: 'AGR', nombre: 'Demo'),
+                rolActivo: RolSesion(id: 'r1', nombre: 'Miembro'),
+                permisos: {Permisos.generarQr},
+              ),
+            ),
+        );
+        addTearDown(contenedor.dispose);
+        final controlador = contenedor.read(sesionControladorProvider.notifier);
+        await _asentar();
+        expect(controlador.acceso, isNull);
+
+        await controlador.cerrar();
+
+        expect(
+          _ultimoAdaptador.peticiones.where((o) => o.method == 'DELETE'),
+          isNotEmpty,
+        );
+        expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      },
+    );
+  });
+
+  group('móvil: sin cambios (refresco en el cuerpo y almacén seguro)', () {
+    test('renovar manda el refresco guardado en el cuerpo', () async {
+      final almacen = AlmacenRefrescoFalso();
+      final contenedor = _contenedor(almacen: almacen);
+      addTearDown(contenedor.dispose);
+      final controlador = contenedor.read(sesionControladorProvider.notifier);
+      await _asentar();
+      almacen.refresco = 'ref-1';
+
+      expect(await controlador.renovar(), isTrue);
+      expect(_peticionesA('/sesiones/refresco').last.data, {
+        'refresco': 'ref-1',
+      });
+      expect(almacen.refresco, 'ref-2');
     });
   });
 }

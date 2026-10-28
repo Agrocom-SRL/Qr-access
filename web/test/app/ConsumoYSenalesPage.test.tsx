@@ -17,8 +17,8 @@ function montar(permisos: string[], ruta = '/consumo') {
         }),
     },
   });
-  // Con un refresco recordado, la sesión se restaura desde el servicio al arrancar.
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  // La sesión restaurada deja su acceso en memoria; el servicio la devuelve al arrancar.
+  servicios.almacen.guardar('a');
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter initialEntries={[ruta]}>

@@ -25,6 +25,12 @@ export interface ClienteHttp {
   solicitar: <T>(solicitud: SolicitudHttp) => Promise<T>;
 }
 
+/**
+ * La API sabe que un navegador la usa por esta cabecera y le da el refresco en una cookie `HttpOnly`
+ * (ADR 0033 §5). Una página ajena no puede enviarla sin un permiso CORS que la API no da.
+ */
+const CABECERA_DE_CLIENTE = { 'X-Requested-With': 'agrocom-panel' } as const;
+
 interface Opciones {
   baseUrl: string;
   sesion: AlmacenSesion;
@@ -66,7 +72,10 @@ export function crearClienteFetch({
     // `Accept` es solo una preferencia: las rutas que devuelven otro tipo (el CSV de una exportación, un
     // comprobante) fijan su propio `Content-Type` y no negocian contenido. Si la API empezara a hacerlo,
     // estas solicitudes (`formato` `blob` o `respuesta`) tendrían que mandar su `Accept` propio.
-    const cabeceras: Record<string, string> = { Accept: 'application/json' };
+    const cabeceras: Record<string, string> = {
+      Accept: 'application/json',
+      ...CABECERA_DE_CLIENTE,
+    };
     if (solicitud.cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
     if (solicitud.archivo) cabeceras['Content-Type'] = solicitud.archivo.type;
     if (acceso) cabeceras.Authorization = `Bearer ${acceso}`;
@@ -87,17 +96,18 @@ export function crearClienteFetch({
 
   let refrescando: Promise<boolean> | null = null;
 
-  /** Rota los tokens; las llamadas simultáneas comparten el mismo intento. */
+  /**
+   * Pide un acceso nuevo; el refresco va solo en la cookie, así que el cuerpo es vacío. Las llamadas
+   * simultáneas comparten el mismo intento.
+   */
   function refrescar(): Promise<boolean> {
     refrescando ??= (async () => {
-      const actuales = sesion.obtener();
-      if (!actuales) return false;
       const respuesta = await enviar(
-        { metodo: 'POST', ruta: '/sesiones/refresco', cuerpo: { refresco: actuales.refresco } },
+        { metodo: 'POST', ruta: '/sesiones/refresco', cuerpo: {} },
         undefined,
       );
       if (!respuesta.ok) return false;
-      sesion.guardar((await respuesta.json()) as { acceso: string; refresco: string });
+      sesion.guardar(((await respuesta.json()) as { acceso: string }).acceso);
       return true;
     })().finally(() => {
       refrescando = null;
@@ -107,10 +117,10 @@ export function crearClienteFetch({
 
   return {
     async solicitar<T>(solicitud: SolicitudHttp): Promise<T> {
-      let respuesta = await enviar(solicitud, sesion.obtener()?.acceso);
+      let respuesta = await enviar(solicitud, sesion.obtener() ?? undefined);
       if (respuesta.status === 401 && sesion.obtener()) {
         if (await refrescar()) {
-          respuesta = await enviar(solicitud, sesion.obtener()?.acceso);
+          respuesta = await enviar(solicitud, sesion.obtener() ?? undefined);
         } else {
           sesion.limpiar();
           alSesionVencida();

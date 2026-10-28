@@ -11,6 +11,11 @@ class AlmacenRefrescoMovil implements AlmacenRefresco {
 
   final FlutterSecureStorage _almacen;
 
+  /// En móvil el refresco va en el cuerpo de la petición y se guarda aquí; la
+  /// app nativa no es un navegador y no usa cookies (ADR 0033 §5).
+  @override
+  bool get viveEnCookie => false;
+
   @override
   Future<String?> leer() => _almacen.read(key: _clave);
 

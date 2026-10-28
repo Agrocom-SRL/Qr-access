@@ -1,46 +1,41 @@
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco_contrato.dart';
 import 'package:web/web.dart' as web;
 
-/// Implementación web: el refresco vive en el `sessionStorage` de la pestaña,
-/// así recargar la página no cierra la sesión (ADR 0022, addendum). Se borra
-/// al cerrar la pestaña o la sesión; nunca va a `localStorage`.
+/// Implementación web: no guarda el refresco en ningún sitio que JavaScript
+/// pueda leer (ADR 0033 §5). La API lo entrega en la cookie
+/// `__Host-refresco-app` (`HttpOnly`, `Secure`, `SameSite=Strict`) y el
+/// navegador la envía sola en `POST /sesiones/refresco` y
+/// `DELETE /sesiones/actual`.
 ///
-/// Riesgo asumido: un script inyectado (XSS) podría leerlo. Cuando la API
-/// entregue el refresco en una cookie HttpOnly (pendiente), esta clase deja de
-/// guardar nada y el navegador la envía sola.
+/// Por eso `guardar` no hace nada y `leer` siempre devuelve `null`: un XSS ya
+/// no puede llevarse el refresco. Antes vivía en `sessionStorage`; esta clase
+/// borra esa clave heredada para que no quede un secreto en el navegador de
+/// quien actualiza la app.
 class AlmacenRefrescoWeb implements AlmacenRefresco {
-  static const _clave = 'sesion.refresco';
+  static const _claveHeredada = 'sesion.refresco';
 
-  /// En memoria por si el navegador bloquea el almacenamiento (modo privado
-  /// estricto): la sesión dura entonces hasta recargar, como antes.
-  String? _respaldo;
+  @override
+  bool get viveEnCookie => true;
 
   @override
   Future<String?> leer() async {
-    try {
-      return web.window.sessionStorage.getItem(_clave) ?? _respaldo;
-    } on Object {
-      return _respaldo;
-    }
+    _borrarClaveHeredada();
+    return null;
   }
 
   @override
   Future<void> guardar(String refresco) async {
-    _respaldo = refresco;
-    try {
-      web.window.sessionStorage.setItem(_clave, refresco);
-    } on Object {
-      // Sin almacenamiento disponible: queda solo el respaldo en memoria.
-    }
+    // Intencionado: el refresco ya llegó en la cookie HttpOnly.
   }
 
   @override
-  Future<void> borrar() async {
-    _respaldo = null;
+  Future<void> borrar() async => _borrarClaveHeredada();
+
+  void _borrarClaveHeredada() {
     try {
-      web.window.sessionStorage.removeItem(_clave);
+      web.window.sessionStorage.removeItem(_claveHeredada);
     } on Object {
-      // Nada que borrar si el navegador no deja usar el almacenamiento.
+      // Sin almacenamiento disponible no hay nada que borrar.
     }
   }
 }

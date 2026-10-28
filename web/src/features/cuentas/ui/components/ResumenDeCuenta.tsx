@@ -15,7 +15,6 @@ import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
 import { JerarquiaDeCuenta } from './JerarquiaDeCuenta';
-import { UsoDeUsuarios } from './UsoDeUsuarios';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
 import styles from './ResumenDeCuenta.module.css';
 
@@ -225,9 +224,7 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
         <JerarquiaDeCuenta cuentaId={detalle.cuenta.id} puedeReasignar={puedeReasignar} />
       </div>
 
-      <div className={styles.administradores}>
-        <UsoDeUsuarios cuentaId={detalle.cuenta.id} />
-      </div>
+      <div className={styles.administradores}></div>
 
       <DialogoCambiarCodigo
         abierto={cambiandoCodigo}

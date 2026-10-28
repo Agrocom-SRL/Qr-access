@@ -1,3 +1,4 @@
+import { elegirOpcion } from '../../../elegirOpcion';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -40,7 +41,7 @@ function montar(
     },
     incidentes,
   });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>
@@ -85,7 +86,7 @@ describe('incidentes de una cuenta (pestaña de AGROCOM)', () => {
     );
     montar({ listar });
     const selector = await screen.findByRole('combobox', { name: 'Tipo' });
-    await userEvent.selectOptions(selector, 'perdida_o_robo');
+    await elegirOpcion(selector, 'Pérdida o robo');
     expect(listar).toHaveBeenLastCalledWith(
       '7',
       expect.objectContaining({ tipo: 'perdida_o_robo', pagina: 1 }),

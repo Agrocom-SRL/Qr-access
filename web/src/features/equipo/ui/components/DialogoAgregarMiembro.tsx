@@ -86,7 +86,7 @@ export function DialogoAgregarMiembro({ abierto, onCerrar }: Props) {
       abierto={abierto}
       titulo={t('equipo:agregarTitulo')}
       onCerrar={cerrar}
-      ancho="angosto"
+      ancho="ancho"
       acciones={
         <>
           <AccesoBoton variante="texto" onClick={cerrar}>

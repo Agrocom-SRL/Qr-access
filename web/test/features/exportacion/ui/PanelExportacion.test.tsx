@@ -1,3 +1,4 @@
+import { elegirOpcion } from '../../../elegirOpcion';
 import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -42,7 +43,7 @@ function montar(
     }),
   );
   const servicios = crearServiciosDePrueba({ seguridad: { restaurar }, exportaciones });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>
@@ -149,12 +150,12 @@ describe('exportar los datos de una cuenta (pantalla de AGROCOM)', () => {
       await screen.findByRole('button', { name: 'Descargar página 2 de 3' }),
     ).toBeInTheDocument();
 
-    await userEvent.selectOptions(
+    await elegirOpcion(
       screen.getByRole('combobox', { name: 'Qué exportar' }),
-      'lecturas',
+      'Lecturas de acceso',
     );
     // Con lecturas aparecen los filtros; el resultado cambia y la página bajada ya no sirve para seguir.
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Resultado' }), 'rechazado');
+    await elegirOpcion(screen.getByRole('combobox', { name: 'Resultado' }), 'Rechazado');
     expect(screen.getByRole('button', { name: 'Descargar CSV' })).toBeInTheDocument();
     expect(screen.queryByText(/descargada:/)).not.toBeInTheDocument();
   });
@@ -163,9 +164,9 @@ describe('exportar los datos de una cuenta (pantalla de AGROCOM)', () => {
     montar(PERMISO);
     await screen.findByRole('button', { name: 'Descargar CSV' });
     expect(screen.queryByRole('combobox', { name: 'Resultado' })).not.toBeInTheDocument();
-    await userEvent.selectOptions(
+    await elegirOpcion(
       screen.getByRole('combobox', { name: 'Qué exportar' }),
-      'lecturas',
+      'Lecturas de acceso',
     );
     expect(screen.getByRole('combobox', { name: 'Resultado' })).toBeInTheDocument();
     expect(

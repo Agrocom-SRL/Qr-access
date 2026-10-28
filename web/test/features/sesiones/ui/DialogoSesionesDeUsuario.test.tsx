@@ -26,7 +26,7 @@ function montar(permisos: readonly string[], sesiones: Partial<SesionesRepositor
     },
     sesiones,
   });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   const onCerrar = vi.fn();
   render(
     <ProveedoresApp servicios={servicios} reintentos={0}>

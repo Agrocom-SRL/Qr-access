@@ -1,6 +1,7 @@
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco_contrato.dart';
-// La implementación depende de la plataforma: en web, sessionStorage; en móvil,
-// almacén seguro (ADR 0012, regla de web y móvil con el mismo código).
+// La implementación depende de la plataforma: en web, nada (el refresco va en
+// una cookie HttpOnly, ADR 0033 §5); en móvil, almacén seguro (ADR 0012, regla
+// de web y móvil con el mismo código).
 // Se importa y se exporta: `export` solo no trae los nombres a este archivo.
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco_web.dart'
     if (dart.library.io) 'package:agrocom_acceso/core/plataforma/almacen_refresco_movil.dart';
