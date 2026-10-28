@@ -220,8 +220,9 @@ export function DetalleCuentaPage() {
           )
         ) : pestana === 'suscripcion' ? (
           datos ? (
-            // El uso de los usuarios acompaña al plan y al cupo: va acá y no en el resumen, que ya está cargado.
+            // El uso de los usuarios va arriba, luego el plan y al final las renovaciones; no en el resumen, que ya está cargado.
             <div className={styles.apilado}>
+              <UsoDeUsuarios cuentaId={id} />
               <PestanaSuscripcion
                 cuenta={{
                   id,
@@ -230,7 +231,6 @@ export function DetalleCuentaPage() {
                   usuariosActivos: datos.uso.usuariosActivos,
                 }}
               />
-              <UsoDeUsuarios cuentaId={id} />
             </div>
           ) : (
             <div aria-busy="true">
