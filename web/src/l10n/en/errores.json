@@ -58,6 +58,8 @@
   "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again.",
   "notificacion_no_encontrada": "We couldn't find that notice.",
   "sesion_no_encontrada": "That session is no longer open.",
+  "sesion_origen_invalido": "The request doesn't come from the panel. Reload the page and try again.",
+  "sesion_refresco_ambiguo": "Two different sessions arrived. Sign in again.",
   "limite_excedido": "You made too many requests in a row. Wait a moment and try again.",
   "incidente_no_encontrado": "We couldn't find that incident.",
   "incidente_motivo_requerido": "Write the reason to confirm the incident.",

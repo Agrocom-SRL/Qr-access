@@ -15,11 +15,10 @@ function clienteQueResponde(respuesta: unknown) {
 }
 
 describe('seguridadHttp', () => {
-  it('ingresar guarda los tokens en memoria y devuelve solo datos de dominio', async () => {
+  it('ingresar guarda el acceso en memoria y devuelve solo datos de dominio', async () => {
     const sesion = new AlmacenSesion();
     const { cliente, llamadas } = clienteQueResponde({
       acceso: 'a',
-      refresco: 'r',
       usuario: { id: '7', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
       debe_cambiar_contrasena: true,
       permisos: ['seguridad.equipo.ver'],
@@ -29,7 +28,7 @@ describe('seguridadHttp', () => {
       'secreta-12345',
     );
     expect(llamadas[0]).toMatchObject({ metodo: 'POST', ruta: '/plataforma/sesiones' });
-    expect(sesion.obtener()).toEqual({ acceso: 'a', refresco: 'r' });
+    expect(sesion.obtener()).toBe('a');
     expect(resultado).toEqual({
       usuario: { id: '7', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
       debeCambiarContrasena: true,
@@ -38,9 +37,21 @@ describe('seguridadHttp', () => {
     expect(JSON.stringify(resultado)).not.toContain('refresco');
   });
 
+  it('ingresar no deja ningún refresco en el almacenamiento del navegador', async () => {
+    const { cliente } = clienteQueResponde({
+      acceso: 'a',
+      usuario: { id: '7', nombre: null, usuario: 'lucia.paz' },
+      debe_cambiar_contrasena: false,
+      permisos: [],
+    });
+    await crearSeguridadHttp(cliente, new AlmacenSesion()).ingresar('lucia.paz', 'secreta-12345');
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+  });
+
   it('cerrarSesión limpia la sesión aunque la API falle', async () => {
     const sesion = new AlmacenSesion();
-    sesion.guardar({ acceso: 'a', refresco: 'r' });
+    sesion.guardar('a');
     const cliente: ClienteHttp = { solicitar: () => Promise.reject(new Error('sin red')) };
     await expect(crearSeguridadHttp(cliente, sesion).cerrarSesion()).rejects.toThrow();
     expect(sesion.obtener()).toBeNull();
@@ -57,36 +68,52 @@ describe('seguridadHttp', () => {
       permisos: ['seguridad.equipo.ver'],
     };
 
-    it('sin refresco recordado no llama a la API', async () => {
-      const { cliente, llamadas } = clienteQueResponde({});
-      expect(await crearSeguridadHttp(cliente, new AlmacenSesion()).restaurar()).toBeNull();
-      expect(llamadas).toHaveLength(0);
+    it('pide el refresco con cuerpo vacío: el navegador manda la cookie y el panel no la conoce', async () => {
+      const { cliente, llamadas } = clienteQueResponde({ acceso: 'a2' });
+      await crearSeguridadHttp(cliente, new AlmacenSesion()).restaurar();
+      expect(llamadas[0]).toEqual({ metodo: 'POST', ruta: '/sesiones/refresco', cuerpo: {} });
     });
 
-    it('refresca, trae el perfil y rota el refresco recordado', async () => {
+    it('sin cookie válida (401) no hay sesión y no queda nada guardado', async () => {
       const sesion = new AlmacenSesion();
-      sesion.guardar({ acceso: 'viejo', refresco: 'r1' });
+      const cliente: ClienteHttp = {
+        solicitar: () => Promise.reject(new ErrorApi(401, 'sesion.refresco_invalido')),
+      };
+      expect(await crearSeguridadHttp(cliente, sesion).restaurar()).toBeNull();
+      expect(sesion.obtener()).toBeNull();
+      expect(localStorage.length).toBe(0);
+      expect(sessionStorage.length).toBe(0);
+    });
+
+    it('con cookie válida refresca, guarda el acceso y trae el perfil', async () => {
+      const sesion = new AlmacenSesion();
       const cliente: ClienteHttp = {
         solicitar: <T>(solicitud: SolicitudHttp) =>
           Promise.resolve(
-            (solicitud.ruta === '/sesiones/refresco'
-              ? { acceso: 'a2', refresco: 'r2' }
-              : perfil) as T,
+            (solicitud.ruta === '/sesiones/refresco' ? { acceso: 'a2' } : perfil) as T,
           ),
       };
-      const restaurada = await crearSeguridadHttp(cliente, new AlmacenSesion()).restaurar();
+      const restaurada = await crearSeguridadHttp(cliente, sesion).restaurar();
       expect(restaurada).toMatchObject({ usuario: { usuario: 'lucia.paz' } });
-      expect(sessionStorage.getItem('acceso.refresco')).toBe('r2');
+      expect(sesion.obtener()).toBe('a2');
+      expect(sessionStorage.length).toBe(0);
     });
 
-    it('un refresco rechazado borra lo recordado', async () => {
+    it('sin red conserva el acceso que hubiera en memoria', async () => {
       const sesion = new AlmacenSesion();
-      sesion.guardar({ acceso: 'a', refresco: 'r1' });
+      sesion.guardar('a');
       const cliente: ClienteHttp = {
-        solicitar: () => Promise.reject(new ErrorApi(401, 'sesion.invalida')),
+        solicitar: () => Promise.reject(new ErrorApi(0, 'red.sin_conexion')),
       };
       expect(await crearSeguridadHttp(cliente, sesion).restaurar()).toBeNull();
-      expect(sesion.refrescoRecordado()).toBeNull();
+      expect(sesion.obtener()).toBe('a');
+    });
+
+    it('la restauración se hace una sola vez aunque se pida dos veces (StrictMode)', async () => {
+      const { cliente, llamadas } = clienteQueResponde({ acceso: 'a2' });
+      const repositorio = crearSeguridadHttp(cliente, new AlmacenSesion());
+      await Promise.all([repositorio.restaurar(), repositorio.restaurar()]);
+      expect(llamadas.filter((l) => l.ruta === '/sesiones/refresco')).toHaveLength(1);
     });
   });
 });

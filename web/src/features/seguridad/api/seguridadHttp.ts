@@ -4,9 +4,12 @@ import { ErrorApi } from '../../../shared/api/errorApi';
 import type { PerfilAdmin, SesionIniciada } from '../domain/sesion';
 import type { SeguridadRepositorio } from './SeguridadRepositorio';
 
+/**
+ * El refresco no viene en el cuerpo: la API lo deja en la cookie `HttpOnly` del navegador (ADR 0033 §5),
+ * así que este DTO solo trae el acceso.
+ */
 interface IngresoDto {
   acceso: string;
-  refresco: string;
   usuario: { id: string; nombre: string | null; usuario: string };
   debe_cambiar_contrasena: boolean;
   permisos: string[];
@@ -42,16 +45,18 @@ export function crearSeguridadHttp(
   /** Un solo intento por carga: el refresco rota y un segundo uso lo invalidaría (StrictMode monta dos veces). */
   let restauracion: Promise<SesionIniciada | null> | null = null;
 
+  /**
+   * Sin cookie válida la API responde 401 y no hay sesión. No se puede saber antes si la hay (la cookie
+   * es `HttpOnly`), así que siempre se pregunta al arrancar.
+   */
   async function restaurarSesion(): Promise<SesionIniciada | null> {
-    const refresco = sesion.refrescoRecordado();
-    if (refresco === null) return null;
     try {
-      const nuevos = await cliente.solicitar<{ acceso: string; refresco: string }>({
+      const { acceso } = await cliente.solicitar<{ acceso: string }>({
         metodo: 'POST',
         ruta: '/sesiones/refresco',
-        cuerpo: { refresco },
+        cuerpo: {},
       });
-      sesion.guardar(nuevos);
+      sesion.guardar(acceso);
       const perfil = perfilDesdeDto(
         await cliente.solicitar<PerfilDto>({ metodo: 'GET', ruta: '/plataforma/perfil' }),
       );
@@ -61,7 +66,7 @@ export function crearSeguridadHttp(
         permisos: perfil.permisos,
       };
     } catch (error) {
-      // Sin red el refresco sigue siendo válido: se conserva para el próximo intento.
+      // Sin red la cookie sigue siendo válida: la API no la tocó y el próximo intento la usa.
       if (!(error instanceof ErrorApi) || error.status !== 0) sesion.limpiar();
       return null;
     }
@@ -79,8 +84,8 @@ export function crearSeguridadHttp(
         ruta: '/plataforma/sesiones',
         cuerpo: { usuario, contrasena },
       });
-      // Los tokens quedan solo en memoria (ADR 0021) y nunca salen de esta capa.
-      sesion.guardar({ acceso: dto.acceso, refresco: dto.refresco });
+      // El acceso queda solo en memoria (ADR 0021) y nunca sale de esta capa.
+      sesion.guardar(dto.acceso);
       const iniciada: SesionIniciada = {
         usuario: {
           id: dto.usuario.id,
