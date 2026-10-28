@@ -1280,22 +1280,42 @@
   "@perfilIdiomaSistema": {
     "description": "Opción que quita el idioma elegido y vuelve al del dispositivo"
   },
-  "perfilAppNombre": "AGROCOM Acceso",
-  "@perfilAppNombre": {
-    "description": "Nombre de la app en la fila de versión del perfil"
+  "perfilAcercaTitulo": "Acerca de la app",
+  "@perfilAcercaTitulo": {
+    "description": "Fila de Perfil que abre la información de la app"
   },
-  "perfilAppVersion": "Versión {version}",
-  "@perfilAppVersion": {
-    "description": "Versión instalada de la app (la del pubspec)",
+  "perfilAcercaNombreEtiqueta": "Nombre de la app",
+  "@perfilAcercaNombreEtiqueta": {
+    "description": "Clave de la fila del nombre en la información de la app"
+  },
+  "perfilAcercaNombre": "AccesoQR",
+  "@perfilAcercaNombre": {
+    "description": "Nombre de la app"
+  },
+  "perfilAcercaOrganizacionEtiqueta": "Organización",
+  "@perfilAcercaOrganizacionEtiqueta": {
+    "description": "Clave de la fila de la organización en la información de la app"
+  },
+  "perfilAcercaOrganizacion": "Agrocom SRL",
+  "@perfilAcercaOrganizacion": {
+    "description": "Organización que desarrolla la app"
+  },
+  "perfilAcercaVersionEtiqueta": "Versión",
+  "@perfilAcercaVersionEtiqueta": {
+    "description": "Clave de la fila de la versión en la información de la app"
+  },
+  "perfilAcercaDesarrollo": "Desarrollada por el equipo de desarrollo de Agrocom.",
+  "@perfilAcercaDesarrollo": {
+    "description": "Crédito al equipo, al pie de la información de la app"
+  },
+  "perfilAcercaDerechos": "© {anio} Agrocom SRL. Todos los derechos reservados.",
+  "@perfilAcercaDerechos": {
+    "description": "Copyright al pie de la información de la app",
     "placeholders": {
-      "version": {
-        "type": "String"
+      "anio": {
+        "type": "int"
       }
     }
-  },
-  "perfilAppEmpresa": "Agrocom SRL con su equipo de desarrollo",
-  "@perfilAppEmpresa": {
-    "description": "Quién desarrolló la app, bajo la versión en el perfil"
   },
   "puertaEnLinea": "En línea",
   "@puertaEnLinea": {
