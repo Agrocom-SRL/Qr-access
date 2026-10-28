@@ -32,6 +32,13 @@ main {
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
 }
+/* Mismo logo en claro y oscuro: sus verdes y naranjas se leen sobre ambos fondos. */
+.logo {
+  display: block;
+  width: 9rem;
+  height: auto;
+  margin: 0 0 1.25rem;
+}
 h1 {
   font-size: 1.75rem;
   line-height: 1.25;
