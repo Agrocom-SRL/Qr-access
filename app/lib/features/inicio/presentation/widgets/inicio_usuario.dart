@@ -243,12 +243,9 @@ class InicioUsuario extends ConsumerWidget {
                     ? EstadoVacio(
                         ilustracion: Multimedia.vacioQr,
                         titulo: l10n.inicioSinVigentes,
+                        // Sin botón: generar ya está en el hero y en el botón
+                        // flotante o el menú.
                         ayuda: l10n.inicioSinVigentesAyuda,
-                        textoAccion: puedeGenerar ? l10n.qrGenerarBoton : null,
-                        iconoAccion: Icons.add,
-                        alAccionar: puedeGenerar
-                            ? () => context.go(Rutas.qrNuevo)
-                            : null,
                       )
                     : Column(
                         children: [
@@ -274,10 +271,10 @@ class InicioUsuario extends ConsumerWidget {
   }
 }
 
-/// El bloque de arriba del inicio. En compacto, el hero y los accesos rápidos
-/// van uno bajo el otro; en pantalla ancha, en dos columnas: el hero con su
-/// foto a la izquierda y, a la derecha, el estado de las puertas (guardia) o
-/// los accesos rápidos en una tarjeta.
+/// El bloque de arriba del inicio: el hero y, debajo, los accesos rápidos. Solo
+/// el guardia, que supervisa puertas, ve en pantalla ancha el estado de las
+/// suyas junto al hero, en dos columnas; los demás roles conservan el diseño
+/// de siempre.
 List<Widget> _bloquePrincipal(
   BuildContext context, {
   required Widget? hero,
@@ -289,35 +286,22 @@ List<Widget> _bloquePrincipal(
   final tiles = accesos.isEmpty
       ? null
       : Row(children: [for (final acceso in accesos) Expanded(child: acceso)]);
-  if (expandida && hero != null) {
-    final derecha =
-        estadoDePuertas ??
-        (tiles == null ? null : AccesoTarjeta(child: Center(child: tiles)));
-    return [
-      if (derecha == null)
-        hero
-      else
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(flex: 3, child: hero),
-              SizedBox(width: tokens.espacio.xl),
-              Expanded(flex: 2, child: derecha),
-            ],
-          ),
-        ),
-      SizedBox(height: tokens.espacio.xl),
-      // Con el estado de las puertas a la derecha, los accesos rápidos siguen
-      // debajo; con ellos en la tarjeta, no se repiten.
-      if (estadoDePuertas != null && tiles != null) ...[
-        tiles,
-        SizedBox(height: tokens.espacio.l),
-      ],
-    ];
-  }
+  final enDosColumnas = expandida && hero != null && estadoDePuertas != null;
   return [
-    if (hero != null) ...[hero, SizedBox(height: tokens.espacio.xl)],
+    if (enDosColumnas)
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 3, child: hero),
+            SizedBox(width: tokens.espacio.xl),
+            Expanded(flex: 2, child: estadoDePuertas),
+          ],
+        ),
+      )
+    else
+      ?hero,
+    if (hero != null) SizedBox(height: tokens.espacio.xl),
     if (tiles != null) ...[tiles, SizedBox(height: tokens.espacio.l)],
   ];
 }

@@ -305,7 +305,7 @@ void main() {
       expect(find.text(textos.puertaSinConexion), findsOneWidget);
     });
 
-    testWidgets('el usuario ve el hero de generar junto a sus accesos', (
+    testWidgets('el usuario conserva el hero de generar y sus accesos debajo', (
       tester,
     ) async {
       await _montar(tester, permisos: _usuario, expandida: true);
