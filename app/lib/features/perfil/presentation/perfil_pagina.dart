@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
+import 'package:agrocom_acceso/core/config/info_app.dart';
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
@@ -28,8 +29,15 @@ import 'package:go_router/go_router.dart';
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
 
+/// El valor de la fila de la app: la versión (si se pudo leer) y, debajo, quién
+/// la desarrolló.
+String _textoDeVersion(AppLocalizations l10n, InfoApp? info) => [
+  if (info != null) l10n.perfilAppVersion(info.completa),
+  l10n.perfilAppEmpresa,
+].join('\n');
+
 /// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol,
-/// el tema y "Cerrar sesión".
+/// el tema, la versión de la app y "Cerrar sesión".
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -61,6 +69,7 @@ class PerfilPagina extends ConsumerWidget {
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
     final modo = ref.watch(temaProvider);
+    final info = ref.watch(infoAppProvider).value;
     final ahora = ref.read(relojProvider)();
     final suscripcion = sesion.suscripcion;
     final dias = suscripcion == null
@@ -165,7 +174,6 @@ class PerfilPagina extends ConsumerWidget {
                     icono: Icons.dark_mode_outlined,
                     invertida: true,
                     claveEnfatizada: true,
-                    conSeparador: false,
                     accion: AccesoInterruptor(
                       activo: oscuro,
                       etiqueta: l10n.perfilTemaOscuro,
@@ -173,6 +181,14 @@ class PerfilPagina extends ConsumerWidget {
                           .read(temaProvider.notifier)
                           .activarOscuro(oscuro: valor),
                     ),
+                  ),
+                  FilaClaveValor(
+                    clave: l10n.perfilAppNombre,
+                    valor: _textoDeVersion(l10n, info),
+                    icono: Icons.info_outline,
+                    invertida: true,
+                    claveEnfatizada: true,
+                    conSeparador: false,
                   ),
                 ],
               ),
@@ -188,17 +204,6 @@ class PerfilPagina extends ConsumerWidget {
                 expandido: !context.esExpandida,
                 onPressed: ref.read(sesionControladorProvider.notifier).cerrar,
               ),
-            ),
-            SizedBox(height: tokens.espacio.l),
-            Text(
-              l10n.perfilVersion,
-              style: tokens.tipografia.mono(
-                tokens.tipografia.t12,
-                color: colores.textoSecundario,
-              ),
-              textAlign: context.esExpandida
-                  ? TextAlign.start
-                  : TextAlign.center,
             ),
           ],
         ),
