@@ -36,6 +36,23 @@ Future<List<String>> _montar(
 }
 
 void main() {
+  testWidgets('en el teléfono las pestañas reparten el ancho; en pantalla '
+      'ancha quedan al ancho de su texto', (tester) async {
+    await _montar(tester);
+    final enTelefono = tester.getSize(find.byType(TabBar)).width;
+
+    tester.view
+      ..physicalSize = const Size(1440, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _montar(tester);
+    await tester.pumpAndSettle();
+    final enWeb = tester.getSize(find.byType(SelectorSegmentado<String>)).width;
+
+    expect(enTelefono, greaterThan(600));
+    expect(enWeb, lessThan(400));
+  });
+
   testWidgets('deslizar de lado acompaña al dedo y elige la vecina', (
     tester,
   ) async {

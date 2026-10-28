@@ -87,11 +87,15 @@ class MisQrPagina extends ConsumerWidget {
                     tokens.espacio.l,
                     0,
                   ),
-                  // Las pestañas reparten todo el ancho del contenido.
-                  child: SelectorSegmentado<EstadoQr>(
-                    segmentos: segmentos,
-                    seleccionado: filtro.estado,
-                    alElegir: ref.read(filtroQrProvider.notifier).elegirEstado,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: SelectorSegmentado<EstadoQr>(
+                      segmentos: segmentos,
+                      seleccionado: filtro.estado,
+                      alElegir: ref
+                          .read(filtroQrProvider.notifier)
+                          .elegirEstado,
+                    ),
                   ),
                 ),
                 LineaSincronizacion(estado: sincronizacion, ahora: ahora),

@@ -85,6 +85,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
           Row(
             children: [
               Expanded(
+                flex: expandida ? 0 : 1,
                 child: SelectorSegmentado<ResultadoEvento?>(
                   segmentos: [
                     SegmentoDeSelector(

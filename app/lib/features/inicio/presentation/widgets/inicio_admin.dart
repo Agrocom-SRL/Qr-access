@@ -63,9 +63,6 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     final expandida = context.esExpandida;
     final puedeGenerar = widget.sesion.tiene(Permisos.generarQr);
     final puedeQrPropio = widget.sesion.tiene(Permisos.generarQrPropio);
-    // El administrador no tiene "Mis QR" en la barra (se llena con Admin):
-    // llega desde aquí a los QR que generó, para volver a compartirlos.
-    final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
 
     // Mientras carga, el conteo de puertas es una tarjeta de indicador con su
     // esqueleto; con datos lo reemplaza el estado de cada puerta.
@@ -138,15 +135,6 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       variante: VarianteBoton.tonal,
                       onPressed: () => context.go(Rutas.qrRapido),
                     ),
-                  if (puedeVerMisQr) ...[
-                    SizedBox(width: tokens.espacio.m),
-                    AccesoBoton(
-                      texto: l10n.navMisQr,
-                      icono: Icons.list_alt,
-                      variante: VarianteBoton.tonal,
-                      onPressed: () => context.go(Rutas.qrMios),
-                    ),
-                  ],
                   if (puedeGenerar) ...[
                     SizedBox(width: tokens.espacio.m),
                     AccesoBoton(

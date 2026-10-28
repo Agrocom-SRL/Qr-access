@@ -17,7 +17,7 @@ class SelectorSegmentado<T> extends StatelessWidget {
     required this.segmentos,
     required this.seleccionado,
     required this.alElegir,
-    this.estirado = true,
+    this.estirado,
     super.key,
   });
 
@@ -25,14 +25,17 @@ class SelectorSegmentado<T> extends StatelessWidget {
   final T seleccionado;
   final ValueChanged<T> alElegir;
 
-  /// Reparte el ancho entre las pastillas (compacto) o las deja a su medida.
-  final bool estirado;
+  /// Reparte el ancho entre las pastillas o las deja a su medida. Sin valor,
+  /// se reparten en el teléfono y en la tableta, y en pantalla ancha (web)
+  /// quedan al ancho de su texto.
+  final bool? estirado;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
+    final estirado = this.estirado ?? !context.esExpandida;
     return Container(
       padding: EdgeInsets.all(tokens.espacio.xs),
       decoration: BoxDecoration(
