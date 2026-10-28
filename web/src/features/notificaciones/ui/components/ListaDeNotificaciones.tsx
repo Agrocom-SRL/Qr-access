@@ -4,9 +4,9 @@ import { traducirError } from '../../../../l10n/traducirError';
 import { codigoDe } from '../../../../shared/api/errorApi';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
+import { AccesoSelectorBuscable } from '../../../../shared/ui/molecules/AccesoSelectorBuscable';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
-import controles from '../../../../shared/ui/molecules/controles.module.css';
 import { Paginador } from '../../../../shared/ui/molecules/Paginador';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
@@ -133,23 +133,21 @@ export function ListaDeNotificaciones({ puedeGestionar }: Props) {
             etiqueta: t(`notificaciones:filtros.${valor}`),
           }))}
         />
-        <label className={styles.campoTipo}>
-          <span className={styles.etiqueta}>{t('notificaciones:filtroTipo')}</span>
-          <select
-            className={controles.control}
-            value={tipo}
-            onChange={(evento) => {
-              cambiarTipo(evento.target.value);
-            }}
-          >
-            <option value="">{t('notificaciones:todosLosTipos')}</option>
-            {TIPOS_DE_NOTIFICACION.map((valor) => (
-              <option key={valor} value={valor}>
-                {t(`notificaciones:tipo.${valor.replaceAll('.', '_')}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className={styles.campoTipo}>
+          <AccesoSelectorBuscable
+            conBusqueda={false}
+            etiqueta={t('notificaciones:filtroTipo')}
+            valor={tipo}
+            opciones={[
+              { valor: '', etiqueta: t('notificaciones:todosLosTipos') },
+              ...TIPOS_DE_NOTIFICACION.map((valor) => ({
+                valor,
+                etiqueta: t(`notificaciones:tipo.${valor.replaceAll('.', '_')}`),
+              })),
+            ]}
+            onCambio={cambiarTipo}
+          />
+        </div>
         {puedeGestionar ? (
           <AccesoBoton
             variante="tonal"

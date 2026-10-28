@@ -5,12 +5,12 @@
   margin-bottom: var(--esp16);
 }
 
-/* Los dos filtros segmentados van uno debajo del otro; en pantallas angostas cada uno se desplaza solo. */
+/* Los dos filtros segmentados van uno al lado del otro; si no caben, el segundo baja. */
 .segmentados {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: var(--esp12);
+  gap: var(--esp12) var(--esp24);
   margin-bottom: var(--esp24);
   max-width: 100%;
 }

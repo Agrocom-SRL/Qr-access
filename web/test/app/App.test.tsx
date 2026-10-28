@@ -267,13 +267,13 @@ describe('cuentas de cobro (ADR 0029)', () => {
     montar(servicios, '/ingreso');
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Cobranza/ }));
-    await userEvent.click(await screen.findByRole('button', { name: 'Cuentas de cobro' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Modalidades de pago' }));
   }
 
   it('desde Cobranza se llega a la lista de cuentas y QR de AGROCOM', async () => {
     await irACuentasDeCobro(crearServiciosDePrueba());
     expect(
-      await screen.findByRole('heading', { name: 'Cuentas de cobro', level: 1 }),
+      await screen.findByRole('heading', { name: 'Modalidades de pago', level: 1 }),
     ).toBeInTheDocument();
     expect(await screen.findByRole('article', { name: 'Banco Unión' })).toBeInTheDocument();
     expect(screen.getByText('10000123456')).toBeInTheDocument();

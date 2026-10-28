@@ -51,7 +51,7 @@
   "administrador_no_encontrado": "Ese administrador no existe en la cuenta.",
   "reasignacion_nivel_invalido": "Solo se puede reasignar a un Guardia o a un Titular.",
   "reasignacion_mismo_administrador": "Ya depende de ese administrador.",
-  "cuenta_de_cobro_no_encontrada": "No encontramos esa cuenta de cobro.",
+  "cuenta_de_cobro_no_encontrada": "No encontramos esa modalidad de pago.",
   "cuenta_de_cobro_existente": "Ya hay una cuenta con ese banco y número.",
   "cuenta_de_cobro_datos_incompletos": "Faltan datos: una cuenta bancaria pide titular y número, y un QR pide su imagen.",
   "cuenta_de_cobro_imagen_invalida": "El QR tiene que ser una imagen, no un PDF.",

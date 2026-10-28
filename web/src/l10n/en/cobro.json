@@ -1,10 +1,10 @@
 {
-  "titulo": "Payment accounts",
+  "titulo": "Payment methods",
   "subtitulo": "Where AGROCOM receives payments: shown when recording an account's payment",
   "nueva": "Add account",
-  "errorCarga": "We couldn't load the payment accounts",
+  "errorCarga": "We couldn't load the payment methods",
   "vacio": {
-    "titulo": "No payment accounts yet",
+    "titulo": "No payment methods yet",
     "texto": "Add a bank account or a QR to show them when activating an account."
   },
   "metodo": "Payment method",
@@ -34,8 +34,8 @@
   "imagenVista": "QR preview",
   "imagenQr": "{{banco}} payment QR",
   "imagenError": "We couldn't load the QR",
-  "dialogoNueva": "New payment account",
-  "dialogoEditar": "Edit payment account",
+  "dialogoNueva": "New payment method",
+  "dialogoEditar": "Edit payment method",
   "guardar": "Save",
   "guardando": "Saving",
   "editarCuenta": "Edit the {{banco}} account",
@@ -49,8 +49,8 @@
   "archivoGrande": "The file is larger than 5 MB",
   "paraPagar": "Where the account pays",
   "paraPagarVacio": {
-    "transferencia": "There are no active bank accounts: add them in Payment accounts.",
-    "qr": "There is no active payment QR: add it in Payment accounts."
+    "transferencia": "There are no active bank accounts: add them in Payment methods.",
+    "qr": "There is no active payment QR: add it in Payment methods."
   },
-  "gestionar": "Payment accounts"
+  "gestionar": "Payment methods"
 }

@@ -27,9 +27,9 @@ function montar(permisos: string[]) {
 }
 
 describe('navegación de consumo y señales', () => {
-  it('el ítem "Consumo y señales" aparece con cualquiera de sus dos permisos', async () => {
+  it('el ítem "Consumo" aparece con cualquiera de sus dos permisos', async () => {
     montar(['seguridad.senal.ver']);
-    expect(await screen.findByRole('link', { name: 'Consumo y señales' })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: 'Consumo' })).toHaveAttribute(
       'href',
       '/consumo',
     );
@@ -38,6 +38,6 @@ describe('navegación de consumo y señales', () => {
   it('sin ninguno de los dos permisos, el ítem no aparece', async () => {
     montar(['resumen.panel.ver']);
     await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
-    expect(screen.queryByRole('link', { name: 'Consumo y señales' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Consumo' })).not.toBeInTheDocument();
   });
 });

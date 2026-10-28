@@ -5,13 +5,7 @@
 }
 
 .fila {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--esp16);
-}
-
-@media (width < 640px) {
-  .fila {
-    grid-template-columns: 1fr;
-  }
 }

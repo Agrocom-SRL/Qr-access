@@ -87,6 +87,7 @@ export function DialogoPlan({ abierto, onCerrar, plan }: Props) {
       abierto={abierto}
       titulo={plan === null ? t('planes:dialogoNuevo') : t('planes:dialogoEditar')}
       onCerrar={onCerrar}
+      ancho="ancho"
       acciones={
         <>
           <AccesoBoton variante="texto" onClick={onCerrar}>

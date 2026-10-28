@@ -109,7 +109,10 @@ describe('pantalla completa de avisos de AGROCOM', () => {
     );
     montarPagina(['notificaciones.aviso_plataforma.ver'], { listar });
     const selector = await screen.findByRole('combobox', { name: 'Tipo de aviso' });
-    await userEvent.selectOptions(selector, 'incidente.propuesta');
+    await userEvent.click(selector);
+    await userEvent.click(
+      await screen.findByText('El sistema propone una acción sobre un usuario reincidente'),
+    );
     expect(listar).toHaveBeenLastCalledWith('no_leidas', 1, 'incidente.propuesta');
   });
 
