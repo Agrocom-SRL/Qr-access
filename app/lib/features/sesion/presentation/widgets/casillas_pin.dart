@@ -135,6 +135,11 @@ class _CasillasPinEstado extends State<CasillasPin> {
                   textCapitalization: TextCapitalization.characters,
                   keyboardType: TextInputType.visiblePassword,
                   textInputAction: TextInputAction.go,
+                  // Al abrir el teclado, el desplazamiento deja la casilla
+                  // entera sobre él, no solo el cursor (que va arriba).
+                  scrollPadding: EdgeInsets.only(
+                    bottom: tokens.tamano.casillaPinAlto,
+                  ),
                   inputFormatters: const [FormateadorPin()],
                   onChanged: widget.alCambiar,
                   onSubmitted: (_) => widget.alEnviar?.call(),

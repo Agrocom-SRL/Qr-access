@@ -23,11 +23,15 @@ export interface CambiosDePlan {
   readonly nombre?: string | undefined;
   readonly cupoUsuarios?: number | undefined;
   readonly precioAnual?: number | undefined;
+  /** `undefined` = no cambia; `null` = el plan deja de fijarla y rige la general. */
+  readonly bolsaQrMensual?: number | null | undefined;
+  /** `undefined` = no cambia; `null` = el plan deja de fijarlo y rige el general. */
+  readonly maxPuertasPorQr?: number | null | undefined;
 }
 
 /**
- * Edita un plan. El nombre y el precio se pueden cambiar siempre (el precio solo vale para
- * renovaciones y mejoras futuras); el cupo, solo mientras ninguna cuenta use el plan: cambiarlo
+ * Edita un plan. El nombre, el precio y los topes de QR del plan (bolsa mensual y puertas por QR, ADR 0030 §2 y
+ * ADR 0031 §9) se pueden cambiar siempre (el precio solo vale para renovaciones y mejoras futuras); el cupo, solo mientras ninguna cuenta use el plan: cambiarlo
  * movería los límites de cuentas que ya pagaron por otra cosa (ADR 0022).
  */
 export async function editar(pool: Pool, id: string, cambios: CambiosDePlan): Promise<void> {
@@ -50,6 +54,15 @@ export async function editar(pool: Pool, id: string, cambios: CambiosDePlan): Pr
   }
   if (cambios.precioAnual !== undefined && cambios.precioAnual !== Number(actual.precio_anual)) {
     nuevos.precio_anual = cambios.precioAnual;
+  }
+  if (cambios.bolsaQrMensual !== undefined && cambios.bolsaQrMensual !== actual.bolsa_qr_mensual) {
+    nuevos.bolsa_qr_mensual = cambios.bolsaQrMensual;
+  }
+  if (
+    cambios.maxPuertasPorQr !== undefined &&
+    cambios.maxPuertasPorQr !== actual.max_puertas_por_qr
+  ) {
+    nuevos.max_puertas_por_qr = cambios.maxPuertasPorQr;
   }
   if (Object.keys(nuevos).length === 0) return;
   await enTransaccion(pool, (tx) => planes.editar(tx, id, nuevos));

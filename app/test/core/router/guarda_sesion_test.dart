@@ -76,6 +76,21 @@ void main() {
       expect(redireccionDeSesion(sesion, Rutas.qrRapido), Rutas.inicio);
     });
 
+    test('la bandeja de notificaciones exige su permiso de cuenta', () {
+      final sinBandeja = sesionCon(permisos: {Permisos.verQr});
+      final conBandeja = sesionCon(permisos: {Permisos.verNotificaciones});
+      expect(
+        redireccionDeSesion(sinBandeja, Rutas.notificaciones),
+        Rutas.inicio,
+      );
+      expect(redireccionDeSesion(conBandeja, Rutas.notificaciones), isNull);
+    });
+
+    test('Dispositivos conectados no pide permiso: es de quien la abre', () {
+      final sinPermisos = sesionCon();
+      expect(redireccionDeSesion(sinPermisos, Rutas.dispositivos), isNull);
+    });
+
     test('una ruta sin el permiso del rol vuelve al tablero', () {
       expect(redireccionDeSesion(sesion, Rutas.eventos), Rutas.inicio);
       expect(redireccionDeSesion(sesion, Rutas.adminUsuarios), Rutas.inicio);

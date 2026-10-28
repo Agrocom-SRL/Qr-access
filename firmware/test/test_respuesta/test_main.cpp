@@ -246,6 +246,94 @@ void test_anuncio_mal_formado_no_cambia_nada() {
   TEST_ASSERT_EQUAL(Estado::Invalido, anunciar(204, nullptr).estado);
 }
 
+// --- evento_id y configuración del sensor (ADR 0031 §18) ---------------------------------------
+
+static const char* PERMITIDO_EVENTO_42 =
+    "{\"abrir\":true,\"segundos\":4,\"evento_id\":\"42\",\"motivo_code\":\"acceso.permitido\"}";
+
+void test_apertura_deja_su_evento_id_para_informar() {
+  char evento[confirmacion::MAX_EVENTO_ID + 1] = "basura";
+  auto r = respuesta::interpretar(200, PERMITIDO_EVENTO_42, strlen(PERMITIDO_EVENTO_42), evento);
+  TEST_ASSERT_TRUE(r.abrir);
+  TEST_ASSERT_EQUAL_STRING("42", evento);
+}
+
+void test_evento_id_que_no_son_digitos_no_cambia_la_apertura_pero_no_se_informa() {
+  // La falla segura no cambia: la respuesta sigue siendo válida y abre; solo queda sin informe.
+  char evento[confirmacion::MAX_EVENTO_ID + 1] = "basura";
+  auto r = respuesta::interpretar(200, PERMITIDO, strlen(PERMITIDO), evento);  // evento_id "e1"
+  TEST_ASSERT_TRUE(r.valida);
+  TEST_ASSERT_TRUE(r.abrir);
+  TEST_ASSERT_EQUAL_STRING("", evento);
+}
+
+void test_sin_apertura_el_evento_queda_vacio() {
+  const char* denegado =
+      "{\"abrir\":false,\"evento_id\":\"42\",\"motivo_code\":\"qr.vencido\"}";
+  char evento[confirmacion::MAX_EVENTO_ID + 1] = "basura";
+  auto r = respuesta::interpretar(200, denegado, strlen(denegado), evento);
+  TEST_ASSERT_FALSE(r.abrir);
+  TEST_ASSERT_EQUAL_STRING("", evento);
+  char otro[confirmacion::MAX_EVENTO_ID + 1] = "basura";
+  r = respuesta::interpretar(500, PERMITIDO_EVENTO_42, strlen(PERMITIDO_EVENTO_42), otro);
+  TEST_ASSERT_FALSE(r.valida && r.abrir);
+  TEST_ASSERT_EQUAL_STRING("", otro);
+}
+
+static respuesta::Configuracion config(const char* cuerpo) {
+  return respuesta::interpretarConfiguracion(200, cuerpo, strlen(cuerpo));
+}
+
+void test_configuracion_con_sensor_y_espera() {
+  auto c = config("{\"segundos_apertura\":6,\"zona_horaria\":\"America/La_Paz\",\"ota\":null,"
+                  "\"sensor_puerta\":{\"instalado\":true,\"nivel_abierto\":\"bajo\"},"
+                  "\"espera_confirmacion_segundos\":11}");
+  TEST_ASSERT_TRUE(c.valida);
+  TEST_ASSERT_EQUAL_UINT16(6, c.segundosApertura);
+  TEST_ASSERT_TRUE(c.sensor.instalado);
+  TEST_ASSERT_EQUAL(confirmacion::Nivel::Bajo, c.sensor.nivelAbierto);
+  TEST_ASSERT_EQUAL_UINT16(11, c.esperaConfirmacionS);
+}
+
+void test_configuracion_sin_sensor_instalado() {
+  auto c = config("{\"segundos_apertura\":6,\"sensor_puerta\":{\"instalado\":false,"
+                  "\"nivel_abierto\":\"alto\"},\"espera_confirmacion_segundos\":11}");
+  TEST_ASSERT_TRUE(c.valida);
+  TEST_ASSERT_FALSE(c.sensor.instalado);
+  TEST_ASSERT_EQUAL(confirmacion::Nivel::Alto, c.sensor.nivelAbierto);
+}
+
+void test_configuracion_vieja_sin_campos_nuevos_deja_sensor_no_instalado() {
+  auto c = config("{\"segundos_apertura\":6}");
+  TEST_ASSERT_TRUE(c.valida);
+  TEST_ASSERT_FALSE(c.sensor.instalado);
+  TEST_ASSERT_EQUAL_UINT16(0, c.esperaConfirmacionS);
+}
+
+void test_sensor_mal_formado_queda_no_instalado_sin_invalidar_la_configuracion() {
+  const char* casos[] = {
+      "{\"segundos_apertura\":6,\"sensor_puerta\":{\"instalado\":true,\"nivel_abierto\":\"medio\"}}",
+      "{\"segundos_apertura\":6,\"sensor_puerta\":{\"instalado\":true}}",
+      "{\"segundos_apertura\":6,\"sensor_puerta\":{\"instalado\":\"si\",\"nivel_abierto\":\"alto\"}}",
+      "{\"segundos_apertura\":6,\"sensor_puerta\":true}",
+      "{\"segundos_apertura\":6,\"sensor_puerta\":null}",
+  };
+  for (const char* caso : casos) {
+    auto c = config(caso);
+    TEST_ASSERT_TRUE(c.valida);
+    TEST_ASSERT_EQUAL_UINT16(6, c.segundosApertura);
+    TEST_ASSERT_FALSE(c.sensor.instalado);
+  }
+}
+
+void test_espera_fuera_de_rango_o_de_otro_tipo_no_vale() {
+  TEST_ASSERT_EQUAL_UINT16(0, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":0}").esperaConfirmacionS);
+  TEST_ASSERT_EQUAL_UINT16(0, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":601}").esperaConfirmacionS);
+  TEST_ASSERT_EQUAL_UINT16(0, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":\"11\"}").esperaConfirmacionS);
+  TEST_ASSERT_EQUAL_UINT16(0, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":true}").esperaConfirmacionS);
+  TEST_ASSERT_EQUAL_UINT16(600, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":600}").esperaConfirmacionS);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_abrir_true_con_segundos);
@@ -270,5 +358,13 @@ int main() {
   RUN_TEST(test_anuncio_vinculado_trae_el_id);
   RUN_TEST(test_anuncio_401_y_429_son_rechazos);
   RUN_TEST(test_anuncio_mal_formado_no_cambia_nada);
+  RUN_TEST(test_apertura_deja_su_evento_id_para_informar);
+  RUN_TEST(test_evento_id_que_no_son_digitos_no_cambia_la_apertura_pero_no_se_informa);
+  RUN_TEST(test_sin_apertura_el_evento_queda_vacio);
+  RUN_TEST(test_configuracion_con_sensor_y_espera);
+  RUN_TEST(test_configuracion_sin_sensor_instalado);
+  RUN_TEST(test_configuracion_vieja_sin_campos_nuevos_deja_sensor_no_instalado);
+  RUN_TEST(test_sensor_mal_formado_queda_no_instalado_sin_invalidar_la_configuracion);
+  RUN_TEST(test_espera_fuera_de_rango_o_de_otro_tipo_no_vale);
   return UNITY_END();
 }

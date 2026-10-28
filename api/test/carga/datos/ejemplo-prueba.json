@@ -1,0 +1,26 @@
+{
+  "_aviso": "EJEMPLO con valores falsos para leer el formato. No es un entorno real: preparar-datos.mjs genera el de verdad en api/test/carga/datos/generados/ (ignorado por git).",
+  "version": 1,
+  "generado_at": "2026-01-01T00:00:00.000Z",
+  "api": "http://127.0.0.1:3000/api/v1",
+  "cuenta": { "id": "1", "codigo": "EJM" },
+  "sitio": { "id": "1" },
+  "puertas": [
+    { "id": "11", "nombre": "Puerta de carga 1" },
+    { "id": "12", "nombre": "Puerta de carga 2" }
+  ],
+  "dispositivos": [
+    { "id": "21", "clave": "EJEMPLO_CLAVE_FALSA_NO_USAR_0000000000", "mac": "02:00:00:00:00:01", "puerta_id": "11" },
+    { "id": "22", "clave": "EJEMPLO_CLAVE_FALSA_NO_USAR_0000000001", "mac": "02:00:00:00:00:02", "puerta_id": "12" }
+  ],
+  "usuarios": [
+    { "id": "31", "etiqueta": "Titular de carga 1", "pin": "EJM1234" },
+    { "id": "32", "etiqueta": "Titular de carga 2", "pin": "EJM5678" }
+  ],
+  "qr": [
+    { "id": "41", "texto": "AQ1.EJEMPLOTOKENFALSO000000", "puerta_id": "11", "dispositivo": 0, "uso": "validacion" },
+    { "id": "42", "texto": "AQ1.EJEMPLOTOKENFALSO000001", "puerta_id": "12", "dispositivo": 1, "uso": "validacion" },
+    { "id": "43", "texto": "AQ1.EJEMPLOTOKENFALSO000002", "puerta_id": "11", "dispositivo": 0, "uso": "confirmacion" },
+    { "id": "44", "texto": "AQ1.EJEMPLOTOKENFALSO000003", "puerta_id": "12", "dispositivo": 1, "uso": "repeticion" }
+  ]
+}

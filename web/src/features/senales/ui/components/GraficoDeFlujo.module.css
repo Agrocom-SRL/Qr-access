@@ -1,0 +1,29 @@
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--esp16);
+  margin: 0 0 var(--esp12);
+  padding: 0;
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+  list-style: none;
+}
+
+.leyenda li {
+  display: flex;
+  align-items: center;
+  gap: var(--esp8);
+}
+
+.muestra {
+  display: inline-block;
+  width: var(--esp12);
+  height: var(--esp12);
+  border-radius: var(--radio6);
+}
+
+.linea {
+  display: inline-block;
+  width: var(--esp24);
+  height: var(--esp2);
+}

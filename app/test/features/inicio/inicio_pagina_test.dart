@@ -4,6 +4,9 @@ import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/notificaciones/data/notificaciones_repositorio.dart';
+import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
@@ -11,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fakes.dart';
+import '../../helpers/notificaciones_falsas.dart';
 import '../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
@@ -68,12 +72,19 @@ Future<SesionFalsa> _montar(
   WidgetTester tester, {
   required Set<String> permisos,
   List<QrAcceso> vigentes = const [],
+  bool apaisada = false,
+  bool expandida = false,
 }) async {
   final sesion = SesionFalsa(sesionCon(permisos: permisos));
   await montarPantalla(
     tester,
     pagina: const InicioPagina(),
+    apaisada: apaisada,
+    expandida: expandida,
     overrides: [
+      notificacionesRepositorioProvider.overrideWithValue(
+        NotificacionesRepositorioFalso(),
+      ),
       sesionControladorProvider.overrideWith(() => sesion),
       relojProvider.overrideWithValue(() => _ahora),
       qrAccesosRepositorioProvider.overrideWithValue(
@@ -93,7 +104,7 @@ Future<SesionFalsa> _montar(
         EventosRepositorioFalso(
           Pagina(
             datos: [
-              EventoAcceso(
+              Lectura(
                 id: 'e1',
                 ocurridoAt: _ahora,
                 resultado: ResultadoEvento.rechazado,
@@ -220,8 +231,8 @@ void main() {
       expect(find.text('12'), findsOneWidget);
       expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
       expect(find.text('1'), findsOneWidget);
-      expect(find.text(textos.inicioUltimosEventos), findsOneWidget);
-      expect(find.text(textos.eventoMotivoQrVencido), findsOneWidget);
+      expect(find.text(textos.inicioUltimasLecturas), findsOneWidget);
+      expect(find.text(textos.lecturaMotivoQrVencido), findsOneWidget);
     });
 
     testWidgets('la cabecera lleva el QR propio y el botón flotante genera', (
@@ -264,6 +275,82 @@ void main() {
       await tester.tap(enBarra(Icons.person_outline).first);
       await tester.pumpAndSettle();
       expect(find.text('destino /perfil'), findsOneWidget);
+    });
+  });
+
+  group('en expandido (1440×900)', () {
+    testWidgets('el administrador ve la bandeja junto a QR propio y Generar', (
+      tester,
+    ) async {
+      await _montar(
+        tester,
+        permisos: {..._administrador, Permisos.verNotificaciones},
+        expandida: true,
+      );
+
+      expect(find.byType(BotonNotificaciones), findsOneWidget);
+    });
+  });
+
+  group('en expandido, para los demás roles', () {
+    testWidgets('el guardia ve el estado de las puertas junto a su hero', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _guardia, expandida: true);
+      final textos = textosEn(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(textos.inicioAccesosDeHoy), findsOneWidget);
+      expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
+      expect(find.text(textos.puertaSinConexion), findsOneWidget);
+    });
+
+    testWidgets('el usuario conserva el hero de generar y sus accesos debajo', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario, expandida: true);
+      final textos = textosEn(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(textos.qrGenerarTitulo), findsWidgets);
+      expect(find.text(textos.inicioQrPropio), findsOneWidget);
+    });
+  });
+
+  group('en horizontal (852×393)', () {
+    testWidgets('el tablero de administración cabe y deja la barra inferior', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _administrador, apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      // La cabecera (avatar y campanita) no se corta arriba ni abajo.
+      final cabecera = tester.getRect(find.byType(EncabezadoInicio));
+      expect(cabecera.top, greaterThanOrEqualTo(0));
+      expect(cabecera.bottom, lessThanOrEqualTo(393));
+    });
+
+    testWidgets('el administrador ve el estado de cada puerta bajo el hero', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _administrador, apaisada: true);
+      final textos = textosEn(tester);
+
+      expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
+      expect(find.text(textos.inicioVerPuertas), findsOneWidget);
+      // Cada puerta con su sitio y su estado; la caída (Depósito 2) primero.
+      expect(find.text(textos.puertaEnLinea), findsOneWidget);
+      expect(find.text(textos.puertaSinConexion), findsOneWidget);
+      expect(find.text('Portón vehicular'), findsOneWidget);
+    });
+
+    testWidgets('el inicio de usuario cabe y deja la barra inferior', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario, apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
     });
   });
 }

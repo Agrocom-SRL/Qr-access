@@ -11,6 +11,7 @@ class AccesoFoto extends StatelessWidget {
     this.alineacion = Alignment.center,
     this.fundirConFondo = false,
     this.verdeEnClaro = false,
+    this.fundidoHaciaLado = false,
     super.key,
   });
 
@@ -26,32 +27,62 @@ class AccesoFoto extends StatelessWidget {
   /// en el oscuro sigue fundiéndose con el fondo.
   final bool verdeEnClaro;
 
+  /// El fundido sale por el borde derecho (foto en columna junto a un
+  /// formulario) en vez de por abajo, para que no quede un corte seco entre la
+  /// foto y el contenido. Arriba conserva el velo de la flecha de volver.
+  final bool fundidoHaciaLado;
+
   @override
   Widget build(BuildContext context) {
     final colores = context.tokens.colores;
     final claro = Theme.of(context).brightness == Brightness.light;
     final fin = fundirConFondo && !(verdeEnClaro && claro)
         ? Theme.of(context).scaffoldBackgroundColor
-        : colores.hero.withValues(alpha: 0.88);
+        : colores.hero.withValues(alpha: opacidadFundidoFoto);
     return ExcludeSemantics(
       child: Stack(
         fit: StackFit.expand,
         children: [
           Image.asset(ruta, fit: BoxFit.cover, alignment: alineacion),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  colores.heroAcento.withValues(alpha: 0.45),
-                  colores.hero.withValues(alpha: 0),
-                  fin,
-                ],
-                stops: const [0, 0.35, 1],
+          if (fundidoHaciaLado) ...[
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colores.heroAcento.withValues(alpha: opacidadAcentoFoto),
+                    colores.hero.withValues(alpha: 0),
+                  ],
+                  stops: const [0, 0.35],
+                ),
               ),
             ),
-          ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: AlignmentDirectional.centerStart,
+                  end: AlignmentDirectional.centerEnd,
+                  colors: [colores.hero.withValues(alpha: 0), fin],
+                  stops: const [0.5, 1],
+                ),
+              ),
+            ),
+          ] else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    colores.heroAcento.withValues(alpha: opacidadAcentoFoto),
+                    colores.hero.withValues(alpha: 0),
+                    fin,
+                  ],
+                  stops: const [0, 0.35, 1],
+                ),
+              ),
+            ),
         ],
       ),
     );

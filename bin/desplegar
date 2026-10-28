@@ -26,6 +26,12 @@ mysql_en_db() { compose --profile herramientas run --rm -T cliente; }
 echo "==> Construyendo imágenes (api, app, panel)"
 compose build api app panel
 
+# Se detiene la API antes de migrar: algunas migraciones cambian el nombre de una tabla (p. ej. el renombre
+# a `lecturas`, ADR 0032 §5) y el código anterior fallaría contra el esquema nuevo. Mientras la API está
+# detenida ninguna puerta abre con QR (falla segura, invariante 2); el pulsador y la llave siguen sirviendo.
+echo "==> Deteniendo la API antes de migrar"
+compose stop api
+
 echo "==> Base de datos (MariaDB compartida en $DB_HOST:$DB_PORT)"
 compose --profile herramientas run --rm dbmate up
 
@@ -45,8 +51,8 @@ if [ "$existe" = "0" ]; then
   # contrasena_temporal = 1: el panel obliga a cambiarla en el primer ingreso.
   mysql_en_db <<SQL
 SET NAMES utf8mb4;
-INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo)
-  VALUES (NULL, 'Root', 'root', '$hash', 1, 1);
+INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal)
+  VALUES (NULL, 'Root', 'root', '$hash', 1);
 INSERT INTO usuario_roles (tenant_id, usuario_id, rol_id)
   SELECT NULL, u.id, r.id FROM usuarios u
     JOIN roles r ON r.tenant_id IS NULL AND r.nombre = 'Super admin' AND r.deleted_at IS NULL

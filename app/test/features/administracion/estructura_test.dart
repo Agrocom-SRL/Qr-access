@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/features/administracion/administracion.dart';
 import 'package:agrocom_acceso/features/administracion/data/estructura_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estructura.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -42,11 +43,13 @@ const Set<String> _administrador = {
 Future<EstructuraRepositorioFalso> _montar(
   WidgetTester tester, {
   Set<String> permisos = _administrador,
+  bool apaisada = false,
 }) async {
   final repositorio = EstructuraRepositorioFalso(_sitios);
   await montarPantalla(
     tester,
     pagina: const EstructuraPagina(),
+    apaisada: apaisada,
     overrides: [
       sesionControladorProvider.overrideWith(
         () => SesionFalsa(sesionCon(permisos: permisos)),
@@ -141,5 +144,14 @@ void main() {
     expect(find.byTooltip(textos.estructuraSitioNuevo), findsNothing);
     expect(find.text(textos.estructuraPuertaNueva), findsNothing);
     expect(find.byTooltip(textos.comunEliminar), findsNothing);
+  });
+
+  testWidgets('en horizontal (852×393) los sitios se desplazan sin desbordar', (
+    tester,
+  ) async {
+    await _montar(tester, apaisada: true);
+
+    expect(find.byType(BarraNavegacion), findsOneWidget);
+    expect(find.text(textosEn(tester).estructuraTitulo), findsOneWidget);
   });
 }

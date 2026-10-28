@@ -12,13 +12,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Propiedad y nombre de la unidad de un Titular nuevo (ADR 0028): su unidad
-/// nace con él, en una propiedad de la cuenta.
+/// nace con él, en una propiedad de la cuenta. Son obligatorios: sin ellos el
+/// Titular no tiene dónde responder.
 class SeccionUnidad extends ConsumerWidget {
-  const new({required this.controlador, required this.errorDatos, super.key});
+  const new({required this.controlador, required this.errores, super.key});
 
   /// Controla el texto del nombre de la unidad.
   final TextEditingController controlador;
-  final ErrorDatosUsuario? errorDatos;
+
+  /// Los errores del alta; se marcan los de propiedad y de nombre de unidad.
+  final Set<ErrorDatosUsuario> errores;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +48,8 @@ class SeccionUnidad extends ConsumerWidget {
                 )
               : CampoFormulario(
                   etiqueta: l10n.usuariosCampoPropiedad,
-                  textoError: errorDatos == ErrorDatosUsuario.sinPropiedad
+                  obligatorio: true,
+                  textoError: errores.contains(ErrorDatosUsuario.sinPropiedad)
                       ? l10n.usuariosErrorSinPropiedad
                       : null,
                   child: AccesoSelector<String>(
@@ -62,14 +66,9 @@ class SeccionUnidad extends ConsumerWidget {
         ),
         CampoFormulario(
           etiqueta: l10n.usuariosCampoUnidad,
+          obligatorio: true,
           ayuda: l10n.usuariosCampoUnidadAyuda,
-          textoError: switch (errorDatos) {
-            ErrorDatosUsuario.sinNombreDeUnidad =>
-              l10n.usuariosErrorSinNombreUnidad,
-            ErrorDatosUsuario.nombreDeUnidadLargo =>
-              l10n.usuariosErrorUnidadLarga(DatosUnidad.largoMaximoNombre),
-            _ => null,
-          },
+          textoError: _errorDeNombre(l10n),
           child: AccesoCampoTexto(
             controlador: controlador,
             placeholder: l10n.usuariosCampoUnidadEjemplo,
@@ -79,5 +78,15 @@ class SeccionUnidad extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  String? _errorDeNombre(AppLocalizations l10n) {
+    if (errores.contains(ErrorDatosUsuario.sinNombreDeUnidad)) {
+      return l10n.usuariosErrorSinNombreUnidad;
+    }
+    if (errores.contains(ErrorDatosUsuario.nombreDeUnidadLargo)) {
+      return l10n.usuariosErrorUnidadLarga(DatosUnidad.largoMaximoNombre);
+    }
+    return null;
   }
 }

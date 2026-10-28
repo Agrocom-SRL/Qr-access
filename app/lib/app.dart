@@ -1,5 +1,6 @@
 import 'package:agrocom_acceso/core/l10n/idioma_controlador.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/navegacion/comportamiento_desplazamiento.dart';
 import 'package:agrocom_acceso/core/router/router.dart';
 import 'package:agrocom_acceso/core/theme/tema.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
@@ -20,6 +21,8 @@ class AccesoApp extends ConsumerWidget {
       theme: Tema.claro,
       darkTheme: Tema.oscuro,
       themeMode: ref.watch(temaProvider),
+      // Tirar hacia abajo para actualizar también con el mouse (web/escritorio).
+      scrollBehavior: const ComportamientoDesplazamientoAcceso(),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // Sin idioma elegido, `localeListResolutionCallback` cae en español si

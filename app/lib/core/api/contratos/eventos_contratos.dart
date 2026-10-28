@@ -1,8 +1,8 @@
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
 import 'package:agrocom_acceso/core/api/contratos/puertas_contratos.dart';
 
-/// Elemento de `GET /eventos-acceso` (contrato común V1, ADR 0007).
-class EventoAccesoDto {
+/// Elemento de `GET /lecturas` (contrato común V1, ADR 0007).
+class LecturaDto {
   const new({
     required this.id,
     required this.ocurridoAt,
@@ -54,7 +54,7 @@ class QrDeEventoDto {
   final String? generadorEtiqueta;
 }
 
-/// Respuesta de `GET /eventos-acceso/resumen`: indicadores del tablero.
+/// Respuesta de `GET /lecturas/resumen`: indicadores del tablero.
 class ResumenEventosDto {
   new desde(Map<String, dynamic> json)
     : permitidos = json['permitidos'] as int,

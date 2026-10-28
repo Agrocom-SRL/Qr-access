@@ -17,7 +17,15 @@ export const RUTAS = {
   equipo: '/equipo',
   perfil: '/perfil',
   estados: '/estados',
+  consumo: '/consumo',
+  notificaciones: '/notificaciones',
 } as const;
+
+/** Consumo de la bolsa de una cuenta (ADR 0030 §5). */
+export const rutaDeConsumoCuenta = (id: string): string => `/consumo/cuentas/${id}`;
+
+/** Flujo de una cuenta, con su periodo en días (ADR 0030 §4). */
+export const rutaDeFlujoCuenta = (id: string): string => `/consumo/flujo/${id}`;
 
 export const rutaDeCuenta = (id: string, pestana?: string): string =>
   pestana === undefined ? `/cuentas/${id}` : `/cuentas/${id}?pestana=${pestana}`;

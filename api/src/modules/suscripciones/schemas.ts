@@ -7,6 +7,10 @@ export const esquemaPlan = z.object({
   nombre: z.string(),
   cupo_usuarios: z.number().int().nullable(),
   precio_anual: z.number(),
+  /** `null` = el plan no fija la bolsa mensual de QR y rige la general (ADR 0030 §2). */
+  bolsa_qr_mensual: z.number().int().nullable(),
+  /** `null` = el plan no fija las puertas por QR y rige el general (ADR 0031 §9). */
+  max_puertas_por_qr: z.number().int().nullable(),
   cuentas: z.number().int(),
   usuarios_en_uso: z.number().int(),
 });
@@ -20,9 +24,9 @@ const esquemaPrecio = z
   .max(99_999_999)
   .refine((n) => Math.round(n * 100) / 100 === n);
 
-export const cuerpoDePrecios = z.object({
+export const cuerpoDePrecios = z.strictObject({
   precios: z
-    .array(z.object({ plan_id: esquemaId, precio_anual: esquemaPrecio }))
+    .array(z.strictObject({ plan_id: esquemaId, precio_anual: esquemaPrecio }))
     .min(1)
     .max(20),
 });
@@ -30,7 +34,7 @@ export const cuerpoDePrecios = z.object({
 export const parametrosDeCuenta = z.object({ id: esquemaId });
 export const parametrosDeComprobante = z.object({ id: esquemaId });
 
-export const cuerpoDeCambioDePlan = z.object({ plan_id: esquemaId });
+export const cuerpoDeCambioDePlan = z.strictObject({ plan_id: esquemaId });
 
 export const respuestaDeCambioDePlan = z.object({
   plan: z.object({
@@ -62,7 +66,7 @@ export function exigirRespaldoDelPago(
 }
 
 export const cuerpoDePago = z
-  .object({
+  .strictObject({
     tipo: z.enum(['alta', 'renovacion', 'mejora_de_plan']),
     monto: z
       .number()
@@ -94,17 +98,21 @@ export const respuestaDePago = z.object({
 const esquemaNombreDePlan = z.string().trim().min(1).max(80);
 const esquemaCupo = z.number().int().min(1).max(100_000);
 
-export const cuerpoDePlanNuevo = z.object({
+export const cuerpoDePlanNuevo = z.strictObject({
   nombre: esquemaNombreDePlan,
   cupo_usuarios: esquemaCupo,
   precio_anual: esquemaPrecio,
 });
 
 export const cuerpoDeEdicionDePlan = z
-  .object({
+  .strictObject({
     nombre: esquemaNombreDePlan.optional(),
     cupo_usuarios: esquemaCupo.optional(),
     precio_anual: esquemaPrecio.optional(),
+    /** `null` devuelve el plan a la bolsa general. */
+    bolsa_qr_mensual: z.number().int().min(1).max(100_000_000).nullable().optional(),
+    /** `null` devuelve el plan al máximo general de puertas por QR. */
+    max_puertas_por_qr: z.number().int().min(1).max(1_000).nullable().optional(),
   })
   .refine((cuerpo) => Object.keys(cuerpo).length > 0);
 
@@ -137,18 +145,19 @@ export const esquemaCuentaDeCobro = z.object({
 
 export const respuestaDeCuentasDeCobro = z.object({ datos: z.array(esquemaCuentaDeCobro) });
 
-export const cuerpoDeCuentaDeCobroNueva = z.object({
+export const cuerpoDeCuentaDeCobroNueva = z.strictObject({
   metodo: z.enum(['transferencia', 'qr']),
   banco: esquemaBanco,
   titular: textoOpcional(120).optional(),
   numero_cuenta: textoOpcional(40).optional(),
-  tipo_cuenta: esquemaTipoDeCuenta.optional(),
+  // `null` se acepta porque el panel lo envía cuando no hay tipo (ampliación compatible).
+  tipo_cuenta: esquemaTipoDeCuenta.nullable().optional(),
   imagen_id: esquemaId.optional(),
   nota: textoOpcional(200).optional(),
 });
 
 export const cuerpoDeEdicionDeCuentaDeCobro = z
-  .object({
+  .strictObject({
     banco: esquemaBanco.optional(),
     titular: textoOpcional(120).optional(),
     numero_cuenta: textoOpcional(40).optional(),

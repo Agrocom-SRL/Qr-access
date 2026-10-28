@@ -25,8 +25,8 @@ abstract final class Permisos {
   /// `accesos.qr.anular_todos`.
   static const anularQr = 'accesos.qr.anular';
 
-  /// Consultar los eventos de acceso: los de sus QR, o todos los de la cuenta
-  /// con `accesos.evento.ver_todos`.
+  /// Consultar las lecturas (intentos de lectura de un QR): las de sus QR, o
+  /// todas las de la cuenta con `accesos.evento.ver_todos`.
   static const verEventos = 'accesos.evento.ver';
   static const verTodosLosEventos = 'accesos.evento.ver_todos';
 
@@ -40,6 +40,11 @@ abstract final class Permisos {
   /// Asignar guardias a puertas.
   static const asignarGuardias = 'organizacion.guardia.asignar';
 
+  /// Ver mi bandeja de notificaciones de la cuenta, y marcarlas leídas (ADR
+  /// 0030 §6). Son permisos de la cuenta, nunca de plataforma.
+  static const verNotificaciones = 'notificaciones.aviso.ver';
+  static const gestionarNotificaciones = 'notificaciones.aviso.gestionar';
+
   static const verUsuarios = 'seguridad.usuario.ver';
   static const crearUsuarios = 'seguridad.usuario.crear';
   static const editarUsuarios = 'seguridad.usuario.editar';
@@ -52,4 +57,19 @@ abstract final class Permisos {
   /// Ver el uso de los usuarios de la rama (inactivos, ruidosos, Titulares
   /// cerca del tope): solo el Administrador (ADR 0028 §4).
   static const verEstadisticas = 'seguridad.estadistica.ver';
+
+  /// Ver los incidentes de uso de mi rama (ADR 0033 §3): el Administrador, el
+  /// Titular, el Miembro y el Guardia, cada uno sobre lo que le toca.
+  static const verIncidentes = 'seguridad.incidente.ver';
+
+  /// Confirmar, descartar o dejar pendiente un incidente de mi rama (ADR 0033
+  /// §3): solo el Administrador y el Titular. Nunca uno propio.
+  static const resolverIncidentes = 'seguridad.incidente.resolver';
+
+  /// Anular en bloque los QR vigentes de mi rama (ADR 0033 §3). Cada nivel lo
+  /// hace sobre lo que le toca: el Administrador, su rama entera.
+  static const anularQrDeRama = 'accesos.qr.anular_masivo';
+
+  /// Exportar en CSV los datos de mi rama (ADR 0033 §3): solo el Administrador.
+  static const exportarDatos = 'accesos.evento.exportar';
 }

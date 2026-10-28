@@ -41,7 +41,8 @@ class AdministracionPagina extends ConsumerWidget {
     final conPestanas = vePuertas && veUsuarios;
     return PlantillaAdmin(
       destino: DestinoNav.admin,
-      // "Nuevo usuario" es el botón flotante mientras se ven los usuarios.
+      // "Nuevo usuario" es el botón flotante mientras se ven los usuarios, en
+      // vertical y en horizontal de teléfono (VistaUsuarios deja su espacio).
       fab: pestana == PestanaAdmin.usuarios && puedeCrear
           ? FloatingActionButton.extended(
               onPressed: () => context.go(Rutas.adminUsuarioNuevo),
@@ -67,11 +68,11 @@ class AdministracionPagina extends ConsumerWidget {
               alElegir: ref.read(pestanaAdminProvider.notifier).elegir,
               paginaDe: (context, valor) => valor == PestanaAdmin.puertas
                   ? const VistaPuertas()
-                  : const VistaUsuarios(),
+                  : VistaUsuarios(conBotonFlotante: puedeCrear),
             )
           : vePuertas
           ? const VistaPuertas()
-          : const VistaUsuarios(),
+          : VistaUsuarios(conBotonFlotante: puedeCrear),
     );
   }
 }
@@ -108,6 +109,7 @@ class UsuariosPagina extends ConsumerWidget {
           ? AccesoBoton(
               texto: l10n.usuariosNuevo,
               icono: Icons.person_add_outlined,
+              variante: VarianteBoton.acento,
               onPressed: () => context.go(Rutas.adminUsuarioNuevo),
             )
           : null,

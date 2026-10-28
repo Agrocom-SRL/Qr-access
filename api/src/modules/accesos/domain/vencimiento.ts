@@ -1,5 +1,12 @@
 const ZONA_DE_RESPALDO = 'America/La_Paz';
 
+/**
+ * La zona en que se cuentan los días y los meses de los topes de generación (ADR 0030 §2). Un usuario no
+ * tiene zona propia y sus puertas pueden estar en sitios distintos, así que cuenta la de la plataforma, que
+ * es también la de respaldo de los sitios (invariante 7).
+ */
+export const ZONA_DE_LOS_TOPES = ZONA_DE_RESPALDO;
+
 interface PartesLocales {
   anio: number;
   mes: number;
@@ -46,6 +53,37 @@ export function finDelDiaLocal(ahora: Date, zonaHoraria: string): Date {
   // Dos pasadas: el desfase se mide en el instante buscado, que puede cruzar un cambio de hora.
   const primera = medianocheComoUtc - desfaseEnMs(formato, new Date(medianocheComoUtc));
   return new Date(medianocheComoUtc - desfaseEnMs(formato, new Date(primera)));
+}
+
+/**
+ * El instante (UTC) en que empezó el día de `ahora` en esa zona: el comienzo de la ventana de «hoy» de los
+ * topes diarios. Es el fin del día anterior, así que reutiliza el cálculo (y el cambio de hora) de
+ * [finDelDiaLocal].
+ */
+export function inicioDelDiaLocal(ahora: Date, zonaHoraria: string): Date {
+  // El fin del día de un instante de ayer es el comienzo de hoy. 24 h antes de `ahora` es de ayer salvo que un
+  // cambio de hora alargue el día; entonces el candidato pasa de `ahora` y se retrocede otras 24 h.
+  const candidato = finDelDiaLocal(new Date(ahora.getTime() - 24 * 3_600_000), zonaHoraria);
+  if (candidato.getTime() <= ahora.getTime()) return candidato;
+  return finDelDiaLocal(new Date(ahora.getTime() - 48 * 3_600_000), zonaHoraria);
+}
+
+/**
+ * El instante (UTC) en que empezó el mes de `ahora` en esa zona: el comienzo de la ventana de la bolsa
+ * mensual (ADR 0030 §2).
+ */
+export function inicioDelMesLocal(ahora: Date, zonaHoraria: string): Date {
+  const formato = formateador(zonaHoraria);
+  const p = partesDe(formato, ahora);
+  const primeroComoUtc = Date.UTC(p.year ?? 0, (p.month ?? 1) - 1, 1, 0, 0, 0);
+  const primera = primeroComoUtc - desfaseEnMs(formato, new Date(primeroComoUtc));
+  return new Date(primeroComoUtc - desfaseEnMs(formato, new Date(primera)));
+}
+
+/** El día de `ahora` en esa zona como `aaaa-mm-dd` (sirve de clave de «una vez por día»). */
+export function diaLocal(ahora: Date, zonaHoraria: string): string {
+  const p = partesDe(formateador(zonaHoraria), ahora);
+  return `${String(p.year)}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 }
 
 /** Techo del sistema para cualquier QR, aunque el plan no limite la vigencia (7 días). */

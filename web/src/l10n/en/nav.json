@@ -7,6 +7,8 @@
   "equipo": "Users",
   "perfil": "Profile",
   "placas": "Boards",
-  "accesos": "Access log",
-  "estadisticas": "Statistics"
+  "accesos": "Scans",
+  "estadisticas": "Statistics",
+  "consumo": "Usage and signals",
+  "notificaciones": "Notices"
 }

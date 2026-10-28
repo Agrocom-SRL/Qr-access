@@ -9,9 +9,11 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
-import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/estado_de_puertas.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
+import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
@@ -50,6 +52,12 @@ class InicioUsuario extends ConsumerWidget {
     final eventos = veEventosAqui ? ref.watch(ultimosEventosProvider) : null;
     final resumenDeHoy = guardia ? ref.watch(resumenDeHoyProvider) : null;
     final ultimo = vigentes?.value?.datos.firstOrNull;
+    final expandida = context.esExpandida;
+    // El guardia supervisa las puertas que tiene asignadas: en pantalla ancha
+    // ve su estado junto al hero, como el administrador.
+    final puertas = guardia && sesion.tiene(Permisos.supervisarPuertas)
+        ? ref.watch(puertasDisponiblesProvider).value
+        : null;
 
     final accesos = <_AccesoRapido>[
       // Siempre visible para quien genera: sin un QR previo queda apagado en
@@ -72,7 +80,8 @@ class InicioUsuario extends ConsumerWidget {
       // mismo dispositivo.
       if (puedeQrPropio)
         _AccesoRapido(
-          icono: Icons.person_pin_outlined,
+          // El mismo ícono del QR propio en toda la app.
+          icono: Icons.how_to_reg,
           etiqueta: l10n.inicioQrPropio,
           alTocar: () => context.go(Rutas.qrRapido),
         ),
@@ -86,7 +95,7 @@ class InicioUsuario extends ConsumerWidget {
       if (sesion.tiene(Permisos.verEventos))
         _AccesoRapido(
           icono: Icons.history,
-          etiqueta: l10n.navEventos,
+          etiqueta: l10n.navLecturas,
           alTocar: () => context.go(Rutas.eventos),
         ),
     ];
@@ -113,35 +122,35 @@ class InicioUsuario extends ConsumerWidget {
           children: [
             EncabezadoInicio(
               sesion: sesion,
-              accion: puedeQrPropio ? const BotonQrPropio() : null,
+              accion: accionesDeCabecera(sesion, qrPropio: puedeQrPropio),
             ),
             SizedBox(height: tokens.espacio.xl),
-            if (guardia) ...[
-              // Mismo diseño que "Generar QR", pero con lo que le toca vigilar.
-              HeroAccesosDeHoy(
-                permitidos: resumenDeHoy?.value?.permitidos,
-                rechazados: resumenDeHoy?.value?.rechazados,
-                alTocar: () => context.go(Rutas.eventos),
-              ),
-              SizedBox(height: tokens.espacio.xl),
-            ] else if (puedeCompartir) ...[
-              _HeroGenerar(alGenerar: () => context.go(Rutas.qrNuevo)),
-              SizedBox(height: tokens.espacio.xl),
-            ],
-            if (accesos.isNotEmpty) ...[
-              Row(
-                children: [
-                  for (final acceso in accesos) Expanded(child: acceso),
-                ],
-              ),
-              SizedBox(height: tokens.espacio.l),
-            ],
+            ..._bloquePrincipal(
+              context,
+              hero: guardia
+                  ? HeroAccesosDeHoy(
+                      permitidos: resumenDeHoy?.value?.permitidos,
+                      rechazados: resumenDeHoy?.value?.rechazados,
+                      alTocar: () => context.go(Rutas.eventos),
+                    )
+                  : puedeCompartir
+                  ? _HeroGenerar(alGenerar: () => context.go(Rutas.qrNuevo))
+                  : null,
+              accesos: accesos,
+              estadoDePuertas: puertas == null
+                  ? null
+                  : EstadoDePuertas(
+                      puertas: puertas,
+                      alVerPuertas: () => context.go(Rutas.adminPuertas),
+                    ),
+              expandida: expandida,
+            ),
             if (eventos != null) ...[
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.inicioUltimosEventos,
+                      l10n.inicioUltimasLecturas,
                       style: textos.titleLarge,
                     ),
                   ),
@@ -179,8 +188,8 @@ class InicioUsuario extends ConsumerWidget {
                 data: (lista) => lista.isEmpty
                     ? EstadoVacio(
                         ilustracion: Multimedia.vacioEventos,
-                        titulo: l10n.eventosSinResultados,
-                        ayuda: l10n.eventosSinResultadosAyuda,
+                        titulo: l10n.lecturasSinResultados,
+                        ayuda: l10n.lecturasSinResultadosAyuda,
                       )
                     : AccesoTarjeta(
                         relleno: EdgeInsets.symmetric(
@@ -234,12 +243,9 @@ class InicioUsuario extends ConsumerWidget {
                     ? EstadoVacio(
                         ilustracion: Multimedia.vacioQr,
                         titulo: l10n.inicioSinVigentes,
+                        // Sin botón: generar ya está en el hero y en el botón
+                        // flotante o el menú.
                         ayuda: l10n.inicioSinVigentesAyuda,
-                        textoAccion: puedeGenerar ? l10n.qrGenerarBoton : null,
-                        iconoAccion: Icons.add,
-                        alAccionar: puedeGenerar
-                            ? () => context.go(Rutas.qrNuevo)
-                            : null,
                       )
                     : Column(
                         children: [
@@ -263,6 +269,41 @@ class InicioUsuario extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// El bloque de arriba del inicio: el hero y, debajo, los accesos rápidos. Solo
+/// el guardia, que supervisa puertas, ve en pantalla ancha el estado de las
+/// suyas junto al hero, en dos columnas; los demás roles conservan el diseño
+/// de siempre.
+List<Widget> _bloquePrincipal(
+  BuildContext context, {
+  required Widget? hero,
+  required List<_AccesoRapido> accesos,
+  required Widget? estadoDePuertas,
+  required bool expandida,
+}) {
+  final tokens = context.tokens;
+  final tiles = accesos.isEmpty
+      ? null
+      : Row(children: [for (final acceso in accesos) Expanded(child: acceso)]);
+  final enDosColumnas = expandida && hero != null && estadoDePuertas != null;
+  return [
+    if (enDosColumnas)
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(flex: 3, child: hero),
+            SizedBox(width: tokens.espacio.xl),
+            Expanded(flex: 2, child: estadoDePuertas),
+          ],
+        ),
+      )
+    else
+      ?hero,
+    if (hero != null) SizedBox(height: tokens.espacio.xl),
+    if (tiles != null) ...[tiles, SizedBox(height: tokens.espacio.l)],
+  ];
 }
 
 class _HeroGenerar extends StatelessWidget {
@@ -299,10 +340,17 @@ class _HeroGenerar extends StatelessWidget {
                 SizedBox(height: tokens.espacio.l),
                 FilledButton.icon(
                   onPressed: alGenerar,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colores.superficie,
-                    foregroundColor: colores.primario,
-                  ),
+                  // En pantalla ancha, la acción de crear va con el color de
+                  // acento (en el teléfono es el botón flotante).
+                  style: context.esExpandida
+                      ? FilledButton.styleFrom(
+                          backgroundColor: colores.acento,
+                          foregroundColor: colores.sobreAcento,
+                        )
+                      : FilledButton.styleFrom(
+                          backgroundColor: colores.superficie,
+                          foregroundColor: colores.primario,
+                        ),
                   icon: const Icon(Icons.add),
                   label: Text(l10n.inicioNuevoQr),
                 ),

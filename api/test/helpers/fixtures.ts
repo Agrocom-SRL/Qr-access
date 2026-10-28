@@ -31,14 +31,24 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'accesos.qr.ver_todos',
   'accesos.qr.anular',
   'accesos.qr.anular_todos',
+  'accesos.qr.anular_masivo',
   'accesos.evento.ver',
   'accesos.evento.ver_todos',
+  'accesos.evento.exportar',
+  'seguridad.incidente.ver',
+  'seguridad.incidente.resolver',
   'seguridad.usuario.ver',
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
+  'seguridad.usuario.restringir',
+  'seguridad.usuario.suspender',
   'seguridad.cupo.ver',
   'seguridad.estadistica.ver',
+  'notificaciones.aviso.ver',
+  'notificaciones.aviso.gestionar',
+  'seguridad.sesion.ver',
+  'seguridad.sesion.cerrar',
 ];
 
 /** Lo que tiene un Miembro (ADR 0028): usar la puerta con sus QR. */
@@ -48,7 +58,9 @@ export const PERMISOS_DE_USUARIO = [
   'accesos.qr.generar_propio',
   'accesos.qr.ver',
   'accesos.qr.anular',
+  'accesos.qr.anular_masivo',
   'accesos.evento.ver',
+  'seguridad.incidente.ver',
 ];
 
 /** Lo que tiene un Guardia (ADR 0028 §5): su QR propio, no los de visitas. */
@@ -56,6 +68,8 @@ export const PERMISOS_DE_GUARDIA = [
   'organizacion.puerta.ver',
   'organizacion.puerta.supervisar',
   'accesos.qr.generar_propio',
+  'accesos.qr.anular_masivo',
+  'seguridad.incidente.ver',
   'accesos.evento.ver',
   'accesos.evento.ver_asignadas',
 ];
@@ -67,6 +81,11 @@ export const PERMISOS_DE_TITULAR = [
   'seguridad.usuario.crear',
   'seguridad.usuario.editar',
   'seguridad.usuario.eliminar',
+  'seguridad.usuario.restringir',
+  'seguridad.usuario.suspender',
+  'seguridad.incidente.resolver',
+  'seguridad.sesion.ver',
+  'seguridad.sesion.cerrar',
 ];
 
 export interface Cuenta {
@@ -74,12 +93,26 @@ export interface Cuenta {
   readonly codigo: string;
 }
 
-export async function crearCuenta(pool: Pool, codigo: string, activo = true): Promise<Cuenta> {
-  const id = await insertar(pool, 'INSERT INTO cuentas (nombre, codigo, activo) VALUES (?, ?, ?)', [
-    `Cuenta ${codigo}`,
-    codigo,
-    activo ? 1 : 0,
-  ]);
+export type EstadoDePrueba = 'activo' | 'restringido' | 'suspendido';
+
+/** Las columnas de estado que exige la base (`ck_*_estado_datos`): `activo` las lleva en NULL. */
+function columnasDeEstado(estado: EstadoDePrueba): [string, Date | null, string | null] {
+  return estado === 'activo' ? [estado, null, null] : [estado, new Date(), 'motivo de prueba'];
+}
+
+/** `estado` acepta un booleano por compatibilidad: `false` = suspendida. */
+export async function crearCuenta(
+  pool: Pool,
+  codigo: string,
+  estado: EstadoDePrueba | boolean = 'activo',
+): Promise<Cuenta> {
+  const propio: EstadoDePrueba =
+    typeof estado === 'boolean' ? (estado ? 'activo' : 'suspendido') : estado;
+  const id = await insertar(
+    pool,
+    'INSERT INTO cuentas (nombre, codigo, estado, estado_desde, estado_motivo) VALUES (?, ?, ?, ?, ?)',
+    [`Cuenta ${codigo}`, codigo, ...columnasDeEstado(propio)],
+  );
   return { id, codigo };
 }
 
@@ -114,19 +147,19 @@ export async function crearUsuarioConPin(
   cuenta: Cuenta,
   sufijo: string,
   rolIds: readonly string[],
-  opciones: { activo?: boolean; superiorId?: string } = {},
+  opciones: { activo?: boolean; estado?: EstadoDePrueba; superiorId?: string } = {},
 ): Promise<UsuarioDePrueba> {
   const pin = `${cuenta.codigo}${sufijo}`;
   const id = await insertar(
     pool,
-    'INSERT INTO usuarios (tenant_id, superior_id, etiqueta, pin_indice, pin_hash, pin_generado_at, activo) VALUES (?, ?, ?, ?, ?, NOW(3), ?)',
+    'INSERT INTO usuarios (tenant_id, superior_id, etiqueta, pin_indice, pin_hash, pin_generado_at, estado, estado_desde, estado_motivo) VALUES (?, ?, ?, ?, ?, NOW(3), ?, ?, ?)',
     [
       cuenta.id,
       opciones.superiorId ?? null,
       `Usuario ${pin}`,
       calcularIndiceDePin(cargarConfig().PIN_PIMIENTA, cuenta.id, sufijo),
       await hashear(secretoDePin(cuenta.id, sufijo)),
-      opciones.activo === false ? 0 : 1,
+      ...columnasDeEstado(opciones.estado ?? (opciones.activo === false ? 'suspendido' : 'activo')),
     ],
   );
   for (const rolId of rolIds) {
@@ -147,16 +180,21 @@ export async function crearSuscripcion(
     maxVigenciaQrHoras?: number | null;
     maxUsuarios?: number | null;
     maxDispositivos?: number | null;
+    /** Lo que el plan fija sobre la generación de QR; sin ello rige la configuración general. */
+    bolsaQrMensual?: number | null;
+    maxPuertasPorQr?: number | null;
   } = {},
 ): Promise<void> {
   const planId = await insertar(
     pool,
-    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios, max_dispositivos) VALUES (?, ?, ?, ?)',
+    'INSERT INTO planes (nombre, max_vigencia_qr_horas, max_usuarios, max_dispositivos, bolsa_qr_mensual, max_puertas_por_qr) VALUES (?, ?, ?, ?, ?, ?)',
     [
       `Plan ${cuenta.codigo}`,
       opciones.maxVigenciaQrHoras ?? null,
       opciones.maxUsuarios ?? null,
       opciones.maxDispositivos ?? null,
+      opciones.bolsaQrMensual ?? null,
+      opciones.maxPuertasPorQr ?? null,
     ],
   );
   const dia = 86_400_000;
@@ -193,11 +231,12 @@ export async function crearPuerta(
   sitioId: string,
   nombre: string,
   segundosApertura = 5,
+  creadaPor: string | null = null,
 ): Promise<PuertaDePrueba> {
   const id = await insertar(
     pool,
-    'INSERT INTO puertas (tenant_id, sitio_id, nombre, segundos_apertura) VALUES (?, ?, ?, ?)',
-    [cuenta.id, sitioId, nombre, segundosApertura],
+    'INSERT INTO puertas (tenant_id, sitio_id, nombre, segundos_apertura, created_by) VALUES (?, ?, ?, ?, ?)',
+    [cuenta.id, sitioId, nombre, segundosApertura, creadaPor],
   );
   return { id, nombre, sitioId };
 }
@@ -293,8 +332,22 @@ export async function crearEscenario(pool: Pool, codigo: string): Promise<Escena
   });
   await crearSuscripcion(pool, cuenta);
   const sitioId = await crearSitio(pool, cuenta, `Sitio ${codigo}`);
-  const puertaPrincipal = await crearPuerta(pool, cuenta, sitioId, `Principal ${codigo}`, 6);
-  const puertaTrasera = await crearPuerta(pool, cuenta, sitioId, `Trasera ${codigo}`);
+  const puertaPrincipal = await crearPuerta(
+    pool,
+    cuenta,
+    sitioId,
+    `Principal ${codigo}`,
+    6,
+    administrador.id,
+  );
+  const puertaTrasera = await crearPuerta(
+    pool,
+    cuenta,
+    sitioId,
+    `Trasera ${codigo}`,
+    5,
+    administrador.id,
+  );
   return {
     cuenta,
     rolAdministradorId,
@@ -339,13 +392,13 @@ export async function crearSuperAdmin(
   const contrasena = opciones.contrasena ?? 'contrasena-de-prueba-1';
   const id = await insertar(
     pool,
-    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, activo) VALUES (NULL, ?, ?, ?, ?, ?)',
+    'INSERT INTO usuarios (tenant_id, etiqueta, username, contrasena_hash, contrasena_temporal, estado, estado_desde, estado_motivo) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)',
     [
       opciones.nombre ?? `Admin ${usuario}`,
       usuario,
       await hashear(contrasena),
       opciones.temporal === true ? 1 : 0,
-      opciones.activo === false ? 0 : 1,
+      ...columnasDeEstado(opciones.activo === false ? 'suspendido' : 'activo'),
     ],
   );
   await pool.query(

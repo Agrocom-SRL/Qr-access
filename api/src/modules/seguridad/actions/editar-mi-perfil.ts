@@ -15,7 +15,7 @@ export async function ejecutar(
   etiqueta: string,
 ): Promise<{ id: string; etiqueta: string }> {
   const usuarios = new RepositorioDeUsuarios(pool);
-  if ((await usuarios.buscarActivoPorId(principal.usuarioId)) === null) {
+  if ((await usuarios.buscarPorId(principal.usuarioId)) === null) {
     throw new ErrorDeDominio('autenticacion.requerida', 401);
   }
   await enTransaccion(pool, (tx) => usuarios.cambiarEtiqueta(tx, principal.usuarioId, etiqueta));

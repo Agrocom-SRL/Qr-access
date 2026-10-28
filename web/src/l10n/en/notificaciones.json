@@ -1,0 +1,94 @@
+{
+  "titulo": "Notifications",
+  "subtitulo": "Board alerts from all accounts, grouped by site.",
+  "campana_one": "Notifications: {{count}} unread",
+  "campana_other": "Notifications: {{count}} unread",
+  "nuevas_one": "{{count}} new notification",
+  "nuevas_other": "{{count}} new notifications",
+  "filtro": "Which notifications to show",
+  "filtros": {
+    "no_leidas": "Unread",
+    "todas": "All"
+  },
+  "leerTodas": "Mark all as read",
+  "leyendoTodas": "Marking…",
+  "leer": "Mark as read",
+  "descartar": "Dismiss",
+  "sinSitio": "Whole account",
+  "sinLeer": "Unread",
+  "novedad": "Latest update: {{cuando}}",
+  "errorCarga": "We couldn't load the notifications",
+  "severidad": {
+    "info": "Information",
+    "aviso": "Warning",
+    "critica": "Critical"
+  },
+  "tipo": {
+    "placa_caida_sostenida": "A board stopped reporting",
+    "placa_desaparecida": "A board went missing",
+    "placa_lector_sin_respuesta": "A board's reader does not respond",
+    "placa_recuperada": "A board is reporting again",
+    "apertura_fallida": "A door does not open after several tries",
+    "senal_uso": "A QR has unusual use",
+    "bolsa_aviso": "An account's QR quota reached the warning level",
+    "bolsa_superada": "An account exceeded its QR quota for the month",
+    "flujo_atipico": "A day of openings was unusual",
+    "incidente_propuesta": "The system proposes an action on a user with repeat incidents"
+  },
+  "detalle": {
+    "aperturasFallidas_one": "{{count}} opening not confirmed",
+    "aperturasFallidas_other": "{{count}} openings not confirmed",
+    "desde": "Since {{cuando}}"
+  },
+  "causa": {
+    "puerta_no_abrio": "The door did not open",
+    "puerta_no_cerro": "The door did not close again",
+    "rele_no_accionado": "The relay did not trigger",
+    "sin_sensor": "The door has no sensor",
+    "sin_respuesta": "The board did not respond in time"
+  },
+  "vacio": {
+    "noLeidas": {
+      "titulo": "All caught up",
+      "texto": "You have no unread notifications."
+    },
+    "todas": {
+      "titulo": "No notifications",
+      "texto": "When a board stops reporting or a door does not open, the alert shows up here."
+    }
+  },
+  "cuentaDelGrupo": "{{codigo}} · {{nombre}}",
+  "senal": {
+    "usuario": "User: {{usuario}}",
+    "usuarioSinNombre": "User without name",
+    "medido": "Measured: {{valor}}; threshold: {{umbral}}",
+    "dia": "Day {{dia}}"
+  },
+  "bolsa": {
+    "usado": "{{usado}} of {{tope}} QR in {{mes}}",
+    "sinCifras": "Quota for {{mes}}: this warning has no figures"
+  },
+  "flujo": {
+    "aperturas": "{{aperturas}} openings with {{usuarios}} active users",
+    "porUsuario": "{{porUsuario}} per user (threshold: {{umbral}})",
+    "base": "Usual baseline: {{base}} openings",
+    "sinBase": "No usual baseline yet",
+    "dia": "Day {{dia}}"
+  },
+  "filtroTipo": "Notice type",
+  "todosLosTipos": "All types",
+  "pagina": {
+    "titulo": "Notices"
+  },
+  "propuesta": {
+    "accion": {
+      "restringir": "Proposes restricting {{usuario}}",
+      "suspender": "Proposes suspending {{usuario}}",
+      "suspender_y_anular": "Proposes suspending {{usuario}} and cancelling their valid QR codes"
+    },
+    "sinNombre": "this user",
+    "incidentes": "{{confirmados}} of {{minimo}} confirmed incidents in {{ventana}} days",
+    "aplicada": "The system already restricted them automatically. Check whether that is right.",
+    "pendiente": "Nobody has applied it yet: a person in the account decides."
+  }
+}

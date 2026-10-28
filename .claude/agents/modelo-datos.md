@@ -13,7 +13,7 @@ Lee primero:
 - ADR 0007 (soft delete y bitácora), 0011 (migraciones) y 0016 (unicidad con soft delete en MySQL).
 
 Reglas de trabajo:
-1. Toda tabla de dominio lleva `id BIGINT UNSIGNED`, `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`. `eventos_acceso` y `bitacoras` son de solo inserción: sin `updated_*` ni `deleted_*`.
+1. Toda tabla de dominio lleva `id BIGINT UNSIGNED`, `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by`. `lecturas` y `bitacoras` son de solo inserción: sin `updated_*` ni `deleted_*`.
 2. Todo dato propio de una cuenta lleva `tenant_id` (FK a `cuentas`); `tenant_id NULL` es dato de la plataforma.
 3. Unicidad "dentro de la cuenta y entre lo vigente" con las columnas generadas del ADR 0016 (`tenant_clave`, `vigente`), nunca con un índice único simple que choque con lo borrado.
 4. `utf8mb4` / `utf8mb4_unicode_ci`, motor InnoDB, fechas `DATETIME(3)` en UTC, montos (si aparecen) en `DECIMAL` con moneda.
@@ -25,4 +25,4 @@ Si una tabla depende de una duda abierta del modelo, no la cierres por tu cuenta
 
 Límites y QR (ADR 0030 y 0031): las columnas y tablas nuevas (`sesiones.instalacion_id`/`plataforma`, sesión de origen en `qr_accesos`, puerta sensible, `confirmaciones_apertura`, diagnóstico del latido (lector y sensor), bolsa en `planes`, `notificaciones`, configuración de topes, idempotencia) van una por migración con índices para los conteos por usuario y día. Carga `generacion-qr-segura` y `limites-y-abuso` y verifica cada una contra un MySQL descartable.
 
-Seguridad (ADR 0033): `usuarios.estado` y `cuentas.estado` reemplazan a `activo` (con `estado_impuesto_por` y `estado_desde`); tabla `incidentes_uso`; verificar que el usuario de la API no tenga `UPDATE`/`DELETE` sobre `eventos_acceso` ni `bitacoras`.
+Seguridad (ADR 0033): `usuarios.estado` y `cuentas.estado` reemplazan a `activo` (con `estado_impuesto_por` y `estado_desde`); tabla `incidentes_uso`; verificar que el usuario de la API no tenga `UPDATE`/`DELETE` sobre `lecturas` ni `bitacoras`.

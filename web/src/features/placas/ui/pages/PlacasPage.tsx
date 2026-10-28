@@ -14,6 +14,7 @@ import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmenta
 import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { ListadoPaginado } from '../../../../shared/ui/organisms/ListadoPaginado';
 import type { Columna } from '../../../../shared/ui/organisms/TablaDatos';
+import { tienePermiso, useSesion } from '../../../seguridad';
 import {
   useCancelarVinculoDePlaca,
   useDarDeBajaPlaca,
@@ -24,15 +25,20 @@ import {
   FILTROS_DE_CONEXION,
   FILTROS_DE_ESTADO,
   POR_PAGINA_DE_PLACAS,
+  estadoDeConexionDe,
   minutosRestantes,
   puedeCancelarVinculo,
+  puedeConfigurarSensor,
   puedeDarDeBaja,
   puedeLiberar,
   puedeVincular,
   type FiltrosDePlacas,
   type Placa,
 } from '../../domain/placa';
+import { ConexionDePlaca } from '../components/ConexionDePlaca';
+import { DialogoSensorDePuerta } from '../components/DialogoSensorDePuerta';
 import { DialogoVincularPlaca } from '../components/DialogoVincularPlaca';
+import { SaludDePlaca } from '../components/SaludDePlaca';
 import styles from './PlacasPage.module.css';
 
 /** Búsqueda, filtro y página viven en la URL: el enlace se puede compartir. */
@@ -46,16 +52,25 @@ function filtrosDeLaUrl(parametros: URLSearchParams): FiltrosDePlacas {
   };
 }
 
-/** Inventario de placas: estado, a quién sirven y las acciones de vincular, liberar y dar de baja (ADR 0026). */
+/**
+ * Inventario de placas: estado, conexión, lector, sensor y aperturas que fallan, y las acciones de
+ * vincular, liberar, dar de baja y configurar el sensor (ADR 0026 y ADR 0031 §18).
+ */
 export function PlacasPage() {
   const { t } = useTranslation(['placas', 'comun']);
   const [parametros, setParametros] = useSearchParams();
+  const { sesion } = useSesion();
+  const puedeConfigurarSensores = tienePermiso(
+    sesion?.permisos ?? [],
+    'dispositivos.placa.vincular',
+  );
   const filtros = filtrosDeLaUrl(parametros);
   const placas = usePlacas(filtros);
   const liberar = useLiberarPlaca();
   const darDeBaja = useDarDeBajaPlaca();
   const cancelarVinculo = useCancelarVinculoDePlaca();
   const [aVincular, setAVincular] = useState<Placa | null>(null);
+  const [aConfigurarSensor, setAConfigurarSensor] = useState<Placa | null>(null);
   const [aLiberar, setALiberar] = useState<Placa | null>(null);
   const [aDarDeBaja, setADarDeBaja] = useState<Placa | null>(null);
 
@@ -129,18 +144,15 @@ export function PlacasPage() {
       encabezado: t('placas:columna.contacto'),
       celda: (p) => (
         <span className={styles.asignada}>
-          {p.enLinea ? (
-            <AccesoBadge tono="primario" icono="wifi">
-              {t('placas:conexion.enLinea')}
-            </AccesoBadge>
-          ) : (
-            <AccesoBadge tono="advertencia" icono="wifi_off">
-              {t('placas:conexion.sinConexion')}
-            </AccesoBadge>
-          )}
+          <ConexionDePlaca estado={estadoDeConexionDe(p)} />
           <TextoMono>{contacto(p)}</TextoMono>
         </span>
       ),
+    },
+    {
+      id: 'salud',
+      encabezado: t('placas:columna.salud'),
+      celda: (p) => <SaludDePlaca placa={p} />,
     },
     {
       id: 'firmware',
@@ -161,6 +173,16 @@ export function PlacasPage() {
               etiqueta={t('placas:vincularA', { mac: p.mac })}
               onClick={() => {
                 setAVincular(p);
+              }}
+            />
+          ) : null}
+          {puedeConfigurarSensores && puedeConfigurarSensor(p) ? (
+            <BotonIcono
+              icono="sensors"
+              accion="editar"
+              etiqueta={t('placas:sensorDe', { mac: p.mac })}
+              onClick={() => {
+                setAConfigurarSensor(p);
               }}
             />
           ) : null}
@@ -276,6 +298,14 @@ export function PlacasPage() {
           placa={aVincular}
           onCerrar={() => {
             setAVincular(null);
+          }}
+        />
+      ) : null}
+      {aConfigurarSensor ? (
+        <DialogoSensorDePuerta
+          placa={aConfigurarSensor}
+          onCerrar={() => {
+            setAConfigurarSensor(null);
           }}
         />
       ) : null}

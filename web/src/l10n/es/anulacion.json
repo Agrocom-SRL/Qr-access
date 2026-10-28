@@ -1,0 +1,20 @@
+{
+  "titulo": "Anular QR de la cuenta",
+  "explicacion": "Anula de una vez todos los QR vigentes de la cuenta, de todos sus usuarios. Sirve ante un uso sospechoso que la cuenta no alcanza a cortar sola.",
+  "boton": "Anular QR de la cuenta",
+  "dialogo": {
+    "titulo": "Anular todos los QR de {{cuenta}}",
+    "resumen": "Se anularán todos los QR vigentes de {{cuenta}} ({{codigo}}), de todos sus usuarios. Los QR anulados no vuelven a funcionar: quien los tenga tendrá que pedir uno nuevo.",
+    "irreversible": "Esta acción no se puede deshacer.",
+    "motivo": "Motivo",
+    "motivoAyuda": "Queda registrado en la bitácora de la cuenta.",
+    "codigo": "Escribe {{codigo}} para confirmar",
+    "confirmar": "Anular todos los QR",
+    "anulando": "Anulando"
+  },
+  "resultado": {
+    "ninguno": "No había QR vigentes: no se anuló nada.",
+    "anulados_one": "Se anuló {{count}} QR vigente.",
+    "anulados_other": "Se anularon {{count}} QR vigentes."
+  }
+}

@@ -9,9 +9,11 @@ import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
-import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/estado_de_puertas.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
+import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
@@ -61,50 +63,27 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     final expandida = context.esExpandida;
     final puedeGenerar = widget.sesion.tiene(Permisos.generarQr);
     final puedeQrPropio = widget.sesion.tiene(Permisos.generarQrPropio);
-    // El administrador no tiene "Mis QR" en la barra (se llena con Admin):
-    // llega desde aquí a los QR que generó, para volver a compartirlos.
-    final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
 
-    // Las notas solo caben en expandido; en compacto (C04b) las tarjetas
-    // llevan rótulo y cifra, nada más.
-    final indicadores = [
-      TarjetaIndicador(
-        etiqueta: l10n.inicioAccesosDeHoy,
-        icono: Icons.login,
-        valor: datos?.resumenDeHoy.permitidos,
-        nota: datos == null || !expandida
-            ? null
-            : l10n.inicioPermitidosPorPuertas(datos.puertas.length),
-        variante: VarianteIndicador.hero,
-        alTocar: () => context.go(Rutas.eventos),
-      ),
-      TarjetaIndicador(
-        etiqueta: l10n.inicioRechazados,
-        icono: Icons.block,
-        valor: datos?.resumenDeHoy.rechazados,
-        nota: switch (expandida ? datos?.resumenDeHoy.motivoPrincipal : null) {
-          null => null,
-          final motivo => l10n.inicioRechazadosPorMotivo(
-            motivo.value,
-            textoMotivoEvento(l10n, motivo.key),
-          ),
-        },
-        variante: VarianteIndicador.alerta,
-        alTocar: () => context.go(Rutas.eventos),
-      ),
-      TarjetaIndicador(
-        etiqueta: l10n.inicioPuertasSinConexion,
-        icono: Icons.wifi_off,
-        valor: datos?.puertasSinConexion.length,
-        nota: datos == null || datos.puertasSinConexion.isEmpty || !expandida
-            ? null
-            : datos.puertasSinConexion.map((p) => p.nombre).join(' · '),
-        variante: VarianteIndicador.alerta,
-        alTocar: widget.sesion.tiene(Permisos.supervisarPuertas)
-            ? () => context.go(Rutas.adminPuertas)
-            : null,
-      ),
-    ];
+    // Mientras carga, el conteo de puertas es una tarjeta de indicador con su
+    // esqueleto; con datos lo reemplaza el estado de cada puerta.
+    final cargandoPuertas = TarjetaIndicador(
+      etiqueta: l10n.inicioPuertasSinConexion,
+      icono: Icons.wifi_off,
+      variante: VarianteIndicador.alerta,
+    );
+    final hero = HeroAccesosDeHoy(
+      permitidos: datos?.resumenDeHoy.permitidos,
+      rechazados: datos?.resumenDeHoy.rechazados,
+      alTocar: () => context.go(Rutas.eventos),
+    );
+    final estadoDePuertas = datos == null
+        ? cargandoPuertas
+        : EstadoDePuertas(
+            puertas: datos.puertas,
+            alVerPuertas: widget.sesion.tiene(Permisos.supervisarPuertas)
+                ? () => context.go(Rutas.adminPuertas)
+                : null,
+          );
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(tableroProvider.future),
@@ -142,27 +121,26 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
+                  // La bandeja también va aquí: en expandido no hay cabecera de
+                  // teléfono que la lleve.
+                  if (widget.sesion.tiene(Permisos.verNotificaciones)) ...[
+                    const BotonNotificaciones(),
+                    SizedBox(width: tokens.espacio.m),
+                  ],
                   if (puedeQrPropio)
                     AccesoBoton(
                       texto: l10n.inicioQrPropio,
-                      icono: Icons.person_pin_outlined,
+                      // El mismo ícono que el botón del QR propio del teléfono.
+                      icono: Icons.how_to_reg,
                       variante: VarianteBoton.tonal,
                       onPressed: () => context.go(Rutas.qrRapido),
                     ),
-                  if (puedeVerMisQr) ...[
-                    SizedBox(width: tokens.espacio.m),
-                    AccesoBoton(
-                      texto: l10n.navMisQr,
-                      icono: Icons.list_alt,
-                      variante: VarianteBoton.tonal,
-                      onPressed: () => context.go(Rutas.qrMios),
-                    ),
-                  ],
                   if (puedeGenerar) ...[
                     SizedBox(width: tokens.espacio.m),
                     AccesoBoton(
                       texto: l10n.qrGenerarBoton,
                       icono: Icons.qr_code_2,
+                      variante: VarianteBoton.acento,
                       onPressed: () => context.go(Rutas.qrNuevo),
                     ),
                   ],
@@ -171,9 +149,12 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             else ...[
               EncabezadoInicio(
                 sesion: widget.sesion,
-                // Solo el QR propio: Mis QR es una pestaña y "Generar QR" es
-                // el botón flotante de la página.
-                accion: puedeQrPropio ? const BotonQrPropio() : null,
+                // Solo el QR propio y la bandeja: Mis QR es una pestaña y
+                // "Generar QR" es el botón flotante de la página.
+                accion: accionesDeCabecera(
+                  widget.sesion,
+                  qrPropio: puedeQrPropio,
+                ),
               ),
               SizedBox(height: tokens.espacio.xl),
               Row(
@@ -201,28 +182,24 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 alReintentar: () => ref.invalidate(tableroProvider),
               )
             else if (expandida)
-              // Las tres tarjetas miden lo mismo, lleven nota o no.
+              // Pantalla ancha: el hero con su foto y el estado de las puertas
+              // en dos columnas, igual alto.
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (var i = 0; i < indicadores.length; i++) ...[
-                      Expanded(child: indicadores[i]),
-                      if (i < indicadores.length - 1)
-                        SizedBox(width: tokens.espacio.xl),
-                    ],
+                    Expanded(child: hero),
+                    SizedBox(width: tokens.espacio.xl),
+                    Expanded(child: estadoDePuertas),
                   ],
                 ),
               )
             else ...[
-              // Mismo card con foto de fondo que ve el guardia.
-              HeroAccesosDeHoy(
-                permitidos: datos?.resumenDeHoy.permitidos,
-                rechazados: datos?.resumenDeHoy.rechazados,
-                alTocar: () => context.go(Rutas.eventos),
-              ),
+              // Mismo card con foto de fondo que ve el guardia, siempre a todo
+              // el ancho, en vertical y en horizontal.
+              hero,
               SizedBox(height: tokens.espacio.l),
-              indicadores[2],
+              estadoDePuertas,
             ],
             SizedBox(height: tokens.espacio.xxl),
             if (expandida && datos != null && datos.ultimosEventos.isNotEmpty)
@@ -232,7 +209,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 children: [
                   Expanded(
                     child: Text(
-                      l10n.inicioUltimosEventos,
+                      l10n.inicioUltimasLecturas,
                       style: textos.titleLarge,
                     ),
                   ),
@@ -247,8 +224,8 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
               if (datos != null && datos.ultimosEventos.isEmpty)
                 EstadoVacio(
                   ilustracion: Multimedia.vacioEventos,
-                  titulo: l10n.eventosSinResultados,
-                  ayuda: l10n.eventosSinResultadosAyuda,
+                  titulo: l10n.lecturasSinResultados,
+                  ayuda: l10n.lecturasSinResultadosAyuda,
                 )
               else if (datos != null)
                 AccesoTarjeta(
@@ -276,7 +253,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
 class _TablaUltimosEventos extends StatelessWidget {
   const new({required this.eventos});
 
-  final List<EventoAcceso> eventos;
+  final List<Lectura> eventos;
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +290,7 @@ class _TablaUltimosEventos extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    l10n.inicioUltimosEventos,
+                    l10n.inicioUltimasLecturas,
                     style: textos.titleLarge,
                   ),
                 ),
@@ -345,12 +322,12 @@ class _TablaUltimosEventos extends StatelessWidget {
                   decoration: BoxDecoration(color: tokens.colores.fondo),
                   children: [
                     for (final titulo in [
-                      l10n.eventosColumnaHora,
-                      l10n.eventosColumnaPuerta,
-                      l10n.eventosColumnaSitio,
-                      l10n.eventosColumnaQr,
-                      l10n.eventosColumnaResultado,
-                      l10n.eventosColumnaMotivo,
+                      l10n.lecturasColumnaHora,
+                      l10n.lecturasColumnaPuerta,
+                      l10n.lecturasColumnaSitio,
+                      l10n.lecturasColumnaQr,
+                      l10n.lecturasColumnaResultado,
+                      l10n.lecturasColumnaMotivo,
                     ])
                       celda(Text(titulo, style: cabecera)),
                   ],
@@ -376,7 +353,7 @@ class _TablaUltimosEventos extends StatelessWidget {
                           evento.qrEtiqueta == null &&
                                   evento.generadorEtiqueta == null
                               ? l10n.comunGuion
-                              : l10n.eventoQrDe(
+                              : l10n.lecturaQrDe(
                                   evento.qrEtiqueta ?? l10n.qrSinEtiqueta,
                                   evento.generadorEtiqueta ?? l10n.comunGuion,
                                 ),

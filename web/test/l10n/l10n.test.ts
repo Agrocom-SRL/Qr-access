@@ -1,13 +1,17 @@
 import { cambiarIdioma, i18next, recursos } from '@/l10n';
 import {
   formatearCuentaRegresiva,
+  formatearDecimal,
+  formatearDiaCalendario,
   formatearFecha,
+  formatearMes,
+  formatearPorcentaje,
   formatearHora,
   formatearMonto,
   formatearNumero,
   relacionDeDia,
 } from '@/l10n/formatos';
-import { traducirError } from '@/l10n/traducirError';
+import { traducirError, traducirMotivoDeEstado } from '@/l10n/traducirError';
 
 describe('formatos', () => {
   it('monto en bolivianos sin decimales y con punto de miles', () => {
@@ -95,5 +99,66 @@ describe('idiomas del panel', () => {
     expect(document.documentElement.lang).toBe('pt');
     await cambiarIdioma('es');
     expect(i18next.t('nav:cuentas')).toBe('Cuentas');
+  });
+});
+
+describe('formatos de consumo y señales', () => {
+  it('porcentaje con un decimal como máximo, en el idioma activo', () => {
+    expect(formatearPorcentaje(92, 'es')).toBe('92%');
+    expect(formatearPorcentaje(85.5, 'es')).toBe('85,5%');
+    expect(formatearPorcentaje(115, 'en')).toBe('115%');
+  });
+
+  it('día de calendario sin desfase de zona: el día 1 no cae en el mes anterior', () => {
+    expect(formatearDiaCalendario('2026-10-01', 'es')).toBe('1/10');
+    expect(formatearDiaCalendario('2026-10-27', 'es')).toBe('27/10');
+  });
+
+  it('mes con nombre y año', () => {
+    expect(formatearMes('2026-10', 'es')).toBe('octubre de 2026');
+  });
+
+  it('decimal con coma en español, para las aperturas por usuario', () => {
+    expect(formatearDecimal(12.5, 'es')).toBe('12,5');
+    expect(formatearDecimal(0.2, 'es')).toBe('0,2');
+  });
+});
+
+describe('códigos de incidente y motivos de estado', () => {
+  const t = i18next.t.bind(i18next);
+
+  it('los códigos de incidente de la API tienen su texto', () => {
+    expect(traducirError(t, 'incidente.fecha_antigua')).toBe(
+      'La fecha del incidente es de hace más de un año.',
+    );
+    expect(traducirError(t, 'incidente.tope_diario')).toContain('Ya registraste muchos incidentes');
+    expect(traducirError(t, 'incidente.no_encontrado')).toBe('No encontramos ese incidente.');
+  });
+
+  it('el motivo de reincidencia lleva el id del incidente como parámetro', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia:412')).toBe(
+      'Restringido por reincidencia en el incidente 412.',
+    );
+  });
+
+  it('sin id, el motivo de reincidencia usa el texto genérico', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia')).toBe(
+      'Restringido por reincidencia.',
+    );
+  });
+
+  it('un id que no son solo dígitos no entra al texto', () => {
+    expect(traducirMotivoDeEstado(t, 'incidente.reincidencia:<b>x</b>')).toBe(
+      'Restringido por reincidencia.',
+    );
+  });
+
+  it('cualquier otro motivo se traduce como un código de la API', () => {
+    expect(traducirMotivoDeEstado(t, 'sesion.bloqueada')).toBe(
+      'Demasiados intentos, espera unos minutos.',
+    );
+    expect(traducirMotivoDeEstado(t, 'codigo.nuevo')).toBe(
+      'Algo falló de nuestro lado. Intenta de nuevo en unos segundos.',
+    );
   });
 });

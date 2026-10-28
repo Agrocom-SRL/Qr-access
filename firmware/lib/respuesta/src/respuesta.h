@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "confirmacion.h"
 #include "puerta.h"
 
 namespace respuesta {
@@ -22,13 +23,26 @@ constexpr int SEGUNDOS_MAXIMOS_ACEPTADOS = 3600;
 // - abrir:true exige motivo "acceso.permitido" y `segundos` entero en rango; el
 //   resultado trae `segundos` ya acotado a puerta::MAX_APERTURA_S.
 // - abrir:false -> denegado, con el motivo informado (o DenegadoOtro).
-puerta::Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo);
+//
+// `eventoId` (opcional, con capacidad confirmacion::MAX_EVENTO_ID + 1) recibe el `evento_id` de una
+// apertura permitida, para informar su desenlace (ADR 0031 §18). Queda vacío si no hay apertura o
+// si el id no son 1-20 dígitos: eso solo deja sin informe, NUNCA cambia si se abre o no.
+puerta::Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo,
+                              char* eventoId = nullptr);
 
 // GET /api/v1/dispositivos/configuracion:
-//   {"segundos_apertura":int,"zona_horaria":string,"ota":null|...}
+//   {"segundos_apertura":int,"zona_horaria":string,"ota":null|...,
+//    "sensor_puerta":{"instalado":bool,"nivel_abierto":"alto"|"bajo"},
+//    "espera_confirmacion_segundos":int}
+// `valida` depende solo de `segundos_apertura` (la falla segura no cambia). Los campos del sensor y
+// de la espera son opcionales: si faltan o vienen mal formados, el sensor queda NO instalado y la
+// espera en 0 («no vino»), y la placa informa `sin_sensor`.
+constexpr int ESPERA_CONFIRMACION_MAXIMA_S = 600;
 struct Configuracion {
   bool valida;
   uint16_t segundosApertura;  // acotado a puerta::MAX_APERTURA_S
+  confirmacion::Sensor sensor = {};
+  uint16_t esperaConfirmacionS = 0;  // 0 = no vino
 };
 Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_t largo);
 

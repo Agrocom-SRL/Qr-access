@@ -3,44 +3,105 @@ import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js'
 import { RepositorioDeFilasDePlataforma } from '../../platform/db/repositorio-de-fila-de-plataforma.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import type { Estado } from './domain/estado.js';
+import type { MotivoDeCierre, Plataforma } from './domain/sesion.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export interface CuentaFila extends RowDataPacket {
   id: string;
   codigo: string;
   nombre: string;
-  activo: number;
+  estado: Estado;
   /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
   max_miembros_por_titular: number;
 }
 
-const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular';
+const COLUMNAS_DE_CUENTA = 't.id, t.codigo, t.nombre, t.estado, t.max_miembros_por_titular';
+
+/** Las columnas del estado que se escriben juntas (la base exige que coincidan, `ck_*_estado_datos`). */
+export interface CambioDeEstado {
+  readonly estado: Estado;
+  /** Quién lo impuso (`null` solo al volver a `activo`). */
+  readonly impuestoPor: string | null;
+  readonly desde: Date | null;
+  readonly motivo: string | null;
+}
+
+/** Vuelve a `activo` y limpia los tres campos de apoyo. */
+export const SIN_ESTADO: CambioDeEstado = {
+  estado: 'activo',
+  impuestoPor: null,
+  desde: null,
+  motivo: null,
+};
+
+function columnasDeEstado(cambio: CambioDeEstado): Record<string, unknown> {
+  return {
+    estado: cambio.estado,
+    estado_impuesto_por: cambio.impuestoPor,
+    estado_desde: cambio.desde,
+    estado_motivo: cambio.motivo,
+  };
+}
+
+/**
+ * Condición de «compare-and-set» sobre el estado leído: si otro lo cambió entre la lectura y el UPDATE
+ * no se pisa. `<=>` compara también NULL.
+ */
+function siSigueEnEstado(estado: Estado, impuestoPor: string | null) {
+  return { sql: 'estado = ? AND estado_impuesto_por <=> ?', params: [estado, impuestoPor] };
+}
+
+const COLUMNAS_DE_ESTADO_ESCRIBIBLES = [
+  'estado',
+  'estado_impuesto_por',
+  'estado_desde',
+  'estado_motivo',
+] as const;
 
 /** Dueño de `cuentas` (tabla de plataforma). */
 export class RepositorioDeCuentas extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo'],
+      columnas: ['nombre', 'codigo', ...COLUMNAS_DE_ESTADO_ESCRIBIBLES],
       perfil: 'dominio',
       deCuenta: false,
     });
   }
 
-  /** Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. */
-  buscarActivaPorCodigo(codigo: string): Promise<CuentaFila | null> {
+  /**
+   * Salto del aislamiento: el login busca la cuenta por su código antes de saber cuál es. Trae la
+   * cuenta en cualquier estado (el login distingue «suspendida» solo después de verificar el PIN, para
+   * no revelar qué códigos existen); una cuenta eliminada no existe.
+   */
+  buscarPorCodigo(codigo: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
       columnas: COLUMNAS_DE_CUENTA,
-      donde: 't.codigo = ? AND t.activo = 1',
+      donde: 't.codigo = ?',
       params: [codigo],
     });
   }
 
-  buscarActivaPorId(id: string): Promise<CuentaFila | null> {
+  /** La cuenta en cualquier estado (no eliminada). */
+  buscarPorId(id: string): Promise<CuentaFila | null> {
     return this.seleccionarUna<CuentaFila>({
       columnas: COLUMNAS_DE_CUENTA,
-      donde: 't.id = ? AND t.activo = 1',
+      donde: 't.id = ?',
       params: [id],
     });
+  }
+
+  /**
+   * La cuenta con un bloqueo compartido hasta el fin de la transacción: nadie puede cambiarle el estado
+   * (restringirla o suspenderla escribe esta fila) mientras `tx` siga abierta, y varias transacciones a la
+   * vez no se esperan entre sí. Lo usa `generar-qr` para que una suspensión concurrente no deje un QR vivo.
+   */
+  buscarPorIdCompartida(tx: Transaccion, id: string): Promise<CuentaFila | null> {
+    return this.seleccionarUna<CuentaFila>(
+      { columnas: COLUMNAS_DE_CUENTA, donde: 't.id = ?', params: [id], bloquear: 'compartido' },
+      tx,
+    );
   }
 }
 
@@ -50,13 +111,40 @@ export interface UsuarioFila extends RowDataPacket {
   pin_hash: string | null;
   /** El nivel de arriba en el árbol (ADR 0028); `null` en el Administrador. */
   superior_id: string | null;
-  activo: number;
+  /** Estado propio; el efectivo (con superiores y cuenta) se deriva en `domain/estado.ts`. */
+  estado: Estado;
+  estado_impuesto_por: string | null;
+  estado_desde: Date | null;
+  estado_motivo: string | null;
   pin_generado_at: Date | null;
   created_at: Date;
 }
 
 const COLUMNAS_DE_USUARIO =
-  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.activo, t.pin_generado_at, t.created_at';
+  't.id, t.etiqueta, t.pin_hash, t.superior_id, t.estado, t.estado_impuesto_por, t.estado_desde, t.estado_motivo, t.pin_generado_at, t.created_at';
+
+/** Lo mínimo de un usuario para derivar el estado efectivo. */
+export interface UsuarioDeEstadoFila extends RowDataPacket {
+  id: string;
+  superior_id: string | null;
+  estado: Estado;
+}
+
+/**
+ * Filtro «es X o uno de sus superiores»: X y todos sus ascendientes por `superior_id`. Se recorre sin
+ * mirar `deleted_at` (un superior borrado debe notarse), pero la consulta que lo usa ya filtra por la
+ * cuenta del contexto y excluye lo borrado: quien falta en el resultado es un superior eliminado, y
+ * `estadoEfectivo` lo trata como tal. `UNION` (no `ALL`) corta un ciclo si algún dato lo trajera.
+ * Lleva un `?`: el id de X.
+ */
+const X_Y_SUS_SUPERIORES = `t.id IN (
+  WITH RECURSIVE cadena (id, superior_id) AS (
+    SELECT s.id, s.superior_id FROM usuarios AS s WHERE s.id = ?
+    UNION
+    SELECT p.id, p.superior_id FROM usuarios AS p JOIN cadena ON p.id = cadena.superior_id
+  )
+  SELECT id FROM cadena
+)`;
 
 /**
  * Filtro "está en la rama de X": todos los descendientes de X por `superior_id`, sin X. Es la segunda
@@ -67,7 +155,7 @@ const COLUMNAS_DE_USUARIO =
 const EN_LA_RAMA_DE = `t.id IN (
   WITH RECURSIVE rama (id) AS (
     SELECT h.id FROM usuarios AS h WHERE h.superior_id = ? AND h.deleted_at IS NULL
-    UNION ALL
+    UNION
     SELECT n.id FROM usuarios AS n JOIN rama ON n.superior_id = rama.id AND n.deleted_at IS NULL
   )
   SELECT id FROM rama
@@ -102,7 +190,7 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
         'username',
         'contrasena_hash',
         'superior_id',
-        'activo',
+        ...COLUMNAS_DE_ESTADO_ESCRIBIBLES,
       ],
       sensibles: ['pin_indice', 'pin_hash', 'contrasena_hash'],
       perfil: 'dominio',
@@ -110,23 +198,84 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  buscarActivoPorIndiceDePin(indice: string): Promise<UsuarioFila | null> {
+  /**
+   * Los usuarios de la cuenta del contexto que pueden operar (no suspendidos) y cuyo rol tiene el permiso de
+   * ámbito cuenta `codigo`. Para decidir a quién va un aviso (ADR 0030 §5): el destinatario sale del permiso,
+   * no de un nombre de rol.
+   */
+  async idsConPermiso(codigo: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 'DISTINCT t.id',
+      uniones:
+        'JOIN usuario_roles AS ur ON ur.usuario_id = t.id AND ur.tenant_id = t.tenant_id AND ur.deleted_at IS NULL ' +
+        'JOIN roles AS r ON r.id = ur.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.activo = 1 ' +
+        'JOIN rol_permisos AS rp ON rp.rol_id = r.id ' +
+        "JOIN permisos AS p ON p.id = rp.permiso_id AND p.ambito = 'cuenta'",
+      donde: "p.codigo = ? AND t.estado <> 'suspendido'",
+      params: [codigo],
+      orden: 't.id',
+    });
+    return filas.map((fila) => String(fila.id));
+  }
+
+  /** El usuario del PIN en cualquier estado: el login decide después qué hacer con uno suspendido. */
+  buscarPorIndiceDePin(indice: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.pin_indice = ? AND t.activo = 1',
+      donde: 't.pin_indice = ?',
       params: [indice],
     });
   }
 
-  buscarActivoPorId(id: string): Promise<UsuarioFila | null> {
-    return this.seleccionarUna<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.id = ? AND t.activo = 1',
-      params: [id],
-    });
+  /**
+   * El usuario y todos sus superiores, con lo mínimo para derivar el estado efectivo. Solo de la cuenta
+   * del contexto y sin los borrados.
+   */
+  cadenaDeEstados(id: string, tx?: Transaccion): Promise<UsuarioDeEstadoFila[]> {
+    return this.seleccionar<UsuarioDeEstadoFila>(
+      { columnas: 't.id, t.superior_id, t.estado', donde: X_Y_SUS_SUPERIORES, params: [id] },
+      tx,
+    );
   }
 
-  /** Un usuario de la cuenta, esté activo o no (para administrarlo). Borrado = no existe. */
+  /**
+   * Como `cadenaDeEstados`, pero BLOQUEA las filas del usuario y de todos sus superiores (`FOR UPDATE`) hasta
+   * el fin de la transacción y devuelve lo que hay AHORA. Suspender o restringir a alguien de la cadena escribe
+   * su fila, así que o bien ya está confirmado y se ve acá, o bien espera a que termine `tx`.
+   *
+   * Sube de un usuario a su superior con una lectura bloqueante cada vez, sin ninguna lectura común antes: la
+   * primera lectura común de una transacción fija la foto que verá el resto, y esa foto tiene que ser POSTERIOR
+   * al bloqueo para que los conteos que siguen vean lo que otra generación confirmó mientras se esperaba. Un
+   * usuario borrado (o un ciclo) corta la cadena: `estadoEfectivo` lo trata como eliminado (falla cerrado).
+   */
+  async cadenaDeEstadosBloqueada(tx: Transaccion, id: string): Promise<UsuarioDeEstadoFila[]> {
+    const cadena: UsuarioDeEstadoFila[] = [];
+    const vistos = new Set<string>();
+    let actual: string | null = id;
+    while (actual !== null && !vistos.has(actual)) {
+      vistos.add(actual);
+      const fila: UsuarioDeEstadoFila | null = await this.seleccionarUna<UsuarioDeEstadoFila>(
+        {
+          columnas: 't.id, t.superior_id, t.estado',
+          donde: 't.id = ?',
+          params: [actual],
+          bloquear: true,
+        },
+        tx,
+      );
+      if (fila === null) break;
+      cadena.push(fila);
+      actual = fila.superior_id;
+    }
+    return cadena;
+  }
+
+  /** Todos los usuarios de la cuenta con lo mínimo para derivar su estado efectivo (listados). */
+  estadosDeTodos(): Promise<UsuarioDeEstadoFila[]> {
+    return this.seleccionar<UsuarioDeEstadoFila>({ columnas: 't.id, t.superior_id, t.estado' });
+  }
+
+  /** Un usuario de la cuenta, en el estado que sea (para administrarlo). Borrado = no existe. */
   buscarPorId(id: string): Promise<UsuarioFila | null> {
     return this.seleccionarUna<UsuarioFila>({
       columnas: COLUMNAS_DE_USUARIO,
@@ -135,13 +284,27 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  buscarPorIds(ids: readonly string[]): Promise<UsuarioFila[]> {
+  buscarPorIds(ids: readonly string[], tx?: Transaccion): Promise<UsuarioFila[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return this.seleccionar<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      donde: 't.id IN (?)',
-      params: [ids],
-    });
+    return this.seleccionar<UsuarioFila>(
+      {
+        columnas: COLUMNAS_DE_USUARIO,
+        donde: 't.id IN (?)',
+        params: [ids],
+      },
+      tx,
+    );
+  }
+
+  /**
+   * Bloquea la fila del usuario hasta el fin de la transacción: serializa sus ingresos simultáneos para que cada
+   * uno vea las sesiones del anterior al aplicar el tope (ADR 0030 §4.1) y no choquen por bloqueos de rango.
+   */
+  async bloquear(tx: Transaccion, id: string): Promise<void> {
+    await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: 't.id = ?', params: [id], bloquear: true },
+      tx,
+    );
   }
 
   /** Un usuario de la rama de `superiorId` (ADR 0028 §4); uno de otra rama o el propio `superiorId` no existe. */
@@ -170,14 +333,43 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
   }
 
   /** Los ids de toda la rama de `id` (sus descendientes, sin él): lo que cae con su baja en cascada. */
-  async idsDeRama(id: string): Promise<string[]> {
-    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
-      columnas: 't.id',
-      donde: EN_LA_RAMA_DE,
-      params: [id],
-      orden: 't.id',
-    });
+  async idsDeRama(id: string, tx?: Transaccion): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>(
+      {
+        columnas: 't.id',
+        donde: EN_LA_RAMA_DE,
+        params: [id],
+        orden: 't.id',
+      },
+      tx,
+    );
     return filas.map((fila) => fila.id);
+  }
+
+  /**
+   * Una página de los usuarios de `ids` (el alcance de quien exporta: él y su rama), por id: para la exportación
+   * (ADR 0033 §3). Sin ids no hay nada.
+   */
+  listarPaginaDe(
+    ids: IdsOTodaLaCuenta,
+    limite: number,
+    desplazamiento: number,
+  ): Promise<UsuarioFila[]> {
+    if (ids !== TODA_LA_CUENTA && ids.length === 0) return Promise.resolve([]);
+    return this.seleccionar<UsuarioFila>({
+      columnas: COLUMNAS_DE_USUARIO,
+      ...(ids === TODA_LA_CUENTA ? {} : { donde: 't.id IN (?)', params: [ids] }),
+      orden: 't.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  /** Cuántos de esos usuarios existen en la cuenta (los no borrados). */
+  async contarDe(ids: IdsOTodaLaCuenta): Promise<number> {
+    if (ids === TODA_LA_CUENTA) return this.contar({});
+    if (ids.length === 0) return 0;
+    return this.contar({ donde: 't.id IN (?)', params: [ids] });
   }
 
   /** Cuántos usuarios cuelgan directamente de `id` (para no dejar huérfanos al darlo de baja). */
@@ -195,12 +387,24 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
     });
   }
 
-  /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
-  listarTodos(): Promise<UsuarioFila[]> {
-    return this.seleccionar<UsuarioFila>({
-      columnas: COLUMNAS_DE_USUARIO,
-      orden: 't.etiqueta, t.id',
+  /** Los ids de todos los usuarios de la cuenta (sin filtro de rama): solo para lo que hace AGROCOM sobre la cuenta entera. */
+  async idsDeTodos(): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket & { id: string }>({
+      columnas: 't.id',
+      orden: 't.id',
     });
+    return filas.map((fila) => fila.id);
+  }
+
+  /** Todos los usuarios de la cuenta, sin filtro de rama: solo para la ficha que ve AGROCOM. */
+  listarTodos(tx?: Transaccion): Promise<UsuarioFila[]> {
+    return this.seleccionar<UsuarioFila>(
+      {
+        columnas: COLUMNAS_DE_USUARIO,
+        orden: 't.etiqueta, t.id',
+      },
+      tx,
+    );
   }
 
   /** Cuelga a `id` de otro Administrador; sus Miembros y su unidad lo siguen por el árbol (ADR 0028 §7). */
@@ -220,8 +424,31 @@ export class RepositorioDeUsuarios extends RepositorioDeCuenta {
       pin_indice: usuario.pinIndice,
       pin_hash: usuario.pinHash,
       pin_generado_at: usuario.ahora,
-      activo: 1,
     });
+  }
+
+  /**
+   * Cambia el estado propio de `id` solo si sigue como lo leyó quien decide (`antes`): dos personas que
+   * cambian el mismo estado a la vez no se pisan, la segunda recibe `false`. La bitácora lo registra.
+   */
+  cambiarEstado(
+    tx: Transaccion,
+    id: string,
+    antes: { readonly estado: Estado; readonly impuestoPor: string | null },
+    cambio: CambioDeEstado,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio), {
+      cuando: siSigueEnEstado(antes.estado, antes.impuestoPor),
+    });
+  }
+
+  /**
+   * Cambia solo QUIÉN impuso el estado propio de `id` (el estado, el motivo y el desde no se tocan). Lo usa
+   * la reasignación de AGROCOM: quien impuso el estado ya no está sobre el usuario movido. La bitácora lo
+   * registra.
+   */
+  cambiarQuienImpusoElEstado(tx: Transaccion, id: string, impuestoPor: string): Promise<boolean> {
+    return this.actualizar(tx, id, { estado_impuesto_por: impuestoPor });
   }
 
   /** El PIN anterior deja de servir en el mismo UPDATE (ADR 0018 §2). */
@@ -373,25 +600,25 @@ export class RepositorioDeRolesDeUsuario extends RepositorioDeCuenta {
     return this.insertar(tx, { usuario_id: usuarioId, rol_id: rolId });
   }
 
-  /** Ids de los usuarios activos de la cuenta con el rol protegido "Administrador". */
+  /** Ids de los usuarios no suspendidos de la cuenta con el rol protegido "Administrador". */
   async idsDeAdministradores(): Promise<string[]> {
     const filas = await this.seleccionar<RowDataPacket & { usuario_id: string }>({
       columnas: 'DISTINCT t.usuario_id',
       uniones: [
         "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
-        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+        "JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.estado <> 'suspendido'",
       ].join(' '),
       orden: 't.usuario_id',
     });
     return filas.map((fila) => fila.usuario_id);
   }
 
-  /** Usuarios activos de la cuenta que tienen el rol protegido "Administrador". */
+  /** Usuarios no suspendidos de la cuenta que tienen el rol protegido "Administrador". */
   contarAdministradores(): Promise<number> {
     return this.contar({
       uniones: [
         "JOIN roles AS r ON r.id = t.rol_id AND r.tenant_id = t.tenant_id AND r.deleted_at IS NULL AND r.protegido = 1 AND r.nombre = 'Administrador'",
-        'JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.activo = 1',
+        "JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id AND u.deleted_at IS NULL AND u.estado <> 'suspendido'",
       ].join(' '),
     });
   }
@@ -421,10 +648,35 @@ export interface SesionFila extends RowDataPacket {
   rol_activo_id: string | null;
   expira_at: Date;
   revocada_at: Date | null;
+  ultima_actividad_at: Date | null;
+}
+
+/** Una sesión viva tal como se lista (ADR 0030 §4.1). Nunca lleva el refresh. */
+export interface SesionDetalleFila extends RowDataPacket {
+  id: string;
+  usuario_id: string;
+  instalacion_id: string | null;
+  plataforma: Plataforma | null;
+  nombre_dispositivo: string | null;
+  ip: string | null;
+  ultima_actividad_at: Date | null;
+  created_at: Date;
+  expira_at: Date;
 }
 
 const COLUMNAS_DE_SESION =
-  't.id, t.tenant_id, t.usuario_id, t.rol_activo_id, t.expira_at, t.revocada_at';
+  't.id, t.tenant_id, t.usuario_id, t.rol_activo_id, t.expira_at, t.revocada_at, t.ultima_actividad_at';
+const COLUMNAS_DE_DETALLE =
+  't.id, t.usuario_id, t.instalacion_id, t.plataforma, t.nombre_dispositivo, t.ip, t.ultima_actividad_at, t.created_at, t.expira_at';
+/** Viva = sin revocar y sin vencer; el `?` es el instante de la consulta. */
+const SESION_VIVA = 't.revocada_at IS NULL AND t.expira_at > ?';
+const MAS_RECIENTE_PRIMERO = 't.ultima_actividad_at DESC, t.id DESC';
+
+/** Quién y por qué cierra una sesión: queda en la sesión y en la bitácora. */
+export interface CierreSolicitado {
+  readonly motivo: MotivoDeCierre;
+  readonly porUsuarioId: string | null;
+}
 const DESCRIPCION_DE_SESIONES = {
   nombre: 'sesiones',
   columnas: [
@@ -433,10 +685,17 @@ const DESCRIPCION_DE_SESIONES = {
     'refresh_hash',
     'agente',
     'ip',
+    'instalacion_id',
+    'plataforma',
+    'nombre_dispositivo',
+    'ultima_actividad_at',
     'expira_at',
     'revocada_at',
+    'motivo_cierre',
+    'revocada_por',
   ],
-  sensibles: ['refresh_hash'],
+  // El identificador de instalación y la IP no se copian a la bitácora (ADR 0030 §4.1).
+  sensibles: ['refresh_hash', 'instalacion_id', 'ip'],
   perfil: 'transitoria',
   deCuenta: true,
 } as const;
@@ -448,6 +707,26 @@ export interface NuevaSesion {
   readonly agente: string | null;
   readonly ip: string | null;
   readonly expiraAt: Date;
+  /** Identificador aleatorio de la instalación (la app lo genera); `null` en clientes que no lo mandan. */
+  readonly instalacionId: string | null;
+  readonly plataforma: Plataforma | null;
+  readonly nombreDeDispositivo: string | null;
+  readonly ahora: Date;
+}
+
+/** Los valores que se escriben al abrir una sesión, comunes a las de cuenta y a las de plataforma. */
+function valoresDeSesionNueva(sesion: NuevaSesion): Record<string, unknown> {
+  return {
+    usuario_id: sesion.usuarioId,
+    refresh_hash: sesion.refreshHash,
+    agente: sesion.agente,
+    ip: sesion.ip,
+    instalacion_id: sesion.instalacionId,
+    plataforma: sesion.plataforma,
+    nombre_dispositivo: sesion.nombreDeDispositivo,
+    ultima_actividad_at: sesion.ahora,
+    expira_at: sesion.expiraAt,
+  };
 }
 
 /** Dueño de `sesiones`. Con tenant: solo las de la cuenta del contexto. */
@@ -458,12 +737,8 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
 
   crear(tx: Transaccion, sesion: NuevaSesion): Promise<string> {
     return this.insertar(tx, {
-      usuario_id: sesion.usuarioId,
+      ...valoresDeSesionNueva(sesion),
       rol_activo_id: sesion.rolActivoId,
-      refresh_hash: sesion.refreshHash,
-      agente: sesion.agente,
-      ip: sesion.ip,
-      expira_at: sesion.expiraAt,
     });
   }
 
@@ -483,11 +758,17 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
     refreshNuevo: string,
     expiraAt: Date,
     ahora: Date,
+    ip: string | null = null,
   ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { refresh_hash: refreshNuevo, expira_at: expiraAt },
+      {
+        refresh_hash: refreshNuevo,
+        expira_at: expiraAt,
+        ultima_actividad_at: ahora,
+        ...(ip === null ? {} : { ip }),
+      },
       {
         cuando: {
           sql: 'refresh_hash = ? AND revocada_at IS NULL AND expira_at > ?',
@@ -497,11 +778,105 @@ export class RepositorioDeSesiones extends RepositorioDeCuenta {
     );
   }
 
-  revocar(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+  /**
+   * Revoca una sesión sin bitácora, como todo cambio rutinario de `sesiones`: salir (`motivo` 'salida') o
+   * cortar las del usuario por un PIN nuevo, una baja o una suspensión (sin motivo).
+   */
+  revocar(
+    tx: Transaccion,
+    id: string,
+    ahora: Date,
+    motivo: MotivoDeCierre | null = null,
+  ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { revocada_at: ahora },
+      { revocada_at: ahora, ...(motivo === null ? {} : { motivo_cierre: motivo }) },
+      { cuando: { sql: 'revocada_at IS NULL' } },
+    );
+  }
+
+  /** Las sesiones vivas de un usuario de la cuenta, la de actividad más reciente primero. Con `tx`, las bloquea. */
+  vivasDe(usuarioId: string, ahora: Date, tx?: Transaccion): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.usuario_id = ? AND ${SESION_VIVA}`,
+        params: [usuarioId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        ...(tx === undefined ? {} : { bloquear: true }),
+      },
+      tx,
+    );
+  }
+
+  /** Las sesiones vivas de una instalación (de cualquier usuario de la cuenta), para el tope por instalación. */
+  vivasDeInstalacion(
+    instalacionId: string,
+    ahora: Date,
+    tx: Transaccion,
+  ): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.instalacion_id = ? AND ${SESION_VIVA}`,
+        params: [instalacionId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /** Una sesión viva de ese usuario; de otro usuario, de otra cuenta, cerrada o vencida no existe. */
+  buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null> {
+    return this.seleccionarUna<SesionDetalleFila>({
+      columnas: COLUMNAS_DE_DETALLE,
+      donde: `t.id = ? AND t.usuario_id = ? AND ${SESION_VIVA}`,
+      params: [id, usuarioId, ahora],
+    });
+  }
+
+  /** Cierra una sesión dejando quién y por qué, y una fila en la bitácora (ADR 0007). */
+  cerrar(tx: Transaccion, id: string, ahora: Date, cierre: CierreSolicitado): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { revocada_at: ahora, motivo_cierre: cierre.motivo, revocada_por: cierre.porUsuarioId },
+      { cuando: { sql: 'revocada_at IS NULL' }, auditar: true },
+    );
+  }
+
+  /** Cierra las sesiones vivas de un usuario, salvo `exceptoId`; devuelve cuántas cerró. */
+  async cerrarVivasDe(
+    tx: Transaccion,
+    usuarioId: string,
+    ahora: Date,
+    cierre: CierreSolicitado,
+    exceptoId: string | null = null,
+  ): Promise<number> {
+    let cerradas = 0;
+    for (const sesion of await this.vivasDe(usuarioId, ahora, tx)) {
+      if (sesion.id === exceptoId) continue;
+      if (await this.cerrar(tx, sesion.id, ahora, cierre)) cerradas += 1;
+    }
+    return cerradas;
+  }
+
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeUsuarios(this.pool).bloquear(tx, usuarioId);
+  }
+
+  /** Anota la última actividad de una sesión viva. Es telemetría: sin bitácora. */
+  registrarActividad(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { ultima_actividad_at: ahora },
       { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }
@@ -559,6 +934,47 @@ export class RepositorioDeSesionesDePlataforma extends RepositorioDePlataforma {
       params: [refreshHash],
     });
   }
+
+  /**
+   * Usuarios de cualquier cuenta con sesiones activas (vivas y movidas desde `desde`) desde al menos `minimo` IP
+   * distintas O desde al menos `minimo` instalaciones distintas (`instalacion_id`, ola W8; la mayor de las dos medidas,
+   * no su suma, para que un mismo aparato no cuente doble): la señal de un PIN que anda en varias manos (ADR 0030 §4.1, ola W12). Solo lectura y de TODAS las
+   * cuentas (salto explícito del aislamiento, para el detector); cada hallazgo se trata luego dentro de su cuenta. Una
+   * página de `limite`, por (cuenta, usuario), a continuación de `despuesDe`. Cuenta IP e instalaciones, nunca las devuelve.
+   */
+  usuariosConVariasIps(
+    ahora: Date,
+    desde: Date,
+    minimo: number,
+    limite: number,
+    despuesDe: { readonly cuentaId: string; readonly usuarioId: string } | null,
+  ): Promise<SesionesDeUsuarioFila[]> {
+    const cursor = despuesDe === null ? [] : [despuesDe.cuentaId, despuesDe.usuarioId];
+    return this.seleccionar<SesionesDeUsuarioFila>({
+      columnas:
+        't.tenant_id, t.usuario_id, COUNT(DISTINCT t.ip) AS ips, ' +
+        'COUNT(DISTINCT t.instalacion_id) AS instalaciones, COUNT(*) AS sesiones',
+      donde:
+        't.tenant_id IS NOT NULL AND (t.ip IS NOT NULL OR t.instalacion_id IS NOT NULL) ' +
+        'AND t.revocada_at IS NULL AND t.expira_at > ? ' +
+        'AND t.updated_at >= ?' +
+        (despuesDe === null ? '' : ' AND (t.tenant_id, t.usuario_id) > (?, ?)'),
+      // El último `?` es el del HAVING: la consulta junta los parámetros en el orden del texto.
+      params: [ahora, desde, ...cursor, minimo],
+      agrupar:
+        't.tenant_id, t.usuario_id HAVING GREATEST(COUNT(DISTINCT t.ip), COUNT(DISTINCT t.instalacion_id)) >= ?',
+      orden: 't.tenant_id, t.usuario_id',
+      limite,
+    });
+  }
+}
+
+export interface SesionesDeUsuarioFila extends RowDataPacket {
+  tenant_id: string;
+  usuario_id: string;
+  ips: number | string;
+  instalaciones: number | string;
+  sesiones: number | string;
 }
 
 export interface SuperAdminFila extends RowDataPacket {
@@ -567,12 +983,13 @@ export interface SuperAdminFila extends RowDataPacket {
   username: string;
   contrasena_hash: string;
   contrasena_temporal: number;
-  activo: number;
+  /** El equipo AGROCOM solo está `activo` o `suspendido` (desactivado). */
+  estado: Estado;
   created_at: Date;
 }
 
 const COLUMNAS_DE_SUPER_ADMIN =
-  't.id, t.etiqueta, t.username, t.contrasena_hash, t.contrasena_temporal, t.activo, t.created_at';
+  't.id, t.etiqueta, t.username, t.contrasena_hash, t.contrasena_temporal, t.estado, t.created_at';
 
 export interface NuevoSuperAdmin {
   readonly nombre: string;
@@ -588,17 +1005,51 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'usuarios',
-      columnas: ['etiqueta', 'username', 'contrasena_hash', 'contrasena_temporal', 'activo'],
+      columnas: [
+        'etiqueta',
+        'username',
+        'contrasena_hash',
+        'contrasena_temporal',
+        ...COLUMNAS_DE_ESTADO_ESCRIBIBLES,
+      ],
       sensibles: ['contrasena_hash'],
       perfil: 'dominio',
       deCuenta: false,
     });
   }
 
+  /** Los integrantes del equipo AGROCOM que pueden operar y cuyo rol tiene el permiso de plataforma `codigo`. */
+  async idsConPermiso(codigo: string): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 'DISTINCT t.id',
+      uniones:
+        'JOIN usuario_roles AS ur ON ur.usuario_id = t.id AND ur.tenant_id IS NULL AND ur.deleted_at IS NULL ' +
+        'JOIN roles AS r ON r.id = ur.rol_id AND r.tenant_id IS NULL AND r.deleted_at IS NULL AND r.activo = 1 ' +
+        'JOIN rol_permisos AS rp ON rp.rol_id = r.id ' +
+        "JOIN permisos AS p ON p.id = rp.permiso_id AND p.ambito = 'plataforma'",
+      donde: "p.codigo = ? AND t.estado <> 'suspendido'",
+      params: [codigo],
+      orden: 't.id',
+    });
+    return filas.map((fila) => String(fila.id));
+  }
+
+  /**
+   * Bloquea la fila del super admin (los ingresos simultáneos suyos se esperan) y dice si SIGUE activo: leída
+   * con `FOR UPDATE`, ve lo que una desactivación concurrente ya confirmó.
+   */
+  async bloquearSiActivo(tx: Transaccion, id: string): Promise<boolean> {
+    const fila = await this.seleccionarUna<RowDataPacket>(
+      { columnas: 't.id', donde: "t.id = ? AND t.estado = 'activo'", params: [id], bloquear: true },
+      tx,
+    );
+    return fila !== null;
+  }
+
   buscarActivoPorUsername(username: string): Promise<SuperAdminFila | null> {
     return this.seleccionarUna<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      donde: 't.username = ? AND t.activo = 1',
+      donde: "t.username = ? AND t.estado = 'activo'",
       params: [username],
     });
   }
@@ -606,7 +1057,7 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   buscarActivoPorId(id: string): Promise<SuperAdminFila | null> {
     return this.seleccionarUna<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      donde: 't.id = ? AND t.activo = 1',
+      donde: "t.id = ? AND t.estado = 'activo'",
       params: [id],
     });
   }
@@ -627,7 +1078,7 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   listar(limite: number, desplazamiento: number): Promise<SuperAdminFila[]> {
     return this.seleccionar<SuperAdminFila>({
       columnas: COLUMNAS_DE_SUPER_ADMIN,
-      orden: 't.activo DESC, t.etiqueta, t.id',
+      orden: "(t.estado = 'activo') DESC, t.etiqueta, t.id",
       limite,
       desplazamiento,
     });
@@ -648,13 +1099,13 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
   }
 
   contarActivos(): Promise<number> {
-    return this.contar({ donde: 't.activo = 1' });
+    return this.contar({ donde: "t.estado = 'activo'" });
   }
 
   /** Bloquea las filas de los super admin activos hasta el fin de la transacción (nunca queda un equipo sin activos). */
   async idsActivosBloqueados(tx: Transaccion): Promise<string[]> {
     const filas = await this.seleccionar<RowDataPacket & { id: string }>(
-      { columnas: 't.id', donde: 't.activo = 1', orden: 't.id', bloquear: true },
+      { columnas: 't.id', donde: "t.estado = 'activo'", orden: 't.id', bloquear: true },
       tx,
     );
     return filas.map((fila) => fila.id);
@@ -666,7 +1117,6 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
       username: nuevo.username,
       contrasena_hash: nuevo.contrasenaHash,
       contrasena_temporal: 1,
-      activo: 1,
     });
   }
 
@@ -674,12 +1124,13 @@ export class RepositorioDeSuperAdmins extends RepositorioDeFilasDePlataforma {
     return this.actualizar(tx, id, { contrasena_hash: contrasenaHash, contrasena_temporal: 0 });
   }
 
-  desactivar(tx: Transaccion, id: string): Promise<boolean> {
-    return this.actualizar(tx, id, { activo: 0 });
+  /** Desactivar a alguien del equipo es dejarlo `suspendido`, con quién lo hizo, desde cuándo y por qué. */
+  desactivar(tx: Transaccion, id: string, cambio: CambioDeEstado): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio));
   }
 
   reactivar(tx: Transaccion, id: string): Promise<boolean> {
-    return this.actualizar(tx, id, { activo: 1 });
+    return this.actualizar(tx, id, columnasDeEstado(SIN_ESTADO));
   }
 
   renombrar(tx: Transaccion, id: string, nombre: string): Promise<boolean> {
@@ -695,12 +1146,8 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
 
   crear(tx: Transaccion, sesion: Omit<NuevaSesion, 'rolActivoId'>): Promise<string> {
     return this.insertar(tx, {
-      usuario_id: sesion.usuarioId,
+      ...valoresDeSesionNueva({ ...sesion, rolActivoId: null }),
       rol_activo_id: null,
-      refresh_hash: sesion.refreshHash,
-      agente: sesion.agente,
-      ip: sesion.ip,
-      expira_at: sesion.expiraAt,
     });
   }
 
@@ -719,11 +1166,17 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
     refreshNuevo: string,
     expiraAt: Date,
     ahora: Date,
+    ip: string | null = null,
   ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { refresh_hash: refreshNuevo, expira_at: expiraAt },
+      {
+        refresh_hash: refreshNuevo,
+        expira_at: expiraAt,
+        ultima_actividad_at: ahora,
+        ...(ip === null ? {} : { ip }),
+      },
       {
         cuando: {
           sql: 'refresh_hash = ? AND revocada_at IS NULL AND expira_at > ?',
@@ -733,11 +1186,98 @@ export class RepositorioDeSesionesDeSuperAdmins extends RepositorioDeFilasDePlat
     );
   }
 
-  revocar(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+  /** Revoca sin bitácora: salir (`motivo` 'salida') o cortar las del super admin al desactivarlo (sin motivo). */
+  revocar(
+    tx: Transaccion,
+    id: string,
+    ahora: Date,
+    motivo: MotivoDeCierre | null = null,
+  ): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
-      { revocada_at: ahora },
+      { revocada_at: ahora, ...(motivo === null ? {} : { motivo_cierre: motivo }) },
+      { cuando: { sql: 'revocada_at IS NULL' } },
+    );
+  }
+
+  /** Las sesiones vivas de un super admin, la de actividad más reciente primero. Con `tx`, las bloquea. */
+  vivasDe(usuarioId: string, ahora: Date, tx?: Transaccion): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.usuario_id = ? AND ${SESION_VIVA}`,
+        params: [usuarioId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        ...(tx === undefined ? {} : { bloquear: true }),
+      },
+      tx,
+    );
+  }
+
+  /** Las sesiones vivas de una instalación entre los super admin, para el tope por instalación. */
+  vivasDeInstalacion(
+    instalacionId: string,
+    ahora: Date,
+    tx: Transaccion,
+  ): Promise<SesionDetalleFila[]> {
+    return this.seleccionar<SesionDetalleFila>(
+      {
+        columnas: COLUMNAS_DE_DETALLE,
+        donde: `t.instalacion_id = ? AND ${SESION_VIVA}`,
+        params: [instalacionId, ahora],
+        orden: MAS_RECIENTE_PRIMERO,
+        bloquear: true,
+      },
+      tx,
+    );
+  }
+
+  /**
+   * Bloquea la fila del dueño de las sesiones, igual que el ingreso: cerrar todas y abrir una nueva se
+   * ordenan en vez de cruzar sus bloqueos de filas (deadlock).
+   */
+  async bloquearDueno(tx: Transaccion, usuarioId: string): Promise<void> {
+    await new RepositorioDeSuperAdmins(this.pool).bloquearSiActivo(tx, usuarioId);
+  }
+
+  buscarVivaDe(usuarioId: string, id: string, ahora: Date): Promise<SesionDetalleFila | null> {
+    return this.seleccionarUna<SesionDetalleFila>({
+      columnas: COLUMNAS_DE_DETALLE,
+      donde: `t.id = ? AND t.usuario_id = ? AND ${SESION_VIVA}`,
+      params: [id, usuarioId, ahora],
+    });
+  }
+
+  cerrar(tx: Transaccion, id: string, ahora: Date, cierre: CierreSolicitado): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { revocada_at: ahora, motivo_cierre: cierre.motivo, revocada_por: cierre.porUsuarioId },
+      { cuando: { sql: 'revocada_at IS NULL' }, auditar: true },
+    );
+  }
+
+  async cerrarVivasDe(
+    tx: Transaccion,
+    usuarioId: string,
+    ahora: Date,
+    cierre: CierreSolicitado,
+    exceptoId: string | null = null,
+  ): Promise<number> {
+    let cerradas = 0;
+    for (const sesion of await this.vivasDe(usuarioId, ahora, tx)) {
+      if (sesion.id === exceptoId) continue;
+      if (await this.cerrar(tx, sesion.id, ahora, cierre)) cerradas += 1;
+    }
+    return cerradas;
+  }
+
+  registrarActividad(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+    return this.actualizar(
+      tx,
+      id,
+      { ultima_actividad_at: ahora },
       { cuando: { sql: 'revocada_at IS NULL' } },
     );
   }
@@ -832,7 +1372,7 @@ interface ConteoDeUsuariosFila extends RowDataPacket {
 }
 
 /**
- * Cuántos usuarios activos tiene cada cuenta, para el panel de plataforma. Es un SALTO
+ * Cuántos usuarios no suspendidos tiene cada cuenta, para el panel de plataforma. Es un SALTO
  * EXPLÍCITO del aislamiento (RepositorioDePlataforma sobre `usuarios`): solo lee conteos
  * agrupados por cuenta, nunca filas de usuarios, y nunca escribe.
  */
@@ -851,7 +1391,7 @@ export class RepositorioDeConteoDeUsuarios extends RepositorioDePlataforma {
     if (cuentaIds.length === 0) return mapa;
     const filas = await this.seleccionar<ConteoDeUsuariosFila>({
       columnas: 't.tenant_id, COUNT(*) AS total',
-      donde: 't.tenant_id IN (?) AND t.activo = 1',
+      donde: "t.tenant_id IN (?) AND t.estado <> 'suspendido'",
       params: [cuentaIds],
       agrupar: 't.tenant_id',
     });
@@ -865,14 +1405,17 @@ export interface CuentaDePlataformaFila extends RowDataPacket {
   id: string;
   codigo: string;
   nombre: string;
-  activo: number;
+  estado: Estado;
+  estado_impuesto_por: string | null;
+  estado_desde: Date | null;
+  estado_motivo: string | null;
   /** Tope de Miembros por Titular de la cuenta (ADR 0028 §6). */
   max_miembros_por_titular: number;
   created_at: Date;
 }
 
 const COLUMNAS_DE_CUENTA_DE_PLATAFORMA =
-  't.id, t.codigo, t.nombre, t.activo, t.max_miembros_por_titular, t.created_at';
+  't.id, t.codigo, t.nombre, t.estado, t.estado_impuesto_por, t.estado_desde, t.estado_motivo, t.max_miembros_por_titular, t.created_at';
 
 export interface NuevaCuenta {
   readonly nombre: string;
@@ -884,7 +1427,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'cuentas',
-      columnas: ['nombre', 'codigo', 'activo', 'max_miembros_por_titular'],
+      columnas: ['nombre', 'codigo', ...COLUMNAS_DE_ESTADO_ESCRIBIBLES, 'max_miembros_por_titular'],
       perfil: 'dominio',
       deCuenta: false,
     });
@@ -923,7 +1466,7 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   }
 
   crear(tx: Transaccion, cuenta: NuevaCuenta): Promise<string> {
-    return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo, activo: 1 });
+    return this.insertar(tx, { nombre: cuenta.nombre, codigo: cuenta.codigo });
   }
 
   /**
@@ -942,6 +1485,21 @@ export class RepositorioDeCuentasDePlataforma extends RepositorioDePlataforma {
   /** Cambia cuántos Miembros puede tener cada Titular de la cuenta (ADR 0028 §6). */
   cambiarMaxMiembros(tx: Transaccion, id: string, maximo: number): Promise<boolean> {
     return this.actualizar(tx, id, { max_miembros_por_titular: maximo });
+  }
+
+  /**
+   * Cambia el estado de la cuenta solo si sigue como lo leyó quien decide (`antes`), con quién lo
+   * impuso, desde cuándo y por qué. La bitácora lo registra.
+   */
+  cambiarEstado(
+    tx: Transaccion,
+    id: string,
+    antes: { readonly estado: Estado; readonly impuestoPor: string | null },
+    cambio: CambioDeEstado,
+  ): Promise<boolean> {
+    return this.actualizar(tx, id, columnasDeEstado(cambio), {
+      cuando: siSigueEnEstado(antes.estado, antes.impuestoPor),
+    });
   }
 
   /** Baja lógica de la cuenta: nadie de ella vuelve a ingresar y su código queda libre. */

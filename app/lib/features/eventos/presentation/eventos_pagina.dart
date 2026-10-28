@@ -4,7 +4,7 @@ import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/evento_vista.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/eventos_controlador.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/widgets/fila_evento.dart';
@@ -12,6 +12,7 @@ import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_selector.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/linea_sincronizacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/selector_segmentado.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/listado_paginado.dart';
@@ -42,28 +43,30 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
     final puertas = ref.watch(puertasDisponiblesProvider).value ?? const [];
     final expandida = context.esExpandida;
     final conFiltroDePuerta = expandida || _mostrarFiltroDePuerta;
+    final sincronizacion = ref.watch(sincronizacionEventosProvider);
+    final ahora = ref.read(relojProvider)();
     final segmentosDeResultado = [
       SegmentoDeSelector<ResultadoEvento?>(
         valor: null,
-        etiqueta: l10n.eventosFiltroTodos,
+        etiqueta: l10n.lecturasFiltroTodos,
       ),
       SegmentoDeSelector<ResultadoEvento?>(
         valor: ResultadoEvento.permitido,
-        etiqueta: l10n.eventosFiltroPermitidos,
+        etiqueta: l10n.lecturasFiltroPermitidos,
       ),
       SegmentoDeSelector<ResultadoEvento?>(
         valor: ResultadoEvento.rechazado,
-        etiqueta: l10n.eventosFiltroRechazados,
+        etiqueta: l10n.lecturasFiltroRechazados,
       ),
     ];
 
     final selectorDePuerta = AccesoSelector<String?>(
-      placeholder: l10n.eventosTodasLasPuertas,
+      placeholder: l10n.lecturasTodasLasPuertas,
       iconoInicial: Icons.door_front_door_outlined,
       seleccionado: consulta.filtro.puertaId,
       alElegir: controlador.elegirPuerta,
       opciones: [
-        OpcionSelector(valor: null, etiqueta: l10n.eventosTodasLasPuertas),
+        OpcionSelector(valor: null, etiqueta: l10n.lecturasTodasLasPuertas),
         for (final puerta in puertas)
           OpcionSelector(valor: puerta.id, etiqueta: puerta.nombre),
       ],
@@ -84,19 +87,18 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
               Expanded(
                 flex: expandida ? 0 : 1,
                 child: SelectorSegmentado<ResultadoEvento?>(
-                  estirado: !expandida,
                   segmentos: [
                     SegmentoDeSelector(
                       valor: null,
-                      etiqueta: l10n.eventosFiltroTodos,
+                      etiqueta: l10n.lecturasFiltroTodos,
                     ),
                     SegmentoDeSelector(
                       valor: ResultadoEvento.permitido,
-                      etiqueta: l10n.eventosFiltroPermitidos,
+                      etiqueta: l10n.lecturasFiltroPermitidos,
                     ),
                     SegmentoDeSelector(
                       valor: ResultadoEvento.rechazado,
-                      etiqueta: l10n.eventosFiltroRechazados,
+                      etiqueta: l10n.lecturasFiltroRechazados,
                     ),
                   ],
                   seleccionado: consulta.filtro.resultado,
@@ -122,9 +124,9 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
 
     return PlantillaAdmin(
       destino: DestinoNav.eventos,
-      titulo: l10n.eventosTitulo,
+      titulo: l10n.lecturasTitulo,
       accionCompacta: IconButton(
-        tooltip: l10n.eventosFiltrar,
+        tooltip: l10n.lecturasFiltrar,
         onPressed: () =>
             setState(() => _mostrarFiltroDePuerta = !_mostrarFiltroDePuerta),
         icon: Icon(
@@ -137,6 +139,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 filtros,
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
                 Expanded(
                   child: _ListaEventos(resultado: consulta.filtro.resultado),
                 ),
@@ -155,6 +158,7 @@ class _EventosPaginaEstado extends ConsumerState<EventosPagina> {
                     ),
                     child: selectorDePuerta,
                   ),
+                LineaSincronizacion(estado: sincronizacion, ahora: ahora),
                 Expanded(
                   child: PestanasDeslizables<ResultadoEvento?>(
                     segmentos: segmentosDeResultado,
@@ -196,19 +200,21 @@ class _ListaEventos extends ConsumerWidget {
     final hayFiltro =
         consulta.filtro.resultado != null || consulta.filtro.puertaId != null;
 
-    return ListadoPaginado<EventoAcceso>(
+    return ListadoPaginado<Lectura>(
       estado: estadoDesdeAsync(eventos, ahora: ahora),
-      tituloDeError: l10n.eventosErrorCargar,
+      tituloDeError: l10n.lecturasErrorCargar,
       alReintentar: () => ref.invalidate(eventosProvider),
       alCambiarPagina: controlador.irAPagina,
+      alActualizar: () =>
+          ref.read(sincronizacionEventosProvider.notifier).refrescar(),
       vacio: EstadoVacio(
         ilustracion: Multimedia.vacioEventos,
         titulo: hayFiltro
-            ? l10n.eventosSinResultadosFiltro
-            : l10n.eventosSinResultados,
+            ? l10n.lecturasSinResultadosFiltro
+            : l10n.lecturasSinResultados,
         ayuda: hayFiltro
-            ? l10n.eventosSinResultadosFiltroAyuda
-            : l10n.eventosSinResultadosAyuda,
+            ? l10n.lecturasSinResultadosFiltroAyuda
+            : l10n.lecturasSinResultadosAyuda,
         textoAccion: hayFiltro ? l10n.comunQuitarFiltros : null,
         alAccionar: hayFiltro
             ? () {
@@ -226,7 +232,7 @@ class _ListaEventos extends ConsumerWidget {
       tarjeta: (context, evento) => TarjetaEvento(evento: evento),
       columnas: [
         ColumnaListado(
-          titulo: l10n.eventosColumnaHora,
+          titulo: l10n.lecturasColumnaHora,
           ancho: tokens.tamano.columnaHora,
           celda: (context, evento) => Text(
             formatearHoraConSegundos(evento.ocurridoAt),
@@ -237,14 +243,14 @@ class _ListaEventos extends ConsumerWidget {
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaPuerta,
+          titulo: l10n.lecturasColumnaPuerta,
           celda: (context, evento) => Text(
             evento.puertaNombre,
             style: Theme.of(context).textTheme.titleSmall,
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaSitio,
+          titulo: l10n.lecturasColumnaSitio,
           celda: (context, evento) => Text(
             evento.sitioNombre,
             style: Theme.of(context).textTheme.bodyMedium
@@ -252,13 +258,13 @@ class _ListaEventos extends ConsumerWidget {
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaQr,
+          titulo: l10n.lecturasColumnaQr,
           celda: (context, evento) => Text(
             evento.qrEtiqueta == null && evento.generadorEtiqueta == null
                 ? l10n.comunGuion
                 : textoDetalleEvento(
                     l10n,
-                    EventoAcceso(
+                    Lectura(
                       id: evento.id,
                       ocurridoAt: evento.ocurridoAt,
                       resultado: ResultadoEvento.permitido,
@@ -274,14 +280,14 @@ class _ListaEventos extends ConsumerWidget {
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaResultado,
+          titulo: l10n.lecturasColumnaResultado,
           celda: (context, evento) => AccesoBadge(
             texto: textoResultadoEvento(l10n, evento.resultado),
             tono: tonoResultadoEvento(evento.resultado),
           ),
         ),
         ColumnaListado(
-          titulo: l10n.eventosColumnaMotivo,
+          titulo: l10n.lecturasColumnaMotivo,
           celda: (context, evento) => Text(
             evento.esPermitido
                 ? l10n.comunGuion

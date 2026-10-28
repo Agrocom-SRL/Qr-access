@@ -6,6 +6,7 @@ import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagi
 import { FiltroSegmentado } from '../../../../shared/ui/molecules/FiltroSegmentado';
 import { useCuentasDeLosEventos, useEventos } from '../../application/useEventos';
 import {
+  FILTROS_DE_EJECUCION,
   FILTROS_DE_RESULTADO,
   POR_PAGINA_DE_EVENTOS,
   type FiltrosDeEventos,
@@ -13,11 +14,12 @@ import {
 import { TablaEventos } from '../components/TablaEventos';
 import styles from './EventosPage.module.css';
 
-/** Filtros y página en la URL (`?cuenta=…&resultado=…&desde=…&hasta=…&pagina=…`): el enlace se puede compartir. */
+/** Filtros y página en la URL (`?cuenta=…&resultado=…&ejecucion=…&desde=…&hasta=…&pagina=…`): el enlace se puede compartir. */
 function filtrosDeLaUrl(parametros: URLSearchParams): FiltrosDeEventos {
   return {
     cuentaId: parametros.get('cuenta'),
     resultado: FILTROS_DE_RESULTADO.find((r) => r === parametros.get('resultado')) ?? 'todos',
+    ejecucion: FILTROS_DE_EJECUCION.find((e) => e === parametros.get('ejecucion')) ?? 'todas',
     desde: parametros.get('desde') ?? '',
     hasta: parametros.get('hasta') ?? '',
     pagina: Math.max(1, Number(parametros.get('pagina') ?? 1) || 1),
@@ -37,6 +39,7 @@ export function EventosPage() {
     const nuevos = new URLSearchParams();
     if (siguiente.cuentaId) nuevos.set('cuenta', siguiente.cuentaId);
     if (siguiente.resultado !== 'todos') nuevos.set('resultado', siguiente.resultado);
+    if (siguiente.ejecucion !== 'todas') nuevos.set('ejecucion', siguiente.ejecucion);
     if (siguiente.desde !== '') nuevos.set('desde', siguiente.desde);
     if (siguiente.hasta !== '') nuevos.set('hasta', siguiente.hasta);
     if (siguiente.pagina > 1) nuevos.set('pagina', String(siguiente.pagina));
@@ -46,6 +49,7 @@ export function EventosPage() {
   const hayFiltros =
     filtros.cuentaId !== null ||
     filtros.resultado !== 'todos' ||
+    filtros.ejecucion !== 'todas' ||
     filtros.desde !== '' ||
     filtros.hasta !== '';
   return (
@@ -83,7 +87,7 @@ export function EventosPage() {
           }}
         />
       </div>
-      <div className={styles.segmentado}>
+      <div className={styles.segmentados}>
         <FiltroSegmentado
           etiqueta={t('eventos:filtros.resultado')}
           valor={filtros.resultado}
@@ -93,6 +97,17 @@ export function EventosPage() {
           opciones={FILTROS_DE_RESULTADO.map((valor) => ({
             valor,
             etiqueta: t(`eventos:filtros.${valor}`),
+          }))}
+        />
+        <FiltroSegmentado
+          etiqueta={t('eventos:filtros.ejecucionEtiqueta')}
+          valor={filtros.ejecucion}
+          onCambio={(ejecucion) => {
+            cambiar({ ejecucion });
+          }}
+          opciones={FILTROS_DE_EJECUCION.map((valor) => ({
+            valor,
+            etiqueta: t(`eventos:ejecucionFiltro.${valor}`),
           }))}
         />
       </div>

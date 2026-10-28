@@ -39,7 +39,6 @@ import refresh from '@material-symbols/svg-400/outlined/refresh.svg?raw';
 import person_add from '@material-symbols/svg-400/outlined/person_add.svg?raw';
 import group_add from '@material-symbols/svg-400/outlined/group_add.svg?raw';
 import logout from '@material-symbols/svg-400/outlined/logout.svg?raw';
-import lock from '@material-symbols/svg-400/outlined/lock.svg?raw';
 import date_range from '@material-symbols/svg-400/outlined/date_range.svg?raw';
 import calendar_today from '@material-symbols/svg-400/outlined/calendar_today.svg?raw';
 import block from '@material-symbols/svg-400/outlined/block.svg?raw';
@@ -69,6 +68,19 @@ import link from '@material-symbols/svg-400/outlined/link.svg?raw';
 import link_off from '@material-symbols/svg-400/outlined/link_off.svg?raw';
 import translate from '@material-symbols/svg-400/outlined/translate.svg?raw';
 import group_fill from '@material-symbols/svg-400/outlined/group-fill.svg?raw';
+import notifications from '@material-symbols/svg-400/outlined/notifications.svg?raw';
+import notifications_active from '@material-symbols/svg-400/outlined/notifications_active.svg?raw';
+import done_all from '@material-symbols/svg-400/outlined/done_all.svg?raw';
+import mark_email_read from '@material-symbols/svg-400/outlined/mark_email_read.svg?raw';
+import sensors from '@material-symbols/svg-400/outlined/sensors.svg?raw';
+import sensors_off from '@material-symbols/svg-400/outlined/sensors_off.svg?raw';
+import report from '@material-symbols/svg-400/outlined/report.svg?raw';
+
+import monitoring from '@material-symbols/svg-400/outlined/monitoring.svg?raw';
+import monitoring_fill from '@material-symbols/svg-400/outlined/monitoring-fill.svg?raw';
+import do_not_disturb_on from '@material-symbols/svg-400/outlined/do_not_disturb_on.svg?raw';
+import trending_up from '@material-symbols/svg-400/outlined/trending_up.svg?raw';
+import lock from '@material-symbols/svg-400/outlined/lock.svg?raw';
 
 const registro = {
   space_dashboard,
@@ -141,6 +153,17 @@ const registro = {
   qr_code_scanner_fill,
   link,
   link_off,
+  notifications,
+  notifications_active,
+  done_all,
+  mark_email_read,
+  sensors,
+  sensors_off,
+  report,
+  monitoring,
+  monitoring_fill,
+  do_not_disturb_on,
+  trending_up,
 } as const;
 
 export type NombreIcono = keyof typeof registro;

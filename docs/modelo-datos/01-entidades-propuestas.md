@@ -11,7 +11,7 @@ cuentas ─┬─< suscripciones (plan, desde, hasta, estado)
          ├─< sitios ─< puertas ─< dispositivos
          ├─< qr_accesos (generado_por usuario, token_hash, vence_at, usado_at, anulado_at)
          │        └─< qr_acceso_puertas (qr_acceso_id, puerta_id)
-         ├─< eventos_acceso (solo inserción)
+         ├─< lecturas (solo inserción)
          └─< bitacoras (solo inserción)
 ```
 
@@ -33,7 +33,7 @@ cuentas ─┬─< suscripciones (plan, desde, hasta, estado)
 | 14 | `dispositivos` | dispositivos | sí | `puerta_id` (único vigente), `clave_hash`, `firmware_version`, `ultimo_latido_at`, `revocado_at` |
 | 15 | `qr_accesos` | accesos | sí | `generado_por` (usuario), `token_hash` (único), `etiqueta`, `vence_at`, `usado_at`, `usado_dispositivo_id`, `anulado_at`; baja diaria por soft delete |
 | 16 | `qr_acceso_puertas` | accesos | sí | Pivote; depende de D-17 (si un QR abre una sola puerta, pasa a columna `puerta_id`) |
-| 17 | `eventos_acceso` | accesos | sí | Solo inserción; `puerta_id`, `dispositivo_id`, `qr_acceso_id` (si se identificó), `token_hash`, `resultado`, `motivo_code`, `metodo` (`qr`, `pulsador`, `forzada`) |
+| 17 | `lecturas` | accesos | sí | Solo inserción; `puerta_id`, `dispositivo_id`, `qr_acceso_id` (si se identificó), `token_hash`, `resultado`, `motivo_code`, `metodo` (`qr`, `pulsador`, `forzada`) |
 | 18 | `bitacoras` | plataforma | sí (NULL = plataforma) | Solo inserción; antes/después en JSON |
 
 ## Salen respecto de la propuesta anterior

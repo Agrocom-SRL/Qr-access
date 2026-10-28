@@ -26,7 +26,7 @@ Fuente: ADR 0030 (aceptado; §6 notificaciones es propuesta) y ADR 0031 §E. Com
 | Señales (fantasma, ruidoso = 20 QR no usados/día, uso masivo, uso imposible, ciclo generar-usar, flujo atípico, altas en ráfaga, tasa de uso) | `domain/actividad-de-usuarios.ts` y vecinos | Umbrales como constantes hasta tener datos; la API calcula, las apps no |
 | `instalacion_id`, `plataforma` en `sesiones`; sesión de origen en `qr_accesos` | Migración + login | El identificador lo genera la app y no lleva secretos |
 | Bandeja `notificaciones` (con `tenant_id` y destinatario) | Módulo propio | Un aviso por evento y día; push con FCM es un paso posterior |
-| Rechazos de generación por límite | Bitácora o tabla de solo inserción | No van a `eventos_acceso` (no son intentos de acceso) |
+| Rechazos de generación por límite | Bitácora o tabla de solo inserción | No van a `lecturas` (no son intentos de acceso) |
 
 ## Concurrencia y prioridad (ADR 0032, propuesta)
 

@@ -6,7 +6,9 @@ import 'package:agrocom_acceso/features/qr_accesos/data/qr_accesos_repositorio.d
 import 'package:agrocom_acceso/features/qr_accesos/domain/datos_generacion_qr.dart';
 import 'package:agrocom_acceso/features/qr_accesos/domain/qr_acceso.dart';
 import 'package:agrocom_acceso/features/qr_accesos/presentation/generar_qr_pagina.dart';
+import 'package:agrocom_acceso/features/qr_accesos/presentation/widgets/resumen_generacion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/indicador_pasos.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -43,12 +45,16 @@ Future<QrAccesosRepositorioFalso> _montar(
   WidgetTester tester, {
   List<Puerta> puertas = _puertas,
   bool expandida = false,
+  bool apaisada = false,
+  Size? tamano,
 }) async {
   final repositorio = QrAccesosRepositorioFalso(generado: _generado);
   await montarPantalla(
     tester,
     pagina: const GenerarQrPagina(),
     expandida: expandida,
+    apaisada: apaisada,
+    tamano: tamano,
     overrides: [
       qrAccesosRepositorioProvider.overrideWithValue(repositorio),
       puertasRepositorioProvider.overrideWithValue(
@@ -212,5 +218,67 @@ void main() {
 
     expect(find.text(textos.qrResumenTitulo), findsOneWidget);
     expect(find.text(textos.qrGenerarSeleccionarTodas), findsNWidgets(2));
+  });
+
+  group('distribución según la pantalla', () {
+    testWidgets('en horizontal de teléfono (852×393): pasos a la izquierda y '
+        'resumen con Siguiente a la derecha', (tester) async {
+      await _montar(tester, apaisada: true);
+      final textos = textosEn(tester);
+
+      final lista = tester.getRect(find.text('Portón principal'));
+      final resumen = tester.getRect(find.text(textos.qrResumenTitulo));
+      final siguiente = tester.getRect(_boton(textos.comunSiguiente));
+
+      expect(find.byType(ResumenGeneracion), findsOneWidget);
+      expect(find.byType(BarraDeAcciones), findsNothing);
+      expect(resumen.left, greaterThan(lista.right));
+      // La columna derecha empieza después de la lista de la izquierda.
+      expect(siguiente.left, greaterThan(lista.right));
+      expect(siguiente.bottom, lessThanOrEqualTo(tamanoApaisado.height));
+    });
+
+    testWidgets(
+      'en horizontal, el paso de revisar muestra el resumen una sola vez',
+      (tester) async {
+        await _montar(tester, apaisada: true);
+        final textos = textosEn(tester);
+
+        await tester.tap(find.text('Portón principal'));
+        await tester.pump();
+        await tester.tap(_boton(textos.comunSiguiente));
+        await tester.pump();
+        await tester.tap(_boton(textos.comunSiguiente));
+        await tester.pump();
+
+        expect(find.text(textos.qrGenerarRevisa), findsOneWidget);
+        expect(find.byType(ResumenGeneracion), findsOneWidget);
+        final generar = tester.getRect(_boton(textos.qrGenerarBoton));
+        expect(generar.bottom, lessThanOrEqualTo(tamanoApaisado.height));
+        expect(find.text(textos.comunAtras), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'en vertical de teléfono (360×800) la barra va abajo y sin resumen',
+      (tester) async {
+        await _montar(tester);
+        final textos = textosEn(tester);
+
+        expect(find.byType(BarraDeAcciones), findsOneWidget);
+        expect(find.byType(ResumenGeneracion), findsNothing);
+        expect(find.text(textos.qrResumenTitulo), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'en tablet horizontal (800×600) conserva la barra de vertical',
+      (tester) async {
+        await _montar(tester, tamano: const Size(800, 600));
+
+        expect(find.byType(BarraDeAcciones), findsOneWidget);
+        expect(find.byType(ResumenGeneracion), findsNothing);
+      },
+    );
   });
 }

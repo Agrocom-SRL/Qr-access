@@ -1,0 +1,40 @@
+{
+  "titulo": "Connected devices",
+  "subtitulo": "Open sessions of {{usuario}}. Signing in from several devices is normal: here they are only viewed and closed.",
+  "sinNombre": "User without a name",
+  "tabla": "Connected devices of {{usuario}}",
+  "cerradas_one": "1 session closed.",
+  "cerradas_other": "{{count}} sessions closed.",
+  "cerrarTodas": "Close all",
+  "cerrarUna": "Close the session on {{dispositivo}}",
+  "errorCarga": "We couldn't load the devices",
+  "dispositivo": {
+    "sinNombre": "Unnamed device"
+  },
+  "plataforma": {
+    "android": "Android",
+    "ios": "iOS",
+    "web": "Web",
+    "desconocida": "Unknown platform"
+  },
+  "columnas": {
+    "dispositivo": "Device",
+    "ip": "IP",
+    "inicio": "Start",
+    "actividad": "Last activity"
+  },
+  "vacio": {
+    "titulo": "No open sessions",
+    "texto": "This user has no connected devices right now."
+  },
+  "confirmarUna": {
+    "titulo": "Close this session",
+    "texto": "Only this session is closed. The device will have to sign in again; the user's QR codes stay valid.",
+    "accion": "Close session"
+  },
+  "confirmarTodas": {
+    "titulo": "Close all sessions",
+    "texto": "All of {{usuario}}'s sessions are closed and their valid QR codes are cancelled. They will have to sign in again with their PIN.",
+    "accion": "Close all"
+  }
+}

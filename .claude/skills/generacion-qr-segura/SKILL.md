@@ -13,7 +13,7 @@ Fuentes: ADR 0008 (diseño del QR), ADR 0030 (topes y abuso), ADR 0031 (endureci
 2. Un solo uso, consumo atómico (`UPDATE … WHERE usado_at IS NULL`, una fila). Nada de QR multiuso ni permanente.
 3. La puerta abre solo con `abrir: true` del servidor; el firmware no evalúa vencimientos.
 4. **Validar nunca se limita** por cuota, bolsa ni cuenta suspendida de generación (ADR 0030 §1). Los límites van solo en `generar-qr`.
-5. Todo intento de validación va a `eventos_acceso`, también los nuevos motivos.
+5. Todo intento de validación va a `lecturas`, también los nuevos motivos.
 
 ## Estados y cascada (ADR 0031 §0–2, aceptado)
 

@@ -1,18 +1,27 @@
 import { construirApp } from './app.js';
 import { cargarConfig } from './config.js';
-import { crearPool } from './platform/db/pool.js';
+import { crearPools } from './platform/db/pools.js';
+import { crearTareas, programarTareas } from './tareas.js';
 
 const config = cargarConfig();
-const pool = crearPool({
-  host: config.DB_HOST,
-  port: config.DB_PORT,
-  database: config.DB_DATABASE,
-  user: config.DB_USERNAME,
-  password: config.DB_PASSWORD,
+const pools = crearPools(config);
+const app = await construirApp({
+  config,
+  pool: pools.app,
+  poolDispositivos: pools.dispositivos,
 });
-const app = await construirApp({ config, pool });
+// Tareas periódicas (estado de placas, entrega y retención de notificaciones). No corren en los tests: estos
+// llaman a cada función con un reloj inyectado.
+const tareas = programarTareas(crearTareas(pools.app), (nombre, error) => {
+  // Solo el nombre de la tarea y el tipo de error: nada del contenido de una consulta (ADR 0033).
+  app.log.error(
+    { tarea: nombre, error: error instanceof Error ? error.name : 'desconocido' },
+    'falló una tarea periódica',
+  );
+});
 app.addHook('onClose', async () => {
-  await pool.end();
+  tareas.detener();
+  await Promise.all([pools.app.end(), pools.dispositivos.end()]);
 });
 
 for (const senal of ['SIGINT', 'SIGTERM'] as const) {

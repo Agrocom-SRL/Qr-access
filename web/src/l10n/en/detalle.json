@@ -3,8 +3,10 @@
     "resumen": "Summary",
     "suscripcion": "Subscription",
     "sitios": "Properties and doors",
-    "accesos": "Access",
-    "bitacora": "Audit log"
+    "accesos": "Scans",
+    "bitacora": "Audit log",
+    "incidentes": "Incidents",
+    "operaciones": "QR and data"
   },
   "planActual": "Current plan",
   "usuariosActivos": "Active users",
@@ -119,6 +121,8 @@
   "titularDetalle_other": "Holder · {{unidad}} · {{count}} Members",
   "guardiaDetalle": "Guard",
   "reasignar": "Reassign",
+  "dispositivos": "Devices",
+  "verSesiones": "See the connected devices of {{nombre}}",
   "reasignando": "Reassigning",
   "reasignarA": "Reassign {{nombre}} to another administrator",
   "reasignarTitulo": "Reassign {{nombre}}",

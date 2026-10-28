@@ -2,6 +2,8 @@
 // setup()/loop() solo arman los componentes y llaman a tick(); la decisión de
 // abrir la toma puerta::Maquina, probada en la PC. Nada de delay() en loop().
 #include <Arduino.h>
+#include <confirmacion.h>
+#include <entrega.h>
 #include <esp_task_wdt.h>
 #include <puerta.h>
 #include <pulsacion.h>
@@ -41,7 +43,56 @@ config::Dispositivo dispositivo;
 vinculo::Vinculo estadoVinculo(false);  // se rearma en setup() con lo que haya en la NVS
 char linea[puerta::MAX_QR + 1];
 
-void ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs);
+// Confirmación de la apertura (ADR 0031 §18): solo lee el sensor y reporta, nunca decide.
+// Hasta leer la primera configuración válida el sensor figura NO instalado, pero eso es solo un
+// valor por omisión, no un dato: mientras `configuracionLeida` sea false no se observa ninguna
+// apertura ni se informa el estado del sensor (no se afirma `sin_sensor` sin saberlo).
+confirmacion::Sensor sensor;
+bool configuracionLeida = false;
+// Plazo por omisión: segundos REALES de apertura (el tope vigente) + 5 s, igual que el servidor.
+// Lo reemplaza la configuración.
+constexpr uint16_t MARGEN_CONFIRMACION_S = 5;
+uint16_t esperaConfirmacionS = puerta::APERTURA_POR_DEFECTO_S + MARGEN_CONFIRMACION_S;
+confirmacion::Observador observador;
+confirmacion::Entregas entregas;
+
+bool ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs);
+
+confirmacion::Lectura leerSensor() {
+  return confirmacion::interpretar(sensor, cerradura::sensorEnNivelAlto());
+}
+
+// Pasa los informes ya resueltos a la cola de entrega en segundo plano. No envía nada acá.
+void recogerInformes(uint32_t ahoraMs) {
+  confirmacion::Informe informe;
+  while (observador.siguiente(informe)) {
+    // El plazo de reintentos se cuenta desde que se conoce el desenlace (ver entrega.h).
+    entregas.agregar(informe, ahoraMs);
+#ifdef ACCESO_DESARROLLO
+    Serial.printf("[confirmacion] evento %s: %s\n", informe.eventoId, confirmacion::texto(informe.resultado));
+#else
+    // El id completo identifica un acceso: en producción solo su cola.
+    Serial.printf("[confirmacion] evento ...%s: %s\n",
+                  informe.eventoId + (strlen(informe.eventoId) > 4 ? strlen(informe.eventoId) - 4 : 0),
+                  confirmacion::texto(informe.resultado));
+#endif
+  }
+}
+
+// El servidor ordenó abrir y se actuó sobre el relé: empieza a observar si la puerta se abre.
+// Corre DESPUÉS de accionar el relé y no espera nada.
+void iniciarObservacion(const char* eventoId, bool releAccionado, uint32_t ahoraMs) {
+  if (releAccionado) {
+    // Sin configuración no se sabe si hay sensor: no se observa (el servidor lo toma como
+    // «sin respuesta»), en vez de informar `sin_sensor` por un valor por omisión.
+    if (!configuracionLeida) return;
+    observador.iniciar(eventoId, ahoraMs, static_cast<uint32_t>(esperaConfirmacionS) * 1000U, sensor,
+                       leerSensor());
+  } else {
+    observador.releNoAccionado(eventoId);
+  }
+  recogerInformes(ahoraMs);
+}
 
 // Una consulta que ni siquiera puede salir (sin red, sin hora, sin cola) es un
 // resultado inválido: no abre.
@@ -57,11 +108,13 @@ void pedirValidacion(uint32_t ahoraMs) {
   }
 }
 
-void ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs) {
+// true si el relé quedó accionado en esta llamada.
+bool ejecutar(const puerta::Acciones& acciones, uint32_t ahoraMs) {
   if (acciones.desactivarCerradura) cerradura::desactivar();
-  if (acciones.activarCerradura) cerradura::activar(acciones.msApertura, ahoraMs);
+  const bool accionado = acciones.activarCerradura && cerradura::activar(acciones.msApertura, ahoraMs);
   indicadores::mostrar(acciones.indicacion, ahoraMs);
   if (acciones.enviarValidacion) pedirValidacion(ahoraMs);
+  return accionado;
 }
 
 // El servidor contestó el anuncio o la confirmación: la placa aprende si ya tiene vínculo
@@ -109,12 +162,24 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
   switch (r.tipo) {
     case api::Tipo::Validacion:
       Serial.printf("[puerta] %s\n", puerta::mensaje(r.resultado.motivo));
-      ejecutar(maquina.alResponder(r.id, r.resultado, ahoraMs), ahoraMs);
+      {
+        const puerta::Acciones acciones = maquina.alResponder(r.id, r.resultado, ahoraMs);
+        const bool accionado = ejecutar(acciones, ahoraMs);
+        // Solo una apertura ordenada por el servidor se informa; el pulsador de salida, no.
+        if (acciones.activarCerradura) iniciarObservacion(r.eventoId, accionado, ahoraMs);
+      }
       break;
     case api::Tipo::Configuracion:
       if (r.config.valida) {
         maquina.fijarMaxAperturaS(r.config.segundosApertura);
-        Serial.printf("[config] apertura maxima: %u s\n", maquina.maxAperturaS());
+        // Sensor y plazo: lo que dicta el servidor (la polaridad real está pendiente de confirmar).
+        sensor = r.config.sensor;
+        configuracionLeida = true;
+        esperaConfirmacionS = r.config.esperaConfirmacionS != 0
+                                  ? r.config.esperaConfirmacionS
+                                  : maquina.maxAperturaS() + MARGEN_CONFIRMACION_S;
+        Serial.printf("[config] apertura maxima: %u s, sensor %s, espera %u s\n", maquina.maxAperturaS(),
+                      sensor.instalado ? "instalado" : "no instalado", esperaConfirmacionS);
       } else {
         Serial.printf("[config] descarga fallida (http %d)\n", r.http);
       }
@@ -123,6 +188,13 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
     case api::Tipo::Latido:
       if (r.http != 204 && r.http != 200 && r.http != 401) {
         Serial.printf("[latido] fallo (http %d)\n", r.http);
+      }
+      break;
+    case api::Tipo::Informe:
+      // 204 = registrado; reintentar solo ante falta de red, 429 o 5xx (lo decide `entregas`).
+      entregas.alResponder(r.eventoId, r.http, ahoraMs);
+      if (!confirmacion::reintentable(r.http) && !confirmacion::entregado(r.http)) {
+        Serial.printf("[confirmacion] informe descartado (http %d)\n", r.http);
       }
       break;
     case api::Tipo::Anuncio:
@@ -142,7 +214,7 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
 
 // Latido, configuración y anuncio solo con la puerta en reposo y red lista: no le quitan
 // la tarea de red a una validación.
-void segundoPlano() {
+void segundoPlano(uint32_t ahoraMs) {
   if (!red::lista() || maquina.estado() != puerta::Estado::Reposo) return;
   if (estadoVinculo.debeAnunciar()) {
     temporizador::Periodico& temporizadorDeAnuncio =
@@ -150,7 +222,23 @@ void segundoPlano() {
     if (dispositivo.anunciable() && temporizadorDeAnuncio.vencio()) api::anunciar(dispositivo.clave.c_str());
     return;
   }
-  if (latido.vencio()) api::enviarLatido(cerradura::puertaAbierta());
+  // El informe de la apertura va aquí: con la puerta en reposo (el lector ya se atendió) y detrás de
+  // cualquier validación en la tarea de red; nunca retrasa ni mantiene el relé.
+  // Con el lector activo hace instantes alguien está en la puerta: ningún envío de segundo plano
+  // empieza ahora, para que su validación no espere detrás de una llamada de red en vuelo (los
+  // temporizadores siguen vencidos y el envío sale cuando haya quietud).
+  if (lector_qr::huboActividadReciente(ahoraMs, diagnostico::QUIETUD_SEGUNDO_PLANO_MS)) return;
+  if (const confirmacion::Informe* informe = entregas.debeEnviar(ahoraMs)) {
+    // Se marca el intento aunque no entre en la cola: sin esto se repetiría en cada vuelta de loop().
+    api::enviarInforme(*informe);
+    entregas.enviado(informe->eventoId, ahoraMs);
+  }
+  if (latido.vencio()) {
+    const confirmacion::Lectura lectura = leerSensor();
+    // Sin sensor habilitado el pin está al aire: no se afirma nada sobre la puerta.
+    api::enviarLatido({lectura == confirmacion::Lectura::Abierta, configuracionLeida, lectura,
+                       lector_qr::estado(ahoraMs)});
+  }
   if (configuracion.toca()) api::pedirConfiguracion();
 }
 
@@ -223,7 +311,12 @@ void loop() {
   while (api::siguienteRespuesta(respuesta)) atenderRespuesta(respuesta, ahora);
 
   ejecutar(maquina.tick(ahora), ahora);
-  segundoPlano();
+  // Observar el sensor es leer un pin: no bloquea. Los informes salen en segundoPlano().
+  if (observador.observando()) {
+    observador.tick(ahora, leerSensor());
+    recogerInformes(ahora);
+  }
+  segundoPlano(ahora);
   cerradura::tick(ahora);
   indicadores::tick(ahora);
 }

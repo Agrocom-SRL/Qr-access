@@ -1,0 +1,72 @@
+{
+  "pestana": "Consumo de bolsa",
+  "subtitulo": "Los QR generados este mes frente a la bolsa de cada cuenta. Aquí solo se registra y se avisa: ninguna cuenta queda cortada.",
+  "aviso": "Aviso al {{porcentaje}} de la bolsa",
+  "mes": "Mes de {{mes}}",
+  "sinPlan": "Sin plan",
+  "tabla": "Consumo de la bolsa por cuenta",
+  "estado": {
+    "normal": "Normal",
+    "aviso": "Aviso",
+    "superada": "Superada",
+    "sin_tope": "Sin tope"
+  },
+  "filtros": {
+    "estado": "Estado de la bolsa",
+    "todas": "Todas",
+    "buscar": "Buscar por código o nombre",
+    "orden": "Ordenar por",
+    "sentido": "Sentido del orden",
+    "mayorAMenor": "Mayor a menor",
+    "menorAMayor": "Menor a mayor"
+  },
+  "orden": {
+    "porcentaje": "Porcentaje",
+    "usado": "QR usados",
+    "tope": "Bolsa",
+    "nombre": "Nombre"
+  },
+  "origen": {
+    "excepcion": "Excepción de la cuenta",
+    "plan": "Plan",
+    "general": "Valor general"
+  },
+  "columnas": {
+    "cuenta": "Cuenta",
+    "plan": "Plan",
+    "consumo": "Consumo del mes",
+    "estado": "Estado",
+    "origen": "Origen del tope"
+  },
+  "barra": {
+    "etiqueta": "Consumo de {{cuenta}}",
+    "valor": "{{usado}} de {{tope}} QR ({{porcentaje}})",
+    "sinTope": "{{usado}} QR, sin bolsa"
+  },
+  "vacio": {
+    "titulo": "Sin cuentas",
+    "texto": "Todavía no hay cuentas con consumo que mostrar."
+  },
+  "sinResultados": {
+    "titulo": "Sin resultados",
+    "texto": "Ninguna cuenta cumple estos filtros."
+  },
+  "errorCarga": "No pudimos cargar el consumo de la bolsa",
+  "detalle": {
+    "volver": "Consumo de bolsa",
+    "plan": "Plan {{plan}}",
+    "usado": "QR usados",
+    "tope": "Bolsa del mes",
+    "sinTope": "Sin bolsa asignada",
+    "porcentaje": "Porcentaje de la bolsa",
+    "avisoEl": "Aviso el {{cuando}}",
+    "superadaEl": "Superada el {{cuando}}",
+    "origen": "Origen del tope: {{origen}}",
+    "graficaTitulo": "QR generados por día",
+    "graficaSubtitulo": "{{mes}}, hasta hoy: {{total}} QR en total",
+    "graficaEtiqueta": "QR generados por día de {{cuenta}}",
+    "dia": "Día",
+    "generados": "QR generados",
+    "errorCarga": "No pudimos cargar el consumo de esta cuenta"
+  }
+}

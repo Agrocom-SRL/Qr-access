@@ -26,6 +26,7 @@ interface EventoFila extends RowDataPacket {
   dispositivo_id: string;
   qr_acceso_id: string | null;
   token_hash: string | null;
+  repetido_de_id: string | null;
 }
 
 describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
@@ -54,9 +55,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
 
   async function eventos(): Promise<EventoFila[]> {
-    const [filas] = await prueba.pool.query<EventoFila[]>(
-      'SELECT * FROM eventos_acceso ORDER BY id',
-    );
+    const [filas] = await prueba.pool.query<EventoFila[]>('SELECT * FROM lecturas ORDER BY id');
     return filas;
   }
 
@@ -89,10 +88,13 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     expect(String(qrFila?.usado_dispositivo_id)).toBe(a.dispositivoPrincipal.id);
   });
 
-  it('un QR sirve una sola vez: la segunda lectura se rechaza con qr.usado', async () => {
-    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
+  it('un QR sirve una sola vez: la lectura de otro lector se rechaza con qr.usado', async () => {
+    const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [
+      a.puertaPrincipal.id,
+      a.puertaTrasera.id,
+    ]);
     expect((await validar(a.dispositivoPrincipal, qr.texto)).json<Validacion>().abrir).toBe(true);
-    const segunda = (await validar(a.dispositivoPrincipal, qr.texto)).json<Validacion>();
+    const segunda = (await validar(a.dispositivoTrasero, qr.texto)).json<Validacion>();
     expect(segunda).toEqual({
       abrir: false,
       evento_id: cualquierTexto(),
@@ -116,14 +118,25 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     ]);
     const resultados = respuestas.map((r) => r.json<Validacion>());
     expect(respuestas.every((r) => r.statusCode === 200)).toBe(true);
-    expect(resultados.filter((r) => r.abrir)).toHaveLength(1);
-    expect(resultados.filter((r) => !r.abrir).every((r) => r.motivo_code === 'qr.usado')).toBe(
-      true,
-    );
-
+    // Un solo consumo y un solo lector abre; ese lector tiene a lo sumo UNA repetición (ADR 0032 §3);
+    // el resto, incluido el otro lector, recibe qr.usado.
     const registrados = await eventos();
     expect(registrados).toHaveLength(6);
-    expect(registrados.filter((e) => e.resultado === 'permitido')).toHaveLength(1);
+    const originales = registrados.filter(
+      (e) => e.resultado === 'permitido' && e.repetido_de_id === null,
+    );
+    expect(originales).toHaveLength(1);
+    const lectorGanador = String(originales[0]?.dispositivo_id);
+    const repetidas = registrados.filter(
+      (e) => e.resultado === 'permitido' && e.repetido_de_id !== null,
+    );
+    expect(repetidas.length).toBeLessThanOrEqual(1);
+    for (const repetida of repetidas) expect(repetida.dispositivo_id).toBe(lectorGanador);
+    const abrieron = resultados.filter((r) => r.abrir);
+    expect(abrieron).toHaveLength(1 + repetidas.length);
+    for (const resultado of resultados.filter((r) => !r.abrir)) {
+      expect(resultado).toMatchObject({ motivo_code: 'qr.usado' });
+    }
     const [usos] = await prueba.pool.query<RowDataPacket[]>(
       'SELECT usado_at FROM qr_accesos WHERE id = ?',
       [qr.id],
@@ -160,7 +173,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         expect(evento?.token_hash).toMatch(/^[0-9a-f]{64}$/);
         expect(evento?.qr_acceso_id).toBeNull();
       }
-      const [todo] = await prueba.pool.query<RowDataPacket[]>('SELECT * FROM eventos_acceso');
+      const [todo] = await prueba.pool.query<RowDataPacket[]>('SELECT * FROM lecturas');
       expect(JSON.stringify(todo)).not.toContain('AQ1.corto');
     });
 
@@ -234,9 +247,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       const evento = await rechazado(a.dispositivoPrincipal, deB.texto, 'qr.desconocido');
       expect(evento?.qr_acceso_id).toBeNull();
       // Y el evento quedó en la cuenta del dispositivo, no en la del QR
-      const [filas] = await prueba.pool.query<RowDataPacket[]>(
-        'SELECT tenant_id FROM eventos_acceso',
-      );
+      const [filas] = await prueba.pool.query<RowDataPacket[]>('SELECT tenant_id FROM lecturas');
       expect(String(filas[0]?.tenant_id)).toBe(a.cuenta.id);
       const [qrDeB] = await prueba.pool.query<RowDataPacket[]>(
         'SELECT usado_at FROM qr_accesos WHERE id = ?',
@@ -259,15 +270,18 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(filas[0]?.usado_at).toBeNull();
     });
 
-    it('si quien lo generó se desactiva deja de abrir (RF-06): qr.anulado', async () => {
+    it('si quien lo generó se suspende deja de abrir (RF-06): qr.generador_suspendido', async () => {
       const otro = await crearUsuarioConPin(prueba.pool, a.cuenta, 'BA01', [a.rolMiembroId]);
       const qr = await crearQr(prueba.pool, a.cuenta, otro.id, [a.puertaPrincipal.id]);
-      await prueba.pool.query('UPDATE usuarios SET activo = 0 WHERE id = ?', [otro.id]);
-      await rechazado(a.dispositivoPrincipal, qr.texto, 'qr.anulado');
+      await prueba.pool.query(
+        "UPDATE usuarios SET estado = 'suspendido', estado_desde = NOW(3), estado_motivo = 'prueba' WHERE id = ?",
+        [otro.id],
+      );
+      await rechazado(a.dispositivoPrincipal, qr.texto, 'qr.generador_suspendido');
     });
   });
 
-  it('todo intento queda en eventos_acceso: ninguna respuesta se pierde', async () => {
+  it('todo intento queda en lecturas: ninguna respuesta se pierde', async () => {
     const vigente = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
     const intentos = [vigente.texto, vigente.texto, 'basura', `AQ1.${'B'.repeat(22)}`];
     const respuestas = [];
@@ -278,13 +292,13 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     expect(registrados.map((e) => String(e.id))).toEqual(respuestas.map((r) => r.evento_id));
     expect(registrados.map((e) => e.motivo_code)).toEqual([
       'acceso.permitido',
-      'qr.usado',
+      'acceso.permitido', // relectura del mismo lector dentro de la ventana (ADR 0032 §3)
       'qr.formato_invalido',
       'qr.desconocido',
     ]);
   });
 
-  it('eventos_acceso es de solo inserción para la API: no hay ruta que lo cambie', async () => {
+  it('lecturas es de solo inserción para la API: no hay ruta que lo cambie', async () => {
     const qr = await crearQr(prueba.pool, a.cuenta, a.usuario.id, [a.puertaPrincipal.id]);
     await validar(a.dispositivoPrincipal, qr.texto);
     const antes = await eventos();
@@ -350,7 +364,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
       expect(filas[0]?.usado_at).toBeNull();
     });
 
-    it('un dispositivo dado de baja o desactivado, o de una cuenta dada de baja, no autentica', async () => {
+    it('un dispositivo dado de baja o desactivado, o de una cuenta eliminada, no autentica', async () => {
       await prueba.pool.query('UPDATE dispositivos SET activo = 0 WHERE id = ?', [
         a.dispositivoPrincipal.id,
       ]);
@@ -359,7 +373,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         a.dispositivoTrasero.id,
       ]);
       expect((await validar(a.dispositivoTrasero, 'x')).statusCode).toBe(401);
-      await prueba.pool.query('UPDATE cuentas SET activo = 0 WHERE id = ?', [b.cuenta.id]);
+      await prueba.pool.query('UPDATE cuentas SET deleted_at = NOW(3) WHERE id = ?', [b.cuenta.id]);
       expect((await validar(b.dispositivoPrincipal, 'x')).statusCode).toBe(401);
     });
 
@@ -379,7 +393,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
     });
     expect(respuesta.json<Validacion>().abrir).toBe(true);
     const [evento] = await prueba.pool.query<RowDataPacket[]>(
-      'SELECT leido_en_dispositivo_at FROM eventos_acceso',
+      'SELECT leido_en_dispositivo_at FROM lecturas',
     );
     expect(evento[0]?.leido_en_dispositivo_at).toBeNull();
   });
@@ -418,7 +432,12 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
           sitio: { id: a.sitioId, nombre: 'Sitio AAA' },
         },
         qr_id: null,
+        // Campo aditivo (ADR 0031 §18): un rechazo no ordenó abrir, no tiene ejecución.
+        ejecucion: null,
         qr: null,
+        repeticiones: 0,
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect(cuerpo.datos.at(-1)).toMatchObject({
         resultado: 'permitido',
@@ -507,11 +526,15 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         permitidos: 2,
         rechazados: 1,
         rechazados_por_motivo: [{ motivo_code: 'qr.formato_invalido', total: 1 }],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(a.usuario.pin)).json()).toEqual({
         permitidos: 1,
         rechazados: 0,
         rechazados_por_motivo: [],
+        repeticiones_permitidas: 0,
+        repeticiones_rechazadas: 0,
       });
       expect((await resumir(b.administrador.pin)).json()).toMatchObject({
         permitidos: 0,

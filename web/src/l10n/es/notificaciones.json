@@ -1,0 +1,94 @@
+{
+  "titulo": "Notificaciones",
+  "subtitulo": "Avisos de las placas de todas las cuentas, agrupados por sitio.",
+  "campana_one": "Notificaciones: {{count}} sin leer",
+  "campana_other": "Notificaciones: {{count}} sin leer",
+  "nuevas_one": "Llegó {{count}} notificación nueva",
+  "nuevas_other": "Llegaron {{count}} notificaciones nuevas",
+  "filtro": "Qué notificaciones ver",
+  "filtros": {
+    "no_leidas": "Sin leer",
+    "todas": "Todas"
+  },
+  "leerTodas": "Marcar todas como leídas",
+  "leyendoTodas": "Marcando…",
+  "leer": "Marcar como leída",
+  "descartar": "Descartar",
+  "sinSitio": "Toda la cuenta",
+  "sinLeer": "Sin leer",
+  "novedad": "Última novedad: {{cuando}}",
+  "errorCarga": "No pudimos cargar las notificaciones",
+  "severidad": {
+    "info": "Información",
+    "aviso": "Aviso",
+    "critica": "Crítica"
+  },
+  "tipo": {
+    "placa_caida_sostenida": "Una placa dejó de reportar",
+    "placa_desaparecida": "Una placa desapareció",
+    "placa_lector_sin_respuesta": "El lector de una placa no responde",
+    "placa_recuperada": "Una placa volvió a reportar",
+    "apertura_fallida": "Una puerta no abre tras varios intentos",
+    "senal_uso": "Un QR tiene un uso fuera de lo normal",
+    "bolsa_aviso": "La bolsa de QR de una cuenta llegó al aviso",
+    "bolsa_superada": "Una cuenta superó su bolsa de QR del mes",
+    "flujo_atipico": "Un día de accesos fue atípico",
+    "incidente_propuesta": "El sistema propone una acción sobre un usuario reincidente"
+  },
+  "detalle": {
+    "aperturasFallidas_one": "{{count}} apertura sin confirmar",
+    "aperturasFallidas_other": "{{count}} aperturas sin confirmar",
+    "desde": "Desde {{cuando}}"
+  },
+  "causa": {
+    "puerta_no_abrio": "La puerta no se abrió",
+    "puerta_no_cerro": "La puerta no volvió a cerrar",
+    "rele_no_accionado": "El relé no se accionó",
+    "sin_sensor": "La puerta no tiene sensor",
+    "sin_respuesta": "La placa no respondió a tiempo"
+  },
+  "vacio": {
+    "noLeidas": {
+      "titulo": "Todo al día",
+      "texto": "No tienes notificaciones sin leer."
+    },
+    "todas": {
+      "titulo": "Sin notificaciones",
+      "texto": "Cuando una placa deje de reportar o una puerta no abra, el aviso aparece aquí."
+    }
+  },
+  "cuentaDelGrupo": "{{codigo}} · {{nombre}}",
+  "senal": {
+    "usuario": "Usuario: {{usuario}}",
+    "usuarioSinNombre": "Usuario sin nombre",
+    "medido": "Medido: {{valor}}; umbral: {{umbral}}",
+    "dia": "Día {{dia}}"
+  },
+  "bolsa": {
+    "usado": "{{usado}} de {{tope}} QR en {{mes}}",
+    "sinCifras": "Cuota de {{mes}}: este aviso no trae las cifras"
+  },
+  "flujo": {
+    "aperturas": "{{aperturas}} aperturas con {{usuarios}} usuarios activos",
+    "porUsuario": "{{porUsuario}} por usuario (umbral: {{umbral}})",
+    "base": "Base habitual: {{base}} aperturas",
+    "sinBase": "Sin base habitual todavía",
+    "dia": "Día {{dia}}"
+  },
+  "filtroTipo": "Tipo de aviso",
+  "todosLosTipos": "Todos los tipos",
+  "pagina": {
+    "titulo": "Avisos"
+  },
+  "propuesta": {
+    "accion": {
+      "restringir": "Propone restringir a {{usuario}}",
+      "suspender": "Propone suspender a {{usuario}}",
+      "suspender_y_anular": "Propone suspender a {{usuario}} y anular sus QR vigentes"
+    },
+    "sinNombre": "este usuario",
+    "incidentes": "{{confirmados}} de {{minimo}} incidentes confirmados en {{ventana}} días",
+    "aplicada": "El sistema ya lo restringió de forma automática. Revisa si corresponde.",
+    "pendiente": "Nadie la aplicó todavía: la decide una persona de la cuenta."
+  }
+}

@@ -59,7 +59,7 @@ Audiencia: AGROCOM en el panel web (todas las cuentas) y el propietario en la ap
 4. **Usuarios ruidosos:** generan QR a cada rato sin que se usen (aunque sea ilimitado). Pueden ser un usuario ocioso o un malware; candidatos a revisión.
 5. **Dueños que usan mal el cupo:** crean usuarios finales para dar acceso a visitas y familiares, cuando bastaba generar y compartir un QR.
 
-Estas métricas se derivan de `qr_accesos` y `eventos_acceso`; definir umbrales y ventana de tiempo (§10). La API las expone (contrato nuevo en `/api/v1`, aislado por cuenta) y ni la app ni la web calculan nada.
+Estas métricas se derivan de `qr_accesos` y `lecturas`; definir umbrales y ventana de tiempo (§10). La API las expone (contrato nuevo en `/api/v1`, aislado por cuenta) y ni la app ni la web calculan nada.
 
 ## 5. Cambios en la app
 

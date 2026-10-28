@@ -1,8 +1,15 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
-import { permiso, usuarioDe } from '../../plugins/permisos.js';
+import { permiso, tienePermiso, usuarioDe } from '../../plugins/permisos.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
+import { ejecutar as cerrarMiSesion } from './actions/cerrar-mi-sesion.js';
+import { ejecutar as cerrarMisOtrasSesiones } from './actions/cerrar-mis-otras-sesiones.js';
 import { ejecutar as cerrarSesion } from './actions/cerrar-sesion.js';
+import { ejecutar as cerrarSesionDeUsuario } from './actions/cerrar-sesion-de-usuario.js';
+import { ejecutar as cerrarSesionesDeUsuario } from './actions/cerrar-sesiones-de-usuario.js';
+import { ejecutar as listarMisSesiones } from './actions/listar-mis-sesiones.js';
+import { ejecutar as listarSesionesDeUsuario } from './actions/listar-sesiones-de-usuario.js';
 import { ejecutar as compartirPin } from './actions/compartir-pin.js';
 import { ejecutar as crearUsuario } from './actions/crear-usuario.js';
 import { ejecutar as editarMiPerfil } from './actions/editar-mi-perfil.js';
@@ -12,11 +19,16 @@ import { ejecutar as generarPin } from './actions/generar-pin.js';
 import { ejecutar as iniciarSesion } from './actions/iniciar-sesion.js';
 import { ejecutar as listarRoles } from './actions/listar-roles.js';
 import { ejecutar as listarUsuarios } from './actions/listar-usuarios.js';
+import { ejecutar as reactivarUsuario } from './actions/reactivar-usuario.js';
 import { ejecutar as refrescarSesion } from './actions/refrescar-sesion.js';
+import { ejecutar as restringirUsuario } from './actions/restringir-usuario.js';
+import { ejecutar as suspenderUsuario } from './actions/suspender-usuario.js';
+import { ejecutar as verEstadoDeUsuario } from './actions/ver-estado-de-usuario.js';
 import { ejecutar as estadisticasDeUsuarios } from './actions/estadisticas-de-usuarios.js';
 import { ejecutar as verCupo } from './actions/ver-cupo.js';
 import { ejecutar as verSesionActual } from './actions/ver-sesion-actual.js';
 import {
+  cuerpoDeCambioDeEstado,
   cuerpoDeEdicionDeUsuario,
   cuerpoDeIngreso,
   cuerpoDeMiPerfil,
@@ -25,8 +37,13 @@ import {
   cuerpoDeRegeneracionDePin,
   cuerpoDeRefresco,
   esquemaUsuario,
+  parametrosDeSesion,
+  parametrosDeSesionDeUsuario,
   parametrosDeUsuario,
+  respuestaDeSesionesCerradas,
+  respuestaListadoDeSesiones,
   respuestaDeCupo,
+  respuestaDeEstadoDeUsuario,
   respuestaDeEstadisticasDeUsuarios,
   respuestaDeIngreso,
   respuestaDePinGenerado,
@@ -57,11 +74,14 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           body: cuerpoDeIngreso,
           response: { 200: respuestaDeIngreso },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'login' },
       },
       (request) =>
         iniciarSesion(servicios, {
           pin: request.body.pin,
+          instalacionId: request.body.instalacion_id ?? null,
+          plataforma: request.body.plataforma ?? null,
+          dispositivo: request.body.dispositivo ?? null,
           ip: request.ip,
           agente: request.headers['user-agent']?.slice(0, LARGO_MAXIMO_DEL_AGENTE) ?? null,
           log: request.log,
@@ -76,15 +96,38 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           body: cuerpoDeRefresco,
           response: { 200: respuestaDeRefresco },
         },
-        config: { acceso: 'publica' },
+        config: { acceso: 'publica', limite: 'refresco' },
       },
-      (request) => refrescarSesion(servicios, request.body.refresco),
+      (request) => refrescarSesion(servicios, request.body.refresco, new Date(), request.ip),
     );
 
     app.get(
       '/sesiones/actual',
       { schema: { tags: ['seguridad'], response: { 200: respuestaDeSesionActual } } },
       (request) => verSesionActual(pool, usuarioDe(request)),
+    );
+
+    // Dispositivos conectados (ADR 0030 §4.1). Las sesiones PROPIAS no piden permiso: son de quien las abrió.
+    app.get(
+      '/sesiones',
+      { schema: { tags: ['seguridad'], response: { 200: respuestaListadoDeSesiones } } },
+      (request) => listarMisSesiones(pool, usuarioDe(request)),
+    );
+
+    // Antes de `/sesiones/:id`: "otras" no es un id.
+    app.delete(
+      '/sesiones/otras',
+      { schema: { tags: ['seguridad'], response: { 200: respuestaDeSesionesCerradas } } },
+      async (request) => ({ cerradas: await cerrarMisOtrasSesiones(pool, usuarioDe(request)) }),
+    );
+
+    app.delete(
+      '/sesiones/:id',
+      { schema: { tags: ['seguridad'], params: parametrosDeSesion } },
+      async (request, reply) => {
+        await cerrarMiSesion(pool, usuarioDe(request), request.params.id);
+        return reply.status(204).send();
+      },
     );
 
     // Cada persona edita su propio nombre; el PIN y los roles son del administrador de la cuenta.
@@ -104,6 +147,48 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       await cerrarSesion(servicios, usuarioDe(request));
       return reply.status(204).send();
     });
+
+    // Un superior ve y cierra las sesiones de su rama (ADR 0030 §4.1, ADR 0028 §4); quien no es de su rama es 404.
+    app.get(
+      '/usuarios/:id/sesiones',
+      {
+        schema: {
+          tags: ['seguridad'],
+          params: parametrosDeUsuario,
+          response: { 200: respuestaListadoDeSesiones },
+        },
+        preHandler: permiso('seguridad.sesion.ver'),
+      },
+      (request) => listarSesionesDeUsuario(pool, usuarioDe(request), request.params.id),
+    );
+
+    app.delete(
+      '/usuarios/:id/sesiones',
+      {
+        schema: {
+          tags: ['seguridad'],
+          params: parametrosDeUsuario,
+          response: { 200: respuestaDeSesionesCerradas },
+        },
+        preHandler: permiso('seguridad.sesion.cerrar'),
+      },
+      async (request) => ({
+        cerradas: await cerrarSesionesDeUsuario(pool, usuarioDe(request), request.params.id),
+      }),
+    );
+
+    app.delete(
+      '/usuarios/:id/sesiones/:sesionId',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeSesionDeUsuario },
+        preHandler: permiso('seguridad.sesion.cerrar'),
+      },
+      async (request, reply) => {
+        const { id, sesionId } = request.params;
+        await cerrarSesionDeUsuario(pool, usuarioDe(request), id, sesionId);
+        return reply.status(204).send();
+      },
+    );
 
     // El porcentaje y los avisos del cupo los ve solo el Administrador (ADR 0028 §6).
     app.get(
@@ -198,6 +283,69 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
       },
       async (request, reply) => {
         await eliminarUsuario(pool, usuarioDe(request), request.params.id, request.query.confirmar);
+        return reply.status(204).send();
+      },
+    );
+
+    // Estados (ADR 0033 §1, D-25): restringir y suspender arrastran a toda la rama del usuario; el motivo
+    // es obligatorio. Reactivar exige el permiso del estado que levanta (lo comprueba la acción).
+    app.get(
+      '/usuarios/:id/estado',
+      {
+        schema: {
+          tags: ['seguridad'],
+          params: parametrosDeUsuario,
+          response: { 200: respuestaDeEstadoDeUsuario },
+        },
+        preHandler: permiso('seguridad.usuario.ver'),
+      },
+      (request) => verEstadoDeUsuario(pool, usuarioDe(request), request.params.id),
+    );
+
+    app.post(
+      '/usuarios/:id/restriccion',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, body: cuerpoDeCambioDeEstado },
+        preHandler: permiso('seguridad.usuario.restringir'),
+      },
+      async (request, reply) => {
+        await restringirUsuario(pool, usuarioDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/usuarios/:id/suspension',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario, body: cuerpoDeCambioDeEstado },
+        preHandler: permiso('seguridad.usuario.suspender'),
+      },
+      async (request, reply) => {
+        await suspenderUsuario(pool, usuarioDe(request), request.params.id, request.body.motivo);
+        return reply.status(204).send();
+      },
+    );
+
+    app.post(
+      '/usuarios/:id/reactivacion',
+      {
+        schema: { tags: ['seguridad'], params: parametrosDeUsuario },
+        preHandler: (request) => {
+          const usuario = usuarioDe(request);
+          const puede =
+            tienePermiso(usuario, 'seguridad.usuario.restringir') ||
+            tienePermiso(usuario, 'seguridad.usuario.suspender');
+          return puede
+            ? Promise.resolve()
+            : Promise.reject(
+                new ErrorDeDominio('permiso.denegado', 403, {
+                  permiso: 'seguridad.usuario.restringir',
+                }),
+              );
+        },
+      },
+      async (request, reply) => {
+        await reactivarUsuario(pool, usuarioDe(request), request.params.id);
         return reply.status(204).send();
       },
     );

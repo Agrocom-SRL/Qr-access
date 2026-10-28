@@ -3,13 +3,16 @@ import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/acerca_de_la_app.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/seccion_seguridad.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -21,12 +24,13 @@ import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
 
 /// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol,
-/// el tema y "Cerrar sesión".
+/// el tema, la información de la app y "Cerrar sesión".
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -71,6 +75,7 @@ class PerfilPagina extends ConsumerWidget {
         MediaQuery.platformBrightnessOf(context) == Brightness.dark,
     };
 
+    // Sin título de pantalla: la página empieza por el bloque del usuario.
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
       anchoMaximo: tokens.tamano.maxFormulario,
@@ -124,6 +129,8 @@ class PerfilPagina extends ConsumerWidget {
             SizedBox(height: tokens.espacio.xl),
             _TarjetaCuenta(sesion: sesion),
             SizedBox(height: tokens.espacio.l),
+            const SeccionSeguridad(),
+            SizedBox(height: tokens.espacio.l),
             AccesoTarjeta(
               relleno: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
               child: Column(
@@ -133,6 +140,14 @@ class PerfilPagina extends ConsumerWidget {
                     valor: sesion.rolActivo.nombre,
                     icono: Icons.badge_outlined,
                     invertida: true,
+                  ),
+                  FilaClaveValor(
+                    clave: l10n.perfilDispositivos,
+                    valor: l10n.perfilDispositivosAyuda,
+                    icono: Icons.devices_outlined,
+                    invertida: true,
+                    claveEnfatizada: true,
+                    alTocar: () => context.go(Rutas.dispositivos),
                   ),
                   FilaClaveValor(
                     clave: l10n.perfilSuscripcion,
@@ -151,7 +166,6 @@ class PerfilPagina extends ConsumerWidget {
                     icono: Icons.dark_mode_outlined,
                     invertida: true,
                     claveEnfatizada: true,
-                    conSeparador: false,
                     accion: AccesoInterruptor(
                       activo: oscuro,
                       etiqueta: l10n.perfilTemaOscuro,
@@ -160,6 +174,7 @@ class PerfilPagina extends ConsumerWidget {
                           .activarOscuro(oscuro: valor),
                     ),
                   ),
+                  const FilaAcercaDeLaApp(conSeparador: false),
                 ],
               ),
             ),
@@ -174,17 +189,6 @@ class PerfilPagina extends ConsumerWidget {
                 expandido: !context.esExpandida,
                 onPressed: ref.read(sesionControladorProvider.notifier).cerrar,
               ),
-            ),
-            SizedBox(height: tokens.espacio.l),
-            Text(
-              l10n.perfilVersion,
-              style: tokens.tipografia.mono(
-                tokens.tipografia.t12,
-                color: colores.textoSecundario,
-              ),
-              textAlign: context.esExpandida
-                  ? TextAlign.start
-                  : TextAlign.center,
             ),
           ],
         ),

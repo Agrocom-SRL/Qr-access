@@ -11,8 +11,8 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 | Actor | Qué hace |
 |---|---|
 | Super admin (AGROCOM) | Da de alta cuentas, su plan, su suscripción y sus PIN de acceso; soporte; ve el uso de cada cuenta |
-| Administrador de cuenta | Usuarios y roles de su cuenta, sitios, puertas, dispositivos; genera y anula QR; ve todos los eventos de su cuenta |
-| Usuario de cuenta | Genera QR y los comparte; ve sus QR y los eventos de esos QR; si tiene el permiso, crea otros usuarios [confirmar D-19] |
+| Administrador de cuenta | Usuarios y roles de su cuenta, sitios, puertas, dispositivos; genera y anula QR; ve todas las lecturas de su cuenta |
+| Usuario de cuenta | Genera QR y los comparte; ve sus QR y las lecturas de esos QR; si tiene el permiso, crea otros usuarios [confirmar D-19] |
 | Persona que entra | Recibe un QR (por WhatsApp, correo…) y lo muestra al lector. **No tiene app ni queda registrada** |
 | Dispositivo | Lee el QR, pregunta a la API y da el pulso a la cerradura |
 
@@ -24,7 +24,7 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - §4.4 Dispositivos: alta, credencial, latido y configuración.
 - §4.5 Generación, envío y anulación de QR.
 - §4.6 Validación en la puerta.
-- §4.7 Eventos de acceso y bitácora.
+- §4.7 Lecturas (intentos de lectura de un QR) y bitácora.
 - Fuera de V1: abrir remoto desde la app, operación sin red (D-05: no), escáner de guardia (D-20), pasarela de pago (D-15), reportes exportables.
 
 ## 4. Funcionalidades
@@ -57,9 +57,10 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-14: Como dispositivo, envío el QR leído y doy el pulso solo si la API responde `abrir: true`.
 - Un QR se consume en su primer uso válido: la segunda lectura se rechaza.
 
-### 4.7 Eventos
-- HU-15: Como administrador, consulto los intentos de acceso (permitidos y rechazados) con filtros por puerta, usuario generador, resultado y fecha.
-- HU-16: Como usuario, veo los eventos de los QR que generé.
+### 4.7 Lecturas
+Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (tabla `lecturas`; antes «eventos de acceso», ADR 0032 §5).
+- HU-15: Como administrador, consulto las lecturas (intentos permitidos y rechazados) con filtros por puerta, usuario generador, resultado y fecha.
+- HU-16: Como usuario, veo las lecturas de los QR que generé.
 - HU-17: Como super admin, veo el uso de QR y de dispositivos por cuenta.
 
 ## 5. Reglas funcionales

@@ -1,0 +1,26 @@
+{
+  "titulo": "Exportar datos",
+  "subtitulo": "Descarga los datos de la cuenta en CSV, de a una página. Si hay más filas que el tope, acota el rango de fechas para bajar el resto.",
+  "recurso": {
+    "etiqueta": "Qué exportar",
+    "usuarios": "Usuarios",
+    "puertas": "Puertas",
+    "lecturas": "Lecturas de acceso"
+  },
+  "filtros": {
+    "resultado": "Resultado",
+    "todos": "Todos",
+    "permitido": "Permitido",
+    "rechazado": "Rechazado",
+    "desde": "Desde",
+    "hasta": "Hasta",
+    "rangoInvalido": "La fecha de inicio es posterior a la de fin."
+  },
+  "descargar": "Descargar CSV",
+  "descargarDeNuevo": "Descargar desde la primera página",
+  "siguiente": "Descargar página {{pagina}} de {{paginas}}",
+  "descargada_one": "Página {{pagina}} de {{paginas}} descargada: {{count}} fila.",
+  "descargada_other": "Página {{pagina}} de {{paginas}} descargada: {{count}} filas.",
+  "sinFilas": "No hay filas para exportar con estos filtros.",
+  "truncado": "Hay más filas que el tope de la exportación. Acota el rango de fechas para exportar el resto."
+}

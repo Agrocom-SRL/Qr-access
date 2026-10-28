@@ -17,6 +17,7 @@ export abstract class RepositorioDeFilasDePlataforma extends RepositorioBase {
     return {
       tenantId: null,
       condicion: (alias: string | null) => ({
+        // eslint-disable-next-line no-restricted-syntax -- el alias es un literal interno del repositorio, no viene del usuario.
         sql: `${alias === null ? '' : `${alias}.`}tenant_id IS NULL`,
         params: [],
       }),

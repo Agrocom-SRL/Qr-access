@@ -6,11 +6,18 @@ import { ProveedorEquipo } from '../../features/equipo';
 import { ProveedorEstadisticas } from '../../features/estadisticas';
 import { ProveedorPagos } from '../../features/pagos';
 import { ProveedorEventos } from '../../features/eventos';
+import { ProveedorLimites } from '../../features/limites';
+import { ProveedorSenales } from '../../features/senales';
+import { ProveedorNotificaciones } from '../../features/notificaciones';
 import { ProveedorPlacas } from '../../features/placas';
 import { ProveedorCobro } from '../../features/cobro';
 import { ProveedorPlanes } from '../../features/planes';
 import { ProveedorResumen } from '../../features/resumen';
 import { ProveedorSeguridad, SesionProvider } from '../../features/seguridad';
+import { ProveedorSesiones } from '../../features/sesiones';
+import { ProveedorIncidentes } from '../../features/incidentes';
+import { ProveedorAnulacion } from '../../features/anulacion';
+import { ProveedorExportaciones } from '../../features/exportacion';
 import { ProveedorSuscripciones } from '../../features/suscripciones';
 import { ProveedorTema } from '../../theme/ProveedorTema';
 import type { Servicios } from './crearServicios';
@@ -60,9 +67,25 @@ export function ProveedoresApp({
                           <ProveedorEventos valor={servicios.eventos}>
                             <ProveedorResumen valor={servicios.resumen}>
                               <ProveedorEstadisticas valor={servicios.estadisticas}>
-                                <SesionProvider almacen={servicios.almacen}>
-                                  {children}
-                                </SesionProvider>
+                                <ProveedorNotificaciones valor={servicios.notificaciones}>
+                                  <ProveedorLimites valor={servicios.limites}>
+                                    <ProveedorSenales valor={servicios.senales}>
+                                      <SesionProvider almacen={servicios.almacen}>
+                                        <ProveedorSesiones valor={servicios.sesiones}>
+                                          <ProveedorIncidentes valor={servicios.incidentes}>
+                                            <ProveedorAnulacion valor={servicios.anulacion}>
+                                              <ProveedorExportaciones
+                                                valor={servicios.exportaciones}
+                                              >
+                                                {children}
+                                              </ProveedorExportaciones>
+                                            </ProveedorAnulacion>
+                                          </ProveedorIncidentes>
+                                        </ProveedorSesiones>
+                                      </SesionProvider>
+                                    </ProveedorSenales>
+                                  </ProveedorLimites>
+                                </ProveedorNotificaciones>
                               </ProveedorEstadisticas>
                             </ProveedorResumen>
                           </ProveedorEventos>

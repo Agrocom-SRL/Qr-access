@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/banner_sin_conexion.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/centrado_desplazable.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,6 +68,7 @@ class ListadoPaginado<T> extends StatelessWidget {
     required this.tituloDeError,
     this.encabezadoDe,
     this.sinRelleno = false,
+    this.alActualizar,
     super.key,
   });
 
@@ -78,8 +80,13 @@ class ListadoPaginado<T> extends StatelessWidget {
   /// Columnas de la tabla (≥ 1024).
   final List<ColumnaListado<T>> columnas;
 
-  /// Qué mostrar sin datos (un `EstadoVacio` con su acción).
+  /// Qué mostrar sin datos (un `EstadoVacio` con su acción). Va centrado y
+  /// desplazable, así que en un alto corto se ve el título con scroll.
   final Widget vacio;
+
+  /// Pide de nuevo el listado con el gesto de tirar hacia abajo. `null` si la
+  /// pantalla no sincroniza (el gesto no hace nada).
+  final Future<void> Function()? alActualizar;
   final ValueChanged<int> alCambiarPagina;
   final VoidCallback alReintentar;
 
@@ -105,8 +112,9 @@ class ListadoPaginado<T> extends StatelessWidget {
             ? _TablaSkeleton(columnas: columnas.length)
             : const _TarjetasSkeleton(),
       ),
-      ListadoConError(:final sinConexion) =>
-        sinConexion
+      ListadoConError(:final sinConexion) => _GestoActualizar(
+        alActualizar: alActualizar,
+        child: sinConexion
             ? EstadoVacio.sinConexion(
                 titulo: tituloDeError,
                 alReintentar: alReintentar,
@@ -115,6 +123,7 @@ class ListadoPaginado<T> extends StatelessWidget {
                 titulo: tituloDeError,
                 alReintentar: alReintentar,
               ),
+      ),
       ListadoConDatos(:final pagina, :final horaDeLosDatosSinConexion) =>
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,26 +142,51 @@ class ListadoPaginado<T> extends StatelessWidget {
                 ),
               ),
             Expanded(
-              child: pagina.datos.isEmpty
-                  ? vacio
-                  : (expandida
-                        ? _Tabla<T>(
-                            pagina: pagina,
-                            columnas: columnas,
-                            alCambiarPagina: alCambiarPagina,
-                            relleno: relleno,
-                          )
-                        : _Tarjetas<T>(
-                            pagina: pagina,
-                            tarjeta: tarjeta,
-                            encabezadoDe: encabezadoDe,
-                            alCambiarPagina: alCambiarPagina,
-                            relleno: relleno,
-                          )),
+              child: _GestoActualizar(
+                alActualizar: alActualizar,
+                child: pagina.datos.isEmpty
+                    ? CentradoDesplazable(child: vacio)
+                    : (expandida
+                          ? _Tabla<T>(
+                              pagina: pagina,
+                              columnas: columnas,
+                              alCambiarPagina: alCambiarPagina,
+                              relleno: relleno,
+                            )
+                          : _Tarjetas<T>(
+                              pagina: pagina,
+                              tarjeta: tarjeta,
+                              encabezadoDe: encabezadoDe,
+                              alCambiarPagina: alCambiarPagina,
+                              relleno: relleno,
+                            )),
+              ),
             ),
           ],
         ),
     };
+  }
+}
+
+/// Gesto de tirar hacia abajo para actualizar, con los colores del tema. Sin
+/// [alActualizar] no hace nada: el hijo se pinta tal cual.
+class _GestoActualizar extends StatelessWidget {
+  const new({required this.alActualizar, required this.child});
+
+  final Future<void> Function()? alActualizar;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final actualizar = alActualizar;
+    if (actualizar == null) return child;
+    final colores = context.tokens.colores;
+    return RefreshIndicator(
+      onRefresh: actualizar,
+      color: colores.primario,
+      backgroundColor: colores.superficie,
+      child: child,
+    );
   }
 }
 
@@ -185,7 +219,10 @@ class _Tarjetas<T> extends StatelessWidget {
       elementos.add(tarjeta(context, dato));
       anterior = dato;
     }
+    // Siempre desplazable: con pocas tarjetas el gesto de actualizar sigue
+    // funcionando (ver `_GestoActualizar`).
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: relleno,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -282,6 +319,7 @@ class _Tabla<T> extends StatelessWidget {
     final desde = (pagina.pagina - 1) * pagina.porPagina + 1;
     final hasta = desde + pagina.datos.length - 1;
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: relleno,
       child: AccesoTarjeta(
         relleno: EdgeInsets.zero,
@@ -382,42 +420,47 @@ class _TarjetasSkeleton extends StatelessWidget {
     final tokens = context.tokens;
     return Semantics(
       label: context.l10n.comunCargando,
-      child: Column(
-        children: [
-          for (var i = 0; i < tokens.tamano.filasDelTablero; i++) ...[
-            AccesoTarjeta(
-              child: Row(
-                children: [
-                  AccesoSkeleton(
-                    ancho: tokens.tamano.iconoCaja,
-                    alto: tokens.tamano.iconoCaja,
-                  ),
-                  SizedBox(width: tokens.espacio.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AccesoSkeleton(
-                          ancho: tokens.tamano.railExpandido / 1.4,
-                        ),
-                        SizedBox(height: tokens.espacio.s),
-                        AccesoSkeleton(
-                          ancho: tokens.tamano.railExpandido / 2,
-                          alto: tokens.espacio.m,
-                        ),
-                      ],
+      // Con poco alto (horizontal de teléfono) el esqueleto no cabe: se recorta
+      // sin desbordar, sin que nadie pueda desplazarlo.
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            for (var i = 0; i < tokens.tamano.filasDelTablero; i++) ...[
+              AccesoTarjeta(
+                child: Row(
+                  children: [
+                    AccesoSkeleton(
+                      ancho: tokens.tamano.iconoCaja,
+                      alto: tokens.tamano.iconoCaja,
                     ),
-                  ),
-                  AccesoSkeleton(
-                    ancho: tokens.tamano.railMedio,
-                    alto: tokens.tamano.badge,
-                  ),
-                ],
+                    SizedBox(width: tokens.espacio.m),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.railExpandido / 1.4,
+                          ),
+                          SizedBox(height: tokens.espacio.s),
+                          AccesoSkeleton(
+                            ancho: tokens.tamano.railExpandido / 2,
+                            alto: tokens.espacio.m,
+                          ),
+                        ],
+                      ),
+                    ),
+                    AccesoSkeleton(
+                      ancho: tokens.tamano.railMedio,
+                      alto: tokens.tamano.badge,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: tokens.espacio.m),
+              SizedBox(height: tokens.espacio.m),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

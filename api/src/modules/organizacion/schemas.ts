@@ -50,25 +50,25 @@ export const respuestaDeEstructura = z.object({
   ),
 });
 
-export const cuerpoDeNuevoSitio = z.object({
+export const cuerpoDeNuevoSitio = z.strictObject({
   nombre: esquemaNombre,
   direccion: esquemaDireccion.nullish().transform((d) => d ?? null),
   zona_horaria: z.string().trim().min(1).max(64).default('America/La_Paz'),
 });
 
-export const cuerpoDeEdicionDeSitio = z.object({
+export const cuerpoDeEdicionDeSitio = z.strictObject({
   nombre: esquemaNombre.optional(),
   direccion: esquemaDireccion.nullable().optional(),
   zona_horaria: z.string().trim().min(1).max(64).optional(),
   activo: z.boolean().optional(),
 });
 
-export const cuerpoDeNuevaPuerta = z.object({
+export const cuerpoDeNuevaPuerta = z.strictObject({
   nombre: esquemaNombre,
   segundos_apertura: z.number().int().min(1).max(30).default(5),
 });
 
-export const cuerpoDeEdicionDePuerta = z.object({
+export const cuerpoDeEdicionDePuerta = z.strictObject({
   nombre: esquemaNombre.optional(),
   segundos_apertura: z.number().int().min(1).max(30).optional(),
   activa: z.boolean().optional(),
@@ -81,7 +81,7 @@ export const respuestaDeCreado = z.object({ id: z.string() });
 export const parametrosDeUsuario = z.object({ usuarioId: esquemaIdDeRuta });
 
 /** Puertas asignadas a un usuario: `todas` o una lista de puertas (nunca las dos cosas). */
-export const esquemaPuertasAsignadas = z.object({
+export const esquemaPuertasAsignadas = z.strictObject({
   todas: z.boolean(),
   puerta_ids: z.array(esquemaIdDeRuta).max(500),
 });

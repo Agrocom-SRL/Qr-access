@@ -1,6 +1,8 @@
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
@@ -54,9 +56,8 @@ consultaEventosProvider =
 /// Eventos de una consulta. Es una familia para que cada pestaña de resultado
 /// tenga su lista mientras se desliza entre ellas. Se recarga al cambiar
 /// filtro o página.
-final FutureProviderFamily<Pagina<EventoAcceso>, ConsultaEventos>
-eventosProvider = FutureProvider.autoDispose
-    .family<Pagina<EventoAcceso>, ConsultaEventos>(
+final FutureProviderFamily<Pagina<Lectura>, ConsultaEventos> eventosProvider =
+    FutureProvider.autoDispose.family<Pagina<Lectura>, ConsultaEventos>(
       (ref, consulta) => ref
           .watch(eventosRepositorioProvider)
           .listar(
@@ -65,3 +66,22 @@ eventosProvider = FutureProvider.autoDispose
             porPagina: porPaginaPorDefecto,
           ),
     );
+
+/// Sincronización de Lecturas (ver `ControladorSincronizacion`): vuelve a pedir
+/// la consulta elegida (filtro y página), no las pestañas que no se ven.
+class SincronizacionEventosControlador extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    final consulta = ref.read(consultaEventosProvider);
+    ref.invalidate(eventosProvider(consulta));
+    await ref.read(eventosProvider(consulta).future);
+  }
+}
+
+/// Estado de sincronización de Lecturas; se descarta al salir de la pantalla.
+final NotifierProvider<SincronizacionEventosControlador, EstadoSincronizacion>
+sincronizacionEventosProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionEventosControlador,
+      EstadoSincronizacion
+    >(SincronizacionEventosControlador.new);

@@ -1,0 +1,38 @@
+.contenedor {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--esp4);
+  min-width: var(--tam160);
+}
+
+.pista {
+  display: block;
+  height: var(--esp8);
+  overflow: hidden;
+  background: var(--skeleton);
+  border-radius: var(--radioCompleto);
+}
+
+/* El ancho lo fija el ratio del consumo; el color solo repite lo que ya dice el estado con texto. */
+.relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--radioCompleto);
+  transition: width var(--dur200) var(--easeOutCubic);
+}
+
+.normal {
+  background: var(--primario);
+}
+
+.aviso {
+  background: var(--advertencia);
+}
+
+.superada {
+  background: var(--peligro);
+}
+
+.sin_tope {
+  background: var(--textoSecundario);
+}

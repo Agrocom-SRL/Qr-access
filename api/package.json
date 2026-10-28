@@ -1,6 +1,6 @@
 {
   "name": "agrocom-acceso-api",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "private": true,
   "description": "API REST de AGROCOM Acceso",
   "type": "module",
@@ -19,23 +19,24 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastify/swagger": "^9.9.1",
+    "@fastify/rate-limit": "^11.2.1",
+    "@fastify/swagger": "^9.9.2",
     "argon2": "^0.45.1",
     "fastify": "^5.12.7",
     "fastify-type-provider-zod": "^7.0.0",
-    "jose": "^6.2.12",
-    "mysql2": "^3.24.5",
+    "jose": "^6.2.13",
+    "mysql2": "3.24.6",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.5",
-    "dependency-cruiser": "^18.5.0",
-    "eslint": "^9.39.5",
-    "prettier": "^3.9.9",
+    "dependency-cruiser": "^18.7.0",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.71.1",
-    "vitest": "^4.1.12"
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   }
 }

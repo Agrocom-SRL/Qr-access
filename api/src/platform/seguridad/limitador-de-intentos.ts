@@ -6,6 +6,8 @@ export interface OpcionesDelLimitador {
   readonly bloqueoMaximoSegundos: number;
   /** Milisegundos desde la época; se inyecta para probar sin esperar. */
   readonly reloj?: () => number;
+  /** Claves que se recuerdan a la vez (por omisión 50 000). */
+  readonly maxRegistros?: number;
 }
 
 interface Registro {
@@ -26,9 +28,11 @@ const TOPE_DE_REGISTROS = 50_000;
 export class LimitadorDeIntentos {
   private readonly registros = new Map<string, Registro>();
   private readonly reloj: () => number;
+  private readonly tope: number;
 
   constructor(private readonly opciones: OpcionesDelLimitador) {
     this.reloj = opciones.reloj ?? Date.now;
+    this.tope = opciones.maxRegistros ?? TOPE_DE_REGISTROS;
   }
 
   /** Segundos que faltan para poder reintentar; `0` si no está bloqueada. */
@@ -61,7 +65,10 @@ export class LimitadorDeIntentos {
       registro.bloqueadoHasta = ahora + segundos * 1000;
       disparaBloqueo = true;
     }
+    // Se reinserta al final: el orden del mapa es el de actividad y el más viejo queda primero.
+    this.registros.delete(clave);
     this.registros.set(clave, registro);
+    this.acotar();
     return disparaBloqueo;
   }
 
@@ -69,9 +76,21 @@ export class LimitadorDeIntentos {
     this.registros.delete(clave);
   }
 
+  /**
+   * Tope duro: si tras depurar sigue lleno (todo activo), cae la clave menos reciente. Preferible
+   * a crecer sin límite; quien inunde con claves distintas solo logra que se olvide a los más viejos.
+   */
+  private acotar(): void {
+    while (this.registros.size > this.tope) {
+      const masAntigua = this.registros.keys().next();
+      if (masAntigua.done === true) return;
+      this.registros.delete(masAntigua.value);
+    }
+  }
+
   /** Olvida lo inactivo para que un atacante no llene la memoria con claves distintas. */
   private depurar(ahora: number): void {
-    if (this.registros.size < TOPE_DE_REGISTROS) return;
+    if (this.registros.size < this.tope) return;
     for (const [clave, registro] of this.registros) {
       if (ahora - registro.ultimaActividad > OLVIDO_MS && registro.bloqueadoHasta < ahora) {
         this.registros.delete(clave);

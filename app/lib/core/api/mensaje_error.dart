@@ -28,18 +28,84 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'rol.permisos_excedidos' => l10n.comunErrorRolPermisosExcedidos,
     'plan.limite_usuarios' => l10n.comunErrorPlanLimiteUsuarios,
     'pin.sufijo_en_uso' => l10n.comunErrorPinSufijoEnUso,
+    'idempotencia.conflicto' => l10n.comunErrorIdempotenciaConflicto,
+    'idempotencia.en_curso' => l10n.comunErrorIdempotenciaEnCurso,
+    'idempotencia.qr_no_vigente' => l10n.comunErrorIdempotenciaQrNoVigente,
     'sitio.nombre_existente' => l10n.comunErrorSitioNombreExistente,
     'puerta.nombre_existente' => l10n.comunErrorPuertaNombreExistente,
     'sitio.con_puertas' => l10n.comunErrorSitioConPuertas,
     'puerta.con_dispositivo' => l10n.comunErrorPuertaConDispositivo,
     'sitio.no_encontrado' => l10n.comunErrorSitioNoEncontrado,
     'sesion.sin_rol' => l10n.comunErrorSesionSinRol,
+    'sesion.no_encontrada' => l10n.comunErrorSesionNoEncontrada,
+    'notificacion.no_encontrada' => l10n.comunErrorNotificacionNoEncontrada,
     'unidad.requerida' => l10n.comunErrorUnidadRequerida,
     'unidad.no_corresponde' => l10n.comunErrorUnidadNoCorresponde,
     'unidad.nombre_existente' => l10n.comunErrorUnidadNombreExistente,
     'usuario.nivel_no_permitido' => l10n.comunErrorUsuarioNivelNoPermitido,
     'usuario.con_dependientes' => l10n.comunErrorUsuarioConDependientes,
     'plan.limite_miembros_por_titular' => l10n.comunErrorPlanLimiteMiembros,
+    'qr.limite_diario' => l10n.comunErrorQrLimiteDiario,
+    'qr.limite_pendientes' => l10n.comunErrorQrLimitePendientes,
+    'qr.limite_propios_sin_uso' => _textoLimitePropiosSinUso(l10n, error),
+    'qr.limite_puertas' => l10n.comunErrorQrLimitePuertas,
+    'qr.generacion_restringida' => l10n.comunErrorQrGeneracionRestringida,
+    'qr.generador_suspendido' => l10n.comunErrorQrGeneradorSuspendido,
+    'qr.cuenta_suspendida' => l10n.comunErrorQrCuentaSuspendida,
+    'sesion.usuario_suspendido' => l10n.comunErrorSesionUsuarioSuspendido,
+    'sesion.cuenta_suspendida' => l10n.comunErrorSesionCuentaSuspendida,
+    'incidente.no_encontrado' => l10n.comunErrorIncidenteNoEncontrado,
+    'incidente.propio' => l10n.comunErrorIncidentePropio,
+    'incidente.motivo_requerido' => l10n.comunErrorIncidenteMotivoRequerido,
+    'incidente.evidencia_invalida' => l10n.comunErrorIncidenteEvidenciaInvalida,
+    'incidente.fecha_futura' => l10n.comunErrorIncidenteFechaFutura,
+    'incidente.fecha_antigua' => l10n.comunErrorIncidenteFechaAntigua,
+    'incidente.tope_diario' => l10n.comunErrorIncidenteTopeDiario,
+    'anulacion.alcance_no_permitido' =>
+      l10n.comunErrorAnulacionAlcanceNoPermitido,
+    'exportacion.tope_excedido' => l10n.comunErrorExportacionTopeExcedido,
+    'limite.excedido' => l10n.comunErrorLimiteExcedido,
     _ => l10n.comunErrorGenerico,
   };
+}
+
+/// Prefijo del motivo que deja la reincidencia en el `estado_motivo` de un
+/// usuario (`incidente.reincidencia:<id>`, ADR 0033 §4.4).
+const _codigoDeReincidencia = 'incidente.reincidencia';
+
+/// El id del incidente: solo dígitos. Lo que no lo sea no entra en el texto.
+final _idDeIncidente = RegExp(r'^\d{1,19}$');
+
+/// Traduce el `estado_motivo` de un usuario, que no es un error sino el porqué
+/// de su estado. La reincidencia lleva el id del incidente que lo provocó: el
+/// id va como parámetro del texto, nunca concatenado en una frase traducida.
+/// Cualquier otro motivo se traduce como un código de error.
+String textoDeMotivoDeEstado(AppLocalizations l10n, String motivo) {
+  final separador = motivo.indexOf(':');
+  final codigo = separador == -1 ? motivo : motivo.substring(0, separador);
+  if (codigo != _codigoDeReincidencia) {
+    return textoDeError(l10n, ErrorApi(code: codigo));
+  }
+  final id = separador == -1 ? '' : motivo.substring(separador + 1);
+  return _idDeIncidente.hasMatch(id)
+      ? l10n.comunMotivoIncidenteReincidencia(id)
+      : l10n.comunMotivoIncidenteReincidenciaSinId;
+}
+
+/// Hasta esta espera (en segundos) se dice cuántos minutos faltan. Más allá es
+/// el tope del día, que vuelve a medianoche: se responde sin cifra.
+const _esperaConMinutosMaxSegundos = 3600;
+const _segundosPorMinuto = 60;
+
+/// Los reemplazos sin uso tienen dos causas: la espera de 2 minutos entre uno
+/// y otro, o el tope del día (ADR 0030 §2.1.5). Ambas llegan como el mismo
+/// código.
+String _textoLimitePropiosSinUso(AppLocalizations l10n, ErrorApi error) {
+  final segundos = error.reintentarEnSegundos;
+  if (segundos == null || segundos > _esperaConMinutosMaxSegundos) {
+    return l10n.comunErrorQrLimitePropiosSinUso;
+  }
+  return l10n.comunErrorQrLimitePropiosEspera(
+    (segundos / _segundosPorMinuto).ceil(),
+  );
 }

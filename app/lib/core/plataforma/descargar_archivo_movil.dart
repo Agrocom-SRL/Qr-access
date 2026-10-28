@@ -5,6 +5,12 @@ import 'dart:typed_data';
 class DescargarArchivo {
   const new();
 
+  Future<bool> archivo({
+    required Uint8List bytes,
+    required String nombreArchivo,
+    required String mimeType,
+  }) async => false;
+
   Future<bool> png({
     required Uint8List bytes,
     required String nombreArchivo,

@@ -3,8 +3,10 @@
     "resumen": "Resumen",
     "suscripcion": "Suscripción",
     "sitios": "Propiedades y puertas",
-    "accesos": "Accesos",
-    "bitacora": "Bitácora"
+    "accesos": "Lecturas",
+    "bitacora": "Bitácora",
+    "incidentes": "Incidentes",
+    "operaciones": "QR y datos"
   },
   "planActual": "Plan actual",
   "usuariosActivos": "Usuarios activos",
@@ -119,6 +121,8 @@
   "titularDetalle_other": "Titular · {{unidad}} · {{count}} Miembros",
   "guardiaDetalle": "Guardia",
   "reasignar": "Reasignar",
+  "dispositivos": "Dispositivos",
+  "verSesiones": "Ver los dispositivos conectados de {{nombre}}",
   "reasignando": "Reasignando",
   "reasignarA": "Reasignar a {{nombre}} a otro administrador",
   "reasignarTitulo": "Reasignar a {{nombre}}",

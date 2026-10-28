@@ -1,0 +1,40 @@
+{
+  "titulo": "Dispositivos conectados",
+  "subtitulo": "Sessões abertas de {{usuario}}. Entrar a partir de vários dispositivos é normal: aqui elas só são vistas e encerradas.",
+  "sinNombre": "Usuário sem nome",
+  "tabla": "Dispositivos conectados de {{usuario}}",
+  "cerradas_one": "1 sessão encerrada.",
+  "cerradas_other": "{{count}} sessões encerradas.",
+  "cerrarTodas": "Encerrar todas",
+  "cerrarUna": "Encerrar a sessão de {{dispositivo}}",
+  "errorCarga": "Não conseguimos carregar os dispositivos",
+  "dispositivo": {
+    "sinNombre": "Dispositivo sem nome"
+  },
+  "plataforma": {
+    "android": "Android",
+    "ios": "iOS",
+    "web": "Web",
+    "desconocida": "Plataforma desconhecida"
+  },
+  "columnas": {
+    "dispositivo": "Dispositivo",
+    "ip": "IP",
+    "inicio": "Início",
+    "actividad": "Última atividade"
+  },
+  "vacio": {
+    "titulo": "Sem sessões abertas",
+    "texto": "Este usuário não tem dispositivos conectados agora."
+  },
+  "confirmarUna": {
+    "titulo": "Encerrar esta sessão",
+    "texto": "Só esta sessão é encerrada. O dispositivo terá que entrar de novo; os QR do usuário continuam válidos.",
+    "accion": "Encerrar sessão"
+  },
+  "confirmarTodas": {
+    "titulo": "Encerrar todas as sessões",
+    "texto": "Todas as sessões de {{usuario}} são encerradas e os QR válidos dele são anulados. Ele terá que entrar de novo com o PIN.",
+    "accion": "Encerrar todas"
+  }
+}

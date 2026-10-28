@@ -18,6 +18,12 @@ export function contrasenaValida(contrasena: string): boolean {
   );
 }
 
+/**
+ * Motivo cuando quien desactiva a alguien del equipo no lo escribe (el panel anterior no lo pedía);
+ * la base exige uno para todo estado distinto de `activo`. Es un código, no un texto de interfaz.
+ */
+export const MOTIVO_POR_DEFECTO = 'equipo.desactivado';
+
 export type MotivoDeBloqueo = 'a_si_mismo' | 'ultimo_activo';
 
 /**

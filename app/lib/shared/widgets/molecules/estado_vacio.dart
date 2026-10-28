@@ -4,9 +4,11 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/centrado_desplazable.dart';
 import 'package:flutter/material.dart';
 
-/// Variantes (handoff): vacío (ícono primario, acción primaria), error
+/// Variantes (handoff): vacío (ilustración, o ícono si el llamador pasa uno;
+/// acción primaria), error
 /// (ícono peligro + "Reintentar") y sin conexión (cloud_off + "Reintentar").
 enum VarianteEstadoVacio { vacio, error, sinConexion }
 
@@ -69,7 +71,10 @@ class EstadoVacio extends StatelessWidget {
     final ilustracionFinal =
         ilustracion ??
         switch (variante) {
-          VarianteEstadoVacio.vacio => null,
+          // Un vacío sin ícono propio lleva la ilustración genérica: las listas
+          // vacías se ven como las demás (handoff), no con un ícono suelto.
+          VarianteEstadoVacio.vacio =>
+            icono == null ? Multimedia.vacioEventos : null,
           VarianteEstadoVacio.error => Multimedia.error,
           VarianteEstadoVacio.sinConexion => Multimedia.sinConexion,
         };
@@ -102,7 +107,9 @@ class EstadoVacio extends StatelessWidget {
         Icons.refresh,
       ),
     };
-    return Center(
+    // Dentro de un scrollable (CentradoDesplazable): si no cabe en la altura,
+    // se desplaza y el título queda alcanzable.
+    return CentradoDesplazable(
       child: Padding(
         padding: EdgeInsets.all(tokens.espacio.xl),
         child: ConstrainedBox(

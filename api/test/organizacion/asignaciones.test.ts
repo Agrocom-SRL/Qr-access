@@ -41,7 +41,7 @@ describe('asignación de guardias a puertas y alcance de sus eventos', () => {
       [b, b.puertaPrincipal, b.dispositivoPrincipal],
     ] as const) {
       await prueba.pool.query(
-        `INSERT INTO eventos_acceso (tenant_id, puerta_id, dispositivo_id, token_hash, metodo, resultado, motivo_code, ocurrido_at)
+        `INSERT INTO lecturas (tenant_id, puerta_id, dispositivo_id, token_hash, metodo, resultado, motivo_code, ocurrido_at)
          VALUES (?, ?, ?, ?, 'qr', 'rechazado', 'qr.desconocido', UTC_TIMESTAMP(3))`,
         [escenario.cuenta.id, puerta.id, dispositivo.id, `hash-${puerta.id}`],
       );

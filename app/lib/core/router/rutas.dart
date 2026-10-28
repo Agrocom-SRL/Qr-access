@@ -19,8 +19,19 @@ abstract final class Rutas {
   /// URL que se pueda volver a abrir.
   static const qrGenerado = '/qr/generado';
 
-  static const eventos = '/eventos';
+  /// Lecturas (antes "eventos"): la URL sigue el nombre que ve la persona.
+  static const eventos = '/lecturas';
+
+  /// La URL anterior de Lecturas: quien la tenga guardada llega a [eventos].
+  static const eventosAnterior = '/eventos';
   static const perfil = '/perfil';
+
+  /// Dispositivos conectados (ADR 0030 §4.1): desde Perfil. Sin permiso, es de
+  /// quien la abre.
+  static const dispositivos = '/dispositivos';
+
+  /// Bandeja de notificaciones de la cuenta (ADR 0030 §6), desde el Inicio.
+  static const notificaciones = '/notificaciones';
 
   /// Administración en compacto: Puertas y Usuarios en pestañas.
   static const admin = '/admin';
@@ -41,4 +52,23 @@ abstract final class Rutas {
   static const adminPinGenerado = '/admin/usuarios/pin';
 
   static String adminUsuario(String id) => '/admin/usuarios/$id';
+
+  /// Incidentes de uso de mi rama (ADR 0033 §4), desde Perfil.
+  static const incidentes = '/incidentes';
+
+  /// Un incidente con su historial: `/incidentes/:id`. Se abre también desde
+  /// un aviso de propuesta de la bandeja.
+  static const incidenteDetalle = '/incidentes/:id';
+
+  /// Exportar en CSV los datos de mi rama, desde Perfil (solo el
+  /// Administrador).
+  static const exportar = '/exportar';
+
+  /// Bajar los accesos a puertas en CSV, con sus filtros; desde Exportar.
+  static const exportarAccesos = '/exportar/accesos';
+
+  /// Anular los QR vigentes de mis usuarios, desde Perfil (pantalla completa).
+  static const anularQrDeRama = '/qr/anular';
+
+  static String incidente(String id) => '/incidentes/$id';
 }

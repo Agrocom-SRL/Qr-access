@@ -1,7 +1,7 @@
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/evento_vista.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_fila.dart';
@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 class TarjetaEvento extends StatelessWidget {
   const new({required this.evento, super.key});
 
-  final EventoAcceso evento;
+  final Lectura evento;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class TarjetaEvento extends StatelessWidget {
 class FilaEvento extends StatelessWidget {
   const new({required this.evento, super.key});
 
-  final EventoAcceso evento;
+  final Lectura evento;
 
   @override
   Widget build(BuildContext context) {

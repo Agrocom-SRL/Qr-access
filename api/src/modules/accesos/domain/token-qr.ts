@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { generarTokenOpaco, sha256Hex } from '../../../platform/seguridad/tokens.js';
 
 /** Texto del QR: `AQ1.<token>` (ADR 0008). Corto, para que un lector económico lo lea rápido. */
@@ -29,4 +30,29 @@ export function extraerToken(texto: string): string | null {
  */
 export function hashDeToken(token: string): string {
   return sha256Hex(token);
+}
+
+/**
+ * Token de una generación idempotente: 128 bits derivados con HMAC-SHA256 del secreto `QR_IDEMPOTENCIA_CLAVE`, la cuenta,
+ * el usuario y la clave de idempotencia (ADR 0031 §11). Existe para que un reintento (la respuesta original se
+ * perdió) pueda devolver el MISMO texto sin que el servidor guarde nunca el token, ni en claro ni cifrado
+ * (ADR 0008): se vuelve a calcular y su hash coincide con el de `qr_accesos`. Sigue siendo impredecible para
+ * quien no tenga el secreto; la derivación incluye cuenta y usuario, así que dos usuarios con la misma clave
+ * obtienen tokens distintos, y el instante de creación hace que reusar una clave ya vencida dé otro token
+ * (nunca el hash de un QR anterior).
+ */
+export function derivarTokenQr(
+  secreto: string,
+  cuentaId: string,
+  usuarioId: string,
+  claveDeIdempotencia: string,
+  creadaAt: Date,
+): string {
+  // Subclave propia del uso: el secreto no se usa directamente para otra cosa.
+  const subclave = createHmac('sha256', secreto).update('qr-idempotente-v1').digest();
+  return createHmac('sha256', subclave)
+    .update(JSON.stringify([cuentaId, usuarioId, claveDeIdempotencia, creadaAt.getTime()]))
+    .digest()
+    .subarray(0, 16)
+    .toString('base64url');
 }

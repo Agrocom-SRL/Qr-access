@@ -7,6 +7,9 @@ export 'data/qr_accesos_repositorio.dart'
 export 'domain/datos_generacion_qr.dart' show PrellenadoGeneracion, Vigencia;
 export 'domain/estado_qr.dart';
 export 'domain/qr_acceso.dart';
+export 'presentation/anulacion_masiva_controlador.dart'
+    show anulacionMasivaProvider;
+export 'presentation/anular_qr_pagina.dart' show AnularQrPagina;
 export 'presentation/generar_qr_pagina.dart' show GenerarQrPagina;
 export 'presentation/mis_qr_pagina.dart' show MisQrPagina;
 export 'presentation/mostrar_qr_pagina.dart' show MostrarQrPagina;

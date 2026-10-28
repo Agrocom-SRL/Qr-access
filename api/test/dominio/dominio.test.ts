@@ -320,7 +320,7 @@ describe('decisión de validación (pasos 3 a 6)', () => {
       anuladoAt: null,
       venceAt: new Date('2026-10-09T13:00:00Z'),
       puertaIds: ['1', '2'],
-      generadorActivo: true,
+      generador: { estado: 'activo', origen: null },
     },
     puertaDelDispositivoId: '2',
     ahora,
@@ -335,9 +335,18 @@ describe('decisión de validación (pasos 3 a 6)', () => {
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, anuladoAt: ahora } })).toBe(
       'qr.anulado',
     );
-    expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, generadorActivo: false } })).toBe(
-      'qr.anulado',
-    );
+    const generador = (
+      estado: 'restringido' | 'suspendido' | 'eliminado',
+      origen: 'usuario' | 'superior' | 'cuenta',
+    ) => decidirAntesDeConsumir({ ...base, qr: { ...base.qr, generador: { estado, origen } } });
+    expect(generador('eliminado', 'superior')).toBe('qr.anulado');
+    expect(generador('suspendido', 'usuario')).toBe('qr.generador_suspendido');
+    expect(generador('suspendido', 'superior')).toBe('qr.generador_suspendido');
+    expect(generador('suspendido', 'cuenta')).toBe('qr.cuenta_suspendida');
+    // Restringido (él, su superior o su cuenta): el QR ya generado sigue abriendo.
+    expect(generador('restringido', 'usuario')).toBeNull();
+    expect(generador('restringido', 'superior')).toBeNull();
+    expect(generador('restringido', 'cuenta')).toBeNull();
     expect(decidirAntesDeConsumir({ ...base, qr: { ...base.qr, venceAt: ahora } })).toBe(
       'qr.vencido',
     );
@@ -349,7 +358,12 @@ describe('decisión de validación (pasos 3 a 6)', () => {
 
   it('respeta el orden del ADR: anulado antes que vencido, vencido antes que otra puerta, otra puerta antes que suscripción', () => {
     const todoMal: EntradaDeDecision = {
-      qr: { anuladoAt: ahora, venceAt: ahora, puertaIds: [], generadorActivo: true },
+      qr: {
+        anuladoAt: ahora,
+        venceAt: ahora,
+        puertaIds: [],
+        generador: { estado: 'activo', origen: null },
+      },
       puertaDelDispositivoId: '9',
       ahora,
       suscripcionVigente: false,

@@ -44,7 +44,7 @@ verificar_api() {
     [ -f api/package.json ] || { aviso "api/ todavía no existe: se saltea"; return; }
     (
         cd api || exit 1
-        [ -d node_modules ] || npm ci --no-audit --no-fund || exit 1
+        [ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund || exit 1
         exit 0
     ) || { mal "npm ci"; return; }
     correr "migraciones de la base de tests (dbmate)" migrar_base_de_tests
@@ -64,7 +64,9 @@ verificar_app() {
     correr "formato (dart format)"   bash -c 'cd app && dart format --output=none --set-exit-if-changed lib test'
     correr "análisis (flutter analyze)" bash -c 'cd app && flutter analyze --fatal-infos'
     correr "tests (flutter test)"    bash -c 'cd app && flutter test'
-    correr "build web"               bash -c 'cd app && flutter build web --release >/dev/null'
+    # --base-href como el Dockerfile: la app vive bajo /app/ y la prueba de nginx mide ese mismo build
+    correr "build web"               bash -c 'cd app && flutter build web --release --base-href=/app/ >/dev/null'
+    correr "nginx de la app (cabeceras, rutas, hash del splash)" bin/verificar-nginx app
 }
 
 verificar_firmware() {
@@ -86,12 +88,13 @@ verificar_firmware() {
 verificar_web() {
     paso "web"
     [ -f web/package.json ] || { aviso "web/ todavía no existe: se saltea"; return; }
-    (cd web && { [ -d node_modules ] || npm ci --no-audit --no-fund; }) || { mal "npm ci"; return; }
+    (cd web && { [ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund; }) || { mal "npm ci"; return; }
     correr "lint (ESLint)"           npm --prefix web run --silent lint
     correr "formato (Prettier)"      npm --prefix web run --silent format:check
     correr "tipos (tsc --noEmit)"    npm --prefix web run --silent typecheck
     correr "tests (Vitest)"          npm --prefix web run --silent test
     correr "build (Vite)"            npm --prefix web run --silent build
+    correr "nginx del panel (cabeceras, caché, 404)" bin/verificar-nginx panel
 }
 
 for p in "${partes[@]}"; do

@@ -12,7 +12,7 @@ export type Ejecutor = Pool | PoolConnection;
  * - `dominio_sin_bitacora`: soft delete y autoría; para pivotes cuyo cambio ya queda en la
  *   bitácora de la entidad que los crea.
  * - `transitoria`: se actualiza en sitio, sin soft delete ni bitácora (sesiones).
- * - `solo_insercion`: no se actualiza ni se borra (eventos de acceso).
+ * - `solo_insercion`: no se actualiza ni se borra (lecturas).
  */
 export type PerfilDeTabla = 'dominio' | 'dominio_sin_bitacora' | 'transitoria' | 'solo_insercion';
 
@@ -44,8 +44,12 @@ export interface Consulta {
   readonly orden?: string;
   readonly limite?: number;
   readonly desplazamiento?: number;
-  /** `SELECT … FOR UPDATE`: solo dentro de una transacción. */
-  readonly bloquear?: boolean;
+  /**
+   * Solo dentro de una transacción. `true` = `FOR UPDATE` (quien lo pide va a escribir la fila);
+   * `'compartido'` = `LOCK IN SHARE MODE` (solo impide que otro la cambie mientras dura la transacción:
+   * varios lectores a la vez no se esperan entre sí).
+   */
+  readonly bloquear?: boolean | 'compartido';
 }
 
 export interface CondicionExtra {
@@ -58,6 +62,11 @@ export interface OpcionesDeActualizacion {
   readonly cuando?: CondicionExtra;
   /** Solo para telemetría que no es un cambio relevante (latido del dispositivo). */
   readonly sinBitacora?: boolean;
+  /**
+   * Fuerza la bitácora en una tabla `transitoria`, cuyos cambios rutinarios no se auditan: sirve para el
+   * que sí es relevante (cerrar la sesión de otra persona). Quién, de dónde y cuándo salen del contexto.
+   */
+  readonly auditar?: boolean;
 }
 
 export class UsoIndebidoDeRepositorio extends Error {
@@ -142,6 +151,7 @@ export abstract class RepositorioBase {
       this.tabla.nombre,
       'AS t',
       consulta.uniones ?? '',
+      // eslint-disable-next-line no-restricted-syntax -- `donde` son fragmentos internos con `?`; los valores van aparte en `params`.
       donde.length > 0 ? `WHERE ${donde.join(' AND ')}` : '',
     ];
     const params = [...base.params, ...(consulta.params ?? [])];
@@ -153,6 +163,7 @@ export abstract class RepositorioBase {
         params.push(consulta.limite, consulta.desplazamiento ?? 0);
       }
       if (consulta.bloquear === true) partes.push('FOR UPDATE');
+      else if (consulta.bloquear === 'compartido') partes.push('LOCK IN SHARE MODE');
     }
     return { sql: partes.filter((parte) => parte !== '').join(' '), params };
   }
@@ -298,7 +309,8 @@ export abstract class RepositorioBase {
     );
     if (resultado.affectedRows !== 1) return false;
 
-    if (this.conBitacora && opciones.sinBitacora !== true) {
+    const auditaEstaTransitoria = this.tabla.perfil === 'transitoria' && opciones.auditar === true;
+    if ((this.conBitacora && opciones.sinBitacora !== true) || auditaEstaTransitoria) {
       const sensibles = this.tabla.sensibles ?? [];
       await registrarCambio(tx, {
         tenantId: this.tabla.deCuenta ? this.alcance().tenantId : null,
@@ -330,6 +342,7 @@ export abstract class RepositorioBase {
         'UPDATE',
         this.tabla.nombre,
         'SET deleted_at = ?, deleted_by = ?',
+        // eslint-disable-next-line no-restricted-syntax -- `donde` se arma con fragmentos internos del repositorio (alcance de cuenta e `id = ?`); ningún valor del usuario entra en el texto.
         `WHERE ${[...base.sql, 'id = ?'].join(' AND ')}`,
       ].join(' '),
       [new Date(), ContextoCuenta.actual()?.usuarioId ?? null, ...base.params, id],

@@ -1,5 +1,7 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/listados/pagina.dart';
+import 'package:agrocom_acceso/core/sincronizacion/controlador_sincronizacion.dart';
+import 'package:agrocom_acceso/core/sincronizacion/estado_sincronizacion.dart';
 import 'package:agrocom_acceso/features/administracion/data/usuarios_repositorio.dart';
 import 'package:agrocom_acceso/features/administracion/domain/cupo.dart';
 import 'package:agrocom_acceso/features/administracion/domain/estadisticas_usuarios.dart';
@@ -49,6 +51,29 @@ final FutureProvider<EstadisticasDeUsuarios> estadisticasProvider =
     FutureProvider.autoDispose<EstadisticasDeUsuarios>(
       (ref) => ref.watch(usuariosRepositorioProvider).estadisticas(),
     );
+
+/// Sincronización de la actividad de usuarios (ver
+/// `ControladorSincronizacion`): vuelve a pedir las estadísticas con el gesto
+/// de tirar hacia abajo y en segundo plano. Sin botón de actualizar.
+class SincronizacionEstadisticasControlador extends ControladorSincronizacion {
+  @override
+  Future<void> recargarListado() async {
+    ref.invalidate(estadisticasProvider);
+    await ref.read(estadisticasProvider.future);
+  }
+}
+
+/// Estado de sincronización de la actividad, que se descarta al salir de la
+/// pantalla (y con él, el refresco en segundo plano).
+final NotifierProvider<
+  SincronizacionEstadisticasControlador,
+  EstadoSincronizacion
+>
+sincronizacionEstadisticasProvider =
+    NotifierProvider.autoDispose<
+      SincronizacionEstadisticasControlador,
+      EstadoSincronizacion
+    >(SincronizacionEstadisticasControlador.new);
 
 /// Acciones sobre un usuario del listado: generar PIN y eliminar. El estado
 /// es el id del usuario con una acción en curso.
@@ -112,13 +137,14 @@ class FormularioUsuarioEstado {
     this.sitioId,
     this.unidad = '',
     this.enviando = false,
-    this.errorDatos,
+    this.errores = const {},
     this.errorApi,
     this.guardado = false,
     this.elegirSufijo = false,
     this.sufijo = '',
-    this.puertas = const PuertasAsignadas(),
+    this.puertas = const PuertasAsignadas(todas: true),
     this.puertasCargadas = false,
+    this.puertasNoCargadas = false,
   });
 
   final String etiqueta;
@@ -130,7 +156,10 @@ class FormularioUsuarioEstado {
   final String? sitioId;
   final String unidad;
   final bool enviando;
-  final ErrorDatosUsuario? errorDatos;
+
+  /// Todos los campos que faltan o no son válidos; cada uno se marca en su
+  /// sitio del formulario.
+  final Set<ErrorDatosUsuario> errores;
   final ErrorApi? errorApi;
 
   /// En edición: se guardó y el formulario sigue abierto (guía §2.3).
@@ -140,10 +169,13 @@ class FormularioUsuarioEstado {
   final bool elegirSufijo;
   final String sufijo;
 
-  /// Puertas asignadas (guardias). `puertasCargadas` evita pisar la asignación
-  /// real con una vacía si todavía no se leyó.
+  /// Puertas asignadas. Un alta nuevo viene con todas marcadas (el
+  /// administrador desmarca solo si quiere restringir). Al editar se espera a
+  /// leer lo guardado: `puertasCargadas` evita pisar la asignación real con
+  /// una vacía, y `puertasNoCargadas` avisa si la lectura falló.
   final PuertasAsignadas puertas;
   final bool puertasCargadas;
+  final bool puertasNoCargadas;
 
   /// El nivel del rol elegido; `null` si aún no eligió.
   NivelUsuario? get nivel => rol == null ? null : nivelDeRol(rol!.nombre);
@@ -156,27 +188,34 @@ class FormularioUsuarioEstado {
     bool sinSitio = false,
     String? unidad,
     bool enviando = false,
-    ErrorDatosUsuario? errorDatos,
+    Set<ErrorDatosUsuario>? errores,
     ErrorApi? errorApi,
     bool guardado = false,
     bool? elegirSufijo,
     String? sufijo,
     PuertasAsignadas? puertas,
     bool? puertasCargadas,
+    bool? puertasNoCargadas,
   }) => FormularioUsuarioEstado(
     etiqueta: etiqueta ?? this.etiqueta,
     rol: sinRol ? null : rol ?? this.rol,
     sitioId: sinSitio ? null : sitioId ?? this.sitioId,
     unidad: unidad ?? this.unidad,
     enviando: enviando,
-    errorDatos: errorDatos,
+    errores: errores ?? this.errores,
     errorApi: errorApi,
     guardado: guardado,
     elegirSufijo: elegirSufijo ?? this.elegirSufijo,
     sufijo: sufijo ?? this.sufijo,
     puertas: puertas ?? this.puertas,
     puertasCargadas: puertasCargadas ?? this.puertasCargadas,
+    puertasNoCargadas: puertasNoCargadas ?? this.puertasNoCargadas,
   );
+
+  /// Quita de los errores los que ya se corrigieron: al escribir o elegir en
+  /// un campo, su error desaparece y el resto se queda.
+  FormularioUsuarioEstado sinErrores(Set<ErrorDatosUsuario> corregidos) =>
+      copiar(errores: errores.difference(corregidos));
 }
 
 /// Crear o editar un usuario (HU-06). Crear devuelve el PIN para mostrarlo
@@ -185,21 +224,38 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
   @override
   FormularioUsuarioEstado build() => const FormularioUsuarioEstado();
 
-  /// Al editar solo cuenta el nombre: el rol y la unidad no se tocan.
-  void cargar(Usuario usuario) =>
-      state = FormularioUsuarioEstado(etiqueta: usuario.etiqueta ?? '');
+  /// Al editar solo cuenta el nombre: el rol y la unidad no se tocan. Las
+  /// puertas se leen aparte: hasta entonces no hay nada marcado.
+  void cargar(Usuario usuario) => state = FormularioUsuarioEstado(
+    etiqueta: usuario.etiqueta ?? '',
+    puertas: const PuertasAsignadas(),
+  );
+
+  static const Set<ErrorDatosUsuario> _erroresDeEtiqueta = {
+    ErrorDatosUsuario.sinEtiqueta,
+    ErrorDatosUsuario.etiquetaLarga,
+  };
 
   void cambiarEtiqueta(String etiqueta) =>
-      state = state.copiar(etiqueta: etiqueta);
+      state = state.copiar(etiqueta: etiqueta).sinErrores(_erroresDeEtiqueta);
 
   void alternarSufijoElegido({required bool elegir}) =>
       state = state.copiar(elegirSufijo: elegir, sufijo: '');
 
-  void cambiarSufijo(String sufijo) => state = state.copiar(sufijo: sufijo);
+  void cambiarSufijo(String sufijo) => state = state
+      .copiar(sufijo: sufijo)
+      .sinErrores({ErrorDatosUsuario.sufijoInvalido});
 
   /// Las puertas que ya tiene asignadas el usuario que se edita.
-  void cargarPuertas(PuertasAsignadas puertas) =>
-      state = state.copiar(puertas: puertas, puertasCargadas: true);
+  void cargarPuertas(PuertasAsignadas puertas) => state = state.copiar(
+    puertas: puertas,
+    puertasCargadas: true,
+    puertasNoCargadas: false,
+  );
+
+  /// La lectura de las puertas del usuario que se edita falló: no se marca
+  /// nada y guardar no las toca.
+  void fallarCargaDePuertas() => state = state.copiar(puertasNoCargadas: true);
 
   void alternarTodasLasPuertas({required bool todas}) => state = state.copiar(
     puertas: PuertasAsignadas(todas: todas, puertaIds: state.puertas.puertaIds),
@@ -219,33 +275,43 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
   /// la unidad ya no corresponde y se descarta.
   void elegirRol(Rol rol) {
     final esTitular = nivelDeRol(rol.nombre) == NivelUsuario.titular;
-    state = state.copiar(
-      rol: rol,
-      sinSitio: !esTitular,
-      unidad: esTitular ? state.unidad : '',
-    );
+    state = state
+        .copiar(
+          rol: rol,
+          sinSitio: !esTitular,
+          unidad: esTitular ? state.unidad : '',
+        )
+        .sinErrores({ErrorDatosUsuario.sinRol});
   }
 
-  void elegirPropiedad(String? sitioId) => state = sitioId == null
-      ? state.copiar(sinSitio: true)
-      : state.copiar(sitioId: sitioId);
+  void elegirPropiedad(String? sitioId) => state =
+      (sitioId == null
+              ? state.copiar(sinSitio: true)
+              : state.copiar(sitioId: sitioId))
+          .sinErrores({ErrorDatosUsuario.sinPropiedad});
 
-  void cambiarUnidad(String unidad) => state = state.copiar(unidad: unidad);
+  void cambiarUnidad(String unidad) =>
+      state = state.copiar(unidad: unidad).sinErrores({
+        ErrorDatosUsuario.sinNombreDeUnidad,
+        ErrorDatosUsuario.nombreDeUnidadLargo,
+      });
 
+  /// Los errores del alta (todos a la vez), o `null` si los datos son válidos.
+  /// Quedan en el estado para marcar cada campo.
   DatosUsuario? _validarAlta() {
-    final error = DatosUsuario.errorDe(
-      etiqueta: state.etiqueta,
-      rolId: state.rol?.id,
-      nivel: state.nivel,
-      sitioId: state.sitioId,
-      unidad: state.unidad,
-    );
-    if (error != null) {
-      state = state.copiar(errorDatos: error);
-      return null;
-    }
-    if (state.elegirSufijo && !sufijoDePinValido(state.sufijo)) {
-      state = state.copiar(errorDatos: ErrorDatosUsuario.sufijoInvalido);
+    final errores = {
+      ...DatosUsuario.erroresDe(
+        etiqueta: state.etiqueta,
+        rolId: state.rol?.id,
+        nivel: state.nivel,
+        sitioId: state.sitioId,
+        unidad: state.unidad,
+      ),
+      if (state.elegirSufijo && !sufijoDePinValido(state.sufijo))
+        ErrorDatosUsuario.sufijoInvalido,
+    };
+    if (errores.isNotEmpty) {
+      state = state.copiar(errores: errores);
       return null;
     }
     return DatosUsuario(
@@ -264,7 +330,7 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
     if (state.enviando) return null;
     final datos = _validarAlta();
     if (datos == null) return null;
-    state = state.copiar(enviando: true);
+    state = state.copiar(enviando: true, errores: const {});
     try {
       final repositorio = ref.read(usuariosRepositorioProvider);
       final pin = await repositorio.crear(datos);
@@ -290,10 +356,10 @@ class FormularioUsuarioControlador extends Notifier<FormularioUsuarioEstado> {
     if (state.enviando) return false;
     final error = DatosUsuario.errorDeEtiqueta(state.etiqueta);
     if (error != null) {
-      state = state.copiar(errorDatos: error);
+      state = state.copiar(errores: {error});
       return false;
     }
-    state = state.copiar(enviando: true);
+    state = state.copiar(enviando: true, errores: const {});
     try {
       final repositorio = ref.read(usuariosRepositorioProvider);
       await repositorio.editar(id, etiqueta: state.etiqueta.trim());

@@ -4,9 +4,11 @@ import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/data/eventos_repositorio.dart';
-import 'package:agrocom_acceso/features/eventos/domain/evento_acceso.dart';
+import 'package:agrocom_acceso/features/eventos/domain/lectura.dart';
 import 'package:agrocom_acceso/features/eventos/presentation/eventos_pagina.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/pestanas_deslizables.dart';
+import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,12 +17,12 @@ import '../../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
 
-EventoAcceso _evento({
+Lectura _evento({
   required String id,
   required ResultadoEvento resultado,
   required String motivo,
   DateTime? ocurridoAt,
-}) => EventoAcceso(
+}) => Lectura(
   id: id,
   ocurridoAt: ocurridoAt ?? DateTime.utc(2026, 10, 9, 13),
   resultado: resultado,
@@ -33,9 +35,10 @@ EventoAcceso _evento({
 
 Future<EventosRepositorioFalso> _montar(
   WidgetTester tester,
-  List<EventoAcceso> eventos, {
+  List<Lectura> eventos, {
   Exception? error,
   bool expandida = false,
+  bool apaisada = false,
 }) async {
   final repositorio = EventosRepositorioFalso(
     Pagina(datos: eventos, pagina: 1, porPagina: 20, total: eventos.length),
@@ -45,6 +48,7 @@ Future<EventosRepositorioFalso> _montar(
     tester,
     pagina: const EventosPagina(),
     expandida: expandida,
+    apaisada: apaisada,
     overrides: [
       eventosRepositorioProvider.overrideWithValue(repositorio),
       puertasRepositorioProvider.overrideWithValue(
@@ -86,11 +90,11 @@ void main() {
     ]);
     final textos = textosEn(tester);
 
-    expect(find.text(textos.eventoResultadoRechazado), findsOneWidget);
-    expect(find.text(textos.eventoMotivoQrVencido), findsOneWidget);
-    expect(find.text(textos.eventoResultadoPermitido), findsOneWidget);
+    expect(find.text(textos.lecturaResultadoRechazado), findsOneWidget);
+    expect(find.text(textos.lecturaMotivoQrVencido), findsOneWidget);
+    expect(find.text(textos.lecturaResultadoPermitido), findsOneWidget);
     expect(
-      find.text(textos.eventoQrDe('Proveedor de gas', 'Jorge R.')),
+      find.text(textos.lecturaQrDe('Proveedor de gas', 'Jorge R.')),
       findsOneWidget,
     );
     expect(find.text('Portón principal'), findsNWidgets(2));
@@ -107,27 +111,30 @@ void main() {
       ),
     ]);
 
-    expect(find.text(textosEn(tester).eventoMotivoDesconocido), findsOneWidget);
+    expect(
+      find.text(textosEn(tester).lecturaMotivoDesconocido),
+      findsOneWidget,
+    );
   });
 
   testWidgets('sin eventos, lo dice con el estado vacío', (tester) async {
     await _montar(tester, const []);
 
-    expect(find.text(textosEn(tester).eventosSinResultados), findsOneWidget);
+    expect(find.text(textosEn(tester).lecturasSinResultados), findsOneWidget);
   });
 
   testWidgets('la pastilla Rechazados filtra por resultado', (tester) async {
     final repositorio = await _montar(tester, const []);
     final textos = textosEn(tester);
 
-    await tester.tap(find.text(textos.eventosFiltroRechazados));
+    await tester.tap(find.text(textos.lecturasFiltroRechazados));
     await tester.pumpAndSettle();
 
     expect(
       repositorio.filtrosPedidos.last.resultado,
       ResultadoEvento.rechazado,
     );
-    expect(find.text(textos.eventosSinResultadosFiltro), findsOneWidget);
+    expect(find.text(textos.lecturasSinResultadosFiltro), findsOneWidget);
   });
 
   testWidgets('sin red, ofrece reintentar', (tester) async {
@@ -138,7 +145,7 @@ void main() {
     );
     final textos = textosEn(tester);
 
-    expect(find.text(textos.eventosErrorCargar), findsOneWidget);
+    expect(find.text(textos.lecturasErrorCargar), findsOneWidget);
     expect(find.text(textos.comunReintentar), findsOneWidget);
   });
 
@@ -155,8 +162,27 @@ void main() {
     final textos = textosEn(tester);
 
     expect(find.byType(DataTable), findsOneWidget);
-    expect(find.text(textos.eventosColumnaSitio), findsOneWidget);
+    expect(find.text(textos.lecturasColumnaSitio), findsOneWidget);
     expect(find.text('Sede'), findsOneWidget);
-    expect(find.text(textos.eventoMotivoQrUsado), findsOneWidget);
+    expect(find.text(textos.lecturaMotivoQrUsado), findsOneWidget);
   });
+
+  testWidgets(
+    'en horizontal (852×393) las pestañas y la barra inferior caben',
+    (tester) async {
+      await _montar(tester, [
+        _evento(
+          id: 'e1',
+          resultado: ResultadoEvento.rechazado,
+          motivo: 'qr.vencido',
+        ),
+      ], apaisada: true);
+
+      expect(find.byType(BarraNavegacion), findsOneWidget);
+      expect(
+        find.byType(PestanasDeslizables<ResultadoEvento?>),
+        findsOneWidget,
+      );
+    },
+  );
 }

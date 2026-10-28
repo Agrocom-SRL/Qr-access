@@ -7,6 +7,8 @@
   "equipo": "Usuários",
   "perfil": "Perfil",
   "placas": "Placas",
-  "accesos": "Acessos",
-  "estadisticas": "Estatísticas"
+  "accesos": "Leituras",
+  "estadisticas": "Estatísticas",
+  "consumo": "Consumo e sinais",
+  "notificaciones": "Avisos"
 }

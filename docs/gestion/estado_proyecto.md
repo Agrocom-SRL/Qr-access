@@ -1,11 +1,33 @@
 # Estado del proyecto — AGROCOM Acceso
 
-> **Limpieza de ramas y próxima versión (anotado el 2026-10-23, pendiente de ejecutar).** Antes de lanzar la siguiente versión hay que depurar las ramas, con `bin/estado-plan` como guía y la confirmación de Miguel:
-> - **Integradas** (su PR figura como MERGED): borrar las ramas locales marcadas `gone` y las remotas sobrantes (`feature/reiniciar-base-local`, `feature/version-1.0.3`). No se pierde trabajo: está en `develop`.
-> - **No integradas** (PR cerrado sin merge, como #46, #62, #63, #70, #73 y #77, o ramas locales con commits que no están en `develop`): revisar una por una; cada una se rescata en una rama nueva desde `develop` o se descarta de forma explícita. Nada se borra a ciegas.
-> - Después: podar este archivo (§4.5 del plan maestro) y lanzar la versión (ola W-REL: tag, versiones alineadas en api, web, app y firmware, despliegue con `bin/desplegar`).
+> **Limpieza de ramas (verificada el 2026-10-27).** El remoto ya no tiene ramas `feature/*` sobrantes: solo `develop`, `master` y las ramas `claude/…` de las olas W1 a W14, que se borran al integrarse cada PR. Los PR cerrados sin integrar (#46, #62, #63, #70, #73 y #77) no dejaron ramas. Queda pendiente podar las secciones antiguas de este archivo (§4.5 del plan maestro) y lanzar la versión (W-REL) cuando Miguel lo decida.
 
-**Última actualización:** 2026-10-22, al cierre de la sesión de ajustes del panel (#80, #81 y #82, integrados en `develop`)
+**Última actualización:** 2026-10-27, al cierre de las olas W1 a W14 (todas en PR hacia `develop`, sin merge ni tag). Antes: 2026-10-22, sesión de ajustes del panel (#80, #81 y #82).
+
+## Relevo de las sesiones del 2026-10-26 y 27: olas W1 a W14 en PR
+
+Se ejecutó el plan maestro (§4.3) de W1 a W14 con agentes por ola y revisión de seguridad por ola (`auditor-seguridad` y, donde tocaba, `validador`). **Nada se integró**: hay 14 PR abiertos hacia `develop` (#95 a #109; el #109 contiene la integración de todas), sin merge ni tag, a revisión de Miguel. El detalle ola por ola está en `plan-maestro.md` §4.2–4.3; el orden de integración, los conflictos reales y los pasos manuales, en `integracion-de-olas.md`. Las ramas son `claude/…` (no `feature/…`) para que `auto-merge.yml` no las integre sola.
+
+### Qué quedó hecho
+- **W1** cabeceras de seguridad y `no-store` en la API, CSP y caché controlada en nginx, documentación de NPMplus. **W2** CI de seguridad propuesta (`docs/ci/propuestos/seguridad.yml`), gitleaks, revisión de licencias. **W3** rate limit por ruta, dos pools de base, 503 con `Retry-After`. **W4** estados `restringido` y `suspendido` con cascada por rama. **W5** topes de generación y QR propio reutilizable. **W6** `Idempotency-Key`. **W7** ventana de repetición de 15 s y antirrebote del firmware. **W8** sesiones por instalación. **W9** bandeja de notificaciones y estados de placa. **W10** confirmación de apertura, firmware y panel. **W11** anulación masiva, incidentes y exportación CSV. **W12** señales de abuso y vista de AGROCOM. **W13** escenarios de carga con k6. **W14** tabla `lecturas`.
+- Verificación sobre el sistema integrado: API 1253 tests en verde contra MariaDB 10.11, panel 319, app 400 y 11 suites nativas del firmware (con g++ y un shim de Unity).
+
+### Decisiones de Miguel de estas sesiones
+- Los 15 s de la ventana de repetición están bien (W7). El panel debe avisar cuando una apertura falla (W10). `eventos_acceso` pasa a llamarse `lecturas` (W14). Restringir a un usuario con rama restringe toda su rama (D-25). Solo PR: nada de merge ni tag.
+
+### Supuestos míos que Miguel debe confirmar
+- **El Administrador solo ve y actúa sobre su rama** en anulación masiva, incidentes y exportación (D-29; la primera versión lo trataba como «toda la cuenta» y contradecía el ADR 0028 §4).
+- Retiro de las rutas antiguas `/eventos-acceso` el 2027-06-30 (W14). Topes iniciales de generación (100 diarios, 50 pendientes, 5000 al mes), umbrales de placa (15 min, 2 h), de apertura fallida (2 en 60 min) y de señales (D-26 a D-41), topes de sesiones (10 y 5), TTL de 24 h de la idempotencia. La polaridad del reed (valor por omisión `alto`) **no está confirmada en campo**.
+
+### Hallazgos importantes
+- **La validación de QR respondía 503 con cualquier cliente HTTP real** (el `request.signal` de Fastify llegaba abortado en Node 22) y ningún test lo veía porque todos usan `app.inject()`. Se descubrió con las pruebas de carga (W13), se corrigió en W3 con un presupuesto propio (`presupuestoDePeticion`) y ahora hay tests con servidor real para las rutas con cuerpo. **Lección:** la API se prueba también con un servidor real.
+- `bin/desplegar` y `bin/reiniciar-local` insertaban `usuarios.activo`, columna que W4 reemplazó por `estado`: corregido.
+- El token de las sesiones de IA no puede escribir en `.github/workflows/`: el parche de `ci.yml` (W1) y `seguridad.yml` (W2) los aplica Miguel a mano.
+
+### Pendiente para continuar
+- **Antes de desplegar:** variables nuevas obligatorias `QR_IDEMPOTENCIA_CLAVE` (la API no arranca sin ella) y `TRUST_PROXY` con comportamiento nuevo (número de saltos); NPMplus: HSTS, «Cache Assets» desactivado y no tocar `X-Forwarded-For`; el orden de despliegue de W14 (detener la API, migrar, arrancar); correr `pio run` y `pio test -e native` en CI y la prueba en banco del firmware.
+- **No hecho:** W1b (cookie `HttpOnly` del refresco); pantallas de la app y del panel para W8, W9 (bandeja de la cuenta en la app) y W11; mostrar `incidente.propuesta` en la bandeja del panel; señales «ciclo generar-usar», «altas en ráfaga» y «tasa de uso» y la combinación «varias instalaciones y uso masivo»; política de retención de las tablas nuevas (D-06, D-35, D-41); persistir la clave de idempotencia en la app; correo y push; la corrida de carga en un entorno de prueba real y el ajuste de umbrales; reemplazar `dangerouslySetInnerHTML` en `Icono.tsx` (pre-existente).
+- Revisión línea por línea de lo crítico antes de integrar: validación y generación de QR, autenticación de dispositivos, el firmware de la cerradura y los permisos.
 
 ## Relevo de la sesión del 2026-10-22: ajustes del panel y cuentas de cobro
 
@@ -168,7 +190,7 @@ Lo que entró después de la versión anterior de este documento. Los números s
 ## Pendiente de decidir o confirmar
 
 - **Jerarquía de usuarios (ADR 0028, 2026-10-20):** implementada en `develop` (#59-#68, #71 y #72). Quedan la revisión visual (pendiente real), el rótulo "Registrar pago" en cobranza (`docs/gestion/jerarquia-de-usuarios.md` §6.3) y los textos en/pt (#74, abierto). Las marcas por punto están en ese documento.
-- **Release con cambio incompatible (versión 1.0.3, decidida por Miguel; reinicio de la base de producción aprobado):** plan en `docs/gestion/release-jerarquia.md`. **No se publicó tag ni se desplegó.** Pendiente de Miguel: la versión, el reinicio de la base de producción (borra cuentas, bitácora y `eventos_acceso` de la primera prueba; el respaldo es la única copia) y el aviso a los clientes con la app instalada.
+- **Release con cambio incompatible (versión 1.0.3, decidida por Miguel; reinicio de la base de producción aprobado):** plan en `docs/gestion/release-jerarquia.md`. **No se publicó tag ni se desplegó.** Pendiente de Miguel: la versión, el reinicio de la base de producción (borra cuentas, bitácora y `lecturas` de la primera prueba; el respaldo es la única copia) y el aviso a los clientes con la app instalada.
 - **Contradicción entre documentos:** ADR 0005 y la invariante 11 de `CLAUDE.md` prohíben un cambio incompatible dentro de la misma versión de la API; los cambios de #71 y #72 (nombres de permisos y campos en `/api/v1`) lo son para los clientes instalados. Decidir: excepción documentada en un ADR o `/api/v2`.
 - **Versiones desfasadas:** `api/package.json`, `web/package.json` y `app/pubspec.yaml` siguen en 1.0.0 (+7), y `firmware/include/version.h` en 1.0.0 (el #80 los sube a 1.0.3, pendiente de confirmar con Miguel), aunque existen los tags `v1.0.1` y `v1.0.2`. ADR 0014 dice que el tag fija la versión. Confirmar qué contienen `v1.0.1` y `v1.0.2`.
 - Dudas abiertas: `docs/modelo-datos/02-dudas-y-ambiguedades.md` (D-06, D-08, D-12 a D-24). D-19 está cerrada en código desde `feature/diseno-pantallas`; falta reflejarlo en ese documento.

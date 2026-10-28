@@ -35,6 +35,6 @@
 // Nivel que activa la cerradura (depende del módulo de relé, D-04).
 #define CERRADURA_NIVEL_ACTIVO HIGH
 
-// Nivel del sensor de puerta (INPUT_PULLUP) cuando la puerta está abierta:
-// reed NC con la puerta cerrada = contacto a masa = LOW; abierta = HIGH.
-#define SENSOR_PUERTA_NIVEL_ABIERTA HIGH
+// La polaridad del sensor de puerta (INPUT_PULLUP) ya no se fija al compilar: la dicta el servidor
+// (`sensor_puerta.nivel_abierto`) y su valor por omisión, PENDIENTE DE CONFIRMAR EN CAMPO, vive en
+// lib/confirmacion (NIVEL_ABIERTO_POR_OMISION).

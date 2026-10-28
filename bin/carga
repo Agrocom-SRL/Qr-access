@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# Pruebas de carga de AGROCOM Acceso (ADR 0030 §3, ADR 0032): un atajo sobre api/test/carga/ con las mismas variables.
+# SOLO contra un entorno de prueba: exige CARGA_ENTORNO=prueba y un host declarado (ver docs/gestion/pruebas-de-carga.md).
+#
+#   bin/carga preparar [opciones]          crea los datos en el entorno de prueba (api/test/carga/preparar-datos.mjs)
+#   bin/carga <escenario>                  corre un escenario k6 (validacion-qr, saturacion-usuarios, generacion-qr,
+#                                          login-sesiones, latidos-confirmaciones, rampa-stress, soak, verificar-limites)
+#   bin/carga lista                        muestra los escenarios
+#
+# k6 no toma el entorno del proceso: por eso se pasan las variables CARGA_* con -e. CARGA_ROOT_CLAVE y
+# CARGA_ROOT_USUARIO solo las necesita el preparador, así que no salen hacia k6.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+ESCENARIOS=(validacion-qr saturacion-usuarios generacion-qr login-sesiones latidos-confirmaciones rampa-stress soak verificar-limites)
+
+uso() {
+  sed -n '3,12p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+orden="${1:-}"
+case "$orden" in
+  "" | -h | --ayuda) uso; exit 0 ;;
+  lista) printf '%s\n' "${ESCENARIOS[@]}"; exit 0 ;;
+esac
+
+if [ "${CARGA_ENTORNO:-}" != "prueba" ]; then
+  echo "Las pruebas de carga solo corren con CARGA_ENTORNO=prueba (ver docs/gestion/pruebas-de-carga.md)." >&2
+  exit 2
+fi
+
+if [ "$orden" = preparar ]; then
+  shift
+  exec node api/test/carga/preparar-datos.mjs "$@"
+fi
+
+if ! printf '%s\n' "${ESCENARIOS[@]}" | grep -qx "$orden"; then
+  echo "Escenario desconocido: $orden. Usa: bin/carga lista" >&2
+  exit 2
+fi
+if ! command -v k6 >/dev/null 2>&1; then
+  echo "Falta k6 en el PATH. Instálalo desde https://grafana.com/docs/k6/latest/set-up/install-k6/ (la versión probada es la v1.3.0)." >&2
+  exit 2
+fi
+
+# CARGA_DATOS se resuelve a ruta absoluta: k6 resuelve las relativas desde la carpeta del script.
+datos="${CARGA_DATOS:-}"
+if [ -n "$datos" ]; then
+  datos="$(cd "$(dirname "$datos")" && pwd)/$(basename "$datos")"
+fi
+
+# Variables CARGA_* hacia k6, sin las credenciales del super admin.
+args=()
+while IFS='=' read -r nombre valor; do
+  case "$nombre" in
+    CARGA_ROOT_CLAVE | CARGA_ROOT_USUARIO | CARGA_DATOS) continue ;;
+  esac
+  args+=(-e "$nombre=$valor")
+done < <(env | grep '^CARGA_' || true)
+if [ -n "$datos" ]; then
+  args+=(-e "CARGA_DATOS=$datos")
+fi
+
+exec k6 run "${args[@]}" "api/test/carga/escenarios/$orden.js"

@@ -1,6 +1,7 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import { TODA_LA_CUENTA, type IdsOTodaLaCuenta } from '../../platform/db/alcance.js';
 
 export interface PuertaFila extends RowDataPacket {
   id: string;
@@ -80,6 +81,35 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
 
   contarActivas(): Promise<number> {
     return this.contar({ uniones: UNION_SITIO, donde: 't.activo = 1 AND s.activo = 1' });
+  }
+
+  /**
+   * Una página de las puertas (activas o no) que dieron de alta `autores` (el alcance de quien exporta: él y su
+   * rama), por id: para la exportación (ADR 0033 §3). Una puerta no tiene otro dueño que quien la creó.
+   */
+  listarPaginaDe(
+    autores: IdsOTodaLaCuenta,
+    limite: number,
+    desplazamiento: number,
+  ): Promise<PuertaFila[]> {
+    if (autores !== TODA_LA_CUENTA && autores.length === 0) return Promise.resolve([]);
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      ...(autores === TODA_LA_CUENTA ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
+      orden: 't.id',
+      limite,
+      desplazamiento,
+    });
+  }
+
+  /** `autores` `TODA_LA_CUENTA` = todas las puertas de la cuenta (la exportación de AGROCOM); el repositorio ya filtra por ella. */
+  contarDe(autores: IdsOTodaLaCuenta): Promise<number> {
+    if (autores !== TODA_LA_CUENTA && autores.length === 0) return Promise.resolve(0);
+    return this.contar({
+      uniones: UNION_SITIO,
+      ...(autores === TODA_LA_CUENTA ? {} : { donde: 't.created_by IN (?)', params: [autores] }),
+    });
   }
 
   /** Las puertas de la cuenta del contexto con esos ids; las que no existan o sean de otra cuenta no vuelven. */

@@ -4,7 +4,12 @@ import { crearBitacoraHttp, type BitacoraRepositorio } from '../../features/bita
 import { crearCobroHttp, type CobroRepositorio } from '../../features/cobro';
 import { crearCuentasHttp, type CuentasRepositorio } from '../../features/cuentas';
 import { crearEventosHttp, type EventosRepositorio } from '../../features/eventos';
+import { crearLimitesHttp, type LimitesRepositorio } from '../../features/limites';
 import { crearEquipoHttp, type EquipoRepositorio } from '../../features/equipo';
+import {
+  crearNotificacionesHttp,
+  type NotificacionesRepositorio,
+} from '../../features/notificaciones';
 import { crearEstadisticasHttp, type EstadisticasRepositorio } from '../../features/estadisticas';
 import { crearPagosHttp, type PagosRepositorio } from '../../features/pagos';
 import { crearPlacasHttp, type PlacasRepositorio } from '../../features/placas';
@@ -15,6 +20,11 @@ import {
 } from '../../features/suscripciones';
 import { crearResumenHttp, type ResumenRepositorio } from '../../features/resumen';
 import { crearSeguridadHttp, type SeguridadRepositorio } from '../../features/seguridad';
+import { crearSenalesHttp, type SenalesRepositorio } from '../../features/senales';
+import { crearSesionesHttp, type SesionesRepositorio } from '../../features/sesiones';
+import { crearIncidentesHttp, type IncidentesRepositorio } from '../../features/incidentes';
+import { crearAnulacionHttp, type AnulacionRepositorio } from '../../features/anulacion';
+import { crearExportacionesHttp, type ExportacionesRepositorio } from '../../features/exportacion';
 
 /** Todo lo inyectable de la aplicación: en producción son las implementaciones HTTP; en tests, mocks. */
 export interface Servicios {
@@ -29,8 +39,15 @@ export interface Servicios {
   pagos: PagosRepositorio;
   bitacora: BitacoraRepositorio;
   eventos: EventosRepositorio;
+  notificaciones: NotificacionesRepositorio;
   resumen: ResumenRepositorio;
   estadisticas: EstadisticasRepositorio;
+  limites: LimitesRepositorio;
+  senales: SenalesRepositorio;
+  sesiones: SesionesRepositorio;
+  incidentes: IncidentesRepositorio;
+  anulacion: AnulacionRepositorio;
+  exportaciones: ExportacionesRepositorio;
 }
 
 /** Compone las implementaciones HTTP sobre un único cliente y almacén de sesión. */
@@ -52,7 +69,14 @@ export function crearServicios(
     pagos: crearPagosHttp(cliente),
     bitacora: crearBitacoraHttp(cliente),
     eventos: crearEventosHttp(cliente),
+    notificaciones: crearNotificacionesHttp(cliente),
     resumen: crearResumenHttp(cliente),
     estadisticas: crearEstadisticasHttp(cliente),
+    limites: crearLimitesHttp(cliente),
+    senales: crearSenalesHttp(cliente),
+    sesiones: crearSesionesHttp(cliente),
+    incidentes: crearIncidentesHttp(cliente),
+    anulacion: crearAnulacionHttp(cliente),
+    exportaciones: crearExportacionesHttp(cliente),
   };
 }

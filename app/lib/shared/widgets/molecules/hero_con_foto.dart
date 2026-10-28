@@ -12,9 +12,6 @@ class HeroConFoto extends StatelessWidget {
   final String ruta;
   final Widget child;
 
-  /// Opacidad del velo de marca sobre la foto.
-  static const _velo = 0.86;
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -30,7 +27,7 @@ class HeroConFoto extends StatelessWidget {
           ),
           Positioned.fill(
             child: ColoredBox(
-              color: tokens.colores.hero.withValues(alpha: _velo),
+              color: tokens.colores.hero.withValues(alpha: opacidadVeloHero),
             ),
           ),
           Padding(padding: EdgeInsets.all(tokens.espacio.xl), child: child),

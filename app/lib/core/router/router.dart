@@ -5,8 +5,12 @@ import 'package:agrocom_acceso/core/router/splash_estado.dart';
 import 'package:agrocom_acceso/core/router/transiciones.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/administracion.dart';
+import 'package:agrocom_acceso/features/dispositivos/dispositivos.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
+import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
+import 'package:agrocom_acceso/features/incidentes/incidentes.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
+import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/features/sesion/sesion.dart';
@@ -93,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: Rutas.eventosAnterior,
+        redirect: (context, state) => Rutas.eventos,
+      ),
+      GoRoute(
         path: Rutas.eventos,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const EventosPagina()),
@@ -101,6 +109,61 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Rutas.perfil,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const PerfilPagina()),
+      ),
+      GoRoute(
+        path: Rutas.dispositivos,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const DispositivosPagina()),
+      ),
+      GoRoute(
+        path: Rutas.notificaciones,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const NotificacionesPagina()),
+      ),
+      GoRoute(
+        path: Rutas.incidentes,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const IncidentesPagina()),
+        routes: [
+          GoRoute(
+            path: ':id',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              IncidenteDetallePagina(id: state.pathParameters['id']!),
+              transicion: Transicion.flujo,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Rutas.exportar,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const ExportacionPagina(),
+          transicion: Transicion.flujo,
+        ),
+        routes: [
+          GoRoute(
+            path: 'accesos',
+            pageBuilder: (context, state) => paginaAnimada(
+              context,
+              state,
+              const ExportarAccesosPagina(),
+              transicion: Transicion.flujo,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Rutas.anularQrDeRama,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const AnularQrPagina(),
+          transicion: Transicion.flujo,
+        ),
       ),
       GoRoute(
         path: Rutas.admin,

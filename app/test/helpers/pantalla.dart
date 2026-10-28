@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/navegacion/comportamiento_desplazamiento.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tema.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,10 @@ import 'package:go_router/go_router.dart';
 const tamanoCompacto = Size(360, 800);
 const tamanoExpandido = Size(1440, 900);
 
+/// Teléfono en horizontal (iPhone 17): ancho de tablet, poco alto. Debe
+/// verse como compacto, sin desbordes.
+const tamanoApaisado = Size(852, 393);
+
 /// Fija el tamaño de la ventana del test (y lo restaura al terminar).
 void usarTamano(WidgetTester tester, Size tamano) {
   tester.view
@@ -22,7 +27,8 @@ void usarTamano(WidgetTester tester, Size tamano) {
 /// Monta `pagina` con el tema, los textos y el router reales, y los overrides
 /// de Riverpod que pase el test. Las rutas que la página puede abrir muestran
 /// su propia dirección, así un test verifica a dónde navega. Por defecto se
-/// monta en compacto (360×800); con [expandida], en 1440×900.
+/// monta en compacto (360×800); con [expandida], en 1440×900; con [apaisada],
+/// en iPhone en horizontal, y con [tamano], en el que se indique.
 Future<void> montarPantalla(
   WidgetTester tester, {
   required Widget pagina,
@@ -30,8 +36,18 @@ Future<void> montarPantalla(
   ThemeData? tema,
   String ruta = '/',
   bool expandida = false,
+  bool apaisada = false,
+  Size? tamano,
 }) async {
-  usarTamano(tester, expandida ? tamanoExpandido : tamanoCompacto);
+  usarTamano(
+    tester,
+    tamano ??
+        (apaisada
+            ? tamanoApaisado
+            : expandida
+            ? tamanoExpandido
+            : tamanoCompacto),
+  );
   final router = GoRouter(
     initialLocation: ruta,
     routes: [
@@ -46,6 +62,13 @@ Future<void> montarPantalla(
         Rutas.qrRapido,
         Rutas.eventos,
         Rutas.perfil,
+        Rutas.dispositivos,
+        Rutas.notificaciones,
+        Rutas.incidentes,
+        Rutas.incidenteDetalle,
+        Rutas.exportar,
+        Rutas.exportarAccesos,
+        Rutas.anularQrDeRama,
         Rutas.admin,
         Rutas.adminPuertas,
         Rutas.adminEstructura,
@@ -80,6 +103,8 @@ Future<void> montarPantalla(
         locale: const Locale('es'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        // Igual que la app: tirar hacia abajo también con el mouse.
+        scrollBehavior: const ComportamientoDesplazamientoAcceso(),
         routerConfig: router,
       ),
     ),

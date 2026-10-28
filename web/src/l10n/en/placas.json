@@ -19,7 +19,9 @@
   },
   "conexion": {
     "enLinea": "Online",
-    "sinConexion": "Offline"
+    "sinConexion": "Offline",
+    "caidaSostenida": "Down for a while",
+    "desaparecida": "Missing"
   },
   "columna": {
     "mac": "MAC",
@@ -27,7 +29,8 @@
     "asignada": "Account and door",
     "firmware": "Firmware",
     "contacto": "Last contact",
-    "accion": "Action"
+    "accion": "Action",
+    "salud": "Reader and sensor"
   },
   "sinAsignar": "Unassigned",
   "nunca": "Never",
@@ -78,5 +81,24 @@
     "todas": "All",
     "en_linea": "Online",
     "sin_conexion": "Offline"
-  }
+  },
+  "salud": {
+    "lectorResponde": "Reader responds",
+    "lectorSinRespuesta": "Reader does not respond",
+    "sensorAbierta": "Sensor: door open",
+    "sensorCerrada": "Sensor: door closed",
+    "sinSensor": "No sensor",
+    "aperturaFallida": "Failed openings",
+    "observacion": "Under observation"
+  },
+  "sensorDe": "Configure the sensor of the board {{mac}}",
+  "sensorTitulo": "Door sensor",
+  "sensorTexto": "The sensor tells whether the door was left open after a pulse. Without a sensor, the result of each opening stays unconfirmed.",
+  "sensorInstalado": "A door sensor is installed",
+  "sensorNivel": "Sensor level with the door open",
+  "sensorAlto": "High",
+  "sensorBajo": "Low",
+  "sensorPolaridad": "The polarity is confirmed in the field: with the door open, check that the chosen level is the one reaching the board before saving.",
+  "sensorGuardar": "Save",
+  "sensorGuardando": "Saving…"
 }

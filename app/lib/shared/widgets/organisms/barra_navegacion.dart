@@ -45,9 +45,13 @@ class BarraNavegacion extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
+          // En horizontal (poco alto) la barra se achica: más lugar al
+          // contenido.
           padding: EdgeInsets.symmetric(
             horizontal: tokens.espacio.m,
-            vertical: tokens.espacio.s,
+            vertical: context.esAlturaCorta
+                ? tokens.espacio.xs
+                : tokens.espacio.s,
           ),
           child: GNav(
             selectedIndex: indice,
@@ -67,7 +71,9 @@ class BarraNavegacion extends StatelessWidget {
             ),
             padding: EdgeInsets.symmetric(
               horizontal: tokens.espacio.m,
-              vertical: tokens.espacio.m,
+              vertical: context.esAlturaCorta
+                  ? tokens.espacio.xs
+                  : tokens.espacio.m,
             ),
             tabs: [
               for (var i = 0; i < destinos.length; i++)

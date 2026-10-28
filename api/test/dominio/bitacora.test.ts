@@ -41,7 +41,12 @@ describe('clasificarCambio', () => {
     ],
     [{ tabla: 'usuarios', accion: 'creado', tenantId: null }, 'equipo.agregado'],
     [
-      { tabla: 'usuarios', accion: 'actualizado', tenantId: null, despues: { activo: 0 } },
+      {
+        tabla: 'usuarios',
+        accion: 'actualizado',
+        tenantId: null,
+        despues: { estado: 'suspendido' },
+      },
       'equipo.desactivado',
     ],
     [

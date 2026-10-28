@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import type { DatosDeVinculo } from '../api/PlacasRepositorio';
+import type { NivelAbierto } from '../domain/placa';
 import type { FiltrosDePlacas } from '../domain/placa';
 import { usePlacasRepositorio } from './contextos';
 
@@ -75,6 +76,21 @@ export function useDarDeBajaPlaca() {
   const invalidar = useInvalidarTodo();
   return useMutation({
     mutationFn: (placaId: string) => repositorio.darDeBaja(placaId),
+    onSuccess: invalidar,
+  });
+}
+
+export function useConfigurarSensorDePlaca() {
+  const repositorio = usePlacasRepositorio();
+  const invalidar = useInvalidarTodo();
+  return useMutation({
+    mutationFn: ({
+      placaId,
+      sensor,
+    }: {
+      placaId: string;
+      sensor: { instalado: boolean; nivelAbierto: NivelAbierto };
+    }) => repositorio.configurarSensor(placaId, sensor),
     onSuccess: invalidar,
   });
 }

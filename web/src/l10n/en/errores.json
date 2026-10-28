@@ -55,5 +55,18 @@
   "cuenta_de_cobro_existente": "There is already an account with that bank and number.",
   "cuenta_de_cobro_datos_incompletos": "Missing data: a bank account needs a holder and number, and a QR needs its image.",
   "cuenta_de_cobro_imagen_invalida": "The QR must be an image, not a PDF.",
-  "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again."
+  "comprobante_no_encontrado": "We couldn't find the uploaded file. Upload it again.",
+  "notificacion_no_encontrada": "We couldn't find that notice.",
+  "sesion_no_encontrada": "That session is no longer open.",
+  "limite_excedido": "You made too many requests in a row. Wait a moment and try again.",
+  "incidente_no_encontrado": "We couldn't find that incident.",
+  "incidente_motivo_requerido": "Write the reason to confirm the incident.",
+  "incidente_propio": "You can't resolve an incident of your own.",
+  "incidente_fecha_antigua": "The incident date is more than a year old.",
+  "incidente_fecha_futura": "The incident date can't be in the future.",
+  "incidente_tope_diario": "You already registered many incidents by hand for this person today. Try tomorrow.",
+  "incidente_evidencia_invalida": "Some evidence doesn't belong to that person or their branch.",
+  "incidente_reincidencia": "Restricted for reincidence in incident {{incidente}}.",
+  "incidente_reincidencia_sin_id": "Restricted for reincidence.",
+  "exportacion_tope_excedido": "That page is past the export limit. Narrow the date range."
 }

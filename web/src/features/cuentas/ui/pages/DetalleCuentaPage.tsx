@@ -12,9 +12,13 @@ import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { Pestanas } from '../../../../shared/ui/organisms/Pestanas';
 import { PestanaBitacora } from '../../../bitacora';
+import { PERMISO_ANULAR_QR_DE_CUENTA } from '../../../anulacion';
+import { PERMISO_EXPORTAR_DE_CUENTA } from '../../../exportacion';
+import { PestanaIncidentes } from '../../../incidentes';
 import { PestanaAccesos } from '../../../eventos';
 import { tienePermiso, useSesion } from '../../../seguridad';
 import { PestanaSuscripcion } from '../../../suscripciones';
+import { PestanaOperaciones } from '../components/PestanaOperaciones';
 import { useDetalleDeCuenta } from '../../application/useCuentas';
 import { RUTAS_DE_CUENTAS } from '../../rutas';
 import { DialogoEditarCuenta } from '../components/DialogoEditarCuenta';
@@ -23,12 +27,15 @@ import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
 
-type PestanaDeCuenta = 'resumen' | 'suscripcion' | 'sitios' | 'accesos' | 'bitacora';
+type PestanaDeCuenta =
+  'resumen' | 'suscripcion' | 'sitios' | 'accesos' | 'incidentes' | 'operaciones' | 'bitacora';
 const PESTANAS: readonly PestanaDeCuenta[] = [
   'resumen',
   'suscripcion',
   'sitios',
   'accesos',
+  'incidentes',
+  'operaciones',
   'bitacora',
 ];
 
@@ -45,7 +52,12 @@ export function DetalleCuentaPage() {
   const [editando, setEditando] = useState(parametros.get('editar') === '1');
   const [eliminando, setEliminando] = useState(false);
   const pedida = parametros.get('pestana');
-  const pestana = PESTANAS.find((p) => p === pedida) ?? 'resumen';
+  // "QR y datos" solo aparece a quien puede anular QR o exportar datos; la API lo vuelve a exigir.
+  const puedeOperar =
+    tienePermiso(permisos, PERMISO_ANULAR_QR_DE_CUENTA) ||
+    tienePermiso(permisos, PERMISO_EXPORTAR_DE_CUENTA);
+  const pestanasVisibles = PESTANAS.filter((p) => p !== 'operaciones' || puedeOperar);
+  const pestana = pestanasVisibles.find((p) => p === pedida) ?? 'resumen';
 
   if (detalle.isError) {
     const noEncontrada = detalle.error instanceof ErrorApi && detalle.error.status === 404;
@@ -140,7 +152,7 @@ export function DetalleCuentaPage() {
         onCambio={(siguiente) => {
           setParametros(siguiente === 'resumen' ? {} : { pestana: siguiente }, { replace: true });
         }}
-        pestanas={PESTANAS.map((p) => ({ id: p, etiqueta: t(`detalle:tabs.${p}`) }))}
+        pestanas={pestanasVisibles.map((p) => ({ id: p, etiqueta: t(`detalle:tabs.${p}`) }))}
       />
       <div className={styles.contenido}>
         {pestana === 'resumen' ? (
@@ -168,6 +180,18 @@ export function DetalleCuentaPage() {
           )
         ) : pestana === 'accesos' ? (
           <PestanaAccesos cuentaId={id} />
+        ) : pestana === 'incidentes' ? (
+          <PestanaIncidentes cuentaId={id} />
+        ) : pestana === 'operaciones' ? (
+          datos ? (
+            <PestanaOperaciones
+              cuenta={{ id, nombre: datos.cuenta.nombre, codigo: datos.cuenta.codigo }}
+            />
+          ) : (
+            <div aria-busy="true">
+              <Skeleton alto="bloque" />
+            </div>
+          )
         ) : pestana === 'bitacora' ? (
           <PestanaBitacora cuentaId={id} />
         ) : (

@@ -24,6 +24,9 @@ para ciudades, edificios, parqueos, condominios y haciendas.
 | `app/assets/ilustraciones/error.svg` | Error | Storyset (Freepik), «Warning-rafiki», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
 | `app/assets/ilustraciones/sin_conexion.svg` | Sin conexión | Storyset (Freepik), «Cloud hosting-amico», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
 | `app/assets/ilustraciones/bloqueo.svg` | PIN bloqueado | Storyset (Freepik), «Security-pana», descargado a mano y optimizado con svgo | Storyset: gratis con atribución («Illustration by Storyset») |
+| `app/assets/ilustraciones/anular_qr.svg` | Anular QR | Storyset (Freepik), «Cancel-amico», descargado a mano | Storyset: gratis con atribución («Illustration by Storyset») |
+| `app/assets/ilustraciones/icono_pdf.svg` | Formato PDF en la hoja de descarga | Creación propia, dibujo simple del documento PDF | Propietaria del proyecto |
+| `app/assets/ilustraciones/icono_excel.svg` | Formato Excel en la hoja de descarga | Creación propia, dibujo simple de la hoja de cálculo | Propietaria del proyecto |
 | `app/assets/imagenes/bienvenida_edificio.jpg` | Bienvenida y panel de marca | Foto de Dany Kosenko en Pexels (`pexels-dany-kosenko-2159773600-38877340`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
 | `app/assets/imagenes/ingreso_acceso.jpg` | Cabecera del ingreso (PIN) | Foto de Estrella Bastías en Pexels (`pexels-estrella-bastias-2153724301-33041706`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |
 | `app/assets/imagenes/cerradura_biometrica.jpg` | Elegir rol y PIN generado | Foto de Fotografía GMAZG en Pexels (`pexels-fotografiagmazg-7522609`), reducida a 1400 px | Licencia de Pexels: uso comercial sin atribución obligatoria |

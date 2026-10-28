@@ -19,7 +19,7 @@ Fuente: ADR 0033 (con el estado real del código verificado el 2026-10-23), ADR 
 7. **CORS:** sin plugin = solo mismo origen. Cualquier origen nuevo va en lista blanca explícita.
 8. **Logs y errores:** nunca `authorization`, `cookie`, `pin`, `contrasena`, `refresh` ni el texto de un QR; un 500 no devuelve trazas; el cliente recibe códigos.
 9. **Dependencias:** Dependabot, `npm audit`, escaneo de secretos y CodeQL en CI.
-10. **Base:** el usuario de la API sin `UPDATE`/`DELETE` sobre `eventos_acceso` ni `bitacoras`.
+10. **Base:** el usuario de la API sin `UPDATE`/`DELETE` sobre `lecturas` ni `bitacoras`.
 
 ## Estados (vocabulario único, ADR 0033 §1)
 

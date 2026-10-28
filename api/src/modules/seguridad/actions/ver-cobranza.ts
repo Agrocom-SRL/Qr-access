@@ -57,7 +57,7 @@ export async function ejecutar(
 
   const filas: FilaDeCobranza[] = cuentas.flatMap((cuenta) => {
     const suscripcion = suscripciones.get(cuenta.id);
-    if (suscripcion === undefined || cuenta.activo !== 1) return [];
+    if (suscripcion === undefined || cuenta.estado === 'suspendido') return [];
     return [
       {
         cuenta: { id: cuenta.id, codigo: cuenta.codigo, nombre: cuenta.nombre },

@@ -1,6 +1,8 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import es_app from './es/app.json';
+import es_anulacion from './es/anulacion.json';
+import es_exportacion from './es/exportacion.json';
 import es_auth from './es/auth.json';
 import es_bitacora from './es/bitacora.json';
 import es_cambiarPlan from './es/cambiarPlan.json';
@@ -16,7 +18,12 @@ import es_estadisticas from './es/estadisticas.json';
 import es_eventos from './es/eventos.json';
 import es_estados from './es/estados.json';
 import es_estructura from './es/estructura.json';
+import es_incidentes from './es/incidentes.json';
+import es_limites from './es/limites.json';
+import es_senales from './es/senales.json';
+import es_sesiones from './es/sesiones.json';
 import es_nav from './es/nav.json';
+import es_notificaciones from './es/notificaciones.json';
 import es_pago from './es/pago.json';
 import es_perfil from './es/perfil.json';
 import es_placas from './es/placas.json';
@@ -24,6 +31,8 @@ import es_planes from './es/planes.json';
 import es_resumen from './es/resumen.json';
 import es_suscripcion from './es/suscripcion.json';
 import en_app from './en/app.json';
+import en_anulacion from './en/anulacion.json';
+import en_exportacion from './en/exportacion.json';
 import en_auth from './en/auth.json';
 import en_bitacora from './en/bitacora.json';
 import en_cambiarPlan from './en/cambiarPlan.json';
@@ -39,7 +48,12 @@ import en_estadisticas from './en/estadisticas.json';
 import en_eventos from './en/eventos.json';
 import en_estados from './en/estados.json';
 import en_estructura from './en/estructura.json';
+import en_incidentes from './en/incidentes.json';
+import en_limites from './en/limites.json';
+import en_senales from './en/senales.json';
+import en_sesiones from './en/sesiones.json';
 import en_nav from './en/nav.json';
+import en_notificaciones from './en/notificaciones.json';
 import en_pago from './en/pago.json';
 import en_perfil from './en/perfil.json';
 import en_placas from './en/placas.json';
@@ -47,6 +61,8 @@ import en_planes from './en/planes.json';
 import en_resumen from './en/resumen.json';
 import en_suscripcion from './en/suscripcion.json';
 import pt_app from './pt/app.json';
+import pt_anulacion from './pt/anulacion.json';
+import pt_exportacion from './pt/exportacion.json';
 import pt_auth from './pt/auth.json';
 import pt_bitacora from './pt/bitacora.json';
 import pt_cambiarPlan from './pt/cambiarPlan.json';
@@ -62,7 +78,12 @@ import pt_estadisticas from './pt/estadisticas.json';
 import pt_eventos from './pt/eventos.json';
 import pt_estados from './pt/estados.json';
 import pt_estructura from './pt/estructura.json';
+import pt_incidentes from './pt/incidentes.json';
+import pt_limites from './pt/limites.json';
+import pt_senales from './pt/senales.json';
+import pt_sesiones from './pt/sesiones.json';
 import pt_nav from './pt/nav.json';
+import pt_notificaciones from './pt/notificaciones.json';
 import pt_pago from './pt/pago.json';
 import pt_perfil from './pt/perfil.json';
 import pt_placas from './pt/placas.json';
@@ -83,6 +104,8 @@ const CLAVE_IDIOMA = 'acceso.idioma';
 export const recursos = {
   es: {
     app: es_app,
+    anulacion: es_anulacion,
+    exportacion: es_exportacion,
     auth: es_auth,
     bitacora: es_bitacora,
     cambiarPlan: es_cambiarPlan,
@@ -98,7 +121,12 @@ export const recursos = {
     eventos: es_eventos,
     estados: es_estados,
     estructura: es_estructura,
+    incidentes: es_incidentes,
+    limites: es_limites,
+    senales: es_senales,
+    sesiones: es_sesiones,
     nav: es_nav,
+    notificaciones: es_notificaciones,
     pago: es_pago,
     perfil: es_perfil,
     placas: es_placas,
@@ -108,6 +136,8 @@ export const recursos = {
   },
   en: {
     app: en_app,
+    anulacion: en_anulacion,
+    exportacion: en_exportacion,
     auth: en_auth,
     bitacora: en_bitacora,
     cambiarPlan: en_cambiarPlan,
@@ -123,7 +153,12 @@ export const recursos = {
     eventos: en_eventos,
     estados: en_estados,
     estructura: en_estructura,
+    incidentes: en_incidentes,
+    limites: en_limites,
+    senales: en_senales,
+    sesiones: en_sesiones,
     nav: en_nav,
+    notificaciones: en_notificaciones,
     pago: en_pago,
     perfil: en_perfil,
     placas: en_placas,
@@ -133,6 +168,8 @@ export const recursos = {
   },
   pt: {
     app: pt_app,
+    anulacion: pt_anulacion,
+    exportacion: pt_exportacion,
     auth: pt_auth,
     bitacora: pt_bitacora,
     cambiarPlan: pt_cambiarPlan,
@@ -148,7 +185,12 @@ export const recursos = {
     eventos: pt_eventos,
     estados: pt_estados,
     estructura: pt_estructura,
+    incidentes: pt_incidentes,
+    limites: pt_limites,
+    senales: pt_senales,
+    sesiones: pt_sesiones,
     nav: pt_nav,
+    notificaciones: pt_notificaciones,
     pago: pt_pago,
     perfil: pt_perfil,
     placas: pt_placas,

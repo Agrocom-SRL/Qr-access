@@ -1,10 +1,12 @@
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
+import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/cabecera_titulo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -55,7 +57,37 @@ void main() {
     expect(find.text('AGR'), findsOneWidget);
     expect(find.textContaining('Empresa'), findsOneWidget);
     expect(find.text('Administrador'), findsOneWidget);
-    expect(find.text(textos.perfilVersion), findsOneWidget);
+    // La información de la app va en su propia hoja, no en la fila.
+    expect(find.text(textos.perfilAcercaTitulo), findsOneWidget);
+    expect(find.text(textos.perfilAcercaOrganizacion), findsNothing);
+  });
+
+  testWidgets('Acerca de la app abre la hoja con nombre, organización, '
+      'versión y el copyright', (tester) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.ensureVisible(find.text(textos.perfilAcercaTitulo));
+    await tester.tap(find.text(textos.perfilAcercaTitulo));
+    await tester.pumpAndSettle();
+
+    expect(find.text(textos.perfilAcercaNombreEtiqueta), findsOneWidget);
+    expect(find.text(textos.perfilAcercaOrganizacion), findsOneWidget);
+    expect(find.text(textos.perfilAcercaVersionEtiqueta), findsOneWidget);
+    expect(find.text(textos.perfilAcercaDesarrollo), findsOneWidget);
+    expect(find.text(textos.perfilAcercaDerechos(2026)), findsOneWidget);
+  });
+
+  testWidgets('no lleva título de pantalla: empieza por el usuario', (
+    tester,
+  ) async {
+    await _montar(tester);
+
+    expect(find.byType(CabeceraTitulo), findsNothing);
+    expect(
+      tester.getTopLeft(find.text('Ana Pérez')).dy,
+      lessThan(tester.getTopLeft(find.text(textosEn(tester).sesionCerrar)).dy),
+    );
   });
 
   testWidgets('sin suscripción vigente lo avisa', (tester) async {
@@ -74,6 +106,7 @@ void main() {
   testWidgets('el interruptor de tema guarda la preferencia', (tester) async {
     final (sesion: _, :preferencias) = await _montar(tester);
 
+    await tester.ensureVisible(find.byType(Switch));
     await tester.tap(find.byType(Switch));
     await tester.pump();
 
@@ -116,5 +149,17 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
     await tester.pumpAndSettle();
     expect(perfil.nombres, hasLength(1));
+  });
+
+  testWidgets('Dispositivos conectados lleva a su pantalla', (tester) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    final fila = find.text(textos.perfilDispositivos);
+    await tester.ensureVisible(fila);
+    await tester.tap(fila);
+    await tester.pumpAndSettle();
+
+    expect(find.text('destino ${Rutas.dispositivos}'), findsOneWidget);
   });
 }

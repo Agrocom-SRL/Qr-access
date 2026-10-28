@@ -1,0 +1,156 @@
+{
+  "titulo": "Usage and signals",
+  "subtitulo": "What the system flags for review. None of this cuts off access: a person decides.",
+  "pestanas": "Usage and signals sections",
+  "pestana": {
+    "consumo": "Quota usage",
+    "senales": "Signals",
+    "flujo": "Flow"
+  },
+  "dias_one": "{{count}} day",
+  "dias_other": "{{count}} days",
+  "periodo": "Period",
+  "flujo": {
+    "subtitulo": "Openings per active user. A day is unusual when it crosses both thresholds at once; a one-day spike is not a signal by itself.",
+    "filtros": {
+      "soloAtipicas": "Only accounts with unusual days",
+      "buscar": "Search by code or name",
+      "orden": "Sort by",
+      "sentido": "Sort order",
+      "mayorAMenor": "Highest first",
+      "menorAMayor": "Lowest first",
+      "atipicas": "With unusual days"
+    },
+    "orden": {
+      "por_usuario": "Openings per user",
+      "aperturas": "Openings",
+      "dias_atipicos": "Unusual days",
+      "nombre": "Name"
+    },
+    "columnas": {
+      "cuenta": "Account",
+      "usuarios": "Active users today",
+      "aperturas": "Openings today",
+      "porUsuario": "Per user today",
+      "hoy": "Today",
+      "diasAtipicos": "Unusual days",
+      "ultimo": "Last unusual day",
+      "base": "Usual baseline",
+      "umbrales": "Thresholds"
+    },
+    "atipico": "Unusual",
+    "normal": "Normal",
+    "sinBase": "No history",
+    "ninguno": "None",
+    "umbrales": "Thresholds: {{aperturas}} openings and {{porUsuario}} per user",
+    "vecesLaBase": "{{veces}} times the baseline",
+    "vacio": {
+      "titulo": "No accounts with activity",
+      "texto": "There are no openings to measure yet."
+    },
+    "sinResultados": {
+      "titulo": "No accounts with these filters",
+      "texto": "Remove the unusual days filter or change the search."
+    },
+    "errorCarga": "We couldn't load the accounts flow",
+    "detalle": {
+      "volver": "Accounts flow",
+      "titulo": "Flow of {{cuenta}}",
+      "usuariosHoy": "Active users today",
+      "aperturasHoy": "Openings today",
+      "diasAtipicos": "Unusual days in the period",
+      "base": "Usual baseline",
+      "sinBase": "Not enough history",
+      "graficaTitulo": "Openings per day",
+      "graficaSubtitulo": "The line marks the usual baseline; red bars are unusual days.",
+      "graficaEtiqueta": "Openings per day for {{cuenta}}; {{atipicos}} unusual days",
+      "dia": "Day",
+      "aperturas": "Openings",
+      "rechazos": "Rejections",
+      "generados": "QR generated",
+      "porUsuario": "Per user",
+      "marca": "Flag",
+      "baseDia": "Baseline",
+      "errorCarga": "We couldn't load this account's flow"
+    },
+    "titulo": "Accounts flow",
+    "leyenda": "Legend"
+  },
+  "lista": {
+    "resumen": {
+      "titulo": "Signals by type",
+      "subtitulo": "Last {{dias}}: {{total}} signals, {{abiertas}} unresolved",
+      "tipo": "Type",
+      "total": "Total",
+      "abiertas": "Unresolved",
+      "altas": "High severity",
+      "cuentas": "Accounts with the most signals",
+      "cuenta": "Account",
+      "sinSenales": "There were no signals in this period.",
+      "errorCarga": "We couldn't load the signals summary"
+    },
+    "filtros": {
+      "cuenta": "Account",
+      "cuentaTodas": "All accounts",
+      "tipo": "Type",
+      "tipoTodos": "All types",
+      "gravedad": "Severity",
+      "todas": "All",
+      "estado": "Status",
+      "usuario": "User id",
+      "desde": "From",
+      "hasta": "To",
+      "limpiar": "Clear filters"
+    },
+    "gravedad": {
+      "baja": "Low",
+      "media": "Medium",
+      "alta": "High"
+    },
+    "estado": {
+      "abiertas": "Open",
+      "sin_resolver": "Unresolved",
+      "pendiente": "Pending",
+      "confirmado": "Confirmed",
+      "descartado": "Dismissed"
+    },
+    "tipo": {
+      "uso_masivo": "Mass use of a QR",
+      "uso_imposible": "Impossible use",
+      "pin_compartido": "Shared PIN",
+      "qr_reenviado": "Forwarded QR",
+      "generacion_ruidosa": "Noisy generation",
+      "perdida_o_robo": "Loss or theft",
+      "otro": "Other signal"
+    },
+    "columnas": {
+      "ocurrio": "Occurred",
+      "cuenta": "Account",
+      "usuario": "User",
+      "tipo": "Type",
+      "gravedad": "Severity",
+      "detalle": "Detail",
+      "estado": "Status"
+    },
+    "usuarioSinNombre": "No name",
+    "verCuenta": "View account {{cuenta}}",
+    "descripcion": {
+      "uso_masivo": "{{aperturas}} openings in the day; the threshold is {{umbral}}.",
+      "uso_imposible": "{{pares}} pairs of uses in different places in a short time (less than {{sitios}} min between sites).",
+      "uso_imposible_con_puertas": "{{pares}} pairs of uses in different places in a short time (less than {{sitios}} min between sites and {{puertas}} s between doors).",
+      "pin_compartido": "{{ips}} different IPs with {{sesiones}} active sessions; the threshold is {{umbral}}.",
+      "qr_reenviado": "{{rechazos}} rejections of {{qrs}} QR codes on {{lectores}} readers; the minimum is {{minimo}}.",
+      "sinDetalle": "No detail"
+    },
+    "vacio": {
+      "titulo": "No signals",
+      "texto": "When the system detects unusual use, it appears here."
+    },
+    "sinResultados": {
+      "titulo": "No signals with these filters",
+      "texto": "Try another status or remove a filter."
+    },
+    "errorCarga": "We couldn't load the signals",
+    "titulo": "Abuse signals"
+  }
+}
