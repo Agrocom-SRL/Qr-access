@@ -109,6 +109,7 @@ class UsuariosPagina extends ConsumerWidget {
           ? AccesoBoton(
               texto: l10n.usuariosNuevo,
               icono: Icons.person_add_outlined,
+              variante: VarianteBoton.acento,
               onPressed: () => context.go(Rutas.adminUsuarioNuevo),
             )
           : null,

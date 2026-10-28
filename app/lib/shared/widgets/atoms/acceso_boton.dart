@@ -14,6 +14,10 @@ enum VarianteBoton {
   peligroTexto,
   peligroTonal,
   peligroRelleno,
+
+  /// Color de acento (naranja): la acción principal de una pantalla ancha,
+  /// la que en el teléfono es el botón flotante.
+  acento,
 }
 
 /// Botón de la app. Con [cargando] muestra un spinner de 16 y el verbo en
@@ -83,6 +87,14 @@ class AccesoBoton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: colores.peligroSuave,
           foregroundColor: colores.peligro,
+        ),
+        child: contenido,
+      ),
+      VarianteBoton.acento => FilledButton(
+        onPressed: alPresionar,
+        style: FilledButton.styleFrom(
+          backgroundColor: colores.acento,
+          foregroundColor: colores.sobreAcento,
         ),
         child: contenido,
       ),

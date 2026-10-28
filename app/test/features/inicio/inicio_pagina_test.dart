@@ -292,6 +292,31 @@ void main() {
     });
   });
 
+  group('en expandido, para los demás roles', () {
+    testWidgets('el guardia ve el estado de las puertas junto a su hero', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _guardia, expandida: true);
+      final textos = textosEn(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(textos.inicioAccesosDeHoy), findsOneWidget);
+      expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
+      expect(find.text(textos.puertaSinConexion), findsOneWidget);
+    });
+
+    testWidgets('el usuario ve el hero de generar junto a sus accesos', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _usuario, expandida: true);
+      final textos = textosEn(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(textos.qrGenerarTitulo), findsWidgets);
+      expect(find.text(textos.inicioQrPropio), findsOneWidget);
+    });
+  });
+
   group('en horizontal (852×393)', () {
     testWidgets('el tablero de administración cabe y deja la barra inferior', (
       tester,

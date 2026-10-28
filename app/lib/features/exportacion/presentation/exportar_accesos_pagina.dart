@@ -57,7 +57,9 @@ class ExportarAccesosPagina extends ConsumerWidget {
     );
     // El resultado de la descarga se queda a la vista, bajo las pestañas: un
     // SnackBar la taparía justo cuando hay que tocar para seguir bajando.
-    final apaisada = context.esAlturaCorta;
+    // Teléfono en horizontal y pantalla ancha: pestañas a la izquierda y la
+    // ilustración a la derecha.
+    final apaisada = context.esAlturaCorta || context.esExpandida;
     final contenido = _Contenido(
       estado: estado,
       ultimo: ultimo,

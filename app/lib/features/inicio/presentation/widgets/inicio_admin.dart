@@ -11,13 +11,12 @@ import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/estado_de_puertas.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
 import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
-import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
-import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_indicador.dart';
 import 'package:flutter/material.dart';
@@ -68,46 +67,26 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
     // llega desde aquí a los QR que generó, para volver a compartirlos.
     final puedeVerMisQr = widget.sesion.tiene(Permisos.verQr);
 
-    // Las notas solo caben en expandido; en compacto (C04b) las tarjetas
-    // llevan rótulo y cifra, nada más.
-    final indicadores = [
-      TarjetaIndicador(
-        etiqueta: l10n.inicioAccesosDeHoy,
-        icono: Icons.login,
-        valor: datos?.resumenDeHoy.permitidos,
-        nota: datos == null || !expandida
-            ? null
-            : l10n.inicioPermitidosPorPuertas(datos.puertas.length),
-        variante: VarianteIndicador.hero,
-        alTocar: () => context.go(Rutas.eventos),
-      ),
-      TarjetaIndicador(
-        etiqueta: l10n.inicioRechazados,
-        icono: Icons.block,
-        valor: datos?.resumenDeHoy.rechazados,
-        nota: switch (expandida ? datos?.resumenDeHoy.motivoPrincipal : null) {
-          null => null,
-          final motivo => l10n.inicioRechazadosPorMotivo(
-            motivo.value,
-            textoMotivoEvento(l10n, motivo.key),
-          ),
-        },
-        variante: VarianteIndicador.alerta,
-        alTocar: () => context.go(Rutas.eventos),
-      ),
-      TarjetaIndicador(
-        etiqueta: l10n.inicioPuertasSinConexion,
-        icono: Icons.wifi_off,
-        valor: datos?.puertasSinConexion.length,
-        nota: datos == null || datos.puertasSinConexion.isEmpty || !expandida
-            ? null
-            : datos.puertasSinConexion.map((p) => p.nombre).join(' · '),
-        variante: VarianteIndicador.alerta,
-        alTocar: widget.sesion.tiene(Permisos.supervisarPuertas)
-            ? () => context.go(Rutas.adminPuertas)
-            : null,
-      ),
-    ];
+    // Mientras carga, el conteo de puertas es una tarjeta de indicador con su
+    // esqueleto; con datos lo reemplaza el estado de cada puerta.
+    final cargandoPuertas = TarjetaIndicador(
+      etiqueta: l10n.inicioPuertasSinConexion,
+      icono: Icons.wifi_off,
+      variante: VarianteIndicador.alerta,
+    );
+    final hero = HeroAccesosDeHoy(
+      permitidos: datos?.resumenDeHoy.permitidos,
+      rechazados: datos?.resumenDeHoy.rechazados,
+      alTocar: () => context.go(Rutas.eventos),
+    );
+    final estadoDePuertas = datos == null
+        ? cargandoPuertas
+        : EstadoDePuertas(
+            puertas: datos.puertas,
+            alVerPuertas: widget.sesion.tiene(Permisos.supervisarPuertas)
+                ? () => context.go(Rutas.adminPuertas)
+                : null,
+          );
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(tableroProvider.future),
@@ -154,7 +133,8 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                   if (puedeQrPropio)
                     AccesoBoton(
                       texto: l10n.inicioQrPropio,
-                      icono: Icons.person_pin_outlined,
+                      // El mismo ícono que el botón del QR propio del teléfono.
+                      icono: Icons.how_to_reg,
                       variante: VarianteBoton.tonal,
                       onPressed: () => context.go(Rutas.qrRapido),
                     ),
@@ -172,6 +152,7 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                     AccesoBoton(
                       texto: l10n.qrGenerarBoton,
                       icono: Icons.qr_code_2,
+                      variante: VarianteBoton.acento,
                       onPressed: () => context.go(Rutas.qrNuevo),
                     ),
                   ],
@@ -213,40 +194,24 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                 alReintentar: () => ref.invalidate(tableroProvider),
               )
             else if (expandida)
-              // Las tres tarjetas miden lo mismo, lleven nota o no.
+              // Pantalla ancha: el hero con su foto y el estado de las puertas
+              // en dos columnas, igual alto.
               IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (var i = 0; i < indicadores.length; i++) ...[
-                      Expanded(child: indicadores[i]),
-                      if (i < indicadores.length - 1)
-                        SizedBox(width: tokens.espacio.xl),
-                    ],
+                    Expanded(child: hero),
+                    SizedBox(width: tokens.espacio.xl),
+                    Expanded(child: estadoDePuertas),
                   ],
                 ),
               )
             else ...[
               // Mismo card con foto de fondo que ve el guardia, siempre a todo
               // el ancho, en vertical y en horizontal.
-              HeroAccesosDeHoy(
-                permitidos: datos?.resumenDeHoy.permitidos,
-                rechazados: datos?.resumenDeHoy.rechazados,
-                alTocar: () => context.go(Rutas.eventos),
-              ),
+              hero,
               SizedBox(height: tokens.espacio.l),
-              // Con datos, el conteo de puertas sin conexión es la cabecera de
-              // la tarjeta de estado de cada puerta; mientras carga, queda la
-              // tarjeta de indicador con su esqueleto.
-              if (datos == null)
-                indicadores[2]
-              else
-                _EstadoDePuertas(
-                  puertas: datos.puertas,
-                  alVerPuertas: widget.sesion.tiene(Permisos.supervisarPuertas)
-                      ? () => context.go(Rutas.adminPuertas)
-                      : null,
-                ),
+              estadoDePuertas,
             ],
             SizedBox(height: tokens.espacio.xxl),
             if (expandida && datos != null && datos.ultimosEventos.isNotEmpty)
@@ -290,146 +255,6 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             ],
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Estado de las puertas: la cabecera dice cuántas están sin conexión y debajo
-/// va cada puerta con su sitio y si su lector reporta, las caídas primero.
-/// Muestra las primeras que caben; el resto está en Administración.
-class _EstadoDePuertas extends StatelessWidget {
-  const new({required this.puertas, required this.alVerPuertas});
-
-  /// Con ancho suficiente (horizontal) las filas van en dos columnas.
-  static const _anchoDosColumnas = 560.0;
-  static const _maximoUnaColumna = 4;
-  static const _maximoDosColumnas = 6;
-
-  final List<Puerta> puertas;
-
-  /// `null` si el rol no supervisa puertas: no se ofrece el enlace.
-  final VoidCallback? alVerPuertas;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final tokens = context.tokens;
-    final textos = Theme.of(context).textTheme;
-    final ordenadas = [...puertas]
-      ..sort((a, b) {
-        if (a.sinConexion == b.sinConexion) return 0;
-        return a.sinConexion ? -1 : 1;
-      });
-    final caidas = ordenadas.where((p) => p.sinConexion).length;
-    return AccesoTarjeta(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              CajaIcono(
-                icono: caidas > 0 ? Icons.wifi_off : Icons.wifi,
-                tono: caidas > 0 ? TonoCaja.peligro : TonoCaja.primario,
-                tamano: tokens.tamano.iconoCaja,
-              ),
-              SizedBox(width: tokens.espacio.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.inicioPuertasSinConexion,
-                      style: textos.bodyMedium?.copyWith(
-                        color: tokens.colores.textoSecundario,
-                      ),
-                    ),
-                    Text(
-                      '$caidas',
-                      style: textos.headlineSmall?.copyWith(
-                        color: caidas > 0
-                            ? tokens.colores.peligro
-                            : tokens.colores.texto,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (alVerPuertas != null)
-                AccesoBoton(
-                  texto: l10n.inicioVerPuertas,
-                  variante: VarianteBoton.texto,
-                  onPressed: alVerPuertas,
-                ),
-            ],
-          ),
-          if (ordenadas.isNotEmpty) ...[
-            SizedBox(height: tokens.espacio.s),
-            const Divider(),
-            LayoutBuilder(
-              builder: (context, restricciones) {
-                final dosColumnas = restricciones.maxWidth >= _anchoDosColumnas;
-                final visibles = ordenadas.take(
-                  dosColumnas ? _maximoDosColumnas : _maximoUnaColumna,
-                );
-                final ancho = dosColumnas
-                    ? (restricciones.maxWidth - tokens.espacio.xl) / 2
-                    : restricciones.maxWidth;
-                return Wrap(
-                  spacing: tokens.espacio.xl,
-                  children: [
-                    for (final puerta in visibles)
-                      SizedBox(
-                        width: ancho,
-                        child: _FilaDePuerta(puerta: puerta),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Una puerta del estado: nombre, sitio y su badge de conexión.
-class _FilaDePuerta extends StatelessWidget {
-  const new({required this.puerta});
-
-  final Puerta puerta;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final tokens = context.tokens;
-    final textos = Theme.of(context).textTheme;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: tokens.espacio.s),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(puerta.nombre, style: textos.titleSmall),
-                Text(
-                  puerta.sitioNombre,
-                  style: textos.bodySmall?.copyWith(
-                    color: tokens.colores.textoSecundario,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          AccesoBadge(
-            texto: puerta.sinConexion
-                ? l10n.puertaSinConexion
-                : l10n.puertaEnLinea,
-            tono: puerta.sinConexion ? TonoAcceso.peligro : TonoAcceso.primario,
-          ),
-        ],
       ),
     );
   }

@@ -62,7 +62,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(FilledButton), findsNWidgets(4));
+    // primaria, tonal (es un FilledButton), peligroTonal, peligroRelleno y
+    // acento.
+    expect(find.byType(FilledButton), findsNWidgets(5));
     expect(find.byType(OutlinedButton), findsOneWidget);
     // texto y peligroTexto
     expect(find.byType(TextButton), findsNWidgets(2));
