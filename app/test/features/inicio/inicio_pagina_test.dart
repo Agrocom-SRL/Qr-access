@@ -284,6 +284,20 @@ void main() {
       expect(cabecera.bottom, lessThanOrEqualTo(393));
     });
 
+    testWidgets('el administrador ve el estado de cada puerta al lado', (
+      tester,
+    ) async {
+      await _montar(tester, permisos: _administrador, apaisada: true);
+      final textos = textosEn(tester);
+
+      expect(find.text(textos.inicioEstadoPuertas), findsOneWidget);
+      expect(find.text(textos.inicioVerPuertas), findsOneWidget);
+      // Cada puerta con su sitio y su estado; la caída (Depósito 2) primero.
+      expect(find.text(textos.puertaEnLinea), findsOneWidget);
+      expect(find.text(textos.puertaSinConexion), findsOneWidget);
+      expect(find.text('Portón vehicular'), findsOneWidget);
+    });
+
     testWidgets('el inicio de usuario cabe y deja la barra inferior', (
       tester,
     ) async {
