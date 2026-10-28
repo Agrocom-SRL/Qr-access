@@ -16,6 +16,7 @@ import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
+import 'package:agrocom_acceso/shared/widgets/molecules/caja_icono.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/tarjeta_indicador.dart';
 import 'package:flutter/material.dart';
@@ -218,47 +219,27 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                   ],
                 ),
               )
-            else if (context.esAlturaCorta && datos != null)
-              // Teléfono en horizontal: hay ancho de sobra, así que el estado
-              // de cada puerta va al lado en lugar de dejar el tablero vacío.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        HeroAccesosDeHoy(
-                          permitidos: datos.resumenDeHoy.permitidos,
-                          rechazados: datos.resumenDeHoy.rechazados,
-                          alTocar: () => context.go(Rutas.eventos),
-                        ),
-                        SizedBox(height: tokens.espacio.l),
-                        indicadores[2],
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: tokens.espacio.l),
-                  Expanded(
-                    child: _EstadoDePuertas(
-                      puertas: datos.puertas,
-                      alVerPuertas:
-                          widget.sesion.tiene(Permisos.supervisarPuertas)
-                          ? () => context.go(Rutas.adminPuertas)
-                          : null,
-                    ),
-                  ),
-                ],
-              )
             else ...[
-              // Mismo card con foto de fondo que ve el guardia.
+              // Mismo card con foto de fondo que ve el guardia, siempre a todo
+              // el ancho, en vertical y en horizontal.
               HeroAccesosDeHoy(
                 permitidos: datos?.resumenDeHoy.permitidos,
                 rechazados: datos?.resumenDeHoy.rechazados,
                 alTocar: () => context.go(Rutas.eventos),
               ),
               SizedBox(height: tokens.espacio.l),
-              indicadores[2],
+              // Con datos, el conteo de puertas sin conexión es la cabecera de
+              // la tarjeta de estado de cada puerta; mientras carga, queda la
+              // tarjeta de indicador con su esqueleto.
+              if (datos == null)
+                indicadores[2]
+              else
+                _EstadoDePuertas(
+                  puertas: datos.puertas,
+                  alVerPuertas: widget.sesion.tiene(Permisos.supervisarPuertas)
+                      ? () => context.go(Rutas.adminPuertas)
+                      : null,
+                ),
             ],
             SizedBox(height: tokens.espacio.xxl),
             if (expandida && datos != null && datos.ultimosEventos.isNotEmpty)
@@ -307,12 +288,16 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
   }
 }
 
-/// Las puertas de la cuenta con su sitio y si su lector reporta, las caídas
-/// primero. Muestra las primeras [_maximo]; el resto está en Administración.
+/// Estado de las puertas: la cabecera dice cuántas están sin conexión y debajo
+/// va cada puerta con su sitio y si su lector reporta, las caídas primero.
+/// Muestra las primeras que caben; el resto está en Administración.
 class _EstadoDePuertas extends StatelessWidget {
   const new({required this.puertas, required this.alVerPuertas});
 
-  static const _maximo = 4;
+  /// Con ancho suficiente (horizontal) las filas van en dos columnas.
+  static const _anchoDosColumnas = 560.0;
+  static const _maximoUnaColumna = 4;
+  static const _maximoDosColumnas = 6;
 
   final List<Puerta> puertas;
 
@@ -329,63 +314,114 @@ class _EstadoDePuertas extends StatelessWidget {
         if (a.sinConexion == b.sinConexion) return 0;
         return a.sinConexion ? -1 : 1;
       });
+    final caidas = ordenadas.where((p) => p.sinConexion).length;
     return AccesoTarjeta(
-      relleno: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: EdgeInsets.only(top: tokens.espacio.m),
-            child: Row(
+          Row(
+            children: [
+              CajaIcono(
+                icono: caidas > 0 ? Icons.wifi_off : Icons.wifi,
+                tono: caidas > 0 ? TonoCaja.peligro : TonoCaja.primario,
+                tamano: tokens.tamano.iconoCaja,
+              ),
+              SizedBox(width: tokens.espacio.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.inicioPuertasSinConexion,
+                      style: textos.bodyMedium?.copyWith(
+                        color: tokens.colores.textoSecundario,
+                      ),
+                    ),
+                    Text(
+                      '$caidas',
+                      style: textos.headlineSmall?.copyWith(
+                        color: caidas > 0
+                            ? tokens.colores.peligro
+                            : tokens.colores.texto,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (alVerPuertas != null)
+                AccesoBoton(
+                  texto: l10n.inicioVerPuertas,
+                  variante: VarianteBoton.texto,
+                  onPressed: alVerPuertas,
+                ),
+            ],
+          ),
+          if (ordenadas.isNotEmpty) ...[
+            SizedBox(height: tokens.espacio.s),
+            const Divider(),
+            LayoutBuilder(
+              builder: (context, restricciones) {
+                final dosColumnas = restricciones.maxWidth >= _anchoDosColumnas;
+                final visibles = ordenadas.take(
+                  dosColumnas ? _maximoDosColumnas : _maximoUnaColumna,
+                );
+                final ancho = dosColumnas
+                    ? (restricciones.maxWidth - tokens.espacio.xl) / 2
+                    : restricciones.maxWidth;
+                return Wrap(
+                  spacing: tokens.espacio.xl,
+                  children: [
+                    for (final puerta in visibles)
+                      SizedBox(
+                        width: ancho,
+                        child: _FilaDePuerta(puerta: puerta),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Una puerta del estado: nombre, sitio y su badge de conexión.
+class _FilaDePuerta extends StatelessWidget {
+  const new({required this.puerta});
+
+  final Puerta puerta;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    final textos = Theme.of(context).textTheme;
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: tokens.espacio.s),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    l10n.inicioEstadoPuertas,
-                    style: textos.titleMedium,
+                Text(puerta.nombre, style: textos.titleSmall),
+                Text(
+                  puerta.sitioNombre,
+                  style: textos.bodySmall?.copyWith(
+                    color: tokens.colores.textoSecundario,
                   ),
                 ),
-                if (alVerPuertas != null)
-                  AccesoBoton(
-                    texto: l10n.inicioVerPuertas,
-                    variante: VarianteBoton.texto,
-                    onPressed: alVerPuertas,
-                  ),
               ],
             ),
           ),
-          for (final puerta in ordenadas.take(_maximo)) ...[
-            const Divider(),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: tokens.espacio.xs),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(puerta.nombre, style: textos.titleSmall),
-                        Text(
-                          puerta.sitioNombre,
-                          style: textos.bodySmall?.copyWith(
-                            color: tokens.colores.textoSecundario,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AccesoBadge(
-                    texto: puerta.sinConexion
-                        ? l10n.puertaSinConexion
-                        : l10n.puertaEnLinea,
-                    tono: puerta.sinConexion
-                        ? TonoAcceso.peligro
-                        : TonoAcceso.primario,
-                  ),
-                ],
-              ),
-            ),
-          ],
-          SizedBox(height: tokens.espacio.s),
+          AccesoBadge(
+            texto: puerta.sinConexion
+                ? l10n.puertaSinConexion
+                : l10n.puertaEnLinea,
+            tono: puerta.sinConexion ? TonoAcceso.peligro : TonoAcceso.primario,
+          ),
         ],
       ),
     );

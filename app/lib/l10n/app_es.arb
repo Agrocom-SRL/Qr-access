@@ -2924,10 +2924,6 @@
   "@exportacionEleccionTitulo": {
     "description": "Título del vacío de Exportar accesos, sobre la explicación de cada resultado"
   },
-  "inicioEstadoPuertas": "Estado de las puertas",
-  "@inicioEstadoPuertas": {
-    "description": "Título de la tarjeta con las puertas y su conexión en el Inicio (teléfono en horizontal)"
-  },
   "inicioVerPuertas": "Ver puertas",
   "@inicioVerPuertas": {
     "description": "Enlace de la tarjeta de estado de las puertas hacia Administración › Puertas"

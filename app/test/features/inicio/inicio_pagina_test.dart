@@ -284,13 +284,13 @@ void main() {
       expect(cabecera.bottom, lessThanOrEqualTo(393));
     });
 
-    testWidgets('el administrador ve el estado de cada puerta al lado', (
+    testWidgets('el administrador ve el estado de cada puerta bajo el hero', (
       tester,
     ) async {
       await _montar(tester, permisos: _administrador, apaisada: true);
       final textos = textosEn(tester);
 
-      expect(find.text(textos.inicioEstadoPuertas), findsOneWidget);
+      expect(find.text(textos.inicioPuertasSinConexion), findsOneWidget);
       expect(find.text(textos.inicioVerPuertas), findsOneWidget);
       // Cada puerta con su sitio y su estado; la caída (Depósito 2) primero.
       expect(find.text(textos.puertaEnLinea), findsOneWidget);
