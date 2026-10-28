@@ -310,7 +310,7 @@ class Tamanos {
 
   /// Ilustración sobre el botón, en la columna lateral de un teléfono en
   /// horizontal (Exportar accesos): lo que cabe con un título y un botón.
-  double get ilustracionColumna => 120;
+  double get ilustracionColumna => 160;
 
   /// Diámetro del círculo de un formato de descarga (PDF, Excel) en su hoja;
   /// su ícono a color mide `iconoCaja`.

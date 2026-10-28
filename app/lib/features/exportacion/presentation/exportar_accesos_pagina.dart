@@ -12,12 +12,10 @@ import 'package:agrocom_acceso/features/exportacion/presentation/descarga_de_for
 import 'package:agrocom_acceso/features/exportacion/presentation/exportacion_controlador.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/widgets/menu_de_fechas.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/widgets/resultados_de_lecturas.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
-import 'package:agrocom_acceso/shared/widgets/organisms/formulario_secciones.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,9 +26,10 @@ import 'package:go_router/go_router.dart';
 /// (Perfil → Exportar datos → Accesos), así que su salida es la X: cierra y
 /// vuelve a Exportar datos.
 ///
-/// Las fechas van en un menú de la barra superior; el rango elegido se ve en
-/// un chip. En horizontal de teléfono, el contenido va a la izquierda y el
-/// botón a la derecha, abajo, para que nunca tape lo que se elige.
+/// La descarga y las fechas son botones de la barra superior; el rango elegido
+/// se ve en un chip. La pantalla es un estado vacío con su ilustración: en
+/// horizontal de teléfono, las pestañas van a la izquierda y la ilustración a
+/// la derecha.
 class ExportarAccesosPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -45,20 +44,19 @@ class ExportarAccesosPagina extends ConsumerWidget {
         ? estado.ultimo
         : null;
     final puedeBajar = !estado.descargando && rangoValido(estado.filtros);
-    final boton = AccesoBoton(
-      texto: _textoDelBoton(l10n, ultimo),
-      textoCargando: l10n.exportacionDescargando,
-      icono: Icons.download_outlined,
+    final descarga = _BotonDeDescarga(
+      tooltip: estado.descargando
+          ? l10n.exportacionDescargando
+          : _textoDeLaDescarga(l10n, ultimo),
       cargando: estado.descargando,
-      expandido: true,
-      onPressed: puedeBajar
+      alTocar: puedeBajar
           ? () => unawaited(
               bajarConFormato(context, ref, RecursoExportable.lecturas),
             )
           : null,
     );
-    // Aquí el resultado se queda a la vista, sobre el botón: un SnackBar la
-    // taparía justo cuando hay que tocarlo para seguir bajando.
+    // El resultado de la descarga se queda a la vista, bajo las pestañas: un
+    // SnackBar la taparía justo cuando hay que tocar para seguir bajando.
     final apaisada = context.esAlturaCorta;
     final contenido = _Contenido(
       estado: estado,
@@ -73,18 +71,27 @@ class ExportarAccesosPagina extends ConsumerWidget {
       rutaAtras: Rutas.exportar,
       salida: SalidaDeCabecera.cerrar,
       alSalir: () => context.go(Rutas.exportar),
-      accion: _BotonDeFechas(
-        hayFechas: estado.filtros.desde != null || estado.filtros.hasta != null,
-        // Con una descarga en curso, las fechas no se cambian.
-        alTocar: estado.descargando
-            ? null
-            : () => unawaited(mostrarMenuDeFechas(context)),
+      accion: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          descarga,
+          _BotonDeFechas(
+            hayFechas:
+                estado.filtros.desde != null || estado.filtros.hasta != null,
+            // Con una descarga en curso, las fechas no se cambian.
+            alTocar: estado.descargando
+                ? null
+                : () => unawaited(mostrarMenuDeFechas(context)),
+          ),
+        ],
       ),
       anchoMaximo: apaisada
           ? tokens.tamano.maxContenido
           : tokens.tamano.maxFormularioSecciones,
       conRelleno: false,
       child: apaisada
+          // Horizontal: las pestañas y su explicación a la izquierda y, a la
+          // derecha, la ilustración de vacío con su título.
           ? Padding(
               padding: EdgeInsets.fromLTRB(
                 tokens.espacio.l,
@@ -99,39 +106,55 @@ class ExportarAccesosPagina extends ConsumerWidget {
                   SizedBox(width: tokens.espacio.l),
                   SizedBox(
                     width: tokens.tamano.columnaApaisada,
-                    // La ilustración con su título ocupa lo que sobra sobre el
-                    // botón, que queda abajo.
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Expanded(child: _VacioLateral()),
-                        SizedBox(height: tokens.espacio.m),
-                        boton,
-                      ],
-                    ),
+                    child: const _VacioLateral(),
                   ),
                 ],
               ),
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: contenido),
-                BarraDeAcciones(acciones: [boton]),
-              ],
-            ),
+          : contenido,
     );
   }
 }
 
-/// El texto del botón según lo que ya se bajó: la primera parte, la que sigue
-/// o volver a empezar al terminar.
-String _textoDelBoton(AppLocalizations l10n, ResumenDePagina? ultimo) {
+/// El texto de la descarga según lo que ya se bajó: la primera parte, la que
+/// sigue o volver a empezar al terminar. Va como tooltip del botón de la barra.
+String _textoDeLaDescarga(AppLocalizations l10n, ResumenDePagina? ultimo) {
   if (ultimo == null) return l10n.exportacionDescargar;
   if (ultimo.hayMas) {
     return l10n.exportacionSiguiente(ultimo.pagina + 1, ultimo.paginas);
   }
   return l10n.exportacionDescargarDeNuevo;
+}
+
+/// El botón de descarga de la barra superior. Mientras baja, muestra el
+/// progreso en su lugar; sin un rango válido, queda apagado.
+class _BotonDeDescarga extends StatelessWidget {
+  const new({
+    required this.tooltip,
+    required this.cargando,
+    required this.alTocar,
+  });
+
+  final String tooltip;
+  final bool cargando;
+
+  /// `null` deja el botón apagado.
+  final VoidCallback? alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: alTocar,
+      icon: cargando
+          ? SizedBox.square(
+              dimension: tokens.tamano.iconoNav,
+              child: const CircularProgressIndicator(),
+            )
+          : const Icon(Icons.download_outlined),
+    );
+  }
 }
 
 /// El botón de fechas de la barra superior. Con un rango elegido, lleva un
@@ -207,7 +230,10 @@ class _Contenido extends StatelessWidget {
         ),
         // Los avisos se desplazan si la pantalla es baja (horizontal de
         // teléfono), en lugar de desbordar.
-        Flexible(
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+          ),
           child: _Avisos(estado: estado, ultimo: ultimo),
         ),
       ],
@@ -275,18 +301,17 @@ class _Avisos extends StatelessWidget {
         ),
     ];
     if (avisos.isEmpty) return const SizedBox.shrink();
-    return SingleChildScrollView(
+    // Mide lo que dicen los avisos (y se desplaza solo si no caben), en vez de
+    // ocupar todo el alto que le den.
+    return ListView(
+      shrinkWrap: true,
       padding: EdgeInsets.all(tokens.espacio.l),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < avisos.length; i++) ...[
-            if (i > 0) SizedBox(height: tokens.espacio.m),
-            avisos[i],
-          ],
+      children: [
+        for (var i = 0; i < avisos.length; i++) ...[
+          if (i > 0) SizedBox(height: tokens.espacio.m),
+          avisos[i],
         ],
-      ),
+      ],
     );
   }
 }

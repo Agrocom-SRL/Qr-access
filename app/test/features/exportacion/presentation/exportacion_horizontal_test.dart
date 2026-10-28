@@ -1,5 +1,4 @@
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/horizontal.dart';
@@ -8,7 +7,7 @@ import 'montaje_exportacion.dart';
 
 void main() {
   testWidgets(
-    'en 852×393, los accesos muestran las pestañas y Descargar a la vista',
+    'en 852×393, los accesos muestran las pestañas y Descargar en la barra',
     (tester) async {
       await montarExportacion(
         tester,
@@ -20,9 +19,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(textos.exportacionTodos).hitTestable(), findsOneWidget);
       expect(
-        find
-            .widgetWithText(AccesoBoton, textos.exportacionDescargar)
-            .hitTestable(),
+        find.byTooltip(textos.exportacionDescargar).hitTestable(),
         findsOneWidget,
       );
     },
