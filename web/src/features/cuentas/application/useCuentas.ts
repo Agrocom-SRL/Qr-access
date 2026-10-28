@@ -195,6 +195,21 @@ export function useEliminarCuenta(cuentaId: string) {
   });
 }
 
+/** Restringir, suspender o reactivar la cuenta (ADR 0033 §1): las tres refrescan la ficha y el listado. */
+export function useCambiarEstadoDeCuenta(cuentaId: string) {
+  const repositorio = useCuentasRepositorio();
+  const clienteConsultas = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      cambio: { accion: 'restringir' | 'suspender'; motivo: string } | { accion: 'reactivar' },
+    ) =>
+      cambio.accion === 'reactivar'
+        ? repositorio.reactivar(cuentaId)
+        : repositorio[cambio.accion](cuentaId, cambio.motivo),
+    onSuccess: () => invalidarTodoDeCuentas(clienteConsultas),
+  });
+}
+
 /** Altas, ediciones y bajas de sitios y puertas de una cuenta: todas refrescan la misma estructura. */
 export function useGestionDeEstructura(cuentaId: string) {
   const repositorio = useCuentasRepositorio();

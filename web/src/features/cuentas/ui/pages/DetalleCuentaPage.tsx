@@ -6,8 +6,10 @@ import { rutaDePago } from '../../../../shared/lib/rutas';
 import { AccesoBoton } from '../../../../shared/ui/atoms/AccesoBoton';
 import { BadgeSuscripcion } from '../../../../shared/ui/atoms/BadgeSuscripcion';
 import { Skeleton } from '../../../../shared/ui/atoms/Skeleton';
+import { formatearFecha } from '../../../../l10n/formatos';
 import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Migas } from '../../../../shared/ui/molecules/Migas';
+import { ConfirmarDialogo } from '../../../../shared/ui/organisms/ConfirmarDialogo';
 import { EstadoError } from '../../../../shared/ui/organisms/EstadoError';
 import { EstadoVacio } from '../../../../shared/ui/organisms/EstadoVacio';
 import { Pestanas } from '../../../../shared/ui/organisms/Pestanas';
@@ -19,11 +21,13 @@ import { PestanaAccesos } from '../../../eventos';
 import { tienePermiso, useSesion } from '../../../seguridad';
 import { PestanaSuscripcion } from '../../../suscripciones';
 import { PestanaOperaciones } from '../components/PestanaOperaciones';
-import { useDetalleDeCuenta } from '../../application/useCuentas';
+import { useCambiarEstadoDeCuenta, useDetalleDeCuenta } from '../../application/useCuentas';
 import { RUTAS_DE_CUENTAS } from '../../rutas';
 import { DialogoEditarCuenta } from '../components/DialogoEditarCuenta';
 import { DialogoEliminarCuenta } from '../components/DialogoEliminarCuenta';
+import { DialogoEstadoDeCuenta } from '../components/DialogoEstadoDeCuenta';
 import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
+import { UsoDeUsuarios } from '../components/UsoDeUsuarios';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
 
@@ -51,6 +55,9 @@ export function DetalleCuentaPage() {
   // `?editar=1` abre el diálogo de edición: la lista de cuentas enlaza así desde su acción de editar.
   const [editando, setEditando] = useState(parametros.get('editar') === '1');
   const [eliminando, setEliminando] = useState(false);
+  const [cambiandoEstado, setCambiandoEstado] = useState<'restringir' | 'suspender' | null>(null);
+  const [reactivando, setReactivando] = useState(false);
+  const reactivar = useCambiarEstadoDeCuenta(id);
   const pedida = parametros.get('pestana');
   // "QR y datos" solo aparece a quien puede anular QR o exportar datos; la API lo vuelve a exigir.
   const puedeOperar =
@@ -129,6 +136,41 @@ export function DetalleCuentaPage() {
                 {t('detalle:editar')}
               </AccesoBoton>
             ) : null}
+            {tienePermiso(permisos, 'seguridad.cuenta.editar') ? (
+              <>
+                {datos.cuenta.estadoDeSeguridad === 'activo' ? (
+                  <AccesoBoton
+                    variante="advertencia"
+                    icono="lock"
+                    onClick={() => {
+                      setCambiandoEstado('restringir');
+                    }}
+                  >
+                    {t('detalle:estado.restringir.boton')}
+                  </AccesoBoton>
+                ) : (
+                  <AccesoBoton
+                    icono="check_circle"
+                    onClick={() => {
+                      setReactivando(true);
+                    }}
+                  >
+                    {t('detalle:estado.reactivar.boton')}
+                  </AccesoBoton>
+                )}
+                {datos.cuenta.estadoDeSeguridad !== 'suspendido' ? (
+                  <AccesoBoton
+                    variante="peligro"
+                    icono="block"
+                    onClick={() => {
+                      setCambiandoEstado('suspender');
+                    }}
+                  >
+                    {t('detalle:estado.suspender.boton')}
+                  </AccesoBoton>
+                ) : null}
+              </>
+            ) : null}
             {tienePermiso(permisos, 'seguridad.cuenta.eliminar') ? (
               <AccesoBoton
                 variante="peligro"
@@ -143,6 +185,19 @@ export function DetalleCuentaPage() {
           </div>
         ) : null}
       </header>
+      {datos && datos.cuenta.estadoDeSeguridad !== 'activo' ? (
+        <Aviso
+          tono={datos.cuenta.estadoDeSeguridad === 'suspendido' ? 'peligro' : 'advertencia'}
+          icono={datos.cuenta.estadoDeSeguridad === 'suspendido' ? 'block' : 'lock'}
+        >
+          {t(`detalle:estado.aviso.${datos.cuenta.estadoDeSeguridad}`, {
+            fecha: datos.cuenta.estadoDesde ? formatearFecha(datos.cuenta.estadoDesde) : '—',
+          })}
+          {datos.cuenta.estadoMotivo
+            ? ` ${t('detalle:estado.motivoDe', { motivo: datos.cuenta.estadoMotivo })}`
+            : ''}
+        </Aviso>
+      ) : null}
       {datos?.suscripcion?.estado === 'pendientePago' ? (
         <Aviso tono="advertencia">{t('detalle:pendienteAviso')}</Aviso>
       ) : null}
@@ -165,14 +220,18 @@ export function DetalleCuentaPage() {
           )
         ) : pestana === 'suscripcion' ? (
           datos ? (
-            <PestanaSuscripcion
-              cuenta={{
-                id,
-                nombre: datos.cuenta.nombre,
-                codigo: datos.cuenta.codigo,
-                usuariosActivos: datos.uso.usuariosActivos,
-              }}
-            />
+            // El uso de los usuarios acompaña al plan y al cupo: va acá y no en el resumen, que ya está cargado.
+            <div className={styles.apilado}>
+              <PestanaSuscripcion
+                cuenta={{
+                  id,
+                  nombre: datos.cuenta.nombre,
+                  codigo: datos.cuenta.codigo,
+                  usuariosActivos: datos.uso.usuariosActivos,
+                }}
+              />
+              <UsoDeUsuarios cuentaId={id} />
+            </div>
           ) : (
             <div aria-busy="true">
               <Skeleton alto="bloque" />
@@ -212,6 +271,33 @@ export function DetalleCuentaPage() {
               }
             }}
             detalle={datos}
+          />
+          <DialogoEstadoDeCuenta
+            accion={cambiandoEstado}
+            cuenta={{ id, nombre: datos.cuenta.nombre }}
+            onCerrar={() => {
+              setCambiandoEstado(null);
+            }}
+          />
+          <ConfirmarDialogo
+            abierto={reactivando}
+            titulo={t('detalle:estado.reactivar.titulo', { cuenta: datos.cuenta.nombre })}
+            texto={t('detalle:estado.reactivar.texto')}
+            etiquetaConfirmar={t('detalle:estado.reactivar.confirmar')}
+            cargando={reactivar.isPending}
+            onCancelar={() => {
+              setReactivando(false);
+            }}
+            onConfirmar={() => {
+              reactivar.mutate(
+                { accion: 'reactivar' },
+                {
+                  onSuccess: () => {
+                    setReactivando(false);
+                  },
+                },
+              );
+            }}
           />
           <DialogoEliminarCuenta
             abierto={eliminando}

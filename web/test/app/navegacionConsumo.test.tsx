@@ -16,7 +16,7 @@ function montar(permisos: string[]) {
         }),
     },
   });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter initialEntries={['/']}>

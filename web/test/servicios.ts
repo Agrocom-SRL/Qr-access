@@ -190,6 +190,9 @@ export const DETALLE = {
     nombre: 'Agroindustrial Norte',
     activa: true,
     clienteDesde: new Date('2024-11-05T12:00:00Z'),
+    estadoDeSeguridad: 'activo' as const,
+    estadoMotivo: null,
+    estadoDesde: null,
     maxMiembrosPorTitular: 10,
   },
   empresa: {
@@ -863,7 +866,7 @@ export function crearServiciosDePrueba(
   const ingresar = seguridad.ingresar;
   seguridad.ingresar = async (usuario, contrasena) => {
     const sesion = await ingresar(usuario, contrasena);
-    almacen.guardar({ acceso: 'a', refresco: 'r' });
+    almacen.guardar('a');
     return sesion;
   };
   const equipo: EquipoRepositorio = {
@@ -958,6 +961,9 @@ export function crearServiciosDePrueba(
     estadisticasDeUsuarios: () => Promise.resolve(ESTADISTICAS_DE_USUARIOS),
     reasignar: () => Promise.resolve(),
     cambiarCodigo: () => Promise.resolve(),
+    restringir: () => Promise.resolve(),
+    suspender: () => Promise.resolve(),
+    reactivar: () => Promise.resolve(),
     obtener: () => Promise.resolve(DETALLE),
     editar: () => Promise.resolve(),
     eliminar: () => Promise.resolve(),

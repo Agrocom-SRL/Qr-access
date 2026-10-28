@@ -92,7 +92,7 @@ function montarPagina(permisos: string[], notificaciones: Partial<Notificaciones
     },
     notificaciones,
   });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>

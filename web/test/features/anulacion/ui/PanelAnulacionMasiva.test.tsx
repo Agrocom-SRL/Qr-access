@@ -22,7 +22,7 @@ function montar(
     }),
   );
   const servicios = crearServiciosDePrueba({ seguridad: { restaurar }, anulacion });
-  servicios.almacen.guardar({ acceso: 'a', refresco: 'r' });
+  servicios.almacen.guardar('a');
   render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>

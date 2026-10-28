@@ -78,6 +78,12 @@ export interface CuentasRepositorio {
   editar: (id: string, datos: CorreccionDeCuenta) => Promise<void>;
   /** Da de baja la cuenta; hay que repetir su código para confirmar. */
   eliminar: (id: string, codigo: string) => Promise<void>;
+  /** Restringe la cuenta: no genera QR nuevos, pero lo ya generado abre. El motivo es obligatorio. */
+  restringir: (id: string, motivo: string) => Promise<void>;
+  /** Suspende la cuenta: cierra todas las sesiones y anula los QR vigentes. El motivo es obligatorio. */
+  suspender: (id: string, motivo: string) => Promise<void>;
+  /** Vuelve la cuenta a activa. */
+  reactivar: (id: string) => Promise<void>;
   sitiosYPuertas: (id: string) => Promise<readonly SitioConPuertas[]>;
   crearSitio: (cuentaId: string, datos: DatosDeSitio) => Promise<void>;
   editarSitio: (
