@@ -45,7 +45,9 @@ class SesionControlador extends Notifier<SesionEstado>
 
   Future<_ResultadoRenovacion> _renovar() async {
     final refresco = await _almacen.leer();
-    if (refresco == null) {
+    // En web no hay nada que leer: el refresco está en la cookie y la API lo
+    // encuentra sola. Sin refresco en móvil, no hay nada que renovar.
+    if (refresco == null && !_almacen.viveEnCookie) {
       await _caducar();
       return _ResultadoRenovacion.rechazada;
     }
@@ -64,11 +66,16 @@ class SesionControlador extends Notifier<SesionEstado>
     }
   }
 
-  /// Al abrir la app: si hay un refresco guardado (móvil), restaura la sesión.
-  /// Sin internet no se cierra: se entra con la última sesión guardada (mismo
-  /// rol y permisos) y los datos se actualizan cuando vuelva la red.
+  /// Al abrir la app: si hay un refresco guardado (móvil) o una cookie de
+  /// refresco (web), restaura la sesión. Sin internet no se cierra: se entra
+  /// con la última sesión guardada (mismo rol y permisos) y los datos se
+  /// actualizan cuando vuelva la red.
+  ///
+  /// En web no se puede saber si hay cookie sin preguntar a la API: la cookie
+  /// es `HttpOnly`. Por eso se pide la renovación siempre; un visitante sin
+  /// cookie recibe un 401 y pasa a `SinSesion`.
   Future<void> restaurar() async {
-    if (await _almacen.leer() == null) {
+    if (!_almacen.viveEnCookie && await _almacen.leer() == null) {
       state = const SinSesion();
       return;
     }
@@ -123,8 +130,12 @@ class SesionControlador extends Notifier<SesionEstado>
 
   /// Cierra la sesión en la API y la borra del dispositivo. Si la API no
   /// responde, la app igual olvida la sesión: no debe quedar sesión a medias.
+  ///
+  /// En web puede no haber acceso en memoria (sesión restaurada sin red o tras
+  /// recargar) y aun así quedar la cookie: hay que llamar a la API igualmente,
+  /// porque es la que la borra. El interceptor renueva el acceso si hace falta.
   Future<void> cerrar() async {
-    if (_acceso != null) {
+    if (_acceso != null || _almacen.viveEnCookie) {
       try {
         await _api.cerrarSesion();
       } on ErrorApi {
@@ -167,9 +178,11 @@ class SesionControlador extends Notifier<SesionEstado>
     );
   }
 
-  Future<void> _guardarTokens(String acceso, String refresco) async {
+  /// En web el refresco no llega en el cuerpo (`refresco` es `null`): ya quedó
+  /// en la cookie y no se guarda nada aquí.
+  Future<void> _guardarTokens(String acceso, String? refresco) async {
     _acceso = acceso;
-    await _almacen.guardar(refresco);
+    if (refresco != null) await _almacen.guardar(refresco);
   }
 
   /// Vacía lo guardado para el modo sin conexión: el siguiente que ingrese en

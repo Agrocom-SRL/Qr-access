@@ -74,9 +74,15 @@ SesionAutenticada sesionCon({
 
 /// Almacén del refresco en memoria, sin plugin de plataforma.
 class AlmacenRefrescoFalso implements AlmacenRefresco {
-  new([this.refresco]);
+  new({this.refresco, this.enCookie = false});
 
   String? refresco;
+
+  /// Simula la web: el refresco vive en la cookie y el almacén no guarda nada.
+  final bool enCookie;
+
+  @override
+  bool get viveEnCookie => enCookie;
 
   @override
   Future<String?> leer() async => refresco;
