@@ -1661,31 +1661,6 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
 });
 
 describe('avisos de AGROCOM y sensor de la puerta (ADR 0031 §18, W10)', () => {
-  it('la campana de avisos está en la barra con su contador, solo con el permiso', async () => {
-    montar(crearServiciosDePrueba(), '/ingreso');
-    await ingresar();
-    expect(
-      await screen.findByRole('button', { name: 'Notificaciones: 1 sin leer' }),
-    ).toBeInTheDocument();
-  });
-
-  it('sin el permiso de avisos, la barra no ofrece la campana', async () => {
-    const servicios = crearServiciosDePrueba({
-      seguridad: {
-        ingresar: () =>
-          Promise.resolve({
-            usuario: { id: '1', nombre: 'Lucía Paz', usuario: 'lucia.paz' },
-            debeCambiarContrasena: false,
-            permisos: ['resumen.panel.ver'],
-          }),
-      },
-    });
-    montar(servicios, '/ingreso');
-    await ingresar();
-    await screen.findByRole('navigation', { name: 'AGROCOM Acceso' });
-    expect(screen.queryByRole('button', { name: /Notificaciones/ })).not.toBeInTheDocument();
-  });
-
   it('desde Placas se configura el sensor de una placa vinculada y se guarda', async () => {
     const configurarSensor = vi.fn<PlacasRepositorio['configurarSensor']>(() => Promise.resolve());
     montar(crearServiciosDePrueba({ placas: { configurarSensor } }), '/ingreso');

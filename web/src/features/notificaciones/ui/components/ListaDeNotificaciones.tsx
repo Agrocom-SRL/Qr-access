@@ -33,8 +33,8 @@ interface Props {
 }
 
 /**
- * Los avisos de AGROCOM agrupados por sitio, con filtro por estado y por tipo. Se usa en el diálogo de la
- * campana y en la pantalla completa de avisos: una sola lista, dos lugares.
+ * Los avisos de AGROCOM agrupados por sitio, con filtro por estado y por tipo. Es el contenido de la
+ * pantalla de avisos.
  */
 export function ListaDeNotificaciones({ puedeGestionar }: Props) {
   const { t } = useTranslation(['notificaciones', 'comun']);
