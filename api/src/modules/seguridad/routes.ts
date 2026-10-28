@@ -1,6 +1,13 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
+import {
+  borrarCookieDeRefresco,
+  clienteWebDe,
+  exigirOrigenPropio,
+  fijarCookieDeRefresco,
+  refrescoDeLaCookie,
+} from '../../platform/http/refresco-en-cookie.js';
 import { permiso, tienePermiso, usuarioDe } from '../../plugins/permisos.js';
 import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { ejecutar as cerrarMiSesion } from './actions/cerrar-mi-sesion.js';
@@ -76,8 +83,8 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         },
         config: { acceso: 'publica', limite: 'login' },
       },
-      (request) =>
-        iniciarSesion(servicios, {
+      async (request, reply) => {
+        const { refresco, ...ingreso } = await iniciarSesion(servicios, {
           pin: request.body.pin,
           instalacionId: request.body.instalacion_id ?? null,
           plataforma: request.body.plataforma ?? null,
@@ -85,7 +92,13 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
           ip: request.ip,
           agente: request.headers['user-agent']?.slice(0, LARGO_MAXIMO_DEL_AGENTE) ?? null,
           log: request.log,
-        }),
+        });
+        // Un navegador recibe el refresco en su cookie y no en el cuerpo (ADR 0033 §5).
+        const cliente = clienteWebDe(request);
+        if (cliente === null) return { ...ingreso, refresco };
+        fijarCookieDeRefresco(reply, cliente, refresco, servicios.config.JWT_REFRESH_DIAS);
+        return ingreso;
+      },
     );
 
     app.post(
@@ -98,7 +111,33 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
         },
         config: { acceso: 'publica', limite: 'refresco' },
       },
-      (request) => refrescarSesion(servicios, request.body.refresco, new Date(), request.ip),
+      async (request, reply) => {
+        const cliente = clienteWebDe(request);
+        const enCookie = cliente === null ? undefined : refrescoDeLaCookie(request, cliente);
+        // Con cookie hay que comprobar el origen (CSRF); la petición no puede traer además un cuerpo distinto.
+        if (enCookie !== undefined) exigirOrigenPropio(request);
+        const enCuerpo = request.body.refresco;
+        if (enCookie !== undefined && enCuerpo !== undefined && enCuerpo !== enCookie) {
+          throw new ErrorDeDominio('sesion.refresco_ambiguo', 400);
+        }
+        const presentado = enCuerpo ?? enCookie;
+        try {
+          if (presentado === undefined) throw new ErrorDeDominio('sesion.refresco_invalido', 401);
+          const { refresco, ...sesion } = await refrescarSesion(
+            servicios,
+            presentado,
+            new Date(),
+            request.ip,
+          );
+          if (cliente === null) return { ...sesion, refresco };
+          fijarCookieDeRefresco(reply, cliente, refresco, servicios.config.JWT_REFRESH_DIAS);
+          return sesion;
+        } catch (error) {
+          // Un refresco rechazado no se queda en el navegador: la próxima carga no vuelve a intentarlo.
+          if (cliente !== null && enCookie !== undefined) borrarCookieDeRefresco(reply, cliente);
+          throw error;
+        }
+      },
     );
 
     app.get(
@@ -145,6 +184,8 @@ export function rutas(dependencias: DependenciasDeModulo): FastifyPluginCallback
 
     app.delete('/sesiones/actual', { schema: { tags: ['seguridad'] } }, async (request, reply) => {
       await cerrarSesion(servicios, usuarioDe(request));
+      // Se borra la cookie en cualquier caso: en un cliente que no la usa no hace nada.
+      borrarCookieDeRefresco(reply, 'app');
       return reply.status(204).send();
     });
 
