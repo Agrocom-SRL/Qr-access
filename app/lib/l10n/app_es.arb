@@ -1280,9 +1280,22 @@
   "@perfilIdiomaSistema": {
     "description": "Opción que quita el idioma elegido y vuelve al del dispositivo"
   },
-  "perfilVersion": "v1.0.0",
-  "@perfilVersion": {
-    "description": "Versión de la app al pie del perfil"
+  "perfilAppNombre": "AGROCOM Acceso",
+  "@perfilAppNombre": {
+    "description": "Nombre de la app en la fila de versión del perfil"
+  },
+  "perfilAppVersion": "Versión {version}",
+  "@perfilAppVersion": {
+    "description": "Versión instalada de la app (la del pubspec)",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "perfilAppEmpresa": "Agrocom SRL con su equipo de desarrollo",
+  "@perfilAppEmpresa": {
+    "description": "Quién desarrolló la app, bajo la versión en el perfil"
   },
   "puertaEnLinea": "En línea",
   "@puertaEnLinea": {
@@ -2808,10 +2821,6 @@
   "@exportacionDescLecturas": {
     "description": "Línea de la tarjeta Accesos a puertas en Exportar datos"
   },
-  "exportacionElegirFiltros": "Elegir filtros",
-  "@exportacionElegirFiltros": {
-    "description": "Botón que abre la pantalla de accesos para filtrarlos"
-  },
   "exportacionAccesosTitulo": "Exportar accesos",
   "@exportacionAccesosTitulo": {
     "description": "Título de la pantalla de accesos a puertas en CSV"
@@ -2911,33 +2920,29 @@
   "@exportacionTruncado": {
     "description": "Aviso de que la exportación llegó al tope de 10 000 filas"
   },
+  "exportacionEleccionTitulo": "Elige qué accesos bajar",
+  "@exportacionEleccionTitulo": {
+    "description": "Título del vacío de Exportar accesos, sobre la explicación de cada resultado"
+  },
+  "inicioEstadoPuertas": "Estado de las puertas",
+  "@inicioEstadoPuertas": {
+    "description": "Título de la tarjeta con las puertas y su conexión en el Inicio (teléfono en horizontal)"
+  },
+  "inicioVerPuertas": "Ver puertas",
+  "@inicioVerPuertas": {
+    "description": "Enlace de la tarjeta de estado de las puertas hacia Administración › Puertas"
+  },
   "exportacionFormatoTitulo": "Elige el formato",
   "@exportacionFormatoTitulo": {
     "description": "Título de la hoja para elegir el formato de la descarga"
-  },
-  "exportacionFormatoCsv": "CSV",
-  "@exportacionFormatoCsv": {
-    "description": "Formato CSV: texto con comas, para hojas de cálculo"
-  },
-  "exportacionFormatoCsvAyuda": "Texto simple. Lo abre cualquier hoja de cálculo.",
-  "@exportacionFormatoCsvAyuda": {
-    "description": "Una línea que explica el formato CSV"
   },
   "exportacionFormatoPdf": "PDF",
   "@exportacionFormatoPdf": {
     "description": "Formato PDF: para leer o imprimir"
   },
-  "exportacionFormatoPdfAyuda": "Para leer o imprimir. No se puede editar.",
-  "@exportacionFormatoPdfAyuda": {
-    "description": "Una línea que explica el formato PDF"
-  },
   "exportacionFormatoExcel": "Excel",
   "@exportacionFormatoExcel": {
     "description": "Formato de Excel (.xlsx)"
-  },
-  "exportacionFormatoExcelAyuda": "Hoja de cálculo para editar y ordenar.",
-  "@exportacionFormatoExcelAyuda": {
-    "description": "Una línea que explica el formato de Excel"
   },
   "exportacionDocGenerado": "Generado el {fecha}",
   "@exportacionDocGenerado": {

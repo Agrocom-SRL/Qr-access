@@ -12,6 +12,7 @@ import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.d
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
+import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
@@ -217,6 +218,38 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                   ],
                 ),
               )
+            else if (context.esAlturaCorta && datos != null)
+              // Teléfono en horizontal: hay ancho de sobra, así que el estado
+              // de cada puerta va al lado en lugar de dejar el tablero vacío.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        HeroAccesosDeHoy(
+                          permitidos: datos.resumenDeHoy.permitidos,
+                          rechazados: datos.resumenDeHoy.rechazados,
+                          alTocar: () => context.go(Rutas.eventos),
+                        ),
+                        SizedBox(height: tokens.espacio.l),
+                        indicadores[2],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: tokens.espacio.l),
+                  Expanded(
+                    child: _EstadoDePuertas(
+                      puertas: datos.puertas,
+                      alVerPuertas:
+                          widget.sesion.tiene(Permisos.supervisarPuertas)
+                          ? () => context.go(Rutas.adminPuertas)
+                          : null,
+                    ),
+                  ),
+                ],
+              )
             else ...[
               // Mismo card con foto de fondo que ve el guardia.
               HeroAccesosDeHoy(
@@ -269,6 +302,91 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Las puertas de la cuenta con su sitio y si su lector reporta, las caídas
+/// primero. Muestra las primeras [_maximo]; el resto está en Administración.
+class _EstadoDePuertas extends StatelessWidget {
+  const new({required this.puertas, required this.alVerPuertas});
+
+  static const _maximo = 4;
+
+  final List<Puerta> puertas;
+
+  /// `null` si el rol no supervisa puertas: no se ofrece el enlace.
+  final VoidCallback? alVerPuertas;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    final textos = Theme.of(context).textTheme;
+    final ordenadas = [...puertas]
+      ..sort((a, b) {
+        if (a.sinConexion == b.sinConexion) return 0;
+        return a.sinConexion ? -1 : 1;
+      });
+    return AccesoTarjeta(
+      relleno: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: tokens.espacio.m),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.inicioEstadoPuertas,
+                    style: textos.titleMedium,
+                  ),
+                ),
+                if (alVerPuertas != null)
+                  AccesoBoton(
+                    texto: l10n.inicioVerPuertas,
+                    variante: VarianteBoton.texto,
+                    onPressed: alVerPuertas,
+                  ),
+              ],
+            ),
+          ),
+          for (final puerta in ordenadas.take(_maximo)) ...[
+            const Divider(),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: tokens.espacio.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(puerta.nombre, style: textos.titleSmall),
+                        Text(
+                          puerta.sitioNombre,
+                          style: textos.bodySmall?.copyWith(
+                            color: tokens.colores.textoSecundario,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AccesoBadge(
+                    texto: puerta.sinConexion
+                        ? l10n.puertaSinConexion
+                        : l10n.puertaEnLinea,
+                    tono: puerta.sinConexion
+                        ? TonoAcceso.peligro
+                        : TonoAcceso.primario,
+                  ),
+                ],
+              ),
+            ),
+          ],
+          SizedBox(height: tokens.espacio.s),
+        ],
       ),
     );
   }

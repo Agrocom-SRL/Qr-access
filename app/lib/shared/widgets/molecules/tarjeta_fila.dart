@@ -15,6 +15,7 @@ class TarjetaFila extends StatelessWidget {
     this.pie,
     this.alTocar,
     this.barraColor,
+    this.centrada = false,
     super.key,
   });
 
@@ -31,12 +32,18 @@ class TarjetaFila extends StatelessWidget {
   /// Barra vertical de 4 dp a la izquierda (resultado de un evento).
   final Color? barraColor;
 
+  /// Centra verticalmente lo de la izquierda y lo de la derecha (un chevron),
+  /// en vez de pegarlos arriba. Para tarjetas de una o dos líneas.
+  final bool centrada;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     final cuerpo = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: centrada
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
       children: [
         if (barraColor != null) ...[
           Container(

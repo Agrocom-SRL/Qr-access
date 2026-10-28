@@ -146,10 +146,14 @@ class _PestanasDeslizablesEstado<T> extends State<PestanasDeslizables<T>>
             tokens.espacio.l,
             0,
           ),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: barra,
-          ),
+          // Repartidas, las pestañas ocupan todo el ancho; a su medida, se
+          // alinean al inicio.
+          child: widget.estirado
+              ? barra
+              : Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: barra,
+                ),
         ),
         Expanded(
           child: TabBarView(

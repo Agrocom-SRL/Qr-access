@@ -24,10 +24,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(
-        find
-            .widgetWithText(AccesoBoton, textos.exportacionDescargar)
-            .first
-            .hitTestable(),
+        find.text(textos.exportacionRecursoUsuarios).hitTestable(),
         findsOneWidget,
       );
     });

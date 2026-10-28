@@ -57,7 +57,8 @@ void main() {
     expect(find.text('AGR'), findsOneWidget);
     expect(find.textContaining('Empresa'), findsOneWidget);
     expect(find.text('Administrador'), findsOneWidget);
-    expect(find.text(textos.perfilVersion), findsOneWidget);
+    expect(find.text(textos.perfilAppNombre), findsOneWidget);
+    expect(find.text(textos.perfilAppEmpresa), findsOneWidget);
   });
 
   testWidgets('no lleva título de pantalla: empieza por el usuario', (

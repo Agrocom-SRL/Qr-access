@@ -58,7 +58,7 @@ void main() {
     );
     await tester.tap(find.text(textos.exportacionDescargar));
     await tester.pumpAndSettle();
-    await elegirFormato(tester, textos.exportacionFormatoCsv);
+    await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
     final pedido = r.repo.pedidos.single;
     expect(pedido.recurso, RecursoExportable.lecturas);
@@ -78,10 +78,10 @@ void main() {
 
     await tester.tap(find.text(textos.exportacionDescargar));
     await tester.pumpAndSettle();
-    await elegirFormato(tester, textos.exportacionFormatoCsv);
+    await elegirFormato(tester, FormatoDeDescarga.xlsx);
     await tester.tap(find.text(textos.exportacionSiguiente(2, 3)));
     await tester.pumpAndSettle();
-    await elegirFormato(tester, textos.exportacionFormatoCsv);
+    await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
     expect(r.repo.pedidos.map((p) => p.pagina).toList(), [1, 2]);
   });
@@ -104,7 +104,7 @@ void main() {
 
     await tester.tap(find.text(textos.exportacionDescargar));
     await tester.pumpAndSettle();
-    await elegirFormato(tester, textos.exportacionFormatoCsv);
+    await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
     expect(find.text(textos.exportacionTruncado), findsWidgets);
     expect(find.byType(AccesoAviso), findsWidgets);

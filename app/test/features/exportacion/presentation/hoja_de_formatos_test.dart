@@ -1,7 +1,8 @@
 import 'dart:convert';
 
+import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/horizontal.dart';
@@ -14,36 +15,25 @@ const _mimeXlsx =
 /// Abre la hoja de formatos desde el botón Descargar de Usuarios.
 Future<void> _abrirHoja(WidgetTester tester) async {
   final textos = textosEn(tester);
-  await tester.tap(
-    find.widgetWithText(AccesoBoton, textos.exportacionDescargar).first,
-  );
+  await tester.tap(find.text(textos.exportacionRecursoUsuarios));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('la hoja ofrece CSV, PDF y Excel', (tester) async {
+  testWidgets('la hoja ofrece solo PDF y Excel, en círculos con su nombre', (
+    tester,
+  ) async {
     await montarExportacion(tester, pagina: const ExportacionPagina());
     await _abrirHoja(tester);
     final textos = textosEn(tester);
 
     expect(find.text(textos.exportacionFormatoTitulo), findsOneWidget);
-    expect(find.text(textos.exportacionFormatoCsv), findsOneWidget);
+    expect(find.byKey(const ValueKey('formato-pdf')), findsOneWidget);
+    expect(find.byKey(const ValueKey('formato-xlsx')), findsOneWidget);
+    expect(find.byKey(const ValueKey('formato-csv')), findsNothing);
+    // Cada círculo lleva su nombre debajo, sin explicaciones.
     expect(find.text(textos.exportacionFormatoPdf), findsOneWidget);
     expect(find.text(textos.exportacionFormatoExcel), findsOneWidget);
-  });
-
-  testWidgets('CSV baja el texto con su BOM y tipo text/csv', (tester) async {
-    final r = await montarExportacion(
-      tester,
-      pagina: const ExportacionPagina(),
-    );
-    await _abrirHoja(tester);
-    await elegirFormato(tester, textosEn(tester).exportacionFormatoCsv);
-
-    final archivo = r.compartir.compartidos.single;
-    expect(archivo.nombreArchivo, 'usuarios-agr-p1.csv');
-    expect(archivo.mimeType, 'text/csv');
-    expect(archivo.bytes.sublist(0, 3), [0xEF, 0xBB, 0xBF]);
   });
 
   testWidgets('PDF baja un documento que empieza con %PDF', (tester) async {
@@ -52,7 +42,7 @@ void main() {
       pagina: const ExportacionPagina(),
     );
     await _abrirHoja(tester);
-    await elegirFormato(tester, textosEn(tester).exportacionFormatoPdf);
+    await elegirFormato(tester, FormatoDeDescarga.pdf);
 
     final archivo = r.compartir.compartidos.single;
     expect(archivo.nombreArchivo, 'usuarios-agr-p1.pdf');
@@ -68,7 +58,7 @@ void main() {
       pagina: const ExportacionPagina(),
     );
     await _abrirHoja(tester);
-    await elegirFormato(tester, textosEn(tester).exportacionFormatoExcel);
+    await elegirFormato(tester, FormatoDeDescarga.xlsx);
 
     final archivo = r.compartir.compartidos.single;
     expect(archivo.nombreArchivo, 'usuarios-agr-p1.xlsx');
@@ -82,13 +72,14 @@ void main() {
       pagina: const ExportacionPagina(),
     );
     await _abrirHoja(tester);
-    await tester.tap(find.text(textosEn(tester).comunCancelar));
+    // Se cierra al tocar fuera de la hoja.
+    await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();
 
     expect(r.repo.pedidos, isEmpty);
   });
 
-  testWidgets('en 852×393 las tres opciones se ven y se pueden tocar', (
+  testWidgets('en 852×393 las dos opciones se ven y se pueden tocar', (
     tester,
   ) async {
     await montarExportacion(
@@ -97,11 +88,10 @@ void main() {
       tamano: tamanoHorizontal,
     );
     await _abrirHoja(tester);
-    final textos = textosEn(tester);
 
     expect(tester.takeException(), isNull);
     expect(
-      find.text(textos.exportacionFormatoExcel).hitTestable(),
+      find.byKey(const ValueKey('formato-xlsx')).hitTestable(),
       findsOneWidget,
     );
   });

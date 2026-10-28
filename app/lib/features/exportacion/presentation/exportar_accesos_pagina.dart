@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
@@ -12,6 +13,7 @@ import 'package:agrocom_acceso/features/exportacion/presentation/exportacion_con
 import 'package:agrocom_acceso/features/exportacion/presentation/widgets/menu_de_fechas.dart';
 import 'package:agrocom_acceso/features/exportacion/presentation/widgets/resultados_de_lecturas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_ilustracion.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/chip_etiqueta.dart';
@@ -21,7 +23,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Bajar los accesos a puertas en CSV, PDF o Excel, con su resultado (Todos,
+/// Bajar los accesos a puertas en PDF o Excel, con su resultado (Todos,
 /// Permitido o Rechazado) y sus fechas. Es una pantalla de tercer nivel
 /// (Perfil → Exportar datos → Accesos), así que su salida es la X: cierra y
 /// vuelve a Exportar datos.
@@ -55,14 +57,15 @@ class ExportarAccesosPagina extends ConsumerWidget {
             )
           : null,
     );
+    // Aquí el resultado se queda a la vista, sobre el botón: un SnackBar la
+    // taparía justo cuando hay que tocarlo para seguir bajando.
+    final apaisada = context.esAlturaCorta;
     final contenido = _Contenido(
       estado: estado,
       ultimo: ultimo,
       alElegirResultado: notifier.elegirResultado,
+      conIlustracion: !apaisada,
     );
-    // Aquí el resultado se queda a la vista, sobre el botón: un SnackBar la
-    // taparía justo cuando hay que tocarlo para seguir bajando.
-    final apaisada = context.esAlturaCorta;
 
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
@@ -96,10 +99,15 @@ class ExportarAccesosPagina extends ConsumerWidget {
                   SizedBox(width: tokens.espacio.l),
                   SizedBox(
                     width: tokens.tamano.columnaApaisada,
+                    // La ilustración con su título ocupa lo que sobra sobre el
+                    // botón, que queda abajo.
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [boton],
+                      children: [
+                        const Expanded(child: _VacioLateral()),
+                        SizedBox(height: tokens.espacio.m),
+                        boton,
+                      ],
                     ),
                   ),
                 ],
@@ -160,11 +168,13 @@ class _Contenido extends StatelessWidget {
     required this.estado,
     required this.ultimo,
     required this.alElegirResultado,
+    required this.conIlustracion,
   });
 
   final EstadoExportacion estado;
   final ResumenDePagina? ultimo;
   final ValueChanged<ResultadoFiltro> alElegirResultado;
+  final bool conIlustracion;
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +202,7 @@ class _Contenido extends StatelessWidget {
             seleccionado: estado.filtros.resultado,
             bloqueado: estado.descargando,
             alElegir: alElegirResultado,
+            conIlustracion: conIlustracion,
           ),
         ),
         // Los avisos se desplazan si la pantalla es baja (horizontal de
@@ -200,6 +211,36 @@ class _Contenido extends StatelessWidget {
           child: _Avisos(estado: estado, ultimo: ultimo),
         ),
       ],
+    );
+  }
+}
+
+/// La ilustración de vacío con su título, en la columna derecha del teléfono
+/// en horizontal. Se desplaza si el alto no alcanza.
+class _VacioLateral extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AccesoIlustracion(
+              ruta: Multimedia.vacioEventos,
+              lado: tokens.tamano.ilustracionColumna,
+            ),
+            SizedBox(height: tokens.espacio.s),
+            Text(
+              context.l10n.exportacionEleccionTitulo,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

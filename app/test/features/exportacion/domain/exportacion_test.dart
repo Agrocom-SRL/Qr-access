@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/features/exportacion/domain/exportacion.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -104,9 +102,9 @@ void main() {
           RecursoExportable.lecturas,
           'AGR',
           2,
-          FormatoDeDescarga.csv,
+          FormatoDeDescarga.xlsx,
         ),
-        'lecturas-agr-p2.csv',
+        'lecturas-agr-p2.xlsx',
       );
     });
 
@@ -116,27 +114,19 @@ void main() {
           RecursoExportable.usuarios,
           'a/b c',
           1,
-          FormatoDeDescarga.csv,
+          FormatoDeDescarga.xlsx,
         ),
-        'usuarios-abc-p1.csv',
+        'usuarios-abc-p1.xlsx',
       );
       expect(
         nombreDeArchivo(
           RecursoExportable.puertas,
           '../',
           1,
-          FormatoDeDescarga.csv,
+          FormatoDeDescarga.xlsx,
         ),
-        'puertas-cuenta-p1.csv',
+        'puertas-cuenta-p1.xlsx',
       );
-    });
-
-    test('el CSV sale con la marca de orden de bytes de Excel delante', () {
-      final csv = Uint8List.fromList('id\n1\n'.codeUnits);
-      final conBom = conBomDeExcel(csv);
-
-      expect(conBom.sublist(0, 3), [0xEF, 0xBB, 0xBF]);
-      expect(conBom.sublist(3), csv);
     });
   });
 
