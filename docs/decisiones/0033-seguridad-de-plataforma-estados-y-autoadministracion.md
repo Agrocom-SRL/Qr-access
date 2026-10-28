@@ -135,3 +135,7 @@ El incidente es `{ id, usuario: {id, etiqueta}, tipo, gravedad, origen, registra
 - **App y panel:** pantallas de incidentes, estados y anulación masiva; textos en ARB y en `web/src/l10n/`.
 - **Tests obligatorios:** cuenta A no ve, anula ni restringe nada de B (404); un Titular no restringe a un par ni a un superior; un estado impuesto por el superior no lo levanta el inferior; restringido no genera pero sus QR vigentes abren; suspendido arrastra a su rama y anula sus QR; la URL con `.js` no devuelve datos ni se cachea; cargas de inyección rechazadas o inertes; la reincidencia propone, no aplica, salvo el automático leve activado.
 - **Orden sugerido:** cabeceras y `no-store` (rápido, alto valor) → rate limit → estados → anulación masiva → incidentes y reincidencia → exportación → CI de seguridad.
+
+## Addendum (2026-10-28): estilos de react-select con nonce
+
+`react-select` (emotion) inyecta etiquetas `<style>` en runtime y la CSP `style-src 'self'` las bloqueaba: los selectores del panel se veían sin diseño en el contenedor (no en `vite dev`). La CSP del panel pasa a `style-src 'self' 'nonce-$request_id'`: nginx genera el nonce por petición, lo escribe también en `<meta name="csp-nonce">` del index (`sub_filter` en `location /`) y `src/main.tsx` se lo entrega a emotion. Sigue sin `unsafe-inline`. `bin/verificar-nginx panel` comprueba que el nonce de la cabecera y el del index coincidan.
