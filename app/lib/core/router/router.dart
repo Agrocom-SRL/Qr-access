@@ -97,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: Rutas.eventosAnterior,
+        redirect: (context, state) => Rutas.eventos,
+      ),
+      GoRoute(
         path: Rutas.eventos,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const EventosPagina()),

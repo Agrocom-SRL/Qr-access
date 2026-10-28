@@ -12,6 +12,7 @@ import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.d
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
+import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
@@ -144,6 +145,12 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                       ],
                     ),
                   ),
+                  // La bandeja también va aquí: en expandido no hay cabecera de
+                  // teléfono que la lleve.
+                  if (widget.sesion.tiene(Permisos.verNotificaciones)) ...[
+                    const BotonNotificaciones(),
+                    SizedBox(width: tokens.espacio.m),
+                  ],
                   if (puedeQrPropio)
                     AccesoBoton(
                       texto: l10n.inicioQrPropio,

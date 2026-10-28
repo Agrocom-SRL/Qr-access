@@ -5,6 +5,8 @@ import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
+import 'package:agrocom_acceso/features/notificaciones/data/notificaciones_repositorio.dart';
+import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:agrocom_acceso/features/puertas/puertas.dart';
 import 'package:agrocom_acceso/features/qr_accesos/qr_accesos.dart';
 import 'package:agrocom_acceso/shared/widgets/organisms/barra_navegacion.dart';
@@ -12,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fakes.dart';
+import '../../helpers/notificaciones_falsas.dart';
 import '../../helpers/pantalla.dart';
 
 final _ahora = DateTime.utc(2026, 10, 9, 14, 30);
@@ -70,13 +73,18 @@ Future<SesionFalsa> _montar(
   required Set<String> permisos,
   List<QrAcceso> vigentes = const [],
   bool apaisada = false,
+  bool expandida = false,
 }) async {
   final sesion = SesionFalsa(sesionCon(permisos: permisos));
   await montarPantalla(
     tester,
     pagina: const InicioPagina(),
     apaisada: apaisada,
+    expandida: expandida,
     overrides: [
+      notificacionesRepositorioProvider.overrideWithValue(
+        NotificacionesRepositorioFalso(),
+      ),
       sesionControladorProvider.overrideWith(() => sesion),
       relojProvider.overrideWithValue(() => _ahora),
       qrAccesosRepositorioProvider.overrideWithValue(
@@ -267,6 +275,20 @@ void main() {
       await tester.tap(enBarra(Icons.person_outline).first);
       await tester.pumpAndSettle();
       expect(find.text('destino /perfil'), findsOneWidget);
+    });
+  });
+
+  group('en expandido (1440×900)', () {
+    testWidgets('el administrador ve la bandeja junto a QR propio y Generar', (
+      tester,
+    ) async {
+      await _montar(
+        tester,
+        permisos: {..._administrador, Permisos.verNotificaciones},
+        expandida: true,
+      );
+
+      expect(find.byType(BotonNotificaciones), findsOneWidget);
     });
   });
 
