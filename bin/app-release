@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# Compila el bundle de Android para Google Play apuntando a la API de producción.
+#
+#   bin/app-release                 app/build/app/outputs/bundle/release/app-release.aab
+#   bin/app-release --apk           los argumentos extra van tal cual a `flutter build appbundle`
+#
+# Sin API_URL la app usa http://localhost:3000 y en el teléfono muestra "sin conexión"
+# (app/lib/core/config/entorno.dart). Por eso la URL va fija aquí y no depende de la memoria
+# de nadie. Se puede sobreescribir con API_URL=... para probar contra otro servidor.
+# Antes de subir a Play, sube el `+N` de `version:` en app/pubspec.yaml: Play rechaza un
+# versionCode repetido.
+#
+set -euo pipefail
+cd "$(dirname "$0")/../app" || exit 1
+
+url="${API_URL:-https://acceso.agrocom.com.bo}"
+case "$url" in
+    https://*) ;;
+    *) echo "API_URL debe ser https: el release de Android no permite HTTP." >&2; exit 1 ;;
+esac
+
+echo "API del release: $url"
+exec flutter build appbundle --release --dart-define=API_URL="$url" "$@"
