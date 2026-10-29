@@ -1,4 +1,5 @@
 import type { ClienteHttp } from '../../../shared/api/clienteHttp';
+import type { AperturaManual } from '../domain/aperturaManual';
 import type { Estadisticas } from '../domain/estadisticas';
 import type { EstadisticasRepositorio } from './EstadisticasRepositorio';
 
@@ -16,7 +17,28 @@ interface EstadisticasDto {
   accesos_por_dia: { dia: string; permitidos: number; rechazados: number }[];
 }
 
-/** Endpoint `/plataforma/estadisticas` de la API (módulo `resumen`). */
+interface AperturaManualDto {
+  dias: number;
+  ordenadas: number;
+  rechazadas: number;
+  por_qr: number;
+  usuarios: number;
+  cuentas_que_la_usaron: number;
+  ejecucion: { ejecutadas: number; fallidas: number; sin_confirmacion: number };
+  por_puerta: AperturaManual['porPuerta'][number][];
+  por_cuenta: AperturaManual['porCuenta'][number][];
+  por_dia: AperturaManual['porDia'][number][];
+  por_hora: AperturaManual['porHora'][number][];
+  configuracion: {
+    puertas: number;
+    habilitadas: number;
+    disponibles: number;
+    cuentas: number;
+    cuentas_con_modo_activo: number;
+  };
+}
+
+/** Endpoints `/plataforma/estadisticas` y `/plataforma/apertura-manual` de la API (módulo `resumen`). */
 export function crearEstadisticasHttp(cliente: ClienteHttp): EstadisticasRepositorio {
   return {
     async obtener() {
@@ -41,6 +63,36 @@ export function crearEstadisticasHttp(cliente: ClienteHttp): EstadisticasReposit
         })),
         accesosPorDia: dto.accesos_por_dia,
       } satisfies Estadisticas;
+    },
+    async aperturaManual() {
+      const dto = await cliente.solicitar<AperturaManualDto>({
+        metodo: 'GET',
+        ruta: '/plataforma/apertura-manual',
+      });
+      return {
+        dias: dto.dias,
+        ordenadas: dto.ordenadas,
+        rechazadas: dto.rechazadas,
+        porQr: dto.por_qr,
+        usuarios: dto.usuarios,
+        cuentasQueLaUsaron: dto.cuentas_que_la_usaron,
+        ejecucion: {
+          ejecutadas: dto.ejecucion.ejecutadas,
+          fallidas: dto.ejecucion.fallidas,
+          sinConfirmacion: dto.ejecucion.sin_confirmacion,
+        },
+        porPuerta: dto.por_puerta,
+        porCuenta: dto.por_cuenta,
+        porDia: dto.por_dia,
+        porHora: dto.por_hora,
+        configuracion: {
+          puertas: dto.configuracion.puertas,
+          habilitadas: dto.configuracion.habilitadas,
+          disponibles: dto.configuracion.disponibles,
+          cuentas: dto.configuracion.cuentas,
+          cuentasConModoActivo: dto.configuracion.cuentas_con_modo_activo,
+        },
+      } satisfies AperturaManual;
     },
   };
 }

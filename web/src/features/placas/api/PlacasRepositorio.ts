@@ -1,10 +1,12 @@
 import type { Paginado } from '../../../shared/api/tipos';
-import type { FiltrosDePlacas, NivelAbierto, Placa } from '../domain/placa';
+import type { FiltrosDePlacas, NivelAbierto, Placa, UbicacionDelLector } from '../domain/placa';
 
 export interface DatosDeVinculo {
   cuentaId: string;
   puertaId: string;
   nombre: string;
+  /** Dónde está el lector de la placa; sin elegir, la API toma `ambos`. */
+  sentido?: UbicacionDelLector;
 }
 
 /** Lo que `application` necesita de la API de placas (`/plataforma/placas`, ADR 0026). */

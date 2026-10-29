@@ -169,7 +169,7 @@ describe('plataforma: estadísticas de la apertura manual (ADR 0035, HU-21)', ()
     });
   });
 
-  it('solo el super admin lo ve: una cuenta y quien no inició sesión, no', async () => {
+  it('sin sesión no se ve (es de plataforma)', async () => {
     const sinSesion = await prueba.app.inject({
       method: 'GET',
       url: '/api/v1/plataforma/apertura-manual',
