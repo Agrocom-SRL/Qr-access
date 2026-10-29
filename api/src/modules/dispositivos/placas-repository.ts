@@ -15,6 +15,7 @@ const DESCRIPCION_DE_PLACAS = {
     'vinculo_cuenta_id',
     'vinculo_puerta_id',
     'vinculo_nombre',
+    'vinculo_sentido',
     'vinculo_solicitado_por',
   ],
   perfil: 'dominio',
@@ -28,6 +29,8 @@ export interface PlacaBasica extends RowDataPacket {
   vinculo_cuenta_id: string | null;
   vinculo_puerta_id: string | null;
   vinculo_nombre: string | null;
+  /** Ubicación del lector pedida al vincular; nulo = `ambos` (solicitudes anteriores a ADR 0035). */
+  vinculo_sentido: Sentido | null;
   vinculo_solicitado_por: string | null;
 }
 
@@ -47,6 +50,7 @@ export interface PlacaListada extends RowDataPacket {
   ultimo_anuncio_at: Date | null;
   por_confirmar_hasta: Date | null;
   ultima_ip: string | null;
+  vinculo_sentido: Sentido | null;
   dispositivo_id: string | null;
   dispositivo_nombre: string | null;
   /** Dónde está el lector del dispositivo (ADR 0035 §4); nulo si la placa no está vinculada. */
@@ -70,7 +74,7 @@ export interface PlacaListada extends RowDataPacket {
 
 const COLUMNAS_BASICAS =
   't.id, t.por_confirmar_hasta, t.vinculo_cuenta_id, t.vinculo_puerta_id, ' +
-  't.vinculo_nombre, t.vinculo_solicitado_por';
+  't.vinculo_nombre, t.vinculo_sentido, t.vinculo_solicitado_por';
 
 /** Quién tiene hoy la placa: el dispositivo en servicio y su cuenta y puerta. */
 const UNIONES_DE_ASIGNACION =
@@ -140,6 +144,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       cuentaId: string;
       puertaId: string;
       nombre: string;
+      sentido: Sentido;
       solicitadoPor: string;
     },
   ): Promise<boolean> {
@@ -148,6 +153,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       vinculo_cuenta_id: datos.cuentaId,
       vinculo_puerta_id: datos.puertaId,
       vinculo_nombre: datos.nombre,
+      vinculo_sentido: datos.sentido,
       vinculo_solicitado_por: datos.solicitadoPor,
     });
   }
@@ -159,6 +165,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       vinculo_cuenta_id: null,
       vinculo_puerta_id: null,
       vinculo_nombre: null,
+      vinculo_sentido: null,
       vinculo_solicitado_por: null,
     });
   }
@@ -223,7 +230,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
       this.seleccionar<PlacaListada>({
         ...consulta,
         columnas:
-          't.id, t.mac, t.firmware_version, t.ultimo_anuncio_at, t.por_confirmar_hasta, t.ultima_ip, ' +
+          't.id, t.mac, t.firmware_version, t.ultimo_anuncio_at, t.por_confirmar_hasta, t.ultima_ip, t.vinculo_sentido, ' +
           'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.sentido AS dispositivo_sentido, d.ultimo_latido_at, ' +
           'd.firmware_version AS firmware_del_dispositivo, ' +
           'd.en_linea_desde, d.estado_conexion, d.lector_responde, d.en_observacion, ' +

@@ -28,6 +28,12 @@ export interface DatosDeApertura {
   readonly idempotencia: { readonly clave: string; readonly secreto: string };
   /** Dónde dejar rastro de lo que no debe tumbar la respuesta (nunca lleva clave, PIN ni token). */
   readonly log?: { warn(objeto: object, mensaje: string): void };
+  /**
+   * Se llama DESPUÉS del COMMIT, solo cuando se creó una orden nueva (no en un reintento ni en un rechazo): es
+   * cómo la ruta despierta a las placas de la puerta que esperan en su petición larga (ADR 0035 §2). Es un
+   * aviso en memoria; si falla o se pierde, el sondeo de respaldo de la placa la encuentra igual.
+   */
+  readonly alConfirmarse?: (orden: { readonly puertaId: string }) => void;
 }
 
 export interface OrdenDeApertura {
@@ -210,7 +216,13 @@ export async function ejecutar(
   }
 
   if (resultado.tipo === 'rechazo') throw aError(resultado.rechazo);
-  return resultado.repetida ? repetir(resultado.fila) : presentar(resultado.fila, ahora);
+  if (resultado.repetida) return repetir(resultado.fila);
+  try {
+    datos.alConfirmarse?.({ puertaId: puerta.id });
+  } catch {
+    // La orden ya está confirmada: un aviso que falla no la deshace; la placa la encuentra por su sondeo.
+  }
+  return presentar(resultado.fila, ahora);
 }
 
 function presentar(fila: OrdenFila, ahora: Date): OrdenDeApertura {

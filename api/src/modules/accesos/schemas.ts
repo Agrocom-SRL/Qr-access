@@ -120,6 +120,8 @@ export const esquemaEvento = z.object({
   ocurrido_at: esquemaFecha,
   resultado: z.enum(['permitido', 'rechazado']),
   motivo_code: z.string(),
+  /** `manual`: apertura pedida desde la app (ADR 0035); no lleva QR ni sentido. */
+  metodo: z.enum(['qr', 'pulsador', 'forzada', 'manual']),
   puerta: esquemaPuertaCorta.extend({ sitio: z.object({ id: z.string(), nombre: z.string() }) }),
   qr_id: z.string().nullable(),
   /**
@@ -308,3 +310,40 @@ export const respuestaDeEstadoDeOrden = z.strictObject({
     })
     .nullable(),
 });
+
+// --- Apertura manual: el lado de la placa (ADR 0035 §2) ---
+
+/**
+ * Lo que la placa recibe al tomar una orden. `valida_por_ms` es el plazo RESTANTE (relativo, nunca una hora
+ * absoluta: la placa no depende de su reloj); si ya corrió cuando la placa va a ejecutar, no abre. `segundos_apertura`
+ * es la duración del pulso de la puerta (la placa le aplica su tope duro, como en una validación de QR).
+ */
+export const respuestaDeOrdenEntregada = z.strictObject({
+  orden_id: z.string(),
+  valida_por_ms: z.number().int().positive(),
+  segundos_apertura: z.number().int(),
+});
+
+/**
+ * Cómo terminó la orden según la placa. Los pares `resultado`/`causa` son los de `confirmaciones_apertura`:
+ * `ejecutada`+`puerta_abrio`; `fallida`+`puerta_no_abrio`|`puerta_no_cerro`|`rele_no_accionado` (por omisión
+ * `puerta_no_abrio`); `sin_confirmacion`+`sin_sensor` cuando la puerta no tiene el sensor habilitado (el relé se
+ * accionó pero no se sabe si la puerta abrió). `reportado_en_dispositivo_at` es el reloj de la placa, solo informativo.
+ */
+export const cuerpoDeResultadoDeOrden = z.discriminatedUnion('resultado', [
+  z.strictObject({
+    resultado: z.literal('ejecutada'),
+    causa: z.literal('puerta_abrio').default('puerta_abrio'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    resultado: z.literal('fallida'),
+    causa: z.enum(CAUSAS_DE_FALLA).default('puerta_no_abrio'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    resultado: z.literal('sin_confirmacion'),
+    causa: z.literal('sin_sensor').default('sin_sensor'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+]);

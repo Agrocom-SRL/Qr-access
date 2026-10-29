@@ -426,6 +426,7 @@ describe('POST /api/v1/dispositivos/validaciones (ADR 0008)', () => {
         ocurrido_at: fechaIsoUtc(),
         resultado: 'rechazado',
         motivo_code: 'qr.formato_invalido',
+        metodo: 'qr',
         puerta: {
           id: a.puertaPrincipal.id,
           nombre: 'Principal AAA',

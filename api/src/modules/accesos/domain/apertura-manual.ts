@@ -5,6 +5,8 @@
  * `actions/abrir-puerta-manual.ts` lee y escribe.
  */
 
+import type { CausaDeFalla } from './confirmacion.js';
+
 /** Cuánto vive una orden de abrir desde que se crea (ADR 0035 §3); la tabla nunca admite más de 30 s. */
 export const VIGENCIA_DE_ORDEN_MS = 15_000;
 
@@ -121,11 +123,39 @@ export function decidirApertura(entrada: EntradaDeApertura): RechazoDeApertura |
 export type EstadoDeOrden = 'pendiente' | 'entregada' | 'ejecutada' | 'fallida' | 'vencida';
 
 /**
- * El estado que se muestra a la app. Una orden `pendiente` o `entregada` cuyo plazo ya pasó sigue así en la tabla
- * hasta que el proceso periódico la marque; la app no debe esperarla para siempre, así que ve `vencida`. Una
- * confirmación tardía de la placa (`ejecutada`) la sigue imponiendo cuando llega.
+ * Cuánto después de `vence_at` se espera todavía el resultado de una orden YA ENTREGADA antes de darla por vencida.
+ * `vence_at` es el plazo para que una placa TOME la orden y empiece el pulso; el resultado llega después: el pulso
+ * (hasta 10 s) más lo que la placa observa su sensor (`segundos_apertura` + 5 s) más la red. Sin esta gracia, una
+ * orden tomada a los 14 s se daría por vencida a los 15 s y el informe legítimo de la placa se rechazaría. No aplica
+ * a una orden `pendiente`: esa nadie la tomó y no hay nada que esperar.
+ */
+export const GRACIA_DE_RESULTADO_MS = 30_000;
+
+/**
+ * El estado que se muestra a la app. Una orden `pendiente` cuyo plazo ya pasó, o una `entregada` que además agotó la
+ * gracia para informar, sigue así en la tabla hasta que el proceso periódico la marque; la app no debe esperarla
+ * para siempre, así que ve `vencida`. Mientras una orden entregada está dentro de la gracia se sigue viendo
+ * `entregada` (la placa puede estar observando su sensor).
  */
 export function estadoVisible(estado: EstadoDeOrden, venceAt: Date, ahora: Date): EstadoDeOrden {
-  const viva = estado === 'pendiente' || estado === 'entregada';
-  return viva && venceAt <= ahora ? 'vencida' : estado;
+  if (estado === 'pendiente') return venceAt <= ahora ? 'vencida' : estado;
+  if (estado === 'entregada') {
+    return venceAt.getTime() + GRACIA_DE_RESULTADO_MS <= ahora.getTime() ? 'vencida' : estado;
+  }
+  return estado;
+}
+
+/** Lo que una placa informa de una orden: cómo terminó el pulso y qué vio. Pares válidos de `confirmaciones_apertura`. */
+export type ResultadoDeOrden =
+  | { readonly resultado: 'ejecutada'; readonly causa: 'puerta_abrio' }
+  | { readonly resultado: 'fallida'; readonly causa: CausaDeFalla }
+  | { readonly resultado: 'sin_confirmacion'; readonly causa: 'sin_sensor' };
+
+/**
+ * En qué estado queda la ORDEN tras el informe de la placa. Una puerta sin sensor (`sin_confirmacion`) igual accionó
+ * el relé: la orden se ejecutó, solo que no hay forma de saber si la puerta se abrió (no se inventa un éxito, y la
+ * confirmación lo dice). `fallida`, en cambio, es que la placa no pudo accionar o no vio abrir.
+ */
+export function estadoDeOrdenTras(informe: ResultadoDeOrden): 'ejecutada' | 'fallida' {
+  return informe.resultado === 'fallida' ? 'fallida' : 'ejecutada';
 }

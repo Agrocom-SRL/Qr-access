@@ -2,6 +2,7 @@ import type { Pool } from 'mysql2/promise';
 import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { hashear, verificarHash } from '../../../platform/seguridad/hash.js';
+import { SENTIDO_POR_OMISION } from '../domain/sentido.js';
 import { huellaDeClave, normalizarMac } from '../domain/placa.js';
 import { RepositorioDeAnuncios } from '../anuncios-repository.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
@@ -63,6 +64,8 @@ export async function ejecutar(
   const { por_confirmar_hasta: hasta, vinculo_cuenta_id: cuentaId } = placa;
   const { vinculo_puerta_id: puertaId, vinculo_nombre: nombre } = placa;
   const { vinculo_solicitado_por: solicitadoPor } = placa;
+  // Nulo = solicitud anterior a la ubicación del lector: una sola placa para los dos lados.
+  const sentido = placa.vinculo_sentido ?? SENTIDO_POR_OMISION;
   if (
     hasta === null ||
     hasta <= ahora ||
@@ -78,7 +81,7 @@ export async function ejecutar(
   try {
     const dispositivoId = await conVinculoValido(
       pool,
-      { cuentaId, puertaId, usuarioId: solicitadoPor },
+      { cuentaId, puertaId, usuarioId: solicitadoPor, sentido },
       ahora,
       ({ puertaId: puertaValida, dispositivos }) =>
         enTransaccion(pool, async (tx) => {
@@ -100,6 +103,7 @@ export async function ejecutar(
             puertaId: puertaValida,
             nombre,
             claveHash,
+            sentido,
           });
           await placas.limpiarSolicitud(tx, placa.id);
           await anuncios.descartarTodos(tx, placa.id, ahora);

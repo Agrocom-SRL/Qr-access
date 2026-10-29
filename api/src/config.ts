@@ -5,6 +5,12 @@ import { z } from 'zod';
 /** Cuánto espera el firmware una respuesta (ADR 0009, `cliente.cpp`): la API contesta antes. */
 export const ESPERA_DEL_FIRMWARE_MS = 3000;
 
+/**
+ * Cuánto espera el firmware la petición larga de órdenes (`GET /dispositivos/ordenes`, ADR 0035 §2): la API contesta
+ * antes. Es una constante aparte de `ESPERA_DEL_FIRMWARE_MS` porque esa ruta retiene la petición a propósito.
+ */
+export const ESPERA_DEL_FIRMWARE_ORDENES_MS = 30_000;
+
 const entero = (porDefecto: number, minimo = 1) =>
   z.coerce.number().int().min(minimo).default(porDefecto);
 
@@ -90,6 +96,13 @@ const esquema = z.object({
   // Mínimo 500 ms: por debajo no cabe ni la espera por una conexión más una consulta.
   PETICION_MS_DISPOSITIVOS: entero(2500, 500),
   PETICION_MS_APP: entero(15000, 500),
+  // Petición larga de órdenes de apertura (ADR 0035 §2): la placa pregunta y la API retiene la respuesta hasta
+  // `ORDENES_ESPERA_MS`. Tiene SU PROPIO plazo de petición (mayor que la espera) y no el de 2,5 s de las demás
+  // rutas del dispositivo. `ORDENES_SONDEO_MS` es el sondeo de respaldo a la base por si se pierde una señal
+  // en memoria (otra instancia, reinicio).
+  ORDENES_ESPERA_MS: entero(20000, 100),
+  ORDENES_SONDEO_MS: entero(3000, 50),
+  PETICION_MS_ORDENES: entero(25000, 1000),
   // `Retry-After` de los 503 por saturación.
   REINTENTO_503_SEGUNDOS: entero(2),
 
@@ -106,6 +119,9 @@ const esquema = z.object({
   // Mínimo 60: un lector que relee su QR una vez por segundo no debe toparse nunca con el límite.
   LIMITE_VALIDACION_POR_MINUTO: entero(600, 60),
   LIMITE_DISPOSITIVO_POR_MINUTO: entero(120),
+  // La petición larga de órdenes (ADR 0035 §2): una por ~20 s por placa en reposo. Holgado para que una orden
+  // legítima nunca se corte, pero lo bastante bajo para frenar a una placa que reintente en bucle con un 204.
+  LIMITE_ORDENES_POR_MINUTO: entero(30, 6),
   // Autenticaciones fallidas por IP y por minuto (ADR 0030 §3.2): pasado el tope, esa IP recibe
   // 429 sin que se verifique su credencial. Solo cuentan los fallos; un acierto no consume.
   LIMITE_FALLOS_AUTENTICACION_POR_MINUTO: entero(30, 5),
@@ -159,6 +175,19 @@ function exigirTiemposCoherentes(config: Config): void {
   }
   if (config.PETICION_MS_DISPOSITIVOS >= ESPERA_DEL_FIRMWARE_MS) {
     incoherentes.push('PETICION_MS_DISPOSITIVOS');
+  }
+  // La petición larga de órdenes: espera + la última consulta (con su espera por conexión) < petición < espera del
+  // firmware. No toca la regla de las demás rutas del dispositivo (< 3 s).
+  if (
+    config.ORDENES_ESPERA_MS +
+      config.DB_ESPERA_MS_DISPOSITIVOS +
+      config.DB_CONSULTA_MS_DISPOSITIVOS >=
+    config.PETICION_MS_ORDENES
+  ) {
+    incoherentes.push('ORDENES_ESPERA_MS+PETICION_MS_ORDENES');
+  }
+  if (config.PETICION_MS_ORDENES >= ESPERA_DEL_FIRMWARE_ORDENES_MS) {
+    incoherentes.push('PETICION_MS_ORDENES');
   }
   if (config.DB_CONSULTA_MS_APP >= config.PETICION_MS_APP) incoherentes.push('DB_CONSULTA_MS_APP');
   if (config.DB_ESPERA_MS_APP >= config.PETICION_MS_APP) incoherentes.push('DB_ESPERA_MS_APP');

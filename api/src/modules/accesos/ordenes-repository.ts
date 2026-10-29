@@ -1,5 +1,6 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
+import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { EstadoDeOrden } from './domain/apertura-manual.js';
 
@@ -217,17 +218,66 @@ export class RepositorioDeOrdenesDeApertura extends RepositorioDeCuenta {
   }
 
   /**
-   * Marca `vencida` una orden `pendiente` o `entregada` cuyo plazo ya pasó (`vence_at <= ahora`). `false` si ya
-   * no está viva o todavía vigente. No escribe `confirmaciones_apertura`: eso lo decide quien llama.
+   * Marca `vencida` una orden viva cuyo plazo ya pasó: una `pendiente` con `vence_at <= ahora` (nadie la tomó) o una
+   * `entregada` con `vence_at + gracia <= ahora` (la placa que la tomó tuvo la gracia para informar; ver
+   * `GRACIA_DE_RESULTADO_MS`). Con `graciaDeEntregadaMs = 0` (por omisión) una entregada vence junto con su plazo.
+   * `false` si ya no está viva o todavía está dentro de su plazo. No escribe `confirmaciones_apertura`: eso lo
+   * decide quien llama.
    */
-  vencer(tx: Transaccion, id: string, ahora: Date): Promise<boolean> {
+  vencer(tx: Transaccion, id: string, ahora: Date, graciaDeEntregadaMs = 0): Promise<boolean> {
     return this.actualizar(
       tx,
       id,
       { estado: 'vencida', resuelta_at: ahora },
       {
-        cuando: { sql: "estado IN ('pendiente', 'entregada') AND vence_at <= ?", params: [ahora] },
+        cuando: {
+          sql: "(estado = 'pendiente' AND vence_at <= ?) OR (estado = 'entregada' AND vence_at <= ?)",
+          params: [ahora, new Date(ahora.getTime() - graciaDeEntregadaMs)],
+        },
       },
     );
+  }
+
+  /**
+   * Las órdenes vivas de la cuenta del contexto que ya se pueden dar por vencidas (mismo criterio que `vencer`), las
+   * más viejas primero y a lo sumo `limite`. Lectura sin bloqueo: `vencer` decide con compare-and-set.
+   */
+  listarParaVencer(ahora: Date, graciaDeEntregadaMs: number, limite: number): Promise<OrdenFila[]> {
+    return this.seleccionar<OrdenFila>({
+      columnas: COLUMNAS,
+      donde:
+        "(t.estado = 'pendiente' AND t.vence_at <= ?) OR (t.estado = 'entregada' AND t.vence_at <= ?)",
+      params: [ahora, new Date(ahora.getTime() - graciaDeEntregadaMs)],
+      orden: 't.vence_at, t.id',
+      limite,
+    });
+  }
+}
+
+/**
+ * Las órdenes de apertura de TODAS las cuentas, solo para el barrido periódico que las vence. Salto EXPLÍCITO del
+ * aislamiento por cuenta (invariante 1), acotado a una sola lectura: devuelve QUÉ cuentas tienen órdenes por vencer,
+ * nunca las filas. Cada escritura posterior corre dentro del contexto de ESA cuenta, con el repositorio de cuenta.
+ */
+export class RepositorioDeOrdenesDeTodas extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'ordenes_apertura',
+      columnas: [],
+      perfil: 'transitoria',
+      deCuenta: true,
+    });
+  }
+
+  /** Ids de las cuentas con alguna orden viva que ya se puede dar por vencida (usa `idx_ordenes_apertura_vencimiento`). */
+  async cuentasConOrdenesPorVencer(ahora: Date, graciaDeEntregadaMs: number): Promise<string[]> {
+    const filas = await this.seleccionar<RowDataPacket>({
+      columnas: 'DISTINCT t.tenant_id',
+      donde:
+        "(t.estado = 'pendiente' AND t.vence_at <= ?) OR (t.estado = 'entregada' AND t.vence_at <= ?)",
+      params: [ahora, new Date(ahora.getTime() - graciaDeEntregadaMs)],
+      orden: 't.tenant_id',
+    });
+    return filas.map((fila) => String(fila.tenant_id));
   }
 }

@@ -36,6 +36,7 @@ for (const variable of [
   'LIMITE_EXPORTACION_POR_MINUTO',
   'LIMITE_VALIDACION_POR_MINUTO',
   'LIMITE_DISPOSITIVO_POR_MINUTO',
+  'LIMITE_ORDENES_POR_MINUTO',
 ]) {
   process.env[variable] = '1000000';
 }

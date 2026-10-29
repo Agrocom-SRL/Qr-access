@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   decidirApertura,
+  estadoDeOrdenTras,
   estadoVisible,
+  GRACIA_DE_RESULTADO_MS,
   VIGENCIA_DE_ORDEN_MS,
   type EntradaDeApertura,
 } from '../../src/modules/accesos/domain/apertura-manual.js';
@@ -158,10 +160,18 @@ describe('estadoVisible', () => {
     expect(estadoVisible('entregada', venceAt, ahora)).toBe('entregada');
   });
 
-  it('la orden viva con el plazo corrido se ve vencida, aunque el barrido no la haya marcado', () => {
-    const despues = new Date(venceAt.getTime());
-    expect(estadoVisible('pendiente', venceAt, despues)).toBe('vencida');
-    expect(estadoVisible('entregada', venceAt, new Date(venceAt.getTime() + 1))).toBe('vencida');
+  it('la orden pendiente con el plazo corrido se ve vencida, aunque el barrido no la haya marcado', () => {
+    expect(estadoVisible('pendiente', venceAt, new Date(venceAt.getTime()))).toBe('vencida');
+  });
+
+  it('una orden entregada sigue entregada durante la gracia para informar y después se ve vencida', () => {
+    // La placa la tomó a tiempo y puede estar observando su sensor: su informe todavía vale.
+    expect(estadoVisible('entregada', venceAt, new Date(venceAt.getTime() + 1))).toBe('entregada');
+    const finDeLaGracia = new Date(venceAt.getTime() + GRACIA_DE_RESULTADO_MS);
+    expect(estadoVisible('entregada', venceAt, new Date(finDeLaGracia.getTime() - 1))).toBe(
+      'entregada',
+    );
+    expect(estadoVisible('entregada', venceAt, finDeLaGracia)).toBe('vencida');
   });
 
   it('un estado final no cambia con el tiempo', () => {
@@ -173,5 +183,20 @@ describe('estadoVisible', () => {
 
   it('la vigencia de una orden es de 15 s (la tabla nunca admite más de 30)', () => {
     expect(VIGENCIA_DE_ORDEN_MS).toBe(15_000);
+  });
+});
+
+describe('estadoDeOrdenTras', () => {
+  it('ejecutada y sin_confirmacion (puerta sin sensor) dejan la orden ejecutada: el relé se accionó', () => {
+    expect(estadoDeOrdenTras({ resultado: 'ejecutada', causa: 'puerta_abrio' })).toBe('ejecutada');
+    expect(estadoDeOrdenTras({ resultado: 'sin_confirmacion', causa: 'sin_sensor' })).toBe(
+      'ejecutada',
+    );
+  });
+
+  it('una falla de la placa deja la orden fallida, con cualquier causa', () => {
+    for (const causa of ['puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'] as const) {
+      expect(estadoDeOrdenTras({ resultado: 'fallida', causa })).toBe('fallida');
+    }
   });
 });

@@ -464,6 +464,8 @@ export interface LecturaFila extends RowDataPacket {
   resultado: 'permitido' | 'rechazado';
   motivo_code: string;
   puerta_id: string;
+  /** Cómo se originó: `qr`, `pulsador`, `forzada` o `manual` (apertura desde la app, ADR 0035). */
+  metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
   qr_acceso_id: string | null;
   qr_etiqueta: string | null;
   qr_generado_por: string | null;
@@ -477,7 +479,7 @@ export interface IntentoFila extends RowDataPacket {
 }
 
 export interface FiltroDeLecturas {
-  /** Solo los de QR generados por este usuario; `null` = todos los de la cuenta. */
+  /** Solo los de QR generados por este usuario y sus propias aperturas manuales; `null` = todos los de la cuenta. */
   readonly generadoPor: string | null;
   /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
   readonly puertaIds: readonly string[] | null;
@@ -512,8 +514,10 @@ function armarFiltroDeEventos(
   ];
   const params: unknown[] = [];
   if (filtro.generadoPor !== null) {
-    condiciones.push('q.generado_por = ?');
-    params.push(filtro.generadoPor);
+    // Quien no ve toda la cuenta ve lo suyo: las lecturas de los QR que generó y sus propias aperturas manuales
+    // (ADR 0035 §6; `usuario_id` solo se llena en `manual`). Nunca las manuales de otro usuario.
+    condiciones.push("(q.generado_por = ? OR (t.metodo = 'manual' AND t.usuario_id = ?))");
+    params.push(filtro.generadoPor, filtro.generadoPor);
   }
   if (filtro.puertaIds !== null) {
     if (filtro.puertaIds.length === 0) {
@@ -574,7 +578,7 @@ export interface OriginalFila extends RowDataPacket {
 }
 
 const COLUMNAS_DE_EVENTO =
-  't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
+  't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.metodo, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
 
 /** Desde cuándo se juzgan las aperturas de un dispositivo. */
 export interface DesdeDeDispositivo {

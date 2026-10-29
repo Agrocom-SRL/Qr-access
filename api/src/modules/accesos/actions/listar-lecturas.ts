@@ -19,6 +19,8 @@ export interface LecturaListada {
   ocurrido_at: string;
   resultado: 'permitido' | 'rechazado';
   motivo_code: string;
+  /** `manual` = apertura pedida desde la app (sin QR, sin sentido); el resto, como hasta ahora. */
+  metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
   puerta: { id: string; nombre: string; sitio: { id: string; nombre: string } };
   qr_id: string | null;
   /**
@@ -52,7 +54,7 @@ export interface FiltrosDeLecturas {
 /**
  * Lo que el usuario puede ver: todos los de la cuenta con `accesos.evento.ver_todos` (administrador),
  * los de las puertas que tiene asignadas con `accesos.evento.ver_asignadas` (guardia) o, si no, solo
- * los de los QR que generó. Sin puertas asignadas, un guardia no ve ninguno.
+ * los de los QR que generó y sus propias aperturas manuales (nunca las de otro usuario). Sin puertas asignadas, un guardia no ve ninguno.
  */
 export async function alcanceDe(
   pool: Pool,
@@ -103,6 +105,7 @@ export async function presentarLecturas(
       ocurrido_at: aIso(fila.ocurrido_at),
       resultado: fila.resultado,
       motivo_code: fila.motivo_code,
+      metodo: fila.metodo,
       puerta: {
         id: fila.puerta_id,
         nombre: puerta?.nombre ?? '',

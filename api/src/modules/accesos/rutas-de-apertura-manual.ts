@@ -1,8 +1,10 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
+import type { NotificadorPorClave } from '../../platform/espera/notificador-por-clave.js';
 import { presupuestoDePeticion } from '../../platform/http/presupuesto.js';
 import { permiso, usuarioDe } from '../../plugins/permisos.js';
 import { ejecutar as abrirPuertaManual } from './actions/abrir-puerta-manual.js';
+import { claveDeEsperaDeOrdenes } from './actions/entregar-orden.js';
 import { ejecutar as consultarOrdenDeApertura } from './actions/consultar-orden-de-apertura.js';
 import {
   cabecerasDeApertura,
@@ -16,10 +18,11 @@ import {
  * Rutas de la apertura manual del lado de la app (ADR 0035). La configuración (encender o apagar) y el listado de
  * puertas viven en `organizacion`, que es dueña de `puertas`; el lado de la placa (`/dispositivos/ordenes`) va aparte.
  */
-export function rutasDeAperturaManual({
-  pool,
-  config,
-}: DependenciasDeModulo): FastifyPluginCallbackZod {
+export function rutasDeAperturaManual(
+  { pool, config }: DependenciasDeModulo,
+  /** El despertador compartido con la petición larga de la placa (`rutas-de-ordenes-de-placa.ts`). */
+  notificador: NotificadorPorClave,
+): FastifyPluginCallbackZod {
   return (app, _opciones, listo) => {
     app.post(
       '/puertas/:puertaId/abrir',
@@ -54,6 +57,8 @@ export function rutasDeAperturaManual({
               secreto: config.QR_IDEMPOTENCIA_CLAVE,
             },
             log: request.log,
+            alConfirmarse: ({ puertaId }) =>
+              notificador.despertar(claveDeEsperaDeOrdenes(usuarioDe(request).cuentaId, puertaId)),
           },
           new Date(),
           // Plazo propio o desconexión real del cliente; nunca `request.signal` (ver presupuesto.ts).

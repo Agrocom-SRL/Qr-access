@@ -39,6 +39,8 @@ export interface PlacaDeInventario {
   readonly apertura_fallida: boolean;
   /** Hasta cuándo espera el botón de la placa, si se pidió vincularla. */
   readonly por_confirmar_hasta: string | null;
+  /** La ubicación del lector pedida mientras espera el botón (ADR 0035 §4); `null` sin solicitud en curso. */
+  readonly vinculo_sentido: Sentido | null;
   readonly dispositivo: { id: string; nombre: string; sentido: Sentido } | null;
   readonly cuenta: { id: string; codigo: string; nombre: string } | null;
   readonly puerta: { id: string; nombre: string } | null;
@@ -100,6 +102,7 @@ export async function ejecutar(
       por_confirmar_hasta: esperaElPulsador
         ? (fila.por_confirmar_hasta?.toISOString() ?? null)
         : null,
+      vinculo_sentido: esperaElPulsador && !vinculada ? (fila.vinculo_sentido ?? 'ambos') : null,
       // Son LEFT JOIN: con el id presente, el resto de la unión también lo está.
       dispositivo:
         fila.dispositivo_id === null

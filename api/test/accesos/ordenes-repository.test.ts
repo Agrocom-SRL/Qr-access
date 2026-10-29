@@ -278,6 +278,18 @@ describe('RepositorioDeOrdenesDeApertura (ADR 0035 §3)', () => {
       expect((await estadoDe(ejecutada))?.estado).toBe('ejecutada');
     });
 
+    it('con gracia, una entregada solo vence cuando también la agotó; una pendiente vence con su plazo', async () => {
+      const entregada = await crearOrden(a, a.puertaPrincipal.id, { clave: '8'.repeat(64) });
+      await entregar(a, entregada, a.puertaPrincipal.id, a.dispositivoPrincipal.id);
+      const gracia = (cuando: Date) =>
+        enCuenta(a, () =>
+          enTransaccion(prueba.pool, (tx) => repo().vencer(tx, entregada, cuando, 30_000)),
+        );
+      expect(await gracia(en(20_000))).toBe(false);
+      expect(await gracia(en(44_999))).toBe(false);
+      expect(await gracia(en(45_000))).toBe(true);
+    });
+
     it('una orden vencida libera la puerta para otra', async () => {
       const id = await crearOrden(a, a.puertaPrincipal.id, { clave: '6'.repeat(64) });
       await vencer(a, id, en(20_000));
