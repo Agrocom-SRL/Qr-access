@@ -2,6 +2,7 @@ import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import { LATIDO_MAXIMO_SEGUNDOS } from './domain/en-linea.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import type { Sentido } from './domain/sentido.js';
 
 const DESCRIPCION_DE_PLACAS = {
   nombre: 'placas',
@@ -48,6 +49,8 @@ export interface PlacaListada extends RowDataPacket {
   ultima_ip: string | null;
   dispositivo_id: string | null;
   dispositivo_nombre: string | null;
+  /** Dónde está el lector del dispositivo (ADR 0035 §4); nulo si la placa no está vinculada. */
+  dispositivo_sentido: Sentido | null;
   ultimo_latido_at: Date | null;
   firmware_del_dispositivo: string | null;
   en_linea_desde: Date | null;
@@ -221,7 +224,7 @@ export class RepositorioDePlacas extends RepositorioDePlataforma {
         ...consulta,
         columnas:
           't.id, t.mac, t.firmware_version, t.ultimo_anuncio_at, t.por_confirmar_hasta, t.ultima_ip, ' +
-          'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.ultimo_latido_at, ' +
+          'd.id AS dispositivo_id, d.nombre AS dispositivo_nombre, d.sentido AS dispositivo_sentido, d.ultimo_latido_at, ' +
           'd.firmware_version AS firmware_del_dispositivo, ' +
           'd.en_linea_desde, d.estado_conexion, d.lector_responde, d.en_observacion, ' +
           'd.sensor_estado, d.sensor_instalado, d.sensor_abierto_nivel, d.apertura_fallida, ' +

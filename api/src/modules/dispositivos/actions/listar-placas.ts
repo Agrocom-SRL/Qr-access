@@ -6,6 +6,7 @@ import {
   type Paginacion,
 } from '../../../platform/http/paginacion.js';
 import { crearServicioDeUmbralesDePlaca } from '../../limites/contracts.js';
+import type { Sentido } from '../domain/sentido.js';
 import { estaEnLinea } from '../domain/en-linea.js';
 import { evaluarConexion, type EstadoDeConexion } from '../domain/estado-de-placa.js';
 import { umbralesEnSegundos } from '../domain/umbrales.js';
@@ -38,7 +39,7 @@ export interface PlacaDeInventario {
   readonly apertura_fallida: boolean;
   /** Hasta cuándo espera el botón de la placa, si se pidió vincularla. */
   readonly por_confirmar_hasta: string | null;
-  readonly dispositivo: { id: string; nombre: string } | null;
+  readonly dispositivo: { id: string; nombre: string; sentido: Sentido } | null;
   readonly cuenta: { id: string; codigo: string; nombre: string } | null;
   readonly puerta: { id: string; nombre: string } | null;
 }
@@ -103,7 +104,11 @@ export async function ejecutar(
       dispositivo:
         fila.dispositivo_id === null
           ? null
-          : { id: fila.dispositivo_id, nombre: fila.dispositivo_nombre ?? '' },
+          : {
+              id: fila.dispositivo_id,
+              nombre: fila.dispositivo_nombre ?? '',
+              sentido: fila.dispositivo_sentido ?? 'ambos',
+            },
       cuenta:
         fila.cuenta_id === null
           ? null

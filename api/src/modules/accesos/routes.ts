@@ -20,6 +20,7 @@ import { ejecutar as resumirQr } from './actions/resumir-qr.js';
 import { ejecutar as validarQr } from './actions/validar-qr.js';
 import { ejecutar as verLectura } from './actions/ver-lectura.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
+import { rutasDeAperturaManual } from './rutas-de-apertura-manual.js';
 import { rutasDePlataforma } from './rutas-de-plataforma.js';
 import {
   consultaDeEventos,
@@ -399,6 +400,7 @@ export function rutas({
       },
     );
     app.register(rutasDePlataforma({ pool, poolDispositivos, config }));
+    app.register(rutasDeAperturaManual({ pool, poolDispositivos, config }));
     listo();
   };
 }

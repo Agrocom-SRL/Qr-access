@@ -23,6 +23,8 @@ const PERMISOS_DE_MIEMBRO = [
   'accesos.evento.ver',
   // Ve los incidentes de uso que lo alcanzan (los propios; ADR 0033 §3).
   'seguridad.incidente.ver',
+  // Pide abrir una puerta desde la app (ADR 0035 §5); `configurar` es solo del Administrador (recibe todos).
+  'accesos.apertura_manual.usar',
 ] as const;
 
 export const ROLES_BASE: readonly RolBase[] = [
@@ -61,6 +63,8 @@ export const ROLES_BASE: readonly RolBase[] = [
       'seguridad.incidente.ver',
       'accesos.evento.ver',
       'accesos.evento.ver_asignadas',
+      // Como todos los roles de la cuenta, puede pedir abrir una puerta desde la app (ADR 0035 §5).
+      'accesos.apertura_manual.usar',
     ],
   },
 ];

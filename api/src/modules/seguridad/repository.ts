@@ -2,6 +2,7 @@ import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
 import { RepositorioDeFilasDePlataforma } from '../../platform/db/repositorio-de-fila-de-plataforma.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
+import { ContextoCuenta } from '../../platform/contexto/contexto-cuenta.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import type { Estado } from './domain/estado.js';
 import type { MotivoDeCierre, Plataforma } from './domain/sesion.js';
@@ -102,6 +103,43 @@ export class RepositorioDeCuentas extends RepositorioDePlataforma {
       { columnas: COLUMNAS_DE_CUENTA, donde: 't.id = ?', params: [id], bloquear: 'compartido' },
       tx,
     );
+  }
+}
+
+/**
+ * El valor inicial de `puertas.apertura_manual` de la cuenta (ADR 0035 §5). `cuentas` no tiene `tenant_id`, así que
+ * este repositorio es de plataforma; PERO solo lee y escribe la fila de la cuenta del contexto (el id sale de
+ * `ContextoCuenta`, nunca de un parámetro de la petición) y solo esta columna: es el único acceso a `cuentas`
+ * desde una acción del administrador de la cuenta (revisar línea por línea, invariante 1).
+ */
+export class RepositorioDeAperturaManualDeCuenta extends RepositorioDePlataforma {
+  constructor(pool: Pool) {
+    super(pool, {
+      nombre: 'cuentas',
+      columnas: ['apertura_manual_por_omision'],
+      perfil: 'dominio',
+      deCuenta: false,
+    });
+  }
+
+  /** `true` si las puertas nuevas de la cuenta del contexto nacen con la apertura manual encendida. */
+  async porOmision(): Promise<boolean> {
+    const fila = await this.seleccionarUna<RowDataPacket & { apertura_manual_por_omision: number }>(
+      {
+        columnas: 't.apertura_manual_por_omision',
+        donde: 't.id = ?',
+        params: [ContextoCuenta.cuentaRequerida()],
+      },
+    );
+    // Una cuenta que ya no existe no ofrece nada: apagado (falla cerrado).
+    return fila?.apertura_manual_por_omision === 1;
+  }
+
+  /** Cambia el valor inicial de la cuenta del contexto; queda en la bitácora con el antes y el después. */
+  async fijar(tx: Transaccion, habilitada: boolean): Promise<boolean> {
+    return this.actualizar(tx, ContextoCuenta.cuentaRequerida(), {
+      apertura_manual_por_omision: habilitada ? 1 : 0,
+    });
   }
 }
 

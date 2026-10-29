@@ -559,6 +559,15 @@ export interface NuevaLectura {
   readonly repetidoDeId?: string | null;
 }
 
+/** Una petición de apertura manual para dejar en `lecturas` (ADR 0035 §6). */
+export interface NuevaLecturaManual {
+  readonly puertaId: string;
+  readonly usuarioId: string;
+  readonly resultado: 'permitido' | 'rechazado';
+  readonly motivoCode: string;
+  readonly ocurridoAt: Date;
+}
+
 /** El intento original que enlaza una repetición. */
 export interface OriginalFila extends RowDataPacket {
   id: string;
@@ -593,6 +602,7 @@ export class RepositorioDeLecturas extends RepositorioDeCuenta {
         'puerta_id',
         'dispositivo_id',
         'qr_acceso_id',
+        'usuario_id',
         'token_hash',
         'metodo',
         'resultado',
@@ -603,6 +613,22 @@ export class RepositorioDeLecturas extends RepositorioDeCuenta {
       ],
       perfil: 'solo_insercion',
       deCuenta: true,
+    });
+  }
+
+  /**
+   * Una petición de apertura manual desde la app (ADR 0035 §6), aceptada o rechazada: `metodo = 'manual'` y quién
+   * la pidió. Sin QR, sin hash de token y SIN dispositivo (al crear la lectura todavía no se sabe qué placa
+   * tomará la orden; esa queda en `ordenes_apertura`). No lleva sentido: la app no lo sabe.
+   */
+  registrarManual(tx: Transaccion, lectura: NuevaLecturaManual): Promise<string> {
+    return this.insertar(tx, {
+      puerta_id: lectura.puertaId,
+      usuario_id: lectura.usuarioId,
+      metodo: 'manual',
+      resultado: lectura.resultado,
+      motivo_code: lectura.motivoCode,
+      ocurrido_at: lectura.ocurridoAt,
     });
   }
 

@@ -21,8 +21,23 @@ export interface DispositivoDePuerta {
   readonly ultimoLatidoAt: Date | null;
 }
 
+/** Cuántas placas tiene en servicio una puerta y cuántas de ellas reportaron un latido reciente. */
+export interface PlacasDeLaPuerta {
+  readonly enServicio: number;
+  readonly enLinea: number;
+}
+
 export interface ServicioDeDispositivos {
-  /** `puertaId -> dispositivo en servicio` de la cuenta del contexto; una puerta sin lector no figura. */
+  /**
+   * `puertaId -> placas en servicio y en línea` de la cuenta del contexto (una puerta lleva hasta dos, ADR 0035
+   * §4); una puerta sin placa no figura. «En línea» es lo mismo que en el resto de la API: latido de hace menos de
+   * `LATIDO_MAXIMO_SEGUNDOS`. Es lo que decide si la apertura manual se ofrece y si se puede ordenar.
+   */
+  placasPorPuerta(
+    puertaIds: readonly string[],
+    ahora: Date,
+  ): Promise<Map<string, PlacasDeLaPuerta>>;
+  /** `puertaId -> dispositivo en servicio` de la cuenta del contexto; una puerta sin lector no figura. Con dos placas, la que está en línea. */
   porPuerta(puertaIds: readonly string[], ahora: Date): Promise<Map<string, DispositivoDePuerta>>;
   /** Cuántos dispositivos en servicio de la cuenta del contexto no reportan latido (HU-09). */
   contarSinConexion(ahora: Date): Promise<number>;
@@ -35,20 +50,35 @@ export function crearServicioDeDispositivos(pool: Pool): ServicioDeDispositivos 
       const filas = await dispositivos.listarEnServicio();
       return filas.filter((fila) => !estaEnLinea(fila.ultimo_latido_at, ahora)).length;
     },
+    async placasPorPuerta(puertaIds, ahora) {
+      const mapa = new Map<string, PlacasDeLaPuerta>();
+      for (const fila of await dispositivos.listarEnServicioPorPuertas(puertaIds)) {
+        const actual = mapa.get(fila.puerta_id) ?? { enServicio: 0, enLinea: 0 };
+        mapa.set(fila.puerta_id, {
+          enServicio: actual.enServicio + 1,
+          enLinea: actual.enLinea + (estaEnLinea(fila.ultimo_latido_at, ahora) ? 1 : 0),
+        });
+      }
+      return mapa;
+    },
     async porPuerta(puertaIds, ahora) {
       const filas = await dispositivos.listarEnServicioPorPuertas(puertaIds);
-      return new Map(
-        filas.map((fila) => [
-          fila.puerta_id,
-          {
-            id: fila.id,
-            puertaId: fila.puerta_id,
-            nombre: fila.nombre,
-            enLinea: estaEnLinea(fila.ultimo_latido_at, ahora),
-            ultimoLatidoAt: fila.ultimo_latido_at,
-          },
-        ]),
-      );
+      const mapa = new Map<string, DispositivoDePuerta>();
+      for (const fila of filas) {
+        const dispositivo = {
+          id: fila.id,
+          puertaId: fila.puerta_id,
+          nombre: fila.nombre,
+          enLinea: estaEnLinea(fila.ultimo_latido_at, ahora),
+          ultimoLatidoAt: fila.ultimo_latido_at,
+        };
+        // Con dos placas por puerta (ADR 0035) se muestra la que está en línea; si ninguna, la primera.
+        const previo = mapa.get(fila.puerta_id);
+        if (previo === undefined || (!previo.enLinea && dispositivo.enLinea)) {
+          mapa.set(fila.puerta_id, dispositivo);
+        }
+      }
+      return mapa;
     },
   };
 }

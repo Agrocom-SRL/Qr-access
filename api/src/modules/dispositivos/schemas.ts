@@ -112,7 +112,14 @@ export const respuestaDePlacas = esquemaListado(
     /** La puerta está en el grupo de «aperturas que fallan» (ADR 0031 §18). */
     apertura_fallida: z.boolean(),
     por_confirmar_hasta: z.string().nullable(),
-    dispositivo: z.object({ id: z.string(), nombre: z.string() }).nullable(),
+    dispositivo: z
+      .object({
+        id: z.string(),
+        nombre: z.string(),
+        /** Dónde está el lector: `entrada` (afuera), `salida` (adentro) o `ambos` (ADR 0035 §4). Campo aditivo. */
+        sentido: z.enum(['entrada', 'salida', 'ambos']),
+      })
+      .nullable(),
     cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }).nullable(),
     puerta: z.object({ id: z.string(), nombre: z.string() }).nullable(),
   }),

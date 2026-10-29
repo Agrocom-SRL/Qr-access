@@ -13,6 +13,7 @@ import {
 } from './cambio-de-estado.js';
 import { nivelDeRol, type NivelDeUsuario } from './domain/jerarquia.js';
 import {
+  RepositorioDeAperturaManualDeCuenta,
   RepositorioDeConteoDeUsuarios,
   RepositorioDeCuentas,
   RepositorioDeCuentasDePlataforma,
@@ -79,6 +80,26 @@ export function crearServicioDeUsuarios(pool: Pool): ServicioDeUsuarios {
     async etiquetasDe(usuarioIds) {
       const filas = await usuarios.buscarPorIds(usuarioIds);
       return new Map(filas.map((fila) => [fila.id, fila.etiqueta]));
+    },
+  };
+}
+
+/** El valor inicial de la apertura manual de las puertas de la cuenta (ADR 0035 §5). */
+export interface ServicioDeAperturaManualDeCuenta {
+  /** ¿Las puertas que registre la cuenta del contexto nacen con la apertura manual encendida? */
+  porOmision(): Promise<boolean>;
+  /** Fija ese valor para la cuenta del contexto, dentro de la transacción que ya cambia sus puertas. */
+  fijarPorOmision(tx: Transaccion, habilitada: boolean): Promise<void>;
+}
+
+export function crearServicioDeAperturaManualDeCuenta(
+  pool: Pool,
+): ServicioDeAperturaManualDeCuenta {
+  const cuentas = new RepositorioDeAperturaManualDeCuenta(pool);
+  return {
+    porOmision: () => cuentas.porOmision(),
+    async fijarPorOmision(tx, habilitada) {
+      await cuentas.fijar(tx, habilitada);
     },
   };
 }

@@ -267,3 +267,44 @@ export const consultaDeExportacion = consultaDeEventos.extend({
     .max(FILAS_POR_PAGINA_MAXIMAS)
     .default(FILAS_POR_PAGINA_POR_OMISION),
 });
+
+// --- Apertura manual desde la app (ADR 0035) ---
+
+const ESTADOS_DE_ORDEN = ['pendiente', 'entregada', 'ejecutada', 'fallida', 'vencida'] as const;
+
+/**
+ * `Idempotency-Key` de la apertura manual: OBLIGATORIA (ADR 0035 §7). Un reintento de la app con la misma clave
+ * devuelve la misma orden; cada pulsación nueva lleva una clave nueva (UUID v4 o base64url de 22 a 128 caracteres).
+ */
+export const cabecerasDeApertura = z.object({
+  'idempotency-key': z
+    .string()
+    .min(LARGO_MINIMO_DE_CLAVE)
+    .max(LARGO_MAXIMO_DE_CLAVE)
+    .regex(FORMATO_DE_CLAVE),
+});
+
+export const parametrosDePuertaAAbrir = z.object({ puertaId: esquemaId });
+export const parametrosDeOrden = z.object({ id: esquemaId });
+
+/** La orden creada. Sin sentido ni placa: la orden es de la puerta (ADR 0035 §3). */
+export const respuestaDeOrdenDeApertura = z.strictObject({
+  orden_id: z.string(),
+  estado: z.enum(ESTADOS_DE_ORDEN),
+  vence_at: esquemaFecha,
+});
+
+export const respuestaDeEstadoDeOrden = z.strictObject({
+  orden_id: z.string(),
+  puerta_id: z.string(),
+  /** `pendiente` y `entregada` están en curso; `ejecutada`, `fallida` y `vencida` son finales. */
+  estado: z.enum(ESTADOS_DE_ORDEN),
+  vence_at: esquemaFecha,
+  /** Lo que informó la placa sobre si la puerta se abrió; `null` mientras no haya nada. */
+  resultado: z
+    .strictObject({
+      resultado: z.enum(EJECUCIONES),
+      causa: z.string(),
+    })
+    .nullable(),
+});
