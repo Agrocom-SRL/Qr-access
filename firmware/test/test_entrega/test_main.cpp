@@ -192,26 +192,31 @@ void test_el_id_de_una_orden_no_se_confunde_con_el_de_un_evento() {
 }
 
 void test_la_respuesta_de_una_orden_no_cierra_el_informe_de_un_evento() {
+  // Solo hay un informe de EVENTO "42": la respuesta de la ORDEN "42" no es suya y se ignora.
   Entregas e;
   e.agregar(informe("42"), 0);
-  e.agregar(informeManual("42"), 0);
-  const Informe* primero = e.debeEnviar(0);
-  TEST_ASSERT_TRUE(primero != nullptr);
-  TEST_ASSERT_FALSE(primero->manual);
   e.enviado("42", 0, false);
-  e.alResponder("42", 204, 10, true);  // la respuesta es de la orden: no toca al del evento en vuelo
-  TEST_ASSERT_EQUAL_UINT8(2, e.pendientes());
-  e.alResponder("42", 204, 20, false);
+  e.alResponder("42", 204, 10, true);
   TEST_ASSERT_EQUAL_UINT8(1, e.pendientes());
-  const Informe* siguiente = e.debeEnviar(20);
-  TEST_ASSERT_TRUE(siguiente != nullptr);
-  TEST_ASSERT_TRUE(siguiente->manual);
+  e.alResponder("42", 204, 20, false);
+  TEST_ASSERT_EQUAL_UINT8(0, e.pendientes());
+}
+
+void test_la_respuesta_de_un_evento_no_cierra_el_informe_de_una_orden() {
+  Entregas e;
+  e.agregar(informeManual("42"), 0);
+  e.enviado("42", 0, true);
+  e.alResponder("42", 204, 10, false);
+  TEST_ASSERT_EQUAL_UINT8(1, e.pendientes());
+  e.alResponder("42", 204, 20, true);
+  TEST_ASSERT_EQUAL_UINT8(0, e.pendientes());
 }
 
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_el_id_de_una_orden_no_se_confunde_con_el_de_un_evento);
   RUN_TEST(test_la_respuesta_de_una_orden_no_cierra_el_informe_de_un_evento);
+  RUN_TEST(test_la_respuesta_de_un_evento_no_cierra_el_informe_de_una_orden);
   RUN_TEST(test_clasificacion_de_codigos);
   RUN_TEST(test_204_lo_da_por_entregado_y_no_se_vuelve_a_enviar);
   RUN_TEST(test_un_solo_informe_por_apertura);
