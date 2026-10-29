@@ -15,6 +15,11 @@ String textoMotivoEvento(AppLocalizations l10n, String motivoCode) =>
       'qr.otra_puerta' => l10n.lecturaMotivoQrOtraPuerta,
       'qr.usado' => l10n.lecturaMotivoQrUsado,
       'suscripcion.vencida' => l10n.lecturaMotivoSuscripcionVencida,
+      'manual.ordenada' => l10n.lecturaMotivoManualOrdenada,
+      // Cualquier otro rechazo de una apertura desde la app (sin placa, sin
+      // conexión, límite...): el detalle exacto lo vio quien pidió abrir.
+      final codigo when codigo.startsWith('manual.') =>
+        l10n.lecturaMotivoManualRechazada,
       _ => l10n.lecturaMotivoDesconocido,
     };
 
@@ -23,6 +28,8 @@ String textoMotivoEvento(AppLocalizations l10n, String motivoCode) =>
 /// de Jorge R.").
 String textoDetalleEvento(AppLocalizations l10n, Lectura evento) {
   if (!evento.esPermitido) return textoMotivoEvento(l10n, evento.motivoCode);
+  // Una apertura desde la app no tiene QR: se dice eso, no «sin etiqueta».
+  if (evento.esManual) return l10n.lecturaAperturaManual;
   final etiqueta = evento.qrEtiqueta ?? l10n.qrSinEtiqueta;
   final generador = evento.generadorEtiqueta;
   return generador == null ? etiqueta : l10n.lecturaQrDe(etiqueta, generador);

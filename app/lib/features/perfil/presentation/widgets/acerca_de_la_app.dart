@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/config/info_app.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/documento_legal_pagina.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -85,7 +86,29 @@ class _HojaAcercaDe extends ConsumerWidget {
                 FilaClaveValor(
                   clave: l10n.perfilAcercaVersionEtiqueta,
                   valor: version ?? l10n.comunGuion,
+                ),
+                // Los documentos legales se abren dentro de la app (en el
+                // teléfono) para poder volver sin salir de ella.
+                FilaClaveValor(
+                  clave: l10n.perfilAcercaTerminos,
+                  icono: Icons.description_outlined,
+                  alTocar: () => abrirDocumentoLegal(
+                    context,
+                    titulo: l10n.perfilAcercaTerminos,
+                    ruta: rutaTerminos,
+                  ),
+                  accion: const Icon(Icons.chevron_right),
+                ),
+                FilaClaveValor(
+                  clave: l10n.perfilAcercaPrivacidad,
+                  icono: Icons.privacy_tip_outlined,
                   conSeparador: false,
+                  alTocar: () => abrirDocumentoLegal(
+                    context,
+                    titulo: l10n.perfilAcercaPrivacidad,
+                    ruta: rutaPrivacidad,
+                  ),
+                  accion: const Icon(Icons.chevron_right),
                 ),
                 SizedBox(height: tokens.espacio.l),
                 Text(

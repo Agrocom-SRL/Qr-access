@@ -313,7 +313,9 @@
   "@comunErrorQrLimitePropiosEspera": {
     "description": "code qr.limite_propios_sin_uso (429) con espera corta: reemplazos del QR propio sin uso (ADR 0030 §2.1.5)",
     "placeholders": {
-      "minutos": { "type": "int" }
+      "minutos": {
+        "type": "int"
+      }
     }
   },
   "comunErrorQrLimitePropiosSinUso": "Pediste demasiados QR sin usar por hoy. Vuelve a intentarlo mañana.",
@@ -653,21 +655,27 @@
   "@qrValidezDias": {
     "description": "Tiempo que le queda a un QR vigente, en días",
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "qrValidezHoras": "{n, plural, =1{Válido por 1 hora} other{Válido por {n} horas}}",
   "@qrValidezHoras": {
     "description": "Tiempo que le queda a un QR vigente, en horas",
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "qrValidezMinutos": "{n, plural, =1{Válido por 1 minuto} other{Válido por {n} minutos}}",
   "@qrValidezMinutos": {
     "description": "Tiempo que le queda a un QR vigente, en minutos",
     "placeholders": {
-      "n": { "type": "int" }
+      "n": {
+        "type": "int"
+      }
     }
   },
   "qrRapidoTitulo": "Mi QR de acceso",
@@ -698,7 +706,9 @@
   "@qrRapidoEtiqueta": {
     "description": "Etiqueta con la que se genera el QR rápido",
     "placeholders": {
-      "nombre": { "type": "String" }
+      "nombre": {
+        "type": "String"
+      }
     }
   },
   "qrRapidoError": "No pudimos generar tu QR",
@@ -840,8 +850,12 @@
   "@qrEtiquetaYPuertas": {
     "description": "Qué QR se va a anular, en el diálogo de confirmación (C07b)",
     "placeholders": {
-      "etiqueta": {"type": "String"},
-      "puertas": {"type": "String"}
+      "etiqueta": {
+        "type": "String"
+      },
+      "puertas": {
+        "type": "String"
+      }
     }
   },
   "qrGenerarTodas": "Todas",
@@ -922,7 +936,9 @@
   "@qrVigenciaHoras": {
     "description": "Plazo de vigencia en horas",
     "placeholders": {
-      "horas": { "type": "int" }
+      "horas": {
+        "type": "int"
+      }
     }
   },
   "qrVigenciaModoHoras": "Horas",
@@ -937,7 +953,9 @@
   "@qrVigenciaDias": {
     "description": "Plazo de vigencia en días",
     "placeholders": {
-      "dias": { "type": "int" }
+      "dias": {
+        "type": "int"
+      }
     }
   },
   "qrVigenciaHora": "Hora",
@@ -1357,8 +1375,12 @@
   "@puertasSitioConCantidad": {
     "description": "Encabezado de cada sitio en la lista de puertas, con cuántas tiene (C10a)",
     "placeholders": {
-      "sitio": {"type": "String"},
-      "n": {"type": "int"}
+      "sitio": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
     }
   },
   "puertasSinPuertas": "Aún no hay puertas",
@@ -2113,8 +2135,12 @@
   "@dispositivosPlataformaYActividad": {
     "description": "Línea de una sesión: plataforma y hora de la última actividad",
     "placeholders": {
-      "plataforma": { "type": "String" },
-      "hora": { "type": "String" }
+      "plataforma": {
+        "type": "String"
+      },
+      "hora": {
+        "type": "String"
+      }
     }
   },
   "dispositivosPlataformaAndroid": "Android",
@@ -2181,7 +2207,9 @@
   "@dispositivosCerradas": {
     "description": "Aviso tras cerrar las demás sesiones, con cuántas se cerraron",
     "placeholders": {
-      "cantidad": { "type": "int" }
+      "cantidad": {
+        "type": "int"
+      }
     }
   },
   "dispositivosSinSesiones": "No hay sesiones abiertas.",
@@ -2248,7 +2276,9 @@
   "@notificacionesMarcadas": {
     "description": "Aviso tras marcar notificaciones como leídas, con cuántas",
     "placeholders": {
-      "cantidad": { "type": "int" }
+      "cantidad": {
+        "type": "int"
+      }
     }
   },
   "notificacionesSinNotificaciones": "No tienes notificaciones.",
@@ -2283,28 +2313,36 @@
   "@notificacionRecibida": {
     "description": "Fecha de un aviso, en hora de Bolivia",
     "placeholders": {
-      "fecha": { "type": "String" }
+      "fecha": {
+        "type": "String"
+      }
     }
   },
   "notificacionDetallePuertas": "En {puertas}",
   "@notificacionDetallePuertas": {
     "description": "Detalle de un aviso con puertas: sus nombres, separados por comas",
     "placeholders": {
-      "puertas": { "type": "String" }
+      "puertas": {
+        "type": "String"
+      }
     }
   },
   "notificacionDetalleUsuario": "Usuario {usuario}",
   "@notificacionDetalleUsuario": {
     "description": "Detalle de un aviso sobre un usuario",
     "placeholders": {
-      "usuario": { "type": "String" }
+      "usuario": {
+        "type": "String"
+      }
     }
   },
   "notificacionDetalleSitio": "En el sitio {sitio}",
   "@notificacionDetalleSitio": {
     "description": "Detalle de un aviso sobre un sitio",
     "placeholders": {
-      "sitio": { "type": "String" }
+      "sitio": {
+        "type": "String"
+      }
     }
   },
   "notificacionSeveridadInfo": "Informativa",
@@ -3111,5 +3149,156 @@
   "comunMotivoIncidenteReincidenciaSinId": "Acceso limitado por repetir incidentes.",
   "@comunMotivoIncidenteReincidenciaSinId": {
     "description": "Motivo de reincidencia sin un id válido"
+  },
+  "inicioAbrirPuerta": "Abrir puerta",
+  "@inicioAbrirPuerta": {
+    "description": "Tooltip del botón de la cabecera del Inicio que abre la pantalla de abrir puerta"
+  },
+  "abrirPuertaTitulo": "Abrir puerta",
+  "@abrirPuertaTitulo": {
+    "description": "Título de la pantalla de abrir una puerta sin QR (ADR 0035)"
+  },
+  "abrirPuertaAyuda": "Elige la puerta que quieres abrir. Se abre en unos segundos.",
+  "@abrirPuertaAyuda": {
+    "description": "Ayuda de la pantalla de abrir puerta"
+  },
+  "abrirPuertaAccion": "Abrir",
+  "@abrirPuertaAccion": {
+    "description": "Botón de cada puerta para abrirla"
+  },
+  "abrirPuertaSinConexion": "Sin conexión",
+  "@abrirPuertaSinConexion": {
+    "description": "Etiqueta de una puerta cuya placa no reportó hace poco"
+  },
+  "abrirPuertaSinPuertas": "No hay puertas disponibles",
+  "@abrirPuertaSinPuertas": {
+    "description": "Título del estado vacío cuando no hay puertas que abrir desde la app"
+  },
+  "abrirPuertaSinPuertasDetalle": "Tu administrador no habilitó esta función o las puertas no tienen una placa conectada. Puedes entrar con tu QR.",
+  "@abrirPuertaSinPuertasDetalle": {
+    "description": "Detalle del estado vacío de abrir puerta"
+  },
+  "abrirPuertaEnviando": "Enviando la orden…",
+  "@abrirPuertaEnviando": {
+    "description": "Estado mientras se envía la orden de abrir"
+  },
+  "abrirPuertaEsperando": "Abriendo {puerta}…",
+  "@abrirPuertaEsperando": {
+    "description": "Estado mientras la placa abre la puerta",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "abrirPuertaAbierta": "{puerta} abierta",
+  "@abrirPuertaAbierta": {
+    "description": "Resultado: la puerta se abrió",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "abrirPuertaFallo": "No se pudo abrir {puerta}",
+  "@abrirPuertaFallo": {
+    "description": "Resultado: no se pudo abrir la puerta",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "abrirPuertaFalloNoAbrio": "La puerta no se abrió. Inténtalo de nuevo.",
+  "@abrirPuertaFalloNoAbrio": {
+    "description": "Detalle cuando la placa informó que la puerta no se abrió"
+  },
+  "abrirPuertaFalloVencida": "La puerta no respondió a tiempo. Inténtalo de nuevo o entra con tu QR.",
+  "@abrirPuertaFalloVencida": {
+    "description": "Detalle cuando la orden venció sin que la placa respondiera"
+  },
+  "abrirPuertaOtra": "Abrir otra puerta",
+  "@abrirPuertaOtra": {
+    "description": "Botón para volver a la lista tras abrir o fallar"
+  },
+  "comunErrorManualNoHabilitada": "La apertura desde la app no está habilitada en esta puerta.",
+  "@comunErrorManualNoHabilitada": {
+    "description": "code manual.no_habilitada (409): el administrador apagó la apertura manual en esa puerta"
+  },
+  "comunErrorPuertaSinDispositivo": "Esta puerta no tiene una placa conectada.",
+  "@comunErrorPuertaSinDispositivo": {
+    "description": "code puerta.sin_dispositivo (409): la puerta no tiene ninguna placa en servicio"
+  },
+  "comunErrorPuertaSinConexion": "La placa de esta puerta no responde. Entra con tu QR o avisa al administrador.",
+  "@comunErrorPuertaSinConexion": {
+    "description": "code puerta.sin_conexion (409): ninguna placa de la puerta reportó hace poco"
+  },
+  "comunErrorManualOrdenEnCurso": "Ya hay una apertura en curso en esta puerta. Espera unos segundos.",
+  "@comunErrorManualOrdenEnCurso": {
+    "description": "code manual.orden_en_curso (409): ya hay una apertura viva en la puerta"
+  },
+  "comunErrorManualLimite": "Pediste abrir muy seguido. Espera un momento e inténtalo de nuevo.",
+  "@comunErrorManualLimite": {
+    "description": "code manual.limite (429): enfriamiento o tope diario de aperturas"
+  },
+  "comunErrorManualSinPermiso": "Tu usuario no puede abrir puertas en este momento.",
+  "@comunErrorManualSinPermiso": {
+    "description": "code manual.usuario_* y manual.cuenta_suspendida (403): el usuario o la cuenta no pueden abrir ahora"
+  },
+  "perfilAperturaManual": "Apertura desde la app",
+  "@perfilAperturaManual": {
+    "description": "Fila de Perfil (solo administrador) que abre la configuración de la apertura manual"
+  },
+  "perfilAperturaManualAyuda": "Elige en qué puertas se puede abrir sin QR",
+  "@perfilAperturaManualAyuda": {
+    "description": "Ayuda de la fila de Perfil de apertura manual"
+  },
+  "aperturaManualTitulo": "Apertura desde la app",
+  "@aperturaManualTitulo": {
+    "description": "Título de la pantalla del administrador de la apertura manual"
+  },
+  "aperturaManualAyuda": "Permite que los usuarios de la cuenta abran una puerta desde la app, sin QR. Sirve de respaldo si el lector falla o se pierde.",
+  "@aperturaManualAyuda": {
+    "description": "Ayuda de la pantalla del administrador"
+  },
+  "aperturaManualTodas": "Todas las puertas",
+  "@aperturaManualTodas": {
+    "description": "Interruptor general de la apertura manual"
+  },
+  "aperturaManualTodasAyuda": "También vale para las puertas que registres después.",
+  "@aperturaManualTodasAyuda": {
+    "description": "Ayuda del interruptor general"
+  },
+  "aperturaManualSinPlaca": "Sin placa",
+  "@aperturaManualSinPlaca": {
+    "description": "Etiqueta de una puerta sin placa en servicio: no tiene interruptor"
+  },
+  "perfilAcercaTerminos": "Términos y condiciones",
+  "@perfilAcercaTerminos": {
+    "description": "Fila de Acerca de la app que abre los términos y condiciones"
+  },
+  "perfilAcercaPrivacidad": "Política de privacidad",
+  "@perfilAcercaPrivacidad": {
+    "description": "Fila de Acerca de la app que abre la política de privacidad"
+  },
+  "paginaLegalError": "No se pudo cargar el documento.",
+  "@paginaLegalError": {
+    "description": "Mensaje cuando no se pudo cargar un documento legal"
+  },
+  "paginaLegalAbrirNavegador": "Abrir en el navegador",
+  "@paginaLegalAbrirNavegador": {
+    "description": "Botón que abre el documento legal en el navegador"
+  },
+  "lecturaMotivoManualOrdenada": "Apertura desde la app",
+  "@lecturaMotivoManualOrdenada": {
+    "description": "Motivo de una apertura desde la app que la API ordenó (manual.ordenada)"
+  },
+  "lecturaMotivoManualRechazada": "Apertura desde la app rechazada",
+  "@lecturaMotivoManualRechazada": {
+    "description": "Motivo de una apertura desde la app que la API rechazó (manual.*)"
+  },
+  "lecturaAperturaManual": "Abierta desde la app",
+  "@lecturaAperturaManual": {
+    "description": "Detalle de una lectura permitida que fue una apertura desde la app, sin QR"
   }
 }

@@ -218,6 +218,14 @@ class Duraciones {
   /// Cada cuánto se vuelve a preguntar si las placas de las puertas reportan.
   Duration get refrescoEstadoPuertas => const Duration(seconds: 15);
 
+  /// Cada cuánto se pregunta cómo va una orden de apertura desde la app
+  /// mientras la placa la ejecuta (ADR 0035).
+  Duration get consultaOrdenApertura => const Duration(seconds: 1);
+
+  /// Cuánto se espera el desenlace de una orden de apertura antes de darla
+  /// por no abierta: la API la vence a los 15 s y la placa informa después.
+  Duration get esperaMaximaOrdenApertura => const Duration(seconds: 30);
+
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 

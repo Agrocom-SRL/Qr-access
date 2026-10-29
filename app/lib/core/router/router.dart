@@ -5,6 +5,7 @@ import 'package:agrocom_acceso/core/router/splash_estado.dart';
 import 'package:agrocom_acceso/core/router/transiciones.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/features/administracion/administracion.dart';
+import 'package:agrocom_acceso/features/apertura_manual/apertura_manual.dart';
 import 'package:agrocom_acceso/features/dispositivos/dispositivos.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/exportacion/exportacion.dart';
@@ -109,6 +110,20 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Rutas.perfil,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const PerfilPagina()),
+      ),
+      GoRoute(
+        path: Rutas.abrirPuerta,
+        pageBuilder: (context, state) => paginaAnimada(
+          context,
+          state,
+          const AbrirPuertaPagina(),
+          transicion: Transicion.flujo,
+        ),
+      ),
+      GoRoute(
+        path: Rutas.aperturaManual,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const AperturaManualAdminPagina()),
       ),
       GoRoute(
         path: Rutas.dispositivos,
