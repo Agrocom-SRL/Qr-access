@@ -47,9 +47,9 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-09: Como administrador o guardia (permiso `organizacion.puerta.supervisar`), veo qué dispositivos están en línea y cuáles no reportan latido (sin latido en 3 minutos = sin conexión).
 - HU-10: Como administrador, revoco un dispositivo.
 
-- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta y por sentido (entrar o salir), o su uso total, aunque el sentido tenga lector QR; una cuenta nueva nace con el modo manual activo, y un sentido sin lector se activa solo (ADR 0035).
+- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta y por sentido (entrar o salir), o su uso total, aunque el sentido tenga lector QR; la cuenta nace con el modo manual activo, las puertas nuevas lo heredan y nada lo enciende solo si lo apagué. Donde no hay placa no hay interruptor y la app no muestra el botón (ADR 0035).
 - HU-19: Como usuario de cualquier rol, desde la app móvil o web abro una puerta habilitada de mi cuenta, entrando o saliendo, sin QR; veo si la placa la abrió o falló.
-- HU-20: Como administrador, registro hasta dos placas por puerta, una de entrada y otra de salida (o una sola para ambos sentidos); si un sentido no tiene placa, su apertura manual usa la de la puerta.
+- HU-20: Como administrador, registro hasta dos placas por puerta, una de entrada y otra de salida (o una sola para ambos sentidos); una placa `ambos` abre la misma puerta para entrar y salir por QR y por modo manual. Si la salida es otra puerta sin placa, no se puede abrir.
 - HU-21: Como super admin, veo en el panel el uso de la apertura manual: total, por puerta y por cuenta, frecuencia, cuentas con el modo activo y fallos.
 
 ### 4.5 Generación de QR (ADR 0008)

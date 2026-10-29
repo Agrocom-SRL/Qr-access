@@ -13,8 +13,8 @@ La orden de abrir que la API le da a una placa cuando un usuario pide la apertur
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
 | `puerta_id` | `BIGINT UNSIGNED` | no | FK a `puertas` |
-| `dispositivo_id` | `BIGINT UNSIGNED` | no | FK a `dispositivos`: la placa que debe abrir (la de ese sentido o, si no tiene, la de la puerta) |
-| `sentido` | `VARCHAR(10)` | no | `entrada` o `salida`: lo que pidió la persona. No es el destino: si ese sentido no tiene placa propia, la orden va a la placa de la puerta |
+| `dispositivo_id` | `BIGINT UNSIGNED` | no | FK a `dispositivos`: la placa que debe abrir (la de ese sentido o una `ambos`) |
+| `sentido` | `VARCHAR(10)` | no | `entrada` o `salida`: lo que pidió la persona; la orden va a la placa de ese sentido o a una `ambos`, nunca a la de otro sentido |
 | `usuario_id` | `BIGINT UNSIGNED` | no | FK a `usuarios`: quien lo pidió |
 | `lectura_id` | `BIGINT UNSIGNED` | no | FK a `lecturas`: el intento `permitido` que la originó |
 | `estado` | `VARCHAR(12)` | no | `pendiente`, `entregada`, `ejecutada`, `fallida` o `vencida` |

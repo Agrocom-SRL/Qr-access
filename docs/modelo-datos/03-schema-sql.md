@@ -1132,8 +1132,12 @@ ALTER TABLE dispositivos
 ALTER TABLE puertas
   ADD COLUMN apertura_manual_entrada TINYINT(1) NOT NULL DEFAULT 1 AFTER activo,
   ADD COLUMN apertura_manual_salida TINYINT(1) NOT NULL DEFAULT 1 AFTER apertura_manual_entrada;
--- Por omisión 1: una cuenta nueva nace con el modo manual activo. Al quedar un sentido sin lector propio, la API
--- enciende su columna una vez (queda en la bitácora); después el administrador puede apagarla.
+-- Las puertas nuevas toman cuentas.apertura_manual_por_omision. Nada las enciende solo después de que el
+-- administrador las apagó; la disponibilidad real exige además una placa en servicio de ese sentido.
+
+-- add_apertura_manual_a_cuentas: valor inicial para las puertas que se registren
+ALTER TABLE cuentas
+  ADD COLUMN apertura_manual_por_omision TINYINT(1) NOT NULL DEFAULT 1;
 
 -- add_apertura_manual_a_lecturas: método 'manual', quién y hacia dónde
 -- En MariaDB cambiar un CHECK exige ALGORITHM=COPY (bloquea las escrituras); con datos de prueba no importa.
