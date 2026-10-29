@@ -13,7 +13,9 @@ import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { useCuentas, useSitiosYPuertas, type SitioConPuertas } from '../../../cuentas';
 import { useVincularPlaca } from '../../application/usePlacas';
 import type { Placa } from '../../domain/placa';
+import type { UbicacionDelLector } from '../../domain/placa';
 import { DialogoConfirmarEnPuerta } from './DialogoConfirmarEnPuerta';
+import { SelectorDeUbicacion } from './SelectorDeUbicacion';
 
 /** Las puertas activas de la cuenta que todavía no tienen lector, con su sitio. */
 function puertasLibres(sitios: readonly SitioConPuertas[] | undefined): OpcionSelector[] {
@@ -41,6 +43,7 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
   const [cuenta, setCuenta] = useState<OpcionSelector | null>(null);
   const [puertaId, setPuertaId] = useState('');
   const [nombre, setNombre] = useState('');
+  const [sentido, setSentido] = useState<UbicacionDelLector>('ambos');
   const [nombreEditado, setNombreEditado] = useState(false);
   const [esperaHasta, setEsperaHasta] = useState<Date | null>(null);
 
@@ -69,7 +72,10 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
   const enviar = () => {
     if (cuenta === null) return;
     vincular.mutate(
-      { placaId: placa.id, datos: { cuentaId: cuenta.valor, puertaId, nombre: nombre.trim() } },
+      {
+        placaId: placa.id,
+        datos: { cuentaId: cuenta.valor, puertaId, nombre: nombre.trim(), sentido },
+      },
       {
         onSuccess: ({ porConfirmarHasta }) => {
           setEsperaHasta(porConfirmarHasta);
@@ -127,6 +133,7 @@ export function DialogoVincularPlaca({ placa, onCerrar }: Props) {
         error={sinPuertasLibres ? t('placas:sinPuertasLibres') : undefined}
         onCambio={elegirPuerta}
       />
+      <SelectorDeUbicacion valor={sentido} onCambio={setSentido} />
       <AccesoCampoTexto
         etiqueta={t('placas:nombreLector')}
         value={nombre}

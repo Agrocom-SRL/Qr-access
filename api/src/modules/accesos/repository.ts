@@ -1023,6 +1023,26 @@ export class RepositorioDeConfirmacionesDeTodas extends RepositorioDePlataforma 
       orden: 't.id',
     });
   }
+
+  /**
+   * Cómo terminaron las aperturas MANUALES (ADR 0035) registradas entre `desde` (incl.) y `hasta` (excl.), por
+   * resultado y origen. Solo totales: para las estadísticas del panel de plataforma.
+   */
+  resultadosDeManuales(desde: Date, hasta: Date): Promise<ResultadoDeManualFila[]> {
+    return this.seleccionar<ResultadoDeManualFila>({
+      columnas: 't.resultado, t.origen, COUNT(*) AS total',
+      uniones: 'JOIN lecturas AS l ON l.id = t.evento_acceso_id AND l.tenant_id = t.tenant_id',
+      donde: "l.metodo = 'manual' AND t.registrada_at >= ? AND t.registrada_at < ?",
+      params: [desde, hasta],
+      agrupar: 't.resultado, t.origen',
+    });
+  }
+}
+
+export interface ResultadoDeManualFila extends RowDataPacket {
+  resultado: 'ejecutada' | 'fallida' | 'sin_confirmacion';
+  origen: 'placa' | 'servidor';
+  total: number | string;
 }
 
 /** Dueño de `anulaciones_masivas`: el motivo y el alcance de cada anulación en bloque (ADR 0031 §3). */

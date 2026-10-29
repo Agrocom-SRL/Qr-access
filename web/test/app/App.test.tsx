@@ -38,6 +38,17 @@ describe('ingreso (A01)', () => {
     expect(await screen.findByRole('heading', { name: 'Ingresa al panel' })).toBeInTheDocument();
   });
 
+  it('enlaza los términos y la privacidad, en otra pestaña para no perder el ingreso', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    const terminos = await screen.findByRole('link', { name: 'Términos y condiciones' });
+    expect(terminos).toHaveAttribute('href', '/terminos.html');
+    expect(terminos).toHaveAttribute('target', '_blank');
+    expect(terminos).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    const privacidad = screen.getByRole('link', { name: 'Política de privacidad' });
+    expect(privacidad).toHaveAttribute('href', '/privacidad.html');
+    expect(privacidad).toHaveAttribute('target', '_blank');
+  });
+
   it('con credenciales válidas entra al panel y muestra el rail con el usuario', async () => {
     montar(crearServiciosDePrueba(), '/ingreso');
     await ingresar();
@@ -1320,11 +1331,57 @@ describe('placas (ADR 0026)', () => {
         cuentaId: '1',
         puertaId: '3',
         nombre: 'Garaje',
+        sentido: 'ambos',
       });
     });
     // El vínculo no está hecho: el panel explica cómo confirmarlo en la puerta.
     expect(await screen.findByText('Confirma en la puerta')).toBeInTheDocument();
     expect(screen.getByText(/Mantén pulsado el pulsador de salida/)).toBeInTheDocument();
+  });
+
+  it('vincular: la ubicación del lector se elige y viaja (una puerta puede llevar dos placas)', async () => {
+    const vincular = vi.fn<PlacasRepositorio['vincular']>(() =>
+      Promise.resolve({ porConfirmarHasta: new Date(Date.now() + 10 * 60_000) }),
+    );
+    const sitiosYPuertas = () =>
+      Promise.resolve([
+        {
+          id: '1',
+          nombre: 'Planta Warnes',
+          direccion: null,
+          zonaHoraria: 'America/La_Paz',
+          activo: true,
+          puertas: [
+            { id: '3', nombre: 'Garaje', segundosApertura: 5, activa: true, dispositivo: null },
+          ],
+        },
+      ]);
+    await irAPlacas(crearServiciosDePrueba({ placas: { vincular }, cuentas: { sitiosYPuertas } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Vincular la placa AA:BB:CC:00:11:33' }),
+    );
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.click(within(dialogo).getByLabelText('Cuenta'));
+    await userEvent.click(
+      await screen.findByRole('option', { name: 'AGR · Agroindustrial Norte' }),
+    );
+    await userEvent.click(within(dialogo).getByLabelText('Puerta'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Planta Warnes · Garaje' }));
+    // Por omisión es una sola placa; aquí es la del lector de afuera.
+    expect(within(dialogo).getByRole('button', { name: 'Una sola placa' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Lector de afuera' }));
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Pedir vínculo' }));
+    await waitFor(() => {
+      expect(vincular).toHaveBeenCalledWith('2', {
+        cuentaId: '1',
+        puertaId: '3',
+        nombre: 'Garaje',
+        sentido: 'entrada',
+      });
+    });
   });
 
   it('cancelar el vínculo de una placa que espera su botón envía su id', async () => {

@@ -22,6 +22,13 @@ import {
 } from './repository.js';
 
 export {
+  crearServicioDeEstadisticasDeAperturaManual,
+  type CuentaDeEstadistica,
+  type EstadisticasDeAperturaManual,
+  type ServicioDeEstadisticasDeAperturaManual,
+} from './estadisticas-apertura-manual.js';
+
+export {
   diaLocal,
   inicioDelDiaLocal,
   inicioDelMesLocal,

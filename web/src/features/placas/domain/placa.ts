@@ -16,6 +16,13 @@ export type SensorDePuerta = 'abierta' | 'cerrada' | 'sin_sensor';
 /** Nivel del pin del sensor con la puerta ABIERTA; la polaridad se confirma en campo. */
 export type NivelAbierto = 'alto' | 'bajo';
 
+/**
+ * Dónde está el lector de la placa (ADR 0035): `entrada` es el del lado de afuera, `salida` el de adentro y
+ * `ambos` una sola placa para la puerta. Con dos placas en la misma puerta, cada una lleva el suyo.
+ */
+export type UbicacionDelLector = 'ambos' | 'entrada' | 'salida';
+export const UBICACIONES_DEL_LECTOR: readonly UbicacionDelLector[] = ['ambos', 'entrada', 'salida'];
+
 export interface SensorConfigurado {
   instalado: boolean;
   nivelAbierto: NivelAbierto;

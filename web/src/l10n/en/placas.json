@@ -100,5 +100,12 @@
   "sensorBajo": "Low",
   "sensorPolaridad": "The polarity is confirmed in the field: with the door open, check that the chosen level is the one reaching the board before saving.",
   "sensorGuardar": "Save",
-  "sensorGuardando": "Saving…"
+  "sensorGuardando": "Saving…",
+  "ubicacionLector": "Reader location",
+  "ubicacion": {
+    "ambos": "A single board",
+    "entrada": "Outside reader",
+    "salida": "Inside reader"
+  },
+  "ubicacionAyuda": "If the door has a reader outside and another inside, link one board for each. With a single board, leave it on “A single board”."
 }

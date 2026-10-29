@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { EncabezadoPagina } from '../../../../shared/ui/molecules/EncabezadoPagina';
+import { AperturaManualDelPanel } from '../AperturaManualDelPanel';
 import { GraficasDelResumen } from '../GraficasDelResumen';
 import { UsoPorPlan } from '../UsoPorPlan';
 import styles from './EstadisticasPage.module.css';
@@ -12,6 +13,7 @@ export function EstadisticasPage() {
       <EncabezadoPagina titulo={t('titulo')} subtitulo={t('subtitulo')} />
       <div className={styles.contenido}>
         <GraficasDelResumen />
+        <AperturaManualDelPanel />
         <UsoPorPlan />
       </div>
     </>
