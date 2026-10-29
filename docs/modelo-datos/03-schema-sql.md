@@ -1130,8 +1130,10 @@ ALTER TABLE dispositivos
 
 -- add_apertura_manual_a_puertas: la habilita el administrador de la cuenta
 ALTER TABLE puertas
-  ADD COLUMN apertura_manual_habilitada TINYINT(1) NOT NULL DEFAULT 0 AFTER activo,
-  ADD COLUMN apertura_manual_at DATETIME(3) NULL AFTER apertura_manual_habilitada;
+  ADD COLUMN apertura_manual_entrada TINYINT(1) NOT NULL DEFAULT 1 AFTER activo,
+  ADD COLUMN apertura_manual_salida TINYINT(1) NOT NULL DEFAULT 1 AFTER apertura_manual_entrada;
+-- Por omisión 1: una cuenta nueva nace con el modo manual activo. Al quedar un sentido sin lector propio, la API
+-- enciende su columna una vez (queda en la bitácora); después el administrador puede apagarla.
 
 -- add_apertura_manual_a_lecturas: método 'manual', quién y hacia dónde
 -- En MariaDB cambiar un CHECK exige ALGORITHM=COPY (bloquea las escrituras); con datos de prueba no importa.

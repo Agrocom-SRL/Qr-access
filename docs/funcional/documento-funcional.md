@@ -47,9 +47,9 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-09: Como administrador o guardia (permiso `organizacion.puerta.supervisar`), veo qué dispositivos están en línea y cuáles no reportan latido (sin latido en 3 minutos = sin conexión).
 - HU-10: Como administrador, revoco un dispositivo.
 
-- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta (ADR 0035).
+- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta y por sentido (entrar o salir), o su uso total, aunque el sentido tenga lector QR; una cuenta nueva nace con el modo manual activo, y un sentido sin lector se activa solo (ADR 0035).
 - HU-19: Como usuario de cualquier rol, desde la app móvil o web abro una puerta habilitada de mi cuenta, entrando o saliendo, sin QR; veo si la placa la abrió o falló.
-- HU-20: Como administrador, registro hasta dos placas por puerta, una de entrada y otra de salida (o una sola para ambos sentidos).
+- HU-20: Como administrador, registro hasta dos placas por puerta, una de entrada y otra de salida (o una sola para ambos sentidos); si un sentido no tiene placa, su apertura manual usa la de la puerta.
 - HU-21: Como super admin, veo en el panel el uso de la apertura manual: total, por puerta y por cuenta, frecuencia, cuentas con el modo activo y fallos.
 
 ### 4.5 Generación de QR (ADR 0008)
@@ -83,7 +83,7 @@ Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (
 | RF-08 | La apertura física por pulsador de salida no depende de la red. |
 | RF-09 | Toda modificación relevante queda en la bitácora con autor, fecha, valores antes/después y origen. |
 | RF-10 | Los límites del plan los hace cumplir la API (ADR 0017). |
-| RF-11 | La apertura manual solo existe en las puertas que el administrador de la cuenta habilitó; la API valida al usuario como valida un QR y la orden vence en segundos y se entrega una sola vez (ADR 0035). |
+| RF-11 | La apertura manual solo existe en las puertas y sentidos que el administrador de la cuenta tiene habilitados (por omisión, todos); la API valida al usuario como valida un QR y la orden vence en segundos y se entrega una sola vez (ADR 0035). |
 | RF-12 | Toda petición de apertura manual, aceptada o rechazada, queda como lectura con su usuario, sentido y motivo, y el resultado de la placa queda en la confirmación de apertura. |
 
 ## 6. Criterios de aceptación transversales

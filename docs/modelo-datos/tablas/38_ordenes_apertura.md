@@ -13,8 +13,8 @@ La orden de abrir que la API le da a una placa cuando un usuario pide la apertur
 | `id` | `BIGINT UNSIGNED` | no | PK |
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
 | `puerta_id` | `BIGINT UNSIGNED` | no | FK a `puertas` |
-| `dispositivo_id` | `BIGINT UNSIGNED` | no | FK a `dispositivos`: la placa que debe abrir (la de ese sentido) |
-| `sentido` | `VARCHAR(10)` | no | `entrada` o `salida` |
+| `dispositivo_id` | `BIGINT UNSIGNED` | no | FK a `dispositivos`: la placa que debe abrir (la de ese sentido o, si no tiene, la de la puerta) |
+| `sentido` | `VARCHAR(10)` | no | `entrada` o `salida`: lo que pidió la persona. No es el destino: si ese sentido no tiene placa propia, la orden va a la placa de la puerta |
 | `usuario_id` | `BIGINT UNSIGNED` | no | FK a `usuarios`: quien lo pidió |
 | `lectura_id` | `BIGINT UNSIGNED` | no | FK a `lecturas`: el intento `permitido` que la originó |
 | `estado` | `VARCHAR(12)` | no | `pendiente`, `entregada`, `ejecutada`, `fallida` o `vencida` |
@@ -27,7 +27,7 @@ La orden de abrir que la API le da a una placa cuando un usuario pide la apertur
 
 ## Índices y restricciones
 
-- `uq_ordenes_apertura_vigente` `(dispositivo_id, vigente_clave)`: una sola orden viva por placa; otra petición recibe la misma orden, no se acumulan pulsos.
+- `uq_ordenes_apertura_vigente` `(dispositivo_id, vigente_clave)`: una sola orden viva por placa; la petición repetida del mismo usuario recibe la misma orden y la de otro usuario `409 manual.orden_en_curso`; no se acumulan pulsos.
 - `uq_ordenes_apertura_clave` `(tenant_id, usuario_id, clave_idempotencia)`
 - `idx_ordenes_apertura_entrega` `(dispositivo_id, estado, vence_at)`: lo que consulta la placa.
 - `idx_ordenes_apertura_vencimiento` `(estado, vence_at)`: lo que barre el proceso que vence órdenes.

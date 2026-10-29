@@ -16,8 +16,8 @@ Puerta con cerradura de pulso de un sitio.
 | `nombre` | `VARCHAR(120)` | no |  |
 | `segundos_apertura` | `TINYINT UNSIGNED` | no |  |
 | `activo` | `TINYINT(1)` | no | Desactivar no es borrar |
-| `apertura_manual_habilitada` | `TINYINT(1)` | no | **Configuración** (ADR 0035): 1 = los usuarios de la cuenta pueden abrir esta puerta desde la app sin QR. Por omisión 0. Solo la cambia el administrador de la cuenta (`accesos.apertura_manual.configurar`); pasa por la bitácora |
-| `apertura_manual_at` | `DATETIME(3)` | sí | Cuándo se habilitó por última vez; NULL mientras esté deshabilitada |
+| `apertura_manual_entrada` | `TINYINT(1)` | no | **Configuración** (ADR 0035): 1 = los usuarios de la cuenta pueden pedir desde la app **entrar** por esta puerta sin QR. Por omisión 1 (una cuenta nueva nace con el modo manual activo). Solo la cambia el administrador de la cuenta (`accesos.apertura_manual.configurar`) o la API al quedar el sentido sin lector; pasa por la bitácora |
+| `apertura_manual_salida` | `TINYINT(1)` | no | Igual, para **salir**. «Uso total» = las dos columnas |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` (skill `modelo-datos`) |
 
 ## Índices y restricciones
