@@ -107,3 +107,50 @@ export const respuestaDeEventosDePlataforma = esquemaListado(
     repeticiones_rechazadas: z.number().int(),
   }),
 );
+
+/** Cómo se usó la apertura manual (ADR 0035) en los últimos días, para el panel de plataforma. */
+export const respuestaDeAperturaManual = z.object({
+  /** Cuántos días mira la ventana (hoy incluido). */
+  dias: z.number().int(),
+  ordenadas: z.number().int(),
+  rechazadas: z.number().int(),
+  /** Aperturas por QR permitidas en la misma ventana, para comparar los dos caminos. */
+  por_qr: z.number().int(),
+  usuarios: z.number().int(),
+  cuentas_que_la_usaron: z.number().int(),
+  ejecucion: z.object({
+    ejecutadas: z.number().int(),
+    fallidas: z.number().int(),
+    sin_confirmacion: z.number().int(),
+  }),
+  por_puerta: z.array(
+    z.object({
+      cuenta: esquemaCuenta,
+      puerta: z.object({ id: z.string(), nombre: z.string(), sitio: z.string() }),
+      total: z.number().int(),
+      rechazadas: z.number().int(),
+    }),
+  ),
+  por_cuenta: z.array(
+    z.object({
+      cuenta: esquemaCuenta,
+      total: z.number().int(),
+      rechazadas: z.number().int(),
+      usuarios: z.number().int(),
+    }),
+  ),
+  /** Un elemento por cada día de la ventana, con ceros donde no hubo aperturas. */
+  por_dia: z.array(
+    z.object({ dia: z.string(), ordenadas: z.number().int(), rechazadas: z.number().int() }),
+  ),
+  /** Las 24 horas del día local (0–23) con ceros donde no hubo aperturas. */
+  por_hora: z.array(z.object({ hora: z.number().int(), total: z.number().int() })),
+  configuracion: z.object({
+    puertas: z.number().int(),
+    habilitadas: z.number().int(),
+    /** Habilitadas y con al menos una placa en servicio: las que de verdad ofrecen el botón. */
+    disponibles: z.number().int(),
+    cuentas: z.number().int(),
+    cuentas_con_modo_activo: z.number().int(),
+  }),
+});

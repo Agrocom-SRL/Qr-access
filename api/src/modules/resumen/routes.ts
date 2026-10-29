@@ -1,11 +1,13 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { permisoDePlataforma } from '../../plugins/permisos.js';
+import { ejecutar as verAperturaManual } from './actions/ver-apertura-manual.js';
 import { ejecutar as verEstadisticas } from './actions/ver-estadisticas.js';
 import { ejecutar as verResumen } from './actions/ver-resumen.js';
 import { ejecutar as listarLecturas } from './actions/listar-lecturas.js';
 import {
   consultaDeEventosDePlataforma,
+  respuestaDeAperturaManual,
   respuestaDeEstadisticas,
   respuestaDeEventosDePlataforma,
   respuestaDeResumen,
@@ -31,6 +33,22 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         preHandler: permisoDePlataforma('resumen.panel.ver'),
       },
       () => verEstadisticas(pool),
+    );
+    app.get(
+      '/plataforma/apertura-manual',
+      {
+        schema: {
+          tags: ['plataforma'],
+          description:
+            'Uso de la apertura manual desde la app (ADR 0035) en los últimos 30 días: total, por puerta y por cuenta, ' +
+            'frecuencia por día y por hora, cuentas con el modo activo, proporción contra el QR y cómo terminaron las ' +
+            'órdenes.',
+          response: { 200: respuestaDeAperturaManual },
+        },
+        config: { acceso: 'plataforma' },
+        preHandler: permisoDePlataforma('resumen.panel.ver'),
+      },
+      () => verAperturaManual(pool),
     );
     // `/plataforma/lecturas` es la ruta vigente; `/plataforma/eventos-acceso` (nombre anterior) sigue con el mismo
     // handler y queda obsoleta en el OpenAPI. Retiro propuesto (SUPUESTO): 2027-06-30, ver accesos/routes.ts.
