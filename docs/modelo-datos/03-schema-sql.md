@@ -1120,7 +1120,7 @@ ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);
 Migraciones **propuestas** (se escriben en la ola AM1; este bloque es el diseño y se ajusta si la migración cambia). Los datos de local y de producción son de prueba: se puede reestructurar y volver a sembrar.
 
 ```sql
--- add_sentido_a_dispositivos: hasta dos placas por puerta, una por sentido
+-- add_sentido_a_dispositivos: hasta dos placas por puerta, una por ubicación del lector (afuera/adentro)
 ALTER TABLE dispositivos
   ADD COLUMN sentido VARCHAR(10) NOT NULL DEFAULT 'ambos' AFTER placa_id,
   ADD CONSTRAINT ck_dispositivos_sentido CHECK (sentido IN ('entrada', 'salida', 'ambos')),
@@ -1130,23 +1130,20 @@ ALTER TABLE dispositivos
 
 -- add_apertura_manual_a_puertas: la habilita el administrador de la cuenta
 ALTER TABLE puertas
-  ADD COLUMN apertura_manual_entrada TINYINT(1) NOT NULL DEFAULT 1 AFTER activo,
-  ADD COLUMN apertura_manual_salida TINYINT(1) NOT NULL DEFAULT 1 AFTER apertura_manual_entrada;
+  ADD COLUMN apertura_manual TINYINT(1) NOT NULL DEFAULT 1 AFTER activo;
 -- Las puertas nuevas toman cuentas.apertura_manual_por_omision. Nada las enciende solo después de que el
--- administrador las apagó; la disponibilidad real exige además una placa en servicio de ese sentido.
+-- administrador las apagó; la disponibilidad real exige además al menos una placa en servicio en la puerta.
 
 -- add_apertura_manual_a_cuentas: valor inicial para las puertas que se registren
 ALTER TABLE cuentas
   ADD COLUMN apertura_manual_por_omision TINYINT(1) NOT NULL DEFAULT 1;
 
--- add_apertura_manual_a_lecturas: método 'manual', quién y hacia dónde
+-- add_apertura_manual_a_lecturas: método 'manual' y quién lo pidió (la app no sabe de sentidos)
 -- En MariaDB cambiar un CHECK exige ALGORITHM=COPY (bloquea las escrituras); con datos de prueba no importa.
 ALTER TABLE lecturas
   ADD COLUMN usuario_id BIGINT UNSIGNED NULL AFTER qr_acceso_id,
-  ADD COLUMN sentido VARCHAR(10) NULL AFTER metodo,
   DROP CONSTRAINT ck_eventos_acceso_metodo,
   ADD CONSTRAINT ck_lecturas_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada', 'manual')),
-  ADD CONSTRAINT ck_lecturas_sentido CHECK (sentido IS NULL OR sentido IN ('entrada', 'salida')),
   ADD CONSTRAINT fk_lecturas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   ADD KEY idx_lecturas_manual (tenant_id, metodo, ocurrido_at);
 
@@ -1155,8 +1152,7 @@ CREATE TABLE ordenes_apertura (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   tenant_id BIGINT UNSIGNED NOT NULL,
   puerta_id BIGINT UNSIGNED NOT NULL,
-  dispositivo_id BIGINT UNSIGNED NOT NULL,
-  sentido VARCHAR(10) NOT NULL,
+  dispositivo_id BIGINT UNSIGNED NULL,
   usuario_id BIGINT UNSIGNED NOT NULL,
   lectura_id BIGINT UNSIGNED NOT NULL,
   estado VARCHAR(12) NOT NULL DEFAULT 'pendiente',
@@ -1174,10 +1170,9 @@ CREATE TABLE ordenes_apertura (
   CONSTRAINT fk_ordenes_apertura_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_ordenes_apertura_lectura FOREIGN KEY (lectura_id) REFERENCES lecturas (id),
   CONSTRAINT ck_ordenes_apertura_estado CHECK (estado IN ('pendiente', 'entregada', 'ejecutada', 'fallida', 'vencida')),
-  CONSTRAINT ck_ordenes_apertura_sentido CHECK (sentido IN ('entrada', 'salida')),
-  UNIQUE KEY uq_ordenes_apertura_vigente (dispositivo_id, vigente_clave),
+  UNIQUE KEY uq_ordenes_apertura_vigente (puerta_id, vigente_clave),
   UNIQUE KEY uq_ordenes_apertura_clave (tenant_id, usuario_id, clave_idempotencia),
-  KEY idx_ordenes_apertura_entrega (dispositivo_id, estado, vence_at),
+  KEY idx_ordenes_apertura_entrega (puerta_id, estado, vence_at),
   KEY idx_ordenes_apertura_vencimiento (estado, vence_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```

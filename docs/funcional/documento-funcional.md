@@ -47,9 +47,9 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-09: Como administrador o guardia (permiso `organizacion.puerta.supervisar`), veo qué dispositivos están en línea y cuáles no reportan latido (sin latido en 3 minutos = sin conexión).
 - HU-10: Como administrador, revoco un dispositivo.
 
-- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta y por sentido (entrar o salir), o su uso total, aunque el sentido tenga lector QR; la cuenta nace con el modo manual activo, las puertas nuevas lo heredan y nada lo enciende solo si lo apagué. Donde no hay placa no hay interruptor y la app no muestra el botón (ADR 0035).
-- HU-19: Como usuario de cualquier rol, desde la app móvil o web abro una puerta habilitada de mi cuenta, entrando o saliendo, sin QR; veo si la placa la abrió o falló.
-- HU-20: Como administrador, registro hasta dos placas por puerta, una de entrada y otra de salida (o una sola para ambos sentidos); una placa `ambos` abre la misma puerta para entrar y salir por QR y por modo manual. Si la salida es otra puerta sin placa, no se puede abrir.
+- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta, o en todas a la vez, aunque la puerta tenga lector QR; la cuenta nace con el modo manual activo, las puertas nuevas lo heredan y nada lo enciende solo si lo apagué. Donde no hay placa no hay interruptor y la app no muestra la puerta (ADR 0035).
+- HU-19: Como usuario de cualquier rol, desde la app móvil o web elijo una de las puertas disponibles de mi cuenta y la abro sin QR con el botón «Abrir puerta»; veo si la placa la abrió o falló. No elijo entrada ni salida: la app no lo sabe.
+- HU-20: Como administrador, registro hasta dos placas por puerta (el lector de afuera y el de adentro, que accionan la misma cerradura) o una sola; cualquiera de las placas puede ejecutar una apertura manual y basta con una. Una puerta sin placa no se puede abrir por ningún método.
 - HU-21: Como super admin, veo en el panel el uso de la apertura manual: total, por puerta y por cuenta, frecuencia, cuentas con el modo activo y fallos.
 
 ### 4.5 Generación de QR (ADR 0008)
@@ -67,7 +67,7 @@ Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (
 - HU-15: Como administrador, consulto las lecturas (intentos permitidos y rechazados) con filtros por puerta, usuario generador, resultado y fecha.
 - HU-16: Como usuario, veo las lecturas de los QR que generé.
 - HU-17: Como super admin, veo el uso de QR y de dispositivos por cuenta.
-- Las aperturas manuales también son lecturas (`metodo = manual`), con el usuario y el sentido (ADR 0035 §6).
+- Las aperturas manuales también son lecturas (`metodo = manual`), con el usuario que las pidió y sin sentido (ADR 0035 §6).
 
 ## 5. Reglas funcionales
 
@@ -83,8 +83,8 @@ Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (
 | RF-08 | La apertura física por pulsador de salida no depende de la red. |
 | RF-09 | Toda modificación relevante queda en la bitácora con autor, fecha, valores antes/después y origen. |
 | RF-10 | Los límites del plan los hace cumplir la API (ADR 0017). |
-| RF-11 | La apertura manual solo existe en las puertas y sentidos que el administrador de la cuenta tiene habilitados (por omisión, todos); la API valida al usuario como valida un QR y la orden vence en segundos y se entrega una sola vez (ADR 0035). |
-| RF-12 | Toda petición de apertura manual, aceptada o rechazada, queda como lectura con su usuario, sentido y motivo, y el resultado de la placa queda en la confirmación de apertura. |
+| RF-11 | La apertura manual solo existe en las puertas que el administrador de la cuenta tiene habilitadas (por omisión, todas) y que tienen una placa en servicio; la API valida al usuario como valida un QR y la orden, que es de la puerta, vence en segundos y la ejecuta una sola placa (ADR 0035). |
+| RF-12 | Toda petición de apertura manual, aceptada o rechazada, queda como lectura con su usuario y su motivo, y el resultado de la placa queda en la confirmación de apertura. |
 
 ## 6. Criterios de aceptación transversales
 
