@@ -92,6 +92,8 @@ class _HojaAcercaDe extends ConsumerWidget {
                 FilaClaveValor(
                   clave: l10n.perfilAcercaTerminos,
                   icono: Icons.description_outlined,
+                  invertida: true,
+                  claveEnfatizada: true,
                   alTocar: () => abrirDocumentoLegal(
                     context,
                     titulo: l10n.perfilAcercaTerminos,
@@ -102,6 +104,8 @@ class _HojaAcercaDe extends ConsumerWidget {
                 FilaClaveValor(
                   clave: l10n.perfilAcercaPrivacidad,
                   icono: Icons.privacy_tip_outlined,
+                  invertida: true,
+                  claveEnfatizada: true,
                   conSeparador: false,
                   alTocar: () => abrirDocumentoLegal(
                     context,

@@ -78,6 +78,20 @@ void main() {
     expect(find.text(textos.perfilAcercaDerechos(2026)), findsOneWidget);
   });
 
+  testWidgets('Acerca de la app ofrece los términos y la privacidad', (
+    tester,
+  ) async {
+    await _montar(tester);
+    final textos = textosEn(tester);
+
+    await tester.ensureVisible(find.text(textos.perfilAcercaTitulo));
+    await tester.tap(find.text(textos.perfilAcercaTitulo));
+    await tester.pumpAndSettle();
+
+    expect(find.text(textos.perfilAcercaTerminos), findsOneWidget);
+    expect(find.text(textos.perfilAcercaPrivacidad), findsOneWidget);
+  });
+
   testWidgets('no lleva título de pantalla: empieza por el usuario', (
     tester,
   ) async {
