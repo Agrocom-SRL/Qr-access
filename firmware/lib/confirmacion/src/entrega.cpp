@@ -14,9 +14,12 @@ uint32_t Entregas::esperaTras(uint8_t intentos) {
   return espera > ESPERA_MAXIMA_MS ? ESPERA_MAXIMA_MS : espera;
 }
 
-int Entregas::buscar(const char* eventoId) const {
+int Entregas::buscar(const char* eventoId, bool manual) const {
   for (uint8_t i = 0; i < cantidad_; ++i) {
-    if (strncmp(entradas_[i].informe.eventoId, eventoId, MAX_EVENTO_ID) == 0) return i;
+    if (entradas_[i].informe.manual == manual &&
+        strncmp(entradas_[i].informe.eventoId, eventoId, MAX_EVENTO_ID) == 0) {
+      return i;
+    }
   }
   return -1;
 }
@@ -27,7 +30,7 @@ void Entregas::quitar(uint8_t indice) {
 }
 
 bool Entregas::agregar(const Informe& informe, uint32_t ordenMs) {
-  if (!eventoIdValido(informe.eventoId) || buscar(informe.eventoId) >= 0) return false;
+  if (!eventoIdValido(informe.eventoId) || buscar(informe.eventoId, informe.manual) >= 0) return false;
   if (cantidad_ == CAPACIDAD_ENTREGAS) quitar(0);
   Entrada& entrada = entradas_[cantidad_++];
   entrada = Entrada{};
@@ -66,15 +69,15 @@ const Informe* Entregas::debeEnviar(uint32_t ahoraMs) {
   return nullptr;
 }
 
-void Entregas::enviado(const char* eventoId, uint32_t ahoraMs) {
-  const int indice = buscar(eventoId);
+void Entregas::enviado(const char* eventoId, uint32_t ahoraMs, bool manual) {
+  const int indice = buscar(eventoId, manual);
   if (indice < 0) return;
   entradas_[indice].enVuelo = true;
   entradas_[indice].ultimoIntentoMs = ahoraMs;
 }
 
-void Entregas::alResponder(const char* eventoId, int http, uint32_t ahoraMs) {
-  const int indice = buscar(eventoId);
+void Entregas::alResponder(const char* eventoId, int http, uint32_t ahoraMs, bool manual) {
+  const int indice = buscar(eventoId, manual);
   if (indice < 0) return;  // llegó tarde: ya se descartó
   if (reintentable(http)) {
     fallo(static_cast<uint8_t>(indice), ahoraMs);

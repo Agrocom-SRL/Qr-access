@@ -5,6 +5,7 @@
 #include <confirmacion.h>
 #include <entrega.h>
 #include <esp_task_wdt.h>
+#include <ordenes.h>
 #include <puerta.h>
 #include <pulsacion.h>
 #include <temporizador.h>
@@ -24,7 +25,9 @@ namespace {
 
 constexpr uint32_t WATCHDOG_S = 8;
 constexpr uint32_t PERIODO_LATIDO_MS = 60000;
-constexpr uint32_t PERIODO_CONFIGURACION_MS = 300000;
+// Cada minuto: el interruptor de la apertura manual (`apertura_manual`) le llega a la placa en ese tiempo
+// (ADR 0035 §5). La API además rechaza las órdenes con el modo apagado, así que no depende de esto.
+constexpr uint32_t PERIODO_CONFIGURACION_MS = 60000;
 constexpr uint32_t REINTENTO_CONFIGURACION_MS = 5000;
 // Sin vínculo la placa se anuncia cada 30 s (ADR 0026); el servidor limita los intentos fallidos.
 // Mientras espera que pulsen su botón lo hace cada 5 s, para enterarse pronto de que se canceló
@@ -49,6 +52,9 @@ char linea[puerta::MAX_QR + 1];
 // apertura ni se informa el estado del sensor (no se afirma `sin_sensor` sin saberlo).
 confirmacion::Sensor sensor;
 bool configuracionLeida = false;
+// Interruptor de la apertura manual de la puerta (ADR 0035), tal como lo dictó la última configuración.
+// Apagado hasta saberlo: sin configuración la placa no pregunta por órdenes.
+bool aperturaManual = false;
 // Plazo por omisión: segundos REALES de apertura (el tope vigente) + 5 s, igual que el servidor.
 // Lo reemplaza la configuración.
 constexpr uint16_t MARGEN_CONFIRMACION_S = 5;
@@ -81,15 +87,15 @@ void recogerInformes(uint32_t ahoraMs) {
 
 // El servidor ordenó abrir y se actuó sobre el relé: empieza a observar si la puerta se abre.
 // Corre DESPUÉS de accionar el relé y no espera nada.
-void iniciarObservacion(const char* eventoId, bool releAccionado, uint32_t ahoraMs) {
+void iniciarObservacion(const char* eventoId, bool releAccionado, uint32_t ahoraMs, bool manual = false) {
   if (releAccionado) {
     // Sin configuración no se sabe si hay sensor: no se observa (el servidor lo toma como
     // «sin respuesta»), en vez de informar `sin_sensor` por un valor por omisión.
     if (!configuracionLeida) return;
     observador.iniciar(eventoId, ahoraMs, static_cast<uint32_t>(esperaConfirmacionS) * 1000U, sensor,
-                       leerSensor());
+                       leerSensor(), manual);
   } else {
-    observador.releNoAccionado(eventoId);
+    observador.releNoAccionado(eventoId, manual);
   }
   recogerInformes(ahoraMs);
 }
@@ -151,6 +157,29 @@ void atenderAnuncio(const respuesta::Anuncio& r, uint32_t ahoraMs) {
   }
 }
 
+// Una orden de apertura manual de la app (ADR 0035). Abre solo si sigue vigente (su plazo es relativo y
+// corre desde que llegó la respuesta) y con el relé libre; si no, se descarta SIN abrir y sin informar:
+// el servidor la da por vencida. Esto es lo único que abre por esta vía: ni un error, ni un 204, ni una
+// respuesta mal formada llegan hasta aquí (invariante 2).
+void atenderOrden(const api::Respuesta& r, uint32_t ahoraMs) {
+  // También con el 401 de la credencial: la tarea ya publicó y aquí solo se reanuda.
+  if (r.orden.estado == respuesta::Orden::Estado::Recibida) {
+    if (!ordenes::vigente(r.recibidaEnMs, r.orden.validaPorMs, ahoraMs)) {
+      Serial.println("[orden] vencida antes de ejecutarse: no se abre");
+    } else {
+      const puerta::Acciones acciones = maquina.alRecibirOrdenManual(r.orden.segundos, ahoraMs);
+      const bool accionado = ejecutar(acciones, ahoraMs);
+      if (acciones.activarCerradura) {
+        Serial.printf("[orden] apertura manual: %u s\n", r.orden.segundos);
+        iniciarObservacion(r.orden.id, accionado, ahoraMs, true);
+      } else {
+        Serial.println("[orden] la puerta esta ocupada: no se abre");
+      }
+    }
+  }
+  api::reanudarOrdenes();
+}
+
 void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
   // La API rechazó la credencial (cuenta suspendida, dispositivo liberado): no se valida más
   // hasta que el servidor confirme el vínculo (falla segura).
@@ -175,11 +204,13 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
         // Sensor y plazo: lo que dicta el servidor (la polaridad real está pendiente de confirmar).
         sensor = r.config.sensor;
         configuracionLeida = true;
+        aperturaManual = r.config.aperturaManual;
         esperaConfirmacionS = r.config.esperaConfirmacionS != 0
                                   ? r.config.esperaConfirmacionS
                                   : maquina.maxAperturaS() + MARGEN_CONFIRMACION_S;
-        Serial.printf("[config] apertura maxima: %u s, sensor %s, espera %u s\n", maquina.maxAperturaS(),
-                      sensor.instalado ? "instalado" : "no instalado", esperaConfirmacionS);
+        Serial.printf("[config] apertura maxima: %u s, sensor %s, espera %u s, apertura manual %s\n",
+                      maquina.maxAperturaS(), sensor.instalado ? "instalado" : "no instalado",
+                      esperaConfirmacionS, aperturaManual ? "si" : "no");
       } else {
         Serial.printf("[config] descarga fallida (http %d)\n", r.http);
       }
@@ -192,10 +223,13 @@ void atenderRespuesta(const api::Respuesta& r, uint32_t ahoraMs) {
       break;
     case api::Tipo::Informe:
       // 204 = registrado; reintentar solo ante falta de red, 429 o 5xx (lo decide `entregas`).
-      entregas.alResponder(r.eventoId, r.http, ahoraMs);
+      entregas.alResponder(r.eventoId, r.http, ahoraMs, r.manual);
       if (!confirmacion::reintentable(r.http) && !confirmacion::entregado(r.http)) {
         Serial.printf("[confirmacion] informe descartado (http %d)\n", r.http);
       }
+      break;
+    case api::Tipo::Orden:
+      atenderOrden(r, ahoraMs);
       break;
     case api::Tipo::Anuncio:
       atenderAnuncio(r.anuncio, ahoraMs);
@@ -231,7 +265,7 @@ void segundoPlano(uint32_t ahoraMs) {
   if (const confirmacion::Informe* informe = entregas.debeEnviar(ahoraMs)) {
     // Se marca el intento aunque no entre en la cola: sin esto se repetiría en cada vuelta de loop().
     api::enviarInforme(*informe);
-    entregas.enviado(informe->eventoId, ahoraMs);
+    entregas.enviado(informe->eventoId, ahoraMs, informe->manual);
   }
   if (latido.vencio()) {
     const confirmacion::Lectura lectura = leerSensor();
@@ -309,6 +343,10 @@ void loop() {
 
   api::Respuesta respuesta;
   while (api::siguienteRespuesta(respuesta)) atenderRespuesta(respuesta, ahora);
+  // Apertura manual: solo se pregunta por órdenes con el vínculo operando, red lista, configuración
+  // leída y el interruptor de la puerta encendido (ADR 0035 §5).
+  api::habilitarOrdenes(
+      ordenes::debePreguntar(estadoVinculo.opera(), red::lista(), configuracionLeida, aperturaManual));
 
   ejecutar(maquina.tick(ahora), ahora);
   // Observar el sensor es leer un pin: no bloquea. Los informes salen en segundoPlano().

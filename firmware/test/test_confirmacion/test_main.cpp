@@ -207,8 +207,50 @@ void test_no_bloquea_cada_tick_retorna_y_la_observacion_avanza_con_el_tiempo() {
   TEST_ASSERT_EQUAL(Resultado::Fallida, i.resultado);
 }
 
+void test_el_informe_de_una_orden_manual_lo_marca() {
+  Observador o;
+  o.iniciar("7", 1000, 11000, sensorInstalado(), Lectura::Cerrada, true);
+  o.tick(2000, Lectura::Abierta);
+  Informe i;
+  TEST_ASSERT_TRUE(o.siguiente(i));
+  TEST_ASSERT_TRUE(i.manual);
+  TEST_ASSERT_EQUAL(Resultado::Ejecutada, i.resultado);
+}
+
+void test_una_apertura_por_qr_no_queda_marcada_como_manual() {
+  Observador o;
+  o.iniciar("7", 1000, 11000, sensorInstalado(), Lectura::Cerrada, true);
+  o.tick(2000, Lectura::Abierta);
+  Informe i;
+  o.siguiente(i);
+  o.iniciar("8", 5000, 11000, sensorInstalado(), Lectura::Cerrada);  // la marca no se arrastra
+  o.tick(5500, Lectura::Abierta);
+  TEST_ASSERT_TRUE(o.siguiente(i));
+  TEST_ASSERT_FALSE(i.manual);
+}
+
+void test_rele_no_accionado_de_una_orden_manual_la_marca() {
+  Observador o;
+  o.releNoAccionado("9", true);
+  Informe i;
+  TEST_ASSERT_TRUE(o.siguiente(i));
+  TEST_ASSERT_TRUE(i.manual);
+  TEST_ASSERT_EQUAL(Resultado::Fallida, i.resultado);
+  TEST_ASSERT_EQUAL(Causa::ReleNoAccionado, i.causa);
+}
+
+void test_vocabulario_de_la_ruta_de_ordenes() {
+  TEST_ASSERT_EQUAL_STRING("ejecutada", textoDeOrden(Resultado::Ejecutada));
+  TEST_ASSERT_EQUAL_STRING("fallida", textoDeOrden(Resultado::Fallida));
+  TEST_ASSERT_EQUAL_STRING("sin_confirmacion", textoDeOrden(Resultado::SinSensor));
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_el_informe_de_una_orden_manual_lo_marca);
+  RUN_TEST(test_una_apertura_por_qr_no_queda_marcada_como_manual);
+  RUN_TEST(test_rele_no_accionado_de_una_orden_manual_la_marca);
+  RUN_TEST(test_vocabulario_de_la_ruta_de_ordenes);
   RUN_TEST(test_por_omision_el_sensor_no_esta_instalado_y_la_polaridad_es_alto);
   RUN_TEST(test_sin_sensor_no_se_interpreta_el_pin);
   RUN_TEST(test_polaridad_alto_es_abierta);

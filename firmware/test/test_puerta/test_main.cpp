@@ -289,8 +289,51 @@ void test_el_pedido_vence_cuando_la_maquina_abandona() {
   TEST_ASSERT_TRUE(puerta::pedidoVencido(1000, limite));
 }
 
+void test_orden_manual_con_la_puerta_en_reposo_abre_con_el_pulso_acotado() {
+  puerta::Maquina m;
+  m.fijarMaxAperturaS(6);
+  auto a = m.alRecibirOrdenManual(10, 1000);
+  TEST_ASSERT_TRUE(a.activarCerradura);
+  TEST_ASSERT_EQUAL_UINT32(6000, a.msApertura);
+  TEST_ASSERT_EQUAL(puerta::Indicacion::Permitido, a.indicacion);
+  TEST_ASSERT_EQUAL(puerta::Estado::Abierta, m.estado());
+}
+
+void test_orden_manual_termina_su_pulso_solo() {
+  puerta::Maquina m;
+  m.alRecibirOrdenManual(3, 1000);
+  TEST_ASSERT_FALSE(m.tick(3999).desactivarCerradura);
+  TEST_ASSERT_TRUE(m.tick(4000).desactivarCerradura);
+  TEST_ASSERT_EQUAL(puerta::Estado::Reposo, m.estado());
+}
+
+void test_orden_manual_con_la_puerta_abierta_no_reabre() {
+  puerta::Maquina m;
+  m.alRecibirOrdenManual(3, 1000);
+  TEST_ASSERT_FALSE(m.alRecibirOrdenManual(3, 1500).activarCerradura);
+}
+
+void test_orden_manual_durante_una_validacion_se_descarta_sin_abrir() {
+  puerta::Maquina m;
+  m.alLeer("qr", 1000);
+  TEST_ASSERT_EQUAL(puerta::Estado::Validando, m.estado());
+  TEST_ASSERT_FALSE(m.alRecibirOrdenManual(3, 1100).activarCerradura);
+  TEST_ASSERT_EQUAL(puerta::Estado::Validando, m.estado());
+}
+
+void test_orden_manual_con_cero_segundos_no_abre() {
+  puerta::Maquina m;
+  TEST_ASSERT_FALSE(m.alRecibirOrdenManual(0, 1000).activarCerradura);
+  TEST_ASSERT_EQUAL(puerta::Estado::Reposo, m.estado());
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_orden_manual_con_la_puerta_en_reposo_abre_con_el_pulso_acotado);
+  RUN_TEST(test_orden_manual_termina_su_pulso_solo);
+  RUN_TEST(test_orden_manual_con_la_puerta_abierta_no_reabre);
+  RUN_TEST(test_orden_manual_durante_una_validacion_se_descarta_sin_abrir);
+  RUN_TEST(test_orden_manual_con_cero_segundos_no_abre);
   RUN_TEST(test_lectura_pide_validacion_y_no_abre);
   RUN_TEST(test_respuesta_positiva_abre_el_tiempo_pedido);
   RUN_TEST(test_rechazo_no_abre);

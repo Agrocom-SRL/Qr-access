@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include <aprovisionamiento.h>
+#include <ordenes.h>
 #include <tiempo.h>
 
 #include "ca_servidor.h"
@@ -52,6 +53,8 @@ QueueHandle_t validaciones = nullptr;
 QueueHandle_t segundoPlano = nullptr;
 QueueHandle_t respuestas = nullptr;
 volatile uint32_t idVigente = 0;
+volatile bool ordenesHabilitadas = false;  // lo decide loop(); la tarea de órdenes solo lo lee
+volatile bool ordenesPausadas = false;     // hay una orden entregada que loop() aún no decidió
 
 String urlBase;
 char autorizacion[MAX_AUTORIZACION];  // vacío = sin credencial
@@ -111,9 +114,9 @@ Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeout
   return llamada;
 }
 
-void publicar(const Respuesta& r) {
+bool publicar(const Respuesta& r) {
   // Sin lugar en la cola se pierde: una validación perdida vence y no abre.
-  xQueueSend(respuestas, &r, 0);
+  return xQueueSend(respuestas, &r, 0) == pdTRUE;
 }
 
 void atenderValidacion(const PedidoValidacion& pedido) {
@@ -178,6 +181,22 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     r.http = llamar(true, "/api/v1/dispositivos/latidos", json, TIMEOUT_SEGUNDO_PLANO_MS,
                     TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
                  .http;
+  } else if (trabajo.tipo == Tipo::Informe && trabajo.informe.manual) {
+    // Resultado de una orden de apertura manual (ADR 0035): el id va en la ruta y el cuerpo es
+    // estricto. `ejecutada` y `sin_confirmacion` no necesitan causa; `fallida` lleva la suya.
+    JsonDocument cuerpo;
+    cuerpo["resultado"] = confirmacion::textoDeOrden(trabajo.informe.resultado);
+    if (trabajo.informe.resultado == confirmacion::Resultado::Fallida &&
+        trabajo.informe.causa != confirmacion::Causa::Ninguna) {
+      cuerpo["causa"] = confirmacion::texto(trabajo.informe.causa);
+    }
+    String json;
+    serializeJson(cuerpo, json);
+    const String ruta = String("/api/v1/dispositivos/ordenes/") + trabajo.informe.eventoId + "/resultado";
+    r.http = llamar(true, ruta.c_str(), json, TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
+                 .http;
+    memcpy(r.eventoId, trabajo.informe.eventoId, sizeof(r.eventoId));
+    r.manual = true;
   } else if (trabajo.tipo == Tipo::Informe) {
     // Cuerpo estricto del contrato: evento_id, resultado y, si falló, la causa.
     JsonDocument cuerpo;
@@ -201,6 +220,48 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
                                                    llamada.cuerpo.length());
   }
   publicar(r);
+}
+
+// Petición larga de órdenes de apertura manual (ADR 0035 §2). Corre en su propia tarea: la validación
+// de un QR nunca espera detrás de ella. No decide nada: entrega lo recibido a loop() y vuelve a
+// preguntar solo cuando loop() la reanuda. Un fallo, un 204 inmediato o un 429 no se reintentan en
+// bucle (lib/ordenes); y ningún error abre nada.
+void tareaOrdenes(void*) {
+  uint8_t rapidas = 0;
+  for (;;) {
+    if (!ordenesHabilitadas || ordenesPausadas) {
+      rapidas = 0;
+      vTaskDelay(pdMS_TO_TICKS(100));
+      continue;
+    }
+    const uint32_t inicio = millis();
+    const Llamada llamada = llamar(false, "/api/v1/dispositivos/ordenes", String(), TIMEOUT_CONEXION_MS,
+                                   ordenes::ESPERA_LECTURA_MS, true, 5);
+    const uint32_t recibida = millis();
+
+    Respuesta r{Tipo::Orden, 0, llamada.http, puerta::Resultado::invalido(puerta::Motivo::RespuestaInvalida),
+                respuesta::Configuracion{false, 0}, respuesta::Anuncio{}};
+    r.orden = respuesta::interpretarOrden(llamada.http, llamada.cuerpo.c_str(), llamada.cuerpo.length());
+    r.recibidaEnMs = recibida;
+
+    if (r.orden.estado == respuesta::Orden::Estado::Recibida) {
+      // Se pausa ANTES de publicar: loop() podría reanudar en cuanto la vea. Si no cupo en la cola
+      // la orden se pierde (el servidor la vence) y no queda pausada para siempre.
+      ordenesPausadas = true;
+      if (!publicar(r)) ordenesPausadas = false;
+      rapidas = 0;
+      continue;
+    }
+    // Una credencial rechazada sí le importa a loop() (el vínculo); lo demás se calla y se reintenta.
+    if (llamada.http == 401) publicar(r);
+
+    if (llamada.http == 204 && !ordenes::respuestaRapida(recibida - inicio)) {
+      rapidas = 0;  // una espera larga normal sin orden: volver a preguntar de inmediato
+    } else {
+      if (rapidas < 255) ++rapidas;
+      vTaskDelay(pdMS_TO_TICKS(ordenes::esperaTras(rapidas)));
+    }
+  }
 }
 
 void tarea(void*) {
@@ -250,7 +311,12 @@ void iniciar(const config::Dispositivo& dispositivo) {
   segundoPlano = xQueueCreate(2, sizeof(TrabajoSegundoPlano));
   respuestas = xQueueCreate(4, sizeof(Respuesta));
   xTaskCreatePinnedToCore(tarea, "api", 10240, nullptr, 1, nullptr, 0);
+  xTaskCreatePinnedToCore(tareaOrdenes, "ordenes", 10240, nullptr, 1, nullptr, 0);
 }
+
+void habilitarOrdenes(bool habilitada) { ordenesHabilitadas = habilitada; }
+
+void reanudarOrdenes() { ordenesPausadas = false; }
 
 bool validar(uint32_t id, const char* qr, int64_t leidoEn) {
   if (validaciones == nullptr) return false;

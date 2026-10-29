@@ -74,6 +74,12 @@ Acciones Maquina::alResponder(uint32_t id, const Resultado& resultado, uint32_t 
   return acciones;
 }
 
+Acciones Maquina::alRecibirOrdenManual(uint16_t segundos, uint32_t ahoraMs) {
+  if (estado_ != Estado::Reposo || segundos == 0) return Acciones{};
+  const uint16_t acotados = segundos > maxAperturaS_ ? maxAperturaS_ : segundos;
+  return abrir(static_cast<uint32_t>(acotados) * 1000U, ahoraMs, Indicacion::Permitido);
+}
+
 Acciones Maquina::alPulsarSalida(uint32_t ahoraMs) {
   if (estado_ == Estado::Abierta) return Acciones{};
   // Una validación en curso se abandona: su respuesta ya no abrirá nada.

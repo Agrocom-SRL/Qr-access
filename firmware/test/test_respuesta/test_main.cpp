@@ -334,8 +334,92 @@ void test_espera_fuera_de_rango_o_de_otro_tipo_no_vale() {
   TEST_ASSERT_EQUAL_UINT16(600, config("{\"segundos_apertura\":6,\"espera_confirmacion_segundos\":600}").esperaConfirmacionS);
 }
 
+static respuesta::Orden leerOrden(int http, const char* cuerpo) {
+  return respuesta::interpretarOrden(http, cuerpo, cuerpo == nullptr ? 0 : strlen(cuerpo));
+}
+
+void test_orden_valida_trae_id_plazo_y_segundos() {
+  auto o = leerOrden(200, "{\"orden_id\":\"184\",\"valida_por_ms\":13420,\"segundos_apertura\":6}");
+  TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Recibida, o.estado);
+  TEST_ASSERT_EQUAL_STRING("184", o.id);
+  TEST_ASSERT_EQUAL_UINT32(13420, o.validaPorMs);
+  TEST_ASSERT_EQUAL_UINT16(6, o.segundos);
+}
+
+void test_orden_acota_los_segundos_al_tope_duro() {
+  auto o = leerOrden(200, "{\"orden_id\":\"1\",\"valida_por_ms\":1000,\"segundos_apertura\":600}");
+  TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Recibida, o.estado);
+  TEST_ASSERT_EQUAL_UINT16(puerta::MAX_APERTURA_S, o.segundos);
+}
+
+void test_204_es_sin_orden() {
+  TEST_ASSERT_EQUAL(respuesta::Orden::Estado::SinOrden, leerOrden(204, nullptr).estado);
+}
+
+void test_orden_mal_formada_es_invalida_y_no_abre() {
+  const char* malas[] = {
+      "{\"valida_por_ms\":1000,\"segundos_apertura\":5}",                         // sin id
+      "{\"orden_id\":184,\"valida_por_ms\":1000,\"segundos_apertura\":5}",      // id no es texto
+      "{\"orden_id\":\"18a\",\"valida_por_ms\":1000,\"segundos_apertura\":5}",  // id no son dígitos
+      "{\"orden_id\":\"123456789012345678901\",\"valida_por_ms\":1000,\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"segundos_apertura\":5}",                           // sin plazo
+      "{\"orden_id\":\"1\",\"valida_por_ms\":0,\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"valida_por_ms\":-5,\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"valida_por_ms\":120001,\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"valida_por_ms\":true,\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"valida_por_ms\":\"1000\",\"segundos_apertura\":5}",
+      "{\"orden_id\":\"1\",\"valida_por_ms\":1000}",                            // sin segundos
+      "{\"orden_id\":\"1\",\"valida_por_ms\":1000,\"segundos_apertura\":0}",
+      "no es json",
+      "[]",
+  };
+  for (const char* cuerpo : malas) {
+    TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Invalida, leerOrden(200, cuerpo).estado);
+  }
+  TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Invalida, leerOrden(200, nullptr).estado);
+  TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Invalida, leerOrden(200, "").estado);
+}
+
+void test_orden_con_otro_http_es_invalida() {
+  const char* buena = "{\"orden_id\":\"1\",\"valida_por_ms\":1000,\"segundos_apertura\":5}";
+  const int codigos[] = {-1, 0, 201, 304, 400, 401, 404, 409, 429, 500, 503};
+  for (int http : codigos) {
+    TEST_ASSERT_EQUAL(respuesta::Orden::Estado::Invalida, leerOrden(http, buena).estado);
+  }
+}
+
+void test_configuracion_trae_el_interruptor_de_apertura_manual() {
+  const char* base = "{\"segundos_apertura\":6,\"zona_horaria\":\"America/La_Paz\",\"ota\":null,";
+  char cuerpo[256];
+  snprintf(cuerpo, sizeof(cuerpo), "%s\"apertura_manual\":true}", base);
+  TEST_ASSERT_TRUE(respuesta::interpretarConfiguracion(200, cuerpo, strlen(cuerpo)).aperturaManual);
+  snprintf(cuerpo, sizeof(cuerpo), "%s\"apertura_manual\":false}", base);
+  TEST_ASSERT_FALSE(respuesta::interpretarConfiguracion(200, cuerpo, strlen(cuerpo)).aperturaManual);
+}
+
+void test_interruptor_ausente_o_mal_formado_queda_apagado() {
+  const char* cuerpos[] = {
+      "{\"segundos_apertura\":6}",
+      "{\"segundos_apertura\":6,\"apertura_manual\":1}",
+      "{\"segundos_apertura\":6,\"apertura_manual\":\"true\"}",
+      "{\"segundos_apertura\":6,\"apertura_manual\":null}",
+  };
+  for (const char* cuerpo : cuerpos) {
+    auto c = respuesta::interpretarConfiguracion(200, cuerpo, strlen(cuerpo));
+    TEST_ASSERT_TRUE(c.valida);
+    TEST_ASSERT_FALSE(c.aperturaManual);
+  }
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_orden_valida_trae_id_plazo_y_segundos);
+  RUN_TEST(test_orden_acota_los_segundos_al_tope_duro);
+  RUN_TEST(test_204_es_sin_orden);
+  RUN_TEST(test_orden_mal_formada_es_invalida_y_no_abre);
+  RUN_TEST(test_orden_con_otro_http_es_invalida);
+  RUN_TEST(test_configuracion_trae_el_interruptor_de_apertura_manual);
+  RUN_TEST(test_interruptor_ausente_o_mal_formado_queda_apagado);
   RUN_TEST(test_abrir_true_con_segundos);
   RUN_TEST(test_segundos_se_acotan_al_maximo);
   RUN_TEST(test_rechazo_es_valido_y_trae_su_motivo);
