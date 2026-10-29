@@ -1,6 +1,6 @@
 # ADR 0009 — Controlador de puerta: ESP32 + Arduino, HTTPS con la API y falla segura
 
-**Estado:** Aceptada (2026-10-08). Cerradas las dudas D-02 a D-05. **Ajustada por el ADR 0025**: solo Ethernet (sin WiFi) y vinculación remota de la placa en lugar del portal AP. El modelo del lector y el detalle eléctrico de la cerradura se confirman cuando se compre el hardware.
+**Estado:** Aceptada (2026-10-08). Cerradas las dudas D-02 a D-05. **Ajustada por el ADR 0025**: solo Ethernet (sin WiFi) y vinculación remota de la placa en lugar del portal AP. **Ajustada por el ADR 0035**: la placa también pregunta por órdenes de apertura manual (petición larga) y una puerta admite hasta dos placas (entrada y salida). El modelo del lector y el detalle eléctrico de la cerradura se confirman cuando se compre el hardware.
 
 ## Contexto
 

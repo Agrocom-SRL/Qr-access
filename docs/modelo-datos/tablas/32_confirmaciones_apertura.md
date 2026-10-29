@@ -23,6 +23,8 @@ Qué pasó con una orden de abrir (ADR 0031 §18): cada fila cuelga de una lectu
 
 Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `lecturas`.
 
+> **Apertura manual (ADR 0035).** Una lectura `manual` permitida también cuelga de aquí: la placa informa el resultado de la orden con `POST /dispositivos/ordenes/{id}/resultado` y se guarda la misma fila (`ejecutada`, `fallida` o `sin_confirmacion`). Una orden `vencida` sin respuesta deja `sin_confirmacion` / `sin_respuesta` con origen `servidor`.
+
 ## Resultados y causas
 
 | `resultado` | `causa` | Quién | Significado | Equivalente en el ADR 0031 §18 |

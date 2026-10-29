@@ -157,6 +157,16 @@ Limitaciones conocidas del diagnóstico (informativas; el servidor las tolera):
 
 Qué hace el servidor (para quien consuma el estado): ver la ficha `docs/modelo-datos/tablas/32_confirmaciones_apertura.md` y el ADR 0031 §18.
 
+## Apertura manual y dos placas por puerta (ADR 0035)
+
+- **Una placa por lector.** Si la puerta tiene un lector afuera y otro adentro, lleva **dos placas ESP32-ETH01**, cada una con su lector y su relé. Una placa con dos lectores se descartó: el ESP32-ETH01 no tiene pines libres para un segundo lector (los pines del PHY Ethernet RMII ocupan buena parte del chip; ver `firmware/include/pines.h`). Cada placa se vincula con la ubicación de su lector (`entrada` = afuera, `salida` = adentro; `ambos` si hay una sola).
+- **Cableado de la cerradura con dos placas.** Los dos relés actúan sobre la **misma** cerradura y se conectan en **paralelo** (contactos `NO`/`COM` de los dos relés en el mismo circuito del pulso); nunca se unen las salidas de dos placas entre sí. Verifica con el electricista antes de energizar.
+- **Una placa, una puerta.** Con una sola placa, el lector y la apertura manual abren por el **mismo relé**: es la misma cerradura, y para salir basta la app. Con dos placas en la puerta, la orden manual la toma **la primera que la reclame** y da el pulso; con una basta, porque las dos abren lo mismo. Si la entrada y la salida son **dos puertas físicas**, son dos puertas en el sistema, cada una con su placa; una puerta sin placa no se puede abrir ni con el botón de la app.
+- **Interruptor en la placa.** La configuración de la API trae `apertura_manual` (bool, el interruptor de la puerta). Con `false` la placa no hace la petición larga de órdenes; solo atiende el lector QR.
+- **Apertura manual (sin lector).** La placa pregunta por órdenes de apertura a la API con una petición larga (`GET /api/v1/dispositivos/ordenes`, ~20 s) por la misma Ethernet y la misma credencial. Al recibir una orden vigente, da el **mismo pulso** del relé (`segundos_apertura`, con su tope) y reporta el resultado; el sensor de puerta la confirma como en las aperturas por QR. Esta función sirve de respaldo si se avería o roban el lector.
+- **Falla segura:** sin red, sin orden o con una orden cuyo plazo (`valida_por_ms`) ya corrió, la placa no abre. Las únicas aperturas sin servidor son el pulsador de salida y la llave mecánica.
+- El contrato exacto de los endpoints de la placa se agrega aquí al implementar el firmware (ola AM2), como el de la ola W10.
+
 ## Compilación de desarrollo
 
 `pio run -e esp32-dev -t upload` compila con `ACCESO_DESARROLLO`: permite una API `http://` (la API local del Mac, por la red cableada) y lee `include/secretos.h` (copia de `secretos.example.h`, no versionado) cuando no hay nada en NVS. Imprime un aviso al arrancar y reporta la versión `0.5.0-dev` en el latido. Es solo para la mesa de trabajo: nunca se publica ni se instala en una puerta real. El env `esp32` (el que compila `bin/verify`) no contiene ninguno de esos dos caminos.

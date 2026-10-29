@@ -18,7 +18,8 @@ Cada fila es una **lectura**: un intento de lectura de un QR (o una apertura fí
 | `dispositivo_id` | `BIGINT UNSIGNED` | sí |  |
 | `qr_acceso_id` | `BIGINT UNSIGNED` | sí |  |
 | `token_hash` | `CHAR(64)` | sí | SHA-256 del token del QR (sensible) |
-| `metodo` | `VARCHAR(20)` | no | `qr`, `pulsador`, `forzada` |
+| `usuario_id` | `BIGINT UNSIGNED` | sí | FK a `usuarios` (ADR 0035): quién pidió la apertura manual. Nulo en las demás |
+| `metodo` | `VARCHAR(20)` | no | `qr`, `pulsador`, `forzada`, `manual` (ADR 0035) |
 | `resultado` | `VARCHAR(10)` | no | `permitido` o `rechazado` |
 | `motivo_code` | `VARCHAR(60)` | no | Código estable, p. ej. `qr.vencido` |
 | `ocurrido_at` | `DATETIME(3)` | no |  |
@@ -46,6 +47,7 @@ El SQL completo está en `03-schema-sql.md`.
 - `ocurrido_at` es la hora del servidor; `leido_en_dispositivo_at` es la del reloj del dispositivo, solo informativa.
 - Qué pasó con la orden de abrir (¿la puerta se abrió?) no se guarda aquí: vive en `confirmaciones_apertura` (ficha 32), enlazada a este evento. El evento nunca se edita.
 - `repetido_de_id` se escribe en el INSERT de la fila repetida, nunca por UPDATE. Un repetido apunta siempre al original (nunca a otro repetido), así la ventana no se encadena. Hay repetición cuando el MISMO dispositivo relee el MISMO `token_hash`: de una apertura `permitido` dentro de 15 s (la API vuelve a responder `abrir: true` sin consumir otra vez) o de un rechazo idéntico (mismo `motivo_code`) dentro de 60 s. Listados y estadísticas muestran solo los originales, con «×N».
+- **Apertura manual** (ADR 0035): `metodo = 'manual'` y `usuario_id`; `qr_acceso_id`, `token_hash` y `dispositivo_id` nulos (al insertar la lectura aún no se sabe qué placa tomará la orden; la tabla es de solo inserción, y esa placa queda en `ordenes_apertura` y `confirmaciones_apertura`). No guarda entrada ni salida: la app no lo sabe. `permitido` con `motivo_code = 'manual.ordenada'` cuando la API crea la orden; `rechazado` con su motivo (`manual.no_habilitada`, `manual.sin_conexion`, `manual.sin_dispositivo`, `manual.orden_en_curso`, `manual.limite`, `manual.suscripcion_vencida`…). El `CHECK` de `metodo` se rehace en la migración `add_apertura_manual_a_lecturas` (`DROP` + `ADD`, ALGORITHM=COPY en MariaDB; datos de prueba).
 - La apertura por pulsador de salida y la puerta forzada (`metodo`) quedan para el firmware.
 
 ## Dudas

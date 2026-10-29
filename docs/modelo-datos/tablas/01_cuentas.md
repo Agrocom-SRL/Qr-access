@@ -20,6 +20,8 @@ La empresa cliente: el tenant. Cada cuenta tiene su propio administrador, usuari
 | `max_miembros_por_titular` | `SMALLINT UNSIGNED` | no | Tope de Miembros por Titular, por defecto 10 (migración `20261022100005_add_max_miembros_a_cuentas.sql`, ADR 0028 §6) |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` (skill `modelo-datos`) |
 
+| `apertura_manual_por_omision` | `TINYINT(1)` | no | Valor con que nace `puertas.apertura_manual` en cada puerta nueva (ADR 0035). 1 al crear la cuenta; el administrador lo apaga o enciende desde la pantalla de apertura manual junto con las puertas existentes. Pasa por la bitácora |
+
 ## Índices y restricciones
 
 - `uq_cuentas_codigo`
