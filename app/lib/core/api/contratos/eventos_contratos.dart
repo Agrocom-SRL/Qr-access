@@ -11,11 +11,14 @@ class LecturaDto {
     required this.puerta,
     required this.sitio,
     required this.qr,
+    this.metodo = 'qr',
   });
 
   new desde(Map<String, dynamic> json)
     : id = json['id'] as String,
       ocurridoAt = fechaDeApi(json['ocurrido_at'] as String),
+      // Una API anterior a la apertura manual no lo trae: era siempre un QR.
+      metodo = json['metodo'] as String? ?? 'qr',
       resultado = json['resultado'] as String,
       motivoCode = json['motivo_code'] as String,
       puerta = ReferenciaDto.desde(json['puerta'] as Map<String, dynamic>),
@@ -32,6 +35,10 @@ class LecturaDto {
 
   /// `permitido` o `rechazado`.
   final String resultado;
+
+  /// Cómo se pidió abrir: `qr`, `pulsador`, `forzada` o `manual` (apertura
+  /// desde la app, ADR 0035).
+  final String metodo;
 
   /// Código del motivo (`acceso.permitido`, `qr.vencido`…): la app lo traduce.
   final String motivoCode;

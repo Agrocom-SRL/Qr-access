@@ -16,7 +16,8 @@ enum ResultadoEvento {
       );
 }
 
-/// Una lectura: un intento de lectura de un QR en una puerta de la cuenta,
+/// Una lectura: un intento de lectura de un QR (o una apertura desde la app,
+/// ADR 0035) en una puerta de la cuenta,
 /// aceptado o rechazado (tabla `lecturas`). Es de solo lectura: la
 /// bitácora no se edita ni se borra (invariante 4).
 @immutable
@@ -28,6 +29,7 @@ class Lectura {
     required this.motivoCode,
     required this.puertaNombre,
     required this.sitioNombre,
+    this.esManual = false,
     this.qrEtiqueta,
     this.generadorEtiqueta,
   });
@@ -43,6 +45,10 @@ class Lectura {
   final String motivoCode;
   final String puertaNombre;
   final String sitioNombre;
+
+  /// Apertura pedida desde la app, sin QR (ADR 0035). No tiene etiqueta de QR
+  /// ni generador: el detalle dice que se abrió desde la app.
+  final bool esManual;
 
   /// Etiqueta del QR leído y de quien lo generó; `null` si no era un QR de
   /// la cuenta.

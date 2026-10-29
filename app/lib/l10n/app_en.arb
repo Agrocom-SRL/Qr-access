@@ -205,7 +205,9 @@
   "@qrVigenciaHoras": {
     "description": "Plazo de vigencia en horas",
     "placeholders": {
-      "horas": { "type": "int" }
+      "horas": {
+        "type": "int"
+      }
     }
   },
   "qrVigenciaModoHoras": "Hours",
@@ -504,5 +506,39 @@
   "notificacionTipoBolsaAviso": "The QR pool is nearly full",
   "notificacionTipoBolsaSuperada": "The monthly QR pool was exceeded",
   "notificacionTipoFlujoAtipico": "Access activity outside the usual pattern",
-  "notificacionTipoDesconocido": "System alert"
+  "notificacionTipoDesconocido": "System alert",
+  "inicioAbrirPuerta": "Open door",
+  "abrirPuertaTitulo": "Open door",
+  "abrirPuertaAyuda": "Choose the door you want to open. It opens in a few seconds.",
+  "abrirPuertaAccion": "Open",
+  "abrirPuertaSinConexion": "Offline",
+  "abrirPuertaSinPuertas": "No doors available",
+  "abrirPuertaSinPuertasDetalle": "Your administrator has not enabled this feature or the doors have no connected board. You can still enter with your QR.",
+  "abrirPuertaEnviando": "Sending the order…",
+  "abrirPuertaEsperando": "Opening {puerta}…",
+  "abrirPuertaAbierta": "{puerta} opened",
+  "abrirPuertaFallo": "Could not open {puerta}",
+  "abrirPuertaFalloNoAbrio": "The door did not open. Try again.",
+  "abrirPuertaFalloVencida": "The door did not respond in time. Try again or enter with your QR.",
+  "abrirPuertaOtra": "Open another door",
+  "comunErrorManualNoHabilitada": "Opening from the app is not enabled for this door.",
+  "comunErrorPuertaSinDispositivo": "This door has no connected board.",
+  "comunErrorPuertaSinConexion": "This door's board is not responding. Enter with your QR or tell the administrator.",
+  "comunErrorManualOrdenEnCurso": "A door opening is already in progress. Wait a few seconds.",
+  "comunErrorManualLimite": "You asked to open too often. Wait a moment and try again.",
+  "comunErrorManualSinPermiso": "Your user cannot open doors right now.",
+  "perfilAperturaManual": "Open from the app",
+  "perfilAperturaManualAyuda": "Choose which doors can be opened without a QR",
+  "aperturaManualTitulo": "Open from the app",
+  "aperturaManualAyuda": "Lets the account's users open a door from the app, without a QR. It is a backup if the reader fails or is lost.",
+  "aperturaManualTodas": "All doors",
+  "aperturaManualTodasAyuda": "It also applies to doors you add later.",
+  "aperturaManualSinPlaca": "No board",
+  "perfilAcercaTerminos": "Terms and conditions",
+  "perfilAcercaPrivacidad": "Privacy policy",
+  "paginaLegalError": "The document could not be loaded.",
+  "paginaLegalAbrirNavegador": "Open in browser",
+  "lecturaMotivoManualOrdenada": "Opened from the app",
+  "lecturaMotivoManualRechazada": "Open from the app rejected",
+  "lecturaAperturaManual": "Opened from the app"
 }

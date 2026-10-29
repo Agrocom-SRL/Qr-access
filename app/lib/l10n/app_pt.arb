@@ -205,7 +205,9 @@
   "@qrVigenciaHoras": {
     "description": "Plazo de vigencia en horas",
     "placeholders": {
-      "horas": { "type": "int" }
+      "horas": {
+        "type": "int"
+      }
     }
   },
   "qrVigenciaModoHoras": "Horas",
@@ -504,5 +506,39 @@
   "notificacionTipoBolsaAviso": "A cota de QR está quase no limite",
   "notificacionTipoBolsaSuperada": "A cota mensal de QR foi superada",
   "notificacionTipoFlujoAtipico": "Movimento de acessos fora do normal",
-  "notificacionTipoDesconocido": "Aviso do sistema"
+  "notificacionTipoDesconocido": "Aviso do sistema",
+  "inicioAbrirPuerta": "Abrir porta",
+  "abrirPuertaTitulo": "Abrir porta",
+  "abrirPuertaAyuda": "Escolha a porta que quer abrir. Ela abre em alguns segundos.",
+  "abrirPuertaAccion": "Abrir",
+  "abrirPuertaSinConexion": "Sem conexão",
+  "abrirPuertaSinPuertas": "Não há portas disponíveis",
+  "abrirPuertaSinPuertasDetalle": "Seu administrador não habilitou esta função ou as portas não têm uma placa conectada. Você pode entrar com seu QR.",
+  "abrirPuertaEnviando": "Enviando o pedido…",
+  "abrirPuertaEsperando": "Abrindo {puerta}…",
+  "abrirPuertaAbierta": "{puerta} aberta",
+  "abrirPuertaFallo": "Não foi possível abrir {puerta}",
+  "abrirPuertaFalloNoAbrio": "A porta não abriu. Tente novamente.",
+  "abrirPuertaFalloVencida": "A porta não respondeu a tempo. Tente novamente ou entre com seu QR.",
+  "abrirPuertaOtra": "Abrir outra porta",
+  "comunErrorManualNoHabilitada": "A abertura pelo app não está habilitada nesta porta.",
+  "comunErrorPuertaSinDispositivo": "Esta porta não tem uma placa conectada.",
+  "comunErrorPuertaSinConexion": "A placa desta porta não responde. Entre com seu QR ou avise o administrador.",
+  "comunErrorManualOrdenEnCurso": "Já há uma abertura em andamento nesta porta. Aguarde alguns segundos.",
+  "comunErrorManualLimite": "Você pediu para abrir com muita frequência. Aguarde um momento e tente novamente.",
+  "comunErrorManualSinPermiso": "Seu usuário não pode abrir portas no momento.",
+  "perfilAperturaManual": "Abertura pelo app",
+  "perfilAperturaManualAyuda": "Escolha em quais portas é possível abrir sem QR",
+  "aperturaManualTitulo": "Abertura pelo app",
+  "aperturaManualAyuda": "Permite que os usuários da conta abram uma porta pelo app, sem QR. Serve de reserva se o leitor falhar ou for perdido.",
+  "aperturaManualTodas": "Todas as portas",
+  "aperturaManualTodasAyuda": "Também vale para as portas que você registrar depois.",
+  "aperturaManualSinPlaca": "Sem placa",
+  "perfilAcercaTerminos": "Termos e condições",
+  "perfilAcercaPrivacidad": "Política de privacidade",
+  "paginaLegalError": "Não foi possível carregar o documento.",
+  "paginaLegalAbrirNavegador": "Abrir no navegador",
+  "lecturaMotivoManualOrdenada": "Abertura pelo app",
+  "lecturaMotivoManualRechazada": "Abertura pelo app rejeitada",
+  "lecturaAperturaManual": "Aberta pelo app"
 }

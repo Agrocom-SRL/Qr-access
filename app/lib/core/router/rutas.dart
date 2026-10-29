@@ -19,6 +19,12 @@ abstract final class Rutas {
   /// URL que se pueda volver a abrir.
   static const qrGenerado = '/qr/generado';
 
+  /// Abrir una puerta sin QR desde la app (ADR 0035).
+  static const abrirPuerta = '/abrir-puerta';
+
+  /// El administrador enciende o apaga la apertura sin QR por puerta.
+  static const aperturaManual = '/apertura-manual';
+
   /// Lecturas (antes "eventos"): la URL sigue el nombre que ve la persona.
   static const eventos = '/lecturas';
 

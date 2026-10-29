@@ -4,6 +4,7 @@ import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
+import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
@@ -149,6 +150,17 @@ class PerfilPagina extends ConsumerWidget {
                     claveEnfatizada: true,
                     alTocar: () => context.go(Rutas.dispositivos),
                   ),
+                  // Solo el administrador de la cuenta enciende o apaga la
+                  // apertura sin QR por puerta (ADR 0035 §5).
+                  if (sesion.tiene(Permisos.configurarAperturaManual))
+                    FilaClaveValor(
+                      clave: l10n.perfilAperturaManual,
+                      valor: l10n.perfilAperturaManualAyuda,
+                      icono: Icons.lock_open,
+                      invertida: true,
+                      claveEnfatizada: true,
+                      alTocar: () => context.go(Rutas.aperturaManual),
+                    ),
                   FilaClaveValor(
                     clave: l10n.perfilSuscripcion,
                     valor: suscripcion == null
