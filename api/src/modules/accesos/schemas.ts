@@ -120,6 +120,8 @@ export const esquemaEvento = z.object({
   ocurrido_at: esquemaFecha,
   resultado: z.enum(['permitido', 'rechazado']),
   motivo_code: z.string(),
+  /** `manual`: apertura pedida desde la app (ADR 0035); no lleva QR ni sentido. */
+  metodo: z.enum(['qr', 'pulsador', 'forzada', 'manual']),
   puerta: esquemaPuertaCorta.extend({ sitio: z.object({ id: z.string(), nombre: z.string() }) }),
   qr_id: z.string().nullable(),
   /**
@@ -267,3 +269,81 @@ export const consultaDeExportacion = consultaDeEventos.extend({
     .max(FILAS_POR_PAGINA_MAXIMAS)
     .default(FILAS_POR_PAGINA_POR_OMISION),
 });
+
+// --- Apertura manual desde la app (ADR 0035) ---
+
+const ESTADOS_DE_ORDEN = ['pendiente', 'entregada', 'ejecutada', 'fallida', 'vencida'] as const;
+
+/**
+ * `Idempotency-Key` de la apertura manual: OBLIGATORIA (ADR 0035 §7). Un reintento de la app con la misma clave
+ * devuelve la misma orden; cada pulsación nueva lleva una clave nueva (UUID v4 o base64url de 22 a 128 caracteres).
+ */
+export const cabecerasDeApertura = z.object({
+  'idempotency-key': z
+    .string()
+    .min(LARGO_MINIMO_DE_CLAVE)
+    .max(LARGO_MAXIMO_DE_CLAVE)
+    .regex(FORMATO_DE_CLAVE),
+});
+
+export const parametrosDePuertaAAbrir = z.object({ puertaId: esquemaId });
+export const parametrosDeOrden = z.object({ id: esquemaId });
+
+/** La orden creada. Sin sentido ni placa: la orden es de la puerta (ADR 0035 §3). */
+export const respuestaDeOrdenDeApertura = z.strictObject({
+  orden_id: z.string(),
+  estado: z.enum(ESTADOS_DE_ORDEN),
+  vence_at: esquemaFecha,
+});
+
+export const respuestaDeEstadoDeOrden = z.strictObject({
+  orden_id: z.string(),
+  puerta_id: z.string(),
+  /** `pendiente` y `entregada` están en curso; `ejecutada`, `fallida` y `vencida` son finales. */
+  estado: z.enum(ESTADOS_DE_ORDEN),
+  vence_at: esquemaFecha,
+  /** Lo que informó la placa sobre si la puerta se abrió; `null` mientras no haya nada. */
+  resultado: z
+    .strictObject({
+      resultado: z.enum(EJECUCIONES),
+      causa: z.string(),
+    })
+    .nullable(),
+});
+
+// --- Apertura manual: el lado de la placa (ADR 0035 §2) ---
+
+/**
+ * Lo que la placa recibe al tomar una orden. `valida_por_ms` es el plazo RESTANTE (relativo, nunca una hora
+ * absoluta: la placa no depende de su reloj); si ya corrió cuando la placa va a ejecutar, no abre. `segundos_apertura`
+ * es la duración del pulso de la puerta (la placa le aplica su tope duro, como en una validación de QR).
+ */
+export const respuestaDeOrdenEntregada = z.strictObject({
+  orden_id: z.string(),
+  valida_por_ms: z.number().int().positive(),
+  segundos_apertura: z.number().int(),
+});
+
+/**
+ * Cómo terminó la orden según la placa. Los pares `resultado`/`causa` son los de `confirmaciones_apertura`:
+ * `ejecutada`+`puerta_abrio`; `fallida`+`puerta_no_abrio`|`puerta_no_cerro`|`rele_no_accionado` (por omisión
+ * `puerta_no_abrio`); `sin_confirmacion`+`sin_sensor` cuando la puerta no tiene el sensor habilitado (el relé se
+ * accionó pero no se sabe si la puerta abrió). `reportado_en_dispositivo_at` es el reloj de la placa, solo informativo.
+ */
+export const cuerpoDeResultadoDeOrden = z.discriminatedUnion('resultado', [
+  z.strictObject({
+    resultado: z.literal('ejecutada'),
+    causa: z.literal('puerta_abrio').default('puerta_abrio'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    resultado: z.literal('fallida'),
+    causa: z.enum(CAUSAS_DE_FALLA).default('puerta_no_abrio'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+  z.strictObject({
+    resultado: z.literal('sin_confirmacion'),
+    causa: z.literal('sin_sensor').default('sin_sensor'),
+    reportado_en_dispositivo_at: z.string().max(40).optional(),
+  }),
+]);

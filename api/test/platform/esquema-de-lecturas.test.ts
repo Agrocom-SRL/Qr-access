@@ -37,6 +37,8 @@ describe('esquema de lecturas', () => {
     expect(claves.map((c) => `${c.tabla}.${c.clave}`)).toEqual([
       'confirmaciones_apertura.fk_confirmaciones_apertura_evento',
       'lecturas.fk_lecturas_repetido_de',
+      // La orden de apertura manual cuelga de la lectura que la registra (ADR 0035 §3).
+      'ordenes_apertura.fk_ordenes_apertura_lectura',
     ]);
   });
 

@@ -1,4 +1,8 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
+import {
+  ejecutar as vencerOrdenes,
+  type ResultadoDeVencimiento,
+} from './actions/vencer-ordenes.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
 import {
@@ -702,4 +706,22 @@ export function crearServicioDeActividadParaSenales(pool: Pool): ServicioDeActiv
     },
     generadosPorCuenta: (cuentaIds, desde, hasta) => qr.generadosPorCuenta(cuentaIds, desde, hasta),
   };
+}
+
+export type { ResultadoDeVencimiento } from './actions/vencer-ordenes.js';
+
+/** Tareas periódicas del módulo (`tareas.ts`). */
+export interface TareasDeAccesos {
+  /**
+   * Vence las órdenes de apertura manual que nadie resolvió, de todas las cuentas, y deja la constancia
+   * `sin_respuesta` de las que una placa tomó y no contestó (ADR 0035 §3). El reloj se inyecta: los tests no esperan.
+   */
+  vencerOrdenes(
+    ahora: Date,
+    registrarError?: (error: unknown) => void,
+  ): Promise<ResultadoDeVencimiento>;
+}
+
+export function crearTareasDeAccesos(pool: Pool): TareasDeAccesos {
+  return { vencerOrdenes: (ahora, registrarError) => vencerOrdenes(pool, ahora, registrarError) };
 }

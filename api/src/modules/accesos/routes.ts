@@ -3,6 +3,7 @@ import type { Pool } from 'mysql2/promise';
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
+import { NotificadorPorClave } from '../../platform/espera/notificador-por-clave.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
 import { presupuestoDePeticion } from '../../platform/http/presupuesto.js';
 import { dispositivoDe, permiso, usuarioDe } from '../../plugins/permisos.js';
@@ -20,6 +21,9 @@ import { ejecutar as resumirQr } from './actions/resumir-qr.js';
 import { ejecutar as validarQr } from './actions/validar-qr.js';
 import { ejecutar as verLectura } from './actions/ver-lectura.js';
 import type { EstadoDeQr } from './domain/estado-qr.js';
+import { leerHoraDelDispositivo } from './domain/hora-del-dispositivo.js';
+import { rutasDeAperturaManual } from './rutas-de-apertura-manual.js';
+import { rutasDeOrdenesDePlaca } from './rutas-de-ordenes-de-placa.js';
 import { rutasDePlataforma } from './rutas-de-plataforma.js';
 import {
   consultaDeEventos,
@@ -62,14 +66,6 @@ function filtrosDe(consulta: ConsultaDeEventos) {
     desde: consulta.desde ?? null,
     hasta: consulta.hasta ?? null,
   };
-}
-
-/** Hora del reloj del dispositivo, solo si es una fecha creíble (puede venir sin NTP). */
-function leerHoraDelDispositivo(texto: string | undefined): Date | null {
-  if (texto === undefined) return null;
-  const fecha = new Date(texto);
-  const anio = fecha.getUTCFullYear();
-  return Number.isNaN(fecha.getTime()) || anio < 2020 || anio > 2100 ? null : fecha;
 }
 
 /** Cada cuánto se barren las claves de idempotencia vencidas (el resto lo limpia cada escritura). */
@@ -399,6 +395,10 @@ export function rutas({
       },
     );
     app.register(rutasDePlataforma({ pool, poolDispositivos, config }));
+    // Un despertador en memoria compartido: crear una orden despierta a las placas de esa puerta que esperan.
+    const notificador = new NotificadorPorClave();
+    app.register(rutasDeAperturaManual({ pool, poolDispositivos, config }, notificador));
+    app.register(rutasDeOrdenesDePlaca({ pool, poolDispositivos, config }, notificador));
     listo();
   };
 }

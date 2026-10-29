@@ -2,12 +2,15 @@ import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { RepositorioDeCuenta } from '../../platform/db/repositorio-de-cuenta.js';
 import { RepositorioDePlataforma } from '../../platform/db/repositorio-de-plataforma.js';
 import type { Transaccion } from '../../platform/db/transaccion.js';
+import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
+import { conflictoDeSentido, SENTIDO_POR_OMISION, type Sentido } from './domain/sentido.js';
 
 const DESCRIPCION_DE_DISPOSITIVOS = {
   nombre: 'dispositivos',
   columnas: [
     'puerta_id',
     'placa_id',
+    'sentido',
     'nombre',
     'clave_hash',
     'firmware_version',
@@ -34,6 +37,15 @@ const DESCRIPCION_DE_DISPOSITIVOS = {
   perfil: 'dominio',
   deCuenta: true,
 } as const;
+
+/** Lanza el 409 que corresponde si una placa en `sentido` no cabe junto a las que ya ocupan la puerta. */
+export function exigirQueCabe(ocupados: readonly Sentido[], sentido: Sentido): void {
+  const conflicto = conflictoDeSentido(ocupados, sentido);
+  if (conflicto === 'mismo_sentido') throw new ErrorDeDominio('puerta.con_dispositivo', 409);
+  if (conflicto === 'sentido_en_conflicto') {
+    throw new ErrorDeDominio('dispositivo.sentido_en_conflicto', 409);
+  }
+}
 
 export interface DispositivoParaAutenticar extends RowDataPacket {
   id: string;
@@ -218,6 +230,7 @@ export interface DispositivoEnServicioFila extends RowDataPacket {
   id: string;
   puerta_id: string;
   nombre: string;
+  sentido: Sentido;
   ultimo_latido_at: Date | null;
 }
 
@@ -417,14 +430,47 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
     return new Map(filas.map((fila) => [fila.puerta_id, fila]));
   }
 
-  /** Alta de un dispositivo para una placa (ADR 0025); la cuenta es la del contexto. */
-  crearParaPlaca(
+  /**
+   * Los sentidos de las placas que ocupan la puerta (sin revocar), leídos CON bloqueo dentro de `tx`: dos
+   * vinculaciones simultáneas a la misma puerta se esperan aquí y la segunda ya ve a la primera (o choca con el
+   * índice único y la base la deshace). No filtra por `activo`: una placa desactivada sigue ocupando su lugar en
+   * `uq_dispositivos_puerta_sentido`.
+   */
+  async sentidosOcupados(tx: Transaccion, puertaId: string): Promise<Sentido[]> {
+    const filas = await this.seleccionar<RowDataPacket & { sentido: Sentido }>(
+      {
+        columnas: 't.sentido',
+        donde: 't.puerta_id = ? AND t.revocado_at IS NULL',
+        params: [puertaId],
+        bloquear: true,
+      },
+      tx,
+    );
+    return filas.map((fila) => fila.sentido);
+  }
+
+  /**
+   * Alta de un dispositivo para una placa (ADR 0025); la cuenta es la del contexto. `sentido` (por omisión
+   * `ambos`) es dónde está su lector (ADR 0035 §4): si en la puerta ya hay una placa en ese lado, o se estaría
+   * mezclando `ambos` con `entrada`/`salida`, se rechaza ANTES de insertar y en la misma transacción
+   * (`puerta.con_dispositivo` o `dispositivo.sentido_en_conflicto`, 409).
+   */
+  async crearParaPlaca(
     tx: Transaccion,
-    datos: { placaId: string; puertaId: string; nombre: string; claveHash: string },
+    datos: {
+      placaId: string;
+      puertaId: string;
+      nombre: string;
+      claveHash: string;
+      sentido?: Sentido;
+    },
   ): Promise<string> {
+    const sentido = datos.sentido ?? SENTIDO_POR_OMISION;
+    exigirQueCabe(await this.sentidosOcupados(tx, datos.puertaId), sentido);
     return this.insertar(tx, {
       placa_id: datos.placaId,
       puerta_id: datos.puertaId,
+      sentido,
       nombre: datos.nombre,
       clave_hash: datos.claveHash,
     });
@@ -444,7 +490,7 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   listarEnServicioPorPuertas(puertaIds: readonly string[]): Promise<DispositivoEnServicioFila[]> {
     if (puertaIds.length === 0) return Promise.resolve([]);
     return this.seleccionar<DispositivoEnServicioFila>({
-      columnas: 't.id, t.puerta_id, t.nombre, t.ultimo_latido_at',
+      columnas: 't.id, t.puerta_id, t.nombre, t.sentido, t.ultimo_latido_at',
       donde: 't.puerta_id IN (?) AND t.revocado_at IS NULL AND t.activo = 1',
       params: [puertaIds],
     });
@@ -453,7 +499,7 @@ export class RepositorioDeDispositivos extends RepositorioDeCuenta {
   /** Todos los dispositivos en servicio de la cuenta del contexto (para contar cuántos están sin conexión). */
   listarEnServicio(): Promise<DispositivoEnServicioFila[]> {
     return this.seleccionar<DispositivoEnServicioFila>({
-      columnas: 't.id, t.puerta_id, t.nombre, t.ultimo_latido_at',
+      columnas: 't.id, t.puerta_id, t.nombre, t.sentido, t.ultimo_latido_at',
       donde: 't.revocado_at IS NULL AND t.activo = 1',
     });
   }

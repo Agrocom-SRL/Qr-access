@@ -37,7 +37,8 @@ La orden de abrir que la API le da a la puerta (la toma una de sus placas) cuand
 
 - La entrega es atómica: `UPDATE … SET estado = 'entregada', dispositivo_id = ?, entregada_at = ahora WHERE id = ? AND estado = 'pendiente' AND vence_at > ahora` (una fila). Una orden se entrega una vez a una sola placa, y solo a una placa de su puerta (nunca de otra puerta ni cuenta); si la puerta tiene dos placas, gana la primera y la otra no recibe nada.
 - La placa recibe `valida_por_ms` (plazo restante, relativo) y no ejecuta una orden cuyo plazo corrió; al reconectarse no ejecuta órdenes viejas.
-- El resultado de la placa pasa la orden a `ejecutada` o `fallida` y escribe la fila de `confirmaciones_apertura`. Una orden `pendiente` o `entregada` cuyo `vence_at` pasó la marca `vencida` el proceso periódico y deja `sin_confirmacion` / `sin_respuesta`.
+- El resultado de la placa pasa la orden a `ejecutada` o `fallida` (`sin_confirmacion`/`sin_sensor`: la orden queda `ejecutada`, el relé se accionó) y escribe la fila de `confirmaciones_apertura` (`origen = 'placa'`, `evento_acceso_id = lectura_id`) en la misma transacción. Solo informa la placa que la tomó (`dispositivo_id`); otra placa, una orden ajena o aún `pendiente` es `404 orden.no_encontrada`; una `vencida`, `409 orden.vencida`; repetir el mismo resultado es idempotente.
+- El proceso `vencer-ordenes` (cada 15 s, todas las cuentas, `GET_LOCK` por cuenta): una `pendiente` con `vence_at` pasado pasa a `vencida` sin constancia; una `entregada` con `vence_at` + 30 s (gracia para que la placa informe tras el pulso y la observación del sensor) pasa a `vencida` y deja `sin_confirmacion` / `sin_respuesta` (`origen = 'servidor'`, `registrada_at = vence_at + 30 s`), que alimenta el aviso `apertura.fallida`.
 - Cambios de estado con compare-and-set (`WHERE estado = ?`), sin bloquear la fila del dispositivo (ADR 0032 §1).
 - Retención: pendiente, junto con la duda D-06.
 

@@ -25,11 +25,17 @@ export type OperacionIdempotente = 'qr.generar';
 /**
  * Lo único que se guarda de la clave: su HMAC-SHA256 con una subclave propia de `QR_IDEMPOTENCIA_CLAVE`. No es un
  * SHA-256 plano: con un volcado de la base no se puede probar claves candidatas sin el secreto del servidor, y la
- * subclave separa este uso del de la derivación del token (ADR 0031 §11). Rotar el secreto cambia el hash: las
+ * subclave separa este uso del de la derivación del token (ADR 0031 §11). `proposito` separa además la clave de un QR de
+ * la de una apertura manual (ADR 0035 §7): la misma cadena en las dos operaciones da hashes distintos. Rotar el secreto cambia el hash: las
  * claves aún vigentes dejan de reconocerse y un reintento con ellas se trata como una solicitud nueva.
  */
-export function hashDeClave(secreto: string, clave: string): string {
-  const subclave = createHmac('sha256', secreto).update('qr-idempotencia-clave-v1').digest();
+export function hashDeClave(
+  secreto: string,
+  clave: string,
+  proposito:
+    'qr-idempotencia-clave-v1' | 'manual-idempotencia-clave-v1' = 'qr-idempotencia-clave-v1',
+): string {
+  const subclave = createHmac('sha256', secreto).update(proposito).digest();
   return createHmac('sha256', subclave).update(clave).digest('hex');
 }
 

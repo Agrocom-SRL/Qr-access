@@ -464,6 +464,8 @@ export interface LecturaFila extends RowDataPacket {
   resultado: 'permitido' | 'rechazado';
   motivo_code: string;
   puerta_id: string;
+  /** Cómo se originó: `qr`, `pulsador`, `forzada` o `manual` (apertura desde la app, ADR 0035). */
+  metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
   qr_acceso_id: string | null;
   qr_etiqueta: string | null;
   qr_generado_por: string | null;
@@ -477,7 +479,7 @@ export interface IntentoFila extends RowDataPacket {
 }
 
 export interface FiltroDeLecturas {
-  /** Solo los de QR generados por este usuario; `null` = todos los de la cuenta. */
+  /** Solo los de QR generados por este usuario y sus propias aperturas manuales; `null` = todos los de la cuenta. */
   readonly generadoPor: string | null;
   /** Solo las de estas puertas (un guardia ve las que tiene asignadas); `null` = todas. */
   readonly puertaIds: readonly string[] | null;
@@ -512,8 +514,10 @@ function armarFiltroDeEventos(
   ];
   const params: unknown[] = [];
   if (filtro.generadoPor !== null) {
-    condiciones.push('q.generado_por = ?');
-    params.push(filtro.generadoPor);
+    // Quien no ve toda la cuenta ve lo suyo: las lecturas de los QR que generó y sus propias aperturas manuales
+    // (ADR 0035 §6; `usuario_id` solo se llena en `manual`). Nunca las manuales de otro usuario.
+    condiciones.push("(q.generado_por = ? OR (t.metodo = 'manual' AND t.usuario_id = ?))");
+    params.push(filtro.generadoPor, filtro.generadoPor);
   }
   if (filtro.puertaIds !== null) {
     if (filtro.puertaIds.length === 0) {
@@ -559,13 +563,22 @@ export interface NuevaLectura {
   readonly repetidoDeId?: string | null;
 }
 
+/** Una petición de apertura manual para dejar en `lecturas` (ADR 0035 §6). */
+export interface NuevaLecturaManual {
+  readonly puertaId: string;
+  readonly usuarioId: string;
+  readonly resultado: 'permitido' | 'rechazado';
+  readonly motivoCode: string;
+  readonly ocurridoAt: Date;
+}
+
 /** El intento original que enlaza una repetición. */
 export interface OriginalFila extends RowDataPacket {
   id: string;
 }
 
 const COLUMNAS_DE_EVENTO =
-  't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
+  't.id, t.ocurrido_at, t.resultado, t.motivo_code, t.puerta_id, t.metodo, t.qr_acceso_id, q.etiqueta AS qr_etiqueta, q.generado_por AS qr_generado_por';
 
 /** Desde cuándo se juzgan las aperturas de un dispositivo. */
 export interface DesdeDeDispositivo {
@@ -593,6 +606,7 @@ export class RepositorioDeLecturas extends RepositorioDeCuenta {
         'puerta_id',
         'dispositivo_id',
         'qr_acceso_id',
+        'usuario_id',
         'token_hash',
         'metodo',
         'resultado',
@@ -603,6 +617,22 @@ export class RepositorioDeLecturas extends RepositorioDeCuenta {
       ],
       perfil: 'solo_insercion',
       deCuenta: true,
+    });
+  }
+
+  /**
+   * Una petición de apertura manual desde la app (ADR 0035 §6), aceptada o rechazada: `metodo = 'manual'` y quién
+   * la pidió. Sin QR, sin hash de token y SIN dispositivo (al crear la lectura todavía no se sabe qué placa
+   * tomará la orden; esa queda en `ordenes_apertura`). No lleva sentido: la app no lo sabe.
+   */
+  registrarManual(tx: Transaccion, lectura: NuevaLecturaManual): Promise<string> {
+    return this.insertar(tx, {
+      puerta_id: lectura.puertaId,
+      usuario_id: lectura.usuarioId,
+      metodo: 'manual',
+      resultado: lectura.resultado,
+      motivo_code: lectura.motivoCode,
+      ocurrido_at: lectura.ocurridoAt,
     });
   }
 

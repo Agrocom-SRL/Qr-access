@@ -49,6 +49,8 @@ export const PERMISOS_DE_ADMINISTRADOR = [
   'notificaciones.aviso.gestionar',
   'seguridad.sesion.ver',
   'seguridad.sesion.cerrar',
+  'accesos.apertura_manual.usar',
+  'accesos.apertura_manual.configurar',
 ];
 
 /** Lo que tiene un Miembro (ADR 0028): usar la puerta con sus QR. */
@@ -61,6 +63,7 @@ export const PERMISOS_DE_USUARIO = [
   'accesos.qr.anular_masivo',
   'accesos.evento.ver',
   'seguridad.incidente.ver',
+  'accesos.apertura_manual.usar',
 ];
 
 /** Lo que tiene un Guardia (ADR 0028 §5): su QR propio, no los de visitas. */
@@ -72,6 +75,7 @@ export const PERMISOS_DE_GUARDIA = [
   'seguridad.incidente.ver',
   'accesos.evento.ver',
   'accesos.evento.ver_asignadas',
+  'accesos.apertura_manual.usar',
 ];
 
 /** Un Titular tiene lo del Miembro y además administra a sus Miembros. */
@@ -252,14 +256,30 @@ export async function crearDispositivo(
   pool: Pool,
   cuenta: Cuenta,
   puertaId: string,
+  /** `sentido`: dónde está el lector (ADR 0035 §4); por omisión `ambos`. */
+  opciones: { sentido?: 'entrada' | 'salida' | 'ambos' } = {},
 ): Promise<DispositivoDePrueba> {
   const clave = generarTokenOpaco(32);
   const id = await insertar(
     pool,
-    'INSERT INTO dispositivos (tenant_id, puerta_id, nombre, clave_hash) VALUES (?, ?, ?, ?)',
-    [cuenta.id, puertaId, `Dispositivo ${puertaId}`, await hashear(clave)],
+    'INSERT INTO dispositivos (tenant_id, puerta_id, sentido, nombre, clave_hash) VALUES (?, ?, ?, ?, ?)',
+    [
+      cuenta.id,
+      puertaId,
+      opciones.sentido ?? 'ambos',
+      `Dispositivo ${puertaId}${opciones.sentido === undefined ? '' : ` ${opciones.sentido}`}`,
+      await hashear(clave),
+    ],
   );
   return { id, clave, encabezado: `Dispositivo ${id}.${clave}` };
+}
+
+/** La placa acaba de latir: para el modo manual está «en línea» (los dispositivos de prueba nacen sin latido). */
+export async function marcarEnLinea(pool: Pool, dispositivoId: string): Promise<void> {
+  await pool.query('UPDATE dispositivos SET ultimo_latido_at = ? WHERE id = ?', [
+    new Date(),
+    dispositivoId,
+  ]);
 }
 
 export interface QrDePrueba {

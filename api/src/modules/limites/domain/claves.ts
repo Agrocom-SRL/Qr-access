@@ -83,13 +83,33 @@ export const CLAVES_DE_SENAL = {
 export type ClaveDeSenal = (typeof CLAVES_DE_SENAL)[keyof typeof CLAVES_DE_SENAL];
 
 /**
+ * Los topes de la apertura manual desde la app (ADR 0035 §7, ADR 0030). Limitan PEDIR la apertura, nunca validar un
+ * QR. Como los de generación, el valor vigente vive en `configuracion_limites` (los iniciales los siembra
+ * `db/seeds/01_catalogo.sql`) y admiten excepción por cuenta o por usuario.
+ */
+export const CLAVES_DE_MANUAL = {
+  /** Segundos mínimos entre dos órdenes del mismo usuario sobre la misma puerta. */
+  enfriamientoSegundos: 'manual.enfriamiento_segundos',
+  /** Órdenes de apertura manual que un usuario puede pedir por día (día local del sitio). */
+  topeDiario: 'manual.tope_diario',
+} as const;
+
+export type ClaveDeManual = (typeof CLAVES_DE_MANUAL)[keyof typeof CLAVES_DE_MANUAL];
+
+/**
  * Dónde puede tener excepción una clave: `usuario` = para una cuenta o para un usuario; `cuenta` = solo para
  * una cuenta entera (la bolsa es de la cuenta); `global` = ninguna, vale igual para todos.
  */
 export type AlcanceDeExcepcion = 'usuario' | 'cuenta' | 'global';
 
 export interface DefinicionDeClave {
-  readonly clave: ClaveDeLimite | ClaveDePlaca | ClaveDeApertura | ClaveDeIncidente | ClaveDeSenal;
+  readonly clave:
+    | ClaveDeLimite
+    | ClaveDePlaca
+    | ClaveDeApertura
+    | ClaveDeIncidente
+    | ClaveDeSenal
+    | ClaveDeManual;
   readonly minimo: number;
   readonly maximo: number;
   readonly excepcion: AlcanceDeExcepcion;
@@ -103,6 +123,12 @@ const DEFINICIONES: readonly DefinicionDeClave[] = [
   { clave: CLAVES.maxPuertasPorQr, minimo: 1, maximo: 1_000, excepcion: 'usuario' },
   { clave: CLAVES.bolsaMensual, minimo: 1, maximo: 100_000_000, excepcion: 'cuenta' },
   { clave: CLAVES.bolsaAvisoPorcentaje, minimo: 1, maximo: 100, excepcion: 'global' },
+];
+
+const DEFINICIONES_DE_MANUAL: readonly DefinicionDeClave[] = [
+  // 0 = sin espera entre órdenes (el interruptor del mínimo; la orden viva por puerta sigue impidiendo acumular pulsos).
+  { clave: CLAVES_DE_MANUAL.enfriamientoSegundos, minimo: 0, maximo: 3_600, excepcion: 'usuario' },
+  { clave: CLAVES_DE_MANUAL.topeDiario, minimo: 1, maximo: 100_000, excepcion: 'usuario' },
 ];
 
 const DEFINICIONES_DE_PLACA: readonly DefinicionDeClave[] = [
@@ -214,6 +240,7 @@ export function todasLasDefiniciones(): readonly DefinicionDeClave[] {
     ...DEFINICIONES_DE_APERTURA,
     ...DEFINICIONES_DE_INCIDENTE,
     ...DEFINICIONES_DE_SENAL,
+    ...DEFINICIONES_DE_MANUAL,
   ];
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SENTIDOS } from './domain/sentido.js';
 import { esquemaListado, esquemaPaginacion } from '../../platform/http/paginacion.js';
 
 export const cuerpoDeLatido = z.strictObject({
@@ -32,6 +33,11 @@ export const respuestaDeConfiguracion = z.object({
    * (`segundos_apertura` + margen). Solo importa con `sensor_puerta.instalado`.
    */
   espera_confirmacion_segundos: z.number().int(),
+  /**
+   * El interruptor de la apertura manual de la puerta (ADR 0035 §5). Con `false` la placa NO hace la petición larga
+   * de órdenes (`GET /dispositivos/ordenes`); vuelve a leer esta configuración y el cambio le llega en un minuto.
+   */
+  apertura_manual: z.boolean(),
 });
 
 /** Habilitar o deshabilitar el sensor de puerta de una placa y fijar su polaridad (solo AGROCOM). */
@@ -70,6 +76,11 @@ export const cuerpoDeVinculo = z.strictObject({
   cuenta_id: z.string().regex(/^\d+$/),
   puerta_id: z.string().regex(/^\d+$/),
   nombre: z.string().trim().min(1).max(100),
+  /**
+   * Dónde está el lector de la placa (ADR 0035 §4): `entrada` (afuera), `salida` (adentro) o `ambos` (una sola placa,
+   * por omisión). Una puerta lleva hasta una placa por lado y `ambos` no se mezcla con los otros (409).
+   */
+  sentido: z.enum(SENTIDOS).default('ambos'),
 });
 
 /** Hasta cuándo espera la placa que alguien pulse su botón. */
@@ -112,7 +123,19 @@ export const respuestaDePlacas = esquemaListado(
     /** La puerta está en el grupo de «aperturas que fallan» (ADR 0031 §18). */
     apertura_fallida: z.boolean(),
     por_confirmar_hasta: z.string().nullable(),
-    dispositivo: z.object({ id: z.string(), nombre: z.string() }).nullable(),
+    /**
+     * La ubicación del lector que pidió el super admin mientras la placa espera el botón (ADR 0035 §4); `null` si
+     * no hay una solicitud en curso. Al confirmarse pasa a `dispositivo.sentido`.
+     */
+    vinculo_sentido: z.enum(SENTIDOS).nullable(),
+    dispositivo: z
+      .object({
+        id: z.string(),
+        nombre: z.string(),
+        /** Dónde está el lector: `entrada` (afuera), `salida` (adentro) o `ambos` (ADR 0035 §4). Campo aditivo. */
+        sentido: z.enum(['entrada', 'salida', 'ambos']),
+      })
+      .nullable(),
     cuenta: z.object({ id: z.string(), codigo: z.string(), nombre: z.string() }).nullable(),
     puerta: z.object({ id: z.string(), nombre: z.string() }).nullable(),
   }),

@@ -36,7 +36,8 @@ Cada fila es una **lectura**: un intento de lectura de un QR (o una apertura fí
 - `idx_lecturas_repetido_de`
 - `fk_lecturas_repetido_de`
 - `fk_lecturas_tenant`, `fk_lecturas_puerta`, `fk_lecturas_dispositivo`, `fk_lecturas_qr`
-- `ck_eventos_acceso_metodo` y `ck_eventos_acceso_resultado`: conservan el nombre anterior a propósito; en MariaDB renombrar un `CHECK` exige `ALGORITHM=COPY` (reescribe la tabla y bloquea las escrituras; 4 s con 200 000 filas). Solo se ven en el mensaje de un `INSERT` inválido.
+- `ck_lecturas_metodo` (`qr`, `pulsador`, `forzada`, `manual`; la rehízo `add_apertura_manual_a_lecturas`), `fk_lecturas_usuario` e `idx_lecturas_manual` `(tenant_id, metodo, ocurrido_at)` (conteos y estadísticas de la apertura manual por cuenta y día).
+- `ck_eventos_acceso_resultado`: conserva el nombre anterior a propósito; en MariaDB renombrar un `CHECK` exige `ALGORITHM=COPY` (reescribe la tabla y bloquea las escrituras; 4 s con 200 000 filas). Solo se ven en el mensaje de un `INSERT` inválido.
 
 El SQL completo está en `03-schema-sql.md`.
 

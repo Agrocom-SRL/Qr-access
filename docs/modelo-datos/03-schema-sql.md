@@ -1117,7 +1117,7 @@ ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);
 
 ## Apertura manual desde la app y hasta dos placas por puerta (ADR 0035)
 
-Migraciones **propuestas** (se escriben en la ola AM1; este bloque es el diseño y se ajusta si la migración cambia). Los datos de local y de producción son de prueba: se puede reestructurar y volver a sembrar.
+Migraciones de la ola AM1 (`db/migrations/20261104100001` a `20261104100005`, en este orden: `add_sentido_a_dispositivos`, `add_apertura_manual_a_cuentas`, `add_apertura_manual_a_puertas`, `add_apertura_manual_a_lecturas`, `create_ordenes_apertura`); el SQL de abajo es el de esas migraciones (verificado contra MariaDB 10.11: migrar, sembrar dos veces, revertir y volver a migrar). Los datos de local y de producción son de prueba: se puede reestructurar y volver a sembrar.
 
 ```sql
 -- add_sentido_a_dispositivos: hasta dos placas por puerta, una por ubicación del lector (afuera/adentro)
@@ -1127,6 +1127,7 @@ ALTER TABLE dispositivos
   DROP INDEX uq_dispositivos_puerta,
   ADD UNIQUE KEY uq_dispositivos_puerta_sentido (puerta_id, sentido, en_servicio);
 -- La exclusividad de 'ambos' (no convive con 'entrada' ni 'salida') la hace cumplir la acción de vincular.
+-- El down FALLA si una puerta tiene dos placas en servicio (revocar una antes de revertir).
 
 -- add_apertura_manual_a_puertas: la habilita el administrador de la cuenta
 ALTER TABLE puertas
@@ -1145,7 +1146,10 @@ ALTER TABLE lecturas
   DROP CONSTRAINT ck_eventos_acceso_metodo,
   ADD CONSTRAINT ck_lecturas_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada', 'manual')),
   ADD CONSTRAINT fk_lecturas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
-  ADD KEY idx_lecturas_manual (tenant_id, metodo, ocurrido_at);
+  ADD KEY idx_lecturas_manual (tenant_id, metodo, ocurrido_at),
+  ALGORITHM=COPY, LOCK=SHARED;
+-- El down vuelve al CHECK `ck_eventos_acceso_metodo` anterior y FALLA si ya hay lecturas 'manual' (tabla de solo inserción:
+-- no se borra nada para poder revertir).
 
 -- create_ordenes_apertura
 CREATE TABLE ordenes_apertura (
@@ -1170,6 +1174,7 @@ CREATE TABLE ordenes_apertura (
   CONSTRAINT fk_ordenes_apertura_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
   CONSTRAINT fk_ordenes_apertura_lectura FOREIGN KEY (lectura_id) REFERENCES lecturas (id),
   CONSTRAINT ck_ordenes_apertura_estado CHECK (estado IN ('pendiente', 'entregada', 'ejecutada', 'fallida', 'vencida')),
+  CONSTRAINT ck_ordenes_apertura_vence CHECK (vence_at <= created_at + INTERVAL 30 SECOND),
   UNIQUE KEY uq_ordenes_apertura_vigente (puerta_id, vigente_clave),
   UNIQUE KEY uq_ordenes_apertura_clave (tenant_id, usuario_id, clave_idempotencia),
   KEY idx_ordenes_apertura_entrega (puerta_id, estado, vence_at),
@@ -1177,4 +1182,4 @@ CREATE TABLE ordenes_apertura (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
-Permisos nuevos (seed `01_catalogo.sql`, idempotente): `accesos.apertura_manual.configurar` (solo Administrador de la cuenta) y `accesos.apertura_manual.usar` (todos los roles de cuenta, ámbito cuenta). Topes nuevos en `configuracion_limites`: enfriamiento por usuario y puerta (10 s) y tope diario por usuario.
+Permisos nuevos (seed `01_catalogo.sql`, idempotente): `accesos.apertura_manual.configurar` (solo Administrador de la cuenta) y `accesos.apertura_manual.usar` (todos los roles de cuenta, ámbito cuenta). Topes nuevos en `configuracion_limites` (mismo seed, sin pisar lo que AGROCOM edite): `manual.enfriamiento_segundos` = 10 (ADR 0035 §7) y `manual.tope_diario` = 30 por usuario y día (supuesto de partida). `usar` se concede a los roles base Titular, Miembro y Guardia; el Administrador recibe ambos con todos los permisos de cuenta.

@@ -1,9 +1,11 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { LimitadorDeIntentos } from '../../platform/seguridad/limitador-de-intentos.js';
 import { dispositivoDe } from '../../plugins/permisos.js';
 import { ejecutar as obtenerConfiguracion } from './actions/obtener-configuracion.js';
 import { ejecutar as registrarLatido } from './actions/registrar-latido.js';
+import { coincideConElEtag, etagDe } from './etag.js';
 import { rutasDePlacas } from './rutas-placas.js';
 import {
   cuerpoDeAnuncio,
@@ -121,11 +123,26 @@ export function rutas({
     app.get(
       '/dispositivos/configuracion',
       {
-        schema: { tags: ['dispositivos'], response: { 200: respuestaDeConfiguracion } },
+        schema: {
+          tags: ['dispositivos'],
+          description:
+            'Configuración de la puerta de la placa. Lleva `ETag`; con `If-None-Match` igual responde 304 sin cuerpo.',
+          response: { 200: respuestaDeConfiguracion, 304: z.undefined().describe('Sin cambios') },
+        },
         config: { acceso: 'dispositivo' },
         handlerTimeout: config.PETICION_MS_DISPOSITIVOS,
       },
-      (request) => obtenerConfiguracion(poolDispositivos, dispositivoDe(request)),
+      async (request, reply) => {
+        const configuracion = await obtenerConfiguracion(poolDispositivos, dispositivoDe(request));
+        // ETag = hash del cuerpo: la placa relee la configuración cada ~60 s y, si no cambió, recibe un 304 sin cuerpo
+        // (ADR 0035 §5). Es un hash de la configuración de SU puerta, nunca un secreto.
+        const etag = etagDe(configuracion);
+        void reply.header('etag', etag);
+        if (coincideConElEtag(request.headers['if-none-match'], etag)) {
+          return reply.status(304).send();
+        }
+        return configuracion;
+      },
     );
     listo();
   };

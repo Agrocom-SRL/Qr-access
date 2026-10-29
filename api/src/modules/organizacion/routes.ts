@@ -1,10 +1,13 @@
 import type { FastifyPluginCallbackZod } from 'fastify-type-provider-zod';
 import type { DependenciasDeModulo } from '../../platform/http/dependencias.js';
 import { esquemaPaginacion } from '../../platform/http/paginacion.js';
-import { permiso } from '../../plugins/permisos.js';
+import { permiso, tienePermiso, usuarioDe } from '../../plugins/permisos.js';
+import { ejecutar as configurarAperturaManual } from './actions/configurar-apertura-manual.js';
+import { ejecutar as listarAperturaManual } from './actions/listar-apertura-manual.js';
 import { ejecutar as listarPuertas } from './actions/listar-puertas.js';
 import { crearServicioDeOrganizacion } from './contracts.js';
 import {
+  cuerpoDeAperturaManual,
   cuerpoDeEdicionDePuerta,
   cuerpoDeEdicionDeSitio,
   cuerpoDeNuevaPuerta,
@@ -14,6 +17,7 @@ import {
   parametrosDeUsuario,
   parametrosDePuerta,
   parametrosDeSitio,
+  respuestaDeAperturaManual,
   respuestaDeCreado,
   respuestaDeEstructura,
 } from './schemas.js';
@@ -34,6 +38,80 @@ export function rutas({ pool }: DependenciasDeModulo): FastifyPluginCallbackZod 
         preHandler: permiso('organizacion.puerta.ver'),
       },
       (request) => listarPuertas(pool, request.query),
+    );
+
+    // `/puertas/apertura-manual` no choca con `/puertas/:puertaId` (ese solo atiende PATCH y DELETE).
+    app.get(
+      '/puertas/apertura-manual',
+      {
+        schema: {
+          tags: ETIQUETA,
+          description:
+            'Las puertas de la cuenta con su apertura manual (ADR 0035 §5). Con el permiso ' +
+            '`accesos.apertura_manual.configurar` salen todas las activas, con `tiene_placa` (la pantalla del ' +
+            'administrador muestra «Sin placa» sin interruptor); con solo `accesos.apertura_manual.usar`, ' +
+            'únicamente las `disponible` (encendidas y con al menos una placa en servicio), que son las que la app ' +
+            'ofrece en el botón de abrir. Ningún campo lleva sentido.',
+          response: { 200: respuestaDeAperturaManual },
+        },
+        // Cualquiera de los dos permisos sirve: quien configura también necesita ver las puertas.
+        preHandler: (request) => {
+          const usuario = usuarioDe(request);
+          return tienePermiso(usuario, 'accesos.apertura_manual.configurar')
+            ? Promise.resolve()
+            : permiso('accesos.apertura_manual.usar')(request);
+        },
+      },
+      async (request) => ({
+        datos: await listarAperturaManual(
+          pool,
+          { verTodas: tienePermiso(usuarioDe(request), 'accesos.apertura_manual.configurar') },
+          new Date(),
+        ),
+      }),
+    );
+
+    app.put(
+      '/puertas/:puertaId/apertura-manual',
+      {
+        schema: {
+          tags: ETIQUETA,
+          description:
+            'Enciende o apaga la apertura manual de una puerta (solo el Administrador de la cuenta). 404 ' +
+            '`puerta.no_encontrada` si no es de la cuenta. Se puede escribir aunque la puerta no tenga placa.',
+          params: parametrosDePuerta,
+          body: cuerpoDeAperturaManual,
+        },
+        preHandler: permiso('accesos.apertura_manual.configurar'),
+      },
+      async (request, reply) => {
+        await configurarAperturaManual(
+          pool,
+          { tipo: 'puerta', puertaId: request.params.puertaId },
+          request.body.habilitada,
+        );
+        return reply.status(204).send();
+      },
+    );
+
+    // La cuenta propia se nombra `actual` (no hay una ruta de la cuenta propia todavía; la plataforma usa
+    // `/plataforma/cuentas/{id}`): el id sale siempre del contexto de la sesión, nunca de la petición.
+    app.put(
+      '/cuentas/actual/apertura-manual',
+      {
+        schema: {
+          tags: ETIQUETA,
+          description:
+            'Enciende o apaga la apertura manual en TODAS las puertas de la cuenta y el valor inicial de las ' +
+            'puertas que se registren después (ADR 0035 §5), en una sola transacción. Solo el Administrador.',
+          body: cuerpoDeAperturaManual,
+        },
+        preHandler: permiso('accesos.apertura_manual.configurar'),
+      },
+      async (request, reply) => {
+        await configurarAperturaManual(pool, { tipo: 'cuenta' }, request.body.habilitada);
+        return reply.status(204).send();
+      },
     );
 
     // Estructura de la cuenta del contexto: el administrador gestiona sus sitios y puertas (HU-07).
