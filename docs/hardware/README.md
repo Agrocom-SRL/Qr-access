@@ -167,7 +167,7 @@ Qué hace el servidor (para quien consuma el estado): ver la ficha `docs/modelo-
 - **Interruptor en la placa.** La configuración de la API trae `apertura_manual` (bool, el interruptor de la puerta). Con `false` la placa no hace la petición larga de órdenes; solo atiende el lector QR.
 - **Apertura manual (sin lector).** La placa pregunta por órdenes de apertura a la API con una petición larga (`GET /api/v1/dispositivos/ordenes`, ~20 s) por la misma Ethernet y la misma credencial. Al recibir una orden vigente, da el **mismo pulso** del relé (`segundos_apertura`, con su tope) y reporta el resultado; el sensor de puerta la confirma como en las aperturas por QR. Esta función sirve de respaldo si se avería o roban el lector.
 - **Falla segura:** sin red, sin orden o con una orden cuyo plazo (`valida_por_ms`) ya corrió, la placa no abre. Las únicas aperturas sin servidor son el pulsador de salida y la llave mecánica.
-- El contrato de los endpoints de la placa está en la sección siguiente (ola AM1, lado de la API); el firmware lo implementa en la ola AM2.
+- El contrato de los endpoints de la placa está en la sección siguiente (ola AM1, lado de la API); el firmware lo implementa la ola AM2: una tarea propia (`ordenes`) hace la petición larga, aparte de la de validación; `lib/ordenes` decide cuándo preguntar y si la orden sigue vigente; `puerta::Maquina::alRecibirOrdenManual` es lo único que abre por esta vía, y solo con el relé libre. La configuración se relee cada 60 s para enterarse del interruptor `apertura_manual`.
 
 ### Apertura manual: contrato de la placa (ADR 0035 §2; API de la ola AM1)
 

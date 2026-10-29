@@ -38,6 +38,15 @@ const char* texto(Causa causa) {
   return "";
 }
 
+const char* textoDeOrden(Resultado resultado) {
+  switch (resultado) {
+    case Resultado::Ejecutada: return "ejecutada";
+    case Resultado::Fallida: return "fallida";
+    case Resultado::SinSensor: return "sin_confirmacion";
+  }
+  return "sin_confirmacion";
+}
+
 bool eventoIdValido(const char* id) {
   if (id == nullptr) return false;
   const size_t largo = strnlen(id, MAX_EVENTO_ID + 1);
@@ -66,17 +75,20 @@ void Observador::cerrar(Resultado resultado, Causa causa) {
   memcpy(informe.eventoId, eventoId_, sizeof(informe.eventoId));
   informe.resultado = resultado;
   informe.causa = causa;
+  informe.manual = manual_;
   encolar(informe);
   observando_ = false;
   memset(eventoId_, 0, sizeof(eventoId_));
+  manual_ = false;
 }
 
 void Observador::iniciar(const char* eventoId, uint32_t inicioPulsoMs, uint32_t esperaMs,
-                         const Sensor& sensor, Lectura lecturaActual) {
+                         const Sensor& sensor, Lectura lecturaActual, bool manual) {
   if (!eventoIdValido(eventoId)) return;
   // Una apertura nueva con la anterior aún en observación: la anterior no vio abrir la puerta
   // (si no, ya estaría informada) y se cierra como `puerta_no_abrio` en vez de perderse.
   cerrarObservacionVigente();
+  manual_ = manual;
   strncpy(eventoId_, eventoId, MAX_EVENTO_ID);
   eventoId_[MAX_EVENTO_ID] = '\0';
   if (!sensor.instalado) {
@@ -89,9 +101,10 @@ void Observador::iniciar(const char* eventoId, uint32_t inicioPulsoMs, uint32_t 
   esperaMs_ = esperaMs;
 }
 
-void Observador::releNoAccionado(const char* eventoId) {
+void Observador::releNoAccionado(const char* eventoId, bool manual) {
   if (!eventoIdValido(eventoId)) return;
   cerrarObservacionVigente();
+  manual_ = manual;
   strncpy(eventoId_, eventoId, MAX_EVENTO_ID);
   eventoId_[MAX_EVENTO_ID] = '\0';
   cerrar(Resultado::Fallida, Causa::ReleNoAccionado);

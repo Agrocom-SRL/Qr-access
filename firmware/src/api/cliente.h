@@ -13,8 +13,9 @@
 
 namespace api {
 
-// `Confirmacion` es la del vínculo (ADR 0026); `Informe` es la de la apertura (ADR 0031 §18).
-enum class Tipo : uint8_t { Validacion, Latido, Configuracion, Anuncio, Confirmacion, Informe };
+// `Confirmacion` es la del vínculo (ADR 0026); `Informe` es la de la apertura (ADR 0031 §18); `Orden`
+// es una orden de apertura manual recibida de la app (ADR 0035).
+enum class Tipo : uint8_t { Validacion, Latido, Configuracion, Anuncio, Confirmacion, Informe, Orden };
 
 // Resultado de una llamada, ya interpretado por lib/respuesta.
 struct Respuesta {
@@ -26,6 +27,11 @@ struct Respuesta {
   respuesta::Anuncio anuncio;          // Anuncio y Confirmacion
   // Validacion con apertura: el evento a informar; Informe: el evento informado. Vacío si no hay.
   char eventoId[confirmacion::MAX_EVENTO_ID + 1] = {0};
+  // Informe: true si es el de una orden de apertura manual (`eventoId` es el id de la orden).
+  bool manual = false;
+  // Orden: la orden recibida y el millis() en que llegó la respuesta, de donde corre su plazo relativo.
+  respuesta::Orden orden;
+  uint32_t recibidaEnMs = 0;
 };
 
 // Lo que el latido reporta además de la versión (ADR 0031 §18). Solo lectura de pines.
@@ -62,6 +68,14 @@ bool confirmar(const char* clave);
 // Encola el informe de una apertura (POST /dispositivos/confirmaciones). Es en segundo plano: la
 // tarea de red atiende primero cualquier validación pendiente. false si no se pudo encolar.
 bool enviarInforme(const confirmacion::Informe& informe);
+
+// Apertura manual (ADR 0035). La placa pregunta por órdenes con una petición larga en su PROPIA tarea,
+// aparte de la de validación: esperar una orden nunca retrasa un QR. `habilitarOrdenes(true)` solo
+// cuando se debe preguntar (lib/ordenes: operando, con red, configuración leída y `apertura_manual`).
+// Tras entregar una orden la tarea queda en pausa hasta `reanudarOrdenes()`: se decide la orden
+// recibida antes de volver a preguntar.
+void habilitarOrdenes(bool habilitada);
+void reanudarOrdenes();
 
 // true si terminó alguna llamada; deja su respuesta en `respuesta`.
 bool siguienteRespuesta(Respuesta& respuesta);
