@@ -3289,6 +3289,18 @@
   "@perfilAcercaPrivacidadAyuda": {
     "description": "Subtítulo de la fila de la política de privacidad en Acerca de la app"
   },
+  "perfilMenuMas": "Más opciones",
+  "@perfilMenuMas": {
+    "description": "Tooltip del menú de tres puntos de Perfil"
+  },
+  "perfilAjustes": "Ajustes",
+  "@perfilAjustes": {
+    "description": "Opción del menú de Perfil y título de la página de ajustes (idioma, tema, dispositivos, acerca de)"
+  },
+  "perfilSeguridadAyuda": "Anula QR y exporta los datos de tu rama",
+  "@perfilSeguridadAyuda": {
+    "description": "Texto de apoyo de la página de Seguridad y datos"
+  },
   "paginaLegalError": "No se pudo cargar el documento.",
   "@paginaLegalError": {
     "description": "Mensaje cuando no se pudo cargar un documento legal"

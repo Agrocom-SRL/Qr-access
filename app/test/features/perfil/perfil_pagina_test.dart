@@ -1,8 +1,6 @@
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
-import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
-import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/perfil.dart';
@@ -57,39 +55,9 @@ void main() {
     expect(find.text('AGR'), findsOneWidget);
     expect(find.textContaining('Empresa'), findsOneWidget);
     expect(find.text('Administrador'), findsOneWidget);
-    // La información de la app va en su propia hoja, no en la fila.
-    expect(find.text(textos.perfilAcercaTitulo), findsOneWidget);
-    expect(find.text(textos.perfilAcercaOrganizacion), findsNothing);
-  });
-
-  testWidgets('Acerca de la app abre la hoja con nombre, organización, '
-      'versión y el copyright', (tester) async {
-    await _montar(tester);
-    final textos = textosEn(tester);
-
-    await tester.ensureVisible(find.text(textos.perfilAcercaTitulo));
-    await tester.tap(find.text(textos.perfilAcercaTitulo));
-    await tester.pumpAndSettle();
-
-    expect(find.text(textos.perfilAcercaNombreEtiqueta), findsOneWidget);
-    expect(find.text(textos.perfilAcercaOrganizacion), findsOneWidget);
-    expect(find.text(textos.perfilAcercaVersionEtiqueta), findsOneWidget);
-    expect(find.text(textos.perfilAcercaDesarrollo), findsOneWidget);
-    expect(find.text(textos.perfilAcercaDerechos(2026)), findsOneWidget);
-  });
-
-  testWidgets('Acerca de la app ofrece los términos y la privacidad', (
-    tester,
-  ) async {
-    await _montar(tester);
-    final textos = textosEn(tester);
-
-    await tester.ensureVisible(find.text(textos.perfilAcercaTitulo));
-    await tester.tap(find.text(textos.perfilAcercaTitulo));
-    await tester.pumpAndSettle();
-
-    expect(find.text(textos.perfilAcercaTerminos), findsOneWidget);
-    expect(find.text(textos.perfilAcercaPrivacidad), findsOneWidget);
+    // Ajustes, incidentes y demás cuelgan del menú, no de la página.
+    expect(find.text(textos.perfilAcercaTitulo), findsNothing);
+    expect(find.text(textos.perfilDispositivos), findsNothing);
   });
 
   testWidgets('no lleva título de pantalla: empieza por el usuario', (
@@ -117,19 +85,8 @@ void main() {
     expect(find.text(rolDePrueba.nombre), findsWidgets);
   });
 
-  testWidgets('el interruptor de tema guarda la preferencia', (tester) async {
-    final (sesion: _, :preferencias) = await _montar(tester);
-
-    await tester.ensureVisible(find.byType(Switch));
-    await tester.tap(find.byType(Switch));
-    await tester.pump();
-
-    expect(preferencias.valores[clavePreferenciaTema], ThemeMode.dark.name);
-  });
-
   testWidgets('Cerrar sesión llama al controlador', (tester) async {
     final (:sesion, preferencias: _) = await _montar(tester);
-    // Con la fila de idioma, el botón queda bajo la barra en 360×800.
     final cerrar = find.text(textosEn(tester).sesionCerrar);
     await tester.ensureVisible(cerrar);
     await tester.pump();
@@ -163,17 +120,5 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, textos.comunGuardar));
     await tester.pumpAndSettle();
     expect(perfil.nombres, hasLength(1));
-  });
-
-  testWidgets('Dispositivos conectados lleva a su pantalla', (tester) async {
-    await _montar(tester);
-    final textos = textosEn(tester);
-
-    final fila = find.text(textos.perfilDispositivos);
-    await tester.ensureVisible(fila);
-    await tester.tap(fila);
-    await tester.pumpAndSettle();
-
-    expect(find.text('destino ${Rutas.dispositivos}'), findsOneWidget);
   });
 }

@@ -3,35 +3,29 @@ import 'package:agrocom_acceso/core/formato/fecha_hora.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
-import 'package:agrocom_acceso/core/router/rutas.dart';
-import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
-import 'package:agrocom_acceso/core/theme/tema_controlador.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
-import 'package:agrocom_acceso/features/perfil/presentation/widgets/acerca_de_la_app.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
-import 'package:agrocom_acceso/features/perfil/presentation/widgets/seccion_seguridad.dart';
-import 'package:agrocom_acceso/features/perfil/presentation/widgets/selector_idioma.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/menu_perfil.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_foto.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_interruptor.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
 import 'package:agrocom_acceso/shared/widgets/templates/plantilla_admin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// Días de suscripción por debajo de los cuales la fila pasa a advertencia.
 const diasDeAvisoDeSuscripcion = 15;
 
-/// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol,
-/// el tema, la información de la app y "Cerrar sesión".
+/// Perfil y cuenta (handoff C09/E09): quién soy, la cuenta y su plan, el rol y
+/// "Cerrar sesión". Lo demás (ajustes, incidentes, apertura manual, seguridad)
+/// cuelga del menú de tres puntos, según el rol.
 class PerfilPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -62,19 +56,12 @@ class PerfilPagina extends ConsumerWidget {
     final tokens = context.tokens;
     final colores = tokens.colores;
     final textos = Theme.of(context).textTheme;
-    final modo = ref.watch(temaProvider);
     final ahora = ref.read(relojProvider)();
     final suscripcion = sesion.suscripcion;
     final dias = suscripcion == null
         ? null
         : diasRestantes(suscripcion.hasta, ahora);
     final enAviso = dias != null && dias < diasDeAvisoDeSuscripcion;
-    final oscuro = switch (modo) {
-      ThemeMode.dark => true,
-      ThemeMode.light => false,
-      ThemeMode.system =>
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark,
-    };
 
     // Sin título de pantalla: la página empieza por el bloque del usuario.
     return PlantillaAdmin(
@@ -125,12 +112,11 @@ class PerfilPagina extends ConsumerWidget {
                     ],
                   ),
                 ),
+                const MenuPerfil(),
               ],
             ),
             SizedBox(height: tokens.espacio.xl),
             _TarjetaCuenta(sesion: sesion),
-            SizedBox(height: tokens.espacio.l),
-            const SeccionSeguridad(),
             SizedBox(height: tokens.espacio.l),
             AccesoTarjeta(
               relleno: EdgeInsets.symmetric(horizontal: tokens.espacio.l),
@@ -143,25 +129,6 @@ class PerfilPagina extends ConsumerWidget {
                     invertida: true,
                   ),
                   FilaClaveValor(
-                    clave: l10n.perfilDispositivos,
-                    valor: l10n.perfilDispositivosAyuda,
-                    icono: Icons.devices_outlined,
-                    invertida: true,
-                    claveEnfatizada: true,
-                    alTocar: () => context.go(Rutas.dispositivos),
-                  ),
-                  // Solo el administrador de la cuenta enciende o apaga la
-                  // apertura sin QR por puerta (ADR 0035 §5).
-                  if (sesion.tiene(Permisos.configurarAperturaManual))
-                    FilaClaveValor(
-                      clave: l10n.perfilAperturaManual,
-                      valor: l10n.perfilAperturaManualAyuda,
-                      icono: Icons.lock_open,
-                      invertida: true,
-                      claveEnfatizada: true,
-                      alTocar: () => context.go(Rutas.aperturaManual),
-                    ),
-                  FilaClaveValor(
                     clave: l10n.perfilSuscripcion,
                     valor: suscripcion == null
                         ? l10n.perfilSinSuscripcion
@@ -170,23 +137,8 @@ class PerfilPagina extends ConsumerWidget {
                     icono: Icons.workspace_premium_outlined,
                     invertida: true,
                     claveEnfatizada: true,
+                    conSeparador: false,
                   ),
-                  const FilaIdioma(),
-                  FilaClaveValor(
-                    clave: l10n.perfilTemaOscuro,
-                    valor: l10n.perfilTemaOscuroAyuda,
-                    icono: Icons.dark_mode_outlined,
-                    invertida: true,
-                    claveEnfatizada: true,
-                    accion: AccesoInterruptor(
-                      activo: oscuro,
-                      etiqueta: l10n.perfilTemaOscuro,
-                      alCambiar: (valor) => ref
-                          .read(temaProvider.notifier)
-                          .activarOscuro(oscuro: valor),
-                    ),
-                  ),
-                  const FilaAcercaDeLaApp(conSeparador: false),
                 ],
               ),
             ),

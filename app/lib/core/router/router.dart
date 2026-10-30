@@ -126,6 +126,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             paginaAnimada(context, state, const AperturaManualAdminPagina()),
       ),
       GoRoute(
+        path: Rutas.ajustes,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const AjustesPagina()),
+      ),
+      GoRoute(
+        path: Rutas.seguridad,
+        pageBuilder: (context, state) =>
+            paginaAnimada(context, state, const SeguridadPagina()),
+      ),
+      GoRoute(
         path: Rutas.dispositivos,
         pageBuilder: (context, state) =>
             paginaAnimada(context, state, const DispositivosPagina()),
