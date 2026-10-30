@@ -1,6 +1,6 @@
 # ADR 0036 — Una placa por puerta, con uno o dos lectores en un bus RS485
 
-**Estado:** Propuesta (2026-10-30), con Miguel. Reemplazaría el §4 del ADR 0035 («una placa por lector») **cuando se cumplan las dos condiciones de abajo**: la prueba de banco y las respuestas del dueño del condominio. Hasta entonces el §4 del ADR 0035 sigue vigente.
+**Estado:** Propuesta (2026-10-30, ajustada el mismo día con lo que informó el condominio), con Miguel. Reemplazaría el §4 del ADR 0035 («una placa por lector») **cuando se cumplan las condiciones de abajo**: la prueba de banco con los dos lectores (aún no se tiene el segundo lector físico) y las preguntas abiertas que quedan. Hasta entonces el §4 del ADR 0035 sigue vigente.
 
 ## Contexto
 
@@ -9,6 +9,8 @@ El ADR 0035 §4 descartó «una placa con dos lectores» porque la ESP32-ETH01 n
 Pero el lector de la mesa de trabajo es **RS485** (`docs/hardware/README.md`): llega a la placa por un MAX485 con **solo recepción** (RE y DE a GND) en un único GPIO (GPIO5). RS485 es un bus multipunto: varios lectores pueden compartir el mismo par A/B, así que **el segundo lector no necesita otro pin**. El límite de hardware que motivó el §4 desaparece.
 
 Además, la plataforma no registra quién entró ni quién salió: solo **cuándo y cuántas veces se abrió la puerta**. Saber de qué lado leyó cada lector no aporta nada que se muestre o se decida.
+
+Y los portones **tienen su propio sensor y su propio control del tiempo abierto**: abren y cierran según el paso de vehículos o personas. La plataforma **no decide cuánto queda abierta la puerta**: solo envía un pulso que dice «ábrete».
 
 ## Decisión
 
@@ -30,11 +32,17 @@ El firmware **serializa**: mientras valida una lectura o mantiene el pulso, no i
 
 El antirrebote del mismo texto y la ventana de repetición de 15 s del ADR 0032 §4 siguen igual.
 
-### 4. Mientras la puerta está abierta (por definir con el dueño del condominio)
+### 4. Nosotros solo damos el pulso; el tiempo abierto lo manda el sensor del portón
 
-Propuesta de partida, **sujeta a las respuestas de abajo**: si llega una lectura **válida** mientras el pulso está activo, el pulso se **extiende** (hasta un tope, nunca más que el máximo del firmware) en vez de lanzar otro aparte. En puertas vehiculares, la palanca principal es `segundos_apertura` (hoy de 1 a 30 s).
+El relé da un **pulso corto** de apertura y nada más. Cuánto queda abierto el portón lo decide su propio sensor (paso de vehículos o personas). Por eso `segundos_apertura` es **la duración del pulso**, no el tiempo abierto: en un portón con control propio debe ser corto.
 
-Sigue valiendo el QR de un solo uso (invariante 3): si la persona 1 gasta su QR y entra la persona 2, la persona 1 genera otro. No se cambia.
+Con dos lecturas válidas seguidas (por ejemplo, un lector de cada lado):
+
+- La **primera** valida y pulsa de inmediato.
+- La **segunda** también se valida y se consume en el servidor (invariante 3), pero **su pulso espera a que la puerta se cierre** y entonces se envía. No se extiende ni se repite el pulso de la primera.
+- El pulso en espera **vence** si el portón no se cierra en un tope (por definir): una orden vencida no abre (invariante 2) y queda registrada como no ejecutada en `confirmaciones_apertura`.
+
+Para esperar al cierre la placa necesita **saber que la puerta está cerrada** (ver las preguntas abiertas). Sigue valiendo el QR de un solo uso: si la persona 1 gasta su QR y entra la persona 2, la persona 1 genera otro.
 
 ### 5. Falla de la placa
 
@@ -42,15 +50,18 @@ Una sola placa es un **punto único de falla**: si cae, caen los dos lados de le
 
 ## Condiciones para aceptarla
 
-1. **Prueba de banco:** dos lectores en el mismo bus A/B con la misma placa. Verificar que (a) cada lectura llega íntegra, (b) dos lecturas simultáneas se descartan o se procesan en orden sin abrir por error, y (c) el formato de trama es el mismo en los dos lectores. Confirmar además el modelo exacto del lector (`docs/hardware/README.md` lo tiene sin confirmar).
-2. **Respuestas del dueño del condominio** (ver abajo).
+1. **Prueba de banco, cuando se tenga el segundo lector físico:** dos lectores en el mismo bus A/B con la misma placa. Verificar que (a) cada lectura llega íntegra, (b) dos lecturas simultáneas se descartan o se procesan en orden sin abrir por error, (c) el formato de trama es el mismo en los dos lectores y (d) el segundo pulso espera al cierre de la puerta. Confirmar además el modelo exacto del lector (`docs/hardware/README.md` lo tiene sin confirmar). **Hasta entonces no se implementa nada de esta decisión.**
+2. **Cerrar las preguntas abiertas** de abajo.
 
-## Preguntas abiertas para el dueño del condominio
+## Resueltas (informó el condominio, 2026-10-30)
 
-1. En el portón vehicular, ¿se cruzan dos autos a la vez (uno entra y otro sale)? ¿Qué debería pasar?
-2. ¿Cuántos segundos debe quedar abierto el portón vehicular y la puerta peatonal?
-3. ¿Es aceptable que quien ve su QR ya consumido (porque entró otra persona) tenga que generar otro?
-4. Con dos lecturas casi simultáneas, ¿se atiende por orden de llegada, o alguna debe tener prioridad?
+- **Cruce de dos autos y tiempo abierto del portón:** lo maneja el sensor propio del portón; la plataforma no controla la duración (§4).
+
+## Preguntas abiertas
+
+1. **¿De dónde sale la señal de «puerta cerrada»?** Opciones: el contacto de la propia placa (`sensor_puerta`, hoy opcional y con polaridad pendiente de confirmar en campo, `docs/hardware/README.md`) o un contacto seco del control del portón. Sin esa señal la placa no puede esperar al cierre; sin ella, el segundo pulso saldría con una separación fija (por definir).
+2. **¿Cuánto esperar el cierre** antes de dar por vencido el pulso en espera?
+3. ¿Es aceptable que la segunda persona vea su QR consumido y la puerta tarde en abrir hasta que cierre la anterior?
 
 ## Alternativas descartadas
 
@@ -62,6 +73,6 @@ Una sola placa es un **punto único de falla**: si cae, caen los dos lados de le
 
 - **Base (ola futura):** quitar `dispositivos.sentido` y su unicidad (migración con `down`; datos de prueba).
 - **API y panel:** retirar `sentido` de vincular placa y de los contratos, y el selector «ubicación del lector» del panel (AM1/AM4). Cambio incompatible: se hace sin romper `/api/v1` mientras no haya clientes publicados que lo usen, o se marca como obsoleto.
-- **Firmware:** serialización de lecturas con cola corta, descarte de tramas corruptas, y (si se aprueba el §4) extensión del pulso con tope. Revisión línea por línea (acciona la cerradura).
+- **Firmware:** serialización de lecturas con cola corta, descarte de tramas corruptas y pulso en espera hasta el cierre, con vencimiento. Revisión línea por línea (acciona la cerradura).
 - **Hardware:** `docs/hardware/README.md` documenta el bus de dos lectores (cableado, terminación y tierra común).
-- **Tests obligatorios:** dos lecturas simultáneas → una sola validación a la vez y ninguna abre por una trama corrupta; lectura válida durante el pulso → extensión con tope (si se aprueba); sin red no abre; QR ya usado sigue rechazado.
+- **Tests obligatorios:** dos lecturas simultáneas → una sola validación a la vez y ninguna abre por una trama corrupta; segunda lectura válida con la puerta abierta → su pulso sale al cerrarse, y vence si no se cierra; sin red no abre; QR ya usado sigue rechazado.
