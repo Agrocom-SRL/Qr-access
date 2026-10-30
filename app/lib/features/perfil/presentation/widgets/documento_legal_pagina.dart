@@ -17,9 +17,12 @@ const rutaTerminos = '/terminos.html';
 const rutaPrivacidad = '/privacidad.html';
 
 /// La dirección de un documento legal. Con la URL de la API vacía (la app web
-/// servida por Nginx) se resuelve contra el sitio desde el que se abrió.
-Uri urlDeDocumento(String ruta) =>
-    Uri.base.resolveUri(Uri.parse('${Entorno.apiUrl}$ruta'));
+/// servida por Nginx) se resuelve contra el sitio desde el que se abrió; si no,
+/// contra [Entorno.sitioUrl], porque la API no sirve estas páginas.
+Uri urlDeDocumento(String ruta) {
+  final base = Entorno.apiUrl.isEmpty ? '' : Entorno.sitioUrl;
+  return Uri.base.resolveUri(Uri.parse('$base$ruta'));
+}
 
 /// Muestra un documento legal. En el teléfono lo carga dentro de la app, en
 /// una página con su flecha de volver, para no sacar a la persona de ella. En

@@ -104,7 +104,10 @@ class _Interruptores extends StatelessWidget {
         children: [
           FilaClaveValor(
             clave: l10n.aperturaManualTodas,
-            valor: l10n.aperturaManualTodasAyuda,
+            valor: l10n.aperturaManualTodasEstado(
+              puertas.where((p) => p.habilitada).length,
+              puertas.length,
+            ),
             icono: Icons.lock_open,
             invertida: true,
             claveEnfatizada: true,
@@ -119,7 +122,7 @@ class _Interruptores extends StatelessWidget {
           for (final puerta in puertas)
             FilaClaveValor(
               clave: puerta.nombre,
-              valor: puerta.sitioNombre,
+              valor: _estadoDe(l10n, puerta),
               icono: Icons.door_front_door_outlined,
               invertida: true,
               claveEnfatizada: true,
@@ -142,4 +145,14 @@ class _Interruptores extends StatelessWidget {
       ),
     );
   }
+}
+
+/// La segunda línea de una puerta: dónde está y si la apertura está encendida;
+/// sin placa, por qué no se puede encender.
+String _estadoDe(AppLocalizations l10n, PuertaAbrible puerta) {
+  if (!puerta.tienePlaca) return l10n.aperturaManualSinPlacaAyuda;
+  final estado = puerta.habilitada
+      ? l10n.aperturaManualEncendida
+      : l10n.aperturaManualApagada;
+  return '${puerta.sitioNombre} · $estado';
 }

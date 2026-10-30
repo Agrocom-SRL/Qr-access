@@ -226,6 +226,9 @@ class Duraciones {
   /// por no abierta: la API la vence a los 15 s y la placa informa después.
   Duration get esperaMaximaOrdenApertura => const Duration(seconds: 30);
 
+  /// Cuánto queda a la vista el PIN propio en Perfil antes de taparse solo.
+  Duration get pinVisible => const Duration(seconds: 10);
+
   /// Cada cuánto se refresca el tablero del administrador.
   Duration get refrescoTablero => const Duration(seconds: 30);
 

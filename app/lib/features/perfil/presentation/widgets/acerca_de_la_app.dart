@@ -75,22 +75,32 @@ class _HojaAcercaDe extends ConsumerWidget {
               children: [
                 Text(l10n.perfilAcercaTitulo, style: textos.titleLarge),
                 SizedBox(height: tokens.espacio.s),
+                // Todas las filas comparten el diseño de Perfil (ícono a la
+                // izquierda y dos líneas); las tres primeras solo se leen, las
+                // de los documentos se tocan y llevan el chevron.
                 FilaClaveValor(
                   clave: l10n.perfilAcercaNombreEtiqueta,
                   valor: l10n.perfilAcercaNombre,
+                  icono: Icons.apps_outlined,
+                  invertida: true,
                 ),
                 FilaClaveValor(
                   clave: l10n.perfilAcercaOrganizacionEtiqueta,
                   valor: l10n.perfilAcercaOrganizacion,
+                  icono: Icons.business_outlined,
+                  invertida: true,
                 ),
                 FilaClaveValor(
                   clave: l10n.perfilAcercaVersionEtiqueta,
                   valor: version ?? l10n.comunGuion,
+                  icono: Icons.sell_outlined,
+                  invertida: true,
                 ),
                 // Los documentos legales se abren dentro de la app (en el
                 // teléfono) para poder volver sin salir de ella.
                 FilaClaveValor(
                   clave: l10n.perfilAcercaTerminos,
+                  valor: l10n.perfilAcercaTerminosAyuda,
                   icono: Icons.description_outlined,
                   invertida: true,
                   claveEnfatizada: true,
@@ -99,10 +109,10 @@ class _HojaAcercaDe extends ConsumerWidget {
                     titulo: l10n.perfilAcercaTerminos,
                     ruta: rutaTerminos,
                   ),
-                  accion: const Icon(Icons.chevron_right),
                 ),
                 FilaClaveValor(
                   clave: l10n.perfilAcercaPrivacidad,
+                  valor: l10n.perfilAcercaPrivacidadAyuda,
                   icono: Icons.privacy_tip_outlined,
                   invertida: true,
                   claveEnfatizada: true,
@@ -112,7 +122,6 @@ class _HojaAcercaDe extends ConsumerWidget {
                     titulo: l10n.perfilAcercaPrivacidad,
                     ruta: rutaPrivacidad,
                   ),
-                  accion: const Icon(Icons.chevron_right),
                 ),
                 SizedBox(height: tokens.espacio.l),
                 Text(

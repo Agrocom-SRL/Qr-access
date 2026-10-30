@@ -62,6 +62,8 @@ Future<void> montarPantalla(
         Rutas.qrRapido,
         Rutas.eventos,
         Rutas.perfil,
+        Rutas.ajustes,
+        Rutas.seguridad,
         Rutas.dispositivos,
         Rutas.notificaciones,
         Rutas.incidentes,

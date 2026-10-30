@@ -3257,7 +3257,7 @@
   "@aperturaManualTitulo": {
     "description": "Título de la pantalla del administrador de la apertura manual"
   },
-  "aperturaManualAyuda": "Permite que los usuarios de la cuenta abran una puerta desde la app, sin QR. Sirve de respaldo si el lector falla o se pierde.",
+  "aperturaManualAyuda": "Cada interruptor enciende o apaga la apertura desde la app, sin QR, en esa puerta. El general cambia todas a la vez, pero puedes dejar encendidas solo las que quieras.",
   "@aperturaManualAyuda": {
     "description": "Ayuda de la pantalla del administrador"
   },
@@ -3280,6 +3280,92 @@
   "perfilAcercaPrivacidad": "Política de privacidad",
   "@perfilAcercaPrivacidad": {
     "description": "Fila de Acerca de la app que abre la política de privacidad"
+  },
+  "perfilAcercaTerminosAyuda": "Las condiciones de uso de la app",
+  "@perfilAcercaTerminosAyuda": {
+    "description": "Subtítulo de la fila de términos y condiciones en Acerca de la app"
+  },
+  "perfilAcercaPrivacidadAyuda": "Cómo cuidamos tus datos",
+  "@perfilAcercaPrivacidadAyuda": {
+    "description": "Subtítulo de la fila de la política de privacidad en Acerca de la app"
+  },
+  "perfilMiPin": "Mi PIN",
+  "@perfilMiPin": {
+    "description": "Fila de Perfil con el PIN propio, oculto, para verlo y copiarlo"
+  },
+  "perfilMiPinNoGuardado": "Cierra sesión y vuelve a ingresar para verlo aquí",
+  "@perfilMiPinNoGuardado": {
+    "description": "Cuando este teléfono no guardó el PIN al ingresar"
+  },
+  "perfilMiPinMostrar": "Mostrar PIN",
+  "@perfilMiPinMostrar": {
+    "description": "Tooltip del ojo que descubre el PIN"
+  },
+  "perfilMiPinOcultar": "Ocultar PIN",
+  "@perfilMiPinOcultar": {
+    "description": "Tooltip del ojo que tapa el PIN"
+  },
+  "perfilMiPinCopiar": "Copiar PIN",
+  "@perfilMiPinCopiar": {
+    "description": "Tooltip del botón que copia el PIN"
+  },
+  "perfilMiPinCopiado": "PIN copiado",
+  "@perfilMiPinCopiado": {
+    "description": "Aviso al copiar el PIN"
+  },
+  "perfilMiActividad": "Hoy · {fecha}",
+  "@perfilMiActividad": {
+    "description": "Título de la fila de actividad de Perfil, con la fecha de hoy",
+    "placeholders": {
+      "fecha": {"type": "String"}
+    }
+  },
+  "perfilQrVigentes": "{n, plural, =0{Sin QR vigentes} =1{1 QR vigente} other{{n} QR vigentes}}",
+  "@perfilQrVigentes": {
+    "description": "Cuántos QR vigentes tiene la persona hoy",
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "inicioAbrirPuertaTitulo": "Abre la puerta desde la app",
+  "@inicioAbrirPuertaTitulo": {
+    "description": "Título de la tarjeta del inicio que indica que se puede abrir sin leer el QR"
+  },
+  "inicioAbrirPuertaAyuda": "Sin escanear el QR: elige la puerta y ábrela desde aquí",
+  "@inicioAbrirPuertaAyuda": {
+    "description": "Texto de apoyo de la tarjeta del inicio para abrir una puerta desde la app"
+  },
+  "aperturaManualTodasEstado": "{encendidas} de {total} puertas encendidas",
+  "@aperturaManualTodasEstado": {
+    "description": "Estado del interruptor general de la apertura desde la app",
+    "placeholders": {
+      "encendidas": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "aperturaManualEncendida": "Encendida",
+  "@aperturaManualEncendida": {
+    "description": "Estado de una puerta con la apertura desde la app encendida"
+  },
+  "aperturaManualApagada": "Apagada",
+  "@aperturaManualApagada": {
+    "description": "Estado de una puerta con la apertura desde la app apagada"
+  },
+  "aperturaManualSinPlacaAyuda": "Vincula una placa para poder encenderla",
+  "@aperturaManualSinPlacaAyuda": {
+    "description": "Explica por qué una puerta sin placa no tiene interruptor"
+  },
+  "perfilMenuMas": "Más opciones",
+  "@perfilMenuMas": {
+    "description": "Tooltip del menú de tres puntos de Perfil"
+  },
+  "perfilAjustes": "Ajustes",
+  "@perfilAjustes": {
+    "description": "Opción del menú de Perfil y título de la página de ajustes (idioma, tema, dispositivos, acerca de)"
+  },
+  "perfilSeguridadAyuda": "Anula QR y exporta los datos de tu rama",
+  "@perfilSeguridadAyuda": {
+    "description": "Texto de apoyo de la página de Seguridad y datos"
   },
   "paginaLegalError": "No se pudo cargar el documento.",
   "@paginaLegalError": {

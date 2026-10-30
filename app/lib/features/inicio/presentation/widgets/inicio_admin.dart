@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/aviso_abrir_puerta.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/estado_de_puertas.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
@@ -174,6 +175,10 @@ class _InicioAdminEstado extends ConsumerState<InicioAdmin> {
                     ),
                 ],
               ),
+            ],
+            if (widget.sesion.tiene(Permisos.abrirPuertaManual)) ...[
+              SizedBox(height: tokens.espacio.l),
+              AvisoAbrirPuerta(sesion: widget.sesion),
             ],
             SizedBox(height: tokens.espacio.l),
             if (tablero.hasError && datos == null)

@@ -32,6 +32,14 @@ abstract final class Rutas {
   static const eventosAnterior = '/eventos';
   static const perfil = '/perfil';
 
+  /// Ajustes: idioma, tema, dispositivos conectados y acerca de; desde el menú
+  /// de tres puntos de Perfil.
+  static const ajustes = '/ajustes';
+
+  /// Seguridad y datos: anular QR de mi rama y exportar; desde el menú de
+  /// Perfil, según permiso.
+  static const seguridad = '/seguridad';
+
   /// Dispositivos conectados (ADR 0030 §4.1): desde Perfil. Sin permiso, es de
   /// quien la abre.
   static const dispositivos = '/dispositivos';

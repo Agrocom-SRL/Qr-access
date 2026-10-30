@@ -49,9 +49,9 @@ class DispositivosPagina extends ConsumerWidget {
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
       titulo: l10n.dispositivosTitulo,
-      rutaAtras: Rutas.perfil,
+      rutaAtras: Rutas.ajustes,
       salida: SalidaDeCabecera.volver,
-      alSalir: () => context.go(Rutas.perfil),
+      alSalir: () => context.go(Rutas.ajustes),
       accion: otras > 0
           ? AccesoBoton(
               texto: l10n.dispositivosCerrarTodas,
