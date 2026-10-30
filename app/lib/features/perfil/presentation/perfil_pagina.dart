@@ -9,7 +9,9 @@ import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/perfil/data/perfil_repositorio.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/dialogo_nombre.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/fila_mi_pin.dart';
 import 'package:agrocom_acceso/features/perfil/presentation/widgets/menu_perfil.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/tarjeta_mi_actividad.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_avatar.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
@@ -128,6 +130,8 @@ class PerfilPagina extends ConsumerWidget {
                     icono: Icons.badge_outlined,
                     invertida: true,
                   ),
+                  const FilaMiPin(),
+                  const FilaMiActividad(),
                   FilaClaveValor(
                     clave: l10n.perfilSuscripcion,
                     valor: suscripcion == null

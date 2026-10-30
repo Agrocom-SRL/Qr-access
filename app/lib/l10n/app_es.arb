@@ -3289,6 +3289,44 @@
   "@perfilAcercaPrivacidadAyuda": {
     "description": "Subtítulo de la fila de la política de privacidad en Acerca de la app"
   },
+  "perfilMiPin": "Mi PIN",
+  "@perfilMiPin": {
+    "description": "Fila de Perfil con el PIN propio, oculto, para verlo y copiarlo"
+  },
+  "perfilMiPinNoGuardado": "Cierra sesión y vuelve a ingresar para verlo aquí",
+  "@perfilMiPinNoGuardado": {
+    "description": "Cuando este teléfono no guardó el PIN al ingresar"
+  },
+  "perfilMiPinMostrar": "Mostrar PIN",
+  "@perfilMiPinMostrar": {
+    "description": "Tooltip del ojo que descubre el PIN"
+  },
+  "perfilMiPinOcultar": "Ocultar PIN",
+  "@perfilMiPinOcultar": {
+    "description": "Tooltip del ojo que tapa el PIN"
+  },
+  "perfilMiPinCopiar": "Copiar PIN",
+  "@perfilMiPinCopiar": {
+    "description": "Tooltip del botón que copia el PIN"
+  },
+  "perfilMiPinCopiado": "PIN copiado",
+  "@perfilMiPinCopiado": {
+    "description": "Aviso al copiar el PIN"
+  },
+  "perfilMiActividad": "Hoy · {fecha}",
+  "@perfilMiActividad": {
+    "description": "Título de la fila de actividad de Perfil, con la fecha de hoy",
+    "placeholders": {
+      "fecha": {"type": "String"}
+    }
+  },
+  "perfilQrVigentes": "{n, plural, =0{Sin QR vigentes} =1{1 QR vigente} other{{n} QR vigentes}}",
+  "@perfilQrVigentes": {
+    "description": "Cuántos QR vigentes tiene la persona hoy",
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
   "inicioAbrirPuertaTitulo": "Abre la puerta desde la app",
   "@inicioAbrirPuertaTitulo": {
     "description": "Título de la tarjeta del inicio que indica que se puede abrir sin leer el QR"

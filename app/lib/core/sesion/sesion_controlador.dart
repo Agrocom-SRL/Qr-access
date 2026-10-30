@@ -6,6 +6,7 @@ import 'package:agrocom_acceso/core/api/contratos/sesion_contratos.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
 import 'package:agrocom_acceso/core/api/interceptor_sesion.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_cache.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_pin.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
@@ -23,6 +24,7 @@ class SesionControlador extends Notifier<SesionEstado>
 
   ClienteApi get _api => ref.read(clienteApiProvider);
   AlmacenRefresco get _almacen => ref.read(almacenRefrescoProvider);
+  AlmacenPin get _almacenPin => ref.read(almacenPinProvider);
   AlmacenPreferencias get _preferencias =>
       ref.read(almacenPreferenciasProvider);
 
@@ -200,6 +202,11 @@ class SesionControlador extends Notifier<SesionEstado>
   Future<void> _caducar() async {
     _acceso = null;
     await _almacen.borrar();
+    try {
+      await _almacenPin.borrar();
+    } on Object {
+      // Sin almacén seguro disponible no hay PIN que borrar.
+    }
     await _preferencias.borrar(claveSesionGuardada);
     await _olvidarCache();
     state = const SinSesion();

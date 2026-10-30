@@ -82,7 +82,7 @@ void main() {
   });
 
   testWidgets(
-    'con motivo, confirmar lo manda y vuelve a Seguridad y datos con el resultado',
+    'con motivo, confirmar lo manda y vuelve a Seguridad con el resultado',
     (tester) async {
       final repo = await _montar(tester);
       final textos = textosEn(tester);

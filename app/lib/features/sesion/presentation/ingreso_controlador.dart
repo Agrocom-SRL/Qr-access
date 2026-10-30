@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/api/error_api.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_pin.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/sesion/data/sesion_repositorio.dart';
@@ -53,9 +54,22 @@ class IngresoControlador extends Notifier<IngresoEstado> {
     try {
       final inicio = await ref.read(sesionRepositorioProvider).iniciar(pin);
       await ref.read(sesionControladorProvider.notifier).adoptarInicio(inicio);
+      await _recordarPin(pin);
       state = const IngresoEstado();
     } on ErrorApi catch (error) {
       state = IngresoEstado(errorApi: error, bloqueadoHasta: _bloqueoDe(error));
+    }
+  }
+
+  /// Guarda el PIN en el teléfono para mostrarlo en Perfil. Es una comodidad:
+  /// si no se puede guardar, el ingreso sigue valiendo.
+  Future<void> _recordarPin(Pin pin) async {
+    final almacen = ref.read(almacenPinProvider);
+    if (!almacen.disponible) return;
+    try {
+      await almacen.guardar(pin.valor);
+    } on Object {
+      // Sin almacén seguro, Perfil no mostrará el PIN.
     }
   }
 
