@@ -69,18 +69,18 @@ void main() {
     expect(find.byIcon(Icons.block), findsNothing);
   });
 
-  testWidgets('la X vuelve a Perfil sin llamar a la API', (tester) async {
+  testWidgets('la X vuelve a Seguridad y datos sin llamar a la API', (tester) async {
     final repo = await _montar(tester);
 
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
     expect(repo.motivos, isEmpty);
-    expect(find.text('destino ${Rutas.perfil}'), findsOneWidget);
+    expect(find.text('destino ${Rutas.seguridad}'), findsOneWidget);
   });
 
   testWidgets(
-    'con motivo, confirmar lo manda y vuelve a Perfil con el resultado',
+    'con motivo, confirmar lo manda y vuelve a Seguridad y datos con el resultado',
     (tester) async {
       final repo = await _montar(tester);
       final textos = textosEn(tester);
@@ -91,7 +91,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repo.motivos, ['PIN filtrado']);
-      expect(find.text('destino ${Rutas.perfil}'), findsOneWidget);
+      expect(find.text('destino ${Rutas.seguridad}'), findsOneWidget);
       expect(find.text(textos.qrAnulacionMiRamaResultado(3)), findsOneWidget);
     },
   );

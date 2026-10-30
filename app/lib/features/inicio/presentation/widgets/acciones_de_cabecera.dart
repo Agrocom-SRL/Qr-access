@@ -1,35 +1,24 @@
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
-import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_abrir_puerta.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/boton_qr_propio.dart';
 import 'package:agrocom_acceso/features/notificaciones/notificaciones.dart';
 import 'package:flutter/material.dart';
 
 /// Las acciones de la cabecera del inicio: la bandeja (si la cuenta le da
-/// permiso, con su contador), abrir una puerta sin QR (ADR 0035, todos los
-/// roles de la cuenta) y el QR propio. `null` si no hay ninguna, para que la
-/// cabecera no deje hueco.
+/// permiso, con su contador) y el QR propio. `null` si no hay ninguna, para que
+/// la cabecera no deje hueco. Abrir una puerta sin QR ya no es un botón de la
+/// cabecera: es el aviso `AvisoAbrirPuerta` del cuerpo del inicio.
 Widget? accionesDeCabecera(SesionAutenticada sesion, {required bool qrPropio}) {
   final bandeja = sesion.tiene(Permisos.verNotificaciones);
-  final abrirPuerta = sesion.tiene(Permisos.abrirPuertaManual);
-  if (!bandeja && !abrirPuerta && !qrPropio) return null;
-  return _AccionesDeCabecera(
-    bandeja: bandeja,
-    abrirPuerta: abrirPuerta,
-    qrPropio: qrPropio,
-  );
+  if (!bandeja && !qrPropio) return null;
+  return _AccionesDeCabecera(bandeja: bandeja, qrPropio: qrPropio);
 }
 
 class _AccionesDeCabecera extends StatelessWidget {
-  const new({
-    required this.bandeja,
-    required this.abrirPuerta,
-    required this.qrPropio,
-  });
+  const new({required this.bandeja, required this.qrPropio});
 
   final bool bandeja;
-  final bool abrirPuerta;
   final bool qrPropio;
 
   @override
@@ -38,7 +27,6 @@ class _AccionesDeCabecera extends StatelessWidget {
     // Cada acción lleva su separación delante, salvo la primera.
     final acciones = <Widget>[
       if (bandeja) const BotonNotificaciones(),
-      if (abrirPuerta) const BotonAbrirPuerta(),
       if (qrPropio) const BotonQrPropio(),
     ];
     return Row(

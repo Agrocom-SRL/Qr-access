@@ -48,7 +48,7 @@ class _AnularQrPaginaEstado extends ConsumerState<AnularQrPagina> {
         ? textoDeError(l10n, error)
         : l10n.qrAnulacionMiRamaResultado(envio.resultado?.qrAnulados ?? 0);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
-    if (error == null) context.go(Rutas.perfil);
+    if (error == null) context.go(Rutas.seguridad);
   }
 
   @override
@@ -62,7 +62,7 @@ class _AnularQrPaginaEstado extends ConsumerState<AnularQrPagina> {
       titulo: l10n.qrAnulacionMiRamaTitulo,
       // Salir mientras se anula dejaría el resultado sin mostrar: se espera.
       alCerrar: () {
-        if (!anulando) context.go(Rutas.perfil);
+        if (!anulando) context.go(Rutas.seguridad);
       },
       // En horizontal de teléfono la ilustración tiene su propia columna, así
       // que va grande; en vertical se achica sola para que el motivo y el

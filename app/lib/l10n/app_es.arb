@@ -3257,7 +3257,7 @@
   "@aperturaManualTitulo": {
     "description": "Título de la pantalla del administrador de la apertura manual"
   },
-  "aperturaManualAyuda": "Permite que los usuarios de la cuenta abran una puerta desde la app, sin QR. Sirve de respaldo si el lector falla o se pierde.",
+  "aperturaManualAyuda": "Cada interruptor enciende o apaga la apertura desde la app, sin QR, en esa puerta. El general cambia todas a la vez, pero puedes dejar encendidas solo las que quieras.",
   "@aperturaManualAyuda": {
     "description": "Ayuda de la pantalla del administrador"
   },
@@ -3288,6 +3288,34 @@
   "perfilAcercaPrivacidadAyuda": "Cómo cuidamos tus datos",
   "@perfilAcercaPrivacidadAyuda": {
     "description": "Subtítulo de la fila de la política de privacidad en Acerca de la app"
+  },
+  "inicioAbrirPuertaTitulo": "Abre la puerta desde la app",
+  "@inicioAbrirPuertaTitulo": {
+    "description": "Título de la tarjeta del inicio que indica que se puede abrir sin leer el QR"
+  },
+  "inicioAbrirPuertaAyuda": "Sin escanear el QR: elige la puerta y ábrela desde aquí",
+  "@inicioAbrirPuertaAyuda": {
+    "description": "Texto de apoyo de la tarjeta del inicio para abrir una puerta desde la app"
+  },
+  "aperturaManualTodasEstado": "{encendidas} de {total} puertas encendidas",
+  "@aperturaManualTodasEstado": {
+    "description": "Estado del interruptor general de la apertura desde la app",
+    "placeholders": {
+      "encendidas": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "aperturaManualEncendida": "Encendida",
+  "@aperturaManualEncendida": {
+    "description": "Estado de una puerta con la apertura desde la app encendida"
+  },
+  "aperturaManualApagada": "Apagada",
+  "@aperturaManualApagada": {
+    "description": "Estado de una puerta con la apertura desde la app apagada"
+  },
+  "aperturaManualSinPlacaAyuda": "Vincula una placa para poder encenderla",
+  "@aperturaManualSinPlacaAyuda": {
+    "description": "Explica por qué una puerta sin placa no tiene interruptor"
   },
   "perfilMenuMas": "Más opciones",
   "@perfilMenuMas": {

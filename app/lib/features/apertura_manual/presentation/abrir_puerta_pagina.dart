@@ -1,5 +1,6 @@
 import 'package:agrocom_acceso/core/api/mensaje_error.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
+import 'package:agrocom_acceso/core/multimedia/multimedia.dart';
 import 'package:agrocom_acceso/core/navegacion/destinos.dart';
 import 'package:agrocom_acceso/core/router/rutas.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
@@ -9,6 +10,8 @@ import 'package:agrocom_acceso/features/apertura_manual/presentation/apertura_ma
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/boton_salida_cabecera.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/estado_vacio.dart';
@@ -35,7 +38,7 @@ class AbrirPuertaPagina extends ConsumerWidget {
       destino: DestinoNav.inicio,
       titulo: l10n.abrirPuertaTitulo,
       rutaAtras: Rutas.inicio,
-      salida: SalidaDeCabecera.volver,
+      salida: SalidaDeCabecera.cerrar,
       alSalir: () => context.go(Rutas.inicio),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,10 +52,7 @@ class AbrirPuertaPagina extends ConsumerWidget {
             ),
             SizedBox(height: tokens.espacio.l),
             puertas.when(
-              loading: () => Padding(
-                padding: EdgeInsets.all(tokens.espacio.xl),
-                child: const AccesoCargando(),
-              ),
+              loading: () => const _PuertasCargando(),
               error: (error, _) => EstadoVacio.error(
                 titulo: textoDeError(l10n, error),
                 alReintentar: () => ref.invalidate(puertasAbriblesProvider),
@@ -62,6 +62,28 @@ class AbrirPuertaPagina extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Las tarjetas de las puertas mientras se piden: el mismo bloque que ocupará
+/// cada una, para que la lista no salte al cargar.
+class _PuertasCargando extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Column(
+      children: [
+        for (var i = 0; i < 3; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: tokens.espacio.m),
+            child: AccesoTarjeta(
+              child: AccesoSkeleton(alto: tokens.tamano.iconoCaja),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -80,7 +102,7 @@ class _Puertas extends ConsumerWidget {
       return EstadoVacio(
         titulo: l10n.abrirPuertaSinPuertas,
         ayuda: l10n.abrirPuertaSinPuertasDetalle,
-        icono: Icons.door_front_door_outlined,
+        ilustracion: Multimedia.vacioPuertas,
       );
     }
     return Column(
