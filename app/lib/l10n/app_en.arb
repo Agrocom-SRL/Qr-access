@@ -536,6 +536,8 @@
   "aperturaManualSinPlaca": "No board",
   "perfilAcercaTerminos": "Terms and conditions",
   "perfilAcercaPrivacidad": "Privacy policy",
+  "perfilAcercaTerminosAyuda": "The conditions for using the app",
+  "perfilAcercaPrivacidadAyuda": "How we look after your data",
   "paginaLegalError": "The document could not be loaded.",
   "paginaLegalAbrirNavegador": "Open in browser",
   "lecturaMotivoManualOrdenada": "Opened from the app",

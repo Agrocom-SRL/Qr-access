@@ -536,6 +536,8 @@
   "aperturaManualSinPlaca": "Sem placa",
   "perfilAcercaTerminos": "Termos e condições",
   "perfilAcercaPrivacidad": "Política de privacidade",
+  "perfilAcercaTerminosAyuda": "As condições de uso do app",
+  "perfilAcercaPrivacidadAyuda": "Como cuidamos dos seus dados",
   "paginaLegalError": "Não foi possível carregar o documento.",
   "paginaLegalAbrirNavegador": "Abrir no navegador",
   "lecturaMotivoManualOrdenada": "Abertura pelo app",

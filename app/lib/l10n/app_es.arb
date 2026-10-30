@@ -3281,6 +3281,14 @@
   "@perfilAcercaPrivacidad": {
     "description": "Fila de Acerca de la app que abre la política de privacidad"
   },
+  "perfilAcercaTerminosAyuda": "Las condiciones de uso de la app",
+  "@perfilAcercaTerminosAyuda": {
+    "description": "Subtítulo de la fila de términos y condiciones en Acerca de la app"
+  },
+  "perfilAcercaPrivacidadAyuda": "Cómo cuidamos tus datos",
+  "@perfilAcercaPrivacidadAyuda": {
+    "description": "Subtítulo de la fila de la política de privacidad en Acerca de la app"
+  },
   "paginaLegalError": "No se pudo cargar el documento.",
   "@paginaLegalError": {
     "description": "Mensaje cuando no se pudo cargar un documento legal"

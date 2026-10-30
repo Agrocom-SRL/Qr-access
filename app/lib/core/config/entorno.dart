@@ -8,6 +8,14 @@ abstract final class Entorno {
     defaultValue: 'http://localhost:3000',
   );
 
+  /// Sitio público donde están los documentos legales (el mismo host del
+  /// panel). Aparte de [apiUrl] porque en desarrollo la API (`:3000`) no sirve
+  /// páginas: el panel sí.
+  static const sitioUrl = String.fromEnvironment(
+    'SITIO_URL',
+    defaultValue: 'https://acceso.agrocom.com.bo',
+  );
+
   /// Versión de la API en la ruta (ADR 0005).
   static const versionApi = 'v1';
 
