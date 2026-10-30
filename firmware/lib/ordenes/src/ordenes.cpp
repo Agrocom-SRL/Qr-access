@@ -6,6 +6,8 @@ bool debePreguntar(bool operando, bool redLista, bool configuracionLeida, bool a
   return operando && redLista && configuracionLeida && aperturaManual;
 }
 
+bool puedeEjecutar(bool operando, bool aperturaManual) { return operando && aperturaManual; }
+
 bool respuestaRapida(uint32_t duracionMs) { return duracionMs < RESPUESTA_RAPIDA_MS; }
 
 uint32_t esperaTras(uint8_t rapidas) {

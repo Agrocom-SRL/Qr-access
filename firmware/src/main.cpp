@@ -164,7 +164,9 @@ void atenderAnuncio(const respuesta::Anuncio& r, uint32_t ahoraMs) {
 void atenderOrden(const api::Respuesta& r, uint32_t ahoraMs) {
   // También con el 401 de la credencial: la tarea ya publicó y aquí solo se reanuda.
   if (r.orden.estado == respuesta::Orden::Estado::Recibida) {
-    if (!ordenes::vigente(r.recibidaEnMs, r.orden.validaPorMs, ahoraMs)) {
+    if (!ordenes::puedeEjecutar(estadoVinculo.opera(), aperturaManual)) {
+      Serial.println("[orden] la placa ya no opera o la apertura manual se apago: no se abre");
+    } else if (!ordenes::vigente(r.recibidaEnMs, r.orden.validaPorMs, ahoraMs)) {
       Serial.println("[orden] vencida antes de ejecutarse: no se abre");
     } else {
       const puerta::Acciones acciones = maquina.alRecibirOrdenManual(r.orden.segundos, ahoraMs);

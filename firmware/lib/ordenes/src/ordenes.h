@@ -23,6 +23,11 @@ constexpr uint32_t ESPERA_MAXIMA_MS = 5000;
 // configuración y esa configuración dice `apertura_manual: true`.
 bool debePreguntar(bool operando, bool redLista, bool configuracionLeida, bool aperturaManual);
 
+// Una orden ya recibida solo se ejecuta si, AL EJECUTARLA, la placa sigue vinculada y operando y el
+// interruptor de la puerta sigue encendido: la petición larga dura hasta 30 s y el vínculo o el interruptor
+// pueden cambiar mientras tanto. La falla segura del firmware no depende de que el servidor no entregue.
+bool puedeEjecutar(bool operando, bool aperturaManual);
+
 // true si la respuesta llegó tan rápido que no fue una espera larga (ver RESPUESTA_RAPIDA_MS) o falló.
 bool respuestaRapida(uint32_t duracionMs);
 

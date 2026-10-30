@@ -54,6 +54,13 @@ void test_una_hora_anterior_a_la_recepcion_no_vence_la_orden_ni_la_alarga() {
   TEST_ASSERT_FALSE(vigente(2000, 0, 1990));
 }
 
+void test_una_orden_solo_se_ejecuta_si_la_placa_opera_y_el_interruptor_sigue_encendido() {
+  TEST_ASSERT_TRUE(puedeEjecutar(true, true));
+  TEST_ASSERT_FALSE(puedeEjecutar(false, true));
+  TEST_ASSERT_FALSE(puedeEjecutar(true, false));
+  TEST_ASSERT_FALSE(puedeEjecutar(false, false));
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_solo_pregunta_con_todo_en_orden);
@@ -63,5 +70,6 @@ int main() {
   RUN_TEST(test_una_orden_sin_plazo_nunca_vale);
   RUN_TEST(test_la_vigencia_aguanta_el_desborde_de_millis);
   RUN_TEST(test_una_hora_anterior_a_la_recepcion_no_vence_la_orden_ni_la_alarga);
+  RUN_TEST(test_una_orden_solo_se_ejecuta_si_la_placa_opera_y_el_interruptor_sigue_encendido);
   return UNITY_END();
 }
