@@ -69,7 +69,9 @@ void main() {
     expect(find.byIcon(Icons.block), findsNothing);
   });
 
-  testWidgets('la X vuelve a Seguridad y datos sin llamar a la API', (tester) async {
+  testWidgets('la X vuelve a Seguridad y datos sin llamar a la API', (
+    tester,
+  ) async {
     final repo = await _montar(tester);
 
     await tester.tap(find.byIcon(Icons.close));
