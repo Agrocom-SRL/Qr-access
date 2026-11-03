@@ -61,6 +61,8 @@
     "puerta_no_abrio": "The door did not open",
     "puerta_no_cerro": "The door did not close again",
     "rele_no_accionado": "The relay did not trigger",
+    "ocupada": "The board discarded the order: the door was busy",
+    "vencida": "The board discarded the order: it expired before running",
     "sin_sensor": "The door has no sensor",
     "sin_respuesta": "The board did not respond in time"
   }
