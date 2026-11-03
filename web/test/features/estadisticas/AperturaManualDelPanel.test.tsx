@@ -3,18 +3,21 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { ProveedoresApp } from '@/app/providers/ProveedoresApp';
 import type { EstadisticasRepositorio } from '@/features/estadisticas';
-import { AperturaManualDelPanel } from '@/features/estadisticas/ui/AperturaManualDelPanel';
+import {
+  AperturaManualDelPanel,
+  RankingsDeAperturaManual,
+} from '@/features/estadisticas/ui/AperturaManualDelPanel';
 import { porcentajeManual } from '@/features/estadisticas/domain/aperturaManual';
 import { APERTURA_MANUAL, crearServiciosDePrueba } from '../../servicios';
 
-function montar(aperturaManual?: EstadisticasRepositorio['aperturaManual']) {
+function montar(aperturaManual?: EstadisticasRepositorio['aperturaManual'], rankings = false) {
   const servicios = crearServiciosDePrueba(
     aperturaManual ? { estadisticas: { aperturaManual } } : {},
   );
   return render(
     <ProveedoresApp servicios={servicios} reintentos={0}>
       <MemoryRouter>
-        <AperturaManualDelPanel />
+        {rankings ? <RankingsDeAperturaManual /> : <AperturaManualDelPanel />}
       </MemoryRouter>
     </ProveedoresApp>,
   );
@@ -44,12 +47,23 @@ describe('apertura desde la app en las estadísticas (HU-21)', () => {
     expect(screen.getByText('Puertas disponibles').nextElementSibling).toHaveTextContent('8 de 12');
   });
 
-  it('lista las puertas y las cuentas que más la usan', async () => {
+  it('el resumen no trae las tablas de puertas y cuentas: van aparte', async () => {
     montar();
-    const puertas = await screen.findByRole('region', { name: 'Puertas que más la usan' });
+    await screen.findByRole('heading', { name: 'Apertura desde la app' });
+    expect(screen.queryByRole('region', { name: /Puertas que más usan/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /Cuentas que más usan/ })).not.toBeInTheDocument();
+  });
+
+  it('lista las puertas y las cuentas que más usan la apertura', async () => {
+    montar(undefined, true);
+    const puertas = await screen.findByRole('region', {
+      name: 'Puertas que más usan la apertura desde la app',
+    });
     expect(within(puertas).getByText('Portón principal · Planta Norte')).toBeInTheDocument();
     expect(within(puertas).getByText('Condominio Betania')).toBeInTheDocument();
-    const cuentas = screen.getByRole('region', { name: 'Cuentas que más la usan' });
+    const cuentas = screen.getByRole('region', {
+      name: 'Cuentas que más usan la apertura desde la app',
+    });
     expect(within(cuentas).getByText('Agroindustrial Norte')).toBeInTheDocument();
   });
 
@@ -63,10 +77,11 @@ describe('apertura desde la app en las estadísticas (HU-21)', () => {
   });
 
   it('sin uso lo dice en vez de mostrar tablas vacías', async () => {
-    montar(() =>
-      Promise.resolve({ ...APERTURA_MANUAL, ordenadas: 0, porPuerta: [], porCuenta: [] }),
+    montar(
+      () => Promise.resolve({ ...APERTURA_MANUAL, ordenadas: 0, porPuerta: [], porCuenta: [] }),
+      true,
     );
-    await screen.findByRole('heading', { name: 'Apertura desde la app' });
+    await screen.findByRole('region', { name: 'Puertas que más usan la apertura desde la app' });
     expect(screen.getAllByText('Todavía nadie abrió una puerta desde la app.')).toHaveLength(2);
   });
 

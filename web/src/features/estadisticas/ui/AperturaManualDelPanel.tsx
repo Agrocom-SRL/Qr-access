@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatearNumero } from '../../../l10n/formatos';
@@ -13,12 +14,8 @@ import { porcentajeManual, type AperturaManual } from '../domain/aperturaManual'
 import styles from './AperturaManualDelPanel.module.css';
 import { etiquetaDeDia } from './formatoDeSeries';
 
-/**
- * El uso de la apertura manual desde la app (ADR 0035, HU-21): cuántas veces se usó, con qué frecuencia, en qué
- * puertas y cuentas, qué cuentas la tienen activa y cuántas órdenes no abrieron. Es el camino más rápido para
- * entrar o salir de quien ya tiene la app, así que también dice qué parte de las aperturas representa.
- */
-export function AperturaManualDelPanel() {
+/** Carga los datos de la apertura manual (una sola consulta compartida) y muestra el error o el esqueleto. */
+function ConDatosDeApertura({ hijo }: { hijo: (datos: AperturaManual) => ReactNode }) {
   const { t } = useTranslation('estadisticas');
   const consulta = useAperturaManual();
   if (consulta.isError) {
@@ -31,7 +28,31 @@ export function AperturaManualDelPanel() {
     );
   }
   if (consulta.isPending) return <Skeleton alto="bloque" />;
-  return <Contenido datos={consulta.data} />;
+  return hijo(consulta.data);
+}
+
+/**
+ * El uso de la apertura manual desde la app (ADR 0035, HU-21): cuántas veces se usó, con qué frecuencia, qué
+ * cuentas la tienen activa y cuántas órdenes no abrieron. Es el camino más rápido para entrar o salir de quien ya
+ * tiene la app, así que también dice qué parte de las aperturas representa. Las puertas y cuentas que más la
+ * usan van aparte, en `RankingsDeAperturaManual`.
+ */
+export function AperturaManualDelPanel() {
+  return <ConDatosDeApertura hijo={(datos) => <Contenido datos={datos} />} />;
+}
+
+/** Las puertas y las cuentas que más usan la apertura desde la app (misma consulta que el resumen). */
+export function RankingsDeAperturaManual() {
+  return (
+    <ConDatosDeApertura
+      hijo={(datos) => (
+        <div className={styles.rejilla}>
+          <TablaDePuertas datos={datos} />
+          <TablaDeCuentas datos={datos} />
+        </div>
+      )}
+    />
+  );
 }
 
 function Contenido({ datos }: { datos: AperturaManual }) {
@@ -207,10 +228,6 @@ function Contenido({ datos }: { datos: AperturaManual }) {
             </ResponsiveContainer>
           </div>
         </TarjetaGrafica>
-      </div>
-      <div className={styles.rejilla}>
-        <TablaDePuertas datos={datos} />
-        <TablaDeCuentas datos={datos} />
       </div>
     </section>
   );

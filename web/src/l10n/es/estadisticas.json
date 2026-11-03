@@ -60,8 +60,8 @@
   "aperturaPorHoraTitulo": "Aperturas por hora del día",
   "aperturaPorHoraSubtitulo": "Hora local de La Paz",
   "aperturaHora": "Hora",
-  "aperturaPuertasTitulo": "Puertas que más la usan",
-  "aperturaCuentasTitulo": "Cuentas que más la usan",
+  "aperturaPuertasTitulo": "Puertas que más usan la apertura desde la app",
+  "aperturaCuentasTitulo": "Cuentas que más usan la apertura desde la app",
   "aperturaPuerta": "Puerta",
   "aperturaCuenta": "Cuenta",
   "aperturaSinUso": "Todavía nadie abrió una puerta desde la app.",
@@ -69,11 +69,13 @@
   "pestanas": {
     "cobros": "Cobros y planes",
     "cuentas": "Cuentas",
-    "accesos": "Accesos"
+    "accesos": "Accesos",
+    "apertura": "Apertura desde la app"
   },
   "descripcion": {
     "cobros": "Cuánto se cobró en el último año, cuántas empresas tiene cada plan y cuántos usuarios usan.",
     "cuentas": "Cuántas cuentas hay en cada estado y cuántas se dieron de alta cada mes.",
-    "accesos": "Las lecturas de QR de los últimos días y cuánto se usa la apertura desde la app."
+    "accesos": "Las lecturas de QR de los últimos días y las puertas y cuentas que más usan la apertura desde la app.",
+    "apertura": "Cuántas veces se abrió una puerta sin QR desde la app, a qué hora y qué cuentas la tienen activa."
   }
 }

@@ -386,8 +386,19 @@ describe('estadísticas', () => {
 
     await userEvent.click(screen.getByRole('tab', { name: 'Accesos' }));
     expect(await screen.findByText('Lecturas por día')).toBeInTheDocument();
-    expect(await screen.findByText('Apertura desde la app')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('region', { name: 'Puertas que más usan la apertura desde la app' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Cuentas por estado')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Apertura desde la app' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Apertura desde la app' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Apertura desde la app' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Lecturas por día')).not.toBeInTheDocument();
   });
 });
 

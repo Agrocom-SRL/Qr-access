@@ -10,7 +10,7 @@ export {
 export type { AperturaManual } from './domain/aperturaManual';
 export type { Estadisticas } from './domain/estadisticas';
 export { AccesosPorDia } from './ui/AccesosPorDia';
-export { AperturaManualDelPanel } from './ui/AperturaManualDelPanel';
+export { AperturaManualDelPanel, RankingsDeAperturaManual } from './ui/AperturaManualDelPanel';
 export { AltasPorMes } from './ui/AltasPorMes';
 export { CobradoPorMes } from './ui/CobradoPorMes';
 export { CuentasPorEstado } from './ui/CuentasPorEstado';

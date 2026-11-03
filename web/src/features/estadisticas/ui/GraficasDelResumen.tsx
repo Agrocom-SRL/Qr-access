@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { codigoDe } from '../../../shared/api/errorApi';
+import { cx } from '../../../shared/lib/cx';
 import { Skeleton } from '../../../shared/ui/atoms/Skeleton';
 import { EstadoError } from '../../../shared/ui/organisms/EstadoError';
 import { useEstadisticas } from '../application/useEstadisticas';
@@ -41,7 +42,7 @@ export function GraficasDelResumen({ grupo }: { grupo: GrupoDeGraficas }) {
   }
   const estadisticas = consulta.data;
   return (
-    <div className={styles.rejilla}>
+    <div className={cx(styles.rejilla, grupo === 'accesos' && styles.unaColumna)}>
       {grupo === 'cobros' ? (
         <>
           <CobradoPorMes estadisticas={estadisticas} ancha />
@@ -54,7 +55,7 @@ export function GraficasDelResumen({ grupo }: { grupo: GrupoDeGraficas }) {
           <AltasPorMes estadisticas={estadisticas} ancha />
         </>
       ) : null}
-      {grupo === 'accesos' ? <AccesosPorDia estadisticas={estadisticas} ancha /> : null}
+      {grupo === 'accesos' ? <AccesosPorDia estadisticas={estadisticas} /> : null}
     </div>
   );
 }
