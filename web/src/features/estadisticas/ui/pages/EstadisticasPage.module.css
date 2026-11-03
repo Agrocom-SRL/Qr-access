@@ -4,3 +4,10 @@
   gap: var(--esp24);
   margin-top: var(--esp24);
 }
+
+.descripcion {
+  margin: var(--esp16) 0 0;
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+  line-height: var(--interlineadoCuerpo);
+}

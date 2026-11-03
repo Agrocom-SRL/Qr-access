@@ -363,6 +363,43 @@ describe('estadísticas', () => {
     expect(await screen.findByRole('heading', { name: 'Uso por plan' })).toBeInTheDocument();
     expect(screen.getByText('1.604')).toBeInTheDocument();
   });
+
+  it('reparte las gráficas en pestañas por tema', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Estadísticas/ }));
+
+    // Cobros y planes es la primera: lo cobrado y cómo se reparten los planes.
+    expect(await screen.findByRole('tab', { name: 'Cobros y planes' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(await screen.findByText('Cobrado por mes')).toBeInTheDocument();
+    expect(screen.getByText('Cuentas por plan')).toBeInTheDocument();
+    expect(screen.queryByText('Cuentas por estado')).not.toBeInTheDocument();
+    expect(screen.queryByText('Lecturas por día')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Cuentas' }));
+    expect(await screen.findByText('Cuentas por estado')).toBeInTheDocument();
+    expect(screen.getByText('Cuentas nuevas por mes')).toBeInTheDocument();
+    expect(screen.queryByText('Cobrado por mes')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Accesos' }));
+    expect(await screen.findByText('Lecturas por día')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('region', { name: 'Puertas que más usan la apertura desde la app' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Cuentas por estado')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Apertura desde la app' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Apertura desde la app' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Apertura desde la app' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Lecturas por día')).not.toBeInTheDocument();
+  });
 });
 
 describe('cuentas (A03)', () => {
@@ -1194,8 +1231,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    // Como responsable, como administrador y en el árbol de la cuenta (ADR 0028)
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(3);
+    // Como responsable y como administrador; el árbol de la cuenta está en la pestaña Usuarios (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(2);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1546,8 +1583,25 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
   });
 
   describe('quién depende de quién', () => {
+    it('vive en la pestaña Usuarios, con el uso de los usuarios, y ya no en el Resumen', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      await screen.findByRole('heading', { name: 'Administradores' });
+      expect(screen.queryByText('Quién depende de quién')).not.toBeInTheDocument();
+      await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+      expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
+      expect(await screen.findByText('Uso de los usuarios')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('tab', { name: 'Suscripción' }));
+      expect(screen.queryByText('Uso de los usuarios')).not.toBeInTheDocument();
+    });
+
+    // La jerarquía vive en la pestaña Usuarios de la ficha, no en el Resumen.
+    const irAUsuarios = async () => {
+      await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+    };
+
     it('muestra cada administrador con sus Titulares (unidad y Miembros) y Guardias', async () => {
       await abrirCuenta(crearServiciosDePrueba());
+      await irAUsuarios();
       expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
       expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.getByText('Titular · Casa 12 · 3 Miembros')).toBeInTheDocument();
@@ -1558,6 +1612,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
     it('reasignar un Titular explica que lleva su unidad y sus Miembros, y lo manda a otro administrador', async () => {
       const reasignar = vi.fn(() => Promise.resolve());
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Jorge Rivero a otro administrador',
@@ -1580,6 +1635,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
     it('reasignar un Guardia manda al Guardia', async () => {
       const reasignar = vi.fn(() => Promise.resolve());
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Portería norte a otro administrador',
@@ -1599,6 +1655,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
         Promise.reject(new ErrorApi(422, 'reasignacion.mismo_administrador')),
       );
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Portería norte a otro administrador',
@@ -1615,6 +1672,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
 
     it('sin el permiso de reasignar, el árbol se ve pero no se ofrece mover a nadie', async () => {
       await abrirCuenta(conPermisos(['seguridad.cuenta.ver', 'resumen.panel.ver']));
+      await irAUsuarios();
       expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.queryByRole('button', { name: /^Reasignar a/ })).not.toBeInTheDocument();
     });
@@ -1625,6 +1683,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
         .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
         .mockResolvedValue([]);
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { jerarquia } }));
+      await irAUsuarios();
       expect(
         await screen.findByText('No pudimos cargar la estructura de la cuenta'),
       ).toBeInTheDocument();
@@ -1684,8 +1743,8 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
-    // El uso de los usuarios vive en la pestaña Suscripción, junto al plan y al cupo.
-    await userEvent.click(await screen.findByRole('tab', { name: 'Suscripción' }));
+    // El uso de los usuarios vive en la pestaña Usuarios, junto a quién depende de quién.
+    await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
   }
 
   it('explica los umbrales y que es solo informativo', async () => {

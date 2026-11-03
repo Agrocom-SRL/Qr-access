@@ -14,7 +14,6 @@ import { tienePermiso, useSesion } from '../../../seguridad';
 import foto from '../../../../shared/ui/assets/fotos/camino_banner.webp';
 import { usuariosDisponibles, type DetalleDeCuenta } from '../../domain/cuenta';
 import { AdministradoresDeCuenta } from './AdministradoresDeCuenta';
-import { JerarquiaDeCuenta } from './JerarquiaDeCuenta';
 import { DialogoCambiarCodigo } from './DialogoCambiarCodigo';
 import styles from './ResumenDeCuenta.module.css';
 
@@ -51,7 +50,6 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
     sesion?.permisos ?? [],
     'seguridad.administrador.crear',
   );
-  const puedeReasignar = tienePermiso(sesion?.permisos ?? [], 'seguridad.administrador.reasignar');
   const [cambiandoCodigo, setCambiandoCodigo] = useState(false);
   const cupo = suscripcion?.plan.cupoUsuarios ?? null;
   const disponibles = usuariosDisponibles(uso.usuariosActivos, cupo);
@@ -219,12 +217,6 @@ export function ResumenDeCuenta({ detalle }: { detalle: DetalleDeCuenta }) {
           puedeAgregar={puedeAgregarAdministrador}
         />
       </div>
-
-      <div className={styles.administradores}>
-        <JerarquiaDeCuenta cuentaId={detalle.cuenta.id} puedeReasignar={puedeReasignar} />
-      </div>
-
-      <div className={styles.administradores}></div>
 
       <DialogoCambiarCodigo
         abierto={cambiandoCodigo}

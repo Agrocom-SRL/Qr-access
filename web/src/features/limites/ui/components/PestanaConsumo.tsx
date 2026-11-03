@@ -97,9 +97,9 @@ export function PestanaConsumo() {
           </span>
         </p>
       ) : null}
-      <p className={styles.ayuda}>{t('limites:subtitulo')}</p>
       <FiltroSegmentado
         etiqueta={t('limites:filtros.estado')}
+        titulo={t('limites:filtros.estado')}
         valor={filtros.estado}
         onCambio={(estado) => {
           cambiarFiltro({ estado });
@@ -137,6 +137,7 @@ export function PestanaConsumo() {
         />
         <FiltroSegmentado<Sentido>
           etiqueta={t('limites:filtros.sentido')}
+          titulo={t('limites:filtros.sentido')}
           valor={filtros.sentido}
           onCambio={(sentido) => {
             cambiarFiltro({ sentido });

@@ -38,7 +38,7 @@
   "cuentasDelTramo_one": "{{count}} cuenta",
   "cuentasDelTramo_other": "{{count}} cuentas",
   "titulo": "Estadísticas",
-  "subtitulo": "Cobros, accesos, altas y uso de cada plan de la plataforma",
+  "subtitulo": "Cobros, cuentas y accesos de la plataforma, por tema",
   "usoTitulo": "Uso por plan",
   "usoSubtitulo": "Cuántas cuentas y usuarios tiene cada plan",
   "usuariosEnUso": "Usuarios en uso",
@@ -60,9 +60,22 @@
   "aperturaPorHoraTitulo": "Aperturas por hora del día",
   "aperturaPorHoraSubtitulo": "Hora local de La Paz",
   "aperturaHora": "Hora",
-  "aperturaPuertasTitulo": "Puertas que más la usan",
-  "aperturaCuentasTitulo": "Cuentas que más la usan",
+  "aperturaPuertasTitulo": "Puertas que más usan la apertura desde la app",
+  "aperturaCuentasTitulo": "Cuentas que más usan la apertura desde la app",
   "aperturaPuerta": "Puerta",
   "aperturaCuenta": "Cuenta",
-  "aperturaSinUso": "Todavía nadie abrió una puerta desde la app."
+  "aperturaSinUso": "Todavía nadie abrió una puerta desde la app.",
+  "pestanasEtiqueta": "Secciones de estadísticas",
+  "pestanas": {
+    "cobros": "Cobros y planes",
+    "cuentas": "Cuentas",
+    "accesos": "Accesos",
+    "apertura": "Apertura desde la app"
+  },
+  "descripcion": {
+    "cobros": "Cuánto se cobró en el último año, cuántas empresas tiene cada plan y cuántos usuarios usan.",
+    "cuentas": "Cuántas cuentas hay en cada estado y cuántas se dieron de alta cada mes.",
+    "accesos": "Las lecturas de QR de los últimos días y las puertas y cuentas que más usan la apertura desde la app.",
+    "apertura": "Cuántas veces se abrió una puerta sin QR desde la app, a qué hora y qué cuentas la tienen activa."
+  }
 }
