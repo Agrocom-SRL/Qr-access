@@ -33,6 +33,8 @@ const char* texto(Causa causa) {
     case Causa::PuertaNoAbrio: return "puerta_no_abrio";
     case Causa::PuertaNoCerro: return "puerta_no_cerro";
     case Causa::ReleNoAccionado: return "rele_no_accionado";
+    case Causa::Ocupada: return "ocupada";
+    case Causa::Vencida: return "vencida";
     case Causa::Ninguna: break;
   }
   return "";
@@ -108,6 +110,19 @@ void Observador::releNoAccionado(const char* eventoId, bool manual) {
   strncpy(eventoId_, eventoId, MAX_EVENTO_ID);
   eventoId_[MAX_EVENTO_ID] = '\0';
   cerrar(Resultado::Fallida, Causa::ReleNoAccionado);
+}
+
+void Observador::ordenDescartada(const char* ordenId, Causa causa) {
+  if (!eventoIdValido(ordenId)) return;
+  if (causa != Causa::Ocupada && causa != Causa::Vencida) return;
+  // Va directo a la cola: no se toca eventoId_ ni manual_, que son de la observación en curso.
+  Informe informe;
+  strncpy(informe.eventoId, ordenId, MAX_EVENTO_ID);
+  informe.eventoId[MAX_EVENTO_ID] = '\0';
+  informe.resultado = Resultado::Fallida;
+  informe.causa = causa;
+  informe.manual = true;
+  encolar(informe);
 }
 
 void Observador::tick(uint32_t ahoraMs, Lectura lectura) {

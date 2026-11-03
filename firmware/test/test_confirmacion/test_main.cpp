@@ -46,6 +46,8 @@ void test_textos_del_contrato() {
   TEST_ASSERT_EQUAL_STRING("puerta_no_abrio", texto(Causa::PuertaNoAbrio));
   TEST_ASSERT_EQUAL_STRING("puerta_no_cerro", texto(Causa::PuertaNoCerro));
   TEST_ASSERT_EQUAL_STRING("rele_no_accionado", texto(Causa::ReleNoAccionado));
+  TEST_ASSERT_EQUAL_STRING("ocupada", texto(Causa::Ocupada));
+  TEST_ASSERT_EQUAL_STRING("vencida", texto(Causa::Vencida));
   TEST_ASSERT_EQUAL_STRING("", texto(Causa::Ninguna));
 }
 
@@ -245,12 +247,57 @@ void test_vocabulario_de_la_ruta_de_ordenes() {
   TEST_ASSERT_EQUAL_STRING("sin_confirmacion", textoDeOrden(Resultado::SinSensor));
 }
 
+void test_una_orden_descartada_se_informa_fallida_con_su_causa_y_marcada_manual() {
+  const Causa causas[] = {Causa::Ocupada, Causa::Vencida};
+  for (const Causa causa : causas) {
+    Observador o;
+    o.ordenDescartada("77", causa);
+    Informe i;
+    TEST_ASSERT_TRUE(o.siguiente(i));
+    TEST_ASSERT_EQUAL_STRING("77", i.eventoId);
+    TEST_ASSERT_EQUAL(Resultado::Fallida, i.resultado);
+    TEST_ASSERT_EQUAL(causa, i.causa);
+    TEST_ASSERT_TRUE(i.manual);
+    TEST_ASSERT_FALSE(o.siguiente(i));
+  }
+}
+
+void test_una_orden_descartada_no_toca_la_observacion_de_otra_apertura() {
+  Observador o;
+  o.iniciar("5", 0, 10000, sensorInstalado(), Lectura::Cerrada);  // un QR que aún se observa
+  o.ordenDescartada("6", Causa::Ocupada);
+  TEST_ASSERT_TRUE(o.observando());
+  Informe i;
+  TEST_ASSERT_TRUE(o.siguiente(i));
+  TEST_ASSERT_EQUAL_STRING("6", i.eventoId);
+  TEST_ASSERT_EQUAL(Causa::Ocupada, i.causa);
+  TEST_ASSERT_FALSE(o.siguiente(i));  // el QR NO se dio por fallido
+  o.tick(500, Lectura::Abierta);
+  TEST_ASSERT_TRUE(o.siguiente(i));
+  TEST_ASSERT_EQUAL_STRING("5", i.eventoId);
+  TEST_ASSERT_EQUAL(Resultado::Ejecutada, i.resultado);
+  TEST_ASSERT_FALSE(i.manual);
+}
+
+void test_una_orden_descartada_solo_admite_ocupada_o_vencida_y_un_id_valido() {
+  Observador o;
+  o.ordenDescartada("7", Causa::PuertaNoAbrio);
+  o.ordenDescartada("7", Causa::Ninguna);
+  o.ordenDescartada("", Causa::Ocupada);
+  o.ordenDescartada("abc", Causa::Vencida);
+  Informe i;
+  TEST_ASSERT_FALSE(o.siguiente(i));
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_el_informe_de_una_orden_manual_lo_marca);
   RUN_TEST(test_una_apertura_por_qr_no_queda_marcada_como_manual);
   RUN_TEST(test_rele_no_accionado_de_una_orden_manual_la_marca);
   RUN_TEST(test_vocabulario_de_la_ruta_de_ordenes);
+  RUN_TEST(test_una_orden_descartada_se_informa_fallida_con_su_causa_y_marcada_manual);
+  RUN_TEST(test_una_orden_descartada_no_toca_la_observacion_de_otra_apertura);
+  RUN_TEST(test_una_orden_descartada_solo_admite_ocupada_o_vencida_y_un_id_valido);
   RUN_TEST(test_por_omision_el_sensor_no_esta_instalado_y_la_polaridad_es_alto);
   RUN_TEST(test_sin_sensor_no_se_interpreta_el_pin);
   RUN_TEST(test_polaridad_alto_es_abierta);

@@ -36,7 +36,9 @@ enum class Lectura : uint8_t { Abierta, Cerrada, SinSensor };
 Lectura interpretar(const Sensor& sensor, bool pinAlto);
 
 enum class Resultado : uint8_t { Ejecutada, Fallida, SinSensor };
-enum class Causa : uint8_t { Ninguna, PuertaNoAbrio, PuertaNoCerro, ReleNoAccionado };
+// `Ocupada` y `Vencida` solo las informa una orden manual que la placa tomó y NO ejecutó (ADR 0035 §3): el relé
+// nunca se accionó, así que no son una falla de la puerta y el servidor no las cuenta como tal.
+enum class Causa : uint8_t { Ninguna, PuertaNoAbrio, PuertaNoCerro, ReleNoAccionado, Ocupada, Vencida };
 
 // Un informe de apertura listo para enviar. `manual` = la apertura la ordenó la app (ADR 0035): en
 // `eventoId` va el id de la ORDEN, que no es un evento de lectura y puede coincidir en número con
@@ -74,6 +76,12 @@ class Observador {
 
   // La placa no pudo accionar el relé: informe `fallida` / `rele_no_accionado`.
   void releNoAccionado(const char* eventoId, bool manual = false);
+
+  // La placa tomó la orden manual `ordenId` y decidió NO ejecutarla (`Causa::Ocupada` o `Causa::Vencida`): informe
+  // `fallida` con esa causa. A diferencia de `releNoAccionado`, NO cierra la observación vigente: si la puerta
+  // está ocupada es porque otra apertura se está observando, y darla por fallida inventaría una falla. Una causa
+  // distinta de esas dos, o un id inválido, no se informa.
+  void ordenDescartada(const char* ordenId, Causa causa);
 
   // Avanza el tiempo con la lectura del sensor. Barato: no hace nada si no se observa.
   void tick(uint32_t ahoraMs, Lectura lectura);

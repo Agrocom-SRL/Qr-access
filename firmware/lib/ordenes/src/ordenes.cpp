@@ -8,6 +8,11 @@ bool debePreguntar(bool operando, bool redLista, bool configuracionLeida, bool a
 
 bool puedeEjecutar(bool operando, bool aperturaManual) { return operando && aperturaManual; }
 
+Veredicto evaluar(bool operando, bool aperturaManual, bool vigente) {
+  if (!puedeEjecutar(operando, aperturaManual)) return Veredicto::Callar;
+  return vigente ? Veredicto::Ejecutar : Veredicto::Vencida;
+}
+
 bool respuestaRapida(uint32_t duracionMs) { return duracionMs < RESPUESTA_RAPIDA_MS; }
 
 uint32_t esperaTras(uint8_t rapidas) {

@@ -100,6 +100,13 @@ void iniciarObservacion(const char* eventoId, bool releAccionado, uint32_t ahora
   recogerInformes(ahoraMs);
 }
 
+// La placa tomó una orden manual y decidió no abrir: se informa para que la app no espere de más y el servidor
+// distinga «ocupada» de «caída». No toca la observación de otra apertura en curso.
+void informarOrdenDescartada(const char* ordenId, confirmacion::Causa causa, uint32_t ahoraMs) {
+  observador.ordenDescartada(ordenId, causa);
+  recogerInformes(ahoraMs);
+}
+
 // Una consulta que ni siquiera puede salir (sin red, sin hora, sin cola) es un
 // resultado inválido: no abre.
 void pedirValidacion(uint32_t ahoraMs) {
@@ -164,18 +171,26 @@ void atenderAnuncio(const respuesta::Anuncio& r, uint32_t ahoraMs) {
 void atenderOrden(const api::Respuesta& r, uint32_t ahoraMs) {
   // También con el 401 de la credencial: la tarea ya publicó y aquí solo se reanuda.
   if (r.orden.estado == respuesta::Orden::Estado::Recibida) {
-    if (!ordenes::puedeEjecutar(estadoVinculo.opera(), aperturaManual)) {
-      Serial.println("[orden] la placa ya no opera o la apertura manual se apago: no se abre");
-    } else if (!ordenes::vigente(r.recibidaEnMs, r.orden.validaPorMs, ahoraMs)) {
-      Serial.println("[orden] vencida antes de ejecutarse: no se abre");
-    } else {
-      const puerta::Acciones acciones = maquina.alRecibirOrdenManual(r.orden.segundos, ahoraMs);
-      const bool accionado = ejecutar(acciones, ahoraMs);
-      if (acciones.activarCerradura) {
-        Serial.printf("[orden] apertura manual: %u s\n", r.orden.segundos);
-        iniciarObservacion(r.orden.id, accionado, ahoraMs, true);
-      } else {
-        Serial.println("[orden] la puerta esta ocupada: no se abre");
+    const bool vigente = ordenes::vigente(r.recibidaEnMs, r.orden.validaPorMs, ahoraMs);
+    switch (ordenes::evaluar(estadoVinculo.opera(), aperturaManual, vigente)) {
+      case ordenes::Veredicto::Callar:
+        Serial.println("[orden] la placa ya no opera o la apertura manual se apago: no se abre");
+        break;
+      case ordenes::Veredicto::Vencida:
+        Serial.println("[orden] vencida antes de ejecutarse: no se abre");
+        informarOrdenDescartada(r.orden.id, confirmacion::Causa::Vencida, ahoraMs);
+        break;
+      case ordenes::Veredicto::Ejecutar: {
+        const puerta::Acciones acciones = maquina.alRecibirOrdenManual(r.orden.segundos, ahoraMs);
+        const bool accionado = ejecutar(acciones, ahoraMs);
+        if (acciones.activarCerradura) {
+          Serial.printf("[orden] apertura manual: %u s\n", r.orden.segundos);
+          iniciarObservacion(r.orden.id, accionado, ahoraMs, true);
+        } else {
+          Serial.println("[orden] la puerta esta ocupada: no se abre");
+          informarOrdenDescartada(r.orden.id, confirmacion::Causa::Ocupada, ahoraMs);
+        }
+        break;
       }
     }
   }

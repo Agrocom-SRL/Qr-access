@@ -28,6 +28,13 @@ bool debePreguntar(bool operando, bool redLista, bool configuracionLeida, bool a
 // pueden cambiar mientras tanto. La falla segura del firmware no depende de que el servidor no entregue.
 bool puedeEjecutar(bool operando, bool aperturaManual);
 
+// Qué hacer con una orden ya recibida, antes de tocar el relé. `Callar`: la placa ya no opera o el interruptor
+// se apagó; no se abre ni se informa (la credencial puede ser inválida y el servidor ya sabe el estado).
+// `Vencida`: el plazo se agotó; no se abre y se informa `vencida`. `Ejecutar`: se puede intentar; si el relé no
+// está libre, quien llama informa `ocupada`. La falla segura va primero: sin `puedeEjecutar` nunca se abre.
+enum class Veredicto : uint8_t { Ejecutar, Callar, Vencida };
+Veredicto evaluar(bool operando, bool aperturaManual, bool vigente);
+
 // true si la respuesta llegó tan rápido que no fue una espera larga (ver RESPUESTA_RAPIDA_MS) o falló.
 bool respuestaRapida(uint32_t duracionMs);
 
