@@ -10,7 +10,17 @@ export type Ejecucion = (typeof EJECUCIONES)[number];
 export const CAUSAS_DE_FALLA = ['puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'] as const;
 export type CausaDeFalla = (typeof CAUSAS_DE_FALLA)[number];
 
-export type CausaDeEjecucion = 'puerta_abrio' | CausaDeFalla | 'sin_sensor' | 'sin_respuesta';
+/**
+ * Una orden de apertura manual que la placa TOMÓ y decidió no ejecutar (ADR 0035 §3): `ocupada` (el relé no estaba
+ * libre) o `vencida` (el plazo se agotó antes del pulso). Se guardan como `fallida`, pero NO son una falla de la
+ * puerta: el relé nunca se accionó, así que el detector de aperturas fallidas no las cuenta. Solo las informa una
+ * orden manual; `POST /dispositivos/confirmaciones` (QR) no las admite.
+ */
+export const CAUSAS_DE_ORDEN_DESCARTADA = ['ocupada', 'vencida'] as const;
+export type CausaDeOrdenDescartada = (typeof CAUSAS_DE_ORDEN_DESCARTADA)[number];
+
+export type CausaDeEjecucion =
+  'puerta_abrio' | CausaDeFalla | CausaDeOrdenDescartada | 'sin_sensor' | 'sin_respuesta';
 
 export type OrigenDeConfirmacion = 'placa' | 'servidor';
 
