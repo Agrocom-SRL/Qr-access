@@ -41,6 +41,7 @@ Fuente: los archivos tal como están el 2026-10-27, en el lanzamiento más recie
 | Lanzamiento (tag) | API | Panel web | App | Firmware |
 |---|---|---|---|---|
 | `v1.0.5` | 1.0.5 | 1.0.5 | 1.0.5+10 | 1.0.5 |
+| `v1.1.2` | 1.1.2 | 1.1.2 | 1.1.2+15 | 1.1.0 |
 
 El tag `v1.0.5` figura como publicado en `docs/gestion/plan-maestro.md`. Al ser el último lanzamiento hecho con versión única, los cuatro valores coinciden; a partir del siguiente tag pueden diferir.
 
