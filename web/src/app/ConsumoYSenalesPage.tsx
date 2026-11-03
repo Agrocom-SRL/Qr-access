@@ -4,6 +4,7 @@ import { PestanaConsumo } from '../features/limites';
 import { PestanaFlujo, PestanaSenales } from '../features/senales';
 import { tienePermiso, useSesion } from '../features/seguridad';
 import { EncabezadoPagina } from '../shared/ui/molecules/EncabezadoPagina';
+import { ExplicacionDePestana } from '../shared/ui/molecules/ExplicacionDePestana';
 import { EstadoVacio } from '../shared/ui/organisms/EstadoVacio';
 import { Pestanas, type Pestana } from '../shared/ui/organisms/Pestanas';
 
@@ -52,6 +53,11 @@ export function ConsumoYSenalesPage() {
             onCambio={(id) => {
               setParametros({ pestana: id }, { replace: true });
             }}
+          />
+          <ExplicacionDePestana
+            titulo={t(`senales:explicacion.${activa}.titulo`)}
+            texto={t(`senales:explicacion.${activa}.texto`)}
+            lectura={t(`senales:explicacion.${activa}.lectura`)}
           />
           {activa === 'consumo' ? <PestanaConsumo /> : null}
           {activa === 'senales' ? <PestanaSenales /> : null}

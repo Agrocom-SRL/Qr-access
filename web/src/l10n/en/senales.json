@@ -11,7 +11,6 @@
   "dias_other": "{{count}} days",
   "periodo": "Period",
   "flujo": {
-    "subtitulo": "Openings per active user. A day is unusual when it crosses both thresholds at once; a one-day spike is not a signal by itself.",
     "filtros": {
       "soloAtipicas": "Only accounts with unusual days",
       "buscar": "Search by code or name",
@@ -19,7 +18,8 @@
       "sentido": "Sort order",
       "mayorAMenor": "Highest first",
       "menorAMayor": "Lowest first",
-      "atipicas": "With unusual days"
+      "atipicas": "With unusual days",
+      "mostrar": "Show"
     },
     "orden": {
       "por_usuario": "Openings per user",
@@ -152,5 +152,22 @@
     },
     "errorCarga": "We couldn't load the signals",
     "titulo": "Abuse signals"
+  },
+  "explicacion": {
+    "consumo": {
+      "titulo": "Quota use: how close each account is to its limit",
+      "texto": "Counts the QR codes each account generated this month and compares them with its quota, the cap from its plan (or an exception). This only records and warns: no account is ever cut off.",
+      "lectura": "States: Normal (below the warning), Warning (close to the cap), Exceeded (past the cap) and No cap (no limit set). Filter by state, search for an account or sort by percentage, QR used, quota or name."
+    },
+    "senales": {
+      "titulo": "Signals: unusual use worth reviewing",
+      "texto": "Situations the system flags as possible abuse or out-of-the-ordinary use. None of this cuts access: a person decides whether a signal is confirmed or dismissed.",
+      "lectura": "Open ones are those nobody has reviewed yet. Filter by account, type, severity or state to go straight to what matters."
+    },
+    "flujo": {
+      "titulo": "Flow: how many openings each user makes",
+      "texto": "Openings per active user for each account over the chosen period, compared with its usual baseline.",
+      "lectura": "A day is atypical when it crosses both thresholds at once; a one-day spike is not a signal on its own. “With atypical days” shows only the accounts that went beyond their baseline."
+    }
   }
 }

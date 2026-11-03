@@ -1,6 +1,5 @@
 {
   "pestana": "Consumo da cota",
-  "subtitulo": "Os QR gerados neste mês em relação à cota de cada conta. Aqui só se registra e se avisa: nenhuma conta é cortada.",
   "aviso": "Aviso em {{porcentaje}} da cota",
   "mes": "Mês de {{mes}}",
   "sinPlan": "Sem plano",

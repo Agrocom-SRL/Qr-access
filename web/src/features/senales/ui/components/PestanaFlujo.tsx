@@ -136,7 +136,6 @@ export function PestanaFlujo() {
 
   return (
     <section className={styles.pestana}>
-      <p className={styles.ayuda}>{t('senales:flujo.subtitulo')}</p>
       <BarraDeFiltros etiqueta={t('senales:flujo.filtros.buscar')}>
         <Buscador
           etiqueta={t('senales:flujo.filtros.buscar')}
@@ -161,6 +160,7 @@ export function PestanaFlujo() {
         />
         <FiltroSegmentado<Sentido>
           etiqueta={t('senales:flujo.filtros.sentido')}
+          titulo={t('senales:flujo.filtros.sentido')}
           valor={filtros.sentido}
           onCambio={(sentido) => {
             cambiar({ sentido });
@@ -172,6 +172,7 @@ export function PestanaFlujo() {
         />
         <FiltroSegmentado
           etiqueta={t('senales:periodo')}
+          titulo={t('senales:periodo')}
           valor={String(filtros.dias)}
           onCambio={(valor) => {
             cambiar({ dias: Number(valor) });
@@ -185,6 +186,7 @@ export function PestanaFlujo() {
       <div className={styles.segmentados}>
         <FiltroSegmentado
           etiqueta={t('senales:flujo.filtros.soloAtipicas')}
+          titulo={t('senales:flujo.filtros.mostrar')}
           valor={filtros.soloAtipicas ? 'atipicas' : 'todas'}
           onCambio={(valor) => {
             cambiar({ soloAtipicas: valor === 'atipicas' });

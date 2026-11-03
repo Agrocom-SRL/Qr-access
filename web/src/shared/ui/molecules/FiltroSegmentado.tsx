@@ -14,6 +14,8 @@ interface Props<V extends string> {
   valor: V;
   onCambio: (valor: V) => void;
   etiqueta: string;
+  /** Texto visible sobre el filtro: dice qué se está eligiendo. Sin él, solo queda la etiqueta accesible. */
+  titulo?: string;
 }
 
 /** Filtro segmentado: contenedor de radio completo; la opción activa va en primario. */
@@ -22,8 +24,9 @@ export function FiltroSegmentado<V extends string>({
   valor,
   onCambio,
   etiqueta,
+  titulo,
 }: Props<V>) {
-  return (
+  const grupo = (
     <div className={styles.contenedor} role="group" aria-label={etiqueta}>
       {opciones.map((opcion) => (
         <button
@@ -43,6 +46,13 @@ export function FiltroSegmentado<V extends string>({
           )}
         </button>
       ))}
+    </div>
+  );
+  if (titulo === undefined) return grupo;
+  return (
+    <div className={styles.campo}>
+      <span className={styles.titulo}>{titulo}</span>
+      {grupo}
     </div>
   );
 }

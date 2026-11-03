@@ -11,7 +11,6 @@
   "dias_other": "{{count}} dias",
   "periodo": "Período",
   "flujo": {
-    "subtitulo": "Aberturas por usuário ativo. Um dia é atípico quando ultrapassa os dois limites ao mesmo tempo; um pico de um dia não é um sinal por si só.",
     "filtros": {
       "soloAtipicas": "Só contas com dias atípicos",
       "buscar": "Buscar por código ou nome",
@@ -19,7 +18,8 @@
       "sentido": "Sentido da ordem",
       "mayorAMenor": "Maior para menor",
       "menorAMayor": "Menor para maior",
-      "atipicas": "Com dias atípicos"
+      "atipicas": "Com dias atípicos",
+      "mostrar": "Mostrar"
     },
     "orden": {
       "por_usuario": "Aberturas por usuário",
@@ -152,5 +152,22 @@
     },
     "errorCarga": "Não foi possível carregar os sinais",
     "titulo": "Sinais de abuso"
+  },
+  "explicacion": {
+    "consumo": {
+      "titulo": "Consumo da cota: quão perto cada conta está do limite",
+      "texto": "Conta os QR que cada conta gerou no mês e os compara com a sua cota, o teto do plano (ou de uma exceção). Aqui só se registra e se avisa: nenhuma conta é cortada.",
+      "lectura": "Estados: Normal (abaixo do aviso), Aviso (perto do teto), Excedida (passou do teto) e Sem teto (sem limite definido). Filtre por estado, busque uma conta ou ordene por porcentagem, QR usados, cota ou nome."
+    },
+    "senales": {
+      "titulo": "Sinais: usos estranhos que vale revisar",
+      "texto": "Situações que o sistema marca como possível abuso ou uso fora do normal. Nada disso corta o acesso: uma pessoa decide se o sinal é confirmado ou descartado.",
+      "lectura": "As abertas são as que ninguém revisou ainda. Filtre por conta, tipo, gravidade ou estado para ir direto ao que importa."
+    },
+    "flujo": {
+      "titulo": "Fluxo: quantas aberturas cada usuário faz",
+      "texto": "Aberturas por usuário ativo de cada conta no período escolhido, em relação à sua base habitual.",
+      "lectura": "Um dia é atípico quando cruza os dois limites ao mesmo tempo; um pico de um só dia não é um sinal por si só. Com «Com dias atípicos» você vê só as contas que fugiram da base."
+    }
   }
 }

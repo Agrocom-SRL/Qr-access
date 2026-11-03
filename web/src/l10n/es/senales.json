@@ -11,7 +11,6 @@
   "dias_other": "{{count}} días",
   "periodo": "Periodo",
   "flujo": {
-    "subtitulo": "Aperturas por usuario activo. Un día es atípico cuando cruza los dos umbrales a la vez; un pico de un día no es una señal por sí solo.",
     "filtros": {
       "soloAtipicas": "Solo cuentas con días atípicos",
       "buscar": "Buscar por código o nombre",
@@ -19,7 +18,8 @@
       "sentido": "Sentido del orden",
       "mayorAMenor": "Mayor a menor",
       "menorAMayor": "Menor a mayor",
-      "atipicas": "Con días atípicos"
+      "atipicas": "Con días atípicos",
+      "mostrar": "Mostrar"
     },
     "orden": {
       "por_usuario": "Aperturas por usuario",
@@ -152,5 +152,22 @@
     },
     "errorCarga": "No pudimos cargar las señales",
     "titulo": "Señales de abuso"
+  },
+  "explicacion": {
+    "consumo": {
+      "titulo": "Consumo de bolsa: qué tan cerca está cada cuenta de su límite",
+      "texto": "Cuenta los QR que generó cada cuenta en el mes y los compara con su bolsa, el tope que le da su plan (o una excepción). Aquí solo se registra y se avisa: ninguna cuenta queda cortada.",
+      "lectura": "Estados: Normal (por debajo del aviso), Aviso (ya cerca del tope), Superada (pasó el tope) y Sin tope (no tiene límite definido). Filtra por estado, busca una cuenta u ordénalas por porcentaje, QR usados, bolsa o nombre."
+    },
+    "senales": {
+      "titulo": "Señales: usos raros que conviene revisar",
+      "texto": "Situaciones que el sistema marca como posible abuso o uso fuera de lo normal. Nada de esto corta el acceso: una persona decide si la señal se confirma o se descarta.",
+      "lectura": "Las abiertas son las que aún nadie revisó. Filtra por cuenta, tipo, gravedad o estado para ir directo a lo que importa."
+    },
+    "flujo": {
+      "titulo": "Flujo: cuántas aperturas hace cada usuario",
+      "texto": "Aperturas por usuario activo de cada cuenta en el periodo elegido, frente a su base habitual.",
+      "lectura": "Un día es atípico cuando cruza los dos umbrales a la vez; un pico de un solo día no es una señal por sí solo. Con «Con días atípicos» ves solo las cuentas que se salieron de su base."
+    }
   }
 }

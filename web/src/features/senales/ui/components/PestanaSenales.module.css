@@ -4,13 +4,6 @@
   gap: var(--esp12);
 }
 
-.ayuda {
-  margin: 0 0 var(--esp8);
-  color: var(--textoSecundario);
-  font-size: var(--texto14);
-  line-height: var(--interlineadoCuerpo);
-}
-
 .segmentados {
   display: flex;
   flex-wrap: wrap;
