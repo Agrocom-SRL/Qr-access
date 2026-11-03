@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { esquemaListado } from '../../platform/http/paginacion.js';
-import { CAUSAS_DE_FALLA, EJECUCIONES } from './domain/confirmacion.js';
+import { CAUSAS_DE_FALLA, CAUSAS_DE_ORDEN_DESCARTADA, EJECUCIONES } from './domain/confirmacion.js';
 import { ESTADOS_DE_QR } from './domain/estado-qr.js';
 import {
   FILAS_POR_PAGINA_MAXIMAS,
@@ -150,7 +150,13 @@ export const respuestaDeEventoDetallado = esquemaEvento.extend({
     z.object({
       origen: z.enum(['placa', 'servidor']),
       resultado: z.enum(EJECUCIONES),
-      causa: z.enum(['puerta_abrio', ...CAUSAS_DE_FALLA, 'sin_sensor', 'sin_respuesta']),
+      causa: z.enum([
+        'puerta_abrio',
+        ...CAUSAS_DE_FALLA,
+        ...CAUSAS_DE_ORDEN_DESCARTADA,
+        'sin_sensor',
+        'sin_respuesta',
+      ]),
       registrada_at: esquemaFecha,
     }),
   ),
@@ -338,7 +344,7 @@ export const cuerpoDeResultadoDeOrden = z.discriminatedUnion('resultado', [
   }),
   z.strictObject({
     resultado: z.literal('fallida'),
-    causa: z.enum(CAUSAS_DE_FALLA).default('puerta_no_abrio'),
+    causa: z.enum([...CAUSAS_DE_FALLA, ...CAUSAS_DE_ORDEN_DESCARTADA]).default('puerta_no_abrio'),
     reportado_en_dispositivo_at: z.string().max(40).optional(),
   }),
   z.strictObject({

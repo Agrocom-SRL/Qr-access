@@ -101,7 +101,13 @@ describe('POST /api/v1/dispositivos/ordenes/{id}/resultado: la placa informa có
       });
     });
 
-    for (const causa of ['puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'] as const) {
+    for (const causa of [
+      'puerta_no_abrio',
+      'puerta_no_cerro',
+      'rele_no_accionado',
+      'ocupada',
+      'vencida',
+    ] as const) {
       it(`fallida (${causa}): la orden queda fallida y la confirmación guarda la causa`, async () => {
         const orden = await ordenTomada();
 

@@ -35,10 +35,17 @@ export interface FallaDeDispositivo {
   readonly desde: Date;
 }
 
+/**
+ * Causas de `fallida` que NO son una falla de la puerta: la placa tomó una orden manual y decidió no ejecutarla
+ * (`ocupada`: relé no libre; `vencida`: plazo agotado). El relé nunca se accionó, así que contarlas avisaría de una
+ * avería que no existe (ADR 0035 §3). Se repiten aquí porque entre módulos solo se usa `contracts.ts`.
+ */
+const CAUSAS_DE_ORDEN_DESCARTADA: ReadonlySet<string> = new Set(['ocupada', 'vencida']);
+
 /** Falla en sí: lo que la placa dice `fallida` o la falta de respuesta. Vale para cualquier dispositivo. */
 export function esFalla(ejecucion: Pick<EjecucionParaJuzgar, 'resultado' | 'causa'>): boolean {
   return (
-    ejecucion.resultado === 'fallida' ||
+    (ejecucion.resultado === 'fallida' && !CAUSAS_DE_ORDEN_DESCARTADA.has(ejecucion.causa)) ||
     (ejecucion.resultado === 'sin_confirmacion' && ejecucion.causa === 'sin_respuesta')
   );
 }

@@ -61,6 +61,17 @@ void test_una_orden_solo_se_ejecuta_si_la_placa_opera_y_el_interruptor_sigue_enc
   TEST_ASSERT_FALSE(puedeEjecutar(false, false));
 }
 
+void test_el_veredicto_de_una_orden_recibida() {
+  // La falla segura va primero: sin vínculo operando o con el interruptor apagado se calla, esté vigente o no.
+  TEST_ASSERT_EQUAL(Veredicto::Callar, evaluar(false, true, true));
+  TEST_ASSERT_EQUAL(Veredicto::Callar, evaluar(true, false, true));
+  TEST_ASSERT_EQUAL(Veredicto::Callar, evaluar(false, false, false));
+  TEST_ASSERT_EQUAL(Veredicto::Callar, evaluar(true, false, false));
+  // Operando y encendida: vigente se ejecuta; vencida se informa.
+  TEST_ASSERT_EQUAL(Veredicto::Ejecutar, evaluar(true, true, true));
+  TEST_ASSERT_EQUAL(Veredicto::Vencida, evaluar(true, true, false));
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_solo_pregunta_con_todo_en_orden);
@@ -71,5 +82,6 @@ int main() {
   RUN_TEST(test_la_vigencia_aguanta_el_desborde_de_millis);
   RUN_TEST(test_una_hora_anterior_a_la_recepcion_no_vence_la_orden_ni_la_alarga);
   RUN_TEST(test_una_orden_solo_se_ejecuta_si_la_placa_opera_y_el_interruptor_sigue_encendido);
+  RUN_TEST(test_el_veredicto_de_una_orden_recibida);
   return UNITY_END();
 }

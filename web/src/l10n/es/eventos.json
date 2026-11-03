@@ -61,6 +61,8 @@
     "puerta_no_abrio": "La puerta no se abrió",
     "puerta_no_cerro": "La puerta no volvió a cerrar",
     "rele_no_accionado": "El relé no se accionó",
+    "ocupada": "La placa descartó la orden: la puerta estaba ocupada",
+    "vencida": "La placa descartó la orden: venció antes de ejecutarse",
     "sin_sensor": "La puerta no tiene sensor",
     "sin_respuesta": "La placa no respondió a tiempo"
   }

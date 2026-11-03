@@ -519,6 +519,7 @@
   "abrirPuertaAbierta": "{puerta} aberta",
   "abrirPuertaFallo": "Não foi possível abrir {puerta}",
   "abrirPuertaFalloNoAbrio": "A porta não abriu. Tente novamente.",
+  "abrirPuertaFalloOcupada": "A porta está ocupada, tente novamente.",
   "abrirPuertaFalloVencida": "A porta não respondeu a tempo. Tente novamente ou entre com seu QR.",
   "abrirPuertaOtra": "Abrir outra porta",
   "comunErrorManualNoHabilitada": "A abertura pelo app não está habilitada nesta porta.",

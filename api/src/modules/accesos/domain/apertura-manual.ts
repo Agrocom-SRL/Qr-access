@@ -5,7 +5,7 @@
  * `actions/abrir-puerta-manual.ts` lee y escribe.
  */
 
-import type { CausaDeFalla } from './confirmacion.js';
+import type { CausaDeFalla, CausaDeOrdenDescartada } from './confirmacion.js';
 
 /** Cuánto vive una orden de abrir desde que se crea (ADR 0035 §3); la tabla nunca admite más de 30 s. */
 export const VIGENCIA_DE_ORDEN_MS = 15_000;
@@ -148,7 +148,7 @@ export function estadoVisible(estado: EstadoDeOrden, venceAt: Date, ahora: Date)
 /** Lo que una placa informa de una orden: cómo terminó el pulso y qué vio. Pares válidos de `confirmaciones_apertura`. */
 export type ResultadoDeOrden =
   | { readonly resultado: 'ejecutada'; readonly causa: 'puerta_abrio' }
-  | { readonly resultado: 'fallida'; readonly causa: CausaDeFalla }
+  | { readonly resultado: 'fallida'; readonly causa: CausaDeFalla | CausaDeOrdenDescartada }
   | { readonly resultado: 'sin_confirmacion'; readonly causa: 'sin_sensor' };
 
 /**

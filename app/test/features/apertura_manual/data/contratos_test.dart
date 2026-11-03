@@ -1,8 +1,60 @@
 import 'package:agrocom_acceso/core/api/contratos/apertura_manual_contratos.dart';
+import 'package:agrocom_acceso/features/apertura_manual/data/apertura_manual_repositorio.dart';
 import 'package:agrocom_acceso/features/apertura_manual/domain/apertura_manual.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('desenlace de una orden', () {
+    test('ejecutada es abierta, venga con la causa que venga', () {
+      expect(
+        desenlaceDeOrden(EstadoOrden.ejecutada, 'puerta_abrio'),
+        DesenlaceDeApertura.abierta,
+      );
+      expect(
+        desenlaceDeOrden(EstadoOrden.ejecutada, 'sin_sensor'),
+        DesenlaceDeApertura.abierta,
+      );
+    });
+
+    test('fallida por ocupada es ocupada, no una falla de la puerta', () {
+      expect(
+        desenlaceDeOrden(EstadoOrden.fallida, 'ocupada'),
+        DesenlaceDeApertura.ocupada,
+      );
+    });
+
+    test('fallida por vencida se trata como orden vencida', () {
+      expect(
+        desenlaceDeOrden(EstadoOrden.fallida, 'vencida'),
+        DesenlaceDeApertura.vencida,
+      );
+    });
+
+    test('cualquier otra falla, o sin causa, es que no abrió', () {
+      for (final causa in [
+        'puerta_no_abrio',
+        'puerta_no_cerro',
+        'rele_no_accionado',
+        null,
+      ]) {
+        expect(
+          desenlaceDeOrden(EstadoOrden.fallida, causa),
+          DesenlaceDeApertura.noAbrio,
+          reason: '$causa',
+        );
+      }
+    });
+
+    test('vencida es vencida y en curso no tiene desenlace', () {
+      expect(
+        desenlaceDeOrden(EstadoOrden.vencida, null),
+        DesenlaceDeApertura.vencida,
+      );
+      expect(desenlaceDeOrden(EstadoOrden.pendiente, null), isNull);
+      expect(desenlaceDeOrden(EstadoOrden.entregada, null), isNull);
+    });
+  });
+
   group('puerta abrible', () {
     final json = <String, dynamic>{
       'id': '7',

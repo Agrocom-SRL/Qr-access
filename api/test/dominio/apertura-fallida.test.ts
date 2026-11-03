@@ -68,6 +68,33 @@ describe('puertas que fallan al abrir', () => {
     expect(esFalla({ resultado: 'ejecutada', causa: 'puerta_abrio' })).toBe(false);
   });
 
+  it('una orden manual que la placa descartó (ocupada, vencida) no es una falla de la puerta', () => {
+    expect(esFalla({ resultado: 'fallida', causa: 'ocupada' })).toBe(false);
+    expect(esFalla({ resultado: 'fallida', causa: 'vencida' })).toBe(false);
+  });
+
+  it('dos órdenes descartadas seguidas no abren el aviso; dos puerta_no_abrio sí', () => {
+    const descartadas = [
+      ejecucion('1', 'fallida', 'ocupada', 10),
+      ejecucion('2', 'fallida', 'vencida', 5),
+    ];
+    expect(dispositivosQueFallan(descartadas, AHORA, umbrales, conSensor).size).toBe(0);
+    const fallas = [
+      ejecucion('1', 'fallida', 'puerta_no_abrio', 10),
+      ejecucion('2', 'fallida', 'puerta_no_abrio', 5),
+    ];
+    expect(dispositivosQueFallan(fallas, AHORA, umbrales, conSensor).size).toBe(1);
+  });
+
+  it('una descartada entre dos fallas reales no las separa ni suma', () => {
+    const mezcla = [
+      ejecucion('1', 'fallida', 'puerta_no_abrio', 10),
+      ejecucion('2', 'fallida', 'ocupada', 7),
+      ejecucion('3', 'fallida', 'puerta_no_abrio', 5),
+    ];
+    expect(dispositivosQueFallan(mezcla, AHORA, umbrales, conSensor).get('1')?.fallos).toBe(2);
+  });
+
   it('una falla aislada no alcanza; dos dentro de la ventana sí', () => {
     expect(
       dispositivosQueFallan(

@@ -29,6 +29,8 @@ export const CAUSAS_DE_EJECUCION = [
   'puerta_no_abrio',
   'puerta_no_cerro',
   'rele_no_accionado',
+  'ocupada',
+  'vencida',
   'sin_sensor',
   'sin_respuesta',
 ] as const;
