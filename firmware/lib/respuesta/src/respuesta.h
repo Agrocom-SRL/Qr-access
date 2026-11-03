@@ -38,11 +38,15 @@ puerta::Resultado interpretar(int estadoHttp, const char* cuerpo, size_t largo,
 // de la espera son opcionales: si faltan o vienen mal formados, el sensor queda NO instalado y la
 // espera en 0 («no vino»), y la placa informa `sin_sensor`.
 constexpr int ESPERA_CONFIRMACION_MAXIMA_S = 600;
+//
+// `apertura_manual` (ADR 0035): el interruptor de la puerta. Solo `true` explícito hace que la placa
+// pregunte por órdenes; si falta o viene mal formado queda en `false` (no pregunta).
 struct Configuracion {
   bool valida;
   uint16_t segundosApertura;  // acotado a puerta::MAX_APERTURA_S
   confirmacion::Sensor sensor = {};
   uint16_t esperaConfirmacionS = 0;  // 0 = no vino
+  bool aperturaManual = false;
 };
 Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_t largo);
 
@@ -61,5 +65,22 @@ struct Anuncio {
   bool rechazado = false;
 };
 Anuncio interpretarAnuncio(int estadoHttp, const char* cuerpo, size_t largo);
+
+// GET /api/v1/dispositivos/ordenes (petición larga, ADR 0035 §2):
+//   200 {"orden_id":"<dígitos>","valida_por_ms":int,"segundos_apertura":int}  -> hay una orden
+//   204                                                                         -> pasó la espera sin orden
+// Cualquier otra cosa (otro HTTP, JSON fuera de forma, id que no sean 1-20 dígitos, plazo ausente o
+// fuera de 1..MAX_VALIDA_POR_MS, segundos fuera de rango) es `Invalida`: NO abre. `valida_por_ms` es el
+// plazo restante RELATIVO; quien lo use debe contarlo desde que recibió la respuesta (lib/ordenes).
+// `segundos` sale acotado a puerta::MAX_APERTURA_S.
+constexpr uint32_t MAX_VALIDA_POR_MS = 120000;
+struct Orden {
+  enum class Estado : uint8_t { Invalida, SinOrden, Recibida };
+  Estado estado = Estado::Invalida;
+  char id[confirmacion::MAX_EVENTO_ID + 1] = {0};  // solo con Recibida
+  uint32_t validaPorMs = 0;                         // solo con Recibida
+  uint16_t segundos = 0;                            // solo con Recibida
+};
+Orden interpretarOrden(int estadoHttp, const char* cuerpo, size_t largo);
 
 }  // namespace respuesta

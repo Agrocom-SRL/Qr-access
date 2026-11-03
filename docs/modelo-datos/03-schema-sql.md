@@ -953,7 +953,7 @@ CREATE TABLE confirmaciones_apertura (
   CONSTRAINT ck_confirmaciones_apertura_resultado CHECK (resultado IN ('ejecutada', 'fallida', 'sin_confirmacion')),
   CONSTRAINT ck_confirmaciones_apertura_causa CHECK (
     (resultado = 'ejecutada' AND causa = 'puerta_abrio')
-    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'))
+    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado', 'ocupada', 'vencida'))
     OR (resultado = 'sin_confirmacion' AND causa IN ('sin_sensor', 'sin_respuesta'))
   ),
   CONSTRAINT ck_confirmaciones_apertura_servidor CHECK (origen = 'placa' OR causa = 'sin_respuesta'),
@@ -1114,3 +1114,72 @@ CREATE TABLE avisos_de_senal (
 ALTER TABLE lecturas ADD KEY idx_lecturas_global (ocurrido_at), ALGORITHM=INPLACE, LOCK=NONE;
 ALTER TABLE eventos_de_limite ADD KEY idx_eventos_de_limite_global (tipo, ocurrido_at);
 ALTER TABLE sesiones ADD KEY idx_sesiones_reciente (updated_at);
+
+## Apertura manual desde la app y hasta dos placas por puerta (ADR 0035)
+
+Migraciones de la ola AM1 (`db/migrations/20261104100001` a `20261104100005`, en este orden: `add_sentido_a_dispositivos`, `add_apertura_manual_a_cuentas`, `add_apertura_manual_a_puertas`, `add_apertura_manual_a_lecturas`, `create_ordenes_apertura`); el SQL de abajo es el de esas migraciones (verificado contra MariaDB 10.11: migrar, sembrar dos veces, revertir y volver a migrar). Los datos de local y de producción son de prueba: se puede reestructurar y volver a sembrar.
+
+```sql
+-- add_sentido_a_dispositivos: hasta dos placas por puerta, una por ubicación del lector (afuera/adentro)
+ALTER TABLE dispositivos
+  ADD COLUMN sentido VARCHAR(10) NOT NULL DEFAULT 'ambos' AFTER placa_id,
+  ADD CONSTRAINT ck_dispositivos_sentido CHECK (sentido IN ('entrada', 'salida', 'ambos')),
+  DROP INDEX uq_dispositivos_puerta,
+  ADD UNIQUE KEY uq_dispositivos_puerta_sentido (puerta_id, sentido, en_servicio);
+-- La exclusividad de 'ambos' (no convive con 'entrada' ni 'salida') la hace cumplir la acción de vincular.
+-- El down FALLA si una puerta tiene dos placas en servicio (revocar una antes de revertir).
+
+-- add_apertura_manual_a_puertas: la habilita el administrador de la cuenta
+ALTER TABLE puertas
+  ADD COLUMN apertura_manual TINYINT(1) NOT NULL DEFAULT 1 AFTER activo;
+-- Las puertas nuevas toman cuentas.apertura_manual_por_omision. Nada las enciende solo después de que el
+-- administrador las apagó; la disponibilidad real exige además al menos una placa en servicio en la puerta.
+
+-- add_apertura_manual_a_cuentas: valor inicial para las puertas que se registren
+ALTER TABLE cuentas
+  ADD COLUMN apertura_manual_por_omision TINYINT(1) NOT NULL DEFAULT 1;
+
+-- add_apertura_manual_a_lecturas: método 'manual' y quién lo pidió (la app no sabe de sentidos)
+-- En MariaDB cambiar un CHECK exige ALGORITHM=COPY (bloquea las escrituras); con datos de prueba no importa.
+ALTER TABLE lecturas
+  ADD COLUMN usuario_id BIGINT UNSIGNED NULL AFTER qr_acceso_id,
+  DROP CONSTRAINT ck_eventos_acceso_metodo,
+  ADD CONSTRAINT ck_lecturas_metodo CHECK (metodo IN ('qr', 'pulsador', 'forzada', 'manual')),
+  ADD CONSTRAINT fk_lecturas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  ADD KEY idx_lecturas_manual (tenant_id, metodo, ocurrido_at),
+  ALGORITHM=COPY, LOCK=SHARED;
+-- El down vuelve al CHECK `ck_eventos_acceso_metodo` anterior y FALLA si ya hay lecturas 'manual' (tabla de solo inserción:
+-- no se borra nada para poder revertir).
+
+-- create_ordenes_apertura
+CREATE TABLE ordenes_apertura (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  tenant_id BIGINT UNSIGNED NOT NULL,
+  puerta_id BIGINT UNSIGNED NOT NULL,
+  dispositivo_id BIGINT UNSIGNED NULL,
+  usuario_id BIGINT UNSIGNED NOT NULL,
+  lectura_id BIGINT UNSIGNED NOT NULL,
+  estado VARCHAR(12) NOT NULL DEFAULT 'pendiente',
+  vence_at DATETIME(3) NOT NULL,
+  entregada_at DATETIME(3) NULL,
+  resuelta_at DATETIME(3) NULL,
+  clave_idempotencia VARCHAR(64) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  created_by BIGINT UNSIGNED NULL,
+  vigente_clave TINYINT GENERATED ALWAYS AS (IF(estado IN ('pendiente', 'entregada'), 1, NULL)) STORED,
+  CONSTRAINT fk_ordenes_apertura_tenant FOREIGN KEY (tenant_id) REFERENCES cuentas (id),
+  CONSTRAINT fk_ordenes_apertura_puerta FOREIGN KEY (puerta_id) REFERENCES puertas (id),
+  CONSTRAINT fk_ordenes_apertura_dispositivo FOREIGN KEY (dispositivo_id) REFERENCES dispositivos (id),
+  CONSTRAINT fk_ordenes_apertura_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
+  CONSTRAINT fk_ordenes_apertura_lectura FOREIGN KEY (lectura_id) REFERENCES lecturas (id),
+  CONSTRAINT ck_ordenes_apertura_estado CHECK (estado IN ('pendiente', 'entregada', 'ejecutada', 'fallida', 'vencida')),
+  CONSTRAINT ck_ordenes_apertura_vence CHECK (vence_at <= created_at + INTERVAL 30 SECOND),
+  UNIQUE KEY uq_ordenes_apertura_vigente (puerta_id, vigente_clave),
+  UNIQUE KEY uq_ordenes_apertura_clave (tenant_id, usuario_id, clave_idempotencia),
+  KEY idx_ordenes_apertura_entrega (puerta_id, estado, vence_at),
+  KEY idx_ordenes_apertura_vencimiento (estado, vence_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+Permisos nuevos (seed `01_catalogo.sql`, idempotente): `accesos.apertura_manual.configurar` (solo Administrador de la cuenta) y `accesos.apertura_manual.usar` (todos los roles de cuenta, ámbito cuenta). Topes nuevos en `configuracion_limites` (mismo seed, sin pisar lo que AGROCOM edite): `manual.enfriamiento_segundos` = 10 (ADR 0035 §7) y `manual.tope_diario` = 30 por usuario y día (supuesto de partida). `usar` se concede a los roles base Titular, Miembro y Guardia; el Administrador recibe ambos con todos los permisos de cuenta.

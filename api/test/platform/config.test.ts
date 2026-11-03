@@ -121,6 +121,43 @@ describe('cargarConfig', () => {
       ).toThrow(/DB_ESPERA_MS_APP\+DB_CONSULTA_MS_APP/);
     });
 
+    it('la petición larga de órdenes tiene su propio plazo y no rompe la regla de las demás rutas (ADR 0035 §2)', () => {
+      expect(cargarConfig(base)).toMatchObject({
+        ORDENES_ESPERA_MS: 20000,
+        ORDENES_SONDEO_MS: 3000,
+        PETICION_MS_ORDENES: 25000,
+        // Las demás rutas del dispositivo conservan su tope de 2,5 s.
+        PETICION_MS_DISPOSITIVOS: 2500,
+      });
+      // La regla `petición < 3 s` sigue valiendo para ellas aunque la de órdenes sea mucho mayor.
+      expect(() => cargarConfig({ ...base, PETICION_MS_DISPOSITIVOS: '3000' })).toThrow(
+        /PETICION_MS_DISPOSITIVOS/,
+      );
+    });
+
+    it('espera de órdenes + la última consulta < petición de órdenes < espera del firmware (30 s)', () => {
+      // La espera iguala o pasa la petición: la API cortaría la espera antes de poder contestar 204.
+      expect(() => cargarConfig({ ...base, ORDENES_ESPERA_MS: '25000' })).toThrow(
+        /ORDENES_ESPERA_MS\+PETICION_MS_ORDENES/,
+      );
+      // No cabe la espera más la última consulta con su espera por conexión (500 + 1500 ms).
+      expect(() => cargarConfig({ ...base, ORDENES_ESPERA_MS: '23500' })).toThrow(
+        /ORDENES_ESPERA_MS\+PETICION_MS_ORDENES/,
+      );
+      expect(() => cargarConfig({ ...base, PETICION_MS_ORDENES: '30000' })).toThrow(
+        /PETICION_MS_ORDENES/,
+      );
+      expect(
+        cargarConfig({
+          ...base,
+          ORDENES_ESPERA_MS: '600',
+          PETICION_MS_ORDENES: '2000',
+          DB_ESPERA_MS_DISPOSITIVOS: '100',
+          DB_CONSULTA_MS_DISPOSITIVOS: '300',
+        }),
+      ).toMatchObject({ ORDENES_ESPERA_MS: 600, PETICION_MS_ORDENES: 2000 });
+    });
+
     it('impone mínimos razonables', () => {
       expect(() => cargarConfig({ ...base, DB_POOL_DISPOSITIVOS: '1' })).toThrow(
         /DB_POOL_DISPOSITIVOS/,

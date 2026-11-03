@@ -61,6 +61,7 @@ export const rutasDePlacas =
             cuentaId: request.body.cuenta_id,
             puertaId: request.body.puerta_id,
             nombre: request.body.nombre,
+            sentido: request.body.sentido,
           },
         );
         // 202: el dispositivo todavía no existe, falta el botón de la placa (ADR 0026).

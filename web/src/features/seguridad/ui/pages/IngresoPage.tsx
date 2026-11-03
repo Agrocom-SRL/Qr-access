@@ -96,6 +96,16 @@ export function IngresoPage() {
           <Aviso tono="peligro">{traducirError(t, error.code)}</Aviso>
         ) : null}
         <p className={styles.olvido}>{t('auth:olvido')}</p>
+        {/* Los documentos legales viven junto al panel (public/): se abren en otra pestaña para no perder el ingreso. */}
+        <p className={styles.legales}>
+          <a href="/terminos.html" target="_blank" rel="noopener noreferrer">
+            {t('auth:terminos')}
+          </a>
+          <span aria-hidden="true"> · </span>
+          <a href="/privacidad.html" target="_blank" rel="noopener noreferrer">
+            {t('auth:privacidad')}
+          </a>
+        </p>
       </form>
     </PlantillaAuth>
   );

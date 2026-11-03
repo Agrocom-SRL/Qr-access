@@ -13,7 +13,9 @@ import { Aviso } from '../../../../shared/ui/molecules/Aviso';
 import { Dialogo } from '../../../../shared/ui/organisms/Dialogo';
 import { usePlacas, useVincularPlaca } from '../../application/usePlacas';
 import type { Placa } from '../../domain/placa';
+import type { UbicacionDelLector } from '../../domain/placa';
 import { DialogoConfirmarEnPuerta } from './DialogoConfirmarEnPuerta';
+import { SelectorDeUbicacion } from './SelectorDeUbicacion';
 
 interface Props {
   cuentaId: string;
@@ -43,6 +45,7 @@ export function DialogoVincularAPuerta({ cuentaId, puerta, onCerrar }: Props) {
   const detectadas = usePlacas({ busqueda: '', estado: 'detectada', conexion: 'todas', pagina: 1 });
   const [placaId, setPlacaId] = useState('');
   const [nombre, setNombre] = useState(puerta.nombre);
+  const [sentido, setSentido] = useState<UbicacionDelLector>('ambos');
   const [esperaHasta, setEsperaHasta] = useState<Date | null>(null);
 
   const placas = detectadas.data?.elementos ?? [];
@@ -58,7 +61,10 @@ export function DialogoVincularAPuerta({ cuentaId, puerta, onCerrar }: Props) {
   const enviar = () => {
     if (elegida === undefined) return;
     vincular.mutate(
-      { placaId: elegida.id, datos: { cuentaId, puertaId: puerta.id, nombre: nombre.trim() } },
+      {
+        placaId: elegida.id,
+        datos: { cuentaId, puertaId: puerta.id, nombre: nombre.trim(), sentido },
+      },
       {
         onSuccess: ({ porConfirmarHasta }) => {
           setEsperaHasta(porConfirmarHasta);
@@ -104,6 +110,7 @@ export function DialogoVincularAPuerta({ cuentaId, puerta, onCerrar }: Props) {
         error={sinPlacas ? t('placas:sinPlacasDetectadas') : undefined}
         onCambio={setPlacaId}
       />
+      <SelectorDeUbicacion valor={sentido} onCambio={setSentido} />
       <AccesoCampoTexto
         etiqueta={t('placas:nombreLector')}
         value={nombre}

@@ -114,7 +114,6 @@ export function PestanaSenales() {
   return (
     <section className={styles.pestana}>
       <ResumenDeSenales />
-      <p className={styles.ayuda}>{t('senales:subtitulo')}</p>
       <BarraDeFiltros etiqueta={t('senales:lista.filtros.cuenta')}>
         <AccesoSelectorBuscable
           etiqueta={t('senales:lista.filtros.cuenta')}
@@ -191,6 +190,7 @@ export function PestanaSenales() {
       <div className={styles.segmentados}>
         <FiltroSegmentado<'todas' | Gravedad>
           etiqueta={t('senales:lista.columnas.gravedad')}
+          titulo={t('senales:lista.columnas.gravedad')}
           valor={filtros.gravedad}
           onCambio={(gravedad) => {
             cambiar({ gravedad });

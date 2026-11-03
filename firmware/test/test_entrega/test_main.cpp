@@ -175,8 +175,48 @@ void test_si_no_se_pudo_encolar_sigue_tocando() {
   TEST_ASSERT_TRUE(e.debeEnviar(1) != nullptr);
 }
 
+static Informe informeManual(const char* id) {
+  Informe i = informe(id);
+  i.manual = true;
+  return i;
+}
+
+void test_el_id_de_una_orden_no_se_confunde_con_el_de_un_evento() {
+  // Un id de orden y un id de evento pueden coincidir en número: son informes distintos.
+  Entregas e;
+  TEST_ASSERT_TRUE(e.agregar(informe("42"), 0));
+  TEST_ASSERT_TRUE(e.agregar(informeManual("42"), 0));
+  TEST_ASSERT_EQUAL_UINT8(2, e.pendientes());
+  TEST_ASSERT_FALSE(e.agregar(informeManual("42"), 0));  // pero cada uno una sola vez
+  TEST_ASSERT_FALSE(e.agregar(informe("42"), 0));
+}
+
+void test_la_respuesta_de_una_orden_no_cierra_el_informe_de_un_evento() {
+  // Solo hay un informe de EVENTO "42": la respuesta de la ORDEN "42" no es suya y se ignora.
+  Entregas e;
+  e.agregar(informe("42"), 0);
+  e.enviado("42", 0, false);
+  e.alResponder("42", 204, 10, true);
+  TEST_ASSERT_EQUAL_UINT8(1, e.pendientes());
+  e.alResponder("42", 204, 20, false);
+  TEST_ASSERT_EQUAL_UINT8(0, e.pendientes());
+}
+
+void test_la_respuesta_de_un_evento_no_cierra_el_informe_de_una_orden() {
+  Entregas e;
+  e.agregar(informeManual("42"), 0);
+  e.enviado("42", 0, true);
+  e.alResponder("42", 204, 10, false);
+  TEST_ASSERT_EQUAL_UINT8(1, e.pendientes());
+  e.alResponder("42", 204, 20, true);
+  TEST_ASSERT_EQUAL_UINT8(0, e.pendientes());
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_el_id_de_una_orden_no_se_confunde_con_el_de_un_evento);
+  RUN_TEST(test_la_respuesta_de_una_orden_no_cierra_el_informe_de_un_evento);
+  RUN_TEST(test_la_respuesta_de_un_evento_no_cierra_el_informe_de_una_orden);
   RUN_TEST(test_clasificacion_de_codigos);
   RUN_TEST(test_204_lo_da_por_entregado_y_no_se_vuelve_a_enviar);
   RUN_TEST(test_un_solo_informe_por_apertura);

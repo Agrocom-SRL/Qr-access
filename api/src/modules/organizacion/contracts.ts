@@ -37,6 +37,8 @@ export interface PuertaDeCuenta {
   readonly zonaHoraria: string;
   readonly segundosApertura: number;
   readonly activa: boolean;
+  /** El administrador habilitó la apertura manual desde la app en esta puerta (ADR 0035 §5). */
+  readonly aperturaManual: boolean;
 }
 
 /** La unidad de un Titular: lo que el resto de los módulos puede saber de ella. */
@@ -104,6 +106,7 @@ function aPuerta(fila: PuertaFila): PuertaDeCuenta {
     zonaHoraria: fila.zona_horaria,
     segundosApertura: fila.segundos_apertura,
     activa: fila.activo === 1,
+    aperturaManual: fila.apertura_manual === 1,
   };
 }
 

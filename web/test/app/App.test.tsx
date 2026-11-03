@@ -38,6 +38,17 @@ describe('ingreso (A01)', () => {
     expect(await screen.findByRole('heading', { name: 'Ingresa al panel' })).toBeInTheDocument();
   });
 
+  it('enlaza los términos y la privacidad, en otra pestaña para no perder el ingreso', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    const terminos = await screen.findByRole('link', { name: 'Términos y condiciones' });
+    expect(terminos).toHaveAttribute('href', '/terminos.html');
+    expect(terminos).toHaveAttribute('target', '_blank');
+    expect(terminos).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    const privacidad = screen.getByRole('link', { name: 'Política de privacidad' });
+    expect(privacidad).toHaveAttribute('href', '/privacidad.html');
+    expect(privacidad).toHaveAttribute('target', '_blank');
+  });
+
   it('con credenciales válidas entra al panel y muestra el rail con el usuario', async () => {
     montar(crearServiciosDePrueba(), '/ingreso');
     await ingresar();
@@ -351,6 +362,43 @@ describe('estadísticas', () => {
     ).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: 'Uso por plan' })).toBeInTheDocument();
     expect(screen.getByText('1.604')).toBeInTheDocument();
+  });
+
+  it('reparte las gráficas en pestañas por tema', async () => {
+    montar(crearServiciosDePrueba(), '/ingreso');
+    await ingresar();
+    await userEvent.click(await screen.findByRole('link', { name: /Estadísticas/ }));
+
+    // Cobros y planes es la primera: lo cobrado y cómo se reparten los planes.
+    expect(await screen.findByRole('tab', { name: 'Cobros y planes' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(await screen.findByText('Cobrado por mes')).toBeInTheDocument();
+    expect(screen.getByText('Cuentas por plan')).toBeInTheDocument();
+    expect(screen.queryByText('Cuentas por estado')).not.toBeInTheDocument();
+    expect(screen.queryByText('Lecturas por día')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Cuentas' }));
+    expect(await screen.findByText('Cuentas por estado')).toBeInTheDocument();
+    expect(screen.getByText('Cuentas nuevas por mes')).toBeInTheDocument();
+    expect(screen.queryByText('Cobrado por mes')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Accesos' }));
+    expect(await screen.findByText('Lecturas por día')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('region', { name: 'Puertas que más usan la apertura desde la app' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Cuentas por estado')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Apertura desde la app' }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Apertura desde la app' }));
+    expect(
+      await screen.findByRole('heading', { name: 'Apertura desde la app' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Lecturas por día')).not.toBeInTheDocument();
   });
 });
 
@@ -1183,8 +1231,8 @@ describe('administradores, PIN y código de la cuenta (ADR 0023)', () => {
   it('lista los administradores con su último ingreso y su PIN', async () => {
     await abrirCuenta(crearServiciosDePrueba());
     expect(await screen.findByText(/Nunca ingresó/)).toBeInTheDocument();
-    // Como responsable, como administrador y en el árbol de la cuenta (ADR 0028)
-    expect(screen.getAllByText('Carla Méndez')).toHaveLength(3);
+    // Como responsable y como administrador; el árbol de la cuenta está en la pestaña Usuarios (ADR 0028)
+    expect(screen.getAllByText('Carla Méndez')).toHaveLength(2);
     expect(screen.getByText(/PIN generado 01\/09\/2026/)).toBeInTheDocument();
   });
 
@@ -1320,11 +1368,57 @@ describe('placas (ADR 0026)', () => {
         cuentaId: '1',
         puertaId: '3',
         nombre: 'Garaje',
+        sentido: 'ambos',
       });
     });
     // El vínculo no está hecho: el panel explica cómo confirmarlo en la puerta.
     expect(await screen.findByText('Confirma en la puerta')).toBeInTheDocument();
     expect(screen.getByText(/Mantén pulsado el pulsador de salida/)).toBeInTheDocument();
+  });
+
+  it('vincular: la ubicación del lector se elige y viaja (una puerta puede llevar dos placas)', async () => {
+    const vincular = vi.fn<PlacasRepositorio['vincular']>(() =>
+      Promise.resolve({ porConfirmarHasta: new Date(Date.now() + 10 * 60_000) }),
+    );
+    const sitiosYPuertas = () =>
+      Promise.resolve([
+        {
+          id: '1',
+          nombre: 'Planta Warnes',
+          direccion: null,
+          zonaHoraria: 'America/La_Paz',
+          activo: true,
+          puertas: [
+            { id: '3', nombre: 'Garaje', segundosApertura: 5, activa: true, dispositivo: null },
+          ],
+        },
+      ]);
+    await irAPlacas(crearServiciosDePrueba({ placas: { vincular }, cuentas: { sitiosYPuertas } }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Vincular la placa AA:BB:CC:00:11:33' }),
+    );
+    const dialogo = await screen.findByRole('dialog');
+    await userEvent.click(within(dialogo).getByLabelText('Cuenta'));
+    await userEvent.click(
+      await screen.findByRole('option', { name: 'AGR · Agroindustrial Norte' }),
+    );
+    await userEvent.click(within(dialogo).getByLabelText('Puerta'));
+    await userEvent.click(await screen.findByRole('option', { name: 'Planta Warnes · Garaje' }));
+    // Por omisión es una sola placa; aquí es la del lector de afuera.
+    expect(within(dialogo).getByRole('button', { name: 'Una sola placa' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Lector de afuera' }));
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Pedir vínculo' }));
+    await waitFor(() => {
+      expect(vincular).toHaveBeenCalledWith('2', {
+        cuentaId: '1',
+        puertaId: '3',
+        nombre: 'Garaje',
+        sentido: 'entrada',
+      });
+    });
   });
 
   it('cancelar el vínculo de una placa que espera su botón envía su id', async () => {
@@ -1489,8 +1583,25 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
   });
 
   describe('quién depende de quién', () => {
+    it('vive en la pestaña Usuarios, con el uso de los usuarios, y ya no en el Resumen', async () => {
+      await abrirCuenta(crearServiciosDePrueba());
+      await screen.findByRole('heading', { name: 'Administradores' });
+      expect(screen.queryByText('Quién depende de quién')).not.toBeInTheDocument();
+      await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+      expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
+      expect(await screen.findByText('Uso de los usuarios')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('tab', { name: 'Suscripción' }));
+      expect(screen.queryByText('Uso de los usuarios')).not.toBeInTheDocument();
+    });
+
+    // La jerarquía vive en la pestaña Usuarios de la ficha, no en el Resumen.
+    const irAUsuarios = async () => {
+      await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
+    };
+
     it('muestra cada administrador con sus Titulares (unidad y Miembros) y Guardias', async () => {
       await abrirCuenta(crearServiciosDePrueba());
+      await irAUsuarios();
       expect(await screen.findByText('Quién depende de quién')).toBeInTheDocument();
       expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.getByText('Titular · Casa 12 · 3 Miembros')).toBeInTheDocument();
@@ -1501,6 +1612,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
     it('reasignar un Titular explica que lleva su unidad y sus Miembros, y lo manda a otro administrador', async () => {
       const reasignar = vi.fn(() => Promise.resolve());
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Jorge Rivero a otro administrador',
@@ -1523,6 +1635,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
     it('reasignar un Guardia manda al Guardia', async () => {
       const reasignar = vi.fn(() => Promise.resolve());
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Portería norte a otro administrador',
@@ -1542,6 +1655,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
         Promise.reject(new ErrorApi(422, 'reasignacion.mismo_administrador')),
       );
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { reasignar } }));
+      await irAUsuarios();
       await userEvent.click(
         await screen.findByRole('button', {
           name: 'Reasignar a Portería norte a otro administrador',
@@ -1558,6 +1672,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
 
     it('sin el permiso de reasignar, el árbol se ve pero no se ofrece mover a nadie', async () => {
       await abrirCuenta(conPermisos(['seguridad.cuenta.ver', 'resumen.panel.ver']));
+      await irAUsuarios();
       expect((await screen.findAllByText('Jorge Rivero')).length).toBeGreaterThan(0);
       expect(screen.queryByRole('button', { name: /^Reasignar a/ })).not.toBeInTheDocument();
     });
@@ -1568,6 +1683,7 @@ describe('estructura de la cuenta: administradores, reasignación y tope (ADR 00
         .mockRejectedValueOnce(new ErrorApi(500, 'desconocido'))
         .mockResolvedValue([]);
       await abrirCuenta(crearServiciosDePrueba({ cuentas: { jerarquia } }));
+      await irAUsuarios();
       expect(
         await screen.findByText('No pudimos cargar la estructura de la cuenta'),
       ).toBeInTheDocument();
@@ -1627,8 +1743,8 @@ describe('uso de los usuarios en la ficha de la cuenta (ADR 0028 §4)', () => {
     await ingresar();
     await userEvent.click(await screen.findByRole('link', { name: /Cuentas/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Ver Agroindustrial Norte' }));
-    // El uso de los usuarios vive en la pestaña Suscripción, junto al plan y al cupo.
-    await userEvent.click(await screen.findByRole('tab', { name: 'Suscripción' }));
+    // El uso de los usuarios vive en la pestaña Usuarios, junto a quién depende de quién.
+    await userEvent.click(await screen.findByRole('tab', { name: 'Usuarios' }));
   }
 
   it('explica los umbrales y que es solo informativo', async () => {

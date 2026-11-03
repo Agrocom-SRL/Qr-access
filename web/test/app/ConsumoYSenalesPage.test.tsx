@@ -64,4 +64,25 @@ describe('consumo y señales: cada sección con su permiso', () => {
     expect(await screen.findByText('No tienes acceso a esta sección')).toBeInTheDocument();
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
   });
+
+  it('cada pestaña explica qué muestra y cómo se lee', async () => {
+    montar(['limites.consumo.ver', 'seguridad.senal.ver']);
+    expect(
+      await screen.findByText('Consumo de bolsa: qué tan cerca está cada cuenta de su límite'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Estados: Normal \(por debajo del aviso\)/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Señales' }));
+    expect(screen.getByText('Señales: usos raros que conviene revisar')).toBeInTheDocument();
+    expect(screen.queryByText(/Estados: Normal/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Flujo' }));
+    expect(screen.getByText('Flujo: cuántas aperturas hace cada usuario')).toBeInTheDocument();
+  });
+
+  it('los filtros segmentados llevan un título visible', async () => {
+    montar(['limites.consumo.ver']);
+    expect(await screen.findByText('Estado de la bolsa')).toBeVisible();
+    expect(screen.getByText('Sentido del orden')).toBeVisible();
+  });
 });

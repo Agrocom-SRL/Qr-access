@@ -94,6 +94,12 @@ class Maquina {
   // está en curso (tardía, ya vencida) se descarta sin abrir.
   Acciones alResponder(uint32_t id, const Resultado& resultado, uint32_t ahoraMs);
 
+  // El servidor ordenó abrir desde la app (apertura manual, ADR 0035) y la orden sigue vigente (eso lo
+  // comprueba quien la recibió, lib/ordenes). Solo abre con el relé libre: con una validación en curso
+  // o la puerta ya abierta se DESCARTA (el servidor la vence y la persona reintenta). El pulso se acota
+  // al tope vigente, como el de una validación. `segundos` 0 no abre.
+  Acciones alRecibirOrdenManual(uint16_t segundos, uint32_t ahoraMs);
+
   // Pulsador de salida: apertura física, no depende de la red (RF-08).
   Acciones alPulsarSalida(uint32_t ahoraMs);
 

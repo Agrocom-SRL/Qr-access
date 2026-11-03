@@ -1,6 +1,6 @@
 # 13 — `dispositivos`
 
-**Módulo dueño:** `dispositivos` · **Tenant:** sí · **Migraciones:** `db/migrations/20261009100013_create_dispositivos.sql`, `20261013100002_add_placa_id_a_dispositivos.sql` `20261030100003_add_estado_de_placa_a_dispositivos.sql` y `20261031100002_add_sensor_y_apertura_a_dispositivos.sql`
+**Módulo dueño:** `dispositivos` · **Tenant:** sí · **Migraciones:** `db/migrations/20261009100013_create_dispositivos.sql`, `20261013100002_add_placa_id_a_dispositivos.sql` `20261030100003_add_estado_de_placa_a_dispositivos.sql` `20261031100002_add_sensor_y_apertura_a_dispositivos.sql` y (ADR 0035) `add_sentido_a_dispositivos`
 
 ## Propósito
 
@@ -14,6 +14,7 @@ Asignación de una placa (ESP32) a una puerta, con su propia credencial (invaria
 | `tenant_id` | `BIGINT UNSIGNED` | no | FK a `cuentas` |
 | `puerta_id` | `BIGINT UNSIGNED` | no |  |
 | `placa_id` | `BIGINT UNSIGNED` | sí | FK a `placas`; nulo solo en los dispositivos de desarrollo anteriores al ADR 0025 |
+| `sentido` | `VARCHAR(10)` | no | `entrada` (lector del lado de afuera), `salida` (lado de adentro) o `ambos` (una sola placa; por omisión). Dice dónde está el lector y permite dos placas por puerta; **no interviene en la apertura manual** (ADR 0035) |
 | `nombre` | `VARCHAR(100)` | no |  |
 | `clave_hash` | `VARCHAR(255)` | no | argon2id de la clave del dispositivo (sensible) |
 | `firmware_version` | `VARCHAR(20)` | sí |  |
@@ -40,7 +41,8 @@ Asignación de una placa (ESP32) a una puerta, con su propia credencial (invaria
 
 ## Índices y restricciones
 
-- `uq_dispositivos_puerta`
+- `uq_dispositivos_puerta_sentido` `(puerta_id, sentido, en_servicio)` (ADR 0035; reemplaza a `uq_dispositivos_puerta`): una puerta tiene como máximo una placa en servicio por ubicación de lector. `ambos` es exclusivo (no convive con `entrada` ni `salida`); lo hace cumplir la acción de vincular dentro de la transacción, porque una restricción única no puede expresarlo.
+- `ck_dispositivos_sentido`
 - `uq_dispositivos_placa`: una placa tiene un solo dispositivo en servicio
 
 El SQL completo está en `03-schema-sql.md`.
@@ -48,7 +50,7 @@ El SQL completo está en `03-schema-sql.md`.
 ## Reglas
 
 - Credencial `Dispositivo <id>.<clave>`; `clave_hash` es argon2id y nunca va a la bitácora. La clave en claro se muestra una sola vez.
-- `en_servicio` (columna generada) garantiza un solo dispositivo sin revocar ni borrar por puerta.
+- `en_servicio` (columna generada) garantiza un solo dispositivo sin revocar ni borrar por puerta **y ubicación de lector** (una puerta lleva hasta dos placas, la de afuera y la de adentro, que accionan la misma cerradura, ADR 0035). Las órdenes de apertura manual son de la puerta: las toma la primera placa en servicio que las reclame.
 - `clave_hash` se copia de `placas.clave_hash` al vincular: la clave la genera la placa y el servidor nunca la guarda en claro.
 - Revocado (`revocado_at`), inactivo o borrado: la API responde 401 y el firmware no abre.
 - El latido actualiza `firmware_version`, `ultimo_latido_at`, `ultimo_rssi` y `ultima_puerta_abierta` sin pasar por la bitácora (telemetría). También guarda `en_linea_desde` y, si el firmware lo informa, `lector_responde`/`lector_informado_at` (y `lector_cambio_at` si el valor cambió). El detector periódico (`evaluar-estado-de-placas`) escribe `estado_conexion`, `estado_lector` y `en_observacion`, tampoco por la bitácora (ADR 0031 §18). El detector NO bloquea filas de `dispositivos` (son padre de las FK de las validaciones, ADR 0032 §1): lee sin bloqueo, serializa por cuenta con un `GET_LOCK` y escribe con compare-and-set (`WHERE estado_conexion <=> ? AND estado_lector <=> ? AND en_observacion = ?`); solo encola el aviso si el UPDATE afectó la fila.

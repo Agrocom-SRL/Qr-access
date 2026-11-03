@@ -1,4 +1,5 @@
 import type { Pool } from 'mysql2/promise';
+import { crearTareasDeAccesos } from './modules/accesos/contracts.js';
 import { crearTareasDeDispositivos } from './modules/dispositivos/contracts.js';
 import { crearTareasDeIncidentes } from './modules/incidentes/contracts.js';
 import { crearTareasDeNotificaciones } from './modules/notificaciones/contracts.js';
@@ -16,6 +17,7 @@ export interface Tarea {
  * inyectado, así los tests la llaman directamente con la hora que quieran y no esperan a ningún temporizador.
  */
 export function crearTareas(pool: Pool): readonly Tarea[] {
+  const accesos = crearTareasDeAccesos(pool);
   const dispositivos = crearTareasDeDispositivos(pool);
   const notificaciones = crearTareasDeNotificaciones(pool);
   const incidentes = crearTareasDeIncidentes(pool);
@@ -90,6 +92,13 @@ export function crearTareas(pool: Pool): readonly Tarea[] {
       nombre: 'senal-flujo-atipico',
       cadaMs: 900_000,
       ejecutar: (ahora, registrarError) => senales.detectarFlujoAtipico(ahora, registrarError),
+    },
+    // Vence las órdenes de apertura manual que nadie tomó o que la placa tomó y no contestó (ADR 0035 §3). Barato:
+    // una lectura por el índice de vencimiento; cada 15 s para que la app vea el desenlace sin esperar un minuto.
+    {
+      nombre: 'vencer-ordenes',
+      cadaMs: 15_000,
+      ejecutar: (ahora, registrarError) => accesos.vencerOrdenes(ahora, registrarError),
     },
   ];
 }

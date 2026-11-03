@@ -4,7 +4,8 @@ import { ErrorDeDominio } from '../../platform/errores/error-de-dominio.js';
 import { crearServicioDeOrganizacion } from '../organizacion/contracts.js';
 import { crearServicioDeCuentas } from '../seguridad/contracts.js';
 import { crearServicioDeSuscripciones } from '../suscripciones/contracts.js';
-import { RepositorioDeDispositivos } from './repository.js';
+import type { Sentido } from './domain/sentido.js';
+import { exigirQueCabe, RepositorioDeDispositivos } from './repository.js';
 
 /** Cuánto espera la placa el pulsador desde que el super admin pide vincularla (ADR 0026 §3). */
 export const VENTANA_DE_CONFIRMACION_MS = 10 * 60_000;
@@ -12,13 +13,13 @@ export const VENTANA_DE_CONFIRMACION_MS = 10 * 60_000;
 /**
  * Comprueba que se puede vincular una placa a esa puerta y, solo entonces, corre `trabajo` en el
  * contexto de la cuenta (ADR 0004 §7), a nombre de `usuarioId`: la cuenta existe y está activa, la
- * puerta es suya y no tiene otro lector, y el plan tiene cupo. Se usa dos veces: al solicitar el
+ * puerta es suya y la placa cabe en ella (una por lado, `ambos` exclusivo), y el plan tiene cupo. Se usa dos veces: al solicitar el
  * vínculo y al confirmarlo con el pulsador, porque entre ambos momentos el plan o la puerta
  * pueden haber cambiado.
  */
 export async function conVinculoValido<T>(
   pool: Pool,
-  datos: { cuentaId: string; puertaId: string; usuarioId: string },
+  datos: { cuentaId: string; puertaId: string; usuarioId: string; sentido?: Sentido },
   ahora: Date,
   trabajo: (vinculo: { puertaId: string; dispositivos: RepositorioDeDispositivos }) => Promise<T>,
 ): Promise<T> {
@@ -41,9 +42,13 @@ export async function conVinculoValido<T>(
         maximo: suscripcion.maxDispositivos,
       });
     }
-    if ((await dispositivos.listarEnServicioPorPuertas([puerta.id])).length > 0) {
-      throw new ErrorDeDominio('puerta.con_dispositivo', 409);
-    }
+    // Aviso temprano (sin bloqueo) de que la placa no cabe: una puerta lleva a lo sumo una placa por lado y `ambos`
+    // no se mezcla (ADR 0035 §4). La comprobación que vale, con bloqueo, la repite `crearParaPlaca` en su transacción.
+    const ocupados = await dispositivos.listarEnServicioPorPuertas([puerta.id]);
+    exigirQueCabe(
+      ocupados.map((fila) => fila.sentido),
+      datos.sentido ?? 'ambos',
+    );
     return trabajo({ puertaId: puerta.id, dispositivos });
   });
 }

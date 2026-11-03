@@ -6,7 +6,11 @@ import type { BitacoraRepositorio, EventoBitacora } from '@/features/bitacora';
 import type { EventosRepositorio } from '@/features/eventos';
 import type { NotificacionesRepositorio, Notificacion } from '@/features/notificaciones';
 import type { ResumenRepositorio } from '@/features/resumen';
-import type { EstadisticasRepositorio, Estadisticas } from '@/features/estadisticas';
+import type {
+  AperturaManual,
+  EstadisticasRepositorio,
+  Estadisticas,
+} from '@/features/estadisticas';
 import type { PagosRepositorio } from '@/features/pagos';
 import type { SuscripcionesRepositorio } from '@/features/suscripciones';
 import type { CuentasRepositorio } from '@/features/cuentas';
@@ -570,6 +574,57 @@ export const ESTADISTICAS: Estadisticas = {
   })),
 };
 
+export const APERTURA_MANUAL: AperturaManual = {
+  dias: 30,
+  ordenadas: 30,
+  rechazadas: 5,
+  porQr: 70,
+  usuarios: 12,
+  cuentasQueLaUsaron: 3,
+  ejecucion: { ejecutadas: 24, fallidas: 4, sinConfirmacion: 2 },
+  porPuerta: [
+    {
+      cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+      puerta: { id: '10', nombre: 'Portón principal', sitio: 'Planta Norte' },
+      total: 22,
+      rechazadas: 2,
+    },
+    {
+      cuenta: { id: '2', codigo: 'BET', nombre: 'Condominio Betania' },
+      puerta: { id: '20', nombre: 'Salida vehicular', sitio: 'Betania' },
+      total: 13,
+      rechazadas: 3,
+    },
+  ],
+  porCuenta: [
+    {
+      cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+      total: 22,
+      rechazadas: 2,
+      usuarios: 8,
+    },
+    {
+      cuenta: { id: '2', codigo: 'BET', nombre: 'Condominio Betania' },
+      total: 13,
+      rechazadas: 3,
+      usuarios: 4,
+    },
+  ],
+  porDia: Array.from({ length: 30 }, (_, i) => ({
+    dia: `2026-10-${String((i % 30) + 1).padStart(2, '0')}`,
+    ordenadas: i % 4,
+    rechazadas: i % 7 === 0 ? 1 : 0,
+  })),
+  porHora: Array.from({ length: 24 }, (_, hora) => ({ hora, total: hora === 8 ? 9 : 0 })),
+  configuracion: {
+    puertas: 12,
+    habilitadas: 10,
+    disponibles: 8,
+    cuentas: 5,
+    cuentasConModoActivo: 4,
+  },
+};
+
 export const COBRANZA = {
   totales: {
     porCobrar30: { monto: 100800, cuentas: 5 },
@@ -1028,6 +1083,7 @@ export function crearServiciosDePrueba(
   };
   const estadisticas: EstadisticasRepositorio = {
     obtener: () => Promise.resolve(ESTADISTICAS),
+    aperturaManual: () => Promise.resolve(APERTURA_MANUAL),
     ...parcial.estadisticas,
   };
   const limites: LimitesRepositorio = {

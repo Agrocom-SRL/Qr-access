@@ -1,6 +1,5 @@
 {
   "pestana": "Consumo de bolsa",
-  "subtitulo": "Los QR generados este mes frente a la bolsa de cada cuenta. Aquí solo se registra y se avisa: ninguna cuenta queda cortada.",
   "aviso": "Aviso al {{porcentaje}} de la bolsa",
   "mes": "Mes de {{mes}}",
   "sinPlan": "Sin plan",

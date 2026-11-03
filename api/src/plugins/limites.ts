@@ -18,7 +18,8 @@ export type ClaseDeLimite =
   | 'lectura'
   | 'exportacion'
   | 'validacion'
-  | 'dispositivo';
+  | 'dispositivo'
+  | 'ordenes';
 
 declare module 'fastify' {
   interface FastifyContextConfig {
@@ -43,6 +44,7 @@ function maximosDe(config: Config): Readonly<Record<ClaseDeLimite, number>> {
     exportacion: config.LIMITE_EXPORTACION_POR_MINUTO,
     validacion: config.LIMITE_VALIDACION_POR_MINUTO,
     dispositivo: config.LIMITE_DISPOSITIVO_POR_MINUTO,
+    ordenes: config.LIMITE_ORDENES_POR_MINUTO,
   };
 }
 

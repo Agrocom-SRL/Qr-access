@@ -79,7 +79,12 @@ export function crearPlacasHttp(cliente: ClienteHttp): PlacasRepositorio {
       const respuesta = await cliente.solicitar<{ por_confirmar_hasta: string }>({
         metodo: 'POST',
         ruta: `/plataforma/placas/${placaId}/vincular`,
-        cuerpo: { cuenta_id: datos.cuentaId, puerta_id: datos.puertaId, nombre: datos.nombre },
+        cuerpo: {
+          cuenta_id: datos.cuentaId,
+          puerta_id: datos.puertaId,
+          nombre: datos.nombre,
+          ...(datos.sentido === undefined ? {} : { sentido: datos.sentido }),
+        },
       });
       return { porConfirmarHasta: new Date(respuesta.por_confirmar_hasta) };
     },

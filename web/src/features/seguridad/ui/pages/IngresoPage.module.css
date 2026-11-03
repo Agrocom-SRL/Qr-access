@@ -20,3 +20,14 @@
   font-size: var(--texto14);
   text-align: center;
 }
+
+.legales {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+  text-align: center;
+}
+
+.legales a {
+  color: var(--primario);
+  text-decoration: underline;
+}

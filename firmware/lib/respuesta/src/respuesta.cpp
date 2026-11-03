@@ -109,7 +109,38 @@ Configuracion interpretarConfiguracion(int estadoHttp, const char* cuerpo, size_
   Configuracion config{true, segundos};
   config.sensor = leerSensor(doc["sensor_puerta"]);
   config.esperaConfirmacionS = leerEspera(doc["espera_confirmacion_segundos"]);
+  JsonVariantConst manual = doc["apertura_manual"];
+  config.aperturaManual = manual.is<bool>() && manual.as<bool>();
   return config;
+}
+
+Orden interpretarOrden(int estadoHttp, const char* cuerpo, size_t largo) {
+  Orden orden;
+  if (estadoHttp == 204) {
+    orden.estado = Orden::Estado::SinOrden;
+    return orden;
+  }
+  if (estadoHttp != 200) return orden;
+
+  JsonDocument doc;
+  if (!leerObjeto(cuerpo, largo, doc)) return orden;
+
+  const char* id = nullptr;
+  if (!textoNoVacio(doc["orden_id"], id) || !confirmacion::eventoIdValido(id)) return orden;
+  // Entero estricto y positivo: sin plazo no hay forma de saber si la orden sigue vigente.
+  JsonVariantConst plazo = doc["valida_por_ms"];
+  if (!plazo.is<int>() || plazo.is<bool>()) return orden;
+  const int validaPorMs = plazo.as<int>();
+  if (validaPorMs < 1 || static_cast<uint32_t>(validaPorMs) > MAX_VALIDA_POR_MS) return orden;
+  uint16_t segundos = 0;
+  if (!segundosEnRango(doc["segundos_apertura"], segundos)) return orden;
+
+  strncpy(orden.id, id, confirmacion::MAX_EVENTO_ID);
+  orden.id[confirmacion::MAX_EVENTO_ID] = '\0';
+  orden.validaPorMs = static_cast<uint32_t>(validaPorMs);
+  orden.segundos = segundos;
+  orden.estado = Orden::Estado::Recibida;
+  return orden;
 }
 
 Anuncio interpretarAnuncio(int estadoHttp, const char* cuerpo, size_t largo) {

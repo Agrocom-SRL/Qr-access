@@ -10,6 +10,7 @@ import 'package:agrocom_acceso/core/tiempo/reloj.dart';
 import 'package:agrocom_acceso/features/eventos/eventos.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/inicio_controlador.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/acciones_de_cabecera.dart';
+import 'package:agrocom_acceso/features/inicio/presentation/widgets/aviso_abrir_puerta.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/encabezado_inicio.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/estado_de_puertas.dart';
 import 'package:agrocom_acceso/features/inicio/presentation/widgets/hero_accesos_de_hoy.dart';
@@ -125,6 +126,10 @@ class InicioUsuario extends ConsumerWidget {
               accion: accionesDeCabecera(sesion, qrPropio: puedeQrPropio),
             ),
             SizedBox(height: tokens.espacio.xl),
+            if (sesion.tiene(Permisos.abrirPuertaManual)) ...[
+              AvisoAbrirPuerta(sesion: sesion),
+              SizedBox(height: tokens.espacio.l),
+            ],
             ..._bloquePrincipal(
               context,
               hero: guardia

@@ -4,6 +4,7 @@ library;
 
 export 'data/qr_accesos_repositorio.dart'
     show QrAccesosRepositorio, qrAccesosRepositorioProvider;
+export 'domain/clave_idempotencia.dart' show generarClaveIdempotencia;
 export 'domain/datos_generacion_qr.dart' show PrellenadoGeneracion, Vigencia;
 export 'domain/estado_qr.dart';
 export 'domain/qr_acceso.dart';

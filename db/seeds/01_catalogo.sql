@@ -37,6 +37,8 @@ INSERT INTO permisos (codigo, ambito) VALUES
   ('notificaciones.aviso.gestionar', 'cuenta'),
   ('seguridad.sesion.ver', 'cuenta'),
   ('seguridad.sesion.cerrar', 'cuenta'),
+  ('accesos.apertura_manual.configurar', 'cuenta'),
+  ('accesos.apertura_manual.usar', 'cuenta'),
   ('seguridad.equipo.ver', 'plataforma'),
   ('seguridad.equipo.crear', 'plataforma'),
   ('seguridad.equipo.editar', 'plataforma'),
@@ -158,6 +160,14 @@ INSERT INTO configuracion_limites (clave, valor) VALUES
   ('senal.flujo_aperturas_por_usuario', 25)
 ON DUPLICATE KEY UPDATE clave = VALUES(clave);
 
+-- Topes de la apertura manual (ADR 0035 §7 y ADR 0030). El enfriamiento de 10 s entre órdenes del mismo usuario y
+-- puerta lo fija el ADR; el tope diario por usuario es un supuesto de partida (30 aperturas manuales por día) que
+-- AGROCOM ajusta con datos reales. Estos límites NO aplican al QR. No pisa lo que AGROCOM ya haya editado.
+INSERT INTO configuracion_limites (clave, valor) VALUES
+  ('manual.enfriamiento_segundos', 10),
+  ('manual.tope_diario', 30)
+ON DUPLICATE KEY UPDATE clave = VALUES(clave);
+
 -- El super admin recibe TODOS los permisos de ámbito plataforma (agrégalos en la primera lista).
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.ambito = 'plataforma'
@@ -223,3 +233,11 @@ INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
 INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
   SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo = 'seguridad.incidente.resolver'
   WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre = 'Titular' AND r.deleted_at IS NULL;
+
+-- Apertura manual desde la app (ADR 0035 §5). `configurar` es solo del Administrador de la cuenta (lo recibe arriba
+-- con el resto de los permisos de ámbito cuenta; ningún otro rol base lo tiene). `usar` lo tienen todos los roles de
+-- la cuenta: el Administrador arriba y los roles base (por nombre, no protegidos) aquí.
+INSERT IGNORE INTO rol_permisos (rol_id, permiso_id)
+  SELECT r.id, p.id FROM roles AS r JOIN permisos AS p ON p.codigo = 'accesos.apertura_manual.usar'
+  WHERE r.tenant_id IS NOT NULL AND r.protegido = 0 AND r.nombre IN ('Guardia', 'Titular', 'Miembro')
+    AND r.deleted_at IS NULL;

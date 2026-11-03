@@ -155,6 +155,9 @@ describe('POST /api/v1/dispositivos/confirmaciones (ADR 0031 §18)', () => {
         { evento_id: eventoId, resultado: 'ejecutada', causa: 'puerta_abrio' },
         { evento_id: eventoId, resultado: 'sin_sensor', causa: 'sin_sensor' },
         { evento_id: eventoId, resultado: 'fallida', causa: 'sin_respuesta' },
+        // Solo una orden manual las informa (ADR 0035 §3): un QR no las admite.
+        { evento_id: eventoId, resultado: 'fallida', causa: 'ocupada' },
+        { evento_id: eventoId, resultado: 'fallida', causa: 'vencida' },
         { evento_id: eventoId, resultado: 'ejecutada', extra: 1 },
         { evento_id: 'abc', resultado: 'ejecutada' },
         { evento_id: eventoId, resultado: 'ejecutada', cuenta_id: b.cuenta.id },

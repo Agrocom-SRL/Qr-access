@@ -735,6 +735,7 @@ describe('estados de placa, outbox y bandeja de notificaciones (ADR 0030 §6, AD
         'senal-pin-compartido',
         'senal-bolsa',
         'senal-flujo-atipico',
+        'vencer-ordenes',
       ]);
       await latidoA(a.dispositivoPrincipal.id, en(-16));
       const errores: unknown[] = [];

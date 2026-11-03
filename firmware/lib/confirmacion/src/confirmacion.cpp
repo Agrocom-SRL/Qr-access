@@ -33,9 +33,20 @@ const char* texto(Causa causa) {
     case Causa::PuertaNoAbrio: return "puerta_no_abrio";
     case Causa::PuertaNoCerro: return "puerta_no_cerro";
     case Causa::ReleNoAccionado: return "rele_no_accionado";
+    case Causa::Ocupada: return "ocupada";
+    case Causa::Vencida: return "vencida";
     case Causa::Ninguna: break;
   }
   return "";
+}
+
+const char* textoDeOrden(Resultado resultado) {
+  switch (resultado) {
+    case Resultado::Ejecutada: return "ejecutada";
+    case Resultado::Fallida: return "fallida";
+    case Resultado::SinSensor: return "sin_confirmacion";
+  }
+  return "sin_confirmacion";
 }
 
 bool eventoIdValido(const char* id) {
@@ -66,17 +77,20 @@ void Observador::cerrar(Resultado resultado, Causa causa) {
   memcpy(informe.eventoId, eventoId_, sizeof(informe.eventoId));
   informe.resultado = resultado;
   informe.causa = causa;
+  informe.manual = manual_;
   encolar(informe);
   observando_ = false;
   memset(eventoId_, 0, sizeof(eventoId_));
+  manual_ = false;
 }
 
 void Observador::iniciar(const char* eventoId, uint32_t inicioPulsoMs, uint32_t esperaMs,
-                         const Sensor& sensor, Lectura lecturaActual) {
+                         const Sensor& sensor, Lectura lecturaActual, bool manual) {
   if (!eventoIdValido(eventoId)) return;
   // Una apertura nueva con la anterior aún en observación: la anterior no vio abrir la puerta
   // (si no, ya estaría informada) y se cierra como `puerta_no_abrio` en vez de perderse.
   cerrarObservacionVigente();
+  manual_ = manual;
   strncpy(eventoId_, eventoId, MAX_EVENTO_ID);
   eventoId_[MAX_EVENTO_ID] = '\0';
   if (!sensor.instalado) {
@@ -89,12 +103,26 @@ void Observador::iniciar(const char* eventoId, uint32_t inicioPulsoMs, uint32_t 
   esperaMs_ = esperaMs;
 }
 
-void Observador::releNoAccionado(const char* eventoId) {
+void Observador::releNoAccionado(const char* eventoId, bool manual) {
   if (!eventoIdValido(eventoId)) return;
   cerrarObservacionVigente();
+  manual_ = manual;
   strncpy(eventoId_, eventoId, MAX_EVENTO_ID);
   eventoId_[MAX_EVENTO_ID] = '\0';
   cerrar(Resultado::Fallida, Causa::ReleNoAccionado);
+}
+
+void Observador::ordenDescartada(const char* ordenId, Causa causa) {
+  if (!eventoIdValido(ordenId)) return;
+  if (causa != Causa::Ocupada && causa != Causa::Vencida) return;
+  // Va directo a la cola: no se toca eventoId_ ni manual_, que son de la observación en curso.
+  Informe informe;
+  strncpy(informe.eventoId, ordenId, MAX_EVENTO_ID);
+  informe.eventoId[MAX_EVENTO_ID] = '\0';
+  informe.resultado = Resultado::Fallida;
+  informe.causa = causa;
+  informe.manual = true;
+  encolar(informe);
 }
 
 void Observador::tick(uint32_t ahoraMs, Lectura lectura) {

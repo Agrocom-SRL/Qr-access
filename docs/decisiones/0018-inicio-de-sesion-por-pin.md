@@ -41,3 +41,12 @@ El cliente pide que cada usuario de una cuenta inicie sesión con un **PIN que g
 ## Addendum (2026-10-15): el administrador puede elegir los 4 caracteres
 
 El administrador de la cuenta (permiso `seguridad.usuario.crear` o `seguridad.usuario.editar`) puede, al crear un usuario o regenerar su PIN, **escribir él mismo los 4 caracteres finales** (`A`–`Z` y `0`–`9`, sin distinguir mayúsculas) en lugar de dejar que el servidor los sortee. Si ya existen en la cuenta, la API responde `409 pin.sufijo_en_uso` y no sortea otro. Sigue sin elegirse el código de la cuenta (lo asigna el super admin). Un sufijo elegido puede ser fácil de adivinar (p. ej. `1234`): la protección sigue siendo el límite de intentos y el mensaje único del §4, y por eso la app ofrece el sorteo como opción por defecto.
+
+## Addendum (2026-10-30): la app guarda el PIN propio en el teléfono
+
+El §3 dice que el PIN «se muestra una sola vez», y el servidor no puede devolverlo (solo guarda `pin_indice` y `pin_hash`). A las personas se les olvida y, con la sesión abierta, quieren verlo para ingresar desde otro dispositivo. Se decide:
+
+- **En móvil**, la app guarda el PIN con el que se ingresó en el almacén seguro del sistema (Keychain en iOS, Keystore en Android), junto al refresco, y Perfil lo muestra oculto, con un ojo (10 s a la vista) y un botón para copiarlo. **En web no se guarda nada**: el navegador no tiene almacén seguro y un script ajeno o quien use el equipo podría leerlo. Tampoco cambia nada en la API, la base ni los logs: el servidor sigue sin conocer el PIN en claro (invariante 6).
+- Se borra al cerrar sesión y cuando el refresco se rechaza. Un PIN regenerado o dado de baja corta las sesiones de la persona (tests de arriba), así que no queda un PIN viejo a la vista.
+- Una sesión abierta antes de este cambio no lo tiene: Perfil pide cerrar sesión y volver a ingresar.
+- **Riesgo aceptado:** quien tenga el teléfono desbloqueado con la app abierta puede ver y copiar el PIN, y con él abrir otras sesiones. Se mitiga con el tapado automático y el almacén seguro; si se quiere más, el paso siguiente es pedir la biometría del teléfono antes de mostrarlo.

@@ -13,6 +13,11 @@ export interface ConfiguracionDelDispositivo {
   sensor_puerta: { instalado: boolean; nivel_abierto: 'alto' | 'bajo' };
   /** Cuánto espera la placa ver abrir la puerta tras el pulso antes de informar `fallida`. */
   espera_confirmacion_segundos: number;
+  /**
+   * El interruptor de la apertura manual de la puerta de esta placa (ADR 0035 §5). Con `false` la placa no hace la
+   * petición larga de órdenes. Es solo una comodidad: la API rechaza crear órdenes con el modo apagado.
+   */
+  apertura_manual: boolean;
 }
 
 /** Margen, sobre la duración del pulso, que la placa espera al sensor antes de dar la apertura por fallida. */
@@ -38,5 +43,6 @@ export async function ejecutar(
       nivel_abierto: sensor?.sensor_abierto_nivel ?? 'alto',
     },
     espera_confirmacion_segundos: puerta.segundosApertura + MARGEN_DE_CONFIRMACION_SEGUNDOS,
+    apertura_manual: puerta.aperturaManual,
   };
 }

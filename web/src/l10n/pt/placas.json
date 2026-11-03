@@ -100,5 +100,12 @@
   "sensorBajo": "Baixo",
   "sensorPolaridad": "A polaridade é confirmada em campo: com a porta aberta, confira se o nível escolhido é o que chega à placa antes de salvar.",
   "sensorGuardar": "Salvar",
-  "sensorGuardando": "Salvando…"
+  "sensorGuardando": "Salvando…",
+  "ubicacionLector": "Localização do leitor",
+  "ubicacion": {
+    "ambos": "Uma única placa",
+    "entrada": "Leitor externo",
+    "salida": "Leitor interno"
+  },
+  "ubicacionAyuda": "Se a porta tem um leitor fora e outro dentro, vincule uma placa para cada um. Com uma única placa, deixe em “Uma única placa”."
 }

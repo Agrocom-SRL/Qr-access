@@ -16,7 +16,7 @@ Inventario de controladores físicos (ESP32-ETH01). Las placas **se anuncian sol
 | `ultimo_anuncio_at` | `DATETIME(3)` | sí | Último anuncio |
 | `ultima_ip` | `VARCHAR(45)` | sí | IP del último anuncio |
 | `por_confirmar_hasta` | `DATETIME(3)` | sí | Fin de la ventana de 10 minutos en la que se espera el botón de la placa; nulo si no hay solicitud |
-| `vinculo_cuenta_id`, `vinculo_puerta_id`, `vinculo_nombre`, `vinculo_solicitado_por` | | sí | La solicitud del super admin; se revalidan al confirmar (sin llaves foráneas: tabla de plataforma) |
+| `vinculo_cuenta_id`, `vinculo_puerta_id`, `vinculo_nombre`, `vinculo_sentido`, `vinculo_solicitado_por` | | sí | La solicitud del super admin (`vinculo_sentido`: ubicación del lector, nulo = `ambos`, ADR 0035); se revalidan al confirmar (sin llaves foráneas: tabla de plataforma) |
 | `vigente` | `TINYINT` | sí | Generada: 1 si no está borrada |
 | autoría y soft delete | | | `created_at`, `updated_at`, `deleted_at`, `created_by`, `updated_by`, `deleted_by` |
 

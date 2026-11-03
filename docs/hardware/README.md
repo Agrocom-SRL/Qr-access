@@ -113,12 +113,14 @@ La placa sigue sin lógica de negocio: lee pines y reporta. Lo de abajo es **sol
 ```json
 { "segundos_apertura": 6, "zona_horaria": "America/La_Paz", "ota": null,
   "sensor_puerta": { "instalado": false, "nivel_abierto": "alto" },
-  "espera_confirmacion_segundos": 11 }
+  "espera_confirmacion_segundos": 11, "apertura_manual": true }
 ```
 
 - `sensor_puerta.instalado` (bool): si el contacto magnético está habilitado para esta puerta. **Vale `false` hasta que AGROCOM lo habilite** (`PUT /plataforma/placas/{id}/sensor`) tras verificar el cableado; una placa no puede saberlo sola. Con `false` la placa no interpreta el pin y informa `sin_sensor`. El servidor juzga las aperturas desde que se habilitó el sensor (`sensor_habilitado_at`, no se expone en la API); si con `instalado: true` la placa informa `sin_sensor`, el servidor lo cuenta como falla.
 - `sensor_puerta.nivel_abierto` (`"alto"` o `"bajo"`): nivel que lee el pin (`INPUT_PULLUP`) con la puerta ABIERTA. **Polaridad pendiente de confirmar en campo**: por omisión `"alto"`; el firmware usa el valor del servidor (ya no hay constante de compilación en `pines.h`; el valor por omisión, marcado como pendiente de confirmar, es `NIVEL_ABIERTO_POR_OMISION` en `firmware/lib/confirmacion`). Mientras no haya leído la primera configuración válida la placa **no sabe** si hay sensor: no observa ninguna apertura (no informa nada, el servidor lo toma como «sin respuesta») y el latido omite `sensor_puerta` (manda solo `puerta_abierta: false`, campo obligatorio); nunca afirma `sin_sensor` por no haber leído nada. Con el sensor no instalado el latido manda `puerta_abierta: false`, porque el pin al aire con pull-up leería «abierta».
 - `espera_confirmacion_segundos` (int): cuánto espera la placa ver la puerta abierta, contado desde el inicio del pulso del relé (`segundos_apertura` + 5).
+- `apertura_manual` (bool, ADR 0035 §5): el interruptor de la puerta. Con `false` la placa **no** hace la petición larga de órdenes (ver «Apertura manual: contrato de la placa»). Si el campo falta (API anterior), la placa lo toma como `false`.
+- **`ETag` / `If-None-Match`.** La respuesta lleva `ETag: "<32 hex>"` (hash del cuerpo). La placa vuelve a pedir la configuración cada ~60 s con `If-None-Match: <último ETag>`; si no cambió, la API responde `304` sin cuerpo (y el mismo `ETag`) y la placa conserva lo que tiene; con `200` reemplaza todo y guarda el `ETag` nuevo. Un cambio del interruptor llega, como mucho, en un minuto.
 
 **2. Latido ampliado** — `POST /api/v1/dispositivos/latidos` (sin cambios de ruta, cada 60 s) → `204`. Cuerpo estricto (cualquier campo no listado es `400`):
 
@@ -156,6 +158,76 @@ Limitaciones conocidas del diagnóstico (informativas; el servidor las tolera):
 - **`lector_responde` cuenta cualquier byte.** El lector es pasivo; basta un byte por la UART (incluso ruido) para marcarlo como «responde». Sin bytes desde el arranque el campo se omite; pasado un día sin bytes se informa `false` (puede estar caído o solo sin uso).
 
 Qué hace el servidor (para quien consuma el estado): ver la ficha `docs/modelo-datos/tablas/32_confirmaciones_apertura.md` y el ADR 0031 §18.
+
+## Apertura manual y dos placas por puerta (ADR 0035)
+
+- **Una placa por lector.** Si la puerta tiene un lector afuera y otro adentro, lleva **dos placas ESP32-ETH01**, cada una con su lector y su relé. Una placa con dos lectores se descartó: el ESP32-ETH01 no tiene pines libres para un segundo lector (los pines del PHY Ethernet RMII ocupan buena parte del chip; ver `firmware/include/pines.h`). Cada placa se vincula con la ubicación de su lector (`entrada` = afuera, `salida` = adentro; `ambos` si hay una sola).
+- **Cableado de la cerradura con dos placas.** Los dos relés actúan sobre la **misma** cerradura y se conectan en **paralelo** (contactos `NO`/`COM` de los dos relés en el mismo circuito del pulso); nunca se unen las salidas de dos placas entre sí. Verifica con el electricista antes de energizar.
+- **Una placa, una puerta.** Con una sola placa, el lector y la apertura manual abren por el **mismo relé**: es la misma cerradura, y para salir basta la app. Con dos placas en la puerta, la orden manual la toma **la primera que la reclame** y da el pulso; con una basta, porque las dos abren lo mismo. Si la entrada y la salida son **dos puertas físicas**, son dos puertas en el sistema, cada una con su placa; una puerta sin placa no se puede abrir ni con el botón de la app.
+- **Interruptor en la placa.** La configuración de la API trae `apertura_manual` (bool, el interruptor de la puerta). Con `false` la placa no hace la petición larga de órdenes; solo atiende el lector QR.
+- **Apertura manual (sin lector).** La placa pregunta por órdenes de apertura a la API con una petición larga (`GET /api/v1/dispositivos/ordenes`, ~20 s) por la misma Ethernet y la misma credencial. Al recibir una orden vigente, da el **mismo pulso** del relé (`segundos_apertura`, con su tope) y reporta el resultado; el sensor de puerta la confirma como en las aperturas por QR. Esta función sirve de respaldo si se avería o roban el lector.
+- **Falla segura:** sin red, sin orden o con una orden cuyo plazo (`valida_por_ms`) ya corrió, la placa no abre. Las únicas aperturas sin servidor son el pulsador de salida y la llave mecánica.
+- El contrato de los endpoints de la placa está en la sección siguiente (ola AM1, lado de la API); el firmware lo implementa la ola AM2: una tarea propia (`ordenes`) hace la petición larga, aparte de la de validación; `lib/ordenes` decide cuándo preguntar y si la orden sigue vigente; `puerta::Maquina::alRecibirOrdenManual` es lo único que abre por esta vía, y solo con el relé libre. La configuración se relee cada 60 s para enterarse del interruptor `apertura_manual`.
+
+### Apertura manual: contrato de la placa (ADR 0035 §2; API de la ola AM1)
+
+Misma credencial `Authorization: Dispositivo <id>.<clave>`, mismo pool reservado a dispositivos, respuestas `Cache-Control: no-store`. La placa **no decide nada**: solo abre con una orden positiva y vigente del servidor (invariante 2).
+
+**1. Preguntar por órdenes (petición larga)** — `GET /api/v1/dispositivos/ordenes`, sin cuerpo. Solo si la última configuración leída trae `apertura_manual: true`. La API retiene la respuesta hasta ~20 s:
+
+```json
+HTTP/1.1 200 OK
+{ "orden_id": "184", "valida_por_ms": 13420, "segundos_apertura": 6 }
+```
+
+```
+HTTP/1.1 204 No Content        (pasó la espera sin orden, o la puerta tiene la apertura manual apagada)
+```
+
+- `orden_id` (string de dígitos): la orden que **esta** placa tomó. Una orden se entrega **una sola vez a una sola placa** de la puerta (con dos placas, gana la primera que la reclama; la otra recibe `204`). No hay que confirmar la recepción.
+- `valida_por_ms` (int > 0): plazo **restante** y **relativo**, medido desde que la API la entregó (nunca una hora absoluta: la placa no depende de su reloj). La placa arranca su propio cronómetro **al recibir la respuesta** (con `millis()`) y descuenta el tiempo que tarde en procesarla: **si al accionar el relé ya corrió `valida_por_ms`, no abre** y no informa nada (el servidor la dará por vencida). Nunca ejecuta una orden vieja tras reconectarse: la API solo entrega las vigentes.
+- `segundos_apertura` (int): duración del pulso del relé; la placa le aplica el **mismo tope duro de 10 s** que a una validación de QR.
+- `204`: la placa vuelve a preguntar de inmediato. **Con el interruptor apagado la API responde `204` al instante** (sin retener): por eso la placa no debe preguntar mientras `apertura_manual` sea `false`, ni reintentar en bucle ante un `204` instantáneo (el tope es de 30 preguntas por minuto por placa; pasado el tope, `429 limite.excedido` con `reintentar_en_segundos`: esperar ese tiempo).
+- **Plazo propio.** Esta ruta **no** es una de las de 2,5 s: la API retiene hasta `ORDENES_ESPERA_MS` (20 s) y vence a los `PETICION_MS_ORDENES` (25 s). El firmware usa un tiempo de lectura propio para ella de **30 s** (la API siempre contesta antes) y **no** el de 1 s por fase del segundo plano de los latidos; conexión y handshake TLS siguen con su tope normal. Si se agota o falla (sin red, TLS, `5xx`), espera un poco (1–5 s, creciente) y vuelve a preguntar; **nunca abre por un error**.
+- Errores: `401 dispositivo.credencial_invalida` (dispositivo revocado o clave inválida: la placa vuelve a anunciarse, ADR 0025), `429 limite.excedido`, `503 servicio.no_disponible` (con `Retry-After`).
+- Esta pregunta es un canal **independiente del lector QR**: no debe frenar la lectura ni la validación (otra tarea/estado no bloqueante).
+
+**2. Informar el resultado** — `POST /api/v1/dispositivos/ordenes/{orden_id}/resultado`. Cuerpo estricto (cualquier campo no listado es `400`); los pares `resultado`/`causa` son los de `confirmaciones_apertura`:
+
+```json
+{ "resultado": "ejecutada", "causa": "puerta_abrio", "reportado_en_dispositivo_at": "2026-11-10T15:00:00Z" }
+{ "resultado": "fallida", "causa": "puerta_no_abrio" }
+{ "resultado": "fallida", "causa": "rele_no_accionado" }
+{ "resultado": "fallida", "causa": "ocupada" }
+{ "resultado": "fallida", "causa": "vencida" }
+{ "resultado": "sin_confirmacion", "causa": "sin_sensor" }
+```
+
+| `resultado` | `causa` | Cuándo |
+|---|---|---|
+| `ejecutada` | `puerta_abrio` (opcional) | El sensor vio abrir la puerta tras el pulso, dentro de `espera_confirmacion_segundos`. Se envía en cuanto se ve |
+| `fallida` | `puerta_no_abrio` (por omisión), `puerta_no_cerro`, `rele_no_accionado` | El relé se accionó y venció el plazo sin ver abrir; la placa no pudo accionar el relé; (opcional) no volvió a cerrar |
+| `fallida` | `ocupada` | La placa **tomó** la orden y **no la ejecutó** porque el relé no estaba libre (una validación de QR en curso o la puerta ya abierta). El relé nunca se accionó |
+| `fallida` | `vencida` | La placa tomó la orden y su plazo (`valida_por_ms`) se agotó antes de ejecutarla. El relé nunca se accionó |
+| `sin_confirmacion` | `sin_sensor` (opcional) | `sensor_puerta.instalado` es `false`: el relé se accionó pero no se sabe si la puerta abrió. La orden queda `ejecutada` (no se inventa un éxito ni una falla) |
+
+**`ocupada` y `vencida` no son una falla de la puerta.** Se informan para que la app deje de esperar y para que el servidor distinga «ocupada» de «caída»; el detector de aperturas fallidas (`apertura.fallida`) **no las cuenta**. Solo valen en esta ruta: `POST /dispositivos/confirmaciones` (la de un QR) las rechaza con `400`. La placa **no informa** si ya no opera o si `apertura_manual` se apagó (no abre y calla). Si la orden se descarta mientras otra apertura se observa, ese informe no cambia el de la observación en curso.
+
+`reportado_en_dispositivo_at` (ISO 8601, opcional, ≤ 40 caracteres) es el reloj de la placa, solo informativo. El informe se envía **una sola vez** por orden, en segundo plano y después de accionar, igual que la confirmación de un QR (reglas del apartado 3).
+
+Respuestas: `204` sin cuerpo (registrado, **o ya estaba registrado igual**: idempotente, el reintento de la misma placa con el mismo resultado también responde `204`); `400` cuerpo inválido (incluye un par `resultado`/`causa` imposible); `401` credencial inválida; `404 orden.no_encontrada` (orden inexistente, de otra puerta o cuenta, aún sin entregar o entregada a **otra** placa: se descarta y no se reintenta); `409 orden.vencida` (la API ya la dio por vencida: descartar) y `409 orden.ya_resuelta` (ya había un resultado **distinto**: el primero vale; descartar); `429`, `503`.
+
+- Reintentar solo ante falta de red, `429` o `5xx`, con espera creciente, hasta ~30 s desde la orden; con cualquier otro `4xx` se descarta. Perder el informe es aceptable (el servidor la da por vencida y deja `sin_respuesta`).
+- **Ventana para informar.** Una orden tomada se mantiene viva para informar hasta **30 s después de su plazo** (el pulso y la observación del sensor ocurren después de recibirla). Pasado eso la API la vence y el informe tardío es `409 orden.vencida`.
+
+**3. Orden de cosas en la placa (falla segura).**
+1. Leer la configuración (cada ~60 s, con `ETag`); si `apertura_manual` es `false`, no preguntar.
+2. Preguntar (`GET /dispositivos/ordenes`). Con `200`: arrancar el cronómetro de `valida_por_ms`.
+3. Si todavía queda plazo y el relé está libre: pulso de `min(segundos_apertura, 10)` s. Si no, descartar sin abrir.
+4. Observar el sensor como en una apertura por QR (`espera_confirmacion_segundos`) e informar el resultado.
+5. Volver a preguntar.
+
+Los límites y las señales del lado de la API (enfriamiento y tope diario por usuario, una orden viva por puerta, idempotencia, aviso `apertura.fallida` con las aperturas manuales fallidas) no los ve la placa: ella solo recibe órdenes ya aprobadas.
 
 ## Compilación de desarrollo
 

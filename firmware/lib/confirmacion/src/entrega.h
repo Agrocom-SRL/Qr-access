@@ -34,10 +34,11 @@ class Entregas {
   const Informe* debeEnviar(uint32_t ahoraMs);
 
   // El informe `eventoId` (el devuelto por `debeEnviar`) quedó encolado en la tarea de red.
-  void enviado(const char* eventoId, uint32_t ahoraMs);
+  // `manual` distingue el id de una orden de apertura manual del de un evento de lectura (ADR 0035).
+  void enviado(const char* eventoId, uint32_t ahoraMs, bool manual = false);
 
   // Llegó el resultado del envío de `eventoId`: `http` <= 0 es «sin respuesta» (red, TLS, timeout).
-  void alResponder(const char* eventoId, int http, uint32_t ahoraMs);
+  void alResponder(const char* eventoId, int http, uint32_t ahoraMs, bool manual = false);
 
   uint8_t pendientes() const { return cantidad_; }
 
@@ -56,7 +57,7 @@ class Entregas {
 
   void quitar(uint8_t indice);
   void fallo(uint8_t indice, uint32_t ahoraMs);
-  int buscar(const char* eventoId) const;
+  int buscar(const char* eventoId, bool manual) const;
 
   Entrada entradas_[CAPACIDAD_ENTREGAS];
   uint8_t cantidad_ = 0;

@@ -36,19 +36,27 @@ enum class Lectura : uint8_t { Abierta, Cerrada, SinSensor };
 Lectura interpretar(const Sensor& sensor, bool pinAlto);
 
 enum class Resultado : uint8_t { Ejecutada, Fallida, SinSensor };
-enum class Causa : uint8_t { Ninguna, PuertaNoAbrio, PuertaNoCerro, ReleNoAccionado };
+// `Ocupada` y `Vencida` solo las informa una orden manual que la placa tomó y NO ejecutó (ADR 0035 §3): el relé
+// nunca se accionó, así que no son una falla de la puerta y el servidor no las cuenta como tal.
+enum class Causa : uint8_t { Ninguna, PuertaNoAbrio, PuertaNoCerro, ReleNoAccionado, Ocupada, Vencida };
 
-// Un informe de apertura listo para enviar.
+// Un informe de apertura listo para enviar. `manual` = la apertura la ordenó la app (ADR 0035): en
+// `eventoId` va el id de la ORDEN, que no es un evento de lectura y puede coincidir en número con
+// uno; por eso `manual` forma parte de la identidad del informe y decide a qué ruta se envía.
 struct Informe {
   char eventoId[MAX_EVENTO_ID + 1] = {0};
   Resultado resultado = Resultado::SinSensor;
   Causa causa = Causa::Ninguna;
+  bool manual = false;
 };
 
 // Textos del contrato de la API (docs/hardware/README.md).
 const char* texto(Lectura lectura);
 const char* texto(Resultado resultado);
 const char* texto(Causa causa);  // "" si no hay causa
+// Resultado en el vocabulario de `POST /dispositivos/ordenes/{id}/resultado`: sin sensor es
+// `sin_confirmacion` (el relé se accionó, pero no se sabe si la puerta abrió).
+const char* textoDeOrden(Resultado resultado);
 
 // Un `evento_id` válido: de 1 a MAX_EVENTO_ID dígitos.
 bool eventoIdValido(const char* id);
@@ -62,11 +70,18 @@ class Observador {
   // estaba abierta: en ese caso se exige verla cerrada antes de contar la apertura.
   // Un `eventoId` inválido no se observa (no hay a quién informar). Si ya se observaba otra
   // apertura, esa se cierra primero con lo que se vio hasta ahora.
+  // `manual`: la apertura la ordenó la app y `eventoId` es el id de la orden (ADR 0035).
   void iniciar(const char* eventoId, uint32_t inicioPulsoMs, uint32_t esperaMs, const Sensor& sensor,
-               Lectura lecturaActual);
+               Lectura lecturaActual, bool manual = false);
 
   // La placa no pudo accionar el relé: informe `fallida` / `rele_no_accionado`.
-  void releNoAccionado(const char* eventoId);
+  void releNoAccionado(const char* eventoId, bool manual = false);
+
+  // La placa tomó la orden manual `ordenId` y decidió NO ejecutarla (`Causa::Ocupada` o `Causa::Vencida`): informe
+  // `fallida` con esa causa. A diferencia de `releNoAccionado`, NO cierra la observación vigente: si la puerta
+  // está ocupada es porque otra apertura se está observando, y darla por fallida inventaría una falla. Una causa
+  // distinta de esas dos, o un id inválido, no se informa.
+  void ordenDescartada(const char* ordenId, Causa causa);
 
   // Avanza el tiempo con la lectura del sensor. Barato: no hace nada si no se observa.
   void tick(uint32_t ahoraMs, Lectura lectura);
@@ -87,6 +102,7 @@ class Observador {
 
   bool observando_ = false;
   bool exigeCierre_ = false;
+  bool manual_ = false;
   char eventoId_[MAX_EVENTO_ID + 1] = {0};
   uint32_t inicioMs_ = 0;
   uint32_t esperaMs_ = 0;

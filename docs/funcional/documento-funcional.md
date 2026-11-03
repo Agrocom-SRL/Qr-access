@@ -47,6 +47,11 @@ AGROCOM vende a empresas (cuentas) una suscripción para controlar sus puertas e
 - HU-09: Como administrador o guardia (permiso `organizacion.puerta.supervisar`), veo qué dispositivos están en línea y cuáles no reportan latido (sin latido en 3 minutos = sin conexión).
 - HU-10: Como administrador, revoco un dispositivo.
 
+- HU-18: Como administrador de la cuenta, habilito o deshabilito la apertura manual por puerta, o en todas a la vez, aunque la puerta tenga lector QR; la cuenta nace con el modo manual activo, las puertas nuevas lo heredan y nada lo enciende solo si lo apagué. Donde no hay placa no hay interruptor y la app no muestra la puerta (ADR 0035).
+- HU-19: Como usuario de cualquier rol, desde la app móvil o web elijo una de las puertas disponibles de mi cuenta y la abro sin QR con el botón «Abrir puerta»; veo si la placa la abrió o falló. No elijo entrada ni salida: la app no lo sabe.
+- HU-20: Como administrador, registro hasta dos placas por puerta (el lector de afuera y el de adentro, que accionan la misma cerradura) o una sola; cualquiera de las placas puede ejecutar una apertura manual y basta con una. Una puerta sin placa no se puede abrir por ningún método.
+- HU-21: Como super admin, veo en el panel el uso de la apertura manual: total, por puerta y por cuenta, frecuencia, cuentas con el modo activo y fallos.
+
 ### 4.5 Generación de QR (ADR 0008)
 - HU-11: Como usuario, genero un QR para una o más puertas de mi cuenta [confirmar D-17], con una etiqueta opcional [confirmar D-21]. Vence por defecto al final del día [confirmar D-16], sin pasar la vigencia máxima del plan.
 - HU-12: Como usuario, comparto la imagen del QR desde la app (WhatsApp, correo…) [confirmar D-18].
@@ -62,13 +67,14 @@ Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (
 - HU-15: Como administrador, consulto las lecturas (intentos permitidos y rechazados) con filtros por puerta, usuario generador, resultado y fecha.
 - HU-16: Como usuario, veo las lecturas de los QR que generé.
 - HU-17: Como super admin, veo el uso de QR y de dispositivos por cuenta.
+- Las aperturas manuales también son lecturas (`metodo = manual`), con el usuario que las pidió y sin sentido (ADR 0035 §6).
 
 ## 5. Reglas funcionales
 
 | Código | Regla |
 |---|---|
 | RF-01 | Ninguna cuenta ve ni opera datos de otra. |
-| RF-02 | La puerta solo abre con una validación positiva de la API (falla segura); sin red no abre. |
+| RF-02 | La puerta solo abre con una orden positiva de la API, ya sea la validación de un QR o una apertura manual autorizada (falla segura); sin red o sin orden no abre. |
 | RF-03 | Un QR vale una sola vez y vence (ADR 0008). |
 | RF-04 | Todo intento de acceso se registra con su resultado y motivo, y el registro no se modifica. |
 | RF-05 | El vencimiento "fin del día" se calcula en la zona horaria del sitio. |
@@ -77,6 +83,8 @@ Cada intento de lectura de un QR, aceptado o rechazado, queda como una lectura (
 | RF-08 | La apertura física por pulsador de salida no depende de la red. |
 | RF-09 | Toda modificación relevante queda en la bitácora con autor, fecha, valores antes/después y origen. |
 | RF-10 | Los límites del plan los hace cumplir la API (ADR 0017). |
+| RF-11 | La apertura manual solo existe en las puertas que el administrador de la cuenta tiene habilitadas (por omisión, todas) y que tienen una placa en servicio; la API valida al usuario como valida un QR y la orden, que es de la puerta, vence en segundos y la ejecuta una sola placa (ADR 0035). |
+| RF-12 | Toda petición de apertura manual, aceptada o rechazada, queda como lectura con su usuario y su motivo, y el resultado de la placa queda en la confirmación de apertura. |
 
 ## 6. Criterios de aceptación transversales
 

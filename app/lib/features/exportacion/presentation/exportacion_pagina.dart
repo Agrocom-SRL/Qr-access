@@ -71,9 +71,9 @@ class ExportacionPagina extends ConsumerWidget {
     return PlantillaAdmin(
       destino: DestinoNav.perfil,
       titulo: l10n.exportacionTitulo,
-      rutaAtras: Rutas.perfil,
+      rutaAtras: Rutas.seguridad,
       salida: SalidaDeCabecera.volver,
-      alSalir: () => context.go(Rutas.perfil),
+      alSalir: () => context.go(Rutas.seguridad),
       anchoMaximo: context.esExpandida
           ? tokens.tamano.maxContenido
           : tokens.tamano.maxFormularioSecciones,

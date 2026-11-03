@@ -264,6 +264,10 @@ async function evaluarCuenta(
  *   «aperturas que fallan» de su sitio; sale cuando vuelve a abrir bien o las fallas salen de la ventana.
  * - Solo si cambia quiénes forman el grupo de un sitio se deja UN aviso `apertura.fallida` (propietario y AGROCOM)
  *   en la cola, en la misma transacción; al quedar vacío, se cierra. Volver a correrlo sin cambios no encola nada.
+ * - Las aperturas MANUALES (ADR 0035) cuentan igual: lo que informó la placa sobre una orden y la constancia que deja
+ *   `vencer-ordenes` (acciones de `accesos`) llegan por `ejecucionesDesde`, que no distingue el método, con el mismo
+ *   umbral y el mismo sensor habilitado; el grupo es por placa, así que una falla por QR y otra manual suman y no
+ *   duplican el aviso. Este detector NO deja constancias de órdenes manuales (`aperturasSinInforme` solo mira QR).
  * Nunca abre ni cierra una puerta. Corre cada minuto (`tareas.ts`).
  */
 export async function ejecutar(

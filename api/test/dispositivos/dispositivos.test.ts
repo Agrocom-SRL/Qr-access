@@ -123,6 +123,8 @@ describe('dispositivos: latido y configuración', () => {
         // Sin sensor habilitado y con la polaridad por omisión (pendiente de confirmar en campo).
         sensor_puerta: { instalado: false, nivel_abierto: 'alto' },
         espera_confirmacion_segundos: 11,
+        // La cuenta nace con el modo manual encendido y cada puerta toma ese valor (ADR 0035 §5).
+        apertura_manual: true,
       });
       expect((await configuracion(a.dispositivoTrasero.encabezado)).json()).toMatchObject({
         segundos_apertura: 5,

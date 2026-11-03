@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/config/info_app.dart';
 import 'package:agrocom_acceso/core/l10n/l10n.dart';
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/core/tiempo/reloj.dart';
+import 'package:agrocom_acceso/features/perfil/presentation/widgets/documento_legal_pagina.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/fila_clave_valor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,18 +75,53 @@ class _HojaAcercaDe extends ConsumerWidget {
               children: [
                 Text(l10n.perfilAcercaTitulo, style: textos.titleLarge),
                 SizedBox(height: tokens.espacio.s),
+                // Todas las filas comparten el diseño de Perfil (ícono a la
+                // izquierda y dos líneas); las tres primeras solo se leen, las
+                // de los documentos se tocan y llevan el chevron.
                 FilaClaveValor(
                   clave: l10n.perfilAcercaNombreEtiqueta,
                   valor: l10n.perfilAcercaNombre,
+                  icono: Icons.apps_outlined,
+                  invertida: true,
                 ),
                 FilaClaveValor(
                   clave: l10n.perfilAcercaOrganizacionEtiqueta,
                   valor: l10n.perfilAcercaOrganizacion,
+                  icono: Icons.business_outlined,
+                  invertida: true,
                 ),
                 FilaClaveValor(
                   clave: l10n.perfilAcercaVersionEtiqueta,
                   valor: version ?? l10n.comunGuion,
+                  icono: Icons.sell_outlined,
+                  invertida: true,
+                ),
+                // Los documentos legales se abren dentro de la app (en el
+                // teléfono) para poder volver sin salir de ella.
+                FilaClaveValor(
+                  clave: l10n.perfilAcercaTerminos,
+                  valor: l10n.perfilAcercaTerminosAyuda,
+                  icono: Icons.description_outlined,
+                  invertida: true,
+                  claveEnfatizada: true,
+                  alTocar: () => abrirDocumentoLegal(
+                    context,
+                    titulo: l10n.perfilAcercaTerminos,
+                    ruta: rutaTerminos,
+                  ),
+                ),
+                FilaClaveValor(
+                  clave: l10n.perfilAcercaPrivacidad,
+                  valor: l10n.perfilAcercaPrivacidadAyuda,
+                  icono: Icons.privacy_tip_outlined,
+                  invertida: true,
+                  claveEnfatizada: true,
                   conSeparador: false,
+                  alTocar: () => abrirDocumentoLegal(
+                    context,
+                    titulo: l10n.perfilAcercaPrivacidad,
+                    ruta: rutaPrivacidad,
+                  ),
                 ),
                 SizedBox(height: tokens.espacio.l),
                 Text(

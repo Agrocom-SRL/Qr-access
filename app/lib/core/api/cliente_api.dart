@@ -1,4 +1,5 @@
 import 'package:agrocom_acceso/core/api/contratos/anulacion_contratos.dart';
+import 'package:agrocom_acceso/core/api/contratos/apertura_manual_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/comunes.dart';
 import 'package:agrocom_acceso/core/api/contratos/estructura_contratos.dart';
 import 'package:agrocom_acceso/core/api/contratos/eventos_contratos.dart';
@@ -104,6 +105,69 @@ class ClienteApi {
         queryParameters: {'pagina': pagina, 'por_pagina': porPagina},
       );
       return paginaDeApi(r.data!, PuertaDto.desde);
+    });
+  }
+
+  /// Puertas de la cuenta con su estado de apertura manual (ADR 0035 §5). Con
+  /// el permiso de configurar llegan todas; con solo el de usar, las
+  /// disponibles.
+  Future<List<PuertaAbribleDto>> puertasDeAperturaManual() {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/puertas/apertura-manual',
+      );
+      return [
+        for (final dato in r.data!['datos'] as List<dynamic>)
+          PuertaAbribleDto.desde(dato as Map<String, dynamic>),
+      ];
+    });
+  }
+
+  /// Pide abrir la puerta sin QR (ADR 0035). [idempotencyKey] es obligatoria:
+  /// un reintento con la misma clave devuelve la misma orden, nunca otra.
+  Future<OrdenCreadaDto> abrirPuerta(
+    String id, {
+    required String idempotencyKey,
+  }) {
+    return _ejecutar(() async {
+      final r = await _dio.post<Map<String, dynamic>>(
+        '/puertas/$id/abrir',
+        options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+      );
+      return OrdenCreadaDto.desde(r.data!);
+    });
+  }
+
+  Future<EstadoDeOrdenDto> estadoDeOrden(String ordenId) {
+    return _ejecutar(() async {
+      final r = await _dio.get<Map<String, dynamic>>(
+        '/ordenes-apertura/$ordenId',
+      );
+      return EstadoDeOrdenDto.desde(r.data!);
+    });
+  }
+
+  /// Enciende o apaga la apertura manual de una puerta (administrador).
+  Future<void> configurarAperturaManualDePuerta(
+    String id, {
+    required bool habilitada,
+  }) {
+    return _ejecutar(() async {
+      await _dio.put<void>(
+        '/puertas/$id/apertura-manual',
+        data: {'habilitada': habilitada},
+      );
+    });
+  }
+
+  /// Lo mismo en todas las puertas de la cuenta y en el valor de las puertas
+  /// que se registren después (ADR 0035 §5).
+  Future<void> configurarAperturaManualDeLaCuenta({required bool habilitada}) {
+    return _ejecutar(() async {
+      await _dio.put<void>(
+        '/cuentas/actual/apertura-manual',
+        data: {'habilitada': habilitada},
+      );
     });
   }
 

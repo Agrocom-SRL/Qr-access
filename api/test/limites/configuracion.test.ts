@@ -75,7 +75,7 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
     });
 
   describe('valores generales', () => {
-    it('lista los siete topes de QR, los cinco umbrales de placa, los tres de apertura, los cinco de incidentes y los once de señales de abuso con su valor inicial sembrado', async () => {
+    it('lista los siete topes de QR, los cinco umbrales de placa, los tres de apertura, los cinco de incidentes, los once de señales de abuso y los dos de apertura manual con su valor inicial sembrado', async () => {
       const respuesta = await pedir('GET', '/plataforma/limites');
       expect(respuesta.statusCode).toBe(200);
       const datos = respuesta.json<{ datos: Limite[] }>().datos;
@@ -111,6 +111,8 @@ describe('plataforma: configuración de los topes de generación y sus excepcion
         ['senal.pin_compartido_ips_minimo', 4],
         ['senal.flujo_aperturas_minimo', 50],
         ['senal.flujo_aperturas_por_usuario', 25],
+        ['manual.enfriamiento_segundos', 10],
+        ['manual.tope_diario', 30],
       ]);
       // La política de reincidencia puede tener excepción por cuenta; la detección de generación ruidosa, no.
       expect(

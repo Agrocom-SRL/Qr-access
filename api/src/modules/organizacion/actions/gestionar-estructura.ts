@@ -3,6 +3,7 @@ import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
 import { aIsoONulo } from '../../../platform/tiempo/fechas.js';
 import { crearServicioDeDispositivos } from '../../dispositivos/contracts.js';
+import { crearServicioDeAperturaManualDeCuenta } from '../../seguridad/contracts.js';
 import { RepositorioDePuertas, RepositorioDeSitios } from '../repository.js';
 
 export interface PuertaDeEstructura {
@@ -169,9 +170,12 @@ export async function crearPuerta(
   if ((await new RepositorioDeSitios(pool).buscarPorId(sitioId)) === null) {
     throw new ErrorDeDominio('sitio.no_encontrado', 404);
   }
+  // La puerta nueva nace con el valor inicial de la cuenta (ADR 0035 §5): si el administrador apagó la apertura
+  // manual en todas, las que registre después nacen apagadas.
+  const aperturaManual = await crearServicioDeAperturaManualDeCuenta(pool).porOmision();
   try {
     const id = await enTransaccion(pool, (tx) =>
-      new RepositorioDePuertas(pool).crear(tx, { sitioId, ...datos }),
+      new RepositorioDePuertas(pool).crear(tx, { sitioId, ...datos, aperturaManual }),
     );
     return { id };
   } catch (error) {

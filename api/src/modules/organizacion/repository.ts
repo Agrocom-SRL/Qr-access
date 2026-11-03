@@ -8,13 +8,15 @@ export interface PuertaFila extends RowDataPacket {
   nombre: string;
   segundos_apertura: number;
   activo: number;
+  /** 1 si el administrador habilitó la apertura manual desde la app en esta puerta (ADR 0035 §5). */
+  apertura_manual: number;
   sitio_id: string;
   sitio_nombre: string;
   zona_horaria: string;
 }
 
 const COLUMNAS =
-  't.id, t.nombre, t.segundos_apertura, t.activo, s.id AS sitio_id, s.nombre AS sitio_nombre, s.zona_horaria';
+  't.id, t.nombre, t.segundos_apertura, t.activo, t.apertura_manual, s.id AS sitio_id, s.nombre AS sitio_nombre, s.zona_horaria';
 /** El sitio es de la misma cuenta que la puerta: se une también por `tenant_id`. */
 const UNION_SITIO =
   'JOIN sitios AS s ON s.id = t.sitio_id AND s.tenant_id = t.tenant_id AND s.deleted_at IS NULL';
@@ -24,7 +26,7 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
   constructor(pool: Pool) {
     super(pool, {
       nombre: 'puertas',
-      columnas: ['sitio_id', 'nombre', 'segundos_apertura', 'activo'],
+      columnas: ['sitio_id', 'nombre', 'segundos_apertura', 'activo', 'apertura_manual'],
       perfil: 'dominio',
       deCuenta: true,
     });
@@ -43,15 +45,35 @@ export class RepositorioDePuertas extends RepositorioDeCuenta {
     return this.contar({ donde: 't.sitio_id = ?', params: [sitioId] });
   }
 
+  /** `aperturaManual` es el valor inicial de la cuenta (`cuentas.apertura_manual_por_omision`, ADR 0035 §5). */
   crear(
     tx: Transaccion,
-    puerta: { sitioId: string; nombre: string; segundosApertura: number },
+    puerta: { sitioId: string; nombre: string; segundosApertura: number; aperturaManual: boolean },
   ): Promise<string> {
     return this.insertar(tx, {
       sitio_id: puerta.sitioId,
       nombre: puerta.nombre,
       segundos_apertura: puerta.segundosApertura,
       activo: 1,
+      apertura_manual: puerta.aperturaManual ? 1 : 0,
+    });
+  }
+
+  /** Enciende o apaga la apertura manual de una puerta; queda en la bitácora con el antes y el después. */
+  fijarAperturaManual(tx: Transaccion, id: string, habilitada: boolean): Promise<boolean> {
+    return this.actualizar(tx, id, { apertura_manual: habilitada ? 1 : 0 });
+  }
+
+  /**
+   * Las puertas activas (en sitios activos) de la cuenta del contexto, sin paginar: es la lista que la app
+   * ofrece en el botón de abrir y la pantalla del administrador, y una cuenta tiene decenas de puertas, no miles.
+   */
+  listarActivasSinPaginar(): Promise<PuertaFila[]> {
+    return this.seleccionar<PuertaFila>({
+      columnas: COLUMNAS,
+      uniones: UNION_SITIO,
+      donde: 't.activo = 1 AND s.activo = 1',
+      orden: 's.nombre, t.nombre, t.id',
     });
   }
 

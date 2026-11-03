@@ -47,3 +47,18 @@
 .conteo {
   font-size: var(--texto12);
 }
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--esp4);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.titulo {
+  color: var(--textoSecundario);
+  font-size: var(--texto12);
+  font-weight: var(--peso600);
+}

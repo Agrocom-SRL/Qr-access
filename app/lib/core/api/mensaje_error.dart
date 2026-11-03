@@ -37,6 +37,15 @@ String textoDeError(AppLocalizations l10n, Object error) {
     'puerta.nombre_existente' => l10n.comunErrorPuertaNombreExistente,
     'sitio.con_puertas' => l10n.comunErrorSitioConPuertas,
     'puerta.con_dispositivo' => l10n.comunErrorPuertaConDispositivo,
+    'manual.no_habilitada' => l10n.comunErrorManualNoHabilitada,
+    'puerta.sin_dispositivo' => l10n.comunErrorPuertaSinDispositivo,
+    'puerta.sin_conexion' => l10n.comunErrorPuertaSinConexion,
+    'manual.orden_en_curso' => l10n.comunErrorManualOrdenEnCurso,
+    'manual.limite' => l10n.comunErrorManualLimite,
+    'manual.usuario_restringido' ||
+    'manual.usuario_suspendido' ||
+    'manual.usuario_eliminado' ||
+    'manual.cuenta_suspendida' => l10n.comunErrorManualSinPermiso,
     'sitio.no_encontrado' => l10n.comunErrorSitioNoEncontrado,
     'sesion.sin_rol' => l10n.comunErrorSesionSinRol,
     'sesion.no_encontrada' => l10n.comunErrorSesionNoEncontrada,

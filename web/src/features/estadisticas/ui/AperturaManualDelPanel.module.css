@@ -1,0 +1,100 @@
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp24);
+}
+
+.titulo {
+  font-size: var(--texto20);
+  font-weight: var(--peso600);
+}
+
+.subtitulo {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--esp16);
+  margin: 0;
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp4);
+  padding: var(--esp16) var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.cifra dt {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+.cifra dd {
+  margin: 0;
+  font-size: var(--texto24);
+  font-weight: var(--peso600);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--esp24);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp16);
+  padding: var(--esp24);
+  background: var(--superficie);
+  border-radius: var(--radio20);
+  box-shadow: var(--elevacion1);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto14);
+}
+
+.tabla th,
+.tabla td {
+  padding: var(--esp12) var(--esp8);
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+
+.tabla thead th {
+  color: var(--textoSecundario);
+  font-weight: var(--peso500);
+}
+
+.tabla tbody th {
+  font-weight: var(--peso500);
+}
+
+.tabla .numero {
+  text-align: right;
+}
+
+.vacio {
+  color: var(--textoSecundario);
+  font-size: var(--texto14);
+}
+
+@media (width < 1024px) {
+  .cifras {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rejilla {
+    grid-template-columns: 1fr;
+  }
+}

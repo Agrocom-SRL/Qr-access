@@ -85,3 +85,26 @@ export const esquemaPuertasAsignadas = z.strictObject({
   todas: z.boolean(),
   puerta_ids: z.array(esquemaIdDeRuta).max(500),
 });
+
+// --- Apertura manual desde la app (ADR 0035 §5) ---
+
+/** El interruptor: encendida o apagada. Sin sentidos: la app no sabe si la persona entra o sale. */
+export const cuerpoDeAperturaManual = z.strictObject({ habilitada: z.boolean() });
+
+export const respuestaDeAperturaManual = z.strictObject({
+  datos: z.array(
+    z.strictObject({
+      id: z.string(),
+      nombre: z.string(),
+      sitio: z.strictObject({ id: z.string(), nombre: z.string() }),
+      /** El administrador la encendió en esta puerta. */
+      habilitada: z.boolean(),
+      /** `habilitada` y con al menos una placa en servicio: lo que la app ofrece en el botón. */
+      disponible: z.boolean(),
+      /** Tiene al menos una placa en servicio (sin placa, la pantalla del administrador no muestra interruptor). */
+      tiene_placa: z.boolean(),
+      /** Si alguna placa de la puerta reportó hace poco; solo para avisar, la autoridad es la API. */
+      conexion: z.enum(['en_linea', 'sin_conexion']),
+    }),
+  ),
+});

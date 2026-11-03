@@ -5,11 +5,13 @@ import {
   CLAVES,
   CLAVES_DE_APERTURA,
   CLAVES_DE_INCIDENTE,
+  CLAVES_DE_MANUAL,
   CLAVES_DE_PLACA,
   CLAVES_DE_SENAL,
   valorEfectivo,
   type ClaveDeLimite,
   type ClaveDeApertura,
+  type ClaveDeManual,
   type ClaveDePlaca,
 } from './domain/claves.js';
 import {
@@ -65,6 +67,14 @@ export interface MarcaDeBolsa {
   readonly ahora: Date;
 }
 
+/** Los topes de la apertura manual que rigen para un usuario (ADR 0035 §7). */
+export interface TopesDeAperturaManual {
+  /** Segundos mínimos entre dos órdenes del mismo usuario sobre la misma puerta. */
+  readonly enfriamientoSegundos: number;
+  /** Órdenes que puede pedir por día local del sitio. */
+  readonly topeDiario: number;
+}
+
 export interface ServicioDeLimites {
   /**
    * Los topes del usuario en la cuenta del contexto. Por cada clave rige, en este orden, la excepción del
@@ -72,6 +82,12 @@ export interface ServicioDeLimites {
    * plataforma. Si el general de alguna clave falta, falla (cerrado): sin topes no se genera.
    */
   topesDe(usuarioId: string, plan: TopesDelPlan): Promise<TopesDeGeneracion>;
+  /**
+   * Los topes de la apertura manual del usuario en la cuenta del contexto, con la misma precedencia que los de
+   * generación (excepción del usuario, de su cuenta, valor general). Falla cerrado si falta el valor general: sin
+   * topes no se ordena abrir. Estos topes no tocan la validación de un QR.
+   */
+  topesDeAperturaManual(usuarioId: string): Promise<TopesDeAperturaManual>;
   /** Cuántos reemplazos sin uso hizo el usuario desde `desde` y cuándo fue el último. */
   reemplazosSinUso(
     tx: Transaccion,
@@ -89,6 +105,32 @@ export interface ServicioDeLimites {
   marcarBolsa(tx: Transaccion, marca: MarcaDeBolsa): Promise<boolean>;
 }
 
+/**
+ * El valor efectivo de una clave para un usuario: excepción del usuario, de su cuenta, lo que fija el plan y el valor
+ * general. Falla cerrado (503 con código estable, ADR 0033: el nombre de la clave no sale) si el general no existe.
+ */
+async function valoresDe(
+  pool: Pool,
+  usuarioId: string,
+): Promise<(clave: ClaveDeLimite | ClaveDeManual, dePlan?: number | null) => number> {
+  const [generales, excepciones] = await Promise.all([
+    new RepositorioDeConfiguracion(pool).listar(),
+    new RepositorioDeExcepciones(pool).deUsuarioYDeCuenta(usuarioId),
+  ]);
+  const general = new Map(generales.map((fila) => [fila.clave, fila.valor]));
+  return (clave, dePlan = null) => {
+    const base = general.get(clave);
+    if (base === undefined) throw new ErrorDeDominio('limite.configuracion_incompleta', 503);
+    const deLaClave = excepciones.filter((fila) => fila.clave === clave);
+    return valorEfectivo({
+      deUsuario: deLaClave.find((fila) => fila.usuario_id === usuarioId)?.valor ?? null,
+      deCuenta: deLaClave.find((fila) => fila.usuario_id === null)?.valor ?? null,
+      dePlan,
+      global: base,
+    });
+  };
+}
+
 export function crearServicioDeLimites(pool: Pool): ServicioDeLimites {
   const eventos = new RepositorioDeEventosDeLimite(pool);
   const evento = (tipo: TipoDeEventoDeLimite, datos: Omit<RechazoDeGeneracion, 'tipo'>) => ({
@@ -101,24 +143,7 @@ export function crearServicioDeLimites(pool: Pool): ServicioDeLimites {
   });
   return {
     async topesDe(usuarioId, plan) {
-      const [generales, excepciones] = await Promise.all([
-        new RepositorioDeConfiguracion(pool).listar(),
-        new RepositorioDeExcepciones(pool).deUsuarioYDeCuenta(usuarioId),
-      ]);
-      const general = new Map(generales.map((fila) => [fila.clave, fila.valor]));
-      const valor = (clave: ClaveDeLimite, dePlan: number | null = null): number => {
-        const base = general.get(clave);
-        // Falla cerrado (sin topes no se genera) con un código estable: el mensaje, con el nombre de la clave,
-        // no sale en la respuesta (ADR 0033).
-        if (base === undefined) throw new ErrorDeDominio('limite.configuracion_incompleta', 503);
-        const deLaClave = excepciones.filter((fila) => fila.clave === clave);
-        return valorEfectivo({
-          deUsuario: deLaClave.find((fila) => fila.usuario_id === usuarioId)?.valor ?? null,
-          deCuenta: deLaClave.find((fila) => fila.usuario_id === null)?.valor ?? null,
-          dePlan,
-          global: base,
-        });
-      };
+      const valor = await valoresDe(pool, usuarioId);
       return {
         topeDiario: valor(CLAVES.topeDiario),
         topePendientes: valor(CLAVES.topePendientes),
@@ -127,6 +152,13 @@ export function crearServicioDeLimites(pool: Pool): ServicioDeLimites {
         maxPuertasPorQr: valor(CLAVES.maxPuertasPorQr, plan.maxPuertasPorQr),
         bolsaMensual: valor(CLAVES.bolsaMensual, plan.bolsaQrMensual),
         bolsaAvisoPorcentaje: valor(CLAVES.bolsaAvisoPorcentaje),
+      };
+    },
+    async topesDeAperturaManual(usuarioId) {
+      const valor = await valoresDe(pool, usuarioId);
+      return {
+        enfriamientoSegundos: valor(CLAVES_DE_MANUAL.enfriamientoSegundos),
+        topeDiario: valor(CLAVES_DE_MANUAL.topeDiario),
       };
     },
     reemplazosSinUso: (tx, usuarioId, desde) =>

@@ -33,6 +33,12 @@ abstract final class Permisos {
   /// Los eventos de las puertas asignadas al guardia.
   static const verEventosAsignados = 'accesos.evento.ver_asignadas';
 
+  /// Abrir una puerta desde la app, sin QR (ADR 0035): todos los roles de la
+  /// cuenta. Y encender o apagar esa función por puerta: solo el
+  /// Administrador de la cuenta.
+  static const abrirPuertaManual = 'accesos.apertura_manual.usar';
+  static const configurarAperturaManual = 'accesos.apertura_manual.configurar';
+
   /// Crear, editar y dar de baja los sitios y las puertas de la cuenta.
   static const administrarSitios = 'organizacion.sitio.administrar';
   static const administrarPuertas = 'organizacion.puerta.administrar';

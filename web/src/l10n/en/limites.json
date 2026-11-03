@@ -1,6 +1,5 @@
 {
   "pestana": "Quota usage",
-  "subtitulo": "QR codes generated this month against each account's quota. This only records and warns: no account is cut off.",
   "aviso": "Warning at {{porcentaje}} of the quota",
   "mes": "Month of {{mes}}",
   "sinPlan": "No plan",
