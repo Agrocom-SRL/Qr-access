@@ -3213,6 +3213,10 @@
   "@abrirPuertaFalloNoAbrio": {
     "description": "Detalle cuando la placa informó que la puerta no se abrió"
   },
+  "abrirPuertaFalloOcupada": "La puerta está ocupada, intenta de nuevo.",
+  "@abrirPuertaFalloOcupada": {
+    "description": "Detalle cuando la placa descartó la orden porque otra apertura estaba en curso"
+  },
   "abrirPuertaFalloVencida": "La puerta no respondió a tiempo. Inténtalo de nuevo o entra con tu QR.",
   "@abrirPuertaFalloVencida": {
     "description": "Detalle cuando la orden venció sin que la placa respondiera"

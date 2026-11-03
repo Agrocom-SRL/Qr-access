@@ -2,6 +2,7 @@ import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/contratos/apertura_manual_contratos.dart';
 import 'package:agrocom_acceso/features/apertura_manual/domain/apertura_manual.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Acceso a la apertura manual (ADR 0035). Los tests lo sustituyen por un fake
@@ -62,7 +63,7 @@ class AperturaManualRepositorioApi implements AperturaManualRepositorio {
   ) async {
     final dto = await _api.estadoDeOrden(ordenId);
     final estado = EstadoOrden.desde(dto.estado);
-    return (estado: estado, desenlace: _desenlace(estado));
+    return (estado: estado, desenlace: desenlaceDeOrden(estado, dto.causa));
   }
 
   @override
@@ -85,14 +86,23 @@ PuertaAbrible _aPuerta(PuertaAbribleDto dto) => PuertaAbrible(
 );
 
 /// `ejecutada` con `sin_confirmacion` (la puerta no tiene sensor) cuenta como
-/// abierta: el relé se accionó y no hay nada que contradiga. Solo una falla
-/// informada por la placa o una orden vencida son "no abrió".
-DesenlaceDeApertura? _desenlace(EstadoOrden estado) => switch (estado) {
-  EstadoOrden.ejecutada => DesenlaceDeApertura.abierta,
-  EstadoOrden.fallida => DesenlaceDeApertura.noAbrio,
-  EstadoOrden.vencida => DesenlaceDeApertura.vencida,
-  EstadoOrden.pendiente || EstadoOrden.entregada => null,
-};
+/// abierta: el relé se accionó y no hay nada que contradiga. Una `fallida` con
+/// causa `ocupada` es que la placa descartó la orden porque el relé estaba en
+/// uso; con causa `vencida`, que se le acabó el plazo (se muestra como una
+/// orden vencida). Solo el resto de las fallas informadas por la placa son
+/// "no abrió". [causa] viene de `resultado.causa` de la API (puede ser `null`).
+@visibleForTesting
+DesenlaceDeApertura? desenlaceDeOrden(EstadoOrden estado, String? causa) =>
+    switch (estado) {
+      EstadoOrden.ejecutada => DesenlaceDeApertura.abierta,
+      EstadoOrden.fallida => switch (causa) {
+        'ocupada' => DesenlaceDeApertura.ocupada,
+        'vencida' => DesenlaceDeApertura.vencida,
+        _ => DesenlaceDeApertura.noAbrio,
+      },
+      EstadoOrden.vencida => DesenlaceDeApertura.vencida,
+      EstadoOrden.pendiente || EstadoOrden.entregada => null,
+    };
 
 final aperturaManualRepositorioProvider = Provider<AperturaManualRepositorio>(
   (ref) => AperturaManualRepositorioApi(ref.watch(clienteApiProvider)),

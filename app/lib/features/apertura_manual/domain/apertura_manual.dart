@@ -61,5 +61,7 @@ class OrdenDeApertura {
   final DateTime venceAt;
 }
 
-/// Cómo terminó una orden: la puerta se abrió, o no.
-enum DesenlaceDeApertura { abierta, noAbrio, vencida }
+/// Cómo terminó una orden: la puerta se abrió, o no. `ocupada` es que la placa
+/// tomó la orden y no la ejecutó porque el relé no estaba libre (otra apertura
+/// en curso): no es una falla de la puerta y conviene reintentar.
+enum DesenlaceDeApertura { abierta, noAbrio, ocupada, vencida }

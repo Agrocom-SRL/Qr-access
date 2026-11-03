@@ -22,6 +22,10 @@ const _Consulta _abierta = (
   estado: EstadoOrden.ejecutada,
   desenlace: DesenlaceDeApertura.abierta,
 );
+const _Consulta _ocupada = (
+  estado: EstadoOrden.fallida,
+  desenlace: DesenlaceDeApertura.ocupada,
+);
 const _Consulta _fallida = (
   estado: EstadoOrden.fallida,
   desenlace: DesenlaceDeApertura.noAbrio,
@@ -118,6 +122,20 @@ void main() {
       expect(estado.fase, FaseDeApertura.fallo);
       expect(estado.error, error);
       expect(estado.desenlace, isNull);
+    },
+  );
+
+  test(
+    'una orden que la placa descartó por ocupada llega como ocupada',
+    () async {
+      final repositorio = _Repositorio(consultas: const [_ocupada]);
+      final contenedor = _contenedor(repositorio);
+
+      await contenedor.read(abrirPuertaProvider.notifier).abrir(_puerta);
+
+      final estado = contenedor.read(abrirPuertaProvider);
+      expect(estado.fase, FaseDeApertura.fallo);
+      expect(estado.desenlace, DesenlaceDeApertura.ocupada);
     },
   );
 

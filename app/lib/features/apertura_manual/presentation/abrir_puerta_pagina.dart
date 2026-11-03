@@ -213,6 +213,7 @@ String _detalleDeFallo(AppLocalizations l10n, AperturaEstado apertura) {
   if (apertura.error != null) return textoDeError(l10n, apertura.error!);
   return switch (apertura.desenlace) {
     DesenlaceDeApertura.noAbrio => l10n.abrirPuertaFalloNoAbrio,
+    DesenlaceDeApertura.ocupada => l10n.abrirPuertaFalloOcupada,
     _ => l10n.abrirPuertaFalloVencida,
   };
 }
