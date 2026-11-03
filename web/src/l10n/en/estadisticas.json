@@ -38,7 +38,7 @@
   "cuentasDelTramo_one": "{{count}} account",
   "cuentasDelTramo_other": "{{count}} accounts",
   "titulo": "Statistics",
-  "subtitulo": "Payments, access, sign-ups and usage of each platform plan",
+  "subtitulo": "Billing, accounts and access across the platform, by topic",
   "usoTitulo": "Usage by plan",
   "usoSubtitulo": "How many accounts and users each plan has",
   "usuariosEnUso": "Users in use",
@@ -64,5 +64,16 @@
   "aperturaCuentasTitulo": "Accounts that use it most",
   "aperturaPuerta": "Door",
   "aperturaCuenta": "Account",
-  "aperturaSinUso": "Nobody has opened a door from the app yet."
+  "aperturaSinUso": "Nobody has opened a door from the app yet.",
+  "pestanasEtiqueta": "Statistics sections",
+  "pestanas": {
+    "cobros": "Billing and plans",
+    "cuentas": "Accounts",
+    "accesos": "Access"
+  },
+  "descripcion": {
+    "cobros": "How much was billed in the last year, how many companies each plan has and how many users they use.",
+    "cuentas": "How many accounts are in each state and how many were created each month.",
+    "accesos": "QR scans from the last few days and how much opening from the app is used."
+  }
 }

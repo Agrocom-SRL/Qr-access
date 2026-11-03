@@ -38,7 +38,7 @@
   "cuentasDelTramo_one": "{{count}} conta",
   "cuentasDelTramo_other": "{{count}} contas",
   "titulo": "Estatísticas",
-  "subtitulo": "Cobranças, acessos, cadastros e uso de cada plano da plataforma",
+  "subtitulo": "Cobranças, contas e acessos da plataforma, por tema",
   "usoTitulo": "Uso por plano",
   "usoSubtitulo": "Quantas contas e usuários cada plano tem",
   "usuariosEnUso": "Usuários em uso",
@@ -64,5 +64,16 @@
   "aperturaCuentasTitulo": "Contas que mais usam",
   "aperturaPuerta": "Porta",
   "aperturaCuenta": "Conta",
-  "aperturaSinUso": "Ainda ninguém abriu uma porta pelo app."
+  "aperturaSinUso": "Ainda ninguém abriu uma porta pelo app.",
+  "pestanasEtiqueta": "Seções de estatísticas",
+  "pestanas": {
+    "cobros": "Cobranças e planos",
+    "cuentas": "Contas",
+    "accesos": "Acessos"
+  },
+  "descripcion": {
+    "cobros": "Quanto foi cobrado no último ano, quantas empresas cada plano tem e quantos usuários usam.",
+    "cuentas": "Quantas contas há em cada estado e quantas foram criadas a cada mês.",
+    "accesos": "As leituras de QR dos últimos dias e quanto se usa a abertura pelo app."
+  }
 }

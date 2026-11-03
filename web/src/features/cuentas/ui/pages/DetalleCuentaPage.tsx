@@ -27,14 +27,22 @@ import { DialogoEditarCuenta } from '../components/DialogoEditarCuenta';
 import { DialogoEliminarCuenta } from '../components/DialogoEliminarCuenta';
 import { DialogoEstadoDeCuenta } from '../components/DialogoEstadoDeCuenta';
 import { ResumenDeCuenta } from '../components/ResumenDeCuenta';
-import { UsoDeUsuarios } from '../components/UsoDeUsuarios';
+import { PestanaUsuarios } from '../components/PestanaUsuarios';
 import { SitiosYPuertas } from '../components/SitiosYPuertas';
 import styles from './DetalleCuentaPage.module.css';
 
 type PestanaDeCuenta =
-  'resumen' | 'suscripcion' | 'sitios' | 'accesos' | 'incidentes' | 'operaciones' | 'bitacora';
+  | 'resumen'
+  | 'usuarios'
+  | 'suscripcion'
+  | 'sitios'
+  | 'accesos'
+  | 'incidentes'
+  | 'operaciones'
+  | 'bitacora';
 const PESTANAS: readonly PestanaDeCuenta[] = [
   'resumen',
+  'usuarios',
   'suscripcion',
   'sitios',
   'accesos',
@@ -218,20 +226,18 @@ export function DetalleCuentaPage() {
               <Skeleton alto="bloque" />
             </div>
           )
+        ) : pestana === 'usuarios' ? (
+          <PestanaUsuarios cuentaId={id} />
         ) : pestana === 'suscripcion' ? (
           datos ? (
-            // El uso de los usuarios va arriba, luego el plan y al final las renovaciones; no en el resumen, que ya está cargado.
-            <div className={styles.apilado}>
-              <UsoDeUsuarios cuentaId={id} />
-              <PestanaSuscripcion
-                cuenta={{
-                  id,
-                  nombre: datos.cuenta.nombre,
-                  codigo: datos.cuenta.codigo,
-                  usuariosActivos: datos.uso.usuariosActivos,
-                }}
-              />
-            </div>
+            <PestanaSuscripcion
+              cuenta={{
+                id,
+                nombre: datos.cuenta.nombre,
+                codigo: datos.cuenta.codigo,
+                usuariosActivos: datos.uso.usuariosActivos,
+              }}
+            />
           ) : (
             <div aria-busy="true">
               <Skeleton alto="bloque" />
