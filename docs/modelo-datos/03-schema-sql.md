@@ -953,7 +953,7 @@ CREATE TABLE confirmaciones_apertura (
   CONSTRAINT ck_confirmaciones_apertura_resultado CHECK (resultado IN ('ejecutada', 'fallida', 'sin_confirmacion')),
   CONSTRAINT ck_confirmaciones_apertura_causa CHECK (
     (resultado = 'ejecutada' AND causa = 'puerta_abrio')
-    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado'))
+    OR (resultado = 'fallida' AND causa IN ('puerta_no_abrio', 'puerta_no_cerro', 'rele_no_accionado', 'ocupada', 'vencida'))
     OR (resultado = 'sin_confirmacion' AND causa IN ('sin_sensor', 'sin_respuesta'))
   ),
   CONSTRAINT ck_confirmaciones_apertura_servidor CHECK (origen = 'placa' OR causa = 'sin_respuesta'),

@@ -33,6 +33,8 @@ Sin `updated_*`, `deleted_*` ni bitácora: perfil `solo_insercion`, como `lectur
 | `fallida` | `puerta_no_abrio` | placa | Se accionó el relé y el sensor no vio abrir la puerta en el plazo (trabada, cerradura o riel sin respuesta) | `no_confirmada` |
 | `fallida` | `puerta_no_cerro` | placa | Se abrió pero no volvió a cerrar (la placa lo informa solo si decide esperar al cierre; el servidor no lo mide) | `no_confirmada` |
 | `fallida` | `rele_no_accionado` | placa | La placa no pudo accionar el relé | `no_confirmada` |
+| `fallida` | `ocupada` | placa | Orden manual que la placa tomó y no ejecutó: el relé no estaba libre. No es una falla de la puerta (no cuenta para `apertura.fallida`) | (sin equivalente) |
+| `fallida` | `vencida` | placa | Orden manual que la placa tomó y cuyo plazo se agotó antes de ejecutarla. No es una falla de la puerta | (sin equivalente) |
 | `sin_confirmacion` | `sin_sensor` | placa | La placa no tiene el sensor habilitado: no se sabe, no se inventa un éxito | `sin_sensor` |
 | `sin_confirmacion` | `sin_respuesta` | servidor | Una placa con sensor no informó dentro del plazo | (sin equivalente: el ADR no cubre el silencio) |
 

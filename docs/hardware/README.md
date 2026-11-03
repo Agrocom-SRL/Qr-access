@@ -198,6 +198,8 @@ HTTP/1.1 204 No Content        (pasó la espera sin orden, o la puerta tiene la 
 { "resultado": "ejecutada", "causa": "puerta_abrio", "reportado_en_dispositivo_at": "2026-11-10T15:00:00Z" }
 { "resultado": "fallida", "causa": "puerta_no_abrio" }
 { "resultado": "fallida", "causa": "rele_no_accionado" }
+{ "resultado": "fallida", "causa": "ocupada" }
+{ "resultado": "fallida", "causa": "vencida" }
 { "resultado": "sin_confirmacion", "causa": "sin_sensor" }
 ```
 
@@ -205,7 +207,11 @@ HTTP/1.1 204 No Content        (pasó la espera sin orden, o la puerta tiene la 
 |---|---|---|
 | `ejecutada` | `puerta_abrio` (opcional) | El sensor vio abrir la puerta tras el pulso, dentro de `espera_confirmacion_segundos`. Se envía en cuanto se ve |
 | `fallida` | `puerta_no_abrio` (por omisión), `puerta_no_cerro`, `rele_no_accionado` | El relé se accionó y venció el plazo sin ver abrir; la placa no pudo accionar el relé; (opcional) no volvió a cerrar |
+| `fallida` | `ocupada` | La placa **tomó** la orden y **no la ejecutó** porque el relé no estaba libre (una validación de QR en curso o la puerta ya abierta). El relé nunca se accionó |
+| `fallida` | `vencida` | La placa tomó la orden y su plazo (`valida_por_ms`) se agotó antes de ejecutarla. El relé nunca se accionó |
 | `sin_confirmacion` | `sin_sensor` (opcional) | `sensor_puerta.instalado` es `false`: el relé se accionó pero no se sabe si la puerta abrió. La orden queda `ejecutada` (no se inventa un éxito ni una falla) |
+
+**`ocupada` y `vencida` no son una falla de la puerta.** Se informan para que la app deje de esperar y para que el servidor distinga «ocupada» de «caída»; el detector de aperturas fallidas (`apertura.fallida`) **no las cuenta**. Solo valen en esta ruta: `POST /dispositivos/confirmaciones` (la de un QR) las rechaza con `400`. La placa **no informa** si ya no opera o si `apertura_manual` se apagó (no abre y calla). Si la orden se descarta mientras otra apertura se observa, ese informe no cambia el de la observación en curso.
 
 `reportado_en_dispositivo_at` (ISO 8601, opcional, ≤ 40 caracteres) es el reloj de la placa, solo informativo. El informe se envía **una sola vez** por orden, en segundo plano y después de accionar, igual que la confirmación de un QR (reglas del apartado 3).
 
