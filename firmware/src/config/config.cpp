@@ -33,9 +33,13 @@ Dispositivo cargar() {
   Dispositivo d;
   Preferences nvs;
   if (nvs.begin(ESPACIO, true)) {
-    d.apiUrl = nvs.getString("api_url", "");
-    d.id = nvs.getString("disp_id", "");
-    d.clave = nvs.getString("disp_clave", "");
+    // `isKey` evita que el core imprima un error `NOT_FOUND` por cada valor que aún no existe.
+    const auto leer = [&nvs](const char* llave) {
+      return nvs.isKey(llave) ? nvs.getString(llave, "") : String();
+    };
+    d.apiUrl = leer("api_url");
+    d.id = leer("disp_id");
+    d.clave = leer("disp_clave");
     nvs.end();
   }
 #ifdef HAY_SECRETOS_DE_DESARROLLO
