@@ -1,6 +1,6 @@
 # ADR 0026 — Vinculación automática de placas con confirmación física
 
-**Estado:** Aceptada (2026-10-14) · Reemplaza el §2 y el §8 del ADR 0025 (código de vinculación por placa y alta manual) y mantiene el resto (clave generada por la placa, dispositivo = placa asignada a una puerta, liberar, solo Ethernet).
+**Estado:** Aceptada (2026-10-14); el §4 y el §5 (confirmación con el pulsador) los reemplaza el [ADR 0037](0037-vinculacion-sin-pulsador.md) · Reemplaza el §2 y el §8 del ADR 0025 (código de vinculación por placa y alta manual) y mantiene el resto (clave generada por la placa, dispositivo = placa asignada a una puerta, liberar, solo Ethernet).
 
 ## Contexto
 

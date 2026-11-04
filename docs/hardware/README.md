@@ -84,14 +84,14 @@ El relé actúa como un pulsador: sus contactos secos **COM** y **NO** se conect
 
 **Todas las placas son iguales**: no llevan credenciales de ninguna cuenta ni código de fábrica, y la URL de la API va en el binario. No hay nada que registrar ni que cargar por serie: la placa se anuncia sola y AGROCOM la asigna a una puerta desde el panel web.
 
-**En el taller, una vez por placa:** flashear el firmware de producción (`pio run -e esp32 -t upload`). Para cargar por USB-serie en la ESP32-ETH01 se puentea GPIO0 a GND y se resetea; **se quita el puente** después de flashear. El mismo binario sirve para todas las placas.
+**En el taller, una vez por placa:** flashear el firmware de producción (`pio run -e esp32 -t upload`; cada carga por cable borra toda la flash, incluido el vínculo, por `--erase-all`). Para cargar por USB-serie en la ESP32-ETH01 se puentea GPIO0 a GND y se resetea; **se quita el puente** después de flashear. El mismo binario sirve para todas las placas.
 
 **En la instalación** (lo hace cualquiera, sin conocimientos técnicos):
 
 1. Conectar el cable de red y la corriente. La placa sortea su clave (generador del hardware, nunca viaja del servidor a la placa) y se anuncia cada 30 s (`POST /dispositivos/anunciar`). En el panel aparece sola como **Detectada**.
-2. En el panel (**Placas**, solo super admin), **Vincular**: elige cuenta, una puerta sin lector y un nombre. La placa pasa a **Esperando el botón** durante 10 minutos.
-3. En la puerta, la placa lo avisa con el **LED azul parpadeando y un beep cada 2 s**. Se **mantiene pulsado el pulsador de salida 5 segundos**: esa es la prueba de presencia física que impide que alguien que solo conoce la MAC se quede con el vínculo.
-4. La placa avisa al servidor (`POST /dispositivos/confirmar`), recibe el id de su dispositivo, da un destello verde con un beep y empieza a validar QR y a enviar latidos.
+2. En el panel (**Placas**, solo super admin), **Vincular**: elige cuenta, una puerta sin lector y un nombre. La placa pasa a **Esperando a la placa** durante 10 minutos.
+3. En su siguiente anuncio (cada 30 s), el servidor la vincula solo: crea el dispositivo y le responde `vinculado` con su id (ADR 0037). **No hay que pulsar nada en la puerta.** Si dos claves se anuncian a la vez con la misma MAC, no se vincula ninguna hasta que quede una sola activa.
+4. La placa recibe el id de su dispositivo, da un destello verde con un beep y empieza a validar QR y a enviar latidos.
 
 Si la ventana vence o se cancela desde el panel, la placa vuelve a **Detectada**; basta con volver a vincular.
 

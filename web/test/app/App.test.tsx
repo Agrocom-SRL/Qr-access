@@ -1297,7 +1297,7 @@ describe('placas (ADR 0026)', () => {
     expect(within(tabla).getByText('Agroindustrial Norte', { exact: false })).toBeInTheDocument();
     expect(within(tabla).getByText('Vinculada')).toBeInTheDocument();
     expect(within(tabla).getByText('Detectada')).toBeInTheDocument();
-    expect(within(tabla).getByText('Esperando el botón')).toBeInTheDocument();
+    expect(within(tabla).getByText('Esperando a la placa')).toBeInTheDocument();
     // Vincular solo en la detectada, cancelar solo en la que espera su botón, liberar solo en la
     // vinculada y baja en las que no tienen dispositivo.
     expect(within(tabla).getAllByRole('button', { name: /^Vincular la placa / })).toHaveLength(1);
@@ -1371,9 +1371,9 @@ describe('placas (ADR 0026)', () => {
         sentido: 'ambos',
       });
     });
-    // El vínculo no está hecho: el panel explica cómo confirmarlo en la puerta.
-    expect(await screen.findByText('Confirma en la puerta')).toBeInTheDocument();
-    expect(screen.getByText(/Mantén pulsado el pulsador de salida/)).toBeInTheDocument();
+    // El vínculo se completa solo en el próximo anuncio de la placa (ADR 0037): no hay que pulsar nada.
+    expect(await screen.findByText('Vinculando la placa')).toBeInTheDocument();
+    expect(screen.getByText(/No hace falta pulsar nada en la puerta/)).toBeInTheDocument();
   });
 
   it('vincular: la ubicación del lector se elige y viaja (una puerta puede llevar dos placas)', async () => {

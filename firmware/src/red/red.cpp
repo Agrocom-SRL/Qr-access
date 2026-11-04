@@ -16,23 +16,54 @@ namespace red {
 namespace {
 
 bool ntpPedido = false;
-volatile bool conIp = false;
+volatile bool conEnlace = false;  // el cable está conectado y el PHY negoció el enlace
+volatile bool conIp = false;      // además, el DHCP ya entregó una IP
+
+/// Pasado este tiempo con cable pero sin IP, se avisa que el problema ya no es el cable.
+constexpr uint32_t MS_SIN_IP_PARA_AVISAR = 15000;
 
 void alEventoDeRed(arduino_event_id_t evento) {
-  if (evento == ARDUINO_EVENT_ETH_GOT_IP) conIp = true;
-  if (evento == ARDUINO_EVENT_ETH_DISCONNECTED || evento == ARDUINO_EVENT_ETH_STOP) conIp = false;
+  switch (evento) {
+    case ARDUINO_EVENT_ETH_CONNECTED:
+      conEnlace = true;
+      break;
+    case ARDUINO_EVENT_ETH_GOT_IP:
+      conEnlace = true;
+      conIp = true;
+      break;
+    case ARDUINO_EVENT_ETH_DISCONNECTED:
+    case ARDUINO_EVENT_ETH_STOP:
+      conEnlace = false;
+      conIp = false;
+      break;
+    default:
+      break;
+  }
 }
 
-/// Deja en el serie si hay enlace y con qué IP: es lo primero que se mira al integrar.
-void registrarCambioDeEnlace() {
+/// Deja en el serie cada cambio entre sin cable, cable sin IP y con IP: es lo primero que se mira
+/// al integrar. Si el cable está pero la IP no llega, avisa una vez que el problema es el DHCP.
+void registrarCambioDeEnlace(uint32_t ahoraMs) {
   static int anterior = -1;
-  const int actual = conIp ? 1 : 0;
-  if (actual == anterior) return;
-  anterior = actual;
-  if (actual == 1) {
-    Serial.printf("[red] ethernet conectado, ip %s\n", ETH.localIP().toString().c_str());
-  } else {
-    Serial.println("[red] sin enlace: esperando el cable");
+  static uint32_t desdeMs = 0;
+  static bool avisado = false;
+  const int actual = conIp ? 2 : (conEnlace ? 1 : 0);
+  if (actual != anterior) {
+    anterior = actual;
+    desdeMs = ahoraMs;
+    avisado = false;
+    if (actual == 2) {
+      Serial.printf("[red] ethernet conectado, ip %s\n", ETH.localIP().toString().c_str());
+    } else if (actual == 1) {
+      Serial.println("[red] cable conectado: esperando la IP del DHCP");
+    } else {
+      Serial.println("[red] sin cable: conecta el cable de red");
+    }
+    return;
+  }
+  if (actual == 1 && !avisado && ahoraMs - desdeMs >= MS_SIN_IP_PARA_AVISAR) {
+    avisado = true;
+    Serial.println("[red] hay cable pero no llega IP: revisa el DHCP del router y la alimentación");
   }
 }
 
@@ -50,8 +81,8 @@ void iniciar() {
             ETH_CLOCK_GPIO0_IN);
 }
 
-void tick(uint32_t) {
-  registrarCambioDeEnlace();
+void tick(uint32_t ahoraMs) {
+  registrarCambioDeEnlace(ahoraMs);
   if (conIp) pedirHoraUnaVez();
 }
 

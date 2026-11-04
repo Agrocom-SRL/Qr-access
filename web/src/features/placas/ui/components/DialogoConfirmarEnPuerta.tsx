@@ -11,8 +11,8 @@ interface Props {
 }
 
 /**
- * Segundo paso de la vinculación (ADR 0026): el vínculo ya se pidió y solo falta que alguien
- * mantenga pulsado el botón de la placa en la puerta; eso es la prueba de presencia física.
+ * Segundo paso de la vinculación (ADR 0037): el vínculo ya se pidió y solo falta que la placa se
+ * anuncie, lo que hace sola en menos de un minuto; ya no hay que pulsar nada en la puerta.
  */
 export function DialogoConfirmarEnPuerta({ mac, esperaHasta, onCerrar }: Props) {
   const { t } = useTranslation('placas');

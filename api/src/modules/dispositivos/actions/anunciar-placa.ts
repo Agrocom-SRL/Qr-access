@@ -7,7 +7,8 @@ import { huellaDeClave, normalizarMac } from '../domain/placa.js';
 import { MAXIMO_DE_CANDIDATOS, RepositorioDeAnuncios } from '../anuncios-repository.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
 import { RepositorioDeDispositivosDePlataforma } from '../repository.js';
-import { esDuplicado } from '../vinculo.js';
+import { crearDispositivoDeLaSolicitud } from '../solicitud-de-vinculo.js';
+import { LAPSO_DE_CANDIDATO_ACTIVO_MS, esDuplicado } from '../vinculo.js';
 
 export interface DatosDeAnuncio {
   readonly mac: string;
@@ -63,8 +64,9 @@ export function exigirSinBloqueo(
  * - MAC nueva → se registra como placa `detectada`;
  * - placa con dispositivo en servicio → responde `vinculado` solo si la clave es la de ese
  *   dispositivo (idempotente: si la respuesta se perdió, se repite); otra clave es 401;
- * - placa sin dispositivo → registra la clave como candidato y responde `confirmar` si el
- *   super admin pidió vincularla y la ventana sigue abierta, o `detectada`.
+ * - placa sin dispositivo → registra la clave como candidato; si el super admin pidió vincularla y
+ *   la ventana sigue abierta (y el candidato es único), crea el dispositivo y responde
+ *   `vinculado`; si no, `detectada`. `confirmar` ya no se responde (ADR 0037).
  */
 export async function ejecutar(
   pool: Pool,
@@ -114,7 +116,13 @@ export async function ejecutar(
   const huella = huellaDeClave(datos.clave);
   const candidato = await anuncios.buscar(placa.id, huella);
   if (candidato?.descartada_at != null) return rechazarAnuncio(limitadores, datos.ip, mac);
-  if (candidato === null && (await anuncios.contarVivos(placa.id)) >= MAXIMO_DE_CANDIDATOS) {
+  // Solo cuentan los candidatos activos: uno viejo o falso de una sola vez no agota el tope y deja
+  // sin vincular a la placa real.
+  const desde = new Date(ahora.getTime() - LAPSO_DE_CANDIDATO_ACTIVO_MS);
+  if (
+    candidato === null &&
+    (await anuncios.contarActivos(placa.id, desde)) >= MAXIMO_DE_CANDIDATOS
+  ) {
     throw new ErrorDeDominio('dispositivo.anuncio_bloqueado', 429, { reintentar_en_segundos: 300 });
   }
 
@@ -133,6 +141,19 @@ export async function ejecutar(
   limitadores.porIp.registrarExito(datos.ip);
   limitadores.porMac.registrarExito(mac);
 
-  const esperaElPulsador = placa.por_confirmar_hasta !== null && placa.por_confirmar_hasta > ahora;
-  return { estado: esperaElPulsador ? 'confirmar' : 'detectada' };
+  const solicitudAbierta = placa.por_confirmar_hasta !== null && placa.por_confirmar_hasta > ahora;
+  if (!solicitudAbierta) return { estado: 'detectada' };
+
+  // ADR 0037: sin pulsador. El super admin ya pidió vincular esta placa y la ventana sigue abierta,
+  // así que el anuncio mismo la vincula, pero solo si es el único candidato activo y ya existía al
+  // pedir el vínculo (las guardas viven en `crearDispositivoDeLaSolicitud`, las mismas de
+  // `/confirmar`). Es una ruta anónima: cualquier rechazo —candidato dudoso, plan, puerta, ventana—
+  // se responde igual, `detectada`, sin contar a quien pregunta qué falló; la placa sigue anunciándose.
+  try {
+    const dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
+    return { estado: 'vinculado', dispositivo_id: dispositivoId };
+  } catch (error) {
+    if (error instanceof ErrorDeDominio) return { estado: 'detectada' };
+    throw error;
+  }
 }

@@ -7,8 +7,14 @@ import { crearServicioDeSuscripciones } from '../suscripciones/contracts.js';
 import type { Sentido } from './domain/sentido.js';
 import { exigirQueCabe, RepositorioDeDispositivos } from './repository.js';
 
-/** Cuánto espera la placa el pulsador desde que el super admin pide vincularla (ADR 0026 §3). */
+/** Cuánto espera la placa desde que el super admin pide vincularla (ADR 0026 §3 y ADR 0037). */
 export const VENTANA_DE_CONFIRMACION_MS = 10 * 60_000;
+
+/**
+ * Un candidato cuenta como "activo" si se anunció en este lapso (ADR 0037): la placa real repite
+ * su anuncio cada 30 s, así que un falso de una sola vez no estorba el vínculo.
+ */
+export const LAPSO_DE_CANDIDATO_ACTIVO_MS = 90_000;
 
 /**
  * Comprueba que se puede vincular una placa a esa puerta y, solo entonces, corre `trabajo` en el
