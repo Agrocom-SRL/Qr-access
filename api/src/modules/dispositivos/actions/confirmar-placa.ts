@@ -1,13 +1,11 @@
 import type { Pool } from 'mysql2/promise';
-import { enTransaccion } from '../../../platform/db/transaccion.js';
 import { ErrorDeDominio } from '../../../platform/errores/error-de-dominio.js';
-import { hashear, verificarHash } from '../../../platform/seguridad/hash.js';
-import { SENTIDO_POR_OMISION } from '../domain/sentido.js';
+import { verificarHash } from '../../../platform/seguridad/hash.js';
 import { huellaDeClave, normalizarMac } from '../domain/placa.js';
 import { RepositorioDeAnuncios } from '../anuncios-repository.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
 import { RepositorioDeDispositivosDePlataforma } from '../repository.js';
-import { conVinculoValido, esDuplicado } from '../vinculo.js';
+import { crearDispositivoDeLaSolicitud, esCandidatoDudoso } from '../solicitud-de-vinculo.js';
 import {
   exigirSinBloqueo,
   rechazarAnuncio,
@@ -22,11 +20,10 @@ export interface DatosDeConfirmacion {
 }
 
 /**
- * La placa avisa que alguien mantuvo pulsado su botón (ADR 0026 §4). Es la prueba de presencia
- * física que reemplaza al código de fábrica: solo el candidato `(mac, clave)` que llega acá se
- * vuelve dispositivo; un anuncio falso de la misma MAC jamás confirma porque nadie pulsa su botón.
- * Ruta anónima y sin contexto de cuenta hasta que crea el dispositivo con el contexto de la cuenta
- * pedida, a nombre de quien pidió el vínculo: revisar línea por línea (invariantes 1 y 5).
+ * Confirmación explícita de una placa (ADR 0026 §4). Con el ADR 0037 el flujo normal ya no la
+ * necesita —el anuncio vincula solo—, pero se conserva para las placas con firmware anterior, que
+ * la llaman al recibir `confirmar`. Solo el candidato `(mac, clave)` que llega acá se vuelve
+ * dispositivo. Ruta anónima: revisar línea por línea (invariantes 1 y 5).
  *
  * Es idempotente: si la placa ya tiene dispositivo con esa clave, repite `vinculado`.
  */
@@ -40,8 +37,7 @@ export async function ejecutar(
   if (mac === null) throw new ErrorDeDominio('placa.mac_invalida', 422);
   exigirSinBloqueo(limitadores, datos.ip, mac);
 
-  const placas = new RepositorioDePlacas(pool);
-  const placa = await placas.buscarPorMac(mac);
+  const placa = await new RepositorioDePlacas(pool).buscarPorMac(mac);
   if (placa === null) return rechazarAnuncio(limitadores, datos.ip, mac);
 
   const dispositivoActual = await new RepositorioDeDispositivosDePlataforma(
@@ -54,68 +50,25 @@ export async function ejecutar(
     return { estado: 'vinculado', dispositivo_id: dispositivoActual.id };
   }
 
-  const anuncios = new RepositorioDeAnuncios(pool);
-  const huella = huellaDeClave(datos.clave);
-  const candidato = await anuncios.buscar(placa.id, huella);
+  const candidato = await new RepositorioDeAnuncios(pool).buscar(
+    placa.id,
+    huellaDeClave(datos.clave),
+  );
   // Sin candidato (`undefined`) o ya descartado: no es la placa que se anunció.
   if (candidato?.descartada_at !== null) {
     return rechazarAnuncio(limitadores, datos.ip, mac);
   }
-  const { por_confirmar_hasta: hasta, vinculo_cuenta_id: cuentaId } = placa;
-  const { vinculo_puerta_id: puertaId, vinculo_nombre: nombre } = placa;
-  const { vinculo_solicitado_por: solicitadoPor } = placa;
-  // Nulo = solicitud anterior a la ubicación del lector: una sola placa para los dos lados.
-  const sentido = placa.vinculo_sentido ?? SENTIDO_POR_OMISION;
-  if (
-    hasta === null ||
-    hasta <= ahora ||
-    cuentaId === null ||
-    puertaId === null ||
-    nombre === null ||
-    solicitadoPor === null
-  ) {
-    throw new ErrorDeDominio('placa.sin_solicitud', 409);
-  }
 
-  const claveHash = await hashear(datos.clave);
+  let dispositivoId: string;
   try {
-    const dispositivoId = await conVinculoValido(
-      pool,
-      { cuentaId, puertaId, usuarioId: solicitadoPor, sentido },
-      ahora,
-      ({ puertaId: puertaValida, dispositivos }) =>
-        enTransaccion(pool, async (tx) => {
-          // Con la fila bloqueada: si el super admin cancelo o cambió la solicitud, no vale.
-          const bloqueada = await placas.buscarPorId(placa.id, tx);
-          const vigenteHasta = bloqueada?.por_confirmar_hasta;
-          if (
-            bloqueada === null ||
-            vigenteHasta === null ||
-            vigenteHasta === undefined ||
-            vigenteHasta <= ahora ||
-            bloqueada.vinculo_cuenta_id !== cuentaId ||
-            bloqueada.vinculo_puerta_id !== puertaId
-          ) {
-            throw new ErrorDeDominio('placa.sin_solicitud', 409);
-          }
-          const id = await dispositivos.crearParaPlaca(tx, {
-            placaId: placa.id,
-            puertaId: puertaValida,
-            nombre,
-            claveHash,
-            sentido,
-          });
-          await placas.limpiarSolicitud(tx, placa.id);
-          await anuncios.descartarTodos(tx, placa.id, ahora);
-          return id;
-        }),
-    );
-    limitadores.porIp.registrarExito(datos.ip);
-    limitadores.porMac.registrarExito(mac);
-    return { estado: 'vinculado', dispositivo_id: dispositivoId };
+    dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
   } catch (error) {
-    // `uq_dispositivos_puerta` / `uq_dispositivos_placa`: otra vinculación llegó primero.
-    if (esDuplicado(error)) throw new ErrorDeDominio('puerta.con_dispositivo', 409);
+    // Dos claves activas para la misma MAC, o un candidato posterior a la solicitud: se trata como
+    // un anuncio inválido (401 uniforme, cuenta contra los límites), sin decir cuál es la causa.
+    if (esCandidatoDudoso(error)) return rechazarAnuncio(limitadores, datos.ip, mac);
     throw error;
   }
+  limitadores.porIp.registrarExito(datos.ip);
+  limitadores.porMac.registrarExito(mac);
+  return { estado: 'vinculado', dispositivo_id: dispositivoId };
 }

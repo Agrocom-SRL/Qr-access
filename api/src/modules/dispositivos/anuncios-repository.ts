@@ -24,6 +24,12 @@ export interface Candidato extends RowDataPacket {
   descartada_at: Date | null;
 }
 
+export interface CandidatoActivo extends RowDataPacket {
+  clave_huella: string;
+  /** Cuándo se anunció por primera vez esa clave. */
+  created_at: Date;
+}
+
 /**
  * Los `(mac, clave)` que se anuncian (ADR 0026). Tabla transitoria de plataforma, sin
  * `tenant_id`: solo la tocan las acciones de anuncio y confirmación de la propia placa.
@@ -48,8 +54,38 @@ export class RepositorioDeAnuncios extends RepositorioDePlataforma {
     );
   }
 
-  contarVivos(placaId: string): Promise<number> {
-    return this.contar({ donde: 't.placa_id = ? AND t.descartada_at IS NULL', params: [placaId] });
+  /**
+   * Los candidatos vivos que se anunciaron desde `desde`. Un anuncio falso de una sola vez deja de
+   * contar pronto; la placa real, que repite el suyo cada 30 s, no (ADR 0037).
+   */
+  contarActivos(placaId: string, desde: Date): Promise<number> {
+    return this.contar({
+      donde: 't.placa_id = ? AND t.descartada_at IS NULL AND t.ultimo_anuncio_at >= ?',
+      params: [placaId, desde],
+    });
+  }
+
+  /**
+   * Los candidatos vivos que se anunciaron desde `desde`, con su huella y su primer anuncio. Con
+   * `bloquear` (dentro de una transacción) la lectura toma las filas, de modo que nadie inserte otro
+   * candidato entre contar y crear el dispositivo (ADR 0037).
+   */
+  async activos(
+    placaId: string,
+    desde: Date,
+    ejecutor: Pool | Transaccion = this.pool,
+    bloquear = false,
+  ): Promise<CandidatoActivo[]> {
+    const [filas] = bloquear
+      ? await ejecutor.query<CandidatoActivo[]>(
+          'SELECT clave_huella, created_at FROM placas_anuncios WHERE placa_id = ? AND descartada_at IS NULL AND ultimo_anuncio_at >= ? FOR UPDATE',
+          [placaId, desde],
+        )
+      : await ejecutor.query<CandidatoActivo[]>(
+          'SELECT clave_huella, created_at FROM placas_anuncios WHERE placa_id = ? AND descartada_at IS NULL AND ultimo_anuncio_at >= ?',
+          [placaId, desde],
+        );
+    return filas;
   }
 
   crear(
