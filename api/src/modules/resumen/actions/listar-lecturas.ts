@@ -20,6 +20,9 @@ export interface EventoDeAccesoDePlataforma {
   puerta: { id: string; nombre: string; sitio: string };
   dispositivo: string | null;
   qr_etiqueta: string | null;
+  metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
+  /** Nombre visible de quien abrió, solo en `manual`; `null` en los demás. */
+  usuario: string | null;
   /** Qué pasó con la orden de abrir (ADR 0031 §18): `ejecutada`, `fallida`, `sin_confirmacion` o `null`. */
   ejecucion: 'ejecutada' | 'fallida' | 'sin_confirmacion' | null;
   /** Por qué: `puerta_abrio`, `puerta_no_abrio`, `sin_sensor`, `sin_respuesta`...; `null` si no hay ejecución. */
@@ -54,6 +57,8 @@ export async function ejecutar(
       puerta: evento.puerta,
       dispositivo: evento.dispositivo,
       qr_etiqueta: evento.qrEtiqueta,
+      metodo: evento.metodo,
+      usuario: evento.usuario,
       ejecucion: evento.ejecucion,
       ejecucion_causa: evento.ejecucionCausa,
       repeticiones_permitidas: evento.repeticionesPermitidas,

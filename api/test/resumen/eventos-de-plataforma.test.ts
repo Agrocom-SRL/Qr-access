@@ -14,6 +14,8 @@ interface Listado {
     repeticiones_rechazadas: number;
     cuenta: { codigo: string };
     puerta: { nombre: string };
+    metodo: string;
+    usuario: string | null;
   }[];
   meta: { total: number };
 }
@@ -90,6 +92,23 @@ describe('plataforma: accesos de todas las cuentas', () => {
     expect(listado.meta.total).toBe(3);
     const evento = listado.datos.find((e) => e.id === originalId);
     expect(evento).toMatchObject({ repeticiones_permitidas: 1, repeticiones_rechazadas: 2 });
+  });
+
+  it('expone el método y, en la apertura manual, el nombre de quien abrió', async () => {
+    await prueba.pool.query('UPDATE usuarios SET etiqueta = ? WHERE id = ?', [
+      'Ana Rojas',
+      a.usuario.id,
+    ]);
+    await prueba.pool.query(
+      "INSERT INTO lecturas (tenant_id, puerta_id, resultado, motivo_code, metodo, usuario_id) VALUES (?, ?, 'permitido', 'manual.ordenada', 'manual', ?)",
+      [a.cuenta.id, a.puertaPrincipal.id, a.usuario.id],
+    );
+    const listado = await pedir();
+    const manual = listado.datos.find((e) => e.metodo === 'manual');
+    expect(manual).toMatchObject({ motivo_code: 'manual.ordenada', usuario: 'Ana Rojas' });
+    const qr = listado.datos.filter((e) => e.metodo === 'qr');
+    expect(qr).toHaveLength(3);
+    expect(qr.every((e) => e.usuario === null)).toBe(true);
   });
 
   it('exige una sesión de plataforma', async () => {

@@ -46,7 +46,8 @@ const UNIONES_DE_EVENTO =
   'JOIN puertas AS p ON p.id = t.puerta_id AND p.tenant_id = t.tenant_id ' +
   'JOIN sitios AS s ON s.id = p.sitio_id AND s.tenant_id = t.tenant_id ' +
   'LEFT JOIN dispositivos AS d ON d.id = t.dispositivo_id AND d.tenant_id = t.tenant_id ' +
-  'LEFT JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id';
+  'LEFT JOIN qr_accesos AS q ON q.id = t.qr_acceso_id AND q.tenant_id = t.tenant_id ' +
+  'LEFT JOIN usuarios AS u ON u.id = t.usuario_id AND u.tenant_id = t.tenant_id';
 
 export interface FiltroDeLecturasDePlataforma {
   readonly cuentaId: string | null;
@@ -82,6 +83,8 @@ interface EventoDePlataformaFila extends RowDataPacket {
   sitio_nombre: string;
   dispositivo_nombre: string | null;
   qr_etiqueta: string | null;
+  metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
+  usuario_etiqueta: string | null;
 }
 
 /** El `WHERE` de los filtros presentes; los valores van siempre como parámetros. */
@@ -142,7 +145,9 @@ class RepositorioDeAccesosDeTodas extends RepositorioDePlataforma {
         't.id, t.ocurrido_at, t.resultado, t.motivo_code, ' +
         'c.id AS cuenta_id, c.codigo AS cuenta_codigo, c.nombre AS cuenta_nombre, ' +
         'p.id AS puerta_id, p.nombre AS puerta_nombre, s.nombre AS sitio_nombre, ' +
-        'd.nombre AS dispositivo_nombre, q.etiqueta AS qr_etiqueta',
+        'd.nombre AS dispositivo_nombre, q.etiqueta AS qr_etiqueta, ' +
+        // El nombre visible del usuario (`usuarios.etiqueta`) solo cuenta en la apertura manual (ADR 0035).
+        "t.metodo, IF(t.metodo = 'manual', u.etiqueta, NULL) AS usuario_etiqueta",
       uniones: UNIONES_DE_EVENTO,
       ...(donde === undefined ? {} : { donde }),
       params,
@@ -219,6 +224,10 @@ export interface EventoDePlataforma {
   readonly puerta: { readonly id: string; readonly nombre: string; readonly sitio: string };
   readonly dispositivo: string | null;
   readonly qrEtiqueta: string | null;
+  /** Cómo se hizo la lectura (`lecturas.metodo`). */
+  readonly metodo: 'qr' | 'pulsador' | 'forzada' | 'manual';
+  /** Nombre visible de quien pidió una apertura manual; `null` en los demás métodos o sin nombre. */
+  readonly usuario: string | null;
   /** Qué pasó con la orden de abrir (ADR 0031 §18); `null` en un rechazo o sin informe todavía. */
   readonly ejecucion: Ejecucion | null;
   /** La causa del resultado de la ejecución (`puerta_no_abrio`, `sin_respuesta`...); `null` si no hay ejecución. */
@@ -281,6 +290,8 @@ export function crearServicioDeAccesosDePlataforma(pool: Pool): ServicioDeAcceso
           puerta: { id: fila.puerta_id, nombre: fila.puerta_nombre, sitio: fila.sitio_nombre },
           dispositivo: fila.dispositivo_nombre,
           qrEtiqueta: fila.qr_etiqueta,
+          metodo: fila.metodo,
+          usuario: fila.usuario_etiqueta,
           ejecucion: efectivas.get(fila.id)?.ejecucion ?? null,
           ejecucionCausa: efectivas.get(fila.id)?.causa ?? null,
           repeticionesPermitidas: repeticiones.get(fila.id)?.permitidas ?? 0,
