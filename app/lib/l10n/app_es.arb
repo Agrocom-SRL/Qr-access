@@ -3158,13 +3158,31 @@
   "@abrirPuertaTitulo": {
     "description": "Título de la pantalla de abrir una puerta sin QR (ADR 0035)"
   },
-  "abrirPuertaAyuda": "Elige la puerta que quieres abrir. Se abre en unos segundos.",
+  "abrirPuertaAyuda": "Pulsa el botón de la puerta que quieres abrir.",
   "@abrirPuertaAyuda": {
     "description": "Ayuda de la pantalla de abrir puerta"
   },
-  "abrirPuertaAccion": "Abrir",
+  "abrirPuertaAccion": "Abrir puerta",
   "@abrirPuertaAccion": {
-    "description": "Botón de cada puerta para abrirla"
+    "description": "Texto visible bajo el pulsador de cada puerta"
+  },
+  "abrirPuertaPulsador": "Abrir {puerta}",
+  "@abrirPuertaPulsador": {
+    "description": "Etiqueta del pulsador para lectores de pantalla: dice qué puerta se abre",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
+  },
+  "abrirPuertaEnviada": "Orden enviada a {puerta}",
+  "@abrirPuertaEnviada": {
+    "description": "Resultado: la placa tomó la orden y el pulso se está enviando. No dice que la puerta se abrió",
+    "placeholders": {
+      "puerta": {
+        "type": "String"
+      }
+    }
   },
   "abrirPuertaSinConexion": "Sin conexión",
   "@abrirPuertaSinConexion": {
@@ -3217,9 +3235,9 @@
   "@abrirPuertaFalloOcupada": {
     "description": "Detalle cuando la placa descartó la orden porque otra apertura estaba en curso"
   },
-  "abrirPuertaFalloVencida": "La puerta no respondió a tiempo. Inténtalo de nuevo o entra con tu QR.",
+  "abrirPuertaFalloVencida": "No se pudo contactar la puerta. Inténtalo de nuevo o entra con tu QR.",
   "@abrirPuertaFalloVencida": {
-    "description": "Detalle cuando la orden venció sin que la placa respondiera"
+    "description": "Detalle cuando la placa no tomó la orden a tiempo: no se sabe si la puerta se movió"
   },
   "abrirPuertaOtra": "Abrir otra puerta",
   "@abrirPuertaOtra": {
