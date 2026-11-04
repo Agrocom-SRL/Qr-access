@@ -5,11 +5,19 @@
 # las placas instaladas. Usa el mismo `erase_flash` del target `pio run -t erase`, que es el que
 # conoce esta versión de esptool; pasarle `--erase-all` por `upload_flags` rompe la carga.
 #
+# `SIN_BORRAR=1 pio run -t upload ...` omite el borrado: sirve cuando el adaptador o la alimentación
+# no aguantan el `erase_flash` (error "Invalid SLIP escape"). La placa conserva su vínculo.
+#
 # Requiere `--upload-port`: la acción corre antes de que PlatformIO autodetecte el puerto.
+import os
+
 Import("env")  # noqa: F821  (lo inyecta SCons)
 
 
 def borrar_flash(source, target, env):
+    if os.environ.get("SIN_BORRAR") == "1":
+        print("SIN_BORRAR=1: se carga sin borrar la flash (el vínculo guardado se conserva).")
+        return
     print("Borrando la flash antes de cargar (vínculo, clave y URL guardadas)...")
     if env.Execute(env.subst("$ERASECMD")) != 0:
         print("No se pudo borrar la flash: ¿IO0 a GND y EN tocado? No se carga nada.")
