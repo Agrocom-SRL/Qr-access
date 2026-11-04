@@ -10,17 +10,22 @@ Además, ese pulsador nunca fue una barrera que el servidor pudiera comprobar. `
 
 ## Decisión
 
-1. **El anuncio vincula.** Si el super admin pidió vincular la placa (ventana de 10 minutos abierta) y el candidato que se anuncia es el único activo, `POST /dispositivos/anunciar` crea el dispositivo con la clave de ese candidato y responde `{ estado: "vinculado", dispositivo_id }`. El firmware publicado ya procesa esa respuesta (guarda el id), así que no hay que recargar placas.
-2. **Candidato único y activo.** Un candidato cuenta como activo si se anunció en los últimos 90 s (la placa real repite su anuncio cada 30 s). Con dos o más activos para la misma MAC no se vincula ninguna y se responde `detectada` (falla cerrada); se reintenta en el siguiente anuncio. Un anuncio falso de una sola vez deja de contar a los 90 s.
-3. **El servidor ya no responde `confirmar`.** `POST /dispositivos/confirmar` se conserva sin cambios para las placas con firmware anterior que lo llaman al recibir `confirmar` (ADR 0005: sin cambios incompatibles en `/api/v1`). Con la ventana cerrada responde `409 placa.sin_solicitud`.
-4. **La lógica de creación es una sola** (`solicitud-de-vinculo.ts`): ventana, cuenta, puerta, plan y cupo se revalidan con la fila bloqueada, igual que antes.
-5. **Panel y documentación:** el diálogo ya no pide pulsar nada; indica que la placa se vincula sola en su próximo anuncio.
+1. **El anuncio vincula.** Si el super admin pidió vincular la placa (ventana de 10 minutos abierta) y el candidato que se anuncia pasa las guardas del §2, `POST /dispositivos/anunciar` crea el dispositivo con la clave de ese candidato y responde `{ estado: "vinculado", dispositivo_id }`. El firmware publicado ya procesa esa respuesta (guarda el id), así que no hay que recargar placas.
+2. **Guardas del candidato** (una sola implementación, `solicitud-de-vinculo.ts`, que usan `/anunciar` y `/confirmar`):
+   - **Único y activo.** Es el único candidato vivo de la MAC anunciado en los últimos 90 s (la placa real repite el suyo cada 30 s). Con dos o más no se vincula ninguna: no hay forma de saber cuál es la real.
+   - **Previo a la solicitud.** Su primer anuncio es anterior al momento en que el super admin pidió el vínculo: el super admin vincula una placa que ya vio en el panel, y un candidato nuevo que aparece después no lo es.
+   - **Atómica.** La comprobación se repite dentro de la transacción de creación, con la fila de la placa y los candidatos bloqueados (`FOR UPDATE`): nadie inserta otro candidato entre contar y crear.
+   - **Solicitud intacta.** Con la fila bloqueada se comparan ventana, cuenta, puerta, nombre, sentido y solicitante con lo que se validó; si el super admin canceló o cambió la solicitud, no se crea nada.
+3. **Respuestas.** En `/anunciar`, cualquier rechazo (candidato dudoso, plan, puerta, ventana) responde `detectada`, sin decirle a una ruta anónima qué falló. En `/confirmar`, el candidato dudoso es el 401 uniforme `dispositivo.anuncio_invalido` y cuenta contra los límites por IP y por MAC. El argon2id se calcula al final, solo si cuenta, plan y puerta ya validaron, para que un anónimo no lo dispare gratis.
+4. **Tope de candidatos.** El máximo de 5 cuenta solo candidatos activos: cinco claves falsas ya envejecidas no dejan sin vincular a la placa real.
+5. **`confirmar` se conserva** para las placas con firmware anterior, que lo llaman al recibir `confirmar` (ADR 0005); el servidor ya no responde ese estado. Con las guardas del §2 deja de ser el atajo que antes saltaba la única defensa.
+6. **Panel y documentación:** el diálogo ya no pide pulsar nada; indica que la placa se vincula sola en su próximo anuncio.
 
 ## Riesgos aceptados
 
-- **Se pierde la prueba de presencia física.** Un atacante que conozca la MAC y se anuncie sostenidamente dentro de la ventana puede impedir la vinculación (con dos candidatos activos no se vincula ninguno), pero **no** quedarse con ella: solo se vincula un candidato único. Si se anuncia antes de que lo haga la placa real, y la placa real no se anuncia durante la ventana, podría ser el candidato único; en la práctica la placa ya está en línea y se anuncia cada 30 s.
-- **Mitigaciones que se mantienen:** solo el super admin abre la ventana, de 10 minutos; el super admin ve MAC, IP pública y último contacto en el panel y elige él cuándo vincular; los límites de anuncios por IP y por MAC y de placas nuevas por IP; los demás candidatos se descartan al vincular.
-- **Un anuncio hostil sostenido** puede impedir que una placa se vincule (denegación), no tomar su lugar. Se detecta por los límites y por el panel.
+- **Se pierde la prueba de presencia física.** Antes tampoco la comprobaba el servidor (el pulsador era una convención del firmware), pero era un paso humano más. Ahora un atacante que conoce la MAC no puede quedarse con el vínculo mientras la placa real siga anunciándose, pero sí puede **impedirlo** anunciándose de forma sostenida (dos candidatos activos: no se vincula ninguno). Es una denegación, no una toma.
+- **Caso residual:** si la placa real lleva más de 90 s callada cuando el super admin pide el vínculo y un candidato falso ya existía antes de la solicitud, ese falso sería el único activo. Se acepta porque el super admin solo vincula placas que ve **en línea** en el panel.
+- **Mitigaciones que se mantienen:** solo el super admin abre la ventana, de 10 minutos; el panel muestra MAC, IP pública y último contacto; los límites de anuncios por IP y por MAC y de placas nuevas por IP; los demás candidatos se descartan al vincular.
 
 ## Alternativas descartadas
 
@@ -31,4 +36,4 @@ Además, ese pulsador nunca fue una barrera que el servidor pudiera comprobar. `
 
 - **API:** `anunciar-placa` crea el dispositivo; `confirmar-placa` queda como compatibilidad. Sin migración.
 - **Firmware:** sin cambios; el estado `confirmar` y la lectura del pulsador de 5 s quedan sin uso y pueden retirarse en una versión posterior.
-- **Tests prioritarios:** el anuncio vincula con la ventana abierta; sin ventana nunca vincula; dos candidatos activos no vinculan; un falso viejo no estorba; `confirmar` sigue funcionando.
+- **Tests prioritarios:** el anuncio vincula con la ventana abierta; sin ventana nunca vincula; dos candidatos activos no vinculan, ni por `/anunciar` ni por `/confirmar`; un falso viejo no estorba; un candidato posterior a la solicitud no vincula aunque esté solo; el tope cuenta solo activos; un cambio de solicitud a mitad del vínculo no crea el dispositivo con la vieja.
