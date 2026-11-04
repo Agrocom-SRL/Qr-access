@@ -52,6 +52,17 @@ export class RepositorioDeAnuncios extends RepositorioDePlataforma {
     return this.contar({ donde: 't.placa_id = ? AND t.descartada_at IS NULL', params: [placaId] });
   }
 
+  /**
+   * Los candidatos vivos que se anunciaron desde `desde`. Un anuncio falso de una sola vez deja de
+   * contar pronto; la placa real, que repite el suyo cada 30 s, no (ADR 0037).
+   */
+  contarActivos(placaId: string, desde: Date): Promise<number> {
+    return this.contar({
+      donde: 't.placa_id = ? AND t.descartada_at IS NULL AND t.ultimo_anuncio_at >= ?',
+      params: [placaId, desde],
+    });
+  }
+
   crear(
     tx: Transaccion,
     datos: { placaId: string; huella: string; firmware: string; ip: string; en: Date },

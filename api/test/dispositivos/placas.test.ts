@@ -22,6 +22,10 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
   let a: Escenario;
   let b: Escenario;
   let acceso: string;
+  // Cada test se anuncia desde su propia IP: los límites por IP (30 placas nuevas) viven en la app
+  // compartida del archivo y no deben arrastrarse de un test al siguiente.
+  let contadorDePruebas = 0;
+  let ipDeLaPrueba = '10.0.0.1';
 
   beforeAll(async () => {
     prueba = await crearAppDePrueba();
@@ -30,6 +34,8 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
     await prueba.cerrar();
   });
   beforeEach(async () => {
+    contadorDePruebas += 1;
+    ipDeLaPrueba = `10.0.${Math.floor(contadorDePruebas / 250)}.${(contadorDePruebas % 250) + 1}`;
     await reiniciarBase(prueba.pool);
     a = await crearEscenario(prueba.pool, 'AAA');
     b = await crearEscenario(prueba.pool, 'BBB');
@@ -49,12 +55,14 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
     app.inject({
       method: 'POST',
       url: '/api/v1/dispositivos/anunciar',
+      remoteAddress: ipDeLaPrueba,
       payload: { mac, clave, firmware: '1.0.0' },
     });
   const confirmar = (clave = CLAVE, mac = MAC) =>
     prueba.app.inject({
       method: 'POST',
       url: '/api/v1/dispositivos/confirmar',
+      remoteAddress: ipDeLaPrueba,
       payload: { mac, clave },
     });
 
@@ -153,16 +161,84 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
     });
   });
 
-  describe('vincular y confirmar con el botón', () => {
-    it('vincular solo abre la ventana: no crea el dispositivo y la placa pasa a confirmar', async () => {
+  describe('vincular sin pulsador (ADR 0037) y confirmación explícita', () => {
+    it('vincular abre la ventana y el siguiente anuncio de la placa crea el dispositivo, sin pulsador', async () => {
       const id = await placaDetectada();
       const puerta = await nuevaPuerta(a, 'Garaje');
-      const respuesta = await pedirVinculo(id, a, puerta);
+      const respuesta = await pedirVinculo(id, a, puerta, 'Lector garaje');
       expect(respuesta.statusCode, respuesta.body).toBe(202);
+      // Todavía no hay dispositivo: la solicitud espera el próximo anuncio de la placa.
       expect(await contarFilas(prueba.pool, 'dispositivos', 'placa_id IS NOT NULL')).toBe(0);
-      expect((await anunciar()).json()).toEqual({ estado: 'confirmar' });
       const lista = await plataforma('GET', '/placas');
       expect(lista.json<{ datos: { estado: string }[] }>().datos[0]?.estado).toBe('por_confirmar');
+
+      const anuncio = await anunciar();
+      expect(anuncio.statusCode, anuncio.body).toBe(200);
+      const { estado, dispositivo_id } = anuncio.json<{
+        estado: string;
+        dispositivo_id: string;
+      }>();
+      expect(estado).toBe('vinculado');
+
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT tenant_id, puerta_id, placa_id, nombre, clave_hash FROM dispositivos WHERE id = ?',
+        [dispositivo_id],
+      );
+      expect(filas[0]).toMatchObject({
+        tenant_id: a.cuenta.id,
+        puerta_id: puerta,
+        placa_id: id,
+        nombre: 'Lector garaje',
+      });
+      expect(String(filas[0]?.clave_hash)).toMatch(/^\$argon2id\$/);
+      // Es idempotente y la placa se autentica con su clave.
+      expect((await anunciar()).json()).toEqual({ estado: 'vinculado', dispositivo_id });
+      const configuracion = await prueba.app.inject({
+        method: 'GET',
+        url: '/api/v1/dispositivos/configuracion',
+        headers: { authorization: `Dispositivo ${dispositivo_id}.${CLAVE}` },
+      });
+      expect(configuracion.statusCode).toBe(200);
+    });
+
+    it('sin solicitud abierta, el anuncio nunca vincula', async () => {
+      await placaDetectada();
+      expect((await anunciar()).json()).toEqual({ estado: 'detectada' });
+      expect(await contarFilas(prueba.pool, 'dispositivos', 'placa_id IS NOT NULL')).toBe(0);
+    });
+
+    it('con dos claves anunciándose a la vez para la misma MAC no se vincula ninguna', async () => {
+      const id = await placaDetectada();
+      // El atacante conoce la MAC y se anuncia con su propia clave.
+      await anunciar(CLAVE_FALSA);
+      await pedirVinculo(id, a, await nuevaPuerta(a, 'Garaje'));
+      expect((await anunciar()).json()).toEqual({ estado: 'detectada' });
+      expect((await anunciar(CLAVE_FALSA)).json()).toEqual({ estado: 'detectada' });
+      expect(await contarFilas(prueba.pool, 'dispositivos', 'placa_id IS NOT NULL')).toBe(0);
+    });
+
+    it('un anuncio falso viejo deja de contar y la placa real se vincula', async () => {
+      const id = await placaDetectada();
+      await anunciar(CLAVE_FALSA);
+      await prueba.pool.query(
+        'UPDATE placas_anuncios SET ultimo_anuncio_at = DATE_SUB(NOW(3), INTERVAL 5 MINUTE) WHERE clave_huella = SHA2(?, 256)',
+        [CLAVE_FALSA],
+      );
+      await pedirVinculo(id, a, await nuevaPuerta(a, 'Garaje'));
+
+      const anuncio = await anunciar();
+      expect(anuncio.json<{ estado: string }>().estado).toBe('vinculado');
+      const { dispositivo_id } = anuncio.json<{ dispositivo_id: string }>();
+      const como = (clave: string) =>
+        prueba.app.inject({
+          method: 'GET',
+          url: '/api/v1/dispositivos/configuracion',
+          headers: { authorization: `Dispositivo ${dispositivo_id}.${clave}` },
+        });
+      expect((await como(CLAVE)).statusCode).toBe(200);
+      // El falso quedó descartado: no sirve ni para anunciarse.
+      expect((await como(CLAVE_FALSA)).statusCode).toBe(401);
+      expect((await anunciar(CLAVE_FALSA)).statusCode).toBe(401);
     });
 
     it('al pulsar el botón se crea el dispositivo de la cuenta y la puerta, y se autentica con su clave', async () => {

@@ -7,7 +7,8 @@ import { huellaDeClave, normalizarMac } from '../domain/placa.js';
 import { MAXIMO_DE_CANDIDATOS, RepositorioDeAnuncios } from '../anuncios-repository.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
 import { RepositorioDeDispositivosDePlataforma } from '../repository.js';
-import { esDuplicado } from '../vinculo.js';
+import { crearDispositivoDeLaSolicitud } from '../solicitud-de-vinculo.js';
+import { LAPSO_DE_CANDIDATO_ACTIVO_MS, esDuplicado } from '../vinculo.js';
 
 export interface DatosDeAnuncio {
   readonly mac: string;
@@ -63,8 +64,9 @@ export function exigirSinBloqueo(
  * - MAC nueva → se registra como placa `detectada`;
  * - placa con dispositivo en servicio → responde `vinculado` solo si la clave es la de ese
  *   dispositivo (idempotente: si la respuesta se perdió, se repite); otra clave es 401;
- * - placa sin dispositivo → registra la clave como candidato y responde `confirmar` si el
- *   super admin pidió vincularla y la ventana sigue abierta, o `detectada`.
+ * - placa sin dispositivo → registra la clave como candidato; si el super admin pidió vincularla y
+ *   la ventana sigue abierta (y el candidato es único), crea el dispositivo y responde
+ *   `vinculado`; si no, `detectada`. `confirmar` ya no se responde (ADR 0037).
  */
 export async function ejecutar(
   pool: Pool,
@@ -133,6 +135,16 @@ export async function ejecutar(
   limitadores.porIp.registrarExito(datos.ip);
   limitadores.porMac.registrarExito(mac);
 
-  const esperaElPulsador = placa.por_confirmar_hasta !== null && placa.por_confirmar_hasta > ahora;
-  return { estado: esperaElPulsador ? 'confirmar' : 'detectada' };
+  const solicitudAbierta = placa.por_confirmar_hasta !== null && placa.por_confirmar_hasta > ahora;
+  if (!solicitudAbierta) return { estado: 'detectada' };
+
+  // ADR 0037: sin pulsador. El super admin ya pidió vincular esta placa y la ventana sigue abierta,
+  // así que el anuncio mismo la vincula, pero solo si este es el único candidato activo: con dos
+  // claves anunciándose a la vez para la misma MAC no hay forma de saber cuál es la placa real,
+  // así que no se vincula ninguna (falla cerrada) y se reintenta en el siguiente anuncio; el falso
+  // que deja de anunciarse sale de la cuenta a los 90 s.
+  const desde = new Date(ahora.getTime() - LAPSO_DE_CANDIDATO_ACTIVO_MS);
+  if ((await anuncios.contarActivos(placa.id, desde)) !== 1) return { estado: 'detectada' };
+  const dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
+  return { estado: 'vinculado', dispositivo_id: dispositivoId };
 }
