@@ -75,15 +75,29 @@ export function TablaEventos({
       id: 'lector',
       encabezado: t('eventos:columna.lector'),
       secundaria: true,
-      celda: (e) => <span className={styles.suave}>{e.dispositivo ?? '—'}</span>,
+      celda: (e) => (
+        <span className={styles.suave}>
+          {e.metodo === 'manual' ? t('eventos:metodo.app') : (e.dispositivo ?? '—')}
+        </span>
+      ),
     },
     {
       id: 'qr',
       encabezado: t('eventos:columna.qr'),
       secundaria: true,
-      celda: (e) => (
-        <span className={cx(styles.suave, styles.recortado)}>{e.qrEtiqueta ?? '—'}</span>
-      ),
+      celda:
+        // La apertura manual no tiene QR: se dice qué fue y quién la pidió, para que la fila se lea completa.
+        (e) =>
+          e.metodo === 'manual' ? (
+            <span className={styles.apilado}>
+              <span className={styles.recortado}>{t('eventos:metodo.manual')}</span>
+              {e.usuario === null ? null : (
+                <span className={cx(styles.suave, styles.recortado)}>{e.usuario}</span>
+              )}
+            </span>
+          ) : (
+            <span className={cx(styles.suave, styles.recortado)}>{e.qrEtiqueta ?? '—'}</span>
+          ),
     },
     {
       id: 'resultado',
@@ -107,6 +121,8 @@ export function TablaEventos({
     {
       id: 'motivo',
       encabezado: t('eventos:columna.motivo'),
+      // Puede partirse en dos líneas: así la columna entra entera en un laptop y no se corta a la derecha.
+      ajustable: true,
       celda: (e) =>
         t(`eventos:motivo.${e.motivoCode.replaceAll('.', '_')}`, {
           defaultValue: t('eventos:motivo.desconocido'),

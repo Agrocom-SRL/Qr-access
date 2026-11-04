@@ -14,6 +14,12 @@ export const FILTROS_DE_RESULTADO: readonly FiltroDeResultado[] = [
  * accionar el relé. `null` en un rechazo o mientras la placa todavía no informa.
  */
 export type EjecucionDeEvento = 'ejecutada' | 'fallida' | 'sin_confirmacion';
+
+/**
+ * Cómo se pidió abrir (ADR 0030 y 0031): con un QR, con el pulsador o la llave, forzada desde el
+ * panel o manual desde la app (sin QR). Quien opera la pantalla lo ve en Lector y QR.
+ */
+export type MetodoDeEvento = 'qr' | 'pulsador' | 'forzada' | 'manual';
 export type FiltroDeEjecucion = EjecucionDeEvento | 'todas';
 
 export const FILTROS_DE_EJECUCION: readonly FiltroDeEjecucion[] = [
@@ -57,6 +63,9 @@ export interface EventoDeAcceso {
   qrEtiqueta: string | null;
   ejecucion: EjecucionDeEvento | null;
   ejecucionCausa: CausaDeEjecucion | null;
+  metodo: MetodoDeEvento;
+  /** Nombre de quien abrió desde la app cuando `metodo` es `manual`; `null` en el resto. */
+  usuario: string | null;
 }
 
 export interface FiltrosDeEventos {

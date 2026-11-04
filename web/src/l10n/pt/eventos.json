@@ -13,6 +13,10 @@
     "motivo": "Motivo",
     "ejecucion": "Abertura"
   },
+  "metodo": {
+    "app": "App",
+    "manual": "Abertura manual"
+  },
   "resultado": {
     "permitido": "Permitido",
     "rechazado": "Recusado"
@@ -43,7 +47,18 @@
     "qr_otra_puerta": "Outra porta",
     "qr_usado": "QR já usado",
     "suscripcion_vencida": "Assinatura vencida",
-    "desconocido": "Motivo indisponível"
+    "desconocido": "Motivo indisponível",
+    "manual_ordenada": "Abertura manual ordenada",
+    "manual_usuario_restringido": "O usuário tem o acesso restringido",
+    "manual_usuario_suspendido": "O usuário está suspenso",
+    "manual_cuenta_suspendida": "A conta está suspensa",
+    "manual_usuario_eliminado": "O usuário foi excluído",
+    "manual_suscripcion_vencida": "A assinatura está vencida",
+    "manual_no_habilitada": "A porta não está com a abertura manual ligada",
+    "manual_sin_dispositivo": "A porta não tem placa em serviço",
+    "manual_sin_conexion": "A placa estava sem conexão",
+    "manual_orden_en_curso": "Já havia uma abertura em andamento",
+    "manual_limite": "Superou o limite de aberturas"
   },
   "ejecucionFiltro": {
     "todas": "Todas",

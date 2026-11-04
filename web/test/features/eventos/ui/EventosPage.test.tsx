@@ -18,6 +18,8 @@ const FALLIDA: EventoDeAcceso = {
   qrEtiqueta: null,
   ejecucion: 'fallida',
   ejecucionCausa: 'puerta_no_abrio',
+  metodo: 'qr',
+  usuario: null,
 };
 
 function montar(listar: EventosRepositorio['listar'], ruta = '/accesos') {
