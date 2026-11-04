@@ -285,15 +285,24 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
       expect(configuracion.statusCode).toBe(200);
     });
 
-    it('un anuncio falso de la misma MAC no confirma ni se queda con el vínculo', async () => {
+    it('con un anuncio falso activo, confirmar tampoco vincula a nadie; al envejecer el falso, vincula a la real', async () => {
       const id = await placaDetectada();
-      // El atacante conoce la MAC y se anuncia primero con su propia clave.
+      // El atacante conoce la MAC y se anuncia con su propia clave.
       await anunciar(CLAVE_FALSA);
       await pedirVinculo(id, a, await nuevaPuerta(a, 'Garaje'));
 
-      // El botón lo pulsó la placa real: confirma la clave real.
+      // Dos claves activas: ni la real ni la falsa pueden confirmar (401 uniforme, sin dispositivo).
+      expect((await confirmar(CLAVE)).statusCode).toBe(401);
+      expect((await confirmar(CLAVE_FALSA)).statusCode).toBe(401);
+      expect(await contarFilas(prueba.pool, 'dispositivos', 'placa_id IS NOT NULL')).toBe(0);
+
+      // El falso deja de anunciarse: solo queda la real, que ya existía al pedir el vínculo.
+      await prueba.pool.query(
+        'UPDATE placas_anuncios SET ultimo_anuncio_at = DATE_SUB(NOW(3), INTERVAL 5 MINUTE) WHERE clave_huella = SHA2(?, 256)',
+        [CLAVE_FALSA],
+      );
       const respuesta = await confirmar(CLAVE);
-      expect(respuesta.statusCode).toBe(200);
+      expect(respuesta.statusCode, respuesta.body).toBe(200);
       const { dispositivo_id } = respuesta.json<{ dispositivo_id: string }>();
 
       const como = (clave: string) =>
@@ -304,9 +313,52 @@ describe('placas: anuncio, confirmación física y liberación (ADR 0026)', () =
         });
       expect((await como(CLAVE)).statusCode).toBe(200);
       expect((await como(CLAVE_FALSA)).statusCode).toBe(401);
-      // El falso queda descartado y ya no sirve ni para anunciarse ni para confirmar.
+      // El falso quedó descartado y ya no sirve ni para anunciarse ni para confirmar.
       expect((await anunciar(CLAVE_FALSA)).statusCode).toBe(401);
       expect((await confirmar(CLAVE_FALSA)).statusCode).toBe(401);
+    });
+
+    it('un candidato que aparece después de pedir el vínculo no se vincula, aunque esté solo', async () => {
+      const id = await placaDetectada();
+      await pedirVinculo(id, a, await nuevaPuerta(a, 'Garaje'));
+      // La placa real lleva rato callada (apagada o reiniciando); solo queda el falso, nuevo.
+      await prueba.pool.query(
+        'UPDATE placas_anuncios SET ultimo_anuncio_at = DATE_SUB(NOW(3), INTERVAL 5 MINUTE) WHERE clave_huella = SHA2(?, 256)',
+        [CLAVE],
+      );
+      expect((await anunciar(CLAVE_FALSA)).json()).toEqual({ estado: 'detectada' });
+      expect((await confirmar(CLAVE_FALSA)).statusCode).toBe(401);
+      expect(await contarFilas(prueba.pool, 'dispositivos', 'placa_id IS NOT NULL')).toBe(0);
+    });
+
+    it('los candidatos viejos no agotan el tope y no dejan sin vincular a la placa real', async () => {
+      const id = await placaDetectada();
+      for (let i = 0; i < 4; i += 1) {
+        expect((await anunciar(String(i).repeat(64))).statusCode).toBe(200);
+      }
+      // Con cinco activos (la real y cuatro falsos), un sexto candidato se frena.
+      expect((await anunciar(OTRA_CLAVE)).statusCode).toBe(429);
+      // Pasan los minutos y los falsos dejan de anunciarse: ya no cuentan para el tope.
+      await prueba.pool.query(
+        'UPDATE placas_anuncios SET ultimo_anuncio_at = DATE_SUB(NOW(3), INTERVAL 5 MINUTE) WHERE placa_id = ?',
+        [id],
+      );
+      expect((await anunciar(OTRA_CLAVE)).statusCode).toBe(200);
+    });
+
+    it('si el super admin cambia la solicitud mientras se vincula, no se crea el dispositivo con la vieja', async () => {
+      const id = await placaDetectada();
+      await pedirVinculo(id, a, await nuevaPuerta(a, 'Garaje'), 'Primero');
+      await plataforma('POST', `/placas/${id}/cancelar-vinculo`);
+      // Una solicitud nueva con otro nombre: el anuncio crea el dispositivo con la actual.
+      await pedirVinculo(id, a, await nuevaPuerta(a, 'Portón'), 'Segundo');
+      const anuncio = await anunciar();
+      const { dispositivo_id } = anuncio.json<{ dispositivo_id: string }>();
+      const [filas] = await prueba.pool.query<RowDataPacket[]>(
+        'SELECT nombre FROM dispositivos WHERE id = ?',
+        [dispositivo_id],
+      );
+      expect(filas[0]?.nombre).toBe('Segundo');
     });
 
     it('quien no tiene un candidato anunciado no puede confirmar', async () => {

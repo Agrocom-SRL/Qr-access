@@ -5,7 +5,7 @@ import { huellaDeClave, normalizarMac } from '../domain/placa.js';
 import { RepositorioDeAnuncios } from '../anuncios-repository.js';
 import { RepositorioDePlacas } from '../placas-repository.js';
 import { RepositorioDeDispositivosDePlataforma } from '../repository.js';
-import { crearDispositivoDeLaSolicitud } from '../solicitud-de-vinculo.js';
+import { crearDispositivoDeLaSolicitud, esCandidatoDudoso } from '../solicitud-de-vinculo.js';
 import {
   exigirSinBloqueo,
   rechazarAnuncio,
@@ -59,7 +59,15 @@ export async function ejecutar(
     return rechazarAnuncio(limitadores, datos.ip, mac);
   }
 
-  const dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
+  let dispositivoId: string;
+  try {
+    dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
+  } catch (error) {
+    // Dos claves activas para la misma MAC, o un candidato posterior a la solicitud: se trata como
+    // un anuncio inválido (401 uniforme, cuenta contra los límites), sin decir cuál es la causa.
+    if (esCandidatoDudoso(error)) return rechazarAnuncio(limitadores, datos.ip, mac);
+    throw error;
+  }
   limitadores.porIp.registrarExito(datos.ip);
   limitadores.porMac.registrarExito(mac);
   return { estado: 'vinculado', dispositivo_id: dispositivoId };

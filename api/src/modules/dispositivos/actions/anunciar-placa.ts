@@ -116,7 +116,13 @@ export async function ejecutar(
   const huella = huellaDeClave(datos.clave);
   const candidato = await anuncios.buscar(placa.id, huella);
   if (candidato?.descartada_at != null) return rechazarAnuncio(limitadores, datos.ip, mac);
-  if (candidato === null && (await anuncios.contarVivos(placa.id)) >= MAXIMO_DE_CANDIDATOS) {
+  // Solo cuentan los candidatos activos: uno viejo o falso de una sola vez no agota el tope y deja
+  // sin vincular a la placa real.
+  const desde = new Date(ahora.getTime() - LAPSO_DE_CANDIDATO_ACTIVO_MS);
+  if (
+    candidato === null &&
+    (await anuncios.contarActivos(placa.id, desde)) >= MAXIMO_DE_CANDIDATOS
+  ) {
     throw new ErrorDeDominio('dispositivo.anuncio_bloqueado', 429, { reintentar_en_segundos: 300 });
   }
 
@@ -139,12 +145,15 @@ export async function ejecutar(
   if (!solicitudAbierta) return { estado: 'detectada' };
 
   // ADR 0037: sin pulsador. El super admin ya pidió vincular esta placa y la ventana sigue abierta,
-  // así que el anuncio mismo la vincula, pero solo si este es el único candidato activo: con dos
-  // claves anunciándose a la vez para la misma MAC no hay forma de saber cuál es la placa real,
-  // así que no se vincula ninguna (falla cerrada) y se reintenta en el siguiente anuncio; el falso
-  // que deja de anunciarse sale de la cuenta a los 90 s.
-  const desde = new Date(ahora.getTime() - LAPSO_DE_CANDIDATO_ACTIVO_MS);
-  if ((await anuncios.contarActivos(placa.id, desde)) !== 1) return { estado: 'detectada' };
-  const dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
-  return { estado: 'vinculado', dispositivo_id: dispositivoId };
+  // así que el anuncio mismo la vincula, pero solo si es el único candidato activo y ya existía al
+  // pedir el vínculo (las guardas viven en `crearDispositivoDeLaSolicitud`, las mismas de
+  // `/confirmar`). Es una ruta anónima: cualquier rechazo —candidato dudoso, plan, puerta, ventana—
+  // se responde igual, `detectada`, sin contar a quien pregunta qué falló; la placa sigue anunciándose.
+  try {
+    const dispositivoId = await crearDispositivoDeLaSolicitud(pool, placa, datos.clave, ahora);
+    return { estado: 'vinculado', dispositivo_id: dispositivoId };
+  } catch (error) {
+    if (error instanceof ErrorDeDominio) return { estado: 'detectada' };
+    throw error;
+  }
 }
