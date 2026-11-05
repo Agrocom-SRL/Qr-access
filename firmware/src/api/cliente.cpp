@@ -28,6 +28,11 @@ constexpr uint16_t TIMEOUT_VINCULO_MS = 2000;
 // el informe se reintenta y la configuración reintenta con backoff). Además, loop() no inicia
 // ninguno con actividad reciente del lector.
 constexpr uint16_t TIMEOUT_SEGUNDO_PLANO_MS = 1000;
+// Handshake TLS de segundo plano. Con 1 s el handshake del ESP32 no alcanzaba a terminar y toda
+// llamada fallaba (http -1) tras vincular: medido en banco, con el certificado RSA 2048 tarda
+// ~1,8 s (con ECDSA P-384, ~5,6 s). Se deja holgura; la validación de un QR que llegue mientras
+// tanto la acota la máquina de estados a su presupuesto de 3 s y falla segura (invariante 2).
+constexpr uint8_t HANDSHAKE_SEGUNDO_PLANO_S = 8;
 constexpr size_t MAX_AUTORIZACION = 12 + 64 + 1 + 128 + 1;
 
 struct PedidoValidacion {
@@ -72,6 +77,7 @@ Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeout
   // Sin credencial no se llama: una ruta de dispositivo sin encabezado solo daría 401.
   if (conCredencial && credencial[0] == '\0') return fallo;
   const String url = urlBase + ruta;
+  const uint32_t inicioMs = millis();
 
   WiFiClientSecure tls;
   WiFiClient plano;
@@ -103,6 +109,14 @@ Llamada llamar(bool post, const char* ruta, const String& json, uint16_t timeout
     estado = http.POST(json);
   } else {
     estado = http.GET();
+  }
+
+  // Diagnóstico: cuánto tarda la llamada (casi todo es el handshake TLS) y cómo termina. Solo se
+  // registra si falla o tarda más de 1 s; nunca la credencial ni el cuerpo.
+  const uint32_t duracionMs = millis() - inicioMs;
+  if (estado <= 0 || duracionMs > 1000) {
+    Serial.printf("[api] %s -> http %d en %lu ms\n", ruta, estado,
+                  static_cast<unsigned long>(duracionMs));
   }
 
   Llamada llamada{estado, String()};
@@ -179,7 +193,7 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     String json;
     serializeJson(cuerpo, json);
     r.http = llamar(true, "/api/v1/dispositivos/latidos", json, TIMEOUT_SEGUNDO_PLANO_MS,
-                    TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
+                    TIMEOUT_SEGUNDO_PLANO_MS, true, HANDSHAKE_SEGUNDO_PLANO_S)
                  .http;
   } else if (trabajo.tipo == Tipo::Informe && trabajo.informe.manual) {
     // Resultado de una orden de apertura manual (ADR 0035): el id va en la ruta y el cuerpo es
@@ -193,7 +207,7 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     String json;
     serializeJson(cuerpo, json);
     const String ruta = String("/api/v1/dispositivos/ordenes/") + trabajo.informe.eventoId + "/resultado";
-    r.http = llamar(true, ruta.c_str(), json, TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
+    r.http = llamar(true, ruta.c_str(), json, TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, HANDSHAKE_SEGUNDO_PLANO_S)
                  .http;
     memcpy(r.eventoId, trabajo.informe.eventoId, sizeof(r.eventoId));
     r.manual = true;
@@ -209,12 +223,12 @@ void atenderSegundoPlano(const TrabajoSegundoPlano& trabajo) {
     String json;
     serializeJson(cuerpo, json);
     r.http = llamar(true, "/api/v1/dispositivos/confirmaciones", json, TIMEOUT_SEGUNDO_PLANO_MS,
-                    TIMEOUT_SEGUNDO_PLANO_MS, true, 1)
+                    TIMEOUT_SEGUNDO_PLANO_MS, true, HANDSHAKE_SEGUNDO_PLANO_S)
                  .http;
     memcpy(r.eventoId, trabajo.informe.eventoId, sizeof(r.eventoId));
   } else {
     const Llamada llamada = llamar(false, "/api/v1/dispositivos/configuracion", String(),
-                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, 1);
+                                   TIMEOUT_SEGUNDO_PLANO_MS, TIMEOUT_SEGUNDO_PLANO_MS, true, HANDSHAKE_SEGUNDO_PLANO_S);
     r.http = llamada.http;
     r.config = respuesta::interpretarConfiguracion(llamada.http, llamada.cuerpo.c_str(),
                                                    llamada.cuerpo.length());

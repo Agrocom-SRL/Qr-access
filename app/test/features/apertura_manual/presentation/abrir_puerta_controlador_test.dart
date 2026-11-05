@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:agrocom_acceso/core/api/error_api.dart';
+import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/apertura_manual/data/apertura_manual_repositorio.dart';
 import 'package:agrocom_acceso/features/apertura_manual/domain/apertura_manual.dart';
 import 'package:agrocom_acceso/features/apertura_manual/presentation/abrir_puerta_controlador.dart';
@@ -17,7 +20,8 @@ const _puerta = PuertaAbrible(
 
 typedef _Consulta = ({EstadoOrden estado, DesenlaceDeApertura? desenlace});
 
-const _Consulta _enCurso = (estado: EstadoOrden.entregada, desenlace: null);
+const _Consulta _pendiente = (estado: EstadoOrden.pendiente, desenlace: null);
+const _Consulta _tomada = (estado: EstadoOrden.entregada, desenlace: null);
 const _Consulta _abierta = (
   estado: EstadoOrden.ejecutada,
   desenlace: DesenlaceDeApertura.abierta,
@@ -32,13 +36,15 @@ const _Consulta _fallida = (
 );
 
 /// Repositorio con el mismo shape que la API: responde lo que se le programa.
+/// Con [colgada], la consulta de estado nunca responde.
 class _Repositorio implements AperturaManualRepositorio {
-  new({this.errorAlAbrir, this.consultas = const []});
+  new({this.errorAlAbrir, this.consultas = const [], this.colgada = false});
 
   final Exception? errorAlAbrir;
   final List<Object> consultas;
+  final bool colgada;
   final List<String> claves = [];
-  var _consultadas = 0;
+  int llamadasAEstado = 0;
 
   @override
   Future<OrdenDeApertura> abrir(
@@ -55,11 +61,12 @@ class _Repositorio implements AperturaManualRepositorio {
   }
 
   @override
-  Future<_Consulta> estado(String ordenId) async {
-    final siguiente = consultas[_consultadas.clamp(0, consultas.length - 1)];
-    _consultadas++;
-    if (siguiente is Exception) throw siguiente;
-    return siguiente as _Consulta;
+  Future<_Consulta> estado(String ordenId) {
+    if (colgada) return Completer<_Consulta>().future;
+    final siguiente = consultas[llamadasAEstado.clamp(0, consultas.length - 1)];
+    llamadasAEstado++;
+    if (siguiente is Exception) return Future.error(siguiente);
+    return Future.value(siguiente as _Consulta);
   }
 
   @override
@@ -74,18 +81,17 @@ class _Repositorio implements AperturaManualRepositorio {
       throw UnimplementedError();
 }
 
+/// Tope de prueba: corto para que los casos de «no contactada» tarden poco.
+const _maximoDePrueba = Duration(milliseconds: 200);
+
 ProviderContainer _contenedor(_Repositorio repositorio) {
   final contenedor = ProviderContainer(
     overrides: [
       aperturaManualRepositorioProvider.overrideWithValue(repositorio),
-      // Sin esperas reales: la consulta corre casi al instante y el tiempo
-      // máximo son unas pocas vueltas.
       intervaloDeConsultaDeOrdenProvider.overrideWithValue(
         const Duration(milliseconds: 1),
       ),
-      maxEsperaDeOrdenProvider.overrideWithValue(
-        const Duration(milliseconds: 5),
-      ),
+      maxEsperaDeOrdenProvider.overrideWithValue(_maximoDePrueba),
     ],
   );
   addTearDown(contenedor.dispose);
@@ -95,10 +101,17 @@ ProviderContainer _contenedor(_Repositorio repositorio) {
 }
 
 void main() {
+  test('el tope de la animación es de 5 s por omisión', () {
+    expect(
+      const Duraciones().esperaMaximaOrdenApertura,
+      const Duration(seconds: 5),
+    );
+  });
+
   test(
     'la puerta se abre cuando la placa informa que ejecutó la orden',
     () async {
-      final repositorio = _Repositorio(consultas: const [_enCurso, _abierta]);
+      final repositorio = _Repositorio(consultas: const [_abierta]);
       final contenedor = _contenedor(repositorio);
 
       await contenedor.read(abrirPuertaProvider.notifier).abrir(_puerta);
@@ -108,6 +121,21 @@ void main() {
       expect(estado.puertaNombre, 'Portón principal');
     },
   );
+
+  test('una orden tomada por la placa es «enviada», no «abierta», '
+      'y la espera termina', () async {
+    final repositorio = _Repositorio(consultas: const [_tomada, _abierta]);
+    final contenedor = _contenedor(repositorio);
+
+    await contenedor.read(abrirPuertaProvider.notifier).abrir(_puerta);
+
+    final estado = contenedor.read(abrirPuertaProvider);
+    expect(estado.fase, FaseDeApertura.enviada);
+    expect(estado.puertaNombre, 'Portón principal');
+    expect(estado.enCurso, isFalse);
+    // Terminó al ver la orden tomada: no volvió a consultar.
+    expect(repositorio.llamadasAEstado, 1);
+  });
 
   test(
     'si la API rechaza la orden la puerta no se abrió y se ve el error',
@@ -167,24 +195,41 @@ void main() {
     },
   );
 
+  test('si la placa nunca toma la orden, a los 5 s se da por no '
+      'contactada (vencida)', () async {
+    final repositorio = _Repositorio(consultas: const [_pendiente]);
+    final contenedor = _contenedor(repositorio);
+
+    await contenedor.read(abrirPuertaProvider.notifier).abrir(_puerta);
+
+    final estado = contenedor.read(abrirPuertaProvider);
+    expect(estado.fase, FaseDeApertura.fallo);
+    expect(estado.desenlace, DesenlaceDeApertura.vencida);
+    expect(estado.enCurso, isFalse);
+  });
+
   test(
-    'si la orden nunca se resuelve se da por no abierta (vencida)',
+    'una consulta que se cuelga no alarga la animación: termina en el tope',
     () async {
-      final repositorio = _Repositorio(consultas: const [_enCurso]);
+      final repositorio = _Repositorio(colgada: true);
       final contenedor = _contenedor(repositorio);
 
+      final inicio = DateTime.now();
       await contenedor.read(abrirPuertaProvider.notifier).abrir(_puerta);
 
       final estado = contenedor.read(abrirPuertaProvider);
-      expect(estado.fase, FaseDeApertura.fallo);
       expect(estado.desenlace, DesenlaceDeApertura.vencida);
+      expect(
+        DateTime.now().difference(inicio),
+        lessThan(const Duration(seconds: 5)),
+      );
     },
   );
 
   test(
     'un segundo toque con una apertura en curso no crea otra orden',
     () async {
-      final repositorio = _Repositorio(consultas: const [_enCurso, _abierta]);
+      final repositorio = _Repositorio(consultas: const [_tomada, _abierta]);
       final contenedor = _contenedor(repositorio);
       final controlador = contenedor.read(abrirPuertaProvider.notifier);
 

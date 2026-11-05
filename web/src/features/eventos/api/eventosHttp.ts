@@ -4,6 +4,7 @@ import {
   causaDeEjecucion,
   type EjecucionDeEvento,
   type EventoDeAcceso,
+  type MetodoDeEvento,
   type ResultadoDeEvento,
 } from '../domain/evento';
 import type { EventosRepositorio } from './EventosRepositorio';
@@ -19,6 +20,9 @@ interface EventoDto {
   qr_etiqueta: string | null;
   ejecucion: EjecucionDeEvento | null;
   ejecucion_causa: string | null;
+  /** Campos aditivos: una API que aún no los envía equivale a una lectura por QR sin usuario. */
+  metodo?: MetodoDeEvento;
+  usuario?: string | null;
 }
 
 /** La Paz no cambia de hora: UTC−4 todo el año (igual que las estadísticas de la API). */
@@ -48,6 +52,8 @@ export function eventoDesdeDto(dto: EventoDto): EventoDeAcceso {
     qrEtiqueta: dto.qr_etiqueta,
     ejecucion: dto.ejecucion,
     ejecucionCausa: causaDeEjecucion(dto.ejecucion_causa),
+    metodo: dto.metodo ?? 'qr',
+    usuario: dto.usuario ?? null,
   };
 }
 

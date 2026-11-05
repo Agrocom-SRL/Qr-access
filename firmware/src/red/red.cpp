@@ -22,6 +22,10 @@ volatile bool conIp = false;      // además, el DHCP ya entregó una IP
 /// Pasado este tiempo con cable pero sin IP, se avisa que el problema ya no es el cable.
 constexpr uint32_t MS_SIN_IP_PARA_AVISAR = 15000;
 
+/// Plazos para reiniciar la placa si la red no se estabiliza (ver vigilarEnlace).
+constexpr uint32_t MS_SIN_ENLACE_PARA_REINICIAR = 20000;
+constexpr uint32_t MS_CON_ENLACE_SIN_IP_PARA_REINICIAR = 25000;
+
 void alEventoDeRed(arduino_event_id_t evento) {
   switch (evento) {
     case ARDUINO_EVENT_ETH_CONNECTED:
@@ -73,16 +77,52 @@ void pedirHoraUnaVez() {
   ntpPedido = true;
 }
 
-}  // namespace
-
-void iniciar() {
-  WiFi.onEvent(alEventoDeRed);
+/// Arranca la PHY desde cero. Tras un reinicio (el botón EN o el de software) el oscilador de
+/// 50 MHz y la PHY siguen alimentados y sin resetear, y `ETH.begin()` a veces no levanta el enlace
+/// ("sin cable" con el cable puesto). Apagar el oscilador un instante antes de empezar fuerza el
+/// mismo arranque limpio que un corte de energía. Es un bloqueo de arranque, no del bucle.
+void arrancarPhy() {
+  pinMode(ETH_PIN_ENERGIA, OUTPUT);
+  digitalWrite(ETH_PIN_ENERGIA, LOW);
+  delay(300);  // el oscilador y la PHY deben apagarse del todo; ETH.begin() lo vuelve a encender
   ETH.begin(ETH_PHY_ADDR_LAN8720, ETH_PIN_ENERGIA, ETH_PIN_MDC, ETH_PIN_MDIO, ETH_PHY_LAN8720,
             ETH_CLOCK_GPIO0_IN);
 }
 
+/// Reinicia la placa; `arrancarPhy()` apaga la PHY al arrancar. Este core no tiene `ETH.end()` y
+/// llamar otra vez a `ETH.begin()` duplicaría la interfaz de red; reiniciar es la salida limpia.
+void reiniciarPorRed() {
+  Serial.println("[red] reiniciando: el enlace no se estabilizó");
+  Serial.flush();
+  ESP.restart();
+}
+
+/// Si no hay IP en el plazo, reinicia la placa. El plazo corre desde el arranque o desde que se
+/// perdió la IP; un cable desconectado reinicia la placa cada 20 s.
+void vigilarEnlace(uint32_t ahoraMs) {
+  static uint32_t desdeMs = 0;
+  if (conIp) {
+    desdeMs = ahoraMs;
+    return;
+  }
+  const uint32_t plazoMs =
+      conEnlace ? MS_CON_ENLACE_SIN_IP_PARA_REINICIAR : MS_SIN_ENLACE_PARA_REINICIAR;
+  if (ahoraMs - desdeMs >= plazoMs) {
+    desdeMs = ahoraMs;
+    reiniciarPorRed();
+  }
+}
+
+}  // namespace
+
+void iniciar() {
+  WiFi.onEvent(alEventoDeRed);
+  arrancarPhy();
+}
+
 void tick(uint32_t ahoraMs) {
   registrarCambioDeEnlace(ahoraMs);
+  vigilarEnlace(ahoraMs);
   if (conIp) pedirHoraUnaVez();
 }
 

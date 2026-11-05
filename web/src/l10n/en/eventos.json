@@ -13,6 +13,10 @@
     "motivo": "Reason",
     "ejecucion": "Opening"
   },
+  "metodo": {
+    "app": "App",
+    "manual": "Manual opening"
+  },
   "resultado": {
     "permitido": "Allowed",
     "rechazado": "Rejected"
@@ -43,7 +47,18 @@
     "qr_otra_puerta": "Different door",
     "qr_usado": "QR already used",
     "suscripcion_vencida": "Subscription expired",
-    "desconocido": "Reason unavailable"
+    "desconocido": "Reason unavailable",
+    "manual_ordenada": "Manual opening ordered",
+    "manual_usuario_restringido": "The user has restricted access",
+    "manual_usuario_suspendido": "The user is suspended",
+    "manual_cuenta_suspendida": "The account is suspended",
+    "manual_usuario_eliminado": "The user was deleted",
+    "manual_suscripcion_vencida": "The subscription has expired",
+    "manual_no_habilitada": "The door does not have manual opening turned on",
+    "manual_sin_dispositivo": "The door has no board in service",
+    "manual_sin_conexion": "The board was offline",
+    "manual_orden_en_curso": "An opening was already in progress",
+    "manual_limite": "Exceeded the opening limit"
   },
   "ejecucionFiltro": {
     "todas": "All",

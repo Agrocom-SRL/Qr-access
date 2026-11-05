@@ -31,6 +31,9 @@ class ColoresSemanticos {
     required this.velo,
     required this.elev1,
     required this.elev3,
+    required this.pulsadorTapa,
+    required this.pulsadorBisel,
+    required this.pulsadorBrillo,
   });
 
   static const claro = ColoresSemanticos(
@@ -56,6 +59,9 @@ class ColoresSemanticos {
     heroAcento: Primitivos.verde600,
     sobreHero: Primitivos.neutro0,
     velo: Primitivos.velo,
+    pulsadorTapa: Primitivos.rojo600,
+    pulsadorBisel: Primitivos.neutro900,
+    pulsadorBrillo: Primitivos.brilloPulsador,
     elev1: [
       BoxShadow(color: Primitivos.sombra6, blurRadius: 2, offset: Offset(0, 1)),
       BoxShadow(color: Primitivos.sombra6, blurRadius: 3, offset: Offset(0, 1)),
@@ -96,6 +102,9 @@ class ColoresSemanticos {
     heroAcento: Primitivos.verde700,
     sobreHero: Primitivos.neutroOscuro400,
     velo: Primitivos.velo,
+    pulsadorTapa: Primitivos.rojo300,
+    pulsadorBisel: Primitivos.neutroOscuro50,
+    pulsadorBrillo: Primitivos.brilloPulsador,
     elev1: [],
     elev3: [],
   );
@@ -133,6 +142,12 @@ class ColoresSemanticos {
   /// Sombra de tarjeta y de diálogo; vacías en oscuro.
   final List<BoxShadow> elev1;
   final List<BoxShadow> elev3;
+
+  /// Pulsador industrial de apertura sin QR (ADR 0035): la tapa roja, el bisel
+  /// que la rodea y el brillo sobre la tapa. Lo único de color del pulsador.
+  final Color pulsadorTapa;
+  final Color pulsadorBisel;
+  final Color pulsadorBrillo;
 
   /// Alias de dominio (handoff): un acceso permitido es primario y uno
   /// rechazado, peligro.
@@ -178,6 +193,12 @@ const double opacidadAcentoFoto = 0.45;
 /// Tamaño de la inicial del avatar: el lado dividido entre este número.
 const double divisorInicialAvatar = 2.6;
 
+/// Brillo de la tapa del pulsador: su radio y su corrimiento hacia arriba y a
+/// la izquierda, como fracción del radio de la tapa (sale del diseño del
+/// pulsador industrial, no de un tamaño fijo).
+const double proporcionBrilloPulsador = 0.5;
+const double corrimientoBrilloPulsador = 0.3;
+
 /// Radios de esquina: chips 6 · campos e íconos 10 · tarjetas 14 · hero y
 /// diálogos 20 · completo para botones y badges.
 @immutable
@@ -222,9 +243,12 @@ class Duraciones {
   /// mientras la placa la ejecuta (ADR 0035).
   Duration get consultaOrdenApertura => const Duration(seconds: 1);
 
-  /// Cuánto se espera el desenlace de una orden de apertura antes de darla
-  /// por no abierta: la API la vence a los 15 s y la placa informa después.
-  Duration get esperaMaximaOrdenApertura => const Duration(seconds: 30);
+  /// Lo que dura la animación de una apertura desde que la API acepta la orden
+  /// (como mucho). Termina antes si la placa toma la orden (enviada) o informa
+  /// (abierta o fallo). Si a los 5 s la placa no la tomó, se da por no
+  /// contactada: lo que tarde el servidor después es interno y no alarga la
+  /// espera.
+  Duration get esperaMaximaOrdenApertura => const Duration(seconds: 5);
 
   /// Cuánto queda a la vista el PIN propio en Perfil antes de taparse solo.
   Duration get pinVisible => const Duration(seconds: 10);
@@ -332,6 +356,15 @@ class Tamanos {
 
   /// Zona de silencio del QR, en módulos (la norma pide 4).
   int get qrZonaSilencioModulos => 4;
+
+  /// Pulsador de apertura (ADR 0035): diámetro del bisel, área táctil y anillo
+  /// de carga (que lo rodea, con holgura), ancho del bisel, cuánto se hunde la
+  /// tapa al pulsarla y grosor del anillo de carga.
+  double get pulsador => 96;
+  double get pulsadorArea => 120;
+  double get pulsadorBisel => 10;
+  double get pulsadorRecorrido => 6;
+  double get anilloPulsador => 4;
 
   double get icono => 20;
   double get iconoNav => 24;
