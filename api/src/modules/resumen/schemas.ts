@@ -99,6 +99,9 @@ export const respuestaDeEventosDePlataforma = esquemaListado(
     puerta: z.object({ id: z.string(), nombre: z.string(), sitio: z.string() }),
     dispositivo: z.string().nullable(),
     qr_etiqueta: z.string().nullable(),
+    metodo: z.enum(['qr', 'pulsador', 'forzada', 'manual']),
+    /** Nombre visible de quien hizo la apertura manual; `null` en los demás métodos. */
+    usuario: z.string().nullable(),
     /** Qué pasó con la orden de abrir; `null` en un rechazo o mientras la placa no informa. */
     ejecucion: z.enum(['ejecutada', 'fallida', 'sin_confirmacion']).nullable(),
     /** Por qué (`puerta_abrio`, `puerta_no_abrio`, `puerta_no_cerro`, `rele_no_accionado`, `sin_sensor`, `sin_respuesta`). */

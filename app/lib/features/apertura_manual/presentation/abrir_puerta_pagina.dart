@@ -9,7 +9,7 @@ import 'package:agrocom_acceso/features/apertura_manual/presentation/abrir_puert
 import 'package:agrocom_acceso/features/apertura_manual/presentation/apertura_manual_providers.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_badge.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_boton.dart';
-import 'package:agrocom_acceso/shared/widgets/atoms/acceso_cargando.dart';
+import 'package:agrocom_acceso/shared/widgets/atoms/acceso_pulsador.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_skeleton.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_tarjeta.dart';
 import 'package:agrocom_acceso/shared/widgets/molecules/acceso_aviso.dart';
@@ -21,9 +21,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// "Abrir puerta" (ADR 0035): la persona elige una de las puertas disponibles
-/// y la abre sin QR. No pregunta ni dice entrada o salida: sin geovalla nadie
-/// sabe hacia dónde va; solo se elige la puerta.
+/// "Abrir puerta" (ADR 0035): la persona pulsa el botón de una de las puertas
+/// disponibles y la abre sin QR. No pregunta ni dice entrada o salida: sin
+/// geovalla nadie sabe hacia dónde va; solo se elige la puerta.
 class AbrirPuertaPagina extends ConsumerWidget {
   const new({super.key});
 
@@ -40,27 +40,30 @@ class AbrirPuertaPagina extends ConsumerWidget {
       rutaAtras: Rutas.inicio,
       salida: SalidaDeCabecera.cerrar,
       alSalir: () => context.go(Rutas.inicio),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (apertura.fase != FaseDeApertura.libre)
-            _Progreso(apertura: apertura)
-          else ...[
-            AccesoAviso(
-              tono: TonoAviso.informacion,
-              texto: l10n.abrirPuertaAyuda,
-            ),
-            SizedBox(height: tokens.espacio.l),
-            puertas.when(
-              loading: () => const _PuertasCargando(),
-              error: (error, _) => EstadoVacio.error(
-                titulo: textoDeError(l10n, error),
-                alReintentar: () => ref.invalidate(puertasAbriblesProvider),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(vertical: tokens.espacio.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (apertura.fase != FaseDeApertura.libre)
+              _Progreso(apertura: apertura)
+            else ...[
+              AccesoAviso(
+                tono: TonoAviso.informacion,
+                texto: l10n.abrirPuertaAyuda,
               ),
-              data: (lista) => _Puertas(puertas: lista),
-            ),
+              SizedBox(height: tokens.espacio.l),
+              puertas.when(
+                loading: () => const _PuertasCargando(),
+                error: (error, _) => EstadoVacio.error(
+                  titulo: textoDeError(l10n, error),
+                  alReintentar: () => ref.invalidate(puertasAbriblesProvider),
+                ),
+                data: (lista) => _Puertas(puertas: lista),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -120,19 +123,44 @@ class _Puertas extends ConsumerWidget {
                       texto: l10n.abrirPuertaSinConexion,
                       tono: TonoAcceso.peligro,
                     ),
-              pie: AccesoBoton(
-                texto: l10n.abrirPuertaAccion,
-                icono: Icons.lock_open,
-                expandido: true,
-                // Con la placa sin reportar la API respondería 409: se evita
-                // el viaje y se deja ver por qué no se puede.
-                onPressed: puerta.enLinea
-                    ? () => ref.read(abrirPuertaProvider.notifier).abrir(puerta)
-                    : null,
-              ),
+              pie: _PulsadorDePuerta(puerta: puerta),
             ),
           ),
       ],
+    );
+  }
+}
+
+/// El pulsador de una puerta con su texto debajo. Con la placa sin reportar
+/// la API respondería 409: el pulsador queda apagado y no se hace el viaje.
+class _PulsadorDePuerta extends ConsumerWidget {
+  const new({required this.puerta});
+
+  final PuertaAbrible puerta;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final tokens = context.tokens;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AccesoPulsador(
+            etiqueta: l10n.abrirPuertaPulsador(puerta.nombre),
+            alPulsar: puerta.enLinea
+                ? () => ref.read(abrirPuertaProvider.notifier).abrir(puerta)
+                : null,
+          ),
+          SizedBox(height: tokens.espacio.s),
+          ExcludeSemantics(
+            child: Text(
+              l10n.abrirPuertaAccion,
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -148,17 +176,25 @@ class _Progreso extends ConsumerWidget {
     final tokens = context.tokens;
     final textos = Theme.of(context).textTheme;
     final nombre = apertura.puertaNombre ?? '';
-    final (titulo, detalle, icono, tono) = switch (apertura.fase) {
+    // Mientras la orden va en camino el pulsador va hundido con su anillo; al
+    // terminar, el icono del resultado.
+    final (titulo, detalle, IconData? icono, tono) = switch (apertura.fase) {
       FaseDeApertura.enviando => (
         l10n.abrirPuertaEnviando,
         null,
-        Icons.hourglass_top,
+        null,
         TonoAviso.informacion,
       ),
       FaseDeApertura.esperando => (
         l10n.abrirPuertaEsperando(nombre),
         null,
-        Icons.hourglass_top,
+        null,
+        TonoAviso.informacion,
+      ),
+      FaseDeApertura.enviada => (
+        l10n.abrirPuertaEnviada(nombre),
+        null,
+        Icons.send_outlined,
         TonoAviso.informacion,
       ),
       FaseDeApertura.abierta => (
@@ -178,18 +214,21 @@ class _Progreso extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: tokens.espacio.l),
-        Icon(icono, size: tokens.tamano.iconoNav * 2),
+        if (apertura.enCurso)
+          Center(
+            child: AccesoPulsador(
+              etiqueta: l10n.abrirPuertaPulsador(nombre),
+              cargando: true,
+            ),
+          )
+        else if (icono != null)
+          Icon(icono, size: tokens.tamano.iconoNav * 2),
         SizedBox(height: tokens.espacio.m),
         Text(titulo, textAlign: TextAlign.center, style: textos.titleLarge),
         SizedBox(height: tokens.espacio.l),
         if (detalle != null)
           AccesoAviso(tono: tono, texto: detalle, icono: icono),
-        if (apertura.enCurso)
-          Padding(
-            padding: EdgeInsets.all(tokens.espacio.xl),
-            child: const AccesoCargando(),
-          )
-        else ...[
+        if (!apertura.enCurso) ...[
           SizedBox(height: tokens.espacio.l),
           AccesoBoton(
             texto: l10n.abrirPuertaOtra,

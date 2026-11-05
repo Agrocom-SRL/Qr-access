@@ -64,3 +64,47 @@ describe('lecturas por HTTP: ejecución (ADR 0031 §18)', () => {
     expect(FILTROS_DE_EJECUCION).toEqual(['todas', 'ejecutada', 'fallida', 'sin_confirmacion']);
   });
 });
+
+describe('lecturas por HTTP: método y usuario de la apertura (ADR 0035)', () => {
+  function clienteConFila(fila: Record<string, unknown>) {
+    const solicitar = vi.fn(() =>
+      Promise.resolve({
+        datos: [
+          {
+            id: '70',
+            ocurrido_at: '2026-10-27T12:00:00.000Z',
+            resultado: 'permitido',
+            motivo_code: 'manual.ordenada',
+            cuenta: { id: '1', codigo: 'AGR', nombre: 'Agroindustrial Norte' },
+            puerta: { id: '3', nombre: 'Portón', sitio: 'Planta Warnes' },
+            dispositivo: 'LECT-0042',
+            qr_etiqueta: null,
+            ejecucion: 'ejecutada',
+            ejecucion_causa: 'puerta_abrio',
+            ...fila,
+          },
+        ],
+        meta: { pagina: 1, por_pagina: 15, total: 1 },
+      }),
+    );
+    return { cliente: { solicitar } as unknown as ClienteHttp };
+  }
+
+  it('mapea una apertura manual con el nombre de quien abrió', async () => {
+    const { cliente } = clienteConFila({ metodo: 'manual', usuario: 'Ana Quiroga' });
+    const pagina = await crearEventosHttp(cliente).listar(FILTROS_BASE, 15);
+    expect(pagina.elementos[0]).toMatchObject({ metodo: 'manual', usuario: 'Ana Quiroga' });
+  });
+
+  it('una apertura manual sin usuario conserva usuario null', async () => {
+    const { cliente } = clienteConFila({ metodo: 'manual', usuario: null });
+    const pagina = await crearEventosHttp(cliente).listar(FILTROS_BASE, 15);
+    expect(pagina.elementos[0]).toMatchObject({ metodo: 'manual', usuario: null });
+  });
+
+  it('si la API aún no envía los campos nuevos, es una lectura por QR sin usuario', async () => {
+    const { cliente } = clienteConFila({});
+    const pagina = await crearEventosHttp(cliente).listar(FILTROS_BASE, 15);
+    expect(pagina.elementos[0]).toMatchObject({ metodo: 'qr', usuario: null });
+  });
+});

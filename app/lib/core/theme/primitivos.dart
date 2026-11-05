@@ -53,6 +53,10 @@ abstract final class Primitivos {
   /// Velo oscuro detrás de un diálogo.
   static const velo = Color(0x80000000);
 
+  /// Brillo de la tapa del pulsador de apertura: blanco translúcido, igual en
+  /// los dos temas (la luz de la tapa no depende del fondo).
+  static const brilloPulsador = Color(0x66FFFFFF);
+
   /// El QR no se tematiza: negro sobre blanco siempre (§1.8).
   static const qrModulo = Color(0xFF000000);
   static const qrFondo = Color(0xFFFFFFFF);

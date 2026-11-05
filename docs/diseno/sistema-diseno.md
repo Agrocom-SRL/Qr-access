@@ -39,6 +39,7 @@ Base **`#007A33`** (D-08: hex provisional). Rampa `verde50 #E8F5EE · 100 #C5E6D
 | `informacion` / `informacionSuave` | `#1565C0` / `#E8F1FB` | `#7EB6F2` / `#14263A` | Usado, Ver, aviso informativo |
 | `hero` / `heroAcento` / `sobreHero` | `#007A33` / `#006B2D` / `#FFFFFF` | `#00451C` / `#005824` / `#E6EAE7` | Bienvenida, tarjeta de cuenta, hero "Generar QR", indicador de accesos de hoy |
 | `elev1` / `elev3` | sombras del handoff | vacías | Tarjeta / diálogo (en oscuro la elevación es la superficie) |
+| `pulsadorTapa` / `pulsadorBisel` / `pulsadorBrillo` | `#C62828` / `#1B1F1C` / blanco 40% | `#EF7A7A` / `#121614` / blanco 40% | Pulsador de apertura sin QR (ADR 0035): tapa roja, bisel oscuro y brillo sobre la tapa |
 
 Alias de dominio: `accesoPermitido = primario`, `accesoDenegado = peligro`, `qrModulo = #000000`, `qrFondo = #FFFFFF`. `ColorScheme` de Material 3 se arma desde estos semánticos (no con `fromSeed`). Contraste AA de todos los pares texto/fondo: `test/core/theme/tema_test.dart`.
 
@@ -56,7 +57,7 @@ Alias de dominio: `accesoPermitido = primario`, `accesoDenegado = peligro`, `qrM
 
 ### 2.5 Medidas de componente (`tokens.tamano`)
 
-No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtro 40 · mínimo táctil 44 · botón y campo 48 · casilla del PIN 36×56 (44×56 en expandido) · app bar, FAB y acceso rápido 56 · fila de perfil 64 · NavigationBar 80 · rail 80 / 240 · ancho máximo 400 (auth), 640 (formulario de secciones), 720 (formularios), 1200 (listas y tableros) · resumen lateral 360 · QR 240 / 320 + 16 de silencio.
+No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtro 40 · mínimo táctil 44 · botón y campo 48 · casilla del PIN 36×56 (44×56 en expandido) · pulsador de apertura: bisel 96, área táctil y anillo 120, bisel 10, recorrido 6, anillo 4 · app bar, FAB y acceso rápido 56 · fila de perfil 64 · NavigationBar 80 · rail 80 / 240 · ancho máximo 400 (auth), 640 (formulario de secciones), 720 (formularios), 1200 (listas y tableros) · resumen lateral 360 · QR 240 / 320 + 16 de silencio.
 
 ### 2.6 Breakpoints y navegación (`context.clasePantalla`)
 
@@ -76,6 +77,7 @@ No son espaciado: badge 24 · chip de paso e interruptor 32 · pastilla de filtr
 | Átomo | `AccesoBadge` | Siempre punto + texto. Vigente/Permitido/En línea = primario · Usado = informacion · Vencido = advertencia · Anulado = neutro · Rechazado/Sin conexión = peligro |
 | Átomo | `AccesoCampoTexto`, `AccesoSelector`, `AccesoInterruptor` | Foco primario 2 dp, error peligro 2 dp con ícono, carga con spinner |
 | Átomo | `AccesoAccionFila` | Ver = informacion · Editar = advertencia · Eliminar = peligro, con tooltip |
+| Átomo | `AccesoPulsador` | Pulsador industrial de apertura sin QR (ADR 0035): tapa roja con brillo en bisel oscuro, se hunde al pulsar; cargando = hundido con anillo girando; sin placa en línea = apagado. Semántica de botón; Tab, Enter y Espacio; cursor de clic, aro de foco y de puntero con `bordeFoco` |
 | Átomo | `AccesoTarjeta`, `AccesoAvatar`, `AccesoLogo`, `AccesoSkeleton`, `AccesoCargando` | Base de tarjeta con elev1; logo de AGROCOM (`assets/imagenes/logo_agrocom.png`) sobre placa blanca |
 | Molécula | `CampoFormulario`, `TarjetaIndicador` (normal, hero, alerta), `EstadoVacio` (vacío, error, sin conexión), `ConfirmarDialogo` (con ficha "estado → estado"), `FilaClaveValor` (normal y navegable) | |
 | Molécula | `AccesoAviso`, `SelectorSegmentado`, `TarjetaSeleccionable`, `IndicadorPasos`, `BannerSinConexion`, `TarjetaFila`, `ChipEtiqueta`, `CajaIcono` | |
