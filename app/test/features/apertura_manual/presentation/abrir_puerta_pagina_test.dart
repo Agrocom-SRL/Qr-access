@@ -1,14 +1,12 @@
-import 'package:agrocom_acceso/core/api/error_api.dart';
-import 'package:agrocom_acceso/core/theme/tokens.dart';
+import 'dart:ui' show Tristate;
+
 import 'package:agrocom_acceso/core/sesion/sesion_controlador.dart';
+import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/features/apertura_manual/apertura_manual.dart';
 import 'package:agrocom_acceso/features/apertura_manual/data/apertura_manual_repositorio.dart';
 import 'package:agrocom_acceso/features/apertura_manual/domain/apertura_manual.dart';
-import 'package:agrocom_acceso/features/apertura_manual/presentation/abrir_puerta_controlador.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_pulsador.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/fakes.dart';
@@ -37,7 +35,7 @@ const _lateral = PuertaAbrible(
 /// Repositorio con el shape de la API: la orden queda `pendiente` hasta que
 /// el test decide cómo termina la consulta.
 class _Repositorio implements AperturaManualRepositorio {
-  _Repositorio({this.consulta = EstadoOrden.entregada});
+  new({this.consulta = EstadoOrden.entregada});
 
   final EstadoOrden consulta;
   final List<String> claves = [];
@@ -96,39 +94,35 @@ Future<_Repositorio> _montar(
 void main() {
   // Web y tablet: a 1280 px el pulsador no se estira ni se achica.
   for (final tamano in [tamanoCompacto, const Size(1280, 800)]) {
-    testWidgets(
-      'muestra cada puerta con su pulsador y su texto, sin desbordes a ${tamano.width.toInt()} px',
-      (tester) async {
-        final semantics = tester.ensureSemantics();
-        await _montar(tester, tamano: tamano);
+    testWidgets('muestra cada puerta con su pulsador y su texto, '
+        'sin desbordes a ${tamano.width.toInt()} px', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _montar(tester, tamano: tamano);
 
-        // El título de la pantalla y el texto bajo cada pulsador.
-        expect(find.text('Abrir puerta'), findsNWidgets(3));
-        expect(find.byType(AccesoPulsador), findsNWidgets(2));
-        expect(
-          tester.getSize(find.byType(AccesoPulsador).first),
-          Size.square(const Tamanos().pulsadorArea),
-        );
-        expect(find.text('Sin conexión'), findsOneWidget);
-        final boton = find.bySemanticsLabel('Abrir Portón principal');
-        expect(
-          tester
-              .getSemantics(boton)
-              .getSemanticsData()
-              .hasFlag(SemanticsFlag.isButton),
-          isTrue,
-        );
-        // La puerta sin placa en línea queda apagada y no responde.
-        expect(
-          tester
-              .getSemantics(find.bySemanticsLabel('Abrir Puerta lateral'))
-              .getSemanticsData()
-              .hasFlag(SemanticsFlag.isEnabled),
-          isFalse,
-        );
-        semantics.dispose();
-      },
-    );
+      // El título de la pantalla y el texto bajo cada pulsador.
+      expect(find.text('Abrir puerta'), findsNWidgets(3));
+      expect(find.byType(AccesoPulsador), findsNWidgets(2));
+      expect(
+        tester.getSize(find.byType(AccesoPulsador).first),
+        Size.square(const Tamanos().pulsadorArea),
+      );
+      expect(find.text('Sin conexión'), findsOneWidget);
+      final boton = find.bySemanticsLabel('Abrir Portón principal');
+      expect(
+        tester.getSemantics(boton).getSemanticsData().flagsCollection.isButton,
+        isTrue,
+      );
+      // La puerta sin placa en línea queda apagada y no responde.
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('Abrir Puerta lateral'))
+            .getSemanticsData()
+            .flagsCollection
+            .isEnabled,
+        Tristate.isFalse,
+      );
+      semantics.dispose();
+    });
   }
 
   testWidgets(
@@ -187,7 +181,8 @@ void main() {
       expect(find.text('No se pudo abrir Portón principal'), findsOneWidget);
       expect(
         find.text(
-          'No se pudo contactar la puerta. Inténtalo de nuevo o entra con tu QR.',
+          'No se pudo contactar la puerta. '
+          'Inténtalo de nuevo o entra con tu QR.',
         ),
         findsOneWidget,
       );

@@ -119,9 +119,9 @@ class AbrirPuertaControlador extends Notifier<AperturaEstado> {
     state = resultado;
   }
 
-  /// Consulta la orden cada [intervalo] hasta que hay algo que mostrar. Devuelve
-  /// `null` si [seguir] deja de valer (el tope ya respondió o la pantalla se
-  /// cerró).
+  /// Consulta la orden cada [intervalo] hasta que hay algo que mostrar.
+  /// Devuelve `null` si [seguir] deja de valer (el tope ya respondió o la
+  /// pantalla se cerró).
   Future<AperturaEstado?> _consultarHastaVer(
     String ordenId,
     String nombre, {

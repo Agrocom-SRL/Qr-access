@@ -151,7 +151,7 @@ class _AccesoPulsadorState extends State<AccesoPulsador> {
 /// la vista el borde del bisel al bajar: ese labio es lo que hace leer el
 /// hundido.
 class _PulsadorPintor extends CustomPainter {
-  const _PulsadorPintor({
+  const new({
     required this.hundimiento,
     required this.tapa,
     required this.bisel,

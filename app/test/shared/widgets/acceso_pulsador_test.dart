@@ -1,7 +1,9 @@
+import 'dart:ui' show Tristate;
+
 import 'package:agrocom_acceso/core/theme/tokens.dart';
 import 'package:agrocom_acceso/shared/widgets/atoms/acceso_pulsador.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,8 +37,8 @@ void main() {
       await tester.pump();
 
       final datos = _semantica(tester);
-      expect(datos.hasFlag(SemanticsFlag.isButton), isTrue);
-      expect(datos.hasFlag(SemanticsFlag.isEnabled), isTrue);
+      expect(datos.flagsCollection.isButton, isTrue);
+      expect(datos.flagsCollection.isEnabled, Tristate.isTrue);
       expect(find.byType(CircularProgressIndicator), findsNothing);
 
       await tester.tap(_pulsador());
@@ -65,7 +67,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(_semantica(tester).hasFlag(SemanticsFlag.isEnabled), isFalse);
+      expect(_semantica(tester).flagsCollection.isEnabled, Tristate.isFalse);
       await tester.tap(_pulsador());
       expect(pulsaciones, 0);
       semantics.dispose();
@@ -90,7 +92,7 @@ void main() {
         find.descendant(of: _pulsador(), matching: find.byType(Opacity)),
       );
       expect(apagado.opacity, opacidadDeshabilitado);
-      expect(_semantica(tester).hasFlag(SemanticsFlag.isEnabled), isFalse);
+      expect(_semantica(tester).flagsCollection.isEnabled, Tristate.isFalse);
       semantics.dispose();
     },
   );
@@ -155,7 +157,7 @@ void main() {
       final puntero = TestPointer(1, PointerDeviceKind.mouse);
       addTearDown(puntero.removePointer);
       final centro = tester.getCenter(_pulsador());
-      await puntero.hover(centro);
+      await tester.sendEventToBinding(puntero.hover(centro));
       await tester.pump();
 
       final region = tester.widget<MouseRegion>(

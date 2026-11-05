@@ -38,17 +38,13 @@ const _Consulta _fallida = (
 /// Repositorio con el mismo shape que la API: responde lo que se le programa.
 /// Con [colgada], la consulta de estado nunca responde.
 class _Repositorio implements AperturaManualRepositorio {
-  _Repositorio({
-    this.errorAlAbrir,
-    this.consultas = const [],
-    this.colgada = false,
-  });
+  new({this.errorAlAbrir, this.consultas = const [], this.colgada = false});
 
   final Exception? errorAlAbrir;
   final List<Object> consultas;
   final bool colgada;
   final List<String> claves = [];
-  var llamadasAEstado = 0;
+  int llamadasAEstado = 0;
 
   @override
   Future<OrdenDeApertura> abrir(
@@ -126,7 +122,8 @@ void main() {
     },
   );
 
-  test('una orden tomada por la placa es «enviada», no «abierta», y la espera termina', () async {
+  test('una orden tomada por la placa es «enviada», no «abierta», '
+      'y la espera termina', () async {
     final repositorio = _Repositorio(consultas: const [_tomada, _abierta]);
     final contenedor = _contenedor(repositorio);
 
@@ -198,7 +195,8 @@ void main() {
     },
   );
 
-  test('si la placa nunca toma la orden, a los 5 s se da por no contactada (vencida)', () async {
+  test('si la placa nunca toma la orden, a los 5 s se da por no '
+      'contactada (vencida)', () async {
     final repositorio = _Repositorio(consultas: const [_pendiente]);
     final contenedor = _contenedor(repositorio);
 
