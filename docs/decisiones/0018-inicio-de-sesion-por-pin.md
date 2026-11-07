@@ -50,3 +50,12 @@ El §3 dice que el PIN «se muestra una sola vez», y el servidor no puede devol
 - Se borra al cerrar sesión y cuando el refresco se rechaza. Un PIN regenerado o dado de baja corta las sesiones de la persona (tests de arriba), así que no queda un PIN viejo a la vista.
 - Una sesión abierta antes de este cambio no lo tiene: Perfil pide cerrar sesión y volver a ingresar.
 - **Riesgo aceptado:** quien tenga el teléfono desbloqueado con la app abierta puede ver y copiar el PIN, y con él abrir otras sesiones. Se mitiga con el tapado automático y el almacén seguro; si se quiere más, el paso siguiente es pedir la biometría del teléfono antes de mostrarlo.
+
+## Addendum (2026-11-07): la web recuerda el PIN y la sesión (primer lanzamiento)
+
+Las tiendas (App Store y Play Store) demoran y el primer lanzamiento a producción usa la **app Flutter web**, en un entorno controlado de pruebas, con personas mayores que no quieren recordar su PIN ni ingresar a cada rato. Se decide, **solo para esta etapa**:
+
+- **En web**, la app guarda el PIN con el que se ingresó en el `localStorage` del navegador (`sesion.pin`), igual que en móvil lo guarda en el almacén seguro; Perfil lo muestra oculto, con ojo y copiar. Esto reemplaza lo dicho para web en el addendum del 2026-10-30.
+- **La sesión se mantiene**: el refresco sigue en la cookie `HttpOnly` (ADR 0033 §5) y no pasa por JavaScript. Si la cookie vence, se pierde o el servidor rechaza el refresco, la app **ingresa sola con el PIN guardado** (`AlmacenPin.reingresoAutomatico`, solo web) y la persona no ve la pantalla de ingreso. Si el PIN ya no vale (regenerado, dado de baja, bloqueado) o la API lo rechaza, se borra y se pide ingresar. Sin red no se juzga: se conserva para reintentar.
+- Se borra al cerrar sesión. El servidor sigue guardando solo el hash del PIN; nada cambia en la API ni en la base (invariante 6).
+- **Riesgo aceptado, temporal:** en el navegador el PIN queda en claro y lo puede leer un script ajeno (XSS) o quien use ese equipo. Se acepta únicamente por el entorno controlado del lanzamiento; se mitiga con la CSP de la API (ADR 0033) y **debe retirarse** cuando las apps de tienda estén publicadas o se tenga un almacenamiento web seguro (p. ej. biometría o passkeys).

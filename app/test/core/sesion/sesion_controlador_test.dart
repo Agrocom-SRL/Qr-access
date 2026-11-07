@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:agrocom_acceso/core/api/api_providers.dart';
 import 'package:agrocom_acceso/core/api/cliente_api.dart';
 import 'package:agrocom_acceso/core/api/error_api.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_instalacion.dart';
+import 'package:agrocom_acceso/core/plataforma/almacen_pin.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
 import 'package:agrocom_acceso/core/sesion/permisos.dart';
@@ -33,6 +35,38 @@ const Map<String, Object?> _sesionActualSinRol = {
   'permisos': <String>[],
 };
 
+class _InstalacionEnMemoria implements AlmacenInstalacion {
+  String? id;
+
+  @override
+  Future<String?> leer() async => id;
+
+  @override
+  Future<void> guardar(String instalacionId) async => id = instalacionId;
+}
+
+/// PIN en memoria; `reingresoAutomatico` simula la web.
+class _AlmacenPinAutomatico implements AlmacenPin {
+  new({this.pin});
+
+  String? pin;
+
+  @override
+  bool get disponible => true;
+
+  @override
+  bool get reingresoAutomatico => true;
+
+  @override
+  Future<String?> leer() async => pin;
+
+  @override
+  Future<void> guardar(String valor) async => pin = valor;
+
+  @override
+  Future<void> borrar() async => pin = null;
+}
+
 /// Rutas de la API que el controlador usa, con las respuestas del contrato.
 /// `refrescoValido` marca qué refresco acepta el servidor. `cookieDelNavegador`
 /// dice si el navegador trae una cookie de refresco válida: en web la petición
@@ -54,6 +88,16 @@ Future<ResponseBody> _api(
       ? jsonDecode(options.data as String) as Map<String, dynamic>
       : options.data as Map<String, dynamic>?;
   switch ((options.method, options.path)) {
+    case ('POST', '/sesiones'):
+      if (cuerpo?['pin'] != 'AGR7K2Q') {
+        return respuestaJson(401, {'code': 'sesion.credenciales_invalidas'});
+      }
+      return respuestaJson(200, {
+        'acceso': 'acc-3',
+        'usuario': {'id': 'u1', 'etiqueta': 'Ana'},
+        'cuenta': {'id': 'c1', 'codigo': 'AGR', 'nombre': 'Cuenta Demo'},
+        'rol_activo_id': 'r1',
+      });
     case ('POST', '/sesiones/refresco'):
       final enCuerpo = cuerpo?['refresco'];
       final valido = enCuerpo == null
@@ -86,6 +130,7 @@ ProviderContainer _contenedor({
   bool sinRol = false,
   bool cookieDelNavegador = false,
   AlmacenPreferenciasFalso? preferencias,
+  AlmacenPin? almacenPin,
 }) {
   final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
   _ultimoAdaptador = AdaptadorHttpFalso(
@@ -102,6 +147,8 @@ ProviderContainer _contenedor({
     overrides: [
       clienteApiProvider.overrideWithValue(ClienteApi(dio)),
       almacenRefrescoProvider.overrideWithValue(almacen),
+      almacenInstalacionProvider.overrideWithValue(_InstalacionEnMemoria()),
+      if (almacenPin != null) almacenPinProvider.overrideWithValue(almacenPin),
       almacenPreferenciasProvider.overrideWithValue(
         preferencias ?? AlmacenPreferenciasFalso(),
       ),
@@ -120,10 +167,75 @@ Iterable<RequestOptions> _peticionesA(String ruta) =>
 Future<void> _asentar() =>
     Future<void>.delayed(const Duration(milliseconds: 20));
 
+/// Más holgado que `_asentar`: el reingreso hace varias peticiones seguidas.
+Future<void> _asentarMas() =>
+    Future<void>.delayed(const Duration(milliseconds: 300));
+
 void main() {
   late AlmacenRefrescoFalso almacen;
 
   setUp(() => almacen = AlmacenRefrescoFalso());
+
+  group('reingreso automático con el PIN guardado (web)', () {
+    test('sin cookie vigente ingresa solo y restaura la sesión', () async {
+      final pin = _AlmacenPinAutomatico(pin: 'AGR7K2Q');
+      final contenedor = _contenedor(
+        almacen: AlmacenRefrescoFalso(enCookie: true),
+        almacenPin: pin,
+      );
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider);
+      await _asentarMas();
+
+      expect(
+        contenedor.read(sesionControladorProvider),
+        isA<SesionAutenticada>(),
+      );
+      expect(_peticionesA('/sesiones'), hasLength(1));
+      expect(pin.pin, 'AGR7K2Q');
+    });
+
+    test('si el PIN ya no vale, cierra la sesión y lo borra', () async {
+      final pin = _AlmacenPinAutomatico(pin: 'AGR0000');
+      final contenedor = _contenedor(
+        almacen: AlmacenRefrescoFalso(enCookie: true),
+        almacenPin: pin,
+      );
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider);
+      await _asentarMas();
+
+      expect(contenedor.read(sesionControladorProvider), isA<SinSesion>());
+      expect(pin.pin, isNull);
+    });
+
+    test('sin red conserva el PIN para reintentar', () async {
+      final pin = _AlmacenPinAutomatico(pin: 'AGR7K2Q');
+      final contenedor = _contenedor(
+        almacen: AlmacenRefrescoFalso(enCookie: true),
+        almacenPin: pin,
+        red: true,
+      );
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider);
+      await _asentarMas();
+
+      expect(pin.pin, 'AGR7K2Q');
+    });
+
+    test('con la cookie vigente no vuelve a enviar el PIN', () async {
+      final contenedor = _contenedor(
+        almacen: AlmacenRefrescoFalso(enCookie: true),
+        almacenPin: _AlmacenPinAutomatico(pin: 'AGR7K2Q'),
+        cookieDelNavegador: true,
+      );
+      addTearDown(contenedor.dispose);
+      contenedor.read(sesionControladorProvider);
+      await _asentarMas();
+
+      expect(_peticionesA('/sesiones'), isEmpty);
+    });
+  });
 
   group('adoptarInicio', () {
     test('sin rol vigente no entra y no deja tokens a medias', () async {
