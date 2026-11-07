@@ -16,6 +16,9 @@ class AlmacenPinMovil implements AlmacenPin {
   bool get disponible => true;
 
   @override
+  bool get reingresoAutomatico => false;
+
+  @override
   Future<String?> leer() => _almacen.read(key: _clave);
 
   @override

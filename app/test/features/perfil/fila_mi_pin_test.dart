@@ -11,6 +11,10 @@ class _AlmacenPinFalso implements AlmacenPin {
 
   @override
   final bool disponible;
+
+  @override
+  bool get reingresoAutomatico => false;
+
   String? pin;
 
   @override
