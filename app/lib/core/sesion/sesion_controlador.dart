@@ -9,6 +9,8 @@ import 'package:agrocom_acceso/core/plataforma/almacen_cache.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_pin.dart';
 import 'package:agrocom_acceso/core/plataforma/almacen_refresco.dart';
 import 'package:agrocom_acceso/core/plataforma/preferencias.dart';
+import 'package:agrocom_acceso/core/sesion/nombre_de_dispositivo.dart';
+import 'package:agrocom_acceso/core/sesion/origen_de_sesion.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_estado.dart';
 import 'package:agrocom_acceso/core/sesion/sesion_guardada.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,8 +52,7 @@ class SesionControlador extends Notifier<SesionEstado>
     // En web no hay nada que leer: el refresco está en la cookie y la API lo
     // encuentra sola. Sin refresco en móvil, no hay nada que renovar.
     if (refresco == null && !_almacen.viveEnCookie) {
-      await _caducar();
-      return _ResultadoRenovacion.rechazada;
+      return await _rechazada();
     }
     try {
       final tokens = await _api.refrescar(refresco);
@@ -59,12 +60,54 @@ class SesionControlador extends Notifier<SesionEstado>
       return _ResultadoRenovacion.hecha;
     } on ErrorApi catch (error) {
       if (error.code == 'sesion.refresco_invalido') {
-        await _caducar();
-        return _ResultadoRenovacion.rechazada;
+        return await _rechazada();
       }
       return error.esSinConexion
           ? _ResultadoRenovacion.sinRed
           : _ResultadoRenovacion.fallida;
+    }
+  }
+
+  /// El refresco no sirve (vencido, revocado o ausente). Donde la plataforma
+  /// lo permite (web), se rehace la sesión con el PIN guardado; si no, o si el
+  /// PIN ya no vale, se cierra la sesión y se pide ingresar.
+  Future<_ResultadoRenovacion> _rechazada() async {
+    switch (await _reingresarConPin()) {
+      case _ResultadoRenovacion.hecha:
+        return _ResultadoRenovacion.hecha;
+      case _ResultadoRenovacion.sinRed:
+        // Sin red no se puede juzgar el PIN: se conserva para reintentar.
+        return _ResultadoRenovacion.sinRed;
+      case _ResultadoRenovacion.rechazada || _ResultadoRenovacion.fallida:
+        await _caducar();
+        return _ResultadoRenovacion.rechazada;
+    }
+  }
+
+  /// Ingresa con el PIN guardado (solo si la plataforma lo habilita). Devuelve
+  /// `rechazada` si no hay PIN o la API ya no lo acepta.
+  Future<_ResultadoRenovacion> _reingresarConPin() async {
+    if (!_almacenPin.reingresoAutomatico) return _ResultadoRenovacion.rechazada;
+    try {
+      final pin = await _almacenPin.leer();
+      if (pin == null) return _ResultadoRenovacion.rechazada;
+      final origen = await ref.read(origenDeSesionProvider).leer();
+      final inicio = await _api.iniciarSesion(
+        pin,
+        instalacionId: origen.instalacionId,
+        plataforma: origen.plataforma,
+        dispositivo: ref.read(nombreDeDispositivoProvider).leer(),
+      );
+      await _guardarTokens(inicio.acceso, inicio.refresco);
+      return inicio.rolActivoId == null
+          ? _ResultadoRenovacion.rechazada
+          : _ResultadoRenovacion.hecha;
+    } on ErrorApi catch (error) {
+      if (error.esSinConexion) return _ResultadoRenovacion.sinRed;
+      // PIN incorrecto, bloqueado o desactivado: no se insiste.
+      return _ResultadoRenovacion.rechazada;
+    } on Object {
+      return _ResultadoRenovacion.rechazada;
     }
   }
 
